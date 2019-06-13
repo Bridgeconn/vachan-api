@@ -3,12 +3,14 @@ import spacy
 from spacy.matcher import Matcher
 from gensim.models.phrases import Phrases
 
-
+# the puctuations that are remved from text for getting a clean text
+# "-" is left out intentionally in this list because, it is ofter used in text to show compund words
 non_letters = [',', '"', '!', '.', '\n', '\\','“','”','“','*','।','?',';',"'","’","(",")","‘","—"]
 non_letter_pattern = re.compile(r'['+''.join(non_letters)+']')
 multi_space_pattern = re.compile(r'\s\s+')
 
-stop_words = [ "ओर", "कर", "करके", "करता", "करते", "करना", "करने", "करे", "करें", "करेगा", "करो", 
+# the stop words are functional words in Hindi, which are treated separately while generating phrases
+hi_stop_words = [ "ओर", "कर", "करके", "करता", "करते", "करना", "करने", "करे", "करें", "करेगा", "करो", 
 			  "का", "कि", "किया", "किस", "किसी", "की", "के", "को",  "तो", "था", "थी", "थे", "ने", "पर"
 			  "भी", "में", "रहा", "रहे", "रहो", "से", "हर", "ही", "हुआ", "हुई", "हुए", "हुओं", "हूँ", "हे"
 			  "है", "हैं", "हो", "होकर", "होगा", "होता", "होने" ]
@@ -57,6 +59,11 @@ def extract_phrases_gensim(conn,lang,version):
 	cursor.execute("select lid, verse from " + source_table + " order by lid;")
 	verses = cursor.fetchall()
 	text = [cleanNsplit(v[1])for v in verses]
+
+	if lang == "hi" or lang == "hin":
+		stop_words = hi_stop_words
+	else:
+		stop_words = []
 
 	model = train_trigram_gensimmodel(text,stop_words)
 	phrases = gensimphrases_dict(model,text)
