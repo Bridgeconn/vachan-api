@@ -27,6 +27,8 @@ import requests
 import scrypt
 import psycopg2
 
+import phrases
+
 logging.basicConfig(filename='API_logs.log', format='%(asctime)s: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
 app = Flask(__name__)
@@ -488,10 +490,11 @@ def parseDataForDBInsert(usfmData):
             lid = lidDict[bcv]
             dbInsertData.append((lid, verseText, crossRefs, footNotes))
             verseContent.append(verseText)
-    tokenList = list(getTokens(' '.join(verseContent)))
-    tokenList = [(bookId, token) for token in tokenList]
+    # tokenList = list(getTokens(' '.join(verseContent)))
+    # tokenList = [(bookId, token) for token in tokenList]
     # print(tokenList)
-    return (dbInsertData, tokenList)
+    # return (dbInsertData, tokenList)
+    return dbInsertData
 
 def createTableCommand(fields, tablename):
     command = 'CREATE TABLE %s (%s)' %(tablename, ', '.join(fields))
@@ -571,12 +574,12 @@ def uploadSource():
     else:
         print(usfm_rst["usfm"].keys())
         return '{"success":false, "message":"Book %s already inserted into database"}' %(bookCode)
-    parsedDbData, tokenDBData = parseDataForDBInsert(parsedUsfmText)
+    parsedDbData = parseDataForDBInsert(parsedUsfmText)
     print("HA HA HA")
     cursor.execute('insert into ' + cleanTableName + ' (lid, verse, cross_reference, foot_notes) values '\
         + str(parsedDbData)[1:-1])
-    cursor.execute('insert into ' + tokenTableName + ' (book_id, token) values ' + str(tokenDBData)[1:-1])
-    
+    # cursor.execute('insert into ' + tokenTableName + ' (book_id, token) values ' + str(tokenDBData)[1:-1])
+    phrases.tokenize(connection, language.lower(), versionContentCode.lower()+'_'+str(revision).replace('.', '_') , bookCode)
 
     connection.commit()
     cursor.close()
