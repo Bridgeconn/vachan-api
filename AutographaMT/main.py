@@ -707,7 +707,8 @@ def downloadDraft():
     connection = get_db()
     cursor = connection.cursor()
 
-    usfmComponent = re.compile(r'((\\[a-z0-9-*]+)+) | (\d+) | ([!\"#$%&\\\'\(\)\*\+,\.\/:;<=>\?\@\[\]^_`{|\}~\”\“\‘\’।0123456789])')
+    usfmMarker = re.compile(r'(\\[a-z0-9\-*]+\s?)+')
+    nonLangComponents = re.compile(r'[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।0-9]+')
 
     if phrases.loadPhraseTranslations(conn, sourceId, targetLanguageId):
         cursor.execute("select book_id, book_code from bible_books_look_up where book_code=%s", (bookList[0],))
@@ -719,15 +720,21 @@ def downloadDraft():
         usfmLineList = []
         for line in usfmText.split('\n'):
             usfmWordsList = []
-            for word_seq in re.split(usfmComponent,line):
+            nonLangComps = re.findall(nonLangComponents,line)
+            markers_in_line = re.findall(usfmMarker,line)
+
+            processed_line = re.sub(nonLangComponents,'###',line)
+            for word_seq in re.split(usfmMarker,processed_line):
                 translated_seq = [ phrases.translateText( word_seq.strip() ) ]
-            markers_in_line = re.findall(usfmComponent,line)
 
             for i,marker in enumerate(markers_in_line):
                 usfmWordsList.append(marker)
                 usfmWordsList.append(translated_seq[i])
+            outputLine = " ".join(usfmWordsList)
+            for comp in nonLangComps:
+                outputLine = re.sub('<###>',comp,outputLine,1)
 
-            usfmLineList.append(" ".join(usfmWordsList))
+            usfmLineList.append(outputLine)
         translatedUsfmText = "\n".join(usfmLineList)
         return json.dumps({
             "translatedUsfmText": translatedUsfmText
