@@ -433,6 +433,69 @@ def tokenize(conn,lang,version,book_id,algo='gensim-ngram'):
 
 
 
+##############################################################################
+
+
+
+
+
+
+################################ Draft Genaration ############################
+
+tokenTranslatedDict = {}
+
+def loadPhraseTranslations(conn, sourceId, targetLanguageId):
+	global tokenTranslatedDict
+	cursor = conn.cursor()
+	cursor.execute("select token, translation from translations where source_id=%s \
+        and target_id=%s", (sourceId, targetLanguageId))
+	rst = cursor.fetchall()
+	if rst:
+		tokenTranslatedDict = {k:v for k,v in rst}
+		return True
+	else:
+		print("!!!!Error: token translations not obtained!!!")
+		return False
+
+
+def getNgrams(sent,n):
+	ngrams = []
+	for i in range(len(sent)):
+		if i+n <= len(sent)+1:
+			ngrams.append(sent[i:i+n-1])
+	return ngrams
+
+
+
+def translateText(text_snippet):
+	words_in_text = text_snippet.split(" ")
+
+	taken = [0 for word in words_in_text]
+	translation = ['NULL' for word in words_in_text]
+
+	N = len(words_in_text)
+	for n in range(N,1,-1):
+		nPhrases = getNgrams(words_in_text, n)
+		for i,phrase in enumerate(nPhrases):
+			not_taken = True
+			phrase_text = " ".join(phrase)
+			for pos in range(i,i+len(phrase)):
+				if taken[pos] == 1:
+					not_taken = False
+					break
+			if not_taken and phrase_text in tokenTranslatedDict:
+				translated_phrase = tokenTranslatedDict[phrase_text]
+				translation[i] = translated_phrase
+				taken[i] = 1
+				for pos in range(i+1,i+len(phrase)):
+					translation[pos] = ''
+					taken[pos] = 1
+	translation = " ".join(translation)
+	return translation
+
+
+
+
 
 if __name__ == '__main__':
 	db = psycopg2.connect(dbname='mt2414_local', user='postgres', password='password', host='localhost', port=5432)
@@ -441,8 +504,14 @@ if __name__ == '__main__':
 	# tokenize(db,'hi','irv4',40,algo='ngram')
 	# tokenize(db,'hi','irv4',40,algo='rule-based')
 	# tokenize(db,'hi','irv4',40,algo='single-word')
-	tokenize(db,'hi','irv4',40,algo='gensim-ngram')
+	# tokenize(db,'hi','irv4',40,algo='gensim-ngram')
 
 	# add_rules_toDB(db,"hi","rules_to_DB_draft2.txt")
 
+
+	loadPhraseTranslations(db,1,2)
+
+	# print(translateText('1 3 2 1 2 5 4 0 5'))
+	print(translateText(' '))
+	print(translateText('   '))
 	db.close()
