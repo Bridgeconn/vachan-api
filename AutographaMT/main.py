@@ -706,28 +706,27 @@ def downloadDraft():
     bookList = req["bookList"]
     connection = get_db()
     cursor = connection.cursor()
-    cursor.execute("select token, translation from translations where source_id=%s \
-        and target_id=%s", (sourceId, targetLanguageId))
 
-    rst = cursor.fetchall()
-    if rst:
+    markerPattern = re.compile(r'(\\\[a-z0-9-*]+)+')
+
+    if phrases.loadPhraseTranslations(conn, sourceId, targetLanguageId):
         cursor.execute("select book_id, book_code from bible_books_look_up where book_code=%s", (bookList[0],))
         bookId, bookCode = cursor.fetchone()
         tokenTranslatedDict = {k:v for k,v in rst}
         cursor.execute("select usfmText from sources where source_id=%s", (sourceId,))
         source_rst = cursor.fetchone()
         usfmText = source_rst[0][bookCode]
-        markerPattern = re.compile(r'\\\w+')
         usfmLineList = []
         for line in usfmText.split('\n'):
             usfmWordsList = []
-            for word in line.split():
-                if re.match(markerPattern, word):
-                    usfmWordsList.append(word)
-                else:
-                    cleanedWord = parsePunctuations(word)
-                    word = tokenTranslatedDict.get(cleanedWord, word)
-                    usfmWordsList.append(word)
+            for word_seq in re.split(markerPattern,line):
+                translated_seq = [ phrases.translateText( parsePunctuations(word_seq) ) ]
+            markers_in_line = re.findall(markerPattern,line)
+
+            for i,marker in enumerate(markers_in_line):
+                usfmWordsList.append(marker)
+                usfmWordsList.append(translated_seq[i])
+
             usfmLineList.append(" ".join(usfmWordsList))
         translatedUsfmText = "\n".join(usfmLineList)
         return json.dumps({
