@@ -515,7 +515,7 @@ if __name__ == '__main__':
 
 	loadPhraseTranslations(db,1,2)
 
-	print(translateText('1 3 2 1 2 5 4 0  x 5'))
+	print(translateText('1 3 2 1 2 5 4 0 5'))
 	print(translateText(' '))
 	print(translateText('   '))
 	db.close()
