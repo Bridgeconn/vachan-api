@@ -707,7 +707,7 @@ def downloadDraft():
     connection = get_db()
     cursor = connection.cursor()
 
-    usfmMarker = re.compile(r'(\\[a-z0-9\-*]+\s?)+')
+    usfmMarker = re.compile(r'\\\w+\d?\s?')
     nonLangComponents = re.compile(r'[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।0-9]+')
 
     if phrases.loadPhraseTranslations(conn, sourceId, targetLanguageId):
@@ -720,20 +720,20 @@ def downloadDraft():
         usfmLineList = []
         for line in usfmText.split('\n'):
             usfmWordsList = []
-            nonLangComps = re.findall(nonLangComponents,line)
+            nonLangComps = []
             markers_in_line = re.findall(usfmMarker,line)
-
-            processed_line = re.sub(nonLangComponents,'###',line)
-            for word_seq in re.split(usfmMarker,processed_line):
-                translated_seq = [ phrases.translateText( word_seq.strip() ) ]
-
+            for word_seq in re.split(usfmMarker,line):
+                nonLangComps += re.findall(nonLangComponents,word_seq)
+                clean_word_seq = re.sub(nonLangComponents,' ### ',word_seq)
+                translated_seq = [ phrases.translateText( clean_word_seq.strip() ) ]
             for i,marker in enumerate(markers_in_line):
                 usfmWordsList.append(marker)
                 usfmWordsList.append(translated_seq[i])
+            if i+1<len(translated_seq):
+                usfmWordsList += translated_seq[i+1:]
             outputLine = " ".join(usfmWordsList)
             for comp in nonLangComps:
-                outputLine = re.sub('<###>',comp,outputLine,1)
-
+                outputLine = re.sub(r'<###>',comp,outputLine,1)
             usfmLineList.append(outputLine)
         translatedUsfmText = "\n".join(usfmLineList)
         return json.dumps({
