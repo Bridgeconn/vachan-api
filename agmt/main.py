@@ -122,7 +122,7 @@ def auth():
             access_token = jwt.encode({'sub': email, 'exp': datetime.datetime.utcnow() + \
                 datetime.timedelta(days=1), 'role': role, 'app':'mt'}, jwt_hs256_secret, algorithm='HS256')
         except Exception as ex:
-            
+            pass
         logging.warning('User: \'' + str(email) + '\' logged in successfully')
         return '{"access_token": "%s"}\n' % (access_token.decode('utf-8'),)
     logging.warning('User: \'' + str(email) + '\' login attempt unsuccessful: Incorrect Password')
