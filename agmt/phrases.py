@@ -426,7 +426,7 @@ def tokenize(conn,lang,version,book_id,algo='gensim-ngram'):
 
 	tokens = sorted(tokens)
 	for tok in tokens:
-		cursor.execute("INSERT INTO "+token_table+" VALUES(%s,%s)",(book_id,tok))
+		cursor.execute("INSERT INTO "+token_table+" (book_id, token) VALUES(%s,%s)",(book_id,tok))
 		# print(tok)
 	conn.commit()
 	cursor.close()

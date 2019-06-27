@@ -773,7 +773,7 @@ def getTranslatedBooks(sourceId, targetId):
 
 
 @app.route("/v1/downloaddraft", methods=["POST"])
-def downloaddraft():
+def downloadDraft():
     req = request.get_json(True)
     sourceId = req["sourceId"]
     targetLanguageId = req["targetLanguageId"]
