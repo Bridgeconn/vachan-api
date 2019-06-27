@@ -26,7 +26,7 @@ import jwt
 import requests
 import scrypt
 import psycopg2
-from random import randint
+
 import phrases
 
 logging.basicConfig(filename='API_logs.log', format='%(asctime)s: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
@@ -41,7 +41,7 @@ postgres_port = os.environ.get("AGMT_POSTGRES_PORT", "5432")
 postgres_user = os.environ.get("AGMT_POSTGRES_USER", "postgres")
 postgres_password = os.environ.get("AGMT_POSTGRES_PASSWORD", "secret")
 postgres_database = os.environ.get("AGMT_POSTGRES_DATABASE", "postgres")
-# postgres_database = os.environ.get("vachan", "vachan")
+postgres_database = os.environ.get("vachan", "vachan")
 host_api_url = os.environ.get("AGMT_HOST_API_URL")
 host_ui_url = os.environ.get("AGMT_HOST_UI_URL")
 system_email = os.environ.get("MTV2_EMAIL_ID", "autographamt@gmail.com")
@@ -52,15 +52,10 @@ def get_db():                                                                   
     current application context.
     """
     if not hasattr(g, 'db'):
-        g.db = psycopg2.connect(dbname=postgres_database, user=postgres_user, password=postgres_password, \
+        g.db1 = psycopg2.connect(dbname=postgres_database, user=postgres_user, password=postgres_password, \
             host=postgres_host, port=postgres_port)
-    return g.db
+    return g.db1
 
-@app.teardown_appcontext                                              #-----------------Close database connection----------------#
-def close_db(error):
-    """Closes the database again at the end of the request."""
-    if hasattr(g, 'db'):
-        g.db.close()
 
 def getLid(bcv):
     connection = get_db()
@@ -80,6 +75,7 @@ def getLid(bcv):
     cursor.close()
     return lid
 
+
 def getBibleBookIds():
     '''
     Returns a tuple of two dictionarys of the books of the Bible, bookcode has bible book codes
@@ -94,6 +90,12 @@ def getBibleBookIds():
         bookIdDict[int(book_id)] = book_code
     cursor.close()
     return bookIdDict
+
+@app.teardown_appcontext                                              #-----------------Close database connection----------------#
+def close_db(error):
+    """Closes the database again at the end of the request."""
+    if hasattr(g, 'db'):
+        g.db.close()
 
 @app.route("/v1/auth", methods=["POST"])                    #-------------------For login---------------------#
 def auth():
@@ -116,13 +118,9 @@ def auth():
     password_salt = bytes.fromhex(rst[1].hex())
     password_hash_new = scrypt.hash(password, password_salt).hex()
     role = rst[2]
-    
     if password_hash == password_hash_new:
-        try:
-            access_token = jwt.encode({'sub': email, 'exp': datetime.datetime.utcnow() + \
-                datetime.timedelta(days=1), 'role': role, 'app':'mt'}, jwt_hs256_secret, algorithm='HS256')
-        except Exception as ex:
-            pass
+        access_token = jwt.encode({'sub': email, 'exp': datetime.datetime.utcnow() + \
+            datetime.timedelta(days=1), 'role': role, 'app':'mt'}, jwt_hs256_secret, algorithm='HS256')
         logging.warning('User: \'' + str(email) + '\' logged in successfully')
         return '{"access_token": "%s"}\n' % (access_token.decode('utf-8'),)
     logging.warning('User: \'' + str(email) + '\' login attempt unsuccessful: Incorrect Password')
@@ -180,9 +178,8 @@ def reset_password():
     else:
         headers = {"api-key": sendinblue_key}
         url = "https://api.sendinblue.com/v2.0/email"
-        # totp = pyotp.TOTP('base32secret3232')       # python otp module
-        # verification_code = totp.now()
-        verification_code = randint(100001,999999)
+        totp = pyotp.TOTP('base32secret3232')       # python otp module
+        verification_code = totp.now()
         body = '''Hi,<br/><br/>your request for resetting the password has been recieved. <br/>
         Your temporary password is %s. Enter your new password by opening this link:
 
@@ -291,13 +288,12 @@ def new_registration2(code):
 def available_books(sourceId):
     connection = get_db()
     cursor = connection.cursor()
-    cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
+    cursor.execute("select usfmText from sources where source_id=%s", (sourceId,))
     rst = cursor.fetchone()
     if not rst:
         return '{"success":false, "message":"No data available"}'
     cursor.close()
-    # 
-    return json.dumps(list(rst[0]['usfm'].keys()))
+    return json.dumps(list(rst[0].keys()))
 
 @app.route("/v1/tokenlist/<sourceId>/<book>", methods=["GET"])
 def getTokenLists(sourceId, book):
@@ -418,6 +414,7 @@ def getVersionDetails(contentId, languageId):
     cursor.close()
     return json.dumps(version_details)
 
+
 @app.route("/v1/languages", methods=["GET"])
 def getAllLanguages():
     connection = get_db()
@@ -465,10 +462,6 @@ def parsePunctuations(text):
     content = re.sub(r'([!\"#$%&\\\'\(\)\*\+,\.\/:;<=>\?\@\[\]^_`{|\}~\”\“\‘\’।0123456789])',"",text)
     return content
 
-def parsePunctuationsForDraft(text):
-    content = re.sub(r'([!\"#$%&\\\'\(\)\*\+,\.\/:;<=>\?\@\[\]^_`{|\}~\”\“\‘\’।])',r" \1",text)
-    return content
-
 def parseDataForDBInsert(usfmData):
     connection = get_db()
     crossRefPattern = re.compile(r'(\(?(\d+\s)?\S+\s\d+:\d+\,?\)?)')
@@ -482,7 +475,7 @@ def parseDataForDBInsert(usfmData):
     chapterData = usfmData["chapters"]
     dbInsertData = []
     verseContent = []
-    # 
+    # print("new",bookName)
     bookId = bookIdDict[bookName]
     for chapter in chapterData:
         chapterNumber = chapter["header"]["title"]
@@ -497,10 +490,11 @@ def parseDataForDBInsert(usfmData):
             lid = lidDict[bcv]
             dbInsertData.append((lid, verseText, crossRefs, footNotes))
             verseContent.append(verseText)
-    tokenList = list(getTokens(' '.join(verseContent)))
-    tokenList = [(bookId, token) for token in tokenList]
-    # 
-    return (dbInsertData, tokenList, bookId)
+    # tokenList = list(getTokens(' '.join(verseContent)))
+    # tokenList = [(bookId, token) for token in tokenList]
+    # print(tokenList)
+    # return (dbInsertData, tokenList)
+    return dbInsertData
 
 def createTableCommand(fields, tablename):
     command = 'CREATE TABLE %s (%s)' %(tablename, ', '.join(fields))
@@ -535,7 +529,7 @@ def uploadSource():
                     s.license=%s",(language, contentType, versionContentCode, 
                         versionContentDescription, year, revision, license))
     rst = cursor.fetchone()
-    
+    print(rst)
     newSource = False
     if not rst:
         create_clean_bible_table_command = createTableCommand(['lid INT NOT NULL', 'verse TEXT', \
@@ -559,13 +553,13 @@ def uploadSource():
              (%s, %s, %s, %s, %s, %s, %s, %s, %s)', (versionContentCode, versionContentDescription, \
                  cleanTableName, year, license, revision, contentId, languageId, usfmTextJson))
         newSource = True
-    
+    print(cleanTableName)
     cursor.execute("select usfm_text from sources where table_name=%s", (cleanTableName,))
     usfm_rst = cursor.fetchone()[0]
-    
+    print(usfm_rst.keys())
     usfmFile = usfm_rst["usfm"]
     parsedJsonFile = usfm_rst["parsedJson"]
-    # 
+    # print(usfmFile)
     if bookCode in usfmFile and newSource:
         pass
     elif bookCode not in usfmFile:
@@ -578,20 +572,15 @@ def uploadSource():
         cursor.execute('update sources set usfm_text=%s where source_id=%s', (usfmText, rst[0]))
     # if bookCode not in usfmFile:
     else:
-        
+        print(usfm_rst["usfm"].keys())
         return '{"success":false, "message":"Book %s already inserted into database"}' %(bookCode)
-    parsedDbData, tokenDBData, bookId = parseDataForDBInsert(parsedUsfmText)
-    
+    parsedDbData = parseDataForDBInsert(parsedUsfmText)
+    print("HA HA HA")
     cursor.execute('insert into ' + cleanTableName + ' (lid, verse, cross_reference, foot_notes) values '\
         + str(parsedDbData)[1:-1])
     # cursor.execute('insert into ' + tokenTableName + ' (book_id, token) values ' + str(tokenDBData)[1:-1])
-    
-    try:
-        phrases.tokenize(connection, language.lower(), versionContentCode.lower()+'_'+str(revision).replace('.', '_') , bookId)
-    except Exception as ex:
-        
-        return '{"success":false, "message":"Phrases method error"}'
-    
+    phrases.tokenize(connection, language.lower(), versionContentCode.lower()+'_'+str(revision).replace('.', '_') , bookCode)
+
     connection.commit()
     cursor.close()
     return '{"success":true, "message":"Inserted %s into database"}' %(bookCode)
@@ -605,8 +594,6 @@ def updateTokenTranslations():
     sourceId = req["sourceId"]
     targetLanguageId = req["targetLanguageId"]
     senses = req["senses"]
-    
-    
     userId = 2
     connection = get_db()
     cursor = connection.cursor()
@@ -622,7 +609,7 @@ def updateTokenTranslations():
         target_id=%s and token=%s",(sourceId, targetLanguageId, token))
     rst = cursor.fetchone()
     if not rst:
-        # senses = "|".join(senses)
+        senses = "|".join(senses)
         cursor.execute("insert into translations (token, translation, source_id, target_id, \
             user_id, senses) values (%s, %s, %s, %s, %s, %s)", (token, translation, sourceId, targetLanguageId, \
                 userId, senses))
@@ -633,31 +620,12 @@ def updateTokenTranslations():
         cursor.close()
         return '{"success":true, "message":"Translation has been inserted"}'
     else:
-        # translation = translation
-        
-        
-        
-        checkSenses = '|'.join(senses)
-        if checkSenses == rst[2] and translation == rst[1]:
-            return '{"success":false, "message":"No New change. This data has already been saved"}'
-        if checkSenses != rst[2] and translation == rst[1]:
-            
-            if rst[2] == "":
-                senses = checkSenses
-            else:
-                senses = rst[2] + '|' + checkSenses
-            # senses = rst[2]
-        if checkSenses == rst[2] and translation != rst[1]:
-            senses = checkSenses
-        
-        
-        
-        senses = '|'.join(list(set(senses.split('|'))))
+        translation = translation + "||" + rst[1]
+        senses = "||".join(rst[1].split("|") + senses)
         cursor.execute("update translations set translation=%s, user_id=%s, senses=%s where source_id=%s and \
             target_id=%s and token=%s",(translation, userId, senses, sourceId, targetLanguageId, token))
-        cursor.execute("insert into translations_history (token, translation, source_id, target_id, \
-            user_id, senses) values (%s, %s, %s, %s, %s, %s)", (token, translation, sourceId, targetLanguageId, \
-                userId, senses))
+        cursor.execute("update translations_history set translation=%s, user_id=%s, senses=%s where source_id=%s and \
+            target_id=%s and token=%s",(translation, userId, senses, sourceId, targetLanguageId, token))
         connection.commit()
         cursor.close()
         return '{"success":true, "message":"Translation has been updated"}'
@@ -672,22 +640,20 @@ def getTransaltedTokensInfo():
     # sourceIds = [x[0] for x in sourceIds]
 
 
-    cursor.execute("select distinct r.version_content_code, l.language_name, r.language_name \
-    from translations t left join (select distinct s.source_id, s.version_content_code, \
+    cursor.execute("select r.version_content_code, l.language_name, r.language_name \
+    from translations t left join (select s.source_id, s.version_content_code, \
     ll.language_name  from translations tt left join sources s on tt.source_id=s.source_id \
         left join languages ll on s.language_id=ll.language_id) \
     r on t.source_id=r.source_id left join languages l on t.target_id=l.language_id")
     rst = cursor.fetchall()
-    # 
     tokenInformation = {}
     for v,t,s in rst:
-        
         if s in tokenInformation:
             temp = tokenInformation[s]
             if v in temp:
                 temp[v] = temp[v] + [t]
             else:
-                temp[v] = [t]
+                temp[v] = {v:[t]}
             tokenInformation[s] = temp
         else:
             tokenInformation[s] = {
@@ -711,7 +677,7 @@ def getTranslatedBooks(sourceId, targetId):
     cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
     rst = cursor.fetchone()[0]
     tableName = "_".join(rst.split("_")[0:-1]) + "_tokens"
-    # 
+    # print("tokens", tableName)
 
     cursor.execute("select b.book_code, t.token from " + tableName + " t left join \
         bible_books_look_up b on t.book_id=b.book_id")
@@ -732,46 +698,6 @@ def getTranslatedBooks(sourceId, targetId):
     return json.dumps(translatedBooks)
 
 
-# @app.route("/v1/downloaddraft", methods=["POST"])
-# def downloadDraft():
-#     req = request.get_json(True)
-#     sourceId = req["sourceId"]
-#     targetLanguageId = req["targetLanguageId"]
-#     bookList = req["bookList"]
-#     connection = get_db()
-#     cursor = connection.cursor()
-#     cursor.execute("select token, translation from translations where source_id=%s \
-#         and target_id=%s", (sourceId, targetLanguageId))
-
-#     rst = cursor.fetchall()
-#     if rst:
-#         cursor.execute("select book_id, book_code from bible_books_look_up where book_code=%s", (bookList[0],))
-#         bookId, bookCode = cursor.fetchone()
-#         tokenTranslatedDict = {k:v for k,v in rst}
-#         cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
-#         source_rst = cursor.fetchone()
-#         usfmText = source_rst[0]['usfm'][bookCode]
-#         markerPattern = re.compile(r'\\\w+')
-#         usfmLineList = []
-#         for line in usfmText.split('\n'):
-#             usfmWordsList = []
-#             for word in line.split():
-#                 if re.match(markerPattern, word):
-#                     usfmWordsList.append(word)
-#                 else:
-#                     parsePunct = parsePunctuationsForDraft(word)
-#                     punctList = parsePunct.split(" ")
-#                     parsedPunctList = []
-#                     for item in punctList:
-#                         parsedPunctList.append(tokenTranslatedDict.get(item, item))
-#                     usfmWordsList.append("".join(parsedPunctList))
-#             usfmLineList.append(" ".join(usfmWordsList))
-#         translatedUsfmText = "\n".join(usfmLineList)
-#         return json.dumps({
-#             "translatedUsfmText": translatedUsfmText
-#         })
-
-
 @app.route("/v1/downloaddraft", methods=["POST"])
 def downloadDraft():
     req = request.get_json(True)
@@ -781,48 +707,58 @@ def downloadDraft():
     connection = get_db()
     cursor = connection.cursor()
 
-    
     usfmMarker = re.compile(r'\\\w+\d?\s?')
-    nonLangComponents = re.compile(r'[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।0-9]+')
-    
-    if phrases.loadPhraseTranslations(connection, sourceId, targetLanguageId):
+    nonLangComponentsTwoSpaces = re.compile(r'\s[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]\s')
+    nonLangComponentsTrailingSpace = re.compile(r'[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]\s')
+    nonLangComponentsFrontSpace = re.compile(r'\s[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]')
+    nonLangComponents = re.compile(r'[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]')
+
+    if phrases.loadPhraseTranslations(conn, sourceId, targetLanguageId):
         cursor.execute("select book_id, book_code from bible_books_look_up where book_code=%s", (bookList[0],))
         bookId, bookCode = cursor.fetchone()
-        
-        # tokenTranslatedDict = {k:v for k,v in rst}
-        cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
+        tokenTranslatedDict = {k:v for k,v in rst}
+        cursor.execute("select usfmText from sources where source_id=%s", (sourceId,))
         source_rst = cursor.fetchone()
-        usfmText = source_rst[0]['usfm'][bookCode]
+        usfmText = source_rst[0][bookCode]
         usfmLineList = []
-        
-        
         for line in usfmText.split('\n'):
             usfmWordsList = []
+            nonLangCompsTwoSpaces = []
+            nonLangCompsTrailingSpace = []
+            nonLangCompsFrontSpace = []
             nonLangComps = []
             markers_in_line = re.findall(usfmMarker,line)
             for word_seq in re.split(usfmMarker,line):
-                nonLangComps += re.findall(nonLangComponents,word_seq)
-                clean_word_seq = re.sub(nonLangComponents,' ### ',word_seq)
-                translated_seq = [ phrases.translateText( clean_word_seq.strip() ) ]
+                nonLangCompsTwoSpaces += re.findall(nonLangComponentsTwoSpaces,word_seq)
+                clean_word_seq = re.sub(nonLangComponentsTwoSpaces,' uuuQQQuuu ',word_seq)
+                nonLangCompsTrailingSpace += re.findall(nonLangComponentsTrailingSpace,clean_word_seq)
+                clean_word_seq = re.sub(nonLangComponentsTrailingSpace,' QQQuuu ',clean_word_seq)
+                nonLangCompsFrontSpace += re.findall(nonLangComponentsFrontSpace,clean_word_seq)
+                clean_word_seq = re.sub(nonLangComponentsFrontSpace,' uuuQQQ ',clean_word_seq)
+                nonLangComps += re.findall(nonLangComponents,clean_word_seq)
+                clean_word_seq = re.sub(nonLangComponents,' QQQ ',clean_word_seq)
+                
+                translated_seq = [ phrases.translateText( clean_word_seq ) ]
+            
             for i,marker in enumerate(markers_in_line):
                 usfmWordsList.append(marker)
                 usfmWordsList.append(translated_seq[i])
             if i+1<len(translated_seq):
                 usfmWordsList += translated_seq[i+1:]
-            
             outputLine = " ".join(usfmWordsList)
-            
+            for comp in nonLangCompsTwoSpaces:
+                outputLine = re.sub(r'\s+uuuQQQuuu\s+'," "+comp+" ",outputLine,1)
+            for comp in nonLangCompsTrailingSpace:
+                outputLine = re.sub(r'\s+QQQuuu\s+',comp+" ",outputLine,1)
+            for comp in nonLangCompsFrontSpace:
+                outputLine = re.sub(r'\s+uuuQQQ\s+'," "+comp,outputLine,1)
             for comp in nonLangComps:
-                outputLine = re.sub(r'<###>',comp,outputLine,1)
-            
+                outputLine = re.sub(r'\s+QQQ\s+',comp,outputLine,1)
             usfmLineList.append(outputLine)
         translatedUsfmText = "\n".join(usfmLineList)
         return json.dumps({
             "translatedUsfmText": translatedUsfmText
         })
-    
-
-
 
 @app.route("/v1/translationshelps/words/<sourceId>/<token>", methods=["GET"])
 def getTranslationWords(sourceId, token):
@@ -840,7 +776,7 @@ def getTranslationWords(sourceId, token):
         tW = cursor.fetchall()
     except:
         return '{"success":false, "message":"No Translation Words available"}'
-    # 
+    # print(tW)
     if tW:
         translationWord = {}
         for keyword, wordforms, strongs, definition, translationhelp in tW:
@@ -854,24 +790,7 @@ def getTranslationWords(sourceId, token):
     else:
         return '{"success":false, "message":"No data"}'
 
-@app.route("/v1/translations/<sourceId>/<targetLanguageId>/<token>", methods=["GET"])
-def getTranslatedWords(sourceId, targetLanguageId, token):
-    connection = get_db()
-    cursor = connection.cursor()
-    
-    cursor.execute("select translation, senses from translations where source_id=%s \
-        and target_id=%s and token=%s", (sourceId, targetLanguageId, token))
-    rst = cursor.fetchone()
-    
-    if rst:
-        translation, senses = rst
-        senses = senses.split('|')
-        return json.dumps({
-            "translation":translation,
-            "senses":senses
-        })
-    else:
-        return '{"success": false, "message":"No Translation or sense available for this token"}'
+
 # @app.route("/v1/sources/")
 
 @app.route('/v1/sources/<sourceid>/<outputtype>', methods=["GET"], defaults={'bookid':None})
@@ -924,7 +843,7 @@ def getVerseInRange(sourceid, outputtype, bookid, chapterid):
     connection = get_db()
     cursor = connection.cursor()
     outputtype = outputtype.lower()
-    
+    print("here")
     cursor.execute("select table_name, usfm_text from sources where source_id=%s", (sourceid,))
     rst = cursor.fetchone()
     if not rst:
@@ -946,7 +865,7 @@ def getVerseInRange(sourceid, outputtype, bookid, chapterid):
         booksIdDict = getBibleBookIds()
         bookCode = (booksIdDict[int(bookid)]).lower()
         jsonContent = rst[1]["parsedJson"]
-        # 
+        # print(jsonContent)
         if bookCode in jsonContent:
             bookContent = jsonContent[bookCode]
             chapterContent = bookContent["chapters"]

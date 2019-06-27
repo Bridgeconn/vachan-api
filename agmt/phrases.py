@@ -426,7 +426,7 @@ def tokenize(conn,lang,version,book_id,algo='gensim-ngram'):
 
 	tokens = sorted(tokens)
 	for tok in tokens:
-		cursor.execute("INSERT INTO "+token_table+" (book_id, token) VALUES(%s,%s)",(book_id,tok))
+		cursor.execute("INSERT INTO "+token_table+" VALUES(%s,%s)",(book_id,tok))
 		# print(tok)
 	conn.commit()
 	cursor.close()
@@ -468,8 +468,7 @@ def getNgrams(sent,n):
 
 
 def translateText(text_snippet):
-	words_in_text = text_snippet.split(" ")
-	words_in_text = [w for w in words_in_text if w != '']
+	words_in_text = re.split(r"\s",text_snippet)
 
 
 	taken = [0 for word in words_in_text]
@@ -494,7 +493,7 @@ def translateText(text_snippet):
 					taken[pos] = 1
 	for index,value in enumerate(taken):
 		if value == 0:
-			translation[index] = '<'+words_in_text[index]+'>'
+			translation[index] = words_in_text[index]
 	translation = " ".join(translation)
 	return translation
 
@@ -516,7 +515,7 @@ if __name__ == '__main__':
 
 	loadPhraseTranslations(db,1,2)
 
-	print(translateText('1 3 2 1 2 5 4 0 5'))
+	print(translateText('1 3 2 1 2 5 4 0  x 5'))
 	print(translateText(' '))
 	print(translateText('   '))
 	db.close()
