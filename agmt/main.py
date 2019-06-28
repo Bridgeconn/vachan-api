@@ -633,26 +633,19 @@ def updateTokenTranslations():
         cursor.close()
         return '{"success":true, "message":"Translation has been inserted"}'
     else:
-        # translation = translation
-        
-        
-        
-        checkSenses = '|'.join(senses)
-        if checkSenses == rst[2] and translation == rst[1]:
+        if senses == rst[2] and translation == rst[1]:
             return '{"success":false, "message":"No New change. This data has already been saved"}'
-        if checkSenses != rst[2] and translation == rst[1]:
-            
-            if rst[2] == "":
-                senses = checkSenses
-            else:
-                senses = rst[2] + '|' + checkSenses
-            # senses = rst[2]
-        if checkSenses == rst[2] and translation != rst[1]:
-            senses = checkSenses
+        if senses != rst[2] and translation == rst[1]:
+            senses = rst[2] + '|' + senses
+        # if senses == rst[2] and translation != rst[1]:
+        #     # senses = checkSenses
+        #     pass
         
         
         
-        senses = '|'.join(list(set(senses.split('|'))))
+        # senses = '|'.join(list(set(senses.split('|'))))
+        if senses[0] == '|':
+            senses = senses[1:]
         cursor.execute("update translations set translation=%s, user_id=%s, senses=%s where source_id=%s and \
             target_id=%s and token=%s",(translation, userId, senses, sourceId, targetLanguageId, token))
         cursor.execute("insert into translations_history (token, translation, source_id, target_id, \
@@ -858,14 +851,17 @@ def getTranslationWords(sourceId, token):
 def getTranslatedWords(sourceId, targetLanguageId, token):
     connection = get_db()
     cursor = connection.cursor()
-    
+    print(token)
     cursor.execute("select translation, senses from translations where source_id=%s \
         and target_id=%s and token=%s", (sourceId, targetLanguageId, token))
     rst = cursor.fetchone()
-    
+    print(rst)
     if rst:
         translation, senses = rst
-        senses = senses.split('|')
+        if senses.strip() == "":
+            senses = []
+        else:
+            senses = senses.split('|')
         return json.dumps({
             "translation":translation,
             "senses":senses
