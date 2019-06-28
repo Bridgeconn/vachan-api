@@ -468,8 +468,7 @@ def getNgrams(sent,n):
 
 
 def translateText(text_snippet):
-	words_in_text = text_snippet.split(" ")
-	words_in_text = [w for w in words_in_text if w != '']
+	words_in_text = re.split(r"\s",text_snippet)
 
 
 	taken = [0 for word in words_in_text]
@@ -494,7 +493,7 @@ def translateText(text_snippet):
 					taken[pos] = 1
 	for index,value in enumerate(taken):
 		if value == 0:
-			translation[index] = '<'+words_in_text[index]+'>'
+			translation[index] = words_in_text[index]
 	translation = " ".join(translation)
 	return translation
 
