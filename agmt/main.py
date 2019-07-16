@@ -106,7 +106,7 @@ def auth():
     if not est:
         logging.warning('Unregistered user \'%s\' login attempt unsuccessful' % email)
         return '{"success":false, "message":"This email is not registered"}'
-    cursor.execute("SELECT u.password_hash, u.password_salt, r.role_name FROM \
+    cursor.execute("SELECT u.password_hash, u.password_salt, r.role_name, u.first_name, u.last_name FROM \
         autographamt_users u LEFT JOIN roles r ON u.role_id = r.role_id WHERE u.email_id = %s \
             and u.verified is True", (email,))
     rst = cursor.fetchone()
@@ -116,11 +116,19 @@ def auth():
     password_salt = bytes.fromhex(rst[1].hex())
     password_hash_new = scrypt.hash(password, password_salt).hex()
     role = rst[2]
+    firstName = rst[3]
+    lastName = rst[4]
     
     if password_hash == password_hash_new:
         try:
-            access_token = jwt.encode({'sub': email, 'exp': datetime.datetime.utcnow() + \
-                datetime.timedelta(days=1), 'role': role, 'app':'mt'}, jwt_hs256_secret, algorithm='HS256')
+            access_token = jwt.encode({
+                'sub': email, 
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1), 
+                'role': role, 
+                'app':'mt',
+                'firstName': firstName,
+                'lastName': lastName
+                }, jwt_hs256_secret, algorithm='HS256')
         except Exception as ex:
             pass
         logging.warning('User: \'' + str(email) + '\' logged in successfully')
@@ -286,7 +294,435 @@ def new_registration2(code):
     return redirect("https://%s/" % (host_ui_url))
 
 
-@app.route("/v1/books/<sourceId>", methods=["GET"])           #-------------------------To find available books and revision number----------------------#
+@app.route("/v1/autographamt/organisations", methods=["GET"])
+@check_token
+def autographamtOrganisations():
+    role = checkAuth()
+    if role == 3:
+        connection = get_db()
+        cursor = connection.cursor()
+        cursor.execute("select organisation_id, organisation_name, organisation_address, \
+            organisation_phone, organisation_email, verified, user_id from autographamt_organisations\
+                order by organisation_id")
+        rst = cursor.fetchall()
+        if not rst:
+            return '{"success":false, "message":"No organisation data available"}'
+        organisationsList = [
+            {
+                "organisationId":organisationId,
+                "organisationName":organisationName,
+                "organisationAddress":organisationAddress,
+                "organisationPhone":organisationPhone,
+                "organisationEmail":organisationEmail,
+                "verified":verified,
+                "userId":userId,
+            } for organisationId, organisationName, organisationAddress, organisationPhone, organisationEmail, verified, userId in rst
+        ]
+        return json.dumps(organisationsList)
+    else:
+        return '{"success":false, "message":"UnAuthorized"}'
+
+@app.route("/v1/autographamt/organisations", methods=["POST"])
+def createOrganisations():
+    req = request.get_json(True)
+    organisationName = req["organisationName"]
+    organisationAddress = req["organisationAddress"]
+    organisationPhone = req["organisationPhone"]
+    organisationEmail = req["organisationEmail"]
+    userId = 3
+    
+    connection = get_db()
+    cursor = connection.cursor()
+    cursor.execute("select * from autographamt_organisations where organisation_name=%s and \
+        organisation_email=%s", (organisationName, organisationEmail))
+    rst = cursor.fetchone()
+    if not rst:
+        cursor.execute("insert into autographamt_organisations (organisation_name, \
+            organisation_address, organisation_phone, organisation_email, user_id) values (%s,%s,%s,%s,%s) ", \
+                (organisationName, organisationAddress, organisationPhone, organisationEmail, userId))
+        connection.commit()
+        cursor.close()
+        return '{"success":true, "message":"Organisation already"}'
+    else:
+        return '{"success":false, "message":"Organisation already created"}'
+
+@app.route("/v1/autographamt/users", methods=["GET"])
+@check_token
+def autographamtUsers():
+    connection = get_db()
+    cursor = connection.cursor()
+    cursor.execute("select user_id, first_name, last_name, email_id, role_id, verified \
+        from autographamt_users where role_id < 3 order by user_id")
+    rst = cursor.fetchall()
+    if not rst:
+        return '{"success":false, "message":"No user data available"}'
+    usersList = [
+        {
+            "userId":userId,
+            "firstName":firstName,
+            "lastName":lastName,
+            "emailId":emailId,
+            "roleId":roleId,
+            "verified":verified
+        } for userId, firstName, lastName, emailId, roleId, verified in rst
+    ]
+    return json.dumps(usersList)
+
+def checkAuth():
+    email = request.email
+    connection = get_db()
+    cursor = connection.cursor()
+    cursor.execute("select role_id from autographamt_users where email_id=%s", (email,))
+    roleId = cursor.fetchone()[0]
+    cursor.close()
+    return roleId
+
+@app.route("/v1/autographamt/projects", methods=["GET"])
+@check_token
+def getProjects():
+    connection = get_db()
+    cursor = connection.cursor()
+    role = checkAuth()
+    if role == 2:
+        email = request.email
+        cursor.execute("select user_id from autographamt_users where email_id=%s", (email,))
+        userId = cursor.fetchone()[0]
+        cursor.execute("select organisation_id from autographamt_organisations where user_id=%s", (userId,))
+        organisationIds = [org[0] for org in cursor.fetchall()]
+        rst = []
+        for orgId in organisationIds:
+            cursor.execute("select p.project_id, p.project_name, p.source_id, p.target_id, p.organisation_id, \
+                o.organisation_name from autographamt_projects p left join autographamt_organisations o on \
+                    p.organisation_id=o.organisation_id where p.organisation_id=%s", (orgId,))
+            rst += cursor.fetchall()
+    elif role == 3:
+        cursor.execute("select p.project_id, p.project_name, p.source_id, p.target_id, p.organisation_id, \
+            o.organisation_name from autographamt_projects p left join autographamt_organisations o on \
+                p.organisation_id=o.organisation_id")
+        rst = cursor.fetchall()
+    else:
+        return '{"success": false ,"message":"Not authorized"}'
+    if not rst:
+        '{"success":false, "message":"No projects created yet"}'
+    projectsList = [
+        {
+            "projectId": projectId,
+            "projectName": projectName,
+            "sourceId": sourceId,
+            "targetId": targetId,
+            "organisationId": organisationId,
+            "organisationName": organisationName
+        } for projectId, projectName, sourceId, targetId, organisationId, organisationName in rst
+    ]
+    return json.dumps(projectsList)
+
+@app.route("/v1/autographamt/organisations/projects", methods=["POST"])
+@check_token
+def createProjects():
+    req = request.get_json(True)
+    sourceId = req["sourceId"]
+    targetLanguageId = req["targetLanguageId"]
+    # organisationId = req["organisationId"]
+    # print(organisationId)
+    role = checkAuth()
+    print(role)
+    if role == 2:
+        # if not organisationId:
+        email = request.email
+        organisationId = None
+        connection = get_db()
+        cursor = connection.cursor()
+        print('before')
+        cursor.execute("select o.organisation_id from autographamt_organisations o left join \
+            autographamt_users u on o.user_id=u.user_id where u.email_id=%s", (email,))
+        print('after')
+        organisationId = cursor.fetchone()
+        print(organisationId)
+        if organisationId:
+            organisationId = organisationId[0]
+            cursor.execute("select l.language_name, l.language_code from sources s left join languages l on \
+                s.language_id=l.language_id where source_id=%s", (sourceId,))
+            sourceLanguage, sourceLanguageCode = cursor.fetchone()
+            cursor.execute("select language_name, language_code from languages where language_id=%s", (targetLanguageId,))
+            targetLanguage, targetLanguageCode = cursor.fetchone()
+            projectName = sourceLanguage + '-to-' + targetLanguage + '|' + sourceLanguageCode + '-to-' + targetLanguageCode
+            print(projectName)
+            cursor.execute("select * from autographamt_projects where organisation_id=%s and source_id=%s and \
+                target_id=%s", (organisationId, sourceId, targetLanguageId))
+            rst = cursor.fetchone()
+            
+            if not rst:
+                print("insert")
+                cursor.execute("insert into autographamt_projects (project_name, source_id, target_id, organisation_id) \
+                    values (%s,%s,%s,%s)", (projectName, sourceId, targetLanguageId, organisationId))
+                connection.commit()
+                cursor.close()
+                return '{"success":true, "message":"Project created"}'
+            else:
+                return '{"success":false, "message":"Project already created"}'
+        else:
+            return '{"success":false, "message":"UnAuthorized"}'
+    else:
+        return '{"success":false, "message":"UnAuthorized"}'
+
+@app.route("/v1/autographamt/projects/assignments/<projectId>", methods=["GET"])
+# @check_token
+def getAssignments(projectId):
+    '''
+    Returns an array of Users assigned under a project
+    '''
+    connection = get_db()
+    cursor = connection.cursor()
+    cursor.execute("select u.first_name, u.last_name, u.email_id, a.assignment_id, \
+        a.books, a.user_id, a.project_id from autographamt_assignments a \
+        left join autographamt_users u on u.user_id=a.user_id where project_id=%s", (projectId,))
+    rst = cursor.fetchall()
+    if not rst:
+        return json.dumps([])
+    else:
+        projectUsers = [
+            {
+                "assignmentId":assignmentId,
+                "books":books.split("|"),
+                "user":{
+                    "userName": firstName + " " + lastName,
+                    "userId": userId,
+                    "email": email
+                },
+                "projectId":projectId
+            } for firstName, lastName, email, assignmentId, books, userId, projectId in rst
+        ]
+        return json.dumps(projectUsers)
+
+@app.route("/v1/autographamt/projects/assignments", methods=["POST"])
+def createAssignments():
+    req = request.get_json(True)
+    userId = req["userId"]
+    projectId = req["projectId"]
+    books = req["books"]
+    # action = req["action"]
+    connection = get_db()
+    cursor = connection.cursor()
+    cursor.execute("select * from autographamt_assignments where user_id=%s and project_id=%s", (
+        userId, projectId
+    ))
+    rst = cursor.fetchone()
+    
+    if not rst:
+        
+        books = "|".join(books)
+        cursor.execute("insert into autographamt_assignments (books, user_id, project_id) \
+            values (%s, %s, %s)", (books, userId, projectId))
+        connection.commit()
+        cursor.close()
+        return '{"success":true, "message":"User Role Assigned"}'
+    # else:
+    # if action == 'add':
+    #     books = list(set(books + rst[1]))
+    # else:
+    #     books = list(set(rst[1]) - set(books))
+    
+    books = "|".join(books)
+    cursor.execute("update autographamt_assignments set books=%s where user_id=%s and \
+        project_id=%s", (books, userId, projectId))
+    connection.commit()
+    cursor.close()
+    return '{"success":true, "message":"User Role Updated"}'
+        
+@app.route("/v1/autographamt/projects/assignments", methods=["DELETE"])
+def removeUserFromProject():
+    
+    req = request.get_json(True)
+    userId = req["userId"]
+    projectId = req["projectId"]
+    connection = get_db()
+    cursor = connection.cursor()
+    cursor.execute("select * from autographamt_assignments where user_id=%s and project_id=%s", (
+        userId, projectId
+    ))
+    
+    rst = cursor.fetchone()
+    
+    if not rst:
+        return '{"success":false, "message":"User Role Does Not exist"}'
+    else:
+        cursor.execute("delete from autographamt_assignments where user_id=%s and project_id=%s", (
+            userId, projectId
+        ))
+        connection.commit()
+        cursor.close()
+        return '{"success": true, "message":"User removed from Project"}'
+
+def convertStringToList(string):
+    if string == "":
+        array = []
+    else:
+        array = string.split("|")
+    return array
+
+@app.route("/v1/autographamt/projects/translations/<token>/<projectId>", methods=["GET"])
+def getProjectTranslations(token, projectId):
+    connection = get_db()
+    cursor = connection.cursor()
+    cursor.execute("select t.translation, t.senses from translations t left join \
+        translation_projects_look_up p on t.translation_id=p.translation_id where t.token=%s and \
+            p.project_id=%s", (token, projectId))
+    rst = cursor.fetchone()
+    
+    if rst:
+        translation, senses = rst
+        if senses.strip() == "":
+            senses = []
+        else:
+            senses = senses.split('|')
+        return json.dumps({
+            "translation":translation,
+            "senses":senses
+        })
+    else:
+        return '{"success": false, "message":"No Translation or sense available for this token"}'
+
+@app.route("/v1/autographamt/projects/translations", methods=["POST"])
+@check_token
+def updateProjectTokenTranslations():
+    req = request.get_json(True)
+    token = req["token"]
+    translation = req["translation"]
+    projectId = req["projectId"]
+    senses = req["senses"]
+    email = request.email
+    connection = get_db()
+    cursor = connection.cursor()
+    cursor.execute("select user_id from autographamt_users where email_id=%s", (email,))
+    userId = cursor.fetchone()[0]
+    cursor.execute("select assignment_id from autographamt_assignments where user_id=%s and \
+        project_id=%s", (userId, projectId))
+    assignmentExists = cursor.fetchone()
+    if not assignmentExists:
+        return '{"success":false, "message":"UnAuthorized/ You haven\'t been assigned this project"}'
+    cursor.execute("select source_id, target_id from autographamt_projects where project_id=%s", (projectId,))
+    sourceId, targetLanguageId = cursor.fetchone()
+    cursor.execute("select language_code from languages where language_id=%s", (targetLanguageId,))
+    targetLanguageCode = cursor.fetchone()
+    if not targetLanguageCode:
+        return '{"success":false, "message":"Target Language does not exist"}' 
+    cursor.execute("select * from sources where source_id=%s", (sourceId,))
+    rst = cursor.fetchone()
+    if not rst:
+        return '{"success":false, "message":"Source does not exist"}'
+    cursor.execute("select t.token, t.translation, t.senses from translations t left join \
+        translation_projects_look_up p on t.translation_id=p.translation_id where p.project_id=%s and \
+        token=%s",(projectId, token))
+    rst = cursor.fetchone()
+    if not rst:
+        cursor.execute("insert into translations (token, translation, source_id, target_id, \
+            user_id, senses) values (%s, %s, %s, %s, %s, %s) returning translation_id", (token, translation, sourceId, targetLanguageId, \
+                userId, senses))
+        translationId = cursor.fetchone()[0]
+        cursor.execute("insert into translation_projects_look_up (translation_id, project_id) values \
+            (%s, %s)", (translationId, projectId))
+        cursor.execute("insert into translations_history (token, translation, source_id, target_id, \
+            user_id, senses) values (%s, %s, %s, %s, %s, %s)", (token, translation, sourceId, targetLanguageId, \
+                userId, senses))
+        connection.commit()
+        cursor.close()
+        return '{"success":true, "message":"Translation has been inserted"}'
+    else:
+        if senses == rst[2] and translation == rst[1]:
+            return '{"success":false, "message":"No New change. This data has already been saved"}'
+        dbSenses = []
+        if rst[2] != "":
+            dbSenses = rst[2].split("|")
+        if senses not in dbSenses:
+            dbSenses.append(senses)
+        senses = "|".join(dbSenses)
+        cursor.execute("update translations set translation=%s, user_id=%s, senses=%s where source_id=%s and \
+            target_id=%s and token=%s",(translation, userId, senses, sourceId, targetLanguageId, token))
+        cursor.execute("insert into translations_history (token, translation, source_id, target_id, \
+            user_id, senses) values (%s, %s, %s, %s, %s, %s)", (token, translation, sourceId, targetLanguageId, \
+                userId, senses))
+        connection.commit()
+        cursor.close()
+        return '{"success":true, "message":"Translation has been updated"}'
+
+@app.route("/v1/autographamt/users/projects", methods=["GET"])
+@check_token
+def getUserProjects():
+    connection = get_db()
+    cursor = connection.cursor()
+    email = request.email
+    cursor.execute("select user_id from autographamt_users where email_id=%s", (email,))
+    userId = cursor.fetchone()
+    if not userId:
+        cursor.close()
+        return '{"success":false, "message":"Unregistered User"}'
+    else:
+        userId = userId[0]
+        cursor.execute("select p.project_id, p.project_name, o.organisation_name, a.books, \
+            p.source_id, p.target_id from autographamt_assignments a left join \
+                autographamt_projects p on a.project_id=p.project_id left join \
+                    autographamt_organisations o on o.organisation_id=p.organisation_id \
+                        where a.user_id=%s", (userId,))
+        rst = cursor.fetchall()
+        userProjects = [
+            {
+                "projectId": projectId,
+                "projectName": projectName,
+                "organisationName": organisationName,
+                "books": convertStringToList(books),
+                "sourceId":sourceId,
+                "targetId": targetId
+            } for projectId, projectName, organisationName, books, sourceId, targetId in rst
+        ]
+        return json.dumps(userProjects)
+
+
+@app.route("/v1/autographamt/approvals/organisations", methods=["POST"])
+@check_token
+def organisationApprovals():
+    req = request.get_json(True)
+    organisationId = req["organisationId"]
+    verified = req["verified"]
+    role = checkAuth()
+    if role == 3:
+        connection = get_db()
+        cursor = connection.cursor()
+        cursor.execute("select user_id, role_id from autographamt_organisations where organisation_id=%s", (organisationId,))
+        userId, roleId = cursor.fetchone()
+        cursor.execute("update autographamt_organisations set verified=%s where \
+            organisation_id=%s", (verified, organisationId))
+        if roleId < 3:
+            cursor.execute("update autographamt_users set role_id=2 where user_id=%s", (userId,))
+        # cursor
+        connection.commit()
+        cursor.close()
+        return '{"success":true, "message":"Role Updated"}'
+    else:
+        # cursor.close()
+        return '{"success":false, "message":"Unauthorized"}'
+
+@app.route("/v1/autographamt/approvals/users", methods=["POST"])
+@check_token
+def userApproval():
+    req = request.get_json(True)
+    userId = req["userId"]
+    admin = req["admin"]
+    if admin:
+        roleId = 2
+    else:
+        roleId = 1
+    role = checkAuth()
+    if role > 1:
+        connection = get_db()
+        cursor = connection.cursor()
+        cursor.execute("update autographamt_users set role_id=%s where user_id=%s", (roleId, userId))
+        connection.commit()
+        cursor.close()
+        return '{"success":true, "message":"Role Updated"}'
+    else:
+        return '{"success":false, "message":"Unauthorized"}'
+
+@app.route("/v1/sources/books/<sourceId>", methods=["GET"])           #-------------------------To find available books and revision number----------------------#
 # @check_token
 def available_books(sourceId):
     connection = get_db()
@@ -298,6 +734,48 @@ def available_books(sourceId):
     cursor.close()
     # 
     return json.dumps(list(rst[0]['usfm'].keys()))
+
+@app.route("/v1/sources/projects/books/<projectId>/<userId>", methods=["GET"])           #-------------------------To find available books and revision number----------------------#
+# @check_token
+def availableProjectBooks(projectId, userId):
+    connection = get_db()
+    cursor = connection.cursor()
+    
+    cursor.execute("select s.usfm_text from sources s left join autographamt_projects p on s.source_id=p.source_id \
+        where p.project_id=%s", (projectId,))
+    rst = cursor.fetchone()
+    if not rst:
+        
+        return '{"success":false, "message":"No data available"}'
+    # cursor.close()
+    allBooks = list(rst[0]['usfm'].keys())
+    
+    
+    try:
+        cursor.execute("select books from autographamt_assignments where project_id=%s and user_id=%s", \
+            (projectId, userId))
+    except Exception as ex:
+        
+        return 'fail'
+    
+    
+    assignedBooks = cursor.fetchone()
+    if assignedBooks:
+        assignedBooks = convertStringToList(assignedBooks[0])
+    else:
+        assignedBooks = []
+    booksArray = {}
+    
+    for book in allBooks:
+        if book not in assignedBooks:
+            booksArray[book] = {
+                    "assigned":False
+                }
+    for aBook in assignedBooks:
+        booksArray[aBook] = {
+                "assigned":True
+            }
+    return json.dumps(booksArray)
 
 @app.route("/v1/tokenlist/<sourceId>/<book>", methods=["GET"])
 def getTokenLists(sourceId, book):
@@ -773,20 +1251,26 @@ def downloadDraft():
     bookList = req["bookList"]
     connection = get_db()
     cursor = connection.cursor()
+    cursor.execute("select token, translation from translations where source_id=%s \
+        and target_id=%s", (sourceId, targetLanguageId))
 
+    rst = cursor.fetchall()
+    
     usfmMarker = re.compile(r'\\\w+\d?\s?')
     nonLangComponentsTwoSpaces = re.compile(r'\s[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]\s')
     nonLangComponentsTrailingSpace = re.compile(r'[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]\s')
     nonLangComponentsFrontSpace = re.compile(r'\s[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]')
     nonLangComponents = re.compile(r'[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]')
 
-    if phrases.loadPhraseTranslations(conn, sourceId, targetLanguageId):
+    if phrases.loadPhraseTranslations(connection, sourceId, targetLanguageId):
+        
         cursor.execute("select book_id, book_code from bible_books_look_up where book_code=%s", (bookList[0],))
         bookId, bookCode = cursor.fetchone()
         tokenTranslatedDict = {k:v for k,v in rst}
-        cursor.execute("select usfmText from sources where source_id=%s", (sourceId,))
+        cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
         source_rst = cursor.fetchone()
-        usfmText = source_rst[0][bookCode]
+        
+        usfmText = source_rst[0]['usfm'][bookCode]
         usfmLineList = []
         for line in usfmText.split('\n'):
             usfmWordsList = []
@@ -813,6 +1297,7 @@ def downloadDraft():
             if i+1<len(translated_seq):
                 usfmWordsList += translated_seq[i+1:]
             outputLine = " ".join(usfmWordsList)
+            
             for comp in nonLangCompsTwoSpaces:
                 outputLine = re.sub(r'\s+uuuQQQuuu\s+'," "+comp+" ",outputLine,1)
             for comp in nonLangCompsTrailingSpace:
@@ -821,6 +1306,7 @@ def downloadDraft():
                 outputLine = re.sub(r'\s+uuuQQQ\s+'," "+comp,outputLine,1)
             for comp in nonLangComps:
                 outputLine = re.sub(r'\s+QQQ\s+',comp,outputLine,1)
+            
             usfmLineList.append(outputLine)
         translatedUsfmText = "\n".join(usfmLineList)
         return json.dumps({
@@ -864,11 +1350,11 @@ def getTranslationWords(sourceId, token):
 def getTranslatedWords(sourceId, targetLanguageId, token):
     connection = get_db()
     cursor = connection.cursor()
-    print(token)
+    
     cursor.execute("select translation, senses from translations where source_id=%s \
         and target_id=%s and token=%s", (sourceId, targetLanguageId, token))
     rst = cursor.fetchone()
-    print(rst)
+    
     if rst:
         translation, senses = rst
         if senses.strip() == "":
