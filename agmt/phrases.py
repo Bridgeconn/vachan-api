@@ -77,7 +77,7 @@ def extract_phrases_gensim(conn,lang,version):
 	source_table = lang+'_'+version+'_bible_cleaned'
 
 	cursor = conn.cursor()
-	cursor.execute("select lid, verse from " + source_table + " order by lid;")
+	cursor.execute("select ref_id, verse from " + source_table + " order by ref_id;")
 	verses = cursor.fetchall()
 	text = [cleanNsplit(v[1])for v in verses]
 
@@ -133,7 +133,7 @@ def extract_phrases_naivestat(conn,lang,version):
 	source_table = lang+'_'+version+'_bible_cleaned'
 
 	cursor = conn.cursor()
-	cursor.execute("select lid, verse from " + source_table + " order by lid;")
+	cursor.execute("select ref_id, verse from " + source_table + " order by ref_id;")
 	verses = cursor.fetchall()
 	text = [cleanNsplit(v[1])for v in verses]
 
@@ -241,9 +241,12 @@ def extract_phrases_rulebased(conn,lang,version,start=None,end=None):
 			matcher.add('rule'+str(row[0]),None,rul)
 
 		if start and end:
-			cursor.execute("select lid, verse from " + source_table + " where lid>="+str(start)+" and lid<="+str(end)+" order by lid;")
+			cursor.execute("select ref_id, verse from " + source_table + " where ref_id>="+str(start)+" and ref_id<"+str(end)+" order by ref_id;")
+		elif start and not end:
+			end = start + 1000000
+			cursor.execute("select ref_id, verse from " + source_table + " where ref_id>="+str(start)+" and ref_id<"+str(end)+" order by ref_id;")
 		else:
-			cursor.execute("select lid, verse from " + source_table + " order by lid;")
+			cursor.execute("select ref_id, verse from " + source_table + " order by ref_id;")
 		verses = cursor.fetchall()
 		text = [' '.join(cleanNsplit(v[1])) for v in verses]
 		word_split_text = [cleanNsplit(v[1]) for v in verses]
@@ -253,73 +256,6 @@ def extract_phrases_rulebased(conn,lang,version,start=None,end=None):
 	return phrases
 
 #################################################################
-
-book_id_lid_map = {
-1: {"start":1	,	"end":1533	},
-2: {"start":1534	,	"end":2746	},
-3: {"start":2747	,	"end":3605	},
-4: {"start":3606	,	"end":4893	},
-5: {"start":4894	,	"end":5852	},
-6: {"start":5853	,	"end":6510	},
-7: {"start":6511	,	"end":7128	},
-8: {"start":7129	,	"end":7213	},
-9: {"start":7214	,	"end":8023	},
-10: {"start":8024	,	"end":8718	},
-11: {"start":8719	,	"end":9534	},
-12: {"start":9535	,	"end":10253	},
-13: {"start":10254	,	"end":11195	},
-14: {"start":11196	,	"end":12017	},
-15: {"start":12018	,	"end":12297	},
-16: {"start":12298	,	"end":12703	},
-17: {"start":12704	,	"end":12870	},
-18: {"start":12871	,	"end":13940	},
-19: {"start":13941	,	"end":16580	},
-20: {"start":16581	,	"end":17332	},
-21: {"start":17333	,	"end":17538	},
-22: {"start":17539	,	"end":17675	},
-23: {"start":17676	,	"end":18947	},
-24: {"start":18948	,	"end":20345	},
-25: {"start":20346	,	"end":20465	},
-26: {"start":20466	,	"end":21738	},
-27: {"start":21739	,	"end":22095	},
-28: {"start":22096	,	"end":22451	},
-30: {"start":22452	,	"end":22512	},
-31: {"start":22513	,	"end":22532	},
-32: {"start":22533	,	"end":22580	},
-33: {"start":22581	,	"end":22698	},
-34: {"start":22699	,	"end":22743	},
-35: {"start":22744	,	"end":22788	},
-36: {"start":22789	,	"end":22843	},
-37: {"start":22844	,	"end":22887	},
-38: {"start":22888	,	"end":23093	},
-39: {"start":23094	,	"end":23145	},
-40: {"start":23146 ,"end":24216 },
-41: {"start":24217 ,"end":24894 },
-42: {"start":24895 ,"end":26045 },
-43: {"start":26046 ,"end":26924 },
-44: {"start":26925 ,"end":27931 },
-45: {"start":27932 ,"end":28364 },
-46: {"start":28365 ,"end":28801 },
-47: {"start":28802 ,"end":29058 },
-48: {"start":29059 ,"end":29207 },
-49: {"start":29208 ,"end":29362 },
-50: {"start":29363 ,"end":29466 },
-51: {"start":29467 ,"end":29561 },
-52: {"start":29562 ,"end":29650 },
-53: {"start":29651 ,"end":29697 },
-54: {"start":29698 ,"end":29810 },
-55: {"start":29811 ,"end":29893 },
-56: {"start":29894 ,"end":29939 },
-57: {"start":29940 ,"end":29964 },
-58: {"start":29965 ,"end":30267 },
-59: {"start":30268 ,"end":30375 },
-60: {"start":30376 ,"end":30480 },
-61: {"start":30481 ,"end":30541 },
-62: {"start":30542 ,"end":30646 },
-63: {"start":30647 ,"end":30659 },
-64: {"start":30660 ,"end":30673 },
-65: {"start":30674 ,"end":30698 },
-66: {"start":30699 ,"end":31102 }}
 
 
 
@@ -336,8 +272,8 @@ book_id_lid_map = {
 # it can take an optional parameter algo
 # algo takes values `gensim`, `ngram`, `gensim-ngram`, `rule-based` or `single-word`. If not specified, defaults to `gensim-ngram`	
 def tokenize(conn,lang,version,book_id,algo='gensim-ngram'):
-	start_lid = book_id_lid_map[book_id]['start']
-	end_lid = book_id_lid_map[book_id]['end']
+	start_refid = book_id * 1000000
+	end_refid = start_refid + 1000000
 	if (algo == 'gensim'):
 		phrases = extract_phrases_gensim(conn,lang,version)
 	elif( algo == 'ngram'):
@@ -345,7 +281,7 @@ def tokenize(conn,lang,version,book_id,algo='gensim-ngram'):
 		# print(phrases.keys())
 		# return
 	elif( algo == 'rule-based'):
-		phrases = extract_phrases_rulebased(conn,lang,version,start=start_lid,end=end_lid)
+		phrases = extract_phrases_rulebased(conn,lang,version,start=start_refid,end=end_refid)
 	elif( algo == 'single-word'):
 		phrases = {}
 	elif ( algo == 'gensim-ngram'):
@@ -377,10 +313,10 @@ def tokenize(conn,lang,version,book_id,algo='gensim-ngram'):
 			phrases[ph] = {'freq':None,'score':None}
 
 	source_table = lang+'_'+version+'_bible_cleaned'
-	if start_lid and end_lid:
-		query = "select lid, verse from " + source_table + " where lid>="+str(start_lid)+" and lid<="+str(end_lid)+" order by lid;"
+	if start_refid and end_refid:
+		query = "select ref_id, verse from " + source_table + " where ref_id>="+str(start_refid)+" and ref_id<"+str(end_refid)+" order by ref_id;"
 	else:
-		query = "select lid, verse from " + source_table + " order by lid;"
+		query = "select ref_id, verse from " + source_table + " order by ref_id;"
 	cursor.execute(query)
 	rows = cursor.fetchall()
 	verses = [(r[0],cleanNsplit(r[1])) for r in rows]
@@ -399,7 +335,7 @@ def tokenize(conn,lang,version,book_id,algo='gensim-ngram'):
 
 	tokens = []
 	for row in verses:
-		lid = row[0]
+		ref_id = row[0]
 		word_split_text = row[1]
 		N = len(word_split_text)
 		taken = [False for i in range(N)]
