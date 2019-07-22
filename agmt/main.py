@@ -818,11 +818,11 @@ def generateConcordances(sourceId, book, token):
     tablename = cursor.fetchone()[0]
     # tablename = "_".join(rst.split('_')[0:3]) + '_'
     cursor.execute("select bb.book_code, bb.book_name, l.chapter, l.verse, b.verse from " + tablename + " b \
-       left join bcv_lid_map l on b.lid=l.lid left join bible_books_look_up bb on l.book=bb.book_id \
+       left join bcv_lid_map l on b.ref_id=l.lid left join bible_books_look_up bb on l.book=bb.book_id \
            where b.verse like '%" + token + "%' and bb.book_code='" + book +"' order by l.lid")
     book_concordance = getConcordanceList(cursor.fetchall())
     cursor.execute("select bb.book_code, bb.book_name, l.chapter, l.verse, b.verse from " + tablename + " b \
-       left join bcv_lid_map l on b.lid=l.lid left join bible_books_look_up bb on l.book=bb.book_id \
+       left join bcv_lid_map l on b.ref_id=l.lid left join bible_books_look_up bb on l.book=bb.book_id \
            where b.verse like '%" + token + "%' and bb.book_code!='" + book +"' order by l.lid \
                limit 100")
     all_books_concordance = getConcordanceList(cursor.fetchall())
@@ -1084,7 +1084,7 @@ def updateTokenTranslations():
     targetLanguageId = req["targetLanguageId"]
     senses = req["senses"]
     
-    
+    print('got Data')
     userId = 2
     connection = get_db()
     cursor = connection.cursor()
@@ -1099,7 +1099,9 @@ def updateTokenTranslations():
     cursor.execute("select token, translation, senses from translations where source_id=%s and \
         target_id=%s and token=%s",(sourceId, targetLanguageId, token))
     rst = cursor.fetchone()
+    print(rst)
     if not rst:
+        print('new')
         # senses = "|".join(senses)
         cursor.execute("insert into translations (token, translation, source_id, target_id, \
             user_id, senses) values (%s, %s, %s, %s, %s, %s)", (token, translation, sourceId, targetLanguageId, \
@@ -1111,24 +1113,35 @@ def updateTokenTranslations():
         cursor.close()
         return '{"success":true, "message":"Translation has been inserted"}'
     else:
+        print('update')
         if senses == rst[2] and translation == rst[1]:
+            print(senses)
+            print("return 1")
             return '{"success":false, "message":"No New change. This data has already been saved"}'
         if senses != rst[2] and translation == rst[1]:
+            print('senses parsing')
+            print(senses)
             senses = rst[2] + '|' + senses
         # if senses == rst[2] and translation != rst[1]:
         #     # senses = checkSenses
         #     pass
-        
+        if senses == "" and translation != rst[1]:
+            senses = rst[2]
+
+        print(' 2nd parse')
         
         
         # senses = '|'.join(list(set(senses.split('|'))))
-        if senses[0] == '|':
-            senses = senses[1:]
+        # if senses[0] == '|':
+        #     print('3rd parse')
+        #     print(senses)
+        #     senses = senses[1:]
         cursor.execute("update translations set translation=%s, user_id=%s, senses=%s where source_id=%s and \
             target_id=%s and token=%s",(translation, userId, senses, sourceId, targetLanguageId, token))
         cursor.execute("insert into translations_history (token, translation, source_id, target_id, \
             user_id, senses) values (%s, %s, %s, %s, %s, %s)", (token, translation, sourceId, targetLanguageId, \
                 userId, senses))
+        print('values updated')
         connection.commit()
         cursor.close()
         return '{"success":true, "message":"Translation has been updated"}'
@@ -1357,6 +1370,7 @@ def getTranslatedWords(sourceId, targetLanguageId, token):
     
     if rst:
         translation, senses = rst
+        print(senses)
         if senses.strip() == "":
             senses = []
         else:
@@ -1452,3 +1466,180 @@ def getVerseInRange(sourceid, outputtype, bookid, chapterid):
     else:
         '{"success":false, "message":"Invalid type. Use either `clean` or `json`"}'
 
+
+#####################################################
+# VACHAN API
+#####################################################
+
+def sourcesPattern(*argv):
+    languageName, languageCode, languageId, contentType, contentId, sourceId, \
+        versionCode, versionName = argv
+    pattern = {
+        "language":{
+            "name": languageName.capitalize(),
+            "code": languageCode,
+            "id": languageId
+        },
+        "resources":{
+            "type": contentType.capitalize(),
+            "id": contentId,
+        },
+        "source":{
+            "id": sourceId
+        },
+        "version": {
+            "code": versionCode,
+            "name": versionName
+        }
+    }
+    return pattern
+
+@app.route("/v1/sources", methods=["GET"])
+def getSources():
+    '''
+    For a complete download of all content types stored in the database
+    '''
+    connection = get_db()
+    cursor = connection.cursor()
+    try:
+        cursor.execute("select s.source_id, s.version_content_code, s.version_content_description, \
+            c.content_id, c.content_type, l.language_id, l.language_name, l.language_code from sources s\
+                left join content_types c on s.content_id=c.content_id left join languages l on \
+                    s.language_id=l.language_id")
+    except Exception as ex:
+        print(ex)
+    sourcesList = []
+    for s_id, ver_code, ver_name, cont_id, cont_name, lang_id, lang_name, lang_code in cursor.fetchall():
+        sourcesList.append(
+            sourcesPattern(lang_name, lang_code, lang_id, cont_name, cont_id, s_id, ver_code, ver_name)
+        )
+    cursor.close()
+    return json.dumps(sourcesList)
+
+def biblePattern(*argv):
+    try:
+        languageName, languageCode, languageId, script, scriptDirection, localScriptName, sourceId, \
+            versionCode, versionName, updatedDate = argv
+    except Exception as ex:
+        print(ex)
+    pattern = {
+        "language":{
+            "id": languageId,
+            "code": languageCode,
+            "name": languageName,
+            "script": script,
+            "scriptDirection": scriptDirection,
+            "localScriptName": localScriptName
+        },
+        "version":{
+            "name": versionName,
+            "code": versionCode,
+        },
+        "audioBible":[],
+        "updatedDate": updatedDate,
+        "sourceId": sourceId
+    }
+    return pattern
+
+@app.route("/v1/bibles", methods=["GET"])
+def getBibles():
+    '''
+    To return a list of Bible Languages and Versions
+    '''
+    connection = get_db()
+    cursor = connection.cursor()
+    try:
+        cursor.execute("select s.source_id, s.version_content_code, s.version_content_description, \
+            l.language_id, l.language_name, l.language_code, local_script_name, script, \
+                script_direction, created_at_date from sources s left join languages l on s.language_id=l.language_id where \
+                    s.content_id=1")
+    except Exception as ex:
+        print(ex)
+    biblesList = []
+    for s_id, ver_code, ver_name, lang_id, lang_name, lang_code, loc_script_name, script, script_dir, \
+        updatedDate in cursor.fetchall():
+        biblesList.append(
+            biblePattern(
+                lang_name, 
+                lang_code, 
+                lang_id, 
+                script,
+                script_dir, 
+                loc_script_name, 
+                s_id, 
+                ver_code,
+                ver_name,
+                str(updatedDate)
+            )
+        )
+    cursor.close()
+    return json.dumps(biblesList)
+
+
+
+@app.route("/v1/bibles/<sourceId>/books", methods=["GET"])
+def getBibleBooks(sourceId):
+    '''
+    To return the list of books in a Bible Language and Version
+    '''
+    connection = get_db()
+    cursor = connection.cursor()
+    cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
+    rst = cursor.fetchone()
+    if not rst:
+        return json.dumps({"success": False, "message": "Invalid Source Id"})
+    if 'usfm' not in rst[0]:
+        return json.dumps({"success": False, "message": "No Books uploaded yet"})
+    bookLists = [item for item in rst[0]["usfm"].keys()]
+    booksData = []
+    cursor.execute("select * from bible_books_look_up")
+    booksDict = {}
+    for bibleBookID, bibleBookFullName, bibleBookCode in cursor.fetchall():
+        booksDict[bibleBookCode] = {
+            "bibleBookID":bibleBookID,
+            "abbreviation": bibleBookCode,
+            "bibleBookFullName": bibleBookFullName.capitalize()
+        }
+    for book in bookLists:
+        if book in booksDict:
+            booksData.append(
+                booksDict[book]
+            )
+    return json.dumps(booksData)
+
+
+
+
+@app.route("/v1/bibles/<id>/books/<biblebookID>/chapters", methods=["GET"])
+def getBibleChapters():
+    '''
+    To return a Chapter object with content of all verses for the Chapter
+    '''
+    pass
+
+
+
+@app.route("/v1/bibles/<id>/<biblebookID>/chapters/<chapterId>/verses", methods=["GET"])
+def getBibleVerses():
+    '''
+    To return Verse Id Array for a Bible Book Chapter
+    '''
+    pass
+
+
+
+@app.route("/v1/bibles/<id>/books/<biblebookID>/chapters/<chapterId>/verses/<verseId>", methods=["GET"])
+def getBibleVerseText():
+    '''
+    To return a Verse object for a given Bible and Verse
+    '''
+    pass
+
+
+
+
+
+
+
+######################################################
+######################################################

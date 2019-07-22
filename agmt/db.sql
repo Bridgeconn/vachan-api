@@ -28,7 +28,10 @@ CREATE TABLE content_types (
 CREATE TABLE languages (
 	language_id BIGSERIAL PRIMARY KEY,
 	language_name TEXT NOT NULL,
-	language_code TEXT NOT NULL
+	language_code TEXT NOT NULL,
+	local_script_name TEXT NOT NULL,
+	script TEXT NOT NULL,
+	srcipt_direction TEXT NOT NULL,
 );
 
 CREATE TABLE bible_books_look_up (
@@ -52,6 +55,7 @@ CREATE TABLE sources (
 	year INT NOT NULL,
 	license TEXT DEFAULT 'CC BY SA',
 	revision FLOAT,
+	created_at_date timestamp with time zone DEFAULT CURRENT_TIMESTAMP(2),
 	content_id BIGINT REFERENCES content_type(content_id) NOT NULL,
 	language_id BIGINT REFERENCES languages(language_id) NOT NULL,
 	usfm_text json
