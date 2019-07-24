@@ -471,8 +471,11 @@ def parsePunctuationsForDraft(text):
 
 def parseDataForDBInsert(usfmData):
     connection = get_db()
-    crossRefPattern = re.compile(r'(\(?(\d+\s)?\S+\s\d+:\d+\,?\)?)')
-    footNotesPattern = re.compile(r'\it(.*)\s?\\f\s?\+.*\\ft\s?(.*)\s?\\f\*\\it\*\*')
+    # crossRefPattern = re.compile(r'(\(?(\d+\s)?\S+\s\d+:\d+\,?\)?)')
+    # footNotesPattern = re.compile(r'\it(.*)\s?\\f\s?\+.*\\ft\s?(.*)\s?\\f\*\\it\*\*')
+    normalVersePattern = re.compile(r'\d+$')
+    splitVersePattern = re.compile(r'(\d+)(\w)$')
+    mergedVersePattern = re.compile(r'(\d+)-(\d+)$')
     cursor = connection.cursor()
     cursor.execute("select lid, book, chapter, verse from bcv_lid_map")
     lidDict = {int(str(b).zfill(3) + str(c).zfill(3) + str(v).zfill(3)):l for l,b,c,v in cursor.fetchall()}
@@ -484,19 +487,63 @@ def parseDataForDBInsert(usfmData):
     verseContent = []
     # 
     bookId = bookIdDict[bookName]
-    for chapter in chapterData:
-        chapterNumber = chapter["header"]["title"]
-        verseData = chapter["verses"]
-        for verse in verseData:
-            verseNumber = verse["number"]
+    for verse in verseData:
+        crossRefs = ''
+        footNotes = ''
+        if 'metadata' in verse and 'cross-ref' in verse['metadata']:
+            crossRefs = verse['metadata']['cross-ref']
+        if 'metadata' in verse and 'footnote' in verse['metadata']:
+            footNotes = verse['metadata']['footnote']
+        verseNumber = verse['number']
+        if normalVersePattern.match(verseNumber):
             verseText = verse["text"]
-            crossRefs = re.sub(crossRefPattern, r'\1', verseText)
-            footNotes = re.sub(footNotesPattern, r'\1', verseText)
             bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
                  + str(verseNumber).zfill(3))
-            lid = lidDict[bcv]
-            dbInsertData.append((lid, verseText, crossRefs, footNotes))
+            ref_id = int(bcv)
+            dbInsertData.append((ref_id, verseText, crossRefs, footNotes))
             verseContent.append(verseText)
+        elif splitVersePattern.match(verseNumber):
+            ## combine split verses and use the whole number verseNumber
+            matchObj = splitVersePattern.match(verseNumber)
+            postScript = matchObj.group(2)
+            verseNumber = matchObj.group(1)
+            if postScript == 'a':
+                verseText = verse['text']
+
+                bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
+                     + str(verseNumber).zfill(3))
+                ref_id = int(bcv)
+                dbInsertData.append((ref_id, verseText, crossRefs, footNotes))
+                verseContent.append(verseText)
+            else:
+                prevdbInsertData = dbInsertData[-1]
+                prevverseContent = verseContent[-1]
+
+                verseText = prevdbInsertData[1] + ' '+ verse['text']
+                dbInsertData[-1] = (prevdbInsertData[0], verseText, prevdbInsertData[2],prevdbInsertData[3])
+                verseContent[-1] = verseText
+        elif mergedVersePattern.match(verseNumber):
+            ## keep the whole text in first verseNumber of merged verses
+            verseText = verse['text']
+            matchObj = mergedVersePattern.match(verseNumber)
+            verseNumber = matchObj.group(1)
+            verseNumberend = matchObj.group(2)
+            bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
+                 + str(verseNumber).zfill(3))
+            ref_id = int(bcv)
+            dbInsertData.append((ref_id, verseText, crossRefs, footNotes))
+            verseContent.append(verseText)
+            ## add empty text in the rest of the verseNumber range
+            for vnum in range(int(verseNumber)+1, int(verseNumberend)+1):
+                bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
+                     + str(vnum).zfill(3))
+                ref_id = int(bcv)
+                dbInsertData.append((ref_id, '', '', ''))
+                verseContent.append('')
+                    
+        else:
+            print("!!!Unrecognized pattern in verse number!!!")
+            print("verseNumber:",verse['number'])
     tokenList = list(getTokens(' '.join(verseContent)))
     tokenList = [(bookId, token) for token in tokenList]
     # 
@@ -582,7 +629,7 @@ def uploadSource():
         return '{"success":false, "message":"Book %s already inserted into database"}' %(bookCode)
     parsedDbData, tokenDBData, bookId = parseDataForDBInsert(parsedUsfmText)
     
-    cursor.execute('insert into ' + cleanTableName + ' (lid, verse, cross_reference, foot_notes) values '\
+    cursor.execute('insert into ' + cleanTableName + ' (ref_id, verse, cross_reference, foot_notes) values '\
         + str(parsedDbData)[1:-1])
     # cursor.execute('insert into ' + tokenTableName + ' (book_id, token) values ' + str(tokenDBData)[1:-1])
     
