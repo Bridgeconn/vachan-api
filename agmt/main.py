@@ -293,6 +293,15 @@ def new_registration2(code):
     connection.commit()
     return redirect("https://%s/" % (host_ui_url))
 
+def checkAuth():
+    email = request.email
+    connection = get_db()
+    cursor = connection.cursor()
+    cursor.execute("select role_id from autographamt_users where email_id=%s", (email,))
+    roleId = cursor.fetchone()[0]
+    cursor.close()
+    return roleId
+
 
 @app.route("/v1/autographamt/organisations", methods=["GET"])
 @check_token
@@ -340,16 +349,20 @@ def autographamtOrganisations():
         return '{"success":false, "message":"Server side error"}' 
 
 @app.route("/v1/autographamt/organisations", methods=["POST"])
+@check_token
 def createOrganisations():
     req = request.get_json(True)
     organisationName = req["organisationName"]
     organisationAddress = req["organisationAddress"]
     organisationPhone = req["organisationPhone"]
     organisationEmail = req["organisationEmail"]
-    userId = 3
+    email = request.email
     
     connection = get_db()
     cursor = connection.cursor()
+
+    cursor.execute("select user_id from autographamt_users where email_id=%s", (email,))
+    userId = cursor.fetchone()[0]
     cursor.execute("select * from autographamt_organisations where organisation_name=%s and \
         organisation_email=%s", (organisationName, organisationEmail))
     rst = cursor.fetchone()
@@ -385,15 +398,6 @@ def autographamtUsers():
     ]
     # print(usersList)
     return json.dumps(usersList)
-
-def checkAuth():
-    email = request.email
-    connection = get_db()
-    cursor = connection.cursor()
-    cursor.execute("select role_id from autographamt_users where email_id=%s", (email,))
-    roleId = cursor.fetchone()[0]
-    cursor.close()
-    return roleId
 
 @app.route("/v1/autographamt/projects", methods=["GET"])
 @check_token
