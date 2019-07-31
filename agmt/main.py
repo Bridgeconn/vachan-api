@@ -19,7 +19,7 @@ import re
 import json
 import logging
 import flask
-from flask import Flask, request, session, redirect, jsonify
+from flask import Flask, request, session, redirect, jsonify, make_response
 from flask import g
 from flask_cors import CORS, cross_origin
 import jwt
@@ -132,7 +132,7 @@ def auth():
         except Exception as ex:
             pass
         logging.warning('User: \'' + str(email) + '\' logged in successfully')
-        return '{"access_token": "%s"}\n' % (access_token.decode('utf-8'),)
+        return '{"accessToken": "%s"}\n' % (access_token.decode('utf-8'),)
     logging.warning('User: \'' + str(email) + '\' login attempt unsuccessful: Incorrect Password')
     return '{"success":false, "message":"Incorrect Password"}'
 
@@ -297,14 +297,30 @@ def new_registration2(code):
 @app.route("/v1/autographamt/organisations", methods=["GET"])
 @check_token
 def autographamtOrganisations():
-    role = checkAuth()
-    if role == 3:
+    try:
+        role = checkAuth()
         connection = get_db()
         cursor = connection.cursor()
-        cursor.execute("select organisation_id, organisation_name, organisation_address, \
-            organisation_phone, organisation_email, verified, user_id from autographamt_organisations\
-                order by organisation_id")
-        rst = cursor.fetchall()
+        email = request.email
+        cursor.execute("select user_id from autographamt_users where email_id=%s", (email,))
+        userId = cursor.fetchone()[0]
+        if role == 3:
+            connection = get_db()
+            cursor = connection.cursor()
+            cursor.execute("select organisation_id, organisation_name, organisation_address, \
+                organisation_phone, organisation_email, verified, user_id from autographamt_organisations\
+                    order by organisation_id")
+            rst = cursor.fetchall()
+        elif role == 2:
+            connection = get_db()
+            cursor = connection.cursor()
+            cursor.execute("select organisation_id, organisation_name, organisation_address, \
+                organisation_phone, organisation_email, verified, user_id from autographamt_organisations\
+                    where user_id=%s and verified=true order by organisation_id", (userId,))
+            rst = cursor.fetchall()
+        else:
+            return '{"success":false, "message":"UnAuthorized"}'
+        cursor.close()
         if not rst:
             return '{"success":false, "message":"No organisation data available"}'
         organisationsList = [
@@ -319,8 +335,9 @@ def autographamtOrganisations():
             } for organisationId, organisationName, organisationAddress, organisationPhone, organisationEmail, verified, userId in rst
         ]
         return json.dumps(organisationsList)
-    else:
-        return '{"success":false, "message":"UnAuthorized"}'
+    except Exception as ex:
+        print(ex)
+        return '{"success":false, "message":"Server side error"}' 
 
 @app.route("/v1/autographamt/organisations", methods=["POST"])
 def createOrganisations():
@@ -366,6 +383,7 @@ def autographamtUsers():
             "verified":verified
         } for userId, firstName, lastName, emailId, roleId, verified in rst
     ]
+    # print(usersList)
     return json.dumps(usersList)
 
 def checkAuth():
@@ -466,7 +484,7 @@ def createProjects():
         return '{"success":false, "message":"UnAuthorized"}'
 
 @app.route("/v1/autographamt/projects/assignments/<projectId>", methods=["GET"])
-# @check_token
+@check_token
 def getAssignments(projectId):
     '''
     Returns an array of Users assigned under a project
@@ -680,26 +698,32 @@ def getUserProjects():
 @app.route("/v1/autographamt/approvals/organisations", methods=["POST"])
 @check_token
 def organisationApprovals():
-    req = request.get_json(True)
-    organisationId = req["organisationId"]
-    verified = req["verified"]
-    role = checkAuth()
-    if role == 3:
-        connection = get_db()
-        cursor = connection.cursor()
-        cursor.execute("select user_id, role_id from autographamt_organisations where organisation_id=%s", (organisationId,))
-        userId, roleId = cursor.fetchone()
-        cursor.execute("update autographamt_organisations set verified=%s where \
-            organisation_id=%s", (verified, organisationId))
-        if roleId < 3:
-            cursor.execute("update autographamt_users set role_id=2 where user_id=%s", (userId,))
-        # cursor
-        connection.commit()
-        cursor.close()
-        return '{"success":true, "message":"Role Updated"}'
-    else:
-        # cursor.close()
-        return '{"success":false, "message":"Unauthorized"}'
+    try:
+        req = request.get_json(True)
+        organisationId = req["organisationId"]
+        verified = req["verified"]
+        role = checkAuth()
+        if role == 3:
+            connection = get_db()
+            cursor = connection.cursor()
+            cursor.execute("select o.user_id, u.role_id from autographamt_organisations o left join \
+                autographamt_users u on o.user_id=u.user_id where o.organisation_id=%s", \
+                    (organisationId,))
+            userId, roleId = cursor.fetchone()
+            cursor.execute("update autographamt_organisations set verified=%s where \
+                organisation_id=%s", (verified, organisationId))
+            if roleId < 3:
+                cursor.execute("update autographamt_users set role_id=2 where user_id=%s", (userId,))
+            # cursor
+            connection.commit()
+            cursor.close()
+            return '{"success":true, "message":"Role Updated"}'
+        else:
+            # cursor.close()
+            return '{"success":false, "message":"Unauthorized"}'
+    except Exception as ex:
+        print(ex)
+        return '{"success":false, "message":"Server error"}'
 
 @app.route("/v1/autographamt/approvals/users", methods=["POST"])
 @check_token
@@ -2011,7 +2035,7 @@ def getBibleVerseText2(sourceId, verseId):
         verse = cursor.fetchone()
         if not verse:
             return '{"success": false, "message":"No verse found"}'
-        return json.dumps({
+        return make_response({
             "sourceId": sourceId,
             "bibleBookCode": bookCode,
             "chapterNumber": chapterNumber,
@@ -2022,6 +2046,7 @@ def getBibleVerseText2(sourceId, verseId):
                 "text": verse[0]
             }
         })
+        # return jsonify(verse[0])
     except Exception as ex:
         return '{"success":false, "message":"%s"}' %(str(ex))
     
