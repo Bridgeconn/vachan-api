@@ -28,7 +28,10 @@ CREATE TABLE content_types (
 CREATE TABLE languages (
 	language_id BIGSERIAL PRIMARY KEY,
 	language_name TEXT NOT NULL,
-	language_code TEXT NOT NULL
+	language_code TEXT NOT NULL,
+	local_script_name TEXT NOT NULL,
+	script TEXT NOT NULL,
+	srcipt_direction TEXT NOT NULL,
 );
 
 CREATE TABLE bible_books_look_up (
@@ -52,6 +55,7 @@ CREATE TABLE sources (
 	year INT NOT NULL,
 	license TEXT DEFAULT 'CC BY SA',
 	revision FLOAT,
+	created_at_date timestamp with time zone DEFAULT CURRENT_TIMESTAMP(2),
 	content_id BIGINT REFERENCES content_type(content_id) NOT NULL,
 	language_id BIGINT REFERENCES languages(language_id) NOT NULL,
 	usfm_text json
@@ -77,4 +81,35 @@ CREATE TABLE translations_history (
 	target_id BIGINT REFERENCES languages(language_id) NOT NULL,
 	updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP(2),
 	user_id BIGINT REFERENCES autographamt_users(user_id) NOT NULL
+);
+
+CREATE TABLE autographamt_organisations (
+	organisation_id BIGSERIAL PRIMARY KEY,
+	organisation_name TEXT NOT NULL,
+	organisation_address TEXT NOT NULL,
+	organisation_phone INT NOT NULL,
+	organisation_email TEXT NOT NULL,
+	verified BOOLEAN DEFAULT FALSE,
+	user_id BIGINT REFERENCES autographamt_users(user_id) NOT NULL
+);
+
+CREATE TABLE autographamt_projects (
+	project_id BIGSERIAL PRIMARY KEY,
+	project_name TEXT NOT NULL,
+	source_id BIGINT REFERENCES sources(source_id) NOT NULL,
+	target_id BIGINT REFERENCES languages(language_id) NOT NULL,
+	organisation_id BIGINT REFERENCES autographamt_organisations(organisation_id) NOT NULL
+);
+
+CREATE TABLE autographamt_assignments (
+	assignment_id BIGSERIAL PRIMARY KEY,
+	books TEXT,
+	user_id BIGINT REFERENCES autographamt_users(user_id) NOT NULL,
+	project_id BIGINT REFERENCES autographamt_projects(project_id) NOT NULL
+);
+
+CREATE TABLE translation_projects_look_up (
+	id BIGSERIAL PRIMARY KEY,
+	translation_id BIGINT REFERENCES translations(translation_id) NOT NULL,
+	project_id BIGINT REFERENCES autographamt_projects(project_id) NOT NULL
 );

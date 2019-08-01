@@ -272,6 +272,9 @@ def extract_phrases_rulebased(conn,lang,version,start=None,end=None):
 # it can take an optional parameter algo
 # algo takes values `gensim`, `ngram`, `gensim-ngram`, `rule-based` or `single-word`. If not specified, defaults to `gensim-ngram`	
 def tokenize(conn,lang,version,book_id,algo='gensim-ngram'):
+	print('*******')
+	print('phrases modules')
+	print(lang, version, book_id)
 	start_refid = book_id * 1000000
 	end_refid = start_refid + 1000000
 	if (algo == 'gensim'):
@@ -292,7 +295,7 @@ def tokenize(conn,lang,version,book_id,algo='gensim-ngram'):
 				phrases[ph] = phrases2[ph]
 			if i > 250:
 				break
-	
+	print('stop words')
 	stop_words = []
 	if lang == 'hi' or lang == 'hin':
 		stop_words = hi_stop_words
