@@ -413,13 +413,15 @@ def getProjects():
         organisationIds = [org[0] for org in cursor.fetchall()]
         rst = []
         for orgId in organisationIds:
-            cursor.execute("select p.project_id, p.project_name, p.source_id, p.target_id, p.organisation_id, \
-                o.organisation_name from autographamt_projects p left join autographamt_organisations o on \
+            cursor.execute("select p.project_id, p.project_name, p.source_id, p.target_id, \
+                p.organisation_id, o.organisation_name, s.version_content_code, s.version_content_description \
+                     from autographamt_projects p left join autographamt_organisations o on \
                     p.organisation_id=o.organisation_id where p.organisation_id=%s", (orgId,))
             rst += cursor.fetchall()
     elif role == 3:
-        cursor.execute("select p.project_id, p.project_name, p.source_id, p.target_id, p.organisation_id, \
-            o.organisation_name from autographamt_projects p left join autographamt_organisations o on \
+        cursor.execute("select p.project_id, p.project_name, p.source_id, p.target_id, \
+            p.organisation_id, o.organisation_name, s.version_content_code, s.version_content_description \
+                from autographamt_projects p left join autographamt_organisations o on \
                 p.organisation_id=o.organisation_id")
         rst = cursor.fetchall()
     else:
@@ -433,8 +435,12 @@ def getProjects():
             "sourceId": sourceId,
             "targetId": targetId,
             "organisationId": organisationId,
-            "organisationName": organisationName
-        } for projectId, projectName, sourceId, targetId, organisationId, organisationName in rst
+            "organisationName": organisationName,
+            "version":{
+                "name": verName,
+                "code": verCode
+            }
+        } for projectId, projectName, sourceId, targetId, organisationId, organisationName, verCode, verName in rst
     ]
     return json.dumps(projectsList)
 
@@ -681,10 +687,11 @@ def getUserProjects():
     else:
         userId = userId[0]
         cursor.execute("select p.project_id, p.project_name, o.organisation_name, a.books, \
-            p.source_id, p.target_id from autographamt_assignments a left join \
-                autographamt_projects p on a.project_id=p.project_id left join \
-                    autographamt_organisations o on o.organisation_id=p.organisation_id \
-                        where a.user_id=%s", (userId,))
+            p.source_id, p.target_id, s.version_content_code, s.version_content_description \
+                from autographamt_assignments a left join autographamt_projects p on \
+                    a.project_id=p.project_id left join autographamt_organisations o on \
+                        o.organisation_id=p.organisation_id left join sources s on \
+                            p.source_id=s.source_id where a.user_id=%s", (userId,))
         rst = cursor.fetchall()
         userProjects = [
             {
@@ -693,8 +700,12 @@ def getUserProjects():
                 "organisationName": organisationName,
                 "books": convertStringToList(books),
                 "sourceId":sourceId,
-                "targetId": targetId
-            } for projectId, projectName, organisationName, books, sourceId, targetId in rst
+                "targetId": targetId,
+                "version": {
+                    "name": verName,
+                    "code": verCode
+                }
+            } for projectId, projectName, organisationName, books, sourceId, targetId, verCode, verName in rst
         ]
         return json.dumps(userProjects)
 
@@ -1333,37 +1344,53 @@ def updateTokenTranslations():
 
 
 @app.route("/v1/info/translatedtokens", methods=["GET"])
+# @check_token
 def getTransaltedTokensInfo():
     connection = get_db()
     cursor = connection.cursor()
-    # cursor.execute("select distinct s.language, target_id from translations")
-    # sourceIds = cursor.fetchall()
-    # sourceIds = [x[0] for x in sourceIds]
-
-
-    cursor.execute("select distinct r.version_content_code, l.language_name, r.language_name \
-    from translations t left join (select distinct s.source_id, s.version_content_code, \
-    ll.language_name  from translations tt left join sources s on tt.source_id=s.source_id \
-        left join languages ll on s.language_id=ll.language_id) \
-    r on t.source_id=r.source_id left join languages l on t.target_id=l.language_id")
-    rst = cursor.fetchall()
-    # 
-    tokenInformation = {}
-    for v,t,s in rst:
+    email = request.email
+    cursor.execute("select user_id from autographamt_users where email=%s", (email,))
+    userId = cursor.fetchone()[0]
+    cursor.execute("select project_id from autographamt_assignments where user_id=%s", (userId,))
+    projectIds = [p[0] for p in cursor.fetchall()]
+    translationInfo = []
+    for p_id in projectIds:
+        cursor.execute("select distinct p.project_id, p.project_name from translation_projects_look_up \
+            t left join autographamt_projects p on t.project_id=p.project_id where p.project_id=%s", \
+                (p_id,))
+        rst = cursor.fetchall()
+        if rst:
+            for projectId, projectName in rst:
+                translationInfo.append({
+                    "projectId": projectId,
+                    "projectName": projectName
+                })
+    cursor.close()
+    return json.dumps(translationInfo)
+    # cursor.execute("select distinct p.project_id, p.project_name, o.organisation_name ")
+    # cursor.execute("select distinct r.version_content_code, l.language_name, r.language_name \
+    # r.source_id from translations t left join (select distinct s.source_id, s.version_content_code, \
+    # ll.language_name  from translations tt left join sources s on tt.source_id=s.source_id \
+    #     left join languages ll on s.language_id=ll.language_id) \
+    # r on t.source_id=r.source_id left join languages l on t.target_id=l.language_id")
+    # rst = cursor.fetchall()
+    # # 
+    # tokenInformation = {}
+    # for v,t,s in rst:
         
-        if s in tokenInformation:
-            temp = tokenInformation[s]
-            if v in temp:
-                temp[v] = temp[v] + [t]
-            else:
-                temp[v] = [t]
-            tokenInformation[s] = temp
-        else:
-            tokenInformation[s] = {
-                v:[t]
-            }
-    # tokenInformationList = [{k:v} for k,v in tokenInformation.items()]
-    return json.dumps(tokenInformation)
+    #     if s in tokenInformation:
+    #         temp = tokenInformation[s]
+    #         if v in temp:
+    #             temp[v] = temp[v] + [t]
+    #         else:
+    #             temp[v] = [t]
+    #         tokenInformation[s] = temp
+    #     else:
+    #         tokenInformation[s] = {
+    #             v:[t]
+    #         }
+    # # tokenInformationList = [{k:v} for k,v in tokenInformation.items()]
+    # return json.dumps(tokenInformation)
 
 
 @app.route("/v1/translatedbooks/<sourceId>/<targetId>", methods=["GET"])
