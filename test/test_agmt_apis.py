@@ -18,12 +18,12 @@ def test_firstpage_load():
 	resp = requests.get(url)
 	assert resp.status_code == 200, resp.text
 
-@pytest.mark.parametrize("email, password",[('kavitharaju18@gmail.com',"letmepass"),('kavitha.raju@bridgeconn.com',"letmepass")])
+@pytest.mark.parametrize("email, password",[('savitha.mark@bridgeconn.com',"221189"),('kavitha.raju@bridgeconn.com',"letmepass")])
 def test_list_valid_user(supply_url,email,password):
 	resp = check_login(supply_url,email,password)
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
-	assert j['success'] == True, "success="+str(j['success'])
+	assert "accessToken" in j, "success="+str(j['success'])+j['message']
 
 
 @pytest.mark.parametrize("email, password",[('kavitharaju18@gmail.com',"letme"),('kavitha.raju@bridgeconn.com',"letme")])
