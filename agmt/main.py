@@ -254,6 +254,7 @@ def auth_exception_handler(error):
 def check_token(f):
     @wraps(f)
     def wrapper(*args, **kwds):
+        print('here')
         auth_header_value = request.headers.get('Authorization', None)
         if not auth_header_value:
             raise TokenError('No Authorization header', 'Token missing')
@@ -307,6 +308,7 @@ def checkAuth():
 @check_token
 def autographamtOrganisations():
     try:
+        print('inside execution')
         role = checkAuth()
         connection = get_db()
         cursor = connection.cursor()
@@ -372,7 +374,7 @@ def createOrganisations():
                 (organisationName, organisationAddress, organisationPhone, organisationEmail, userId))
         connection.commit()
         cursor.close()
-        return '{"success":true, "message":"Organisation already"}'
+        return '{"success":true, "message":"Organisation request sent"}'
     else:
         return '{"success":false, "message":"Organisation already created"}'
 
@@ -402,47 +404,53 @@ def autographamtUsers():
 @app.route("/v1/autographamt/projects", methods=["GET"])
 @check_token
 def getProjects():
-    connection = get_db()
-    cursor = connection.cursor()
-    role = checkAuth()
-    if role == 2:
-        email = request.email
-        cursor.execute("select user_id from autographamt_users where email_id=%s", (email,))
-        userId = cursor.fetchone()[0]
-        cursor.execute("select organisation_id from autographamt_organisations where user_id=%s", (userId,))
-        organisationIds = [org[0] for org in cursor.fetchall()]
-        rst = []
-        for orgId in organisationIds:
+    try:
+        connection = get_db()
+        cursor = connection.cursor()
+        role = checkAuth()
+        if role == 2:
+            email = request.email
+            cursor.execute("select user_id from autographamt_users where email_id=%s", (email,))
+            userId = cursor.fetchone()[0]
+            cursor.execute("select organisation_id from autographamt_organisations where user_id=%s", (userId,))
+            organisationIds = [org[0] for org in cursor.fetchall()]
+            rst = []
+            for orgId in organisationIds:
+                cursor.execute("select p.project_id, p.project_name, p.source_id, p.target_id, \
+                    p.organisation_id, o.organisation_name, s.version_content_code, s.version_content_description \
+                        from autographamt_projects p left join autographamt_organisations o on \
+                        p.organisation_id=o.organisation_id left join sources s on \
+                            s.source_id=p.source_id where p.organisation_id=%s", (orgId,))
+                rst += cursor.fetchall()
+        elif role == 3:
             cursor.execute("select p.project_id, p.project_name, p.source_id, p.target_id, \
                 p.organisation_id, o.organisation_name, s.version_content_code, s.version_content_description \
-                     from autographamt_projects p left join autographamt_organisations o on \
-                    p.organisation_id=o.organisation_id where p.organisation_id=%s", (orgId,))
-            rst += cursor.fetchall()
-    elif role == 3:
-        cursor.execute("select p.project_id, p.project_name, p.source_id, p.target_id, \
-            p.organisation_id, o.organisation_name, s.version_content_code, s.version_content_description \
-                from autographamt_projects p left join autographamt_organisations o on \
-                p.organisation_id=o.organisation_id")
-        rst = cursor.fetchall()
-    else:
-        return '{"success": false ,"message":"Not authorized"}'
-    if not rst:
-        '{"success":false, "message":"No projects created yet"}'
-    projectsList = [
-        {
-            "projectId": projectId,
-            "projectName": projectName,
-            "sourceId": sourceId,
-            "targetId": targetId,
-            "organisationId": organisationId,
-            "organisationName": organisationName,
-            "version":{
-                "name": verName,
-                "code": verCode
-            }
-        } for projectId, projectName, sourceId, targetId, organisationId, organisationName, verCode, verName in rst
-    ]
-    return json.dumps(projectsList)
+                    from autographamt_projects p left join autographamt_organisations o on \
+                    p.organisation_id=o.organisation_id left join sources s on \
+                            s.source_id=p.source_id")
+            rst = cursor.fetchall()
+        else:
+            return '{"success": false ,"message":"Not authorized"}'
+        if not rst:
+            '{"success":false, "message":"No projects created yet"}'
+        projectsList = [
+            {
+                "projectId": projectId,
+                "projectName": projectName,
+                "sourceId": sourceId,
+                "targetId": targetId,
+                "organisationId": organisationId,
+                "organisationName": organisationName,
+                "version":{
+                    "name": verName,
+                    "code": verCode
+                }
+            } for projectId, projectName, sourceId, targetId, organisationId, organisationName, verCode, verName in rst
+        ]
+        return json.dumps(projectsList)
+    except Exception as ex:
+        print(ex)
+        return '{"success": false, "message":"Server side error"}'
 
 @app.route("/v1/autographamt/organisations/projects", methods=["POST"])
 @check_token
@@ -613,65 +621,72 @@ def getProjectTranslations(token, projectId):
 @app.route("/v1/autographamt/projects/translations", methods=["POST"])
 @check_token
 def updateProjectTokenTranslations():
-    req = request.get_json(True)
-    token = req["token"]
-    translation = req["translation"]
-    projectId = req["projectId"]
-    senses = req["senses"]
-    email = request.email
-    connection = get_db()
-    cursor = connection.cursor()
-    cursor.execute("select user_id from autographamt_users where email_id=%s", (email,))
-    userId = cursor.fetchone()[0]
-    cursor.execute("select assignment_id from autographamt_assignments where user_id=%s and \
-        project_id=%s", (userId, projectId))
-    assignmentExists = cursor.fetchone()
-    if not assignmentExists:
-        return '{"success":false, "message":"UnAuthorized/ You haven\'t been assigned this project"}'
-    cursor.execute("select source_id, target_id from autographamt_projects where project_id=%s", (projectId,))
-    sourceId, targetLanguageId = cursor.fetchone()
-    cursor.execute("select language_code from languages where language_id=%s", (targetLanguageId,))
-    targetLanguageCode = cursor.fetchone()
-    if not targetLanguageCode:
-        return '{"success":false, "message":"Target Language does not exist"}' 
-    cursor.execute("select * from sources where source_id=%s", (sourceId,))
-    rst = cursor.fetchone()
-    if not rst:
-        return '{"success":false, "message":"Source does not exist"}'
-    cursor.execute("select t.token, t.translation, t.senses from translations t left join \
-        translation_projects_look_up p on t.translation_id=p.translation_id where p.project_id=%s and \
-        token=%s",(projectId, token))
-    rst = cursor.fetchone()
-    if not rst:
-        cursor.execute("insert into translations (token, translation, source_id, target_id, \
-            user_id, senses) values (%s, %s, %s, %s, %s, %s) returning translation_id", (token, translation, sourceId, targetLanguageId, \
-                userId, senses))
-        translationId = cursor.fetchone()[0]
-        cursor.execute("insert into translation_projects_look_up (translation_id, project_id) values \
-            (%s, %s)", (translationId, projectId))
-        cursor.execute("insert into translations_history (token, translation, source_id, target_id, \
-            user_id, senses) values (%s, %s, %s, %s, %s, %s)", (token, translation, sourceId, targetLanguageId, \
-                userId, senses))
-        connection.commit()
-        cursor.close()
-        return '{"success":true, "message":"Translation has been inserted"}'
-    else:
-        if senses == rst[2] and translation == rst[1]:
-            return '{"success":false, "message":"No New change. This data has already been saved"}'
-        dbSenses = []
-        if rst[2] != "":
-            dbSenses = rst[2].split("|")
-        if senses not in dbSenses:
-            dbSenses.append(senses)
-        senses = "|".join(dbSenses)
-        cursor.execute("update translations set translation=%s, user_id=%s, senses=%s where source_id=%s and \
-            target_id=%s and token=%s",(translation, userId, senses, sourceId, targetLanguageId, token))
-        cursor.execute("insert into translations_history (token, translation, source_id, target_id, \
-            user_id, senses) values (%s, %s, %s, %s, %s, %s)", (token, translation, sourceId, targetLanguageId, \
-                userId, senses))
-        connection.commit()
-        cursor.close()
-        return '{"success":true, "message":"Translation has been updated"}'
+    print('please')
+    try:
+        print('token')
+        req = request.get_json(True)
+        projectId = req["projectId"]
+        token = req["token"]
+        translation = req["translation"]
+        senses = req["senses"]
+        email = request.email
+        # userId=6
+        connection = get_db()
+        cursor = connection.cursor()
+        cursor.execute("select user_id from autographamt_users where email_id=%s", (email,))
+        userId = cursor.fetchone()[0]
+        cursor.execute("select assignment_id from autographamt_assignments where user_id=%s and \
+            project_id=%s", (userId, projectId))
+        assignmentExists = cursor.fetchone()
+        if not assignmentExists:
+            return '{"success":false, "message":"UnAuthorized/ You haven\'t been assigned this project"}'
+        cursor.execute("select source_id, target_id from autographamt_projects where project_id=%s", (projectId,))
+        sourceId, targetLanguageId = cursor.fetchone()
+        cursor.execute("select language_code from languages where language_id=%s", (targetLanguageId,))
+        targetLanguageCode = cursor.fetchone()
+        if not targetLanguageCode:
+            return '{"success":false, "message":"Target Language does not exist"}' 
+        cursor.execute("select * from sources where source_id=%s", (sourceId,))
+        rst = cursor.fetchone()
+        if not rst:
+            return '{"success":false, "message":"Source does not exist"}'
+        cursor.execute("select t.token, t.translation, t.senses from translations t left join \
+            translation_projects_look_up p on t.translation_id=p.translation_id where p.project_id=%s and \
+            token=%s",(projectId, token))
+        rst = cursor.fetchone()
+        if not rst:
+            cursor.execute("insert into translations (token, translation, source_id, target_id, \
+                user_id, senses) values (%s, %s, %s, %s, %s, %s) returning translation_id", (token, translation, sourceId, targetLanguageId, \
+                    userId, senses))
+            translationId = cursor.fetchone()[0]
+            cursor.execute("insert into translation_projects_look_up (translation_id, project_id) values \
+                (%s, %s)", (translationId, projectId))
+            cursor.execute("insert into translations_history (token, translation, source_id, target_id, \
+                user_id, senses) values (%s, %s, %s, %s, %s, %s)", (token, translation, sourceId, targetLanguageId, \
+                    userId, senses))
+            connection.commit()
+            cursor.close()
+            return '{"success":true, "message":"Translation has been inserted"}'
+        else:
+            if senses == rst[2] and translation == rst[1]:
+                return '{"success":false, "message":"No New change. This data has already been saved"}'
+            dbSenses = []
+            if rst[2] != "":
+                dbSenses = rst[2].split("|")
+            if senses not in dbSenses:
+                dbSenses.append(senses)
+            senses = "|".join(dbSenses)
+            cursor.execute("update translations set translation=%s, user_id=%s, senses=%s where source_id=%s and \
+                target_id=%s and token=%s",(translation, userId, senses, sourceId, targetLanguageId, token))
+            cursor.execute("insert into translations_history (token, translation, source_id, target_id, \
+                user_id, senses) values (%s, %s, %s, %s, %s, %s)", (token, translation, sourceId, targetLanguageId, \
+                    userId, senses))
+            connection.commit()
+            cursor.close()
+            return '{"success":true, "message":"Translation has been updated"}'
+    except Exception as ex:
+        print(ex)
+        return '{"success": false, "message":"Server side error"}'
 
 @app.route("/v1/autographamt/users/projects", methods=["GET"])
 @check_token
@@ -1344,29 +1359,39 @@ def updateTokenTranslations():
 
 
 @app.route("/v1/info/translatedtokens", methods=["GET"])
-# @check_token
+@check_token
 def getTransaltedTokensInfo():
-    connection = get_db()
-    cursor = connection.cursor()
-    email = request.email
-    cursor.execute("select user_id from autographamt_users where email=%s", (email,))
-    userId = cursor.fetchone()[0]
-    cursor.execute("select project_id from autographamt_assignments where user_id=%s", (userId,))
-    projectIds = [p[0] for p in cursor.fetchall()]
-    translationInfo = []
-    for p_id in projectIds:
-        cursor.execute("select distinct p.project_id, p.project_name from translation_projects_look_up \
-            t left join autographamt_projects p on t.project_id=p.project_id where p.project_id=%s", \
-                (p_id,))
-        rst = cursor.fetchall()
-        if rst:
-            for projectId, projectName in rst:
-                translationInfo.append({
-                    "projectId": projectId,
-                    "projectName": projectName
-                })
-    cursor.close()
-    return json.dumps(translationInfo)
+    try:
+        connection = get_db()
+        cursor = connection.cursor()
+        email = request.email
+        cursor.execute("select distinct r.version_content_code, l.language_name, r.language_name, \
+            r.source_id from translations t left join (select distinct s.source_id, \
+                s.version_content_code, ll.language_name  from translations tt left join sources s \
+                    on tt.source_id=s.source_id left join languages ll on \
+                        s.language_id=ll.language_id) r on t.source_id=r.source_id left \
+                            join languages l on t.target_id=l.language_id")
+        cursor.execute("select user_id from autographamt_users where email_id=%s", (email,))
+        userId = cursor.fetchone()[0]
+        cursor.execute("select project_id from autographamt_assignments where user_id=%s", (userId,))
+        projectIds = [p[0] for p in cursor.fetchall()]
+        translationInfo = []
+        for p_id in projectIds:
+            cursor.execute("select distinct p.project_id, p.project_name from translation_projects_look_up \
+                t left join autographamt_projects p on t.project_id=p.project_id where p.project_id=%s", \
+                    (p_id,))
+            rst = cursor.fetchall()
+            if rst:
+                for projectId, projectName in rst:
+                    translationInfo.append({
+                        "projectId": projectId,
+                        "projectName": projectName
+                    })
+        cursor.close()
+        return json.dumps(translationInfo)
+    except Exception as ex:
+        print(ex)
+        return '{"success":false, "message":"Server side issue"}'
     # cursor.execute("select distinct p.project_id, p.project_name, o.organisation_name ")
     # cursor.execute("select distinct r.version_content_code, l.language_name, r.language_name \
     # r.source_id from translations t left join (select distinct s.source_id, s.version_content_code, \
@@ -1469,17 +1494,22 @@ def getTranslatedBooks(sourceId, targetId):
 
 
 @app.route("/v1/downloaddraft", methods=["POST"])
+@check_token
 def downloadDraft():
     req = request.get_json(True)
-    sourceId = req["sourceId"]
-    targetLanguageId = req["targetLanguageId"]
+    # sourceId = req["sourceId"]
+    # targetLanguageId = req["targetLanguageId"]
+    projectId = req["projectId"]
     bookList = req["bookList"]
     connection = get_db()
     cursor = connection.cursor()
-    cursor.execute("select token, translation from translations where source_id=%s \
-        and target_id=%s", (sourceId, targetLanguageId))
+    # cursor.execute("select t.token, t.translation from translations t left join \
+    #     translation_projects_look_up l on t.translation_id=l.translation_id where l.project_id=%s \
+    #     ", (projectId,))
 
-    rst = cursor.fetchall()
+    # rst = cursor.fetchall()
+    cursor.execute("select source_id from autographamt_projects where project_id=%s", (projectId,))
+    sourceId = cursor.fetchone()[0]
     
     usfmMarker = re.compile(r'\\\w+\d?\s?')
     nonLangComponentsTwoSpaces = re.compile(r'\s[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]\s')
@@ -1487,57 +1517,63 @@ def downloadDraft():
     nonLangComponentsFrontSpace = re.compile(r'\s[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]')
     nonLangComponents = re.compile(r'[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]')
 
-    if phrases.loadPhraseTranslations(connection, sourceId, targetLanguageId):
+    # if phrases.loadPhraseTranslations(connection, sourceId, targetLanguageId):
+    if phrases.loadPhraseTranslations(connection, projectId):
         
-        cursor.execute("select book_id, book_code from bible_books_look_up where book_code=%s", (bookList[0],))
-        bookId, bookCode = cursor.fetchone()
-        tokenTranslatedDict = {k:v for k,v in rst}
+        # cursor.execute("select book_id, book_code from bible_books_look_up where book_code=%s", (bookList[0],))
+        # bookId, bookCode = cursor.fetchone()
+        # tokenTranslatedDict = {k:v for k,v in rst}
         cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
         source_rst = cursor.fetchone()
         
-        usfmText = source_rst[0]['usfm'][bookCode]
-        usfmLineList = []
-        for line in usfmText.split('\n'):
-            usfmWordsList = []
-            nonLangCompsTwoSpaces = []
-            nonLangCompsTrailingSpace = []
-            nonLangCompsFrontSpace = []
-            nonLangComps = []
-            markers_in_line = re.findall(usfmMarker,line)
-            for word_seq in re.split(usfmMarker,line):
-                nonLangCompsTwoSpaces += re.findall(nonLangComponentsTwoSpaces,word_seq)
-                clean_word_seq = re.sub(nonLangComponentsTwoSpaces,' uuuQQQuuu ',word_seq)
-                nonLangCompsTrailingSpace += re.findall(nonLangComponentsTrailingSpace,clean_word_seq)
-                clean_word_seq = re.sub(nonLangComponentsTrailingSpace,' QQQuuu ',clean_word_seq)
-                nonLangCompsFrontSpace += re.findall(nonLangComponentsFrontSpace,clean_word_seq)
-                clean_word_seq = re.sub(nonLangComponentsFrontSpace,' uuuQQQ ',clean_word_seq)
-                nonLangComps += re.findall(nonLangComponents,clean_word_seq)
-                clean_word_seq = re.sub(nonLangComponents,' QQQ ',clean_word_seq)
+        # usfmText = source_rst[0]['usfm'][bookCode]
+        finalDraftDict = {}
+        for book in bookList:
+            usfmText = source_rst[0]['usfm'][book]
+            usfmLineList = []
+            for line in usfmText.split('\n'):
+                usfmWordsList = []
+                nonLangCompsTwoSpaces = []
+                nonLangCompsTrailingSpace = []
+                nonLangCompsFrontSpace = []
+                nonLangComps = []
+                markers_in_line = re.findall(usfmMarker,line)
+                for word_seq in re.split(usfmMarker,line):
+                    nonLangCompsTwoSpaces += re.findall(nonLangComponentsTwoSpaces,word_seq)
+                    clean_word_seq = re.sub(nonLangComponentsTwoSpaces,' uuuQQQuuu ',word_seq)
+                    nonLangCompsTrailingSpace += re.findall(nonLangComponentsTrailingSpace,clean_word_seq)
+                    clean_word_seq = re.sub(nonLangComponentsTrailingSpace,' QQQuuu ',clean_word_seq)
+                    nonLangCompsFrontSpace += re.findall(nonLangComponentsFrontSpace,clean_word_seq)
+                    clean_word_seq = re.sub(nonLangComponentsFrontSpace,' uuuQQQ ',clean_word_seq)
+                    nonLangComps += re.findall(nonLangComponents,clean_word_seq)
+                    clean_word_seq = re.sub(nonLangComponents,' QQQ ',clean_word_seq)
+                    
+                    translated_seq = [ phrases.translateText( clean_word_seq ) ]
                 
-                translated_seq = [ phrases.translateText( clean_word_seq ) ]
-            
-            for i,marker in enumerate(markers_in_line):
-                usfmWordsList.append(marker)
-                usfmWordsList.append(translated_seq[i])
-            if i+1<len(translated_seq):
-                usfmWordsList += translated_seq[i+1:]
-            outputLine = " ".join(usfmWordsList)
-            
-            for comp in nonLangCompsTwoSpaces:
-                outputLine = re.sub(r'\s+uuuQQQuuu\s+'," "+comp+" ",outputLine,1)
-            for comp in nonLangCompsTrailingSpace:
-                outputLine = re.sub(r'\s+QQQuuu\s+',comp+" ",outputLine,1)
-            for comp in nonLangCompsFrontSpace:
-                outputLine = re.sub(r'\s+uuuQQQ\s+'," "+comp,outputLine,1)
-            for comp in nonLangComps:
-                outputLine = re.sub(r'\s+QQQ\s+',comp,outputLine,1)
-            
-            usfmLineList.append(outputLine)
-        translatedUsfmText = "\n".join(usfmLineList)
+                for i,marker in enumerate(markers_in_line):
+                    usfmWordsList.append(marker)
+                    usfmWordsList.append(translated_seq[i])
+                if i+1<len(translated_seq):
+                    usfmWordsList += translated_seq[i+1:]
+                outputLine = " ".join(usfmWordsList)
+                
+                for comp in nonLangCompsTwoSpaces:
+                    outputLine = re.sub(r'\s+uuuQQQuuu\s+'," "+comp+" ",outputLine,1)
+                for comp in nonLangCompsTrailingSpace:
+                    outputLine = re.sub(r'\s+QQQuuu\s+',comp+" ",outputLine,1)
+                for comp in nonLangCompsFrontSpace:
+                    outputLine = re.sub(r'\s+uuuQQQ\s+'," "+comp,outputLine,1)
+                for comp in nonLangComps:
+                    outputLine = re.sub(r'\s+QQQ\s+',comp,outputLine,1)
+                
+                usfmLineList.append(outputLine)
+            translatedUsfmText = "\n".join(usfmLineList)
+            finalDraftDict[book] = translatedUsfmText
         return json.dumps({
-            "translatedUsfmText": translatedUsfmText
+            "translatedUsfmText": finalDraftDict
         })
-    
+    else:
+        '{"success": false, "message":"No translation available"}'
 
 
 
