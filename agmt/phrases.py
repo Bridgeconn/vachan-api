@@ -383,11 +383,16 @@ def tokenize(conn,lang,version,book_id,algo='gensim-ngram'):
 
 tokenTranslatedDict = {}
 
-def loadPhraseTranslations(conn, sourceId, targetLanguageId):
+def loadPhraseTranslations(conn, projectId):
 	global tokenTranslatedDict
 	cursor = conn.cursor()
-	cursor.execute("select token, translation from translations where source_id=%s \
-        and target_id=%s", (sourceId, targetLanguageId))
+	# cursor.execute("select token, translation from translations where source_id=%s \
+    #     and target_id=%s", (sourceId, targetLanguageId))
+	# rst = cursor.fetchall()
+	cursor.execute("select t.token, t.translation from translations t left join \
+        translation_projects_look_up l on t.translation_id=l.translation_id where l.project_id=%s \
+        ", (projectId,))
+
 	rst = cursor.fetchall()
 	if rst:
 		tokenTranslatedDict = {k:v for k,v in rst}
