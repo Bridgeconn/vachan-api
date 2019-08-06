@@ -1129,100 +1129,53 @@ def createTableCommand(fields, tablename):
 
 @app.route("/v1/sources/bibles", methods=["POST"])
 def createBibleSource():
-    print('here')
-    req = request.get_json(True)
-    language = req["languageCode"]
-    versionContentCode = req["versionContentCode"]
-    versionContentDescription = req["versionContentDescription"]
-    year = req["year"]
-    revision = req["revision"]
-    license = req["license"]
-    contentId = 1
-    # wholeUsfmText = req["wholeUsfmText"]
-    # parsedUsfmText = req["parsedUsfmText"]
-    version = versionContentCode.lower() + '_' + revision
-    print('got parameters')
-    connection = get_db()
-    cursor = connection.cursor()
-    cleanTableName = "%s_%s_%s_bible_cleaned" %(language.lower(), versionContentCode.lower(), str(revision).replace('.', '_'))
-    tokenTableName = "%s_%s_%s_bible_tokens" %(language.lower(), versionContentCode.lower(), str(revision).replace('.', '_'))
-    cursor.execute("select language_id from languages where language_code=%s", (language,))
-    languageId = cursor.fetchone()[0]
-    # cursor.execute('select content_id from content_types where content_type=%s', (contentType,))
-    # contentId = cursor.fetchone()[0]
-    print('before find')
-    cursor.execute("select s.source_id from sources s left join languages l on \
-        s.language_id=l.language_id left join content_types c on s.content_id=c.content_id \
-            where l.language_code=%s and s.content_id=%s and s.version_content_code=%s and \
-                s.version_content_description=%s and s.year=%s and s.version=%s and \
-                    s.license=%s",(language, contentId, versionContentCode, 
-                        versionContentDescription, year, version, license))
-    rst = cursor.fetchone()
-    print('after find')
-    if not rst:
-        print('new insert')
-        try:
+    try:
+        req = request.get_json(True)
+        language = req["languageCode"]
+        versionContentCode = req["versionContentCode"]
+        versionContentDescription = req["versionContentDescription"]
+        year = req["year"]
+        revision = req["revision"]
+        license = req["license"]
+        contentId = 1
+        version = versionContentCode.lower() + '_' + str(revision)
+        connection = get_db()
+        cursor = connection.cursor()
+        cleanTableName = "%s_%s_%s_bible_cleaned" %(language.lower(), versionContentCode.lower(), str(revision).replace('.', '_'))
+        tokenTableName = "%s_%s_%s_bible_tokens" %(language.lower(), versionContentCode.lower(), str(revision).replace('.', '_'))
+        cursor.execute("select language_id from languages where language_code=%s", (language,))
+        languageId = cursor.fetchone()[0]
+        cursor.execute("select s.source_id from sources s left join languages l on \
+            s.language_id=l.language_id left join content_types c on s.content_id=c.content_id \
+                where l.language_code=%s and s.content_id=%s and s.version_content_code=%s and \
+                    s.version_content_description=%s and s.year=%s and s.version=%s and \
+                        s.license=%s",(language, contentId, versionContentCode, 
+                            versionContentDescription, year, version, license))
+        rst = cursor.fetchone()
+        print('after find')
+        if not rst:
             create_clean_bible_table_command = createTableCommand(['ref_id INT NOT NULL', 'verse TEXT', \
                 'cross_reference TEXT', 'foot_notes TEXT'], cleanTableName)
             create_token_bible_table_command = createTableCommand(['token_id BIGSERIAL PRIMARY KEY', \
                 'book_id INT NOT NUll', 'token TEXT NOT NULL'], tokenTableName)
-        except Exception as ex:
-            print(ex)
-            return False
-        print('create tables')
-        cursor.execute(create_clean_bible_table_command)
-        cursor.execute(create_token_bible_table_command)
-        usfmTextJson = json.dumps({
-            "usfm": None,
-            "parsedJson": None
-        })
-        print('usfm')
-        cursor.execute('insert into sources (version_content_code, version_content_description,\
-         table_name, year, license, version, content_id, language_id, usfm_text) values \
-             (%s, %s, %s, %s, %s, %s, %s, %s, %s)', (versionContentCode, versionContentDescription, \
-                 cleanTableName, year, license, version, contentId, languageId, usfmTextJson))
-        connection.commit()
-        cursor.close()
-    else:
-        print('exit')
-        cursor.close()
-        return '{"success": false, "message":"Source already exists"}'
-
-    # cursor.execute("select usfm_text from sources where table_name=%s", (cleanTableName,))
-    # usfm_rst = cursor.fetchone()[0]
-    
-    # usfmFile = usfm_rst["usfm"]
-    # parsedJsonFile = usfm_rst["parsedJson"]
-    # # 
-    # if bookCode in usfmFile and newSource:
-    #     pass
-    # elif bookCode not in usfmFile:
-    #     usfmFile[bookCode] = wholeUsfmText
-    #     parsedJsonFile[bookCode] = parsedUsfmText
-    #     usfmText = json.dumps({
-    #         "usfm": usfmFile,
-    #         "parsedJson": parsedJsonFile
-    #     })
-    #     cursor.execute('update sources set usfm_text=%s where source_id=%s', (usfmText, rst[0]))
-    # # if bookCode not in usfmFile:
-    # else:
-        
-    #     return '{"success":false, "message":"Book %s already inserted into database"}' %(bookCode)
-    
-    
-    # cursor.execute('insert into ' + cleanTableName + ' (lid, verse, cross_reference, foot_notes) values '\
-    #     + str(parsedDbData)[1:-1])
-    # # cursor.execute('insert into ' + tokenTableName + ' (book_id, token) values ' + str(tokenDBData)[1:-1])
-    
-    # try:
-    #     phrases.tokenize(connection, language.lower(), versionContentCode.lower()+'_'+str(revision).replace('.', '_') , bookId)
-    # except Exception as ex:
-        
-    #     return '{"success":false, "message":"Phrases method error"}'
-    
-    # connection.commit()
-    # cursor.close()
-    # return '{"success":true, "message":"Inserted %s into database"}' %(bookCode)
+            cursor.execute(create_clean_bible_table_command)
+            cursor.execute(create_token_bible_table_command)
+            usfmTextJson = json.dumps({
+                "usfm": None,
+                "parsedJson": None
+            })
+            cursor.execute('insert into sources (version_content_code, version_content_description,\
+            table_name, year, license, version, content_id, language_id, usfm_text) values \
+                (%s, %s, %s, %s, %s, %s, %s, %s, %s)', (versionContentCode, versionContentDescription, \
+                    cleanTableName, year, license, version, contentId, languageId, usfmTextJson))
+            connection.commit()
+            cursor.close()
+            return '{"success": true, "message":"Source Created successfully"}'
+        else:
+            cursor.close()
+            return '{"success": false, "message":"Source already exists"}'
+    except Exception as ex:
+        return '{"success":false, "message":"Server side error"}'
     
 @app.route("/v1/bibles/upload", methods=["POST"])
 def uploadSource():
