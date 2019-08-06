@@ -45,7 +45,6 @@ postgres_database = os.environ.get("AGMT_POSTGRES_DATABASE", "postgres")
 host_api_url = os.environ.get("AGMT_HOST_API_URL")
 host_ui_url = os.environ.get("AGMT_HOST_UI_URL")
 system_email = os.environ.get("MTV2_EMAIL_ID", "autographamt@gmail.com")
-print(postgres_user,postgres_database,postgres_host)
 
 def get_db():                                                                      #--------------To open database connection-------------------#
     """Opens a new database connection if there is none yet for the
@@ -1880,8 +1879,8 @@ def getBibleBooks(sourceId):
     return json.dumps(bibleBooks)
 
 
-@app.route("/v1/bibles/<sourceId>/<c_type>", methods=["GET"])
-def getBible(sourceId, c_type):
+@app.route("/v1/bibles/<sourceId>/<format>", methods=["GET"])
+def getBible(sourceId, format):
     '''
     To return the list of books in a Bible Language and Version
     '''
@@ -1893,9 +1892,9 @@ def getBible(sourceId, c_type):
         return json.dumps({"success": False, "message": "Invalid Source Id"})
     if 'usfm' not in rst[0]:
         return json.dumps({"success": False, "message": "No Books uploaded yet"})
-    if c_type.lower() == 'usfm':
+    if format.lower() == 'usfm':
         usfmText = rst[0]["usfm"]
-    elif c_type.lower() == 'json':
+    elif format.lower() == 'json':
         usfmText = {"sourceId":sourceId,"bibleContent":rst[0]["parsedJson"]}
     else:
         return '{"success": false, "message":"Invalid Content Type"}'
@@ -1903,8 +1902,8 @@ def getBible(sourceId, c_type):
     return json.dumps(usfmText)
     
 
-@app.route("/v1/bibles/<sourceId>/books/<book_code>/<c_type>", methods=["GET"])
-def getBook(sourceId,book_code, c_type):
+@app.route("/v1/bibles/<sourceId>/books/<bookCode>/<format>", methods=["GET"])
+def getBook(sourceId,bookCode, format):
     '''
     To return the list of books in a Bible Language and Version
     '''
@@ -1912,14 +1911,14 @@ def getBook(sourceId,book_code, c_type):
     cursor = connection.cursor()
     cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
     rst = cursor.fetchone()
-    contentType="usfm" if c_type.lower() == "usfm" else "parsedJson"
+    contentType="usfm" if format.lower() == "usfm" else "parsedJson"
     if not rst:
         return json.dumps({"success": False, "message": "Invalid Source Id"})
     if 'usfm' not in rst[0]:
         return json.dumps({"success": False, "message": "No Books uploaded yet"})
-    elif c_type.lower() == 'json' or c_type.lower() == 'usfm':
-        if book_code in rst[0][contentType]:
-            usfmText = {"sourceId":sourceId,"bibleBookCode":book_code,"bookContent":rst[0][contentType][book_code]}
+    elif format.lower() == 'json' or format.lower() == 'usfm':
+        if bookCode in rst[0][contentType]:
+            usfmText = {"sourceId":sourceId,"bibleBookCode":bookCode,"bookContent":rst[0][contentType][bookCode]}
         else:
             return json.dumps({"success": False, "message": "Book not uploaded yet"})
     else:
@@ -1971,8 +1970,8 @@ def getBibleChapters(sourceId, biblebookCode):
     except Exception as ex:
         return '{"success": false, "message":"%s"}' %(str(ex))
 
-@app.route("/v1/bibles/<sourceId>/books/<book_code>/chapter/<chapter_id>", methods=["GET"])
-def getChapter(sourceId,book_code,chapter_id):
+@app.route("/v1/bibles/<sourceId>/books/<bookCode>/chapter/<chapterId>", methods=["GET"])
+def getChapter(sourceId,bookCode,chapterId):
     '''
     To return the list of books in a Bible Language and Version
     '''
@@ -1980,14 +1979,14 @@ def getChapter(sourceId,book_code,chapter_id):
     cursor = connection.cursor()
     cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
     rst = cursor.fetchone()
-    chapter_id=int(chapter_id)-1
+    chapterId=int(chapterId)-1
     if not rst:
         return json.dumps({"success": False, "message": "Invalid Source Id"})
     if 'usfm' not in rst[0]:
         return json.dumps({"success": False, "message": "No Books uploaded yet"})
-    elif book_code in rst[0]["parsedJson"]:
-        if chapter_id>=0 and chapter_id<len(rst[0]["parsedJson"][book_code]["chapters"]):
-            usfmText = {"sourceId":sourceId,"bibleBookCode":book_code,"chapterId":chapter_id+1,"chapterContent":rst[0]["parsedJson"][book_code]["chapters"][chapter_id]}
+    elif bookCode in rst[0]["parsedJson"]:
+        if chapterId>=0 and chapterId<len(rst[0]["parsedJson"][bookCode]["chapters"]):
+            usfmText = {"sourceId":sourceId,"bibleBookCode":bookCode,"chapterId":chapterId+1,"chapterContent":rst[0]["parsedJson"][bookCode]["chapters"][chapterId]}
         else:
             return json.dumps({"success": False, "message": "Invalid chapter id"})
     else:
