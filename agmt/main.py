@@ -46,7 +46,6 @@ host_api_url = os.environ.get("AGMT_HOST_API_URL")
 host_ui_url = os.environ.get("AGMT_HOST_UI_URL")
 system_email = os.environ.get("MTV2_EMAIL_ID", "autographamt@gmail.com")
 
-
 def get_db():                                                                      #--------------To open database connection-------------------#
     """Opens a new database connection if there is none yet for the
     current application context.
@@ -1833,7 +1832,52 @@ def getBibleBooks(sourceId):
     return json.dumps(bibleBooks)
 
 
+@app.route("/v1/bibles/<sourceId>/<contentFormat>", methods=["GET"])
+def getBible(sourceId, contentFormat):
+    '''
+    To return the list of books in a Bible Language and Version
+    '''
+    connection = get_db()
+    cursor = connection.cursor()
+    cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
+    rst = cursor.fetchone()
+    if not rst:
+        return json.dumps({"success": False, "message": "Invalid Source Id"})
+    if 'usfm' not in rst[0]:
+        return json.dumps({"success": False, "message": "No Books uploaded yet"})
+    if contentFormat.lower() == 'usfm':
+        usfmText = rst[0]["usfm"]
+    elif contentFormat.lower() == 'json':
+        usfmText = {"sourceId":sourceId,"bibleContent":rst[0]["parsedJson"]}
+    else:
+        return '{"success": false, "message":"Invalid Content Type"}'
+    cursor.close()
+    return json.dumps(usfmText)
+    
 
+@app.route("/v1/bibles/<sourceId>/books/<bookCode>/<contentFormat>", methods=["GET"])
+def getBook(sourceId,bookCode, contentFormat):
+    '''
+    To return the list of books in a Bible Language and Version
+    '''
+    connection = get_db()
+    cursor = connection.cursor()
+    cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
+    rst = cursor.fetchone()
+    contentType="usfm" if contentFormat.lower() == "usfm" else "parsedJson"
+    if not rst:
+        return json.dumps({"success": False, "message": "Invalid Source Id"})
+    if 'usfm' not in rst[0]:
+        return json.dumps({"success": False, "message": "No Books uploaded yet"})
+    elif contentFormat.lower() == 'json' or contentFormat.lower() == 'usfm':
+        if bookCode in rst[0][contentType]:
+            usfmText = {"sourceId":sourceId,"bibleBookCode":bookCode,"bookContent":rst[0][contentType][bookCode]}
+        else:
+            return json.dumps({"success": False, "message": "Book not uploaded yet"})
+    else:
+        return '{"success": false, "message":"Invalid Content Type"}'
+    cursor.close()
+    return json.dumps(usfmText)
 
 @app.route("/v1/bibles/<sourceId>/books/<biblebookCode>/chapters", methods=["GET"])
 def getBibleChapters(sourceId, biblebookCode):
@@ -1879,7 +1923,29 @@ def getBibleChapters(sourceId, biblebookCode):
     except Exception as ex:
         return '{"success": false, "message":"%s"}' %(str(ex))
 
-
+@app.route("/v1/bibles/<sourceId>/books/<bookCode>/chapter/<chapterId>", methods=["GET"])
+def getChapter(sourceId,bookCode,chapterId):
+    '''
+    To return the list of books in a Bible Language and Version
+    '''
+    connection = get_db()
+    cursor = connection.cursor()
+    cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
+    rst = cursor.fetchone()
+    chapterId=int(chapterId)-1
+    if not rst:
+        return json.dumps({"success": False, "message": "Invalid Source Id"})
+    if 'usfm' not in rst[0]:
+        return json.dumps({"success": False, "message": "No Books uploaded yet"})
+    elif bookCode in rst[0]["parsedJson"]:
+        if chapterId>=0 and chapterId<len(rst[0]["parsedJson"][bookCode]["chapters"]):
+            usfmText = {"sourceId":sourceId,"bibleBookCode":bookCode,"chapterId":chapterId+1,"chapterContent":rst[0]["parsedJson"][bookCode]["chapters"][chapterId]}
+        else:
+            return json.dumps({"success": False, "message": "Invalid chapter id"})
+    else:
+        return json.dumps({"success": False, "message": "Book not uploaded yet"})
+    cursor.close()
+    return json.dumps(usfmText)
 
 @app.route("/v1/bibles/<sourceId>/books/<biblebookCode>/chapters/<chapterId>/verses", methods=["GET"])
 def getBibleVerses(sourceId, biblebookCode, chapterId):
