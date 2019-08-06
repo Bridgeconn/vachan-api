@@ -1879,8 +1879,8 @@ def getBibleBooks(sourceId):
     return json.dumps(bibleBooks)
 
 
-@app.route("/v1/bibles/<sourceId>/<format>", methods=["GET"])
-def getBible(sourceId, format):
+@app.route("/v1/bibles/<sourceId>/<contentFormat>", methods=["GET"])
+def getBible(sourceId, contentFormat):
     '''
     To return the list of books in a Bible Language and Version
     '''
@@ -1892,9 +1892,9 @@ def getBible(sourceId, format):
         return json.dumps({"success": False, "message": "Invalid Source Id"})
     if 'usfm' not in rst[0]:
         return json.dumps({"success": False, "message": "No Books uploaded yet"})
-    if format.lower() == 'usfm':
+    if contentFormat.lower() == 'usfm':
         usfmText = rst[0]["usfm"]
-    elif format.lower() == 'json':
+    elif contentFormat.lower() == 'json':
         usfmText = {"sourceId":sourceId,"bibleContent":rst[0]["parsedJson"]}
     else:
         return '{"success": false, "message":"Invalid Content Type"}'
@@ -1902,8 +1902,8 @@ def getBible(sourceId, format):
     return json.dumps(usfmText)
     
 
-@app.route("/v1/bibles/<sourceId>/books/<bookCode>/<format>", methods=["GET"])
-def getBook(sourceId,bookCode, format):
+@app.route("/v1/bibles/<sourceId>/books/<bookCode>/<contentFormat>", methods=["GET"])
+def getBook(sourceId,bookCode, contentFormat):
     '''
     To return the list of books in a Bible Language and Version
     '''
@@ -1911,12 +1911,12 @@ def getBook(sourceId,bookCode, format):
     cursor = connection.cursor()
     cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
     rst = cursor.fetchone()
-    contentType="usfm" if format.lower() == "usfm" else "parsedJson"
+    contentType="usfm" if contentFormat.lower() == "usfm" else "parsedJson"
     if not rst:
         return json.dumps({"success": False, "message": "Invalid Source Id"})
     if 'usfm' not in rst[0]:
         return json.dumps({"success": False, "message": "No Books uploaded yet"})
-    elif format.lower() == 'json' or format.lower() == 'usfm':
+    elif contentFormat.lower() == 'json' or contentFormat.lower() == 'usfm':
         if bookCode in rst[0][contentType]:
             usfmText = {"sourceId":sourceId,"bibleBookCode":bookCode,"bookContent":rst[0][contentType][bookCode]}
         else:
