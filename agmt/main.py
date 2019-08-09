@@ -28,6 +28,7 @@ import scrypt
 import psycopg2
 from random import randint
 import phrases
+from functools import reduce
 
 logging.basicConfig(filename='API_logs.log', format='%(asctime)s: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
@@ -1742,6 +1743,15 @@ def biblePattern(*argv):
     }
     return pattern
 
+def sortLang(lang,version):
+   for i,item in enumerate(lang):
+       if item['language'] == version["language"]["name"]:
+           lang[i]["languageVersions"].append(version)
+           break
+   else:
+       lang.append({"language": version["language"]["name"],"languageVersions": [version]})
+   return lang
+
 @app.route("/v1/bibles", methods=["GET"])
 def getBibles():
     '''
@@ -1775,7 +1785,7 @@ def getBibles():
             )
         )
     cursor.close()
-    return json.dumps(biblesList)
+    return json.dumps(reduce(sortLang,biblesList,[]))
 
 
 @app.route("/v1/bibles/languages", methods=["GET"])
