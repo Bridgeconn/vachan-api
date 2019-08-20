@@ -14,7 +14,7 @@ def sign_up(url, FirstName, LastName,EmailAddress,Password):
 def test_signup_load():
 	url = "https://staging.autographamt.com/signup"
 	resp = requests.get(url)
-	assert resp.status_code == 201, resp.text
+	assert resp.status_code == 200, resp.text
 
 @pytest.mark.parametrize("FirstName,LastName,EmailAddress, Password",[('ag','ag','ag17@yopmail.com',"1189")])
 def test_sugnup_user(supply_url,FirstName,LastName,EmailAddress,Password):
