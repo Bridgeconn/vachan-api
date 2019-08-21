@@ -2,13 +2,17 @@ import pytest
 import requests
 import json
 
-def sign_up(url, FirstName, LastName,EmailAddress,Password):
-	url = url + "/v1/auth"  
-	data = {'Firstname':FirstName,
-            'Lastname':LastName,
-            'Email':EmailAddress,
-		'Password':Password}
-	resp = requests.post(url,data=data)
+@pytest.fixture
+def url():
+	return "https://stagingapi.autographamt.com"
+
+def sign_up(url,firstName,lastName,email,password):
+	url = url + "/v1/registrations"  
+	data = {'firstName':firstName,
+            'lastName':lastName,
+            'email':email,
+			'password':password}
+	resp = requests.post(url, data=data)
 	return resp
 
 def test_signup_load():
@@ -16,9 +20,20 @@ def test_signup_load():
 	resp = requests.get(url)
 	assert resp.status_code == 200, resp.text
 
-@pytest.mark.parametrize("FirstName,LastName,EmailAddress, Password",[('ag','ag','ag17@yopmail.com',"1189")])
-def test_sugnup_user(url,FirstName,LastName,EmailAddress,Password):
-	resp = sign_up(url,FirstName,LastName,EmailAddress,Password)
+@pytest.mark.parametrize("firstName,lastName,email, password",[('ag','ag','ag19*@yopmail.com',"1189")])
+def test_sign_up_successful(url,firstName,lastName,email,password):
+	resp = sign_up(url,firstName,lastName,email,password)
 	j = json.loads(resp.text)
-	assert resp.status_code == 201, resp.text
-	assert "accessToken" in j, "success="+str(j['success'])+j['message']
+	assert resp.status_code == 200, request.text
+	assert j['success'] == True,str(j['success'])
+	assert j['message'] == "Verification Email has been sent to your email id",str(j['messsage'])
+
+
+@pytest.mark.parametrize("firstName,lastName,email, password",[('ag','2','ag2@yopmil.com',"1189")])
+def test_sign_up_fail(url,firstName,lastName,email,password):
+	resp = sign_up(url,firstName,lastName,email,password)
+	j = json.loads(resp.text)
+	assert resp.status_code == 200, request.text
+	assert j['success'] == False,str(j['success'])
+	assert j['message'] == "This email has already been Registered, ",str(j['message'])
+
