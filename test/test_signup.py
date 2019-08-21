@@ -26,7 +26,7 @@ def test_sign_up_successful(url,firstName,lastName,email,password):
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, request.text
 	assert j['success'] == True,str(j['success'])
-	assert j['message'] == "Verification Email has been sent to your email id",str(j['messsage'])
+	assert j['message'] == "Verification Email has been sent to your email id",str(j['message'])
 
 
 @pytest.mark.parametrize("firstName,lastName,email, password",[('ag','2','ag2@yopmil.com',"1189")])
