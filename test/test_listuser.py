@@ -1,3 +1,4 @@
+
 import pytest
 import requests
 import json
@@ -5,20 +6,6 @@ import json
 @pytest.fixture
 def supply_url():
 	return "https://stagingapi.autographamt.com"
-
-@pytest.fixture
-def get_accessTokenw():
-	email = "kavitharaju18@gmail.com"
-	password = "111111"
-	url = "https://stagingapi.autographamt.com/v1/auth"
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	respobj = json.loads(resp.text)
-	token = respobj['accessToken']
-
-	return token
-
 
 @pytest.fixture
 def get_accessToken():
@@ -32,6 +19,20 @@ def get_accessToken():
 	token = respobj['accessToken']
 
 	return token
+
+@pytest.fixture
+def get_accessTokenw():
+	email = "ag2@yopmail.com"
+	password = "1189"
+	url = "https://stagingapi.autographamt.com/v1/auth"
+	data = {'email':email,
+			'password':password}
+	resp = requests.post(url, data=data)
+	respobj = json.loads(resp.text)
+	token = respobj['accessToken']
+
+	return token
+
 
 @pytest.fixture
 def get_supAdmin_accessToken():
@@ -59,15 +60,6 @@ def test_firstpage_load():
 	resp = requests.get(url)
 	assert resp.status_code == 200, resp.text
 
-@pytest.mark.parametrize("email, password",[("kavitharaju18@gmail.com",'111111')])
-def test_list_valid_userk(supply_url,email,password):
-	resp = check_login(supply_url,email,password)
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert "accessToken" in j, "success="+str(j['success'])+j['message']
-
-
-
 @pytest.mark.parametrize("email, password",[("ag27@yopmail.com",'1189')])
 def test_list_valid_user(supply_url,email,password):
 	resp = check_login(supply_url,email,password)
@@ -75,7 +67,14 @@ def test_list_valid_user(supply_url,email,password):
 	assert resp.status_code == 200, resp.text
 	assert "accessToken" in j, "success="+str(j['success'])+j['message']
 
-@pytest.mark.parametrize("email, password",[('kavitharaju18@gmail.com',"letme")])
+@pytest.mark.parametrize("email, password",[("ag2@yopmail.com",'1189')])
+def test_list_valid_userk(supply_url,email,password):
+	resp = check_login(supply_url,email,password)
+	j = json.loads(resp.text)
+	assert resp.status_code == 200, resp.text
+	assert "accessToken" in j, "success="+str(j['success'])+j['message']
+
+@pytest.mark.parametrize("email, password",[('ag27@yopmail.com',"letme")])
 def test_list_invalid_password(supply_url,email,password):
 	resp = check_login(supply_url,email,password)
 	j = json.loads(resp.text)
@@ -99,7 +98,7 @@ def test_list_notverified_email(supply_url,email,password):
 	assert j['success'] == False, "success="+str(j['success'])
 	assert j['message'] == "Email is not Verified", 'message='+j['message']
 
-## GET method with access token
+## GET method with access token for list users
 def test_getusers(supply_url,get_accessToken):
 	url = supply_url + '/v1/autographamt/users'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_accessToken)})
@@ -108,8 +107,12 @@ def test_getusers(supply_url,get_accessToken):
 	assert isinstance(j,list), j
 	assert 'roleId' in j[0], j[0]
 	assert 'firstName' in j[0], j[0]
+	assert 'userId' in j[0], j[0]
+	assert 'lastName' in j[0], j[0]
+	assert 'emailId' in j[0], j[0]
+	assert 'verified' in j[0], j[0]
 
-def test_getusers(supply_url,get_accessToken):
+def test_getusersw(supply_url,get_accessToken):
 	url = supply_url + '/v1/autographamt/users'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_accessToken)})
 	j = json.loads(resp.text)
@@ -117,12 +120,7 @@ def test_getusers(supply_url,get_accessToken):
 	assert isinstance(j,list), j
 	assert 'roleId' in j[0], j[0]
 	assert 'firstName' in j[0], j[0]
-
-def test_getusers(supply_url,get_accessTokenw):
-	url = supply_url + '/v1/autographamt/users'
-	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_accessTokenw)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert isinstance(j,list), j
-	assert 'roleId' in j[0], j[0]
-	assert 'firstName' in j[0], j[0]
+	assert 'userId' in j[0], j[0]
+	assert 'lastName' in j[0], j[0]
+	assert 'emailId' in j[0], j[0]
+	assert 'verified' in j[0], j[0]
