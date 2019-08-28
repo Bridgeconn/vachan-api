@@ -112,9 +112,9 @@ def test_getusers(supply_url,get_accessToken):
 	assert 'emailId' in j[0], j[0]
 	assert 'verified' in j[0], j[0]
 
-def test_getusersw(supply_url,get_accessToken):
+def test_getusersw(supply_url,get_accessTokenw):
 	url = supply_url + '/v1/autographamt/users'
-	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_accessToken)})
+	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_accessTokenw)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
 	assert isinstance(j,list), j
