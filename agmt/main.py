@@ -28,7 +28,6 @@ import scrypt
 import psycopg2
 from random import randint
 import phrases
-from functools import reduce
 
 logging.basicConfig(filename='API_logs.log', format='%(asctime)s: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
@@ -254,7 +253,8 @@ def auth_exception_handler(error):
 def check_token(f):
     @wraps(f)
     def wrapper(*args, **kwds):
-                auth_header_value = request.headers.get('Authorization', None)
+        print('here')
+        auth_header_value = request.headers.get('Authorization', None)
         if not auth_header_value:
             raise TokenError('No Authorization header', 'Token missing')
         parts = auth_header_value.split()
@@ -307,7 +307,8 @@ def checkAuth():
 @check_token
 def autographamtOrganisations():
     try:
-                role = checkAuth()
+        print('inside execution')
+        role = checkAuth()
         connection = get_db()
         cursor = connection.cursor()
         email = request.email
@@ -345,7 +346,8 @@ def autographamtOrganisations():
         ]
         return json.dumps(organisationsList)
     except Exception as ex:
-                return '{"success":false, "message":"Server side error"}' 
+        print(ex)
+        return '{"success":false, "message":"Server side error"}' 
 
 @app.route("/v1/autographamt/organisations", methods=["POST"])
 @check_token
@@ -395,7 +397,8 @@ def autographamtUsers():
             "verified":verified
         } for userId, firstName, lastName, emailId, roleId, verified in rst
     ]
-    #     return json.dumps(usersList)
+    # print(usersList)
+    return json.dumps(usersList)
 
 @app.route("/v1/autographamt/projects", methods=["GET"])
 @check_token
@@ -445,7 +448,8 @@ def getProjects():
         ]
         return json.dumps(projectsList)
     except Exception as ex:
-                return '{"success": false, "message":"Server side error"}'
+        print(ex)
+        return '{"success": false, "message":"Server side error"}'
 
 @app.route("/v1/autographamt/organisations/projects", methods=["POST"])
 @check_token
@@ -455,7 +459,8 @@ def createProjects():
     targetLanguageId = req["targetLanguageId"]
     organisationId = req["organisationId"]
     role = checkAuth()
-        if role > 1:
+    print(role)
+    if role > 1:
         connection = get_db()
         cursor = connection.cursor()
         cursor.execute("select l.language_name, l.language_code from sources s left join languages l on \
@@ -464,11 +469,13 @@ def createProjects():
         cursor.execute("select language_name, language_code from languages where language_id=%s", (targetLanguageId,))
         targetLanguage, targetLanguageCode = cursor.fetchone()
         projectName = sourceLanguage + '-to-' + targetLanguage + '|' + sourceLanguageCode + '-to-' + targetLanguageCode
-                cursor.execute("select * from autographamt_projects where organisation_id=%s and source_id=%s and \
+        print(projectName)
+        cursor.execute("select * from autographamt_projects where organisation_id=%s and source_id=%s and \
             target_id=%s", (organisationId, sourceId, targetLanguageId))
         rst = cursor.fetchone()
         if not rst:
-                        cursor.execute("insert into autographamt_projects (project_name, source_id, target_id, organisation_id) \
+            print("insert")
+            cursor.execute("insert into autographamt_projects (project_name, source_id, target_id, organisation_id) \
                 values (%s,%s,%s,%s)", (projectName, sourceId, targetLanguageId, organisationId))
             connection.commit()
             cursor.close()
@@ -598,8 +605,10 @@ def getProjectTranslations(token, projectId):
 @app.route("/v1/autographamt/projects/translations", methods=["POST"])
 @check_token
 def updateProjectTokenTranslations():
-        try:
-                req = request.get_json(True)
+    print('please')
+    try:
+        print('token')
+        req = request.get_json(True)
         projectId = req["projectId"]
         token = req["token"]
         translation = req["translation"]
@@ -660,7 +669,8 @@ def updateProjectTokenTranslations():
             cursor.close()
             return '{"success":true, "message":"Translation has been updated"}'
     except Exception as ex:
-                return '{"success": false, "message":"Server side error"}'
+        print(ex)
+        return '{"success": false, "message":"Server side error"}'
 
 @app.route("/v1/autographamt/users/projects", methods=["GET"])
 @check_token
@@ -726,7 +736,8 @@ def organisationApprovals():
             # cursor.close()
             return '{"success":false, "message":"Unauthorized"}'
     except Exception as ex:
-                return '{"success":false, "message":"Server error"}'
+        print(ex)
+        return '{"success":false, "message":"Server error"}'
 
 @app.route("/v1/autographamt/approvals/users", methods=["POST"])
 @check_token
@@ -977,11 +988,13 @@ def parsePunctuationsForDraft(text):
 
 '''
 def parseDataForDBInsert(usfmData):
-        connection = get_db()
+    print('first')
+    connection = get_db()
     crossRefPattern = re.compile(r'(\(?(\d+\s)?\S+\s\d+:\d+\,?\)?)')
     footNotesPattern = re.compile(r'\it(.*)\s?\\f\s?\+.*\\ft\s?(.*)\s?\\f\*\\it\*\*')
     cursor = connection.cursor()
-        # cursor.execute("select lid, book, chapter, verse from bcv_lid_map")
+    print('Inside parse dat')
+    # cursor.execute("select lid, book, chapter, verse from bcv_lid_map")
     # lidDict = {int(str(b).zfill(3) + str(c).zfill(3) + str(v).zfill(3)):l for l,b,c,v in cursor.fetchall()}
     cursor.execute("select book_id, book_code from bible_books_look_up")
     bookIdDict = {v.lower():k for k,v in cursor.fetchall()}
@@ -1086,10 +1099,13 @@ def parseDataForDBInsert(usfmData):
                     verseContent.append('')
                         
             else:
-                                    tokenList = list(getTokens(' '.join(verseContent)))
+                print("!!!Unrecognized pattern in verse number!!!")
+                print("verseNumber:",verse['number'])
+    tokenList = list(getTokens(' '.join(verseContent)))
     tokenList = [(bookId, token) for token in tokenList]
     # 
-        return (dbInsertData, tokenList, bookId)
+    print(dbInsertData[0])
+    return (dbInsertData, tokenList, bookId)
 
 def createTableCommand(fields, tablename):
     command = 'CREATE TABLE %s (%s)' %(tablename, ', '.join(fields))
@@ -1121,7 +1137,8 @@ def createBibleSource():
                         s.license=%s",(language, contentId, versionContentCode, 
                             versionContentDescription, year, version, license))
         rst = cursor.fetchone()
-                if not rst:
+        print('after find')
+        if not rst:
             create_clean_bible_table_command = createTableCommand(['ref_id INT NOT NULL', 'verse TEXT', \
                 'cross_reference TEXT', 'foot_notes TEXT'], cleanTableName)
             create_token_bible_table_command = createTableCommand(['token_id BIGSERIAL PRIMARY KEY', \
@@ -1157,24 +1174,30 @@ def uploadSource():
         sources s left join languages l on s.language_id=l.language_id where \
             source_id=%s", (sourceId,))
     rst = cursor.fetchone()
-    #     cursor.close()
+    # print(rst)
+    cursor.close()
     if not rst:
         return '{"success":false, "message":"No source created"}'
     usfmFile = rst[0]["usfm"]
     parsedJsonFile = rst[0]["parsedJson"]
     bookCode = parsedUsfmText["metadata"]["id"]["book"].lower()
-            if usfmFile:
+    print(bookCode)
+    print('whats')
+    if usfmFile:
         if bookCode in usfmFile:
-                        return '{"success":false, "message":"Book already Uploaded"}'
+            print('happening')
+            return '{"success":false, "message":"Book already Uploaded"}'
     else:
         usfmFile = {}
         parsedJsonFile = {}
     # except Exception as ex:
     #     return '{"success":false, "message":"' + str(ex) + '"}'
-        parsedDbData, tokenDBData, bookId = parseDataForDBInsert(parsedUsfmText)
+    print('befire parse')
+    parsedDbData, tokenDBData, bookId = parseDataForDBInsert(parsedUsfmText)
     languageCode = rst[2]
     versionCode = rst[1]
-        cursor = connection.cursor()
+    print(languageCode, versionCode)
+    cursor = connection.cursor()
     usfmFile[bookCode] = wholeUsfmText
     parsedJsonFile[bookCode] = parsedUsfmText
     usfmText = json.dumps({
@@ -1184,7 +1207,8 @@ def uploadSource():
     version = rst[3]
     cleanTableName = "%s_%s_bible_cleaned" %(languageCode.lower(), version.lower())
     
-        cursor.execute('insert into ' + cleanTableName + ' (ref_id, verse, cross_reference, foot_notes) values '\
+    print(cleanTableName)
+    cursor.execute('insert into ' + cleanTableName + ' (ref_id, verse, cross_reference, foot_notes) values '\
         + str(parsedDbData)[1:-1])
     try:
         phrases.tokenize(connection, languageCode.lower(), version.lower() , bookId)
@@ -1208,7 +1232,8 @@ def updateTokenTranslations():
     targetLanguageId = req["targetLanguageId"]
     senses = req["senses"]
     
-        userId = 2
+    print('got Data')
+    userId = 2
     connection = get_db()
     cursor = connection.cursor()
     cursor.execute("select language_code from languages where language_id=%s", (targetLanguageId,))
@@ -1222,8 +1247,10 @@ def updateTokenTranslations():
     cursor.execute("select token, translation, senses from translations where source_id=%s and \
         target_id=%s and token=%s",(sourceId, targetLanguageId, token))
     rst = cursor.fetchone()
-        if not rst:
-                # senses = "|".join(senses)
+    print(rst)
+    if not rst:
+        print('new')
+        # senses = "|".join(senses)
         cursor.execute("insert into translations (token, translation, source_id, target_id, \
             user_id, senses) values (%s, %s, %s, %s, %s, %s)", (token, translation, sourceId, targetLanguageId, \
                 userId, senses))
@@ -1234,27 +1261,36 @@ def updateTokenTranslations():
         cursor.close()
         return '{"success":true, "message":"Translation has been inserted"}'
     else:
-                if senses == rst[2] and translation == rst[1]:
-                                    return '{"success":false, "message":"No New change. This data has already been saved"}'
+        print('update')
+        if senses == rst[2] and translation == rst[1]:
+            print(senses)
+            print("return 1")
+            return '{"success":false, "message":"No New change. This data has already been saved"}'
         if senses != rst[2] and translation == rst[1]:
-                                    senses = rst[2] + '|' + senses
+            print('senses parsing')
+            print(senses)
+            senses = rst[2] + '|' + senses
         # if senses == rst[2] and translation != rst[1]:
         #     # senses = checkSenses
         #     pass
         if senses == "" and translation != rst[1]:
             senses = rst[2]
 
-                
+        print(' 2nd parse')
+        
         
         # senses = '|'.join(list(set(senses.split('|'))))
         # if senses[0] == '|':
-        #             #             #     senses = senses[1:]
+        #     print('3rd parse')
+        #     print(senses)
+        #     senses = senses[1:]
         cursor.execute("update translations set translation=%s, user_id=%s, senses=%s where source_id=%s and \
             target_id=%s and token=%s",(translation, userId, senses, sourceId, targetLanguageId, token))
         cursor.execute("insert into translations_history (token, translation, source_id, target_id, \
             user_id, senses) values (%s, %s, %s, %s, %s, %s)", (token, translation, sourceId, targetLanguageId, \
                 userId, senses))
-                connection.commit()
+        print('values updated')
+        connection.commit()
         cursor.close()
         return '{"success":true, "message":"Translation has been updated"}'
 
@@ -1291,7 +1327,8 @@ def getTransaltedTokensInfo():
         cursor.close()
         return json.dumps(translationInfo)
     except Exception as ex:
-                return '{"success":false, "message":"Server side issue"}'
+        print(ex)
+        return '{"success":false, "message":"Server side issue"}'
     # cursor.execute("select distinct p.project_id, p.project_name, o.organisation_name ")
     # cursor.execute("select distinct r.version_content_code, l.language_name, r.language_name \
     # r.source_id from translations t left join (select distinct s.source_id, s.version_content_code, \
@@ -1518,7 +1555,8 @@ def getTranslatedWords(sourceId, targetLanguageId, token):
     
     if rst:
         translation, senses = rst
-                if senses.strip() == "":
+        print(senses)
+        if senses.strip() == "":
             senses = []
         else:
             senses = senses.split('|')
@@ -1654,7 +1692,8 @@ def getSources():
                 left join content_types c on s.content_id=c.content_id left join languages l on \
                     s.language_id=l.language_id")
     except Exception as ex:
-            sourcesList = []
+        print(ex)
+    sourcesList = []
     for s_id, ver_code, ver_name, cont_id, cont_name, lang_id, lang_name, lang_code in cursor.fetchall():
         sourcesList.append(
             sourcesPattern(lang_name, lang_code, lang_id, cont_name, cont_id, s_id, ver_code, ver_name)
@@ -1667,7 +1706,8 @@ def biblePattern(*argv):
         languageName, languageCode, languageId, script, scriptDirection, localScriptName, sourceId, \
             versionCode, versionName, version, updatedDate = argv
     except Exception as ex:
-            pattern = {
+        print(ex)
+    pattern = {
         "language":{
             "id": languageId,
             "code": languageCode,
@@ -1687,15 +1727,6 @@ def biblePattern(*argv):
     }
     return pattern
 
-def sortLang(lang,version):
-   for i,item in enumerate(lang):
-       if item['language'] == version["language"]["name"]:
-           lang[i]["languageVersions"].append(version)
-           break
-   else:
-       lang.append({"language": version["language"]["name"],"languageVersions": [version]})
-   return lang
-
 @app.route("/v1/bibles", methods=["GET"])
 def getBibles():
     '''
@@ -1709,7 +1740,8 @@ def getBibles():
                 script_direction, created_at_date from sources s left join languages l on s.language_id=l.language_id where \
                     s.content_id=1")
     except Exception as ex:
-            biblesList = []
+        print(ex)
+    biblesList = []
     for s_id, ver, ver_code, ver_name, lang_id, lang_name, lang_code, loc_script_name, script, script_dir, \
         updatedDate in cursor.fetchall():
         biblesList.append(
@@ -1728,7 +1760,7 @@ def getBibles():
             )
         )
     cursor.close()
-    return json.dumps(reduce(sortLang,biblesList,[]))
+    return json.dumps(biblesList)
 
 
 @app.route("/v1/bibles/languages", methods=["GET"])
@@ -1788,7 +1820,7 @@ def getBibleBooks(sourceId):
 @app.route("/v1/bibles/<sourceId>/<contentFormat>", methods=["GET"])
 def getBible(sourceId, contentFormat):
     '''
-    To return the bible content for a particular Bible version and format
+    To return the list of books in a Bible Language and Version
     '''
     connection = get_db()
     cursor = connection.cursor()
@@ -1811,7 +1843,7 @@ def getBible(sourceId, contentFormat):
 @app.route("/v1/bibles/<sourceId>/books/<bookCode>/<contentFormat>", methods=["GET"])
 def getBook(sourceId,bookCode, contentFormat):
     '''
-    To return the content of a book in a particular version and format
+    To return the list of books in a Bible Language and Version
     '''
     connection = get_db()
     cursor = connection.cursor()
@@ -1876,69 +1908,13 @@ def getBibleChapters(sourceId, biblebookCode):
     except Exception as ex:
         return '{"success": false, "message":"%s"}' %(str(ex))
 
-def getChapterList(sourceId,bibleBookData,cursor):
-    startId = int(bibleBookData[0]) * 1000000
-    endId = (int(bibleBookData[0]) + 1) * 1000000
-    cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
-    tableName = cursor.fetchone()
-    if not tableName:
-        return '{"success":false, "message":"Source doesn\'t exist"}'
-    startId = int(bibleBookData[0]) * 1000000
-    endId = (int(bibleBookData[0]) + 1) * 1000000
-    cursor.execute("select ref_id from " + tableName[0] + " where ref_id > %s \
-        and ref_id < %s order by ref_id", (startId, endId))
-    refIdsList = [x[0] for x in cursor.fetchall()]
-    chapterList = []
-    for ref in refIdsList:
-        chapterNumber = int(str(ref)[-6:-3])
-        if chapterNumber not in chapterList:
-            chapterList.append(chapterNumber)
-    return chapterList
-
-def getBookById(bookId,cursor):
-    cursor.execute("select book_id, book_code, book_name from bible_books_look_up \
-        where book_id=%s", (bookId,))
-    return cursor.fetchone()
-    
 @app.route("/v1/bibles/<sourceId>/books/<bookCode>/chapter/<chapterId>", methods=["GET"])
 def getChapter(sourceId,bookCode,chapterId):
     '''
-    To return the content of a given bible chapter
+    To return the list of books in a Bible Language and Version
     '''
     connection = get_db()
     cursor = connection.cursor()
-    cursor.execute("select book_id, book_code, book_name from bible_books_look_up \
-            where book_code=%s", (bookCode.lower(),))
-    bibleBookData = cursor.fetchone()
-    if not bibleBookData:
-        return '{"success":false, "message":"Invalid book code"}'
-    cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
-    tableName = cursor.fetchone()
-    if not tableName:
-        return '{"success":false, "message":"Source doesn\'t exist"}'
-    chapterList = getChapterList(sourceId,bibleBookData,cursor)
-    prevChapter=int(chapterId)-1
-    nextChapter=int(chapterId)+1
-    previous={}
-    next={}
-    if(prevChapter in chapterList):
-        previous={"sourceId":sourceId, "bibleBookCode":bookCode, "chapterId":prevChapter}
-    else:
-        query = "select MAX(ref_id) from %s where ref_id<%%s" % tableName[0]
-        cursor.execute(query,(str(int(bibleBookData[0])*1000000),))
-        prevBookId = cursor.fetchone()
-        if prevBookId[0] != None:
-            prevBook =getBookById(int(prevBookId[0])//1000000,cursor)
-            previous={"sourceId":sourceId, "bibleBookCode":prevBook[1], "chapterId":(int(prevBookId[0])//1000)%1000}
-    if(nextChapter in chapterList):
-        next={"sourceId":sourceId, "bibleBookCode":bookCode, "chapterId":nextChapter}
-    else:
-        query = "select MIN(ref_id) from %s where ref_id>%%s" % tableName[0]
-        cursor.execute(query,(str(int(bibleBookData[0])*1000000+200000),))
-        nextBookId = cursor.fetchone()
-        if nextBookId[0] != None:
-            nextBook =getBookById(int(nextBookId[0])//1000000,cursor)
-            next={"sourceId":sourceId, "bibleBookCode":nextBook[1], "chapterId":(int(nextBookId[0])//1000)%1000}
     cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
     rst = cursor.fetchone()
     chapterId=int(chapterId)-1
@@ -1948,7 +1924,7 @@ def getChapter(sourceId,bookCode,chapterId):
         return json.dumps({"success": False, "message": "No Books uploaded yet"})
     elif bookCode in rst[0]["parsedJson"]:
         if chapterId>=0 and chapterId<len(rst[0]["parsedJson"][bookCode]["chapters"]):
-            usfmText = {"sourceId":sourceId,"bibleBookCode":bookCode,"chapterId":chapterId+1,"previous":previous,"next":next,"chapterContent":rst[0]["parsedJson"][bookCode]["chapters"][chapterId]}
+            usfmText = {"sourceId":sourceId,"bibleBookCode":bookCode,"chapterId":chapterId+1,"chapterContent":rst[0]["parsedJson"][bookCode]["chapters"][chapterId]}
         else:
             return json.dumps({"success": False, "message": "Invalid chapter id"})
     else:
