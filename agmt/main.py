@@ -1745,11 +1745,13 @@ def biblePattern(*argv):
 
 def sortLang(lang,version):
    for i,item in enumerate(lang):
-       if item['language'] == version["language"]["name"]:
+       if item['language']["name"] == version["language"]["name"]:
+           version.pop("language")
            lang[i]["languageVersions"].append(version)
            break
    else:
-       lang.append({"language": version["language"]["name"],"languageVersions": [version]})
+        language = version.pop("language")
+        lang.append({"language": language,"languageVersions": [version]})
    return lang
 
 @app.route("/v1/bibles", methods=["GET"])
@@ -1841,6 +1843,43 @@ def getBibleBooks(sourceId):
     ]
     return json.dumps(bibleBooks)
 
+@app.route("/v1/bibles/<sourceId>/books-chapters", methods=["GET"])
+def getBibleBookChapters(sourceId):
+    '''
+    To return the list of books and chapter Number in a Bible Language and Version
+    '''
+    connection = get_db()
+    cursor = connection.cursor()
+    cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
+    rst = cursor.fetchone()
+    if not rst:
+        return json.dumps({"success": False, "message": "Invalid Source Id"})
+    if 'usfm' not in rst[0]:
+        return json.dumps({"success": False, "message": "No Books uploaded yet"})
+    bookLists = [{"bookName":item,"chapters":len(rst[0]["parsedJson"][item]["chapters"])} for item in rst[0]["usfm"].keys()]
+    booksData = []
+    cursor.execute("select * from bible_books_look_up order by book_id")
+    booksDict = {}
+    for bibleBookID, bibleBookFullName, bibleBookCode in cursor.fetchall():
+        booksDict[bibleBookCode] = {
+            "bibleBookID":bibleBookID,
+            "abbreviation": bibleBookCode,
+            "bibleBookFullName": bibleBookFullName.capitalize()
+        }
+    for bookObject in bookLists:
+        book = bookObject["bookName"]
+        if book in booksDict:
+            booksDict[book]["chapters"]= bookObject["chapters"]
+            booksData.append(
+                booksDict[book]
+            )
+    bibleBooks = [
+        {
+            "sourceId": sourceId,
+            "books": booksData
+        }
+    ]
+    return json.dumps(bibleBooks)
 
 @app.route("/v1/bibles/<sourceId>/<contentFormat>", methods=["GET"])
 def getBible(sourceId, contentFormat):
@@ -1856,7 +1895,7 @@ def getBible(sourceId, contentFormat):
     if 'usfm' not in rst[0]:
         return json.dumps({"success": False, "message": "No Books uploaded yet"})
     if contentFormat.lower() == 'usfm':
-        usfmText = rst[0]["usfm"]
+        usfmText = {"sourceId":sourceId,"bibleContent":rst[0]["usfm"]}
     elif contentFormat.lower() == 'json':
         usfmText = {"sourceId":sourceId,"bibleContent":rst[0]["parsedJson"]}
     else:
