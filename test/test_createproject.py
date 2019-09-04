@@ -6,22 +6,9 @@ import json
 def supply_url():
 	return "https://stagingapi.autographamt.com"
 
-# @pytest.fixture
-# def get_accessToken():
-# 	email = "kavitharaju18@gmail.com"
-# 	password = "111111"
-# 	url = "https://stagingapi.autographamt.com/v1/auth"
-# 	data = {'email':email,
-# 			'password':password}
-# 	resp = requests.post(url, data=data)
-# 	respobj = json.loads(resp.text)
-# 	token = respobj['accessToken']
-
-# 	return token
-
 
 @pytest.fixture
-def get_accessToken():
+def get_adm_accessToken():
 	email = "alex@yopmail.com"
 	password = "1189"
 	url = "https://stagingapi.autographamt.com/v1/auth"
@@ -32,20 +19,6 @@ def get_accessToken():
 	token = respobj['accessToken']
 
 	return token
-
-@pytest.fixture
-def get_accessTokenw():
-	email = "kavitharaju18@gmail.com"
-	password = "1189"
-	url = "https://stagingapi.autographamt.com/v1/auth"
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	respobj = json.loads(resp.text)
-	token = respobj['accessToken']
-
-	return token
-
 
 @pytest.fixture
 def get_supAdmin_accessToken():
@@ -59,6 +32,17 @@ def get_supAdmin_accessToken():
 	token = respobj['accessToken']
 
 	return token
+
+@pytest.fixture
+def get_trans_accessToken():
+	email = 'ag2@yopmail.com'
+	password = '1189'
+	url = "https://stagingapi.autographamt.com/v1/auth"
+	data = {'email':email,
+			'password':password}
+	resp = requests.post(url, data=data)
+	respobj = json.loads(resp.text)
+	token = respobj['accessToken']
 
 
 def check_login(url,email,password):
@@ -114,28 +98,43 @@ def test_list_notverified_email(supply_url,email,password):
 	assert j['message'] == "Email is not Verified", 'message='+j['message']
 # create project
 @pytest.mark.parametrize('org_name, org_addr, org_phone, org_email',[('bcs2','Delhi','000','kavitharaju18@gmail.com')])
-def test_createOrg(supply_url,get_accessTokenw,org_name, org_addr, org_phone, org_email):
+def test_createprojt(supply_url,get_trans_accessToken,org_name, org_addr, org_phone, org_email):
 	url = supply_url + '/v1/autographamt/organisations/projects'
 	data = {
 		'sourceId' = sourceId,
     	'targetLanguageId' = targetLanguageId
 		}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_accessTokenw)})
+	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_trans_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
+	print (j)
 	assert j['success'] == False, str(j)
 	assert j['message'] == "UnAuthorized", str(j)
 
 @pytest.mark.parametrize('org_name, org_addr, org_phone, org_email',[('bcs4','Delhi','000','alex@yopmail.com')])
-def test_createOrg(supply_url,get_accessToken,org_name, org_addr, org_phone, org_email):
+def test_createprojad(supply_url,get_adm_accessToken,org_name, org_addr, org_phone, org_email):
 	url = supply_url + '/v1/autographamt/organisations/projects'
 data = {
 		'sourceId' =sourceId,
     	'targetLanguageId' = targetLanguageId
 		}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_accessToken)})
+	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_adm_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
+	print (j)
 	assert j['success'] == True, str(j)
 	assert j['message'] == "Project created", str(j)
 
+@pytest.mark.parametrize('org_name, org_addr, org_phone, org_email',[('bcs4','Delhi','000','alex@yopmail.com')])
+def test_createprojsup(supply_url,get_supAdmin_accessToken,org_name, org_addr, org_phone, org_email):
+	url = supply_url + '/v1/autographamt/organisations/projects'
+data = {
+		'sourceId' =sourceId,
+    	'targetLanguageId' = targetLanguageId
+		}
+	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
+	j = json.loads(resp.text)
+	assert resp.status_code == 200, resp.text
+	print (j)
+	assert j['success'] == True, str(j)
+	assert j['message'] == "Project created", str(j)
