@@ -117,7 +117,7 @@ def test_listprojectsc(supply_url,get_supAdmin_accessToken):
 	# assert 'organisationName' in j[0], j[0]
 	# assert 'version' in j[0], j[0]
 	
-def test_listprojectc(supply_url,get_accessTokentr):
+def test_listprojectct(supply_url,get_accessTokentr):
 	url = supply_url + '/v1/autographamt/projects'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_accessTokentr)})
 	j = json.loads(resp.text)
