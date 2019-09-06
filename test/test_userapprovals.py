@@ -105,11 +105,12 @@ def test_list_notverified_email(supply_url,email,password):
 
 ## POST method with access token
 
-@pytest.mark.parametrize('userId,admin',[('userId','admin')])
-def test_Userapprovalsup(supply_url,get_supAdmin_accessToken,userId, admin):
+@pytest.mark.parametrize('organisationId,verified',[('organisationId','verified')])
+def test_Userapprovalsup(supply_url,get_supAdmin_accessToken,organisationId,verified):
 	url = supply_url + '/v1/autographamt/approvals/users'
-	data = {'userId':userId,
-			'admin':admin
+	data = {
+			'organisationId':organisationId,
+			'verified':verified
 			}
 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
@@ -118,23 +119,26 @@ def test_Userapprovalsup(supply_url,get_supAdmin_accessToken,userId, admin):
 	assert j['success'] == False, str(j)
 	assert j['message'] == "Unauthorized", str(j)
 
-@pytest.mark.parametrize('userId, admin',[('userId','admin')])
-def test_Userapprovalad(supply_url,get_adm_accessToken,userId,admin):
+@pytest.mark.parametrize('organisationId,verified',[('organisationId','verified')])
+def test_Userapprovalad(supply_url,get_adm_accessToken,organisationId,verified):
 	url = supply_url + '/v1/autographamt/approvals/users'
-	data = {'userId':userId,
-			'admin':admin
+	data = {
+			'organisationId':organisationId,
+			'verified':verified
 			}
+			
 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_adm_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
 	assert j['success'] == False, str(j)
 	assert j['message'] == "Unauthorized", str(j)
 
-# @pytest.mark.parametrize(('userId, admin',[('userId','admin')])
-# def test_Userapprovaltr(supply_url,get_trans_accessToken,userId,admin):
+# @pytest.mark.parametrize('organisationId,verified',[('organisationId','verified')])
+# def test_Userapprovaltr(supply_url,get_trans_accessToken,organisationId,verified):
 # 	url = supply_url + '/v1/autographamt/approvals/users'
-# 	data = {'userId':userId,
-# 			'admin':admin
+# 	data = {'organisationId':organisationId,
+#			'verified':verified
+			
 # 			}
 # 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_trans_accessToken)})
 # 	j = json.loads(resp.text)
@@ -143,11 +147,12 @@ def test_Userapprovalad(supply_url,get_adm_accessToken,userId,admin):
 # 	assert j['success'] == False, str(j)
 # 	assert j['message'] == "Unauthorized", str(j)
     
-@pytest.mark.parametrize('userId, admin',[('userId','admin')])
-def test_Userapprovalsupc(supply_url,get_supAdmin_accessToken,userId,admin):
+@pytest.mark.parametrize('organisationId,verified',[('organisationId','verified')])
+def test_Userapprovalsupc(supply_url,get_supAdmin_accessToken,organisationId,verified):
 	url = supply_url + '/v1/autographamt/approvals/users'
-	data = {'userId':userId,
-			'admin':admin
+	data = {
+			'organisationId':organisationId,
+			'verified':verified
 			}
 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
@@ -156,11 +161,12 @@ def test_Userapprovalsupc(supply_url,get_supAdmin_accessToken,userId,admin):
 	assert j['success'] == True, str(j)
 	assert j['message'] == "Role Updated", str(j)
 
-@pytest.mark.parametrize('userId, admin',[('userId','admin')])
-def test_Userapprovaladc(supply_url,get_adm_accessToken,userId,admin):
+@pytest.mark.parametrize('organisationId,verified',[('organisationId','verified')])
+def test_Userapprovaladc(supply_url,get_adm_accessToken,organisationId,verified):
 	url = supply_url + '/v1/autographamt/approvals/users'
-	data = {'userId':userId,
-			'admin':admin
+	data = {
+			'organisationId':organisationId,
+			'verified':verified
 			}
 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_adm_accessToken)})
 	j = json.loads(resp.text)
