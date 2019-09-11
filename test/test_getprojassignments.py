@@ -70,7 +70,11 @@ def test_getprojassigna(supply_url,get_accessTokenadm):
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
 	print (j)
-	
+	assert 'assignmentId' in j[0], j[0]
+	assert 'books' in j[0], j[0]
+	assert 'user' in j[0], j[0]
+	assert 'projectId' in j[0], j[0]
+
 
 def test_getprojassignw(supply_url,get_supAdmin_accessToken):
 	url = supply_url + '/v1/autographamt/projects/assignments/35'
@@ -78,7 +82,10 @@ def test_getprojassignw(supply_url,get_supAdmin_accessToken):
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
 	print(j)
-
+	assert 'assignmentId' in j[0], j[0]
+	assert 'books' in j[0], j[0]
+	assert 'user' in j[0], j[0]
+	assert 'projectId' in j[0], j[0]
 
 def test_getprojassignt(supply_url,get_accessTokentr):
 	url = supply_url + '/v1/autographamt/projects/assignments/35'
@@ -86,3 +93,8 @@ def test_getprojassignt(supply_url,get_accessTokentr):
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
 	print(j)
+	assert 'assignmentId' in j[0], j[0]
+	assert 'books' in j[0], j[0]
+	assert 'user' in j[0], j[0]
+	assert 'projectId' in j[0], j[0]
+
