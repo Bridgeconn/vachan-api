@@ -71,39 +71,8 @@ def test_firstpage_load():
 	url = "https://staging.autographamt.com"
 	resp = requests.get(url)
 	assert resp.status_code == 200, resp.text
-
-@pytest.mark.parametrize("email, password",[("alex@yopmail.com",'1189')])
-def test_list_valid_user(supply_url,email,password):
-	resp = check_login(supply_url,email,password)
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert "accessToken" in j, "success="+str(j['success'])+j['message']
-
-@pytest.mark.parametrize("email, password",[('kavitharaju18@gmail.com',"letme")])
-def test_list_invalid_password(supply_url,email,password):
-	resp = check_login(supply_url,email,password)
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == False, "success="+str(j['success'])
-	assert j['message'] == "Incorrect Password", 'message='+j['message']
-
-@pytest.mark.parametrize("email, password",[('kavitharaju@gmail.com',"letme"),('kavitharaju@bridgeconn.com',"letme")])
-def test_list_invalid_email(supply_url,email,password):
-	resp = check_login(supply_url,email,password)
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == False, "success="+str(j['success'])
-	assert j['message'] == "This email is not registered", 'message='+j['message']
-
-@pytest.mark.parametrize("email, password",[('kavitha.raju@bridgeconn.com',"letmepass")])
-def test_list_notverified_email(supply_url,email,password):
-	resp = check_login(supply_url,email,password)
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == False, "success="+str(j['success'])
-	assert j['message'] == "Email is not Verified", 'message='+j['message']
-
-## POST method with access token
+	
+## POST method with access  for Organization aprovals
 
 @pytest.mark.parametrize('org_id, verified',[('org_id','verified')])
 def test_Orgapprovalsup(supply_url,get_supAdmin_accessToken,org_id, verified):
