@@ -58,41 +58,32 @@ def test_firstpage_load():
 	resp = requests.get(url)
 	assert resp.status_code == 200, resp.text
 
+
 ## GET method with access token for list users
-def test_getUserProjectssup(supply_url,get_supAdmin_accessToken):
+def test_gettranslatedbookssup(supply_url,get_supAdmin_accessToken):
 	url = supply_url + '/v1/translatedbooks/30/18'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
 	assert isinstance(j,list), j
 	print (j)
-	# assert 'languageName' in j[0], j[0]
-	# assert 'languageId' in j[0], j[0]
-    # assert 'languageCode' in j[0], j[0]
-	
 
-def test_getUserProjectad(supply_url,get_adm_accessToken):
+
+def test_gettranslatedbooksad(supply_url,get_adm_accessToken):
 	url = supply_url + '/v1/translatedbooks/30/18'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_adm_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
 	assert isinstance(j,list), j
 	print (j)
-	# assert 'languageName' in j[0], j[0]
-	# assert 'languageId' in j[0], j[0]
-    # assert 'languageCode' in j[0], j[0]
 	
-
-
-def test_getUserProjecttr(supply_url,get_trans_accessToken):
+def test_gettranslatedbookstr(supply_url,get_trans_accessToken):
 	url = supply_url + '/v1/translatedbooks/30/18'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_trans_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
 	assert isinstance(j,list), j
 	print (j)
-	# assert 'languageName' in j[0], j[0]
-	# assert 'languageId' in j[0], j[0]
-    # assert 'languageCode' in j[0], j[0]
+	
 	
   
