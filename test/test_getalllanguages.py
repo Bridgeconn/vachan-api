@@ -60,7 +60,7 @@ def test_firstpage_load():
 
 
 ## GET method with access token for list users
-def test_getUserProjectssup(supply_url,get_supAdmin_accessToken):
+def test_GetAllaLnguagessup(supply_url,get_supAdmin_accessToken):
 	url = supply_url + '/v1/languages'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
@@ -72,7 +72,7 @@ def test_getUserProjectssup(supply_url,get_supAdmin_accessToken):
     # assert 'languageCode' in j[0], j[0]
 	
 
-def test_getUserProjectad(supply_url,get_adm_accessToken):
+def test_GetAllaLnguagesad(supply_url,get_adm_accessToken):
 	url = supply_url + '/v1/languages'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_adm_accessToken)})
 	j = json.loads(resp.text)
@@ -85,7 +85,7 @@ def test_getUserProjectad(supply_url,get_adm_accessToken):
 	
 
 
-def test_getUserProjecttr(supply_url,get_trans_accessToken):
+def test_GetAllaLnguagestr(supply_url,get_trans_accessToken):
 	url = supply_url + '/v1/languages'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_trans_accessToken)})
 	j = json.loads(resp.text)
