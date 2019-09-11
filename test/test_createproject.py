@@ -58,12 +58,12 @@ def test_firstpage_load():
 	assert resp.status_code == 200, resp.text
 
 # create project
-@pytest.mark.parametrize('org_name, org_addr, org_phone, org_email',[('bcs2','Delhi','000','kavitharaju18@gmail.com')])
-def test_createprojt(supply_url,get_trans_accessToken,org_name, org_addr, org_phone, org_email):
+@pytest.mark.parametrize('sourceId,targetLanguageID',[('31','2761')])
+def test_createprojt(supply_url,get_trans_accessToken,soueceID,targetLanguageID):
 	url = supply_url + '/v1/autographamt/organisations/projects'
 	data = {
-		'sourceId' = sourceId,
-    	'targetLanguageId' = targetLanguageId
+		'sourceId': 31,
+    	'targetLanguageId': 2761
 		}
 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_trans_accessToken)})
 	j = json.loads(resp.text)
@@ -72,12 +72,12 @@ def test_createprojt(supply_url,get_trans_accessToken,org_name, org_addr, org_ph
 	assert j['success'] == False, str(j)
 	assert j['message'] == "UnAuthorized", str(j)
 
-@pytest.mark.parametrize('org_name, org_addr, org_phone, org_email',[('bcs4','Delhi','000','alex@yopmail.com')])
-def test_createprojad(supply_url,get_adm_accessToken,org_name, org_addr, org_phone, org_email):
+@pytest.mark.parametrize ('sourceId,targetLanguageID',[('31','2761')])
+def test_createprojad (supply_url,get_adm_accessToken,soueceID,targetLanguageID):
 	url = supply_url + '/v1/autographamt/organisations/projects'
 data = {
-		'sourceId' =sourceId,
-    	'targetLanguageId' = targetLanguageId
+		'sourceId': 31,
+    	'targetLanguageId': 2761
 		}
 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_adm_accessToken)})
 	j = json.loads(resp.text)
@@ -86,12 +86,12 @@ data = {
 	assert j['success'] == True, str(j)
 	assert j['message'] == "Project created", str(j)
 
-@pytest.mark.parametrize('org_name, org_addr, org_phone, org_email',[('bcs4','Delhi','000','alex@yopmail.com')])
-def test_createprojsup(supply_url,get_supAdmin_accessToken,org_name, org_addr, org_phone, org_email):
+@pytest.mark.parametrize('sourceId,targetLanguageID',[('31','2761')])
+def test_createprojsup(supply_url,get_supAdmin_accessToken,soueceID,targetLanguageID):
 	url = supply_url + '/v1/autographamt/organisations/projects'
 data = {
-		'sourceId' =sourceId,
-    	'targetLanguageId' = targetLanguageId
+		'sourceId': 31,
+    	'targetLanguageId': 2761
 		}
 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
@@ -99,3 +99,4 @@ data = {
 	print (j)
 	assert j['success'] == True, str(j)
 	assert j['message'] == "Project created", str(j)
+
