@@ -26,6 +26,9 @@
  - Run command `psql` in postgres user shell
  - Run command `CREATE USER <username> WITH SUPERUSER PASSWORD '<password>'`. Enter user username and password fot the DB. For ex: `CREATE USER agmt WITH SUPERUSER PASSWORD 'pass&14'`
  
+### Create Database:
+ - Open New Terminal and run command `createdb mt2414`
+ 
 ## Set Environment variables: (Command -> `gedit .bashrc` from home directory)
 - Paste follwing with the credentials to the `bashrc` file.
   ```
