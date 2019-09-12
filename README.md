@@ -53,8 +53,8 @@
 
  ### Clone Project and Install dependencies
  - Clone project repo to server
- - Navigate to project directory containing the `setup.py` file.
- - Install Python dependencies by running command `python setup.py install`
+ - Navigate to project directory containing the `requirements.txt` file.
+ - Install Python dependencies by running command `pip3 install -r requirements.txt`
 
 ### Create Initial DB tables
  - Navigate to project directory containing the `db.sql` file. (Inside `agmt` folder)
