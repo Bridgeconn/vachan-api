@@ -1,4 +1,3 @@
-
 import pytest
 import requests
 import json
@@ -8,8 +7,8 @@ def supply_url():
 	return "https://stagingapi.autographamt.com"
 
 @pytest.fixture
-def get_accessToken():
-	email = "ag27@yopmail.com"
+def get_accessTokenadm():
+	email = "alex@yopmail.com"
 	password = "1189"
 	url = "https://stagingapi.autographamt.com/v1/auth"
 	data = {'email':email,
@@ -20,8 +19,9 @@ def get_accessToken():
 
 	return token
 
+
 @pytest.fixture
-def get_accessTokenw():
+def get_accessTokentr():
 	email = "ag2@yopmail.com"
 	password = "1189"
 	url = "https://stagingapi.autographamt.com/v1/auth"
@@ -31,7 +31,7 @@ def get_accessTokenw():
 	respobj = json.loads(resp.text)
 	token = respobj['accessToken']
 
-	return token
+	return token	
 
 
 @pytest.fixture
@@ -60,29 +60,30 @@ def test_firstpage_load():
 	resp = requests.get(url)
 	assert resp.status_code == 200, resp.text
 
-## GET method with access token for list users
-def test_getusers(supply_url,get_accessToken):
+## GET method with access token
+def test_getusersad(supply_url,get_accessTokenadm):
 	url = supply_url + '/v1/autographamt/users'
-	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_accessToken)})
+	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_accessTokenadm)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
 	assert isinstance(j,list), j
 	assert 'roleId' in j[0], j[0]
 	assert 'firstName' in j[0], j[0]
-	assert 'userId' in j[0], j[0]
-	assert 'lastName' in j[0], j[0]
-	assert 'emailId' in j[0], j[0]
-	assert 'verified' in j[0], j[0]
 
-def test_getusersw(supply_url,get_accessTokenw):
+def test_getusersup(supply_url,get_supAdmin_accessToken):
 	url = supply_url + '/v1/autographamt/users'
-	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_accessTokenw)})
+	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
 	assert isinstance(j,list), j
 	assert 'roleId' in j[0], j[0]
 	assert 'firstName' in j[0], j[0]
-	assert 'userId' in j[0], j[0]
-	assert 'lastName' in j[0], j[0]
-	assert 'emailId' in j[0], j[0]
-	assert 'verified' in j[0], j[0]
+
+def test_getusers(supply_url,get_accessTokentr):
+	url = supply_url + '/v1/autographamt/users'
+	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_accessTokentr)})
+	j = json.loads(resp.text)
+	assert resp.status_code == 200, resp.text
+	assert isinstance(j,list), j
+	assert 'roleId' in j[0], j[0]
+	assert 'firstName' in j[0], j[0]
