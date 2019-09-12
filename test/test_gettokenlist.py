@@ -59,7 +59,7 @@ def test_firstpage_load():
 	assert resp.status_code == 200, resp.text
 
 ## GET method with access token for list users
-def test_aviailbooksup(supply_url,get_supAdmin_accessToken):
+def test_gettokeenlistsup(supply_url,get_supAdmin_accessToken):
 	url = supply_url + '/v1/tokenlist/35/heb'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
@@ -67,7 +67,7 @@ def test_aviailbooksup(supply_url,get_supAdmin_accessToken):
 	assert isinstance(j,list), j
 	print (j)
 
-def test_aviailbookad(supply_url,get_adm_accessToken):
+def test_gettokeenlistad(supply_url,get_adm_accessToken):
 	url = supply_url + '/v1/tokenlist/35/2ti'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_adm_accessToken)})
 	j = json.loads(resp.text)
@@ -75,7 +75,7 @@ def test_aviailbookad(supply_url,get_adm_accessToken):
 	assert isinstance(j,list), j
 	print (j)
 
-def test_aviailbooktr(supply_url,get_trans_accessToken):
+def test_gettokeenlisttr(supply_url,get_trans_accessToken):
 	url = supply_url + '/v1/tokenlist/35/2jn'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_trans_accessToken)})
 	j = json.loads(resp.text)
