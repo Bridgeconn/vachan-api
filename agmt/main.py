@@ -1728,13 +1728,24 @@ def biblePattern(*argv):
     }
     return pattern
 
-def sortLang(lang,version):
+def sortLang1(lang,version):
     for i,item in enumerate(lang):
         if item['language'] == version["language"]["name"]:
             lang[i]["languageVersions"].append(version)
             break
     else:
         lang.append({"language": version["language"]["name"],"languageVersions": [version]})
+    return lang
+
+def sortLang2(lang,version):
+    for i,item in enumerate(lang):
+        if item["language"]["name"] == version["language"]["name"]:
+            version.pop("language")
+            lang[i]["languageVersions"].append(version)
+            break
+    else:
+        language = version.pop("language")
+        lang.append({"language": language,"languageVersions": [version]})
     return lang
 
 @app.route("/v1/bibles", methods=["GET"])
@@ -1752,6 +1763,7 @@ def getBibles():
     except Exception as ex:
         print(ex)
     biblesList = []
+    language = request.args.get('language')
     for s_id, ver, ver_code, ver_name, lang_id, lang_name, lang_code, loc_script_name, script, script_dir, \
         updatedDate in cursor.fetchall():
         biblesList.append(
@@ -1770,8 +1782,12 @@ def getBibles():
             )
         )
     cursor.close()
-    return json.dumps(reduce(sortLang,biblesList,[]))
-
+    sortedList = []
+    if(language and language.lower() == "true"):
+        sortedList = reduce(sortLang2,biblesList,[])
+    else:
+        sortedList = reduce(sortLang1,biblesList,[])
+    return json.dumps(sortedList)
 
 @app.route("/v1/bibles/languages", methods=["GET"])
 def getBibleLanguages():
@@ -1826,6 +1842,43 @@ def getBibleBooks(sourceId):
     ]
     return json.dumps(bibleBooks)
 
+@app.route("/v1/bibles/<sourceId>/books-chapters", methods=["GET"])
+def getBibleBookChapters(sourceId):
+    '''
+    To return the list of books and chapter Number in a Bible Language and Version
+    '''
+    connection = get_db()
+    cursor = connection.cursor()
+    cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
+    rst = cursor.fetchone()
+    if not rst:
+        return json.dumps({"success": False, "message": "Invalid Source Id"})
+    if 'usfm' not in rst[0]:
+        return json.dumps({"success": False, "message": "No Books uploaded yet"})
+    bookLists = [{"bookName":item,"chapters":len(rst[0]["parsedJson"][item]["chapters"])} for item in rst[0]["usfm"].keys()]
+    booksData = []
+    cursor.execute("select * from bible_books_look_up order by book_id")
+    booksDict = {}
+    for bibleBookID, bibleBookFullName, bibleBookCode in cursor.fetchall():
+        booksDict[bibleBookCode] = {
+            "bibleBookID":bibleBookID,
+            "abbreviation": bibleBookCode,
+            "bibleBookFullName": bibleBookFullName.capitalize()
+        }
+    for bookObject in bookLists:
+        book = bookObject["bookName"]
+        if book in booksDict:
+            booksDict[book]["chapters"]= bookObject["chapters"]
+            booksData.append(
+                booksDict[book]
+            )
+    bibleBooks = [
+        {
+            "sourceId": sourceId,
+            "books": booksData
+        }
+    ]
+    return json.dumps(bibleBooks)
 
 @app.route("/v1/bibles/<sourceId>/<contentFormat>", methods=["GET"])
 def getBible(sourceId, contentFormat):
@@ -1841,7 +1894,7 @@ def getBible(sourceId, contentFormat):
     if 'usfm' not in rst[0]:
         return json.dumps({"success": False, "message": "No Books uploaded yet"})
     if contentFormat.lower() == 'usfm':
-        usfmText = rst[0]["usfm"]
+        usfmText = {"sourceId":sourceId,"bibleContent":rst[0]["usfm"]}
     elif contentFormat.lower() == 'json':
         usfmText = {"sourceId":sourceId,"bibleContent":rst[0]["parsedJson"]}
     else:
