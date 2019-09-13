@@ -40,10 +40,6 @@ def check_login(url,email,password):
 	resp = requests.post(url, data=data)
 	return resp
 
-def test_firstpage_load():
-	url = "https://staging.autographamt.com"
-	resp = requests.get(url)
-
 @pytest.mark.parametrize('org_name, org_addr, org_phone, org_email',[('bcs2','Delhi','000','kavitharaju18@gmail.com')])
 def test_createOrg(supply_url,get_accessToken,org_name, org_addr, org_phone, org_email):
 	url = supply_url + '/v1/autographamt/organisations'
