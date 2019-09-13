@@ -59,7 +59,7 @@ def test_firstpage_load():
 	assert resp.status_code == 200, resp.text
 
 # GET method for organization
-def test_getlistorg(supply_url,get_supAdmin_accessToken):
+def test_listorgsup(supply_url,get_supAdmin_accessToken):
 	url = supply_url + '/v1/autographamt/organisations'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
@@ -75,7 +75,7 @@ def test_getlistorg(supply_url,get_supAdmin_accessToken):
 	assert 'userId' in j[0], j[0]
 	
 # 	## GET method with access token
-def test_getlistorgwa(supply_url,get_adm_accessToken):
+def test_listorgad(supply_url,get_adm_accessToken):
 	url = supply_url + '/v1/autographamt/organisations'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_adm_accessToken)})
 	j = json.loads(resp.text)
@@ -89,8 +89,9 @@ def test_getlistorgwa(supply_url,get_adm_accessToken):
 	assert 'organisationEmail' in j[0], j[0] 
 	assert 'verified' in j[0], j[0]
 	assert 'userId' in j[0], j[0]
-
-def test_getlistorgwt(supply_url,get_trans_accessToken):
+	# assert j['success'] == False, str(j)
+	# assert j['message'] == "UnAuthorized", str(j)
+def test_listorgtr(supply_url,get_trans_accessToken):
 	url = supply_url + '/v1/autographamt/organisations'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_trans_accessToken)})
 	j = json.loads(resp.text)
@@ -104,3 +105,5 @@ def test_getlistorgwt(supply_url,get_trans_accessToken):
 	assert 'organisationEmail' in j[0], j[0] 
 	assert 'verified' in j[0], j[0]
 	assert 'userId' in j[0], j[0]
+	assert j['success'] == False, str(j)
+	assert j['message'] == "UnAuthorized", str(j)
