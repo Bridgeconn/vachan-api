@@ -63,7 +63,6 @@ def test_listorgsup(supply_url,get_supAdmin_accessToken):
 	url = supply_url + '/v1/autographamt/organisations'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
-	print(j)
 	assert resp.status_code == 200, resp.text
 	assert isinstance (j,list), j
 	assert 'organisationId' in j[0], j[0]
@@ -73,8 +72,7 @@ def test_listorgsup(supply_url,get_supAdmin_accessToken):
 	assert 'organisationEmail' in j[0], j[0] 
 	assert 'verified' in j[0], j[0]
 	assert 'userId' in j[0], j[0]
-	
-# 	## GET method with access token
+
 def test_listorgad(supply_url,get_adm_accessToken):
 	url = supply_url + '/v1/autographamt/organisations'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_adm_accessToken)})
@@ -95,7 +93,6 @@ def test_listorgtr(supply_url,get_trans_accessToken):
 	url = supply_url + '/v1/autographamt/organisations'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_trans_accessToken)})
 	j = json.loads(resp.text)
-	print(j)
 	assert resp.status_code == 200, resp.text
 	assert isinstance (j,list), j
 	assert 'organisationId' in j[0], j[0]
