@@ -53,11 +53,6 @@ def check_login(url,email,password):
 	resp = requests.post(url, data=data)
 	return resp
 
-def test_firstpage_load():
-	url = "https://staging.autographamt.com"
-	resp = requests.get(url)
-	assert resp.status_code == 200, resp.text
-
 # GET method for organization
 def test_listorgsup(supply_url,get_supAdmin_accessToken):
 	url = supply_url + '/v1/autographamt/organisations'
