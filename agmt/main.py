@@ -1728,31 +1728,31 @@ def biblePattern(*argv):
     }
     return pattern
 
-def sortLang1(lang,version):
-    for i,item in enumerate(lang):
+def sortByLanguageObject(languageObject,version):
+    '''Sort the list of bible versions by language format by language object.'''
+    for index,item in enumerate(languageObject):
         if item['language'] == version["language"]["name"]:
-            lang[i]["languageVersions"].append(version)
+            languageObject[index]["languageVersions"].append(version)
             break
     else:
-        lang.append({"language": version["language"]["name"],"languageVersions": [version]})
-    return lang
+        languageObject.append({"language": version["language"]["name"],"languageVersions": [version]})
+    return languageObject
 
-def sortLang2(lang,version):
-    for i,item in enumerate(lang):
+def sortByLanguageName(languageObject,version):
+    '''Sort the list of bible versions by language format by language name.'''
+    for index,item in enumerate(languageObject):
         if item["language"]["name"] == version["language"]["name"]:
             version.pop("language")
-            lang[i]["languageVersions"].append(version)
+            languageObject[index]["languageVersions"].append(version)
             break
     else:
         language = version.pop("language")
-        lang.append({"language": language,"languageVersions": [version]})
-    return lang
+        languageObject.append({"language": language,"languageVersions": [version]})
+    return languageObject
 
 @app.route("/v1/bibles", methods=["GET"])
 def getBibles():
-    '''
-    To return a list of Bible Languages and Versions
-    '''
+    '''Return the list of availabile Bible Languages and Versions.'''
     connection = get_db()
     cursor = connection.cursor()
     try:
@@ -1784,13 +1784,14 @@ def getBibles():
     cursor.close()
     sortedList = []
     if(language and language.lower() == "true"):
-        sortedList = reduce(sortLang2,biblesList,[])
+        sortedList = reduce(sortByLanguageName,biblesList,[])
     else:
-        sortedList = reduce(sortLang1,biblesList,[])
+        sortedList = reduce(sortByLanguageObject,biblesList,[])
     return json.dumps(sortedList)
 
 @app.route("/v1/bibles/languages", methods=["GET"])
 def getBibleLanguages():
+    '''Return the list of bible languages.'''
     connection = get_db()
     cursor = connection.cursor()
     cursor.execute("select distinct(language_id) from sources where content_id=1")
@@ -1808,9 +1809,7 @@ def getBibleLanguages():
 
 @app.route("/v1/bibles/<sourceId>/books", methods=["GET"])
 def getBibleBooks(sourceId):
-    '''
-    To return the list of books in a Bible Language and Version
-    '''
+    '''Return the list of books in a Bible Language and Version.'''
     connection = get_db()
     cursor = connection.cursor()
     cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
@@ -1844,9 +1843,7 @@ def getBibleBooks(sourceId):
 
 @app.route("/v1/bibles/<sourceId>/books-chapters", methods=["GET"])
 def getBibleBookChapters(sourceId):
-    '''
-    To return the list of books and chapter Number in a Bible Language and Version
-    '''
+    '''Return the list of books and chapter Number in a Bible Language and Version.'''
     connection = get_db()
     cursor = connection.cursor()
     cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
@@ -1882,9 +1879,7 @@ def getBibleBookChapters(sourceId):
 
 @app.route("/v1/bibles/<sourceId>/<contentFormat>", methods=["GET"])
 def getBible(sourceId, contentFormat):
-    '''
-    To return the bible content for a particular Bible version and format
-    '''
+    '''Return the bible content for a particular Bible version and format.'''
     connection = get_db()
     cursor = connection.cursor()
     cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
@@ -1905,9 +1900,7 @@ def getBible(sourceId, contentFormat):
 
 @app.route("/v1/bibles/<sourceId>/books/<bookCode>/<contentFormat>", methods=["GET"])
 def getBook(sourceId,bookCode, contentFormat):
-    '''
-    To return the content of a book in a particular version and format
-    '''
+    '''Return the content of a book in a particular version and format.'''
     connection = get_db()
     cursor = connection.cursor()
     cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
@@ -1929,9 +1922,7 @@ def getBook(sourceId,bookCode, contentFormat):
 
 @app.route("/v1/bibles/<sourceId>/books/<biblebookCode>/chapters", methods=["GET"])
 def getBibleChapters(sourceId, biblebookCode):
-    '''
-    To return a Chapter object with content of all verses for the Chapter
-    '''
+    '''Return a Chapter object with content of all verses for the Chapter.'''
     try:
         connection = get_db()
         cursor = connection.cursor()
@@ -1972,8 +1963,7 @@ def getBibleChapters(sourceId, biblebookCode):
         return '{"success": false, "message":"%s"}' %(str(ex))
 
 def getChapterList(sourceId,bibleBookData,cursor):
-    startId = int(bibleBookData[0]) * 1000000
-    endId = (int(bibleBookData[0]) + 1) * 1000000
+    '''Return the list of chapters for the given book.'''
     cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
     tableName = cursor.fetchone()
     if not tableName:
@@ -1991,15 +1981,14 @@ def getChapterList(sourceId,bibleBookData,cursor):
     return chapterList
 
 def getBookById(bookId,cursor):
+    '''Return the book details from the database for the given book id.'''
     cursor.execute("select book_id, book_code, book_name from bible_books_look_up \
         where book_id=%s", (bookId,))
     return cursor.fetchone()
 
 @app.route("/v1/bibles/<sourceId>/books/<bookCode>/chapter/<chapterId>", methods=["GET"])
 def getChapter(sourceId,bookCode,chapterId):
-    '''
-    To return the content of a given bible chapter
-    '''
+    '''Return the content of a given bible chapter.'''
     connection = get_db()
     cursor = connection.cursor()
     cursor.execute("select book_id, book_code, book_name from bible_books_look_up \
@@ -2053,9 +2042,7 @@ def getChapter(sourceId,bookCode,chapterId):
 
 @app.route("/v1/bibles/<sourceId>/books/<biblebookCode>/chapters/<chapterId>/verses", methods=["GET"])
 def getBibleVerses(sourceId, biblebookCode, chapterId):
-    '''
-    To return Verse Id Array for a Bible Book Chapter
-    '''
+    '''Return Verse Id Array for a Bible Book Chapter.'''
     try:
         connection = get_db()
         cursor = connection.cursor()
@@ -2105,9 +2092,7 @@ def getBibleVerses(sourceId, biblebookCode, chapterId):
 
 @app.route("/v1/bibles/<sourceId>/books/<bibleBookCode>/chapters/<chapterId>/verses/<verseId>", methods=["GET"])
 def getBibleVerseText(sourceId, bibleBookCode, chapterId, verseId):
-    '''
-    To return a Verse object for a given Bible and Verse
-    '''
+    '''Return a Verse object for a given Bible and Verse.'''
     try:
         connection = get_db()
         cursor = connection.cursor()
@@ -2146,9 +2131,7 @@ def getBibleVerseText(sourceId, bibleBookCode, chapterId, verseId):
 
 @app.route("/v1/bibles/<sourceId>/chapters/<chapterId>/verses", methods=["GET"])
 def getBibleVerses2(sourceId, chapterId):
-    '''
-    To return Verse Id Array for a Bible Book Chapter
-    '''
+    '''Return Verse Id Array for a Bible Book Chapter.'''
     try:
         connection = get_db()
         cursor = connection.cursor()
@@ -2196,9 +2179,7 @@ def getBibleVerses2(sourceId, chapterId):
 
 @app.route("/v1/bibles/<sourceId>/verses/<verseId>", methods=["GET"])
 def getBibleVerseText2(sourceId, verseId):
-    '''
-    To return a Verse object for a given Bible and Verse
-    '''
+    '''Return a Verse object for a given Bible and Verse.'''
     try:
         connection = get_db()
         cursor = connection.cursor()
