@@ -254,7 +254,6 @@ def auth_exception_handler(error):
 def check_token(f):
     @wraps(f)
     def wrapper(*args, **kwds):
-        print('here')
         auth_header_value = request.headers.get('Authorization', None)
         if not auth_header_value:
             raise TokenError('No Authorization header', 'Token missing')
@@ -308,7 +307,6 @@ def checkAuth():
 @check_token
 def autographamtOrganisations():
     try:
-        print('inside execution')
         role = checkAuth()
         connection = get_db()
         cursor = connection.cursor()
@@ -383,8 +381,16 @@ def createOrganisations():
 def autographamtUsers():
     connection = get_db()
     cursor = connection.cursor()
-    cursor.execute("select user_id, first_name, last_name, email_id, role_id, verified \
-        from autographamt_users where role_id < 3 order by user_id")
+    role = checkAuth()
+    if role == 3:
+        cursor.execute("select user_id, first_name, last_name, email_id, role_id, verified \
+            from autographamt_users order by user_id")
+    elif role == 2: 
+        cursor.execute("select user_id, first_name, last_name, email_id, role_id, verified \
+            from autographamt_users where role_id < 3 order by user_id")
+    else:
+        cursor.close()
+        return '{"success":false, "message":"UnAuthorized to view data"}'
     rst = cursor.fetchall()
     if not rst:
         return '{"success":false, "message":"No user data available"}'
@@ -707,7 +713,10 @@ def getUserProjects():
                 }
             } for projectId, projectName, organisationName, books, sourceId, targetId, verCode, verName in rst
         ]
-        return json.dumps(userProjects)
+        if userProjects == []:
+            return '{"success":false, "message":"No projects assigned"}'
+        else:
+            return json.dumps(userProjects)
 
 
 @app.route("/v1/autographamt/approvals/organisations", methods=["POST"])
@@ -739,6 +748,70 @@ def organisationApprovals():
     except Exception as ex:
         print(ex)
         return '{"success":false, "message":"Server error"}'
+
+@app.route("/v1/autographamt/statistics/projects/<projectId>", methods=["GET"])
+def getProjectStatistics(projectId):
+    try:
+        connection = get_db()
+        cursor = connection.cursor()
+        cursor.execute("select s.table_name from sources s left join autographamt_projects p on \
+            s.source_id=p.source_id where p.project_id=%s", (projectId,))
+        rst = cursor.fetchone()
+        if not rst:
+            return '{"sucess":false, "message":"Invalid project id"}'
+        # tableName = 
+        tableName = "_".join(rst[0].split("_")[0:-1]) + "_tokens"
+        bookDict = {}
+        cursor.execute("select book_id, book_name, book_code from bible_books_look_up")
+        for b_id, b_name, b_code in cursor.fetchall():
+            bookDict[b_id] = {
+                "name": b_name,
+                "code": b_code
+            }
+        cursor.execute("select book_id, token from " + tableName)
+        bookWiseTokens = {}
+        for book_id, token in cursor.fetchall():
+            if book_id in bookWiseTokens:
+                bookWiseTokens[book_id] = bookWiseTokens[book_id] + [token]
+            else:
+                bookWiseTokens[book_id] = [token]
+        cursor.execute("select t.token from translations t left join translation_projects_look_up tl on \
+            t.translation_id=tl.translation_id where tl.project_id=%s", (projectId,))
+        translatedTokens = [item[0] for item in cursor.fetchall()]
+        projectStatistics = {}
+        cursor.close()
+        pendingPercentageList = []
+        completedPercentageList = []
+        for key in bookWiseTokens.keys():
+            bookCode = bookDict[key]["code"]
+            bookName = bookDict[key]["name"]
+            bookTokenList = bookWiseTokens[key]
+            translatedTokensInBook = set(bookTokenList) & set(translatedTokens)
+            unTranslatedTokenList = set(bookTokenList) - translatedTokensInBook
+            pendingPercentage = float("{0:.2f}".format(len(unTranslatedTokenList) / len(bookTokenList) * 100))
+            completedPercentage = float("{0:.2f}".format(len(translatedTokensInBook) / len(bookTokenList) * 100))
+            pendingPercentageList.append(pendingPercentage)
+            completedPercentageList.append(completedPercentage)
+            projectStatistics[bookCode] = {
+                "allTokensCount": len(bookTokenList),
+                "translatedTokensCount": len(translatedTokensInBook),
+                "completed": completedPercentage,
+                "pending": pendingPercentage,
+                "bookName": bookName,
+            }
+        pendingTokensStatus = float("{0:.2f}".format(reduce(lambda x, y: x + y, pendingPercentageList) / len(pendingPercentageList)))
+        completedTokensStatus = float("{0:.2f}".format(reduce(lambda x, y: x + y, completedPercentageList) / len(completedPercentageList)))
+        
+        return json.dumps({
+            "bookWiseData":projectStatistics,
+            "projectData":{
+                "pending": pendingTokensStatus,
+                "completed": completedTokensStatus
+            }
+        })
+    except Exception as ex:
+        print(ex)
+        return '{"success":false, "message":"Server side error"}'
 
 @app.route("/v1/autographamt/approvals/users", methods=["POST"])
 @check_token
@@ -1055,10 +1128,13 @@ def parseDataForDBInsert(usfmData):
             verseNumber = verse['number']
             if normalVersePattern.match(verseNumber):
                 verseText = verse["text"]
+                dbVerseText = re.sub(r"'", r"''", verseText)
+                if "'" in dbVerseText:
+                    print(dbVerseText)
                 bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
                     + str(verseNumber).zfill(3))
                 ref_id = int(bcv)
-                dbInsertData.append((ref_id, verseText, crossRefs, footNotes))
+                dbInsertData.append((ref_id, dbVerseText, crossRefs, footNotes))
                 verseContent.append(verseText)
             elif splitVersePattern.match(verseNumber):
                 ## combine split verses and use the whole number verseNumber
@@ -1067,29 +1143,31 @@ def parseDataForDBInsert(usfmData):
                 verseNumber = matchObj.group(1)
                 if postScript == 'a':
                     verseText = verse['text']
-
+                    dbVerseText = re.sub("'", "''", verseText)
                     bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
                         + str(verseNumber).zfill(3))
                     ref_id = int(bcv)
-                    dbInsertData.append((ref_id, verseText, crossRefs, footNotes))
+                    dbInsertData.append((ref_id, dbVerseText, crossRefs, footNotes))
                     verseContent.append(verseText)
                 else:
                     prevdbInsertData = dbInsertData[-1]
                     # prevverseContent = verseContent[-1]
 
                     verseText = prevdbInsertData[1] + ' '+ verse['text']
-                    dbInsertData[-1] = (prevdbInsertData[0], verseText, prevdbInsertData[2],prevdbInsertData[3])
+                    dbVerseText = re.sub("'", "''", verseText)
+                    dbInsertData[-1] = (prevdbInsertData[0], dbVerseText, prevdbInsertData[2],prevdbInsertData[3])
                     verseContent[-1] = verseText
             elif mergedVersePattern.match(verseNumber):
                 ## keep the whole text in first verseNumber of merged verses
                 verseText = verse['text']
+                dbVerseText = re.sub("'", "''", verseText)
                 matchObj = mergedVersePattern.match(verseNumber)
                 verseNumber = matchObj.group(1)
                 verseNumberend = matchObj.group(2)
                 bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
                     + str(verseNumber).zfill(3))
                 ref_id = int(bcv)
-                dbInsertData.append((ref_id, verseText, crossRefs, footNotes))
+                dbInsertData.append((ref_id, dbVerseText, crossRefs, footNotes))
                 verseContent.append(verseText)
                 ## add empty text in the rest of the verseNumber range
                 for vnum in range(int(verseNumber)+1, int(verseNumberend)+1):
@@ -1165,63 +1243,66 @@ def createBibleSource():
     
 @app.route("/v1/bibles/upload", methods=["POST"])
 def uploadSource():
-    req = request.get_json(True)
-    sourceId = req["sourceId"]
-    wholeUsfmText = req["wholeUsfmText"]
-    parsedUsfmText = req["parsedUsfmText"]
-    connection = get_db()
-    cursor = connection.cursor()
-    cursor.execute("select s.usfm_text, s.version_content_code, l.language_code, s.version from \
-        sources s left join languages l on s.language_id=l.language_id where \
-            source_id=%s", (sourceId,))
-    rst = cursor.fetchone()
-    # print(rst)
-    cursor.close()
-    if not rst:
-        return '{"success":false, "message":"No source created"}'
-    usfmFile = rst[0]["usfm"]
-    parsedJsonFile = rst[0]["parsedJson"]
-    bookCode = parsedUsfmText["metadata"]["id"]["book"].lower()
-    print(bookCode)
-    print('whats')
-    if usfmFile:
-        if bookCode in usfmFile:
-            print('happening')
-            return '{"success":false, "message":"Book already Uploaded"}'
-    else:
-        usfmFile = {}
-        parsedJsonFile = {}
-    # except Exception as ex:
-    #     return '{"success":false, "message":"' + str(ex) + '"}'
-    print('befire parse')
-    parsedDbData, tokenDBData, bookId = parseDataForDBInsert(parsedUsfmText)
-    languageCode = rst[2]
-    versionCode = rst[1]
-    print(languageCode, versionCode)
-    cursor = connection.cursor()
-    usfmFile[bookCode] = wholeUsfmText
-    parsedJsonFile[bookCode] = parsedUsfmText
-    usfmText = json.dumps({
-        "usfm": usfmFile,
-        "parsedJson": parsedJsonFile
-    })
-    version = rst[3]
-    cleanTableName = "%s_%s_bible_cleaned" %(languageCode.lower(), version.lower())
-    
-    print(cleanTableName)
-    cursor.execute('insert into ' + cleanTableName + ' (ref_id, verse, cross_reference, foot_notes) values '\
-        + str(parsedDbData)[1:-1])
     try:
-        phrases.tokenize(connection, languageCode.lower(), version.lower() , bookId)
+        req = request.get_json(True)
+        sourceId = req["sourceId"]
+        wholeUsfmText = req["wholeUsfmText"]
+        parsedUsfmText = req["parsedUsfmText"]
+        connection = get_db()
+        cursor = connection.cursor()
+        cursor.execute("select s.usfm_text, s.version_content_code, l.language_code, s.version from \
+            sources s left join languages l on s.language_id=l.language_id where \
+                source_id=%s", (sourceId,))
+        rst = cursor.fetchone()
+        # print(rst)
+        cursor.close()
+        if not rst:
+            return '{"success":false, "message":"No source created"}'
+        usfmFile = rst[0]["usfm"]
+        parsedJsonFile = rst[0]["parsedJson"]
+        bookCode = parsedUsfmText["metadata"]["id"]["book"].lower()
+        print(bookCode)
+        print('whats')
+        if usfmFile:
+            if bookCode in usfmFile:
+                print('happening')
+                return '{"success":false, "message":"Book already Uploaded"}'
+        else:
+            usfmFile = {}
+            parsedJsonFile = {}
+        # except Exception as ex:
+        #     return '{"success":false, "message":"' + str(ex) + '"}'
+        print('befire parse')
+        parsedDbData, tokenDBData, bookId = parseDataForDBInsert(parsedUsfmText)
+        languageCode = rst[2]
+        versionCode = rst[1]
+        print(languageCode, versionCode)
+        cursor = connection.cursor()
+        usfmFile[bookCode] = wholeUsfmText
+        parsedJsonFile[bookCode] = parsedUsfmText
+        usfmText = json.dumps({
+            "usfm": usfmFile,
+            "parsedJson": parsedJsonFile
+        })
+        version = rst[3]
+        cleanTableName = "%s_%s_bible_cleaned" %(languageCode.lower(), version.lower())
+        
+        print(cleanTableName)
+        cursor.execute('insert into ' + cleanTableName + ' (ref_id, verse, cross_reference, foot_notes) values '\
+            + str(parsedDbData)[1:-1])
+        try:
+            phrases.tokenize(connection, languageCode.lower(), version.lower() , bookId)
+        except Exception as ex:
+            return '{"success":false, "message":"Phrases method error"}'
+        # cursor = connection.cursor()
+        # version = rst[0]
+        cursor.execute('update sources set usfm_text=%s where source_id=%s', (usfmText, sourceId))
+        connection.commit()
+        cursor.close()
+        return '{"success":true, "message":"Inserted %s into database"}' %(bookCode)
     except Exception as ex:
-        return '{"success":false, "message":"Phrases method error"}'
-    # cursor = connection.cursor()
-    # version = rst[0]
-    cursor.execute('update sources set usfm_text=%s where source_id=%s', (usfmText, sourceId))
-    connection.commit()
-    cursor.close()
-    return '{"success":true, "message":"Inserted %s into database"}' %(bookCode)
-
+        print(ex)
+        return '{"success": false, "message":"Server side error"}'
 
 
 @app.route("/v1/updatetokentranslations", methods=["POST"])
