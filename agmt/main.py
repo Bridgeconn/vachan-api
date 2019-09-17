@@ -799,8 +799,12 @@ def getProjectStatistics(projectId):
                 "pending": pendingPercentage,
                 "bookName": bookName,
             }
-        pendingTokensStatus = float("{0:.2f}".format(reduce(lambda x, y: x + y, pendingPercentageList) / len(pendingPercentageList)))
-        completedTokensStatus = float("{0:.2f}".format(reduce(lambda x, y: x + y, completedPercentageList) / len(completedPercentageList)))
+        if not projectStatistics:
+            pendingTokensStatus = 0
+            completedTokensStatus = 0
+        else:
+            pendingTokensStatus = float("{0:.2f}".format(reduce(lambda x, y: x + y, pendingPercentageList) / len(pendingPercentageList)))
+            completedTokensStatus = float("{0:.2f}".format(reduce(lambda x, y: x + y, completedPercentageList) / len(completedPercentageList)))
         
         return json.dumps({
             "bookWiseData":projectStatistics,
@@ -848,46 +852,46 @@ def available_books(sourceId):
     return json.dumps(list(rst[0]['usfm'].keys()))
 
 @app.route("/v1/sources/projects/books/<projectId>/<userId>", methods=["GET"])           #-------------------------To find available books and revision number----------------------#
-# @check_token
+@check_token
 def availableProjectBooks(projectId, userId):
-    connection = get_db()
-    cursor = connection.cursor()
-    
-    cursor.execute("select s.usfm_text from sources s left join autographamt_projects p on s.source_id=p.source_id \
-        where p.project_id=%s", (projectId,))
-    rst = cursor.fetchone()
-    if not rst:
-        
-        return '{"success":false, "message":"No data available"}'
-    # cursor.close()
-    allBooks = list(rst[0]['usfm'].keys())
-    
-    
     try:
-        cursor.execute("select books from autographamt_assignments where project_id=%s and user_id=%s", \
-            (projectId, userId))
-    except Exception as ex:
+        connection = get_db()
+        cursor = connection.cursor()
         
-        return 'fail'
-    
-    
-    assignedBooks = cursor.fetchone()
-    if assignedBooks:
-        assignedBooks = convertStringToList(assignedBooks[0])
-    else:
-        assignedBooks = []
-    booksArray = {}
-    
-    for book in allBooks:
-        if book not in assignedBooks:
-            booksArray[book] = {
-                    "assigned":False
+        cursor.execute("select s.usfm_text from sources s left join autographamt_projects p on s.source_id=p.source_id \
+            where p.project_id=%s", (projectId,))
+        rst = cursor.fetchone()
+        if not rst:
+            return '{"success":false, "message":"No data available"}'
+        if not rst[0]['usfm']:
+            return '{"success":false, "message":"No Books uploaded under this source"}'
+        allBooks = list(rst[0]['usfm'].keys())
+        try:
+            cursor.execute("select books from autographamt_assignments where project_id=%s and user_id=%s", \
+                (projectId, userId))
+        except Exception as ex:
+            print(ex)
+            return '{"success":false, "message":"Server error. Unable to fetch books from project"}'
+        assignedBooks = cursor.fetchone()
+        if assignedBooks:
+            assignedBooks = convertStringToList(assignedBooks[0])
+        else:
+            assignedBooks = []
+        booksArray = {}
+        
+        for book in allBooks:
+            if book not in assignedBooks:
+                booksArray[book] = {
+                        "assigned":False
+                    }
+        for aBook in assignedBooks:
+            booksArray[aBook] = {
+                    "assigned":True
                 }
-    for aBook in assignedBooks:
-        booksArray[aBook] = {
-                "assigned":True
-            }
-    return json.dumps(booksArray)
+        return json.dumps(booksArray)
+    except Exception as ex1:
+        print(ex1)
+        return '{"success":false, "message":"Server side error"}'
 
 @app.route("/v1/tokenlist/<sourceId>/<book>", methods=["GET"])
 def getTokenLists(sourceId, book):
