@@ -839,7 +839,7 @@ def userApproval():
         return '{"success":false, "message":"Unauthorized"}'
 
 @app.route("/v1/sources/books/<sourceId>", methods=["GET"])           #-------------------------To find available books and revision number----------------------#
-# @check_token
+@check_token
 def available_books(sourceId):
     connection = get_db()
     cursor = connection.cursor()
@@ -849,7 +849,10 @@ def available_books(sourceId):
         return '{"success":false, "message":"No data available"}'
     cursor.close()
     # 
-    return json.dumps(list(rst[0]['usfm'].keys()))
+    if not rst[0]['usfm']:
+        return '{"success":false, "message":"No Books uploaded under this source"}'
+    else:
+        return json.dumps(list(rst[0]['usfm'].keys()))
 
 @app.route("/v1/sources/projects/books/<projectId>/<userId>", methods=["GET"])           #-------------------------To find available books and revision number----------------------#
 @check_token
@@ -1123,21 +1126,23 @@ def parseDataForDBInsert(usfmData):
         chapterNumber = chapter["header"]["title"]
         verseData = chapter["verses"]
         for verse in verseData:
-            crossRefs = ''
-            footNotes = ''
+            crossRefs = ""
+            footNotes = ""
             if 'metadata' in verse and 'cross-ref' in verse['metadata']:
                 crossRefs = verse['metadata']['cross-ref']
             if 'metadata' in verse and 'footnote' in verse['metadata']:
                 footNotes = verse['metadata']['footnote']
-            verseNumber = verse['number']
+            verseNumber = verse['number'].strip()
             if normalVersePattern.match(verseNumber):
                 verseText = verse["text"]
-                dbVerseText = re.sub(r"'", r"''", verseText)
-                if "'" in dbVerseText:
-                    print(dbVerseText)
+                # dbVerseText = re.sub(r"'", r"''", verseText)
+                dbVerseText = '$' + verseText + '$'
+                # if "'" in dbVerseText:
+                #     print(dbVerseText)
                 bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
                     + str(verseNumber).zfill(3))
                 ref_id = int(bcv)
+                # dbInsertData.append((ref_id, verseText, crossRefs, footNotes))
                 dbInsertData.append((ref_id, dbVerseText, crossRefs, footNotes))
                 verseContent.append(verseText)
             elif splitVersePattern.match(verseNumber):
@@ -1147,10 +1152,12 @@ def parseDataForDBInsert(usfmData):
                 verseNumber = matchObj.group(1)
                 if postScript == 'a':
                     verseText = verse['text']
-                    dbVerseText = re.sub("'", "''", verseText)
+                    # dbVerseText = re.sub("'", "''", verseText)
+                    dbVerseText = '$' + verseText + '$'
                     bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
                         + str(verseNumber).zfill(3))
                     ref_id = int(bcv)
+                    # dbInsertData.append((ref_id, verseText, crossRefs, footNotes))
                     dbInsertData.append((ref_id, dbVerseText, crossRefs, footNotes))
                     verseContent.append(verseText)
                 else:
@@ -1158,19 +1165,23 @@ def parseDataForDBInsert(usfmData):
                     # prevverseContent = verseContent[-1]
 
                     verseText = prevdbInsertData[1] + ' '+ verse['text']
-                    dbVerseText = re.sub("'", "''", verseText)
+                    # dbVerseText = re.sub("'", "''", verseText)
+                    dbVerseText = '$' + verseText + '$'
+                    # dbInsertData[-1] = (prevdbInsertData[0], verseText, prevdbInsertData[2],prevdbInsertData[3])
                     dbInsertData[-1] = (prevdbInsertData[0], dbVerseText, prevdbInsertData[2],prevdbInsertData[3])
                     verseContent[-1] = verseText
             elif mergedVersePattern.match(verseNumber):
                 ## keep the whole text in first verseNumber of merged verses
                 verseText = verse['text']
-                dbVerseText = re.sub("'", "''", verseText)
+                # dbVerseText = re.sub("'", "''", verseText)
+                dbVerseText = '$' + verseText + '$'
                 matchObj = mergedVersePattern.match(verseNumber)
                 verseNumber = matchObj.group(1)
                 verseNumberend = matchObj.group(2)
                 bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
                     + str(verseNumber).zfill(3))
                 ref_id = int(bcv)
+                # dbInsertData.append((ref_id, verseText, crossRefs, footNotes))
                 dbInsertData.append((ref_id, dbVerseText, crossRefs, footNotes))
                 verseContent.append(verseText)
                 ## add empty text in the rest of the verseNumber range
@@ -1178,7 +1189,7 @@ def parseDataForDBInsert(usfmData):
                     bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
                         + str(vnum).zfill(3))
                     ref_id = int(bcv)
-                    dbInsertData.append((ref_id, '', '', ''))
+                    dbInsertData.append((ref_id, "", "", ""))
                     verseContent.append('')
                         
             else:
@@ -1289,11 +1300,16 @@ def uploadSource():
             "parsedJson": parsedJsonFile
         })
         version = rst[3]
+        dataForDb = str(parsedDbData)[1:-1]
+        dataForDb = re.sub("\$'", "$$", dataForDb)
+        dataForDb = re.sub("'\$", "$$", dataForDb)
+        dataForDb = re.sub('\$"', "$$", dataForDb)
+        dataForDb = re.sub('"\$', "$$", dataForDb)
         cleanTableName = "%s_%s_bible_cleaned" %(languageCode.lower(), version.lower())
         
         print(cleanTableName)
         cursor.execute('insert into ' + cleanTableName + ' (ref_id, verse, cross_reference, foot_notes) values '\
-            + str(parsedDbData)[1:-1])
+            + dataForDb)
         try:
             phrases.tokenize(connection, languageCode.lower(), version.lower() , bookId)
         except Exception as ex:
