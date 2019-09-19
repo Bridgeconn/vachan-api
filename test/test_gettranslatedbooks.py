@@ -6,7 +6,6 @@ import json
 def supply_url():
 	return "https://stagingapi.autographamt.com"
 
-
 @pytest.fixture
 def get_adm_accessToken():
 	email = "alex@yopmail.com"
@@ -43,8 +42,6 @@ def get_trans_accessToken():
 	resp = requests.post(url, data=data)
 	respobj = json.loads(resp.text)
 	token = respobj['accessToken']
-
-
 
 def check_login(url,email,password):
 	url = url + "/v1/auth" 
