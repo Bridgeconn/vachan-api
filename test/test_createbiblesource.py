@@ -52,7 +52,7 @@ def check_login(url,email,password):
 			'password':password}
 	resp = requests.post(url, data=data)
 	return resp
-# POST method with access token
+
 
 @pytest.mark.parametrize('languageCode,versionContentCode,versionContentDescription,year,revision,license',[("181","2",'versionContentDescription',"2019","2",'CC BY SA')])
 def test_Createbiblesourcesup(supply_url,get_supAdmin_accessToken,languageCode,versionContentCode,versionContentDescription,year,revision,license):
