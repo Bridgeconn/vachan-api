@@ -44,13 +44,8 @@ def get_trans_accessToken():
 	resp = requests.post(url, data=data)
 	respobj = json.loads(resp.text)
 	token = respobj['accessToken']
+	return token
 
-def check_login(url,email,password):
-	url = url + "/v1/auth" 
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	return resp
 
 def test_getbiblessup(supply_url,get_supAdmin_accessToken):
 	url = supply_url + '/v1/bibles'
@@ -67,9 +62,9 @@ def test_getbiblessad(supply_url,get_adm_accessToken):
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_adm_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
-    # assert isinstance(j,list), j
-	# assert 'language' in j[0], j[0]
-	# assert 'languageVersions' in j[0], j[0]
+    	assert isinstance(j,list), j
+	assert 'language' in j[0], j[0]
+	assert 'languageVersions' in j[0], j[0]
 
 
 def test_getbiblestr(supply_url,get_trans_accessToken):
@@ -77,9 +72,9 @@ def test_getbiblestr(supply_url,get_trans_accessToken):
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_trans_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
-    # assert isinstance(j,list), j
-	# assert 'language' in j[0], j[0]
-	# assert 'languageVersions' in j[0], j[0]
+   	assert isinstance(j,list), j
+	assert 'language' in j[0], j[0]
+	assert 'languageVersions' in j[0], j[0]
 
 
 
