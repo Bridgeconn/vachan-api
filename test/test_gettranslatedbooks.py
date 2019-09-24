@@ -43,13 +43,6 @@ def get_trans_accessToken():
 	respobj = json.loads(resp.text)
 	token = respobj['accessToken']
 
-def check_login(url,email,password):
-	url = url + "/v1/auth" 
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	return resp
-
 def test_getTranslatedbookssup(supply_url,get_supAdmin_accessToken):
 	url = supply_url + '/v1/translatedbooks/30/18'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
