@@ -53,8 +53,6 @@ def test_Contentdetailssup(supply_url,get_supAdmin_accessToken):
 	assert 'contentType' in j[0], j[0]
 	assert 'contentId' in j[0], j[0]
  
-	
-
 def test_Contentdetailsad(supply_url,get_adm_accessToken):
 	url = supply_url + '/v1/contentdetails'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_adm_accessToken)})
@@ -64,8 +62,6 @@ def test_Contentdetailsad(supply_url,get_adm_accessToken):
 	assert 'contentType' in j[0], j[0]
 	assert 'contentId' in j[0], j[0]
    
-
-
 def test_Contentdetailstr(supply_url,get_trans_accessToken):
 	url = supply_url + '/v1/contentdetails'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_trans_accessToken)})
