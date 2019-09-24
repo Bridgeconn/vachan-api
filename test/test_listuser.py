@@ -47,28 +47,18 @@ def get_supAdmin_accessToken():
 
 	return token
 
-
-def check_login(url,email,password):
-	url = url + "/v1/auth" 
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	return resp
-
-def test_firstpage_load():
-	url = "https://staging.autographamt.com"
-	resp = requests.get(url)
-	assert resp.status_code == 200, resp.text
-
-## GET method with access token
 def test_getusersad(supply_url,get_accessTokenadm):
 	url = supply_url + '/v1/autographamt/users'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_accessTokenadm)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
 	assert isinstance(j,list), j
-	assert 'roleId' in j[0], j[0]
+	assert 'userId' in j[0], j[0]
 	assert 'firstName' in j[0], j[0]
+	assert 'lastName' in j[0], j[0]
+	assert 'emailId' in j[0], j[0]
+	assert 'roleId' in j[0], j[0]
+	assert 'verified' in j[0], j[0]
 
 def test_getusersup(supply_url,get_supAdmin_accessToken):
 	url = supply_url + '/v1/autographamt/users'
@@ -76,14 +66,17 @@ def test_getusersup(supply_url,get_supAdmin_accessToken):
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
 	assert isinstance(j,list), j
-	assert 'roleId' in j[0], j[0]
+	assert 'userId' in j[0], j[0]
 	assert 'firstName' in j[0], j[0]
-
-def test_getusers(supply_url,get_accessTokentr):
+	assert 'lastName' in j[0], j[0]
+	assert 'emailId' in j[0], j[0]
+	assert 'roleId' in j[0], j[0]
+	assert 'verified' in j[0], j[0]
+	
+def test_getuserstr(supply_url,get_accessTokentr):
 	url = supply_url + '/v1/autographamt/users'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_accessTokentr)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
-	assert isinstance(j,list), j
-	assert 'roleId' in j[0], j[0]
-	assert 'firstName' in j[0], j[0]
+	assert j['success'] == False, str(j)
+	assert j['message'] == "UnAuthorized to view data", str(j)
