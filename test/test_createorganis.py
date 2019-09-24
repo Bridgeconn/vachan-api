@@ -30,15 +30,6 @@ def get_supAdmin_accessToken():
 	respobj = json.loads(resp.text)
 	token = respobj['accessToken']
 
-	return token
-
-
-def check_login(url,email,password):
-	url = url + "/v1/auth" 
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	return resp
 
 @pytest.mark.parametrize('org_name, org_addr, org_phone, org_email',[('bcs2','Delhi','000','kavitharaju18@gmail.com')])
 def test_createOrg(supply_url,get_accessToken,org_name, org_addr, org_phone, org_email):
