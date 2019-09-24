@@ -44,59 +44,67 @@ def get_supAdmin_accessToken():
 
 	return token
 
-
-def check_login(url,email,password):
-	url = url + "/v1/auth" 
+@pytest.fixture
+def get_accessTokenadm2():
+	email = "ag27@yopmail.com"
+	password = "1189"
+	url = "https://stagingapi.autographamt.com/v1/auth"
 	data = {'email':email,
 			'password':password}
 	resp = requests.post(url, data=data)
-	return resp
+	respobj = json.loads(resp.text)
+	token = respobj['accessToken']
+	return token
 
-def test_firstpage_load():
-	url = "https://staging.autographamt.com"
-	resp = requests.get(url)
-	assert resp.status_code == 200, resp.text
 
-## GET method with access token
-def test_listprojectsw(supply_url,get_accessTokenadm):
+def test_listprojectsadm(supply_url,get_accessTokenadm):
 	url = supply_url + '/v1/autographamt/projects'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_accessTokenadm)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
-	# assert isinstance(j,list), j
-	# assert 'projectId' in j[0], j[0]
-	# assert 'projectName' in j[0], j[0]
-	# assert 'sourceId' in j[0], j[0]
-	# assert 'targetId' in j[0], j[0]
-	# assert 'organisationId' in j[0], j[0]
-	# assert 'organisationName' in j[0], j[0]
-	# assert 'version' in j[0], j[0]
+	assert isinstance(j,list), j
+	assert 'projectId' in j[0], j[0]
+	assert 'projectName' in j[0], j[0]
+	assert 'sourceId' in j[0], j[0]
+	assert 'targetId' in j[0], j[0]
+	assert 'organisationId' in j[0], j[0]
+	assert 'organisationName' in j[0], j[0]
+	assert 'version' in j[0], j[0]
 	
-def test_listprojectsc(supply_url,get_supAdmin_accessToken):
+	
+def test_listprojectsup(supply_url,get_supAdmin_accessToken):
 	url = supply_url + '/v1/autographamt/projects'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
-		# assert isinstance(j,list), j
-	# assert 'projectId' in j[0], j[0]
-	# assert 'projectName' in j[0], j[0]
-	# assert 'sourceId' in j[0], j[0]
-	# assert 'targetId' in j[0], j[0]
-	# assert 'organisationId' in j[0], j[0]
-	# assert 'organisationName' in j[0], j[0]
-	# assert 'version' in j[0], j[0]
+	assert isinstance(j,list), j
+	assert 'projectId' in j[0], j[0]
+	assert 'projectName' in j[0], j[0]
+	assert 'sourceId' in j[0], j[0]
+	assert 'targetId' in j[0], j[0]
+	assert 'organisationId' in j[0], j[0]
+	assert 'organisationName' in j[0], j[0]
+	assert 'version' in j[0], j[0]
+
+def test_listprojectsadm2(supply_url,get_accessTokenadm2):
+	url = supply_url + '/v1/autographamt/projects'
+	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_accessTokenadm2)})
+	j = json.loads(resp.text)
+	assert resp.status_code == 200, resp.text
+	assert isinstance(j,list), j
+	assert 'projectId' in j[0], j[0]
+	assert 'projectName' in j[0], j[0]
+	assert 'sourceId' in j[0], j[0]
+	assert 'targetId' in j[0], j[0]
+	assert 'organisationId' in j[0], j[0]
+	assert 'organisationName' in j[0], j[0]
+	assert 'version' in j[0], j[0]
 	
-def test_listprojectct(supply_url,get_accessTokentr):
+def test_listprojectctr(supply_url,get_accessTokentr):
 	url = supply_url + '/v1/autographamt/projects'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_accessTokentr)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
-	print(j)
-	# assert isinstance(j,list), j
-	# assert 'projectId' in j[0], j[0]
-	# assert 'projectName' in j[0], j[0]
-	# assert 'sourceId' in j[0], j[0]
-	# assert 'targetId' in j[0], j[0]
-	# assert 'organisationId' in j[0], j[0]
-	# assert 'organisationName' in j[0], j[0]
-	# assert 'version' in j[0], j[0]
+	assert j['success'] == False, str(j)
+	assert j['message'] == "Not authorized", str(j)
+
