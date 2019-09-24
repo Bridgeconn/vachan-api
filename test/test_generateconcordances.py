@@ -47,16 +47,7 @@ def get_supAdmin_accessToken():
 
 	return token
 
-
-def check_login(url,email,password):
-	url = url + "/v1/auth" 
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	return resp
-
-
-def test_generateconcordancesuo(supply_url,get_supAdmin_accessToken):
+def test_generateconcordancesup(supply_url,get_supAdmin_accessToken):
 	url = supply_url + '/v1/concordances/35/heb/करो'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
@@ -64,7 +55,7 @@ def test_generateconcordancesuo(supply_url,get_supAdmin_accessToken):
 	# assert isinstance(j,list), j
 	# # new_j = [x.encode('utf-8') for x in j]
  	# # print(new_j)
-    # # print(j)
+    	# print(j)
 	# assert 'all' in j[0], j[0]
 	
 def test_generateconcordancestr(supply_url,get_accessToketr):
@@ -73,9 +64,9 @@ def test_generateconcordancestr(supply_url,get_accessToketr):
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
 	# assert isinstance(j,list), j
-	# # new_j = [x.encode('utf-8') for x in j]
- 	# # print(new_j)
-    # # print(j)
+	# new_j = [x.encode('utf-8') for x in j]
+ 	# print(new_j)
+    	 # print(j)
 	# assert 'all' in j[0], j[0]
 	
 def test_generateconcordancesad(supply_url,get_accessTokenad):
@@ -84,8 +75,8 @@ def test_generateconcordancesad(supply_url,get_accessTokenad):
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
 	# assert isinstance(j,list), j
-	# # new_j = [x.encode('utf-8') for x in j]
- 	# # print(new_j)
-    # # print(j)
+	# new_j = [x.encode('utf-8') for x in j]
+ 	# print(new_j)
+    	# print(j)
 	# assert 'all' in j[0], j[0]
 	
