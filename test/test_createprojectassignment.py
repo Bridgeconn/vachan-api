@@ -46,13 +46,6 @@ def get_supAdmin_accessToken():
 	return token
 
 
-def check_login(url,email,password):
-	url = url + "/v1/auth" 
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	return resp
-
 # @pytest.mark.parametrize('userID,projectID,Books',[("14","35",'act')])
 # def test_projectassignmentAd(supply_url,get_accessTokenadm,userID, projectID,Books):
 # 	url = supply_url + '/v1/autographamt/projects/assignments'
