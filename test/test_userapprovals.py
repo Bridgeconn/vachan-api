@@ -59,21 +59,6 @@ def get_supAdmin_accessToken():
 
 	return token
 
-
-def check_login(url,email,password):
-	url = url + "/v1/auth" 
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	return resp
-
-def test_firstpage_load():
-	url = "https://staging.autographamt.com"
-	resp = requests.get(url)
-	assert resp.status_code == 200, resp.text
-
-## POST method with access token for userapproval
-
 @pytest.mark.parametrize('userId,admin',[('11','admin')])
 def test_Userapprovalsup(supply_url,get_supAdmin_accessToken,userId,admin):
 	url = supply_url + '/v1/autographamt/approvals/users'
@@ -83,7 +68,6 @@ def test_Userapprovalsup(supply_url,get_supAdmin_accessToken,userId,admin):
 			}
 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
-	print(j)
 	assert resp.status_code == 200, resp.text
 	assert j['success'] == False, str(j)
 	assert j['message'] == "Unauthorized", str(j)
