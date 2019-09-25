@@ -1310,12 +1310,10 @@ def uploadSource():
         print(cleanTableName)
         cursor.execute('insert into ' + cleanTableName + ' (ref_id, verse, cross_reference, foot_notes) values '\
             + dataForDb)
-        ############## lines 1314-1317 commented to debug the upload souce issue ###########
-        # try:
-        #     phrases.tokenize(connection, languageCode.lower(), version.lower() , bookId)
-        # except Exception as ex:
-        #     return '{"success":false, "message":"Phrases method error"}'
-        
+        try:
+            phrases.tokenize(connection, languageCode.lower(), version.lower() , bookId)
+        except Exception as ex:
+            return '{"success":false, "message":"Phrases method error"}'
         # cursor = connection.cursor()
         # version = rst[0]
         cursor.execute('update sources set usfm_text=%s where source_id=%s', (usfmText, sourceId))
