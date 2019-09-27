@@ -45,18 +45,6 @@ def get_trans_accessToken():
 	token = respobj['accessToken']
 
 
-def check_login(url,email,password):
-	url = url + "/v1/auth" 
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	return resp
-
-def test_firstpage_load():
-	url = "https://staging.autographamt.com"
-	resp = requests.get(url)
-	assert resp.status_code == 200, resp.text
-
 # create project
 @pytest.mark.parametrize('sourceId,targetLanguageID',[('31','2761')])
 def test_createprojt(supply_url,get_trans_accessToken,soueceID,targetLanguageID):
