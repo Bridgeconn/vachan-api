@@ -44,6 +44,7 @@ def get_trans_accessToken():
 	resp = requests.post(url, data=data)
 	respobj = json.loads(resp.text)
 	token = respobj['accessToken']
+	return token
 
 def test_getbibleversessup(supply_url,get_supAdmin_accessToken):
 	url = supply_url + '/v1/bibles/35/books/PRO/chapters/7/verses/17'
