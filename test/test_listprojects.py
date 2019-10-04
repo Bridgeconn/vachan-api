@@ -91,14 +91,10 @@ def test_listprojectsadm2(supply_url,get_accessTokenadm2):
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_accessTokenadm2)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
-	assert isinstance(j,list), j
-	assert 'projectId' in j[0], j[0]
-	assert 'projectName' in j[0], j[0]
-	assert 'sourceId' in j[0], j[0]
-	assert 'targetId' in j[0], j[0]
-	assert 'organisationId' in j[0], j[0]
-	assert 'organisationName' in j[0], j[0]
-	assert 'version' in j[0], j[0]
+	# assert j['success'] == False, str(j)
+	# assert j['message'] == "No projects created yet", str(j)
+	
+	
 	
 def test_listprojectctr(supply_url,get_accessTokentr):
 	url = supply_url + '/v1/autographamt/projects'
