@@ -1015,17 +1015,6 @@ def getContentDetails():
     cursor.close()
     return json.dumps(allContentTypeData)
 
-def getTokens(text):
-    crossRefPattern = re.compile(r'(\(?(\d+\s)?\S+\s\d+:\d+\,?\)?)')
-    footNotesPattern = re.compile(r'\it(.*)\s?\\f\s?\+.*\\ft\s?(.*)\s?\\f\*\\it\*\*')
-    content = re.sub(crossRefPattern, '', text)
-    content = re.sub(footNotesPattern, '', content)
-    content = re.sub(r'([!\"#$%&\\\'\(\)\*\+,\.\/:;<=>\?\@\[\]^_`{|\}~\”\“\‘\’।0123456789])',"",content)
-    content = re.sub(r'\n', ' ', content)
-    content = content.strip()
-    tokenSet = set(content.split(' '))
-    # tokenList = list(tokenSet)
-    return tokenSet
 
 def parsePunctuations(text):
     content = re.sub(r'([!\"#$%&\\\'\(\)\*\+,\.\/:;<=>\?\@\[\]^_`{|\}~\”\“\‘\’।0123456789])',"",text)
@@ -1163,11 +1152,9 @@ def parseDataForDBInsert(usfmData):
             else:
                 print("!!!Unrecognized pattern in verse number!!!")
                 print("verseNumber:",verse['number'])
-    tokenList = list(getTokens(' '.join(verseContent)))
-    tokenList = [(bookId, token) for token in tokenList]
     # 
     print(dbInsertData[0])
-    return (dbInsertData, tokenList, bookId)
+    return (dbInsertData, bookId)
 
 def createTableCommand(fields, tablename):
     command = 'CREATE TABLE %s (%s)' %(tablename, ', '.join(fields))
@@ -1256,7 +1243,7 @@ def uploadSource():
         # except Exception as ex:
         #     return '{"success":false, "message":"' + str(ex) + '"}'
         print('befire parse')
-        parsedDbData, tokenDBData, bookId = parseDataForDBInsert(parsedUsfmText)
+        parsedDbData, bookId = parseDataForDBInsert(parsedUsfmText)
         languageCode = rst[2]
         versionCode = rst[1]
         print(languageCode, versionCode)
