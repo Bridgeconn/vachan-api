@@ -983,38 +983,6 @@ def getLanguages(contentId):
     } for languageName, languageCode, languageId in rst]
     return json.dumps(languages)
 
-@app.route("/v1/versiondetails", methods=["GET"], defaults={'contentId': None,'languageId':None})
-@app.route("/v1/versiondetails/<contentId>/<languageId>", methods=["GET"])
-def getVersionDetails(contentId, languageId):
-    connection = get_db()
-    cursor = connection.cursor()
-    if languageId:
-        cursor.execute("select s.source_id, s.version_content_code, s.version_content_description, s.year, \
-            s.license, s.revision, c.content_type, l.language_name from sources s left join \
-                content_types c on s.content_id=c.content_id left join languages l on \
-                    s.language_id=l.language_id where s.content_id=%s and s.language_id=%s", (\
-                        contentId, languageId))
-    else:
-
-        cursor.execute("select s.source_id, s.version_content_code, s.version_content_description, s.year, \
-            s.license, s.revision, c.content_type, l.language_name from sources s left join \
-                content_types c on s.content_id=c.content_id left join languages l on \
-                    s.language_id=l.language_id",)
-    rst = cursor.fetchall()
-    version_details = [
-        {
-            "sourceId":sourceId,
-            "versionContentDescription":versioncontentdescription,
-            "versionContentCode":versioncontentcode,
-            "year":year,
-            "license":license,
-            "revision": revision,
-            "contentType":contenttype,
-            "languageName":languagename,
-        } for sourceId, versioncontentcode, versioncontentdescription, year, license, revision, contenttype, languagename in rst
-    ]
-    cursor.close()
-    return json.dumps(version_details)
 
 @app.route("/v1/languages", methods=["GET"])
 def getAllLanguages():
