@@ -36,12 +36,12 @@ app = Flask(__name__)
 CORS(app)
 
 sendinblue_key = os.environ.get("AGMT_SENDINBLUE_KEY")
-jwt_hs256_secret = os.environ.get("AGMT_HS256_SECRET")
+jwt_hs256_secret = os.environ.get("AGMT_HS256_SECRET", "x709myFlW5")
 postgres_host = os.environ.get("AGMT_POSTGRES_HOST", "localhost")
 postgres_port = os.environ.get("AGMT_POSTGRES_PORT", "5432")
 postgres_user = os.environ.get("AGMT_POSTGRES_USER", "postgres")
-postgres_password = os.environ.get("AGMT_POSTGRES_PASSWORD", "secret")
-postgres_database = os.environ.get("AGMT_POSTGRES_DATABASE", "postgres")
+postgres_password = os.environ.get("AGMT_POSTGRES_PASSWORD", "password")
+postgres_database = os.environ.get("AGMT_POSTGRES_DATABASE", "vachan_engine_local")
 # postgres_database = os.environ.get("vachan", "vachan")
 host_api_url = os.environ.get("AGMT_HOST_API_URL")
 host_ui_url = os.environ.get("AGMT_HOST_UI_URL")
@@ -130,6 +130,8 @@ def auth():
                 'lastName': lastName
                 }, jwt_hs256_secret, algorithm='HS256')
         except Exception as ex:
+            print("comes here")
+            print(ex)
             pass
         logging.warning('User: \'' + str(email) + '\' logged in successfully')
         return '{"accessToken": "%s"}\n' % (access_token.decode('utf-8'),)
@@ -898,20 +900,39 @@ def availableProjectBooks(projectId, userId):
 
 @app.route("/v1/tokenlist/<sourceId>/<book>", methods=["GET"])
 def getTokenLists(sourceId, book):
+    print("comes to getTokenLists")
     connection = get_db()
     cursor = connection.cursor()
     cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
     rst = cursor.fetchone()
+    print("comes here",rst)
     cursor.execute("select book_id from bible_books_look_up where book_code=%s", (book,))
     bookId = cursor.fetchone()[0]
+    print('comes here ',bookId)
     tablename = '_'.join(rst[0].split('_')[0:3]) + '_tokens'
     tablename = rst[0].split('_')
+    languageCode = tablename[0]
+    version = tablename[1]+"_"+tablename[2]
     tablename.pop(-1)
     tablename = '_'.join(tablename) + '_tokens'
     cursor.execute("select token from " + tablename + " where book_id=%s", (bookId,))
     tokenList = [item[0] for item in cursor.fetchall()]
+    # print("comes here:",tokenList)
+    if len(tokenList)==0:
+        try:
+            print("comes here to tokenize")
+            # phrases.testcall()
+            phrases.tokenize(connection, languageCode.lower(), version.lower() , bookId)
+            cursor.execute("select token from " + tablename + " where book_id=%s", (bookId,))
+            tokenList = [item[0] for item in cursor.fetchall()]
+        except Exception as ex:
+            print(ex)
+            return '{"success":false, "message":"Phrases method error"}'
+        
     cursor.close()
-    return json.dumps(tokenList)
+    jsonOut = json.dumps(tokenList)
+    print(jsonOut)
+    return jsonOut
 
 def getConcordanceList(db_data):
     concordance = []
@@ -983,38 +1004,6 @@ def getLanguages(contentId):
     } for languageName, languageCode, languageId in rst]
     return json.dumps(languages)
 
-@app.route("/v1/versiondetails", methods=["GET"], defaults={'contentId': None,'languageId':None})
-@app.route("/v1/versiondetails/<contentId>/<languageId>", methods=["GET"])
-def getVersionDetails(contentId, languageId):
-    connection = get_db()
-    cursor = connection.cursor()
-    if languageId:
-        cursor.execute("select s.source_id, s.version_content_code, s.version_content_description, s.year, \
-            s.license, s.revision, c.content_type, l.language_name from sources s left join \
-                content_types c on s.content_id=c.content_id left join languages l on \
-                    s.language_id=l.language_id where s.content_id=%s and s.language_id=%s", (\
-                        contentId, languageId))
-    else:
-
-        cursor.execute("select s.source_id, s.version_content_code, s.version_content_description, s.year, \
-            s.license, s.revision, c.content_type, l.language_name from sources s left join \
-                content_types c on s.content_id=c.content_id left join languages l on \
-                    s.language_id=l.language_id",)
-    rst = cursor.fetchall()
-    version_details = [
-        {
-            "sourceId":sourceId,
-            "versionContentDescription":versioncontentdescription,
-            "versionContentCode":versioncontentcode,
-            "year":year,
-            "license":license,
-            "revision": revision,
-            "contentType":contenttype,
-            "languageName":languagename,
-        } for sourceId, versioncontentcode, versioncontentdescription, year, license, revision, contenttype, languagename in rst
-    ]
-    cursor.close()
-    return json.dumps(version_details)
 
 @app.route("/v1/languages", methods=["GET"])
 def getAllLanguages():
@@ -1047,17 +1036,6 @@ def getContentDetails():
     cursor.close()
     return json.dumps(allContentTypeData)
 
-def getTokens(text):
-    crossRefPattern = re.compile(r'(\(?(\d+\s)?\S+\s\d+:\d+\,?\)?)')
-    footNotesPattern = re.compile(r'\it(.*)\s?\\f\s?\+.*\\ft\s?(.*)\s?\\f\*\\it\*\*')
-    content = re.sub(crossRefPattern, '', text)
-    content = re.sub(footNotesPattern, '', content)
-    content = re.sub(r'([!\"#$%&\\\'\(\)\*\+,\.\/:;<=>\?\@\[\]^_`{|\}~\”\“\‘\’।0123456789])',"",content)
-    content = re.sub(r'\n', ' ', content)
-    content = content.strip()
-    tokenSet = set(content.split(' '))
-    # tokenList = list(tokenSet)
-    return tokenSet
 
 def parsePunctuations(text):
     content = re.sub(r'([!\"#$%&\\\'\(\)\*\+,\.\/:;<=>\?\@\[\]^_`{|\}~\”\“\‘\’।0123456789])',"",text)
@@ -1195,11 +1173,7 @@ def parseDataForDBInsert(usfmData):
             else:
                 print("!!!Unrecognized pattern in verse number!!!")
                 print("verseNumber:",verse['number'])
-    tokenList = list(getTokens(' '.join(verseContent)))
-    tokenList = [(bookId, token) for token in tokenList]
-    # 
-    print(dbInsertData[0])
-    return (dbInsertData, tokenList, bookId)
+    return (dbInsertData, bookId)
 
 def createTableCommand(fields, tablename):
     command = 'CREATE TABLE %s (%s)' %(tablename, ', '.join(fields))
@@ -1269,14 +1243,15 @@ def uploadSource():
             sources s left join languages l on s.language_id=l.language_id where \
                 source_id=%s", (sourceId,))
         rst = cursor.fetchone()
-        # print(rst)
+        print(rst)
         cursor.close()
         if not rst:
             return '{"success":false, "message":"No source created"}'
         usfmFile = rst[0]["usfm"]
         parsedJsonFile = rst[0]["parsedJson"]
+        print("comes here:",parsedUsfmText["metadata"])
         bookCode = parsedUsfmText["metadata"]["id"]["book"].lower()
-        print(bookCode)
+        print("bookCode:",bookCode)
         print('whats')
         if usfmFile:
             if bookCode in usfmFile:
@@ -1288,7 +1263,8 @@ def uploadSource():
         # except Exception as ex:
         #     return '{"success":false, "message":"' + str(ex) + '"}'
         print('befire parse')
-        parsedDbData, tokenDBData, bookId = parseDataForDBInsert(parsedUsfmText)
+        parsedDbData, bookId = parseDataForDBInsert(parsedUsfmText)
+        print("after parse")
         languageCode = rst[2]
         versionCode = rst[1]
         print(languageCode, versionCode)
@@ -1310,10 +1286,10 @@ def uploadSource():
         print(cleanTableName)
         cursor.execute('insert into ' + cleanTableName + ' (ref_id, verse, cross_reference, foot_notes) values '\
             + dataForDb)
-        try:
-            phrases.tokenize(connection, languageCode.lower(), version.lower() , bookId)
-        except Exception as ex:
-            return '{"success":false, "message":"Phrases method error"}'
+        # try:
+        #     phrases.tokenize(connection, languageCode.lower(), version.lower() , bookId)
+        # except Exception as ex:
+        #     return '{"success":false, "message":"Phrases method error"}'
         # cursor = connection.cursor()
         # version = rst[0]
         cursor.execute('update sources set usfm_text=%s where source_id=%s', (usfmText, sourceId))
