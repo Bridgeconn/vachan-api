@@ -906,10 +906,20 @@ def getTokenLists(sourceId, book):
     bookId = cursor.fetchone()[0]
     tablename = '_'.join(rst[0].split('_')[0:3]) + '_tokens'
     tablename = rst[0].split('_')
+    languageCode = tablename[0]
+    version = tablename[1]+"_"+tablename[2]
     tablename.pop(-1)
     tablename = '_'.join(tablename) + '_tokens'
     cursor.execute("select token from " + tablename + " where book_id=%s", (bookId,))
     tokenList = [item[0] for item in cursor.fetchall()]
+    if len(tokenList) == 0:
+        try:
+            phrases.tokenize(connection, languageCode.lower(), version.lower() , bookId)
+            cursor.execute("select token from " + tablename + " where book_id=%s", (bookId,))
+            tokenList = [item[0] for item in cursor.fetchall()]
+        except Exception as ex:
+            return '{"success":false, "message":"Phrases method error"}'
+
     cursor.close()
     return json.dumps(tokenList)
 
@@ -1265,10 +1275,6 @@ def uploadSource():
         print(cleanTableName)
         cursor.execute('insert into ' + cleanTableName + ' (ref_id, verse, cross_reference, foot_notes) values '\
             + dataForDb)
-        try:
-            phrases.tokenize(connection, languageCode.lower(), version.lower() , bookId)
-        except Exception as ex:
-            return '{"success":false, "message":"Phrases method error"}'
         # cursor = connection.cursor()
         # version = rst[0]
         cursor.execute('update sources set usfm_text=%s where source_id=%s', (usfmText, sourceId))
