@@ -84,8 +84,10 @@ def test_getbiblebooksstr1(supply_url,get_trans_accessToken):
 	resp = requests.get(url,headers={'Authorization': 'bearer{}'.format(get_trans_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
-	assert isinstance(j,list),j
-	assert 'books' in j[0], j[0]
+	#assert isinstance(j,list),j
+	#assert 'books' in j[0], j[0]
+	assert j['success'] == False, str(j)
+	assert j['message'] == "Invalid Source Id", str(j)
 
 def test_getbiblebooksstr(supply_url,get_supAdmin_accessToken):
 	url = supply_url + '/v1/bibles/21/books'
