@@ -57,6 +57,8 @@ def get_trans_accessToken():
 	resp = requests.post(url, data=data)
 	respobj = json.loads(resp.text)
 	token = respobj['accessToken']
+	
+	return token
 
 def test_getUserProjectssup(supply_url,get_supAdmin_accessToken):
 	url = supply_url + '/v1/autographamt/users/projects'
