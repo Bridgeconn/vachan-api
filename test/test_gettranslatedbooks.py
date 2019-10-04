@@ -44,15 +44,23 @@ def get_trans_accessToken():
 	token = respobj['accessToken']
 
 def test_getTranslatedbookssup(supply_url,get_supAdmin_accessToken):
-	url = supply_url + '/v1/translatedbooks/3702/181'
+	url = supply_url + '/v1/translatedbooks/35/18'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
 	# assert isinstance(j,list), j
 	# print (j)
-
+	
+def test_getTranslatedbookssup2(supply_url,get_supAdmin_accessToken):
+	url = supply_url + '/v1/translatedbooks/45/181'
+	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
+	j = json.loads(resp.text)
+	assert resp.status_code == 200, resp.text
+	# assert isinstance(j,list), j
+	# print (j)
+	
 def test_getTranslatedbooksad(supply_url,get_adm_accessToken):
-	url = supply_url + '/v1/translatedbooks/3702/181'
+	url = supply_url + '/v1/translatedbooks/35/18'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_adm_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
@@ -60,7 +68,7 @@ def test_getTranslatedbooksad(supply_url,get_adm_accessToken):
 	# print (j)
 
 def test_getTranslatedbookstr(supply_url,get_trans_accessToken):
-	url = supply_url + '/v1/translatedbooks/30/18'
+	url = supply_url + '/v1/translatedbooks/35/18'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_trans_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
