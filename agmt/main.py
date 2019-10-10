@@ -904,7 +904,6 @@ def getTokenLists(sourceId, book):
     rst = cursor.fetchone()
     cursor.execute("select book_id from bible_books_look_up where book_code=%s", (book,))
     bookId = cursor.fetchone()[0]
-    tablename = '_'.join(rst[0].split('_')[0:3]) + '_tokens'
     tablename = rst[0].split('_')
     languageCode = tablename[0]
     version = tablename[1]+"_"+tablename[2]
