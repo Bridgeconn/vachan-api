@@ -44,6 +44,7 @@ def get_accessTokentrans():
 	resp = requests.post(url, data=data)
 	respobj = json.loads(resp.text)
 	token = respobj['accessToken']
+	return token
 
 @pytest.mark.parametrize('sourceId,targetLanguageID',[("40","181")])
 def test_createprojecttr(supply_url,get_accessTokentrans,sourceId,targetLanguageID):
