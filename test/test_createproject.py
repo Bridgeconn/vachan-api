@@ -36,8 +36,8 @@ def get_supAdmin_accessToken():
 
 @pytest.fixture
 def get_accessTokentrans():
-	email = 'ag2@yopmail.com'
-	password = '1189'
+	email = 'kavitharaju18@gmail.com'
+	password = '111111'
 	url = "https://stagingapi.autographamt.com/v1/auth"
 	data = {'email':email,
 			'password':password}
@@ -46,91 +46,48 @@ def get_accessTokentrans():
 	token = respobj['accessToken']
 	return token
 
-@pytest.mark.parametrize('sourceId,targetLanguageID',[("40","181")])
-def test_createprojecttr(supply_url,get_accessTokentrans,sourceId,targetLanguageID):
+@pytest.mark.parametrize('sourceId,targetLanguageID,organisationId',[(56,3702,26)])
+def test_createprojecttr(supply_url,get_accessTokentrans,sourceId,targetLanguageID,organisationId):
 	url = supply_url + '/v1/autographamt/organisations/projects'
 	data = {
 		'sourceId':sourceId,
-    	'targetLanguageId':targetLanguageID
+    	'targetLanguageId':targetLanguageID,
+    	'organisationId':organisationId
 		}
 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_accessTokentrans)})
 	j = json.loads(resp.text)
+	print(j)
 	assert resp.status_code == 200, resp.text
-	assert j['success'] == False, str(j)
-	assert j['message'] == "Not authorized", str(j)
+	assert j['success'] == True, str(j)
+	assert j['message'] == "Project created", str(j)
+	### add code to delete the project
 
-@pytest.mark.parametrize('sourceId,targetLanguageID',[("35","18")])
-def test_createprojectsup1(supply_url,get_supAdmin_accessToken,sourceId,targetLanguageID):
+@pytest.mark.parametrize('sourceId,targetLanguageID,organisationId',[(56,4923,26)])
+def test_createprojectsup1(supply_url,get_supAdmin_accessToken,sourceId,targetLanguageID,organisationId):
 	url = supply_url + '/v1/autographamt/organisations/projects'
 	data = {
 		'sourceId':sourceId,
-    	'targetLanguageId':targetLanguageID
+    	'targetLanguageId':targetLanguageID,
+    	'organisationId':organisationId
 		}
 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.dumps(resp.text)
-	assert resp.status_code == 500, resp.text
+	assert resp.status_code == 200, resp.text
 	assert j['success'] == True, str(j)
 	assert j['message'] == "Project created", str(j)
+	### add code to delete the project
 
-@pytest.mark.parametrize('sourceId,targetLanguageID',[("4","39")])
-def test_createprojectsup2(supply_url,get_supAdmin_accessToken,sourceId,targetLanguageID):
-	url = supply_url + '/v1/autographamt/organisations/projects'
-	data = {
-		'sourceId':sourceId,
-    	'targetLanguageId':targetLanguageID
-		}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
-	j = json.dumps(resp.text)
-	assert resp.status_code == 500, resp.text
-	assert j['success'] == True, str(j)
-	assert j['message'] == "Project created", str(j)
-
-@pytest.mark.parametrize('sourceId,targetLanguageID',[("35","39")])
-def test_createprojectad(supply_url,get_supAdmin_accessToken,sourceId,targetLanguageID):
+@pytest.mark.parametrize('sourceId,targetLanguageID,organisationId',[(56,3699,13)])
+def test_createprojectad(supply_url,get_supAdmin_accessToken,sourceId,targetLanguageID,organisationId):
 	url = supply_url + '/v1/autographamt/organisations/projects'
 	data = {
 			'sourceId':sourceId,
-    		'targetLanguageId':targetLanguageID
+    		'targetLanguageId':targetLanguageID,
+    		'organisationId':organisationId
 			}
 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
 	assert j['success'] == True, str(j)
 	assert j['message'] == "Project created", str(j)
-
-@pytest.mark.parametrize('sourceId,targetLanguageID',[("3702","181")])
-def test_createprojectad2(supply_url,get_supAdmin_accessToken,sourceId,targetLanguageID):
-	url = supply_url + '/v1/autographamt/organisations/projects'
-	data = {
-			'sourceId':sourceId,
-    		'targetLanguageId':targetLanguageID
-			}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-
-@pytest.mark.parametrize('sourceId,targetLanguageID',[("35","974")])
-def test_createprojectsup3(supply_url,get_supAdmin_accessToken,sourceId,targetLanguageID):
-	url = supply_url + '/v1/autographamt/organisations/projects'
-	data = {
-		'sourceId':sourceId,
-    	'targetLanguageId': targetLanguageID
-		}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == False, str(j)
-	assert j['message'] == "No projects created yet", str(j)
-
-@pytest.mark.parametrize('sourceId,targetLanguageID',[("181","2302")])
-def test_createprojectsup4(supply_url,get_supAdmin_accessToken,sourceId,targetLanguageID):
-	url = supply_url + '/v1/autographamt/organisations/projects'
-	data = {
-		'sourceId':sourceId,
-    	'targetLanguageId': targetLanguageID
-		}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == False, str(j)
-	assert j['message'] == "No projects created yet", str(j)
+	### add code to delete the project
