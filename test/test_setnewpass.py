@@ -6,8 +6,8 @@ import json
 def url():
 	return "https://stagingapi.autographamt.com"
 
-def setnewpass(url,email):
-	url = url + "/v1/forgotpassword"
+def setnewpass(temporaryPassword,password):
+	url = "https://stagingapi.autographamt.com" + "/v1/forgotpassword"
 	data = {'temporaryPassword':temporaryPassword,
             'password': password
             }
@@ -19,7 +19,7 @@ def test_setnewpass_load():
 	resp = requests.get(url)
 	assert resp.status_code == 200, resp.text
 
-@pytest.mark.parametrize("temporaryPassword,password",[("512889","221189")])
+@pytest.mark.parametrize("temporaryPassword,password",[("363588","111111")])
 def test_setnewpass_success(temporaryPassword,password):
 	resp = setnewpass(temporaryPassword,password)
 	j = json.loads(resp.text)
