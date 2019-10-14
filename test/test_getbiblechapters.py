@@ -52,7 +52,7 @@ def test_getbiblechapterssup(supply_url,get_supAdmin_accessToken):
 	assert resp.status_code == 200, resp.text
 	# assert j['success'] == False, str(j)
 	# assert j['message'] == "Invalid book code", str(j)
-  	assert isinstance(j,list), j
+	assert isinstance(j,list), j
 	assert 'sourceId' in j[0], j[0]
 	assert 'chapter' in j[0], j[0]
 

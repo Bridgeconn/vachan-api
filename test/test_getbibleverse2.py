@@ -57,7 +57,7 @@ def test_getbiblechapterssup(supply_url,get_supAdmin_accessToken):
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
-  	assert isinstance(j,list), j
+	assert isinstance(j,list), j
 	assert 'sourceId' in j[0], j[0]
 	assert 'chapterId' in j[0], j[0]
 	assert 'verse' in j[0], j[0]
@@ -70,7 +70,7 @@ def test_getbibleverse2sup2(supply_url,get_supAdmin_accessToken):
 	assert resp.status_code == 200, resp.text
 	assert j['success'] == False, str(j)
 	assert j['message'] == "Invalid Chapter id format.", str(j)
-  	# assert isinstance(j,list), j
+	# assert isinstance(j,list), j
 	# assert 'sourceId' in j[0], j[0]
 	# assert 'chapter' in j[0], j[0]
 
@@ -109,7 +109,7 @@ def test_getbiblechaptersstr(supply_url,get_trans_accessToken):
 	assert j['message'] == "Invalid Chapter id format.", str(j)
   
 
-    
+	
 
 
 

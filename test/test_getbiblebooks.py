@@ -64,7 +64,7 @@ def test_getbiblebookssup(supply_url,get_supAdmin_accessToken):
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
-  	assert isinstance(j,list), j
+	assert isinstance(j,list), j
 	assert 'sourceId' in j[0], j[0]
 	assert 'books' in j[0], j[0]
 	

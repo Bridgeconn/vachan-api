@@ -62,7 +62,7 @@ def test_getbiblessad(supply_url,get_adm_accessToken):
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_adm_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
-    	assert isinstance(j,list), j
+	assert isinstance(j,list), j
 	assert 'language' in j[0], j[0]
 	assert 'languageVersions' in j[0], j[0]
 
@@ -72,7 +72,7 @@ def test_getbiblestr(supply_url,get_trans_accessToken):
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_trans_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
-   	assert isinstance(j,list), j
+	assert isinstance(j,list), j
 	assert 'language' in j[0], j[0]
 	assert 'languageVersions' in j[0], j[0]
 
