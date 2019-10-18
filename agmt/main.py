@@ -1380,12 +1380,6 @@ def getTransaltedTokensInfo():
         connection = get_db()
         cursor = connection.cursor()
         email = request.email
-        cursor.execute("select distinct r.version_content_code, l.language_name, r.language_name, \
-            r.source_id from translations t left join (select distinct s.source_id, \
-                s.version_content_code, ll.language_name  from translations tt left join sources s \
-                    on tt.source_id=s.source_id left join languages ll on \
-                        s.language_id=ll.language_id) r on t.source_id=r.source_id left \
-                            join languages l on t.target_id=l.language_id")
         cursor.execute("select user_id from autographamt_users where email_id=%s", (email,))
         userId = cursor.fetchone()[0]
         cursor.execute("select project_id from autographamt_assignments where user_id=%s", (userId,))
