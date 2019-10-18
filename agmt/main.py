@@ -284,7 +284,7 @@ def check_token(f):
 
 
 
-@app.route("/v1/verifications/<string:code>", methods=["GET"])
+@app.route("/v1/verifications/<code>", methods=["GET"])
 def new_registration2(code):
     connection = get_db()
     cursor = connection.cursor()
@@ -1638,6 +1638,36 @@ def getTranslatedWords(sourceId, targetLanguageId, token):
         })
     else:
         return '{"success": false, "message":"No Translation or sense available for this token"}'
+
+@app.route("/v1/translations/<sourceId>/<targetLanguageId>", methods=["GET"])
+def getAllTranslatedWords(sourceId, targetLanguageId):
+    connection = get_db()
+    cursor = connection.cursor()
+    
+    cursor.execute("select token,translation, senses from translations where source_id=%s \
+        and target_id=%s", (sourceId, targetLanguageId))
+    rst = cursor.fetchall()
+    print(rst)
+    
+    if rst:
+        result = []
+        for item in rst:
+            token,translation, senses = item
+            print(senses)
+            if senses.strip() == "":
+                senses = []
+            else:
+                senses = senses.split('|')
+            result.append({
+                "token": token,
+                "translation":translation,
+                "senses":senses
+            })
+        return json.dumps(result)
+    else:
+        return '{"success": false, "message":"No Token Translations or senses available for this language pair"}'
+
+
 # @app.route("/v1/sources/")
 
 @app.route('/v1/sources/<sourceid>/<outputtype>', methods=["GET"], defaults={'bookid':None})
