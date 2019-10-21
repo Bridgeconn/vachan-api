@@ -1753,6 +1753,198 @@ def getVerseInRange(sourceid, outputtype, bookid, chapterid):
     else:
         '{"success":false, "message":"Invalid type. Use either `clean` or `json`"}'
 
+@app.route("/v1/autographamt/user/delete",methods=["DELETE"])
+@check_token
+def removeUser():
+    req = request.get_json(True)
+    userEmail = req["userEmail"]
+    role = checkAuth()
+    connection = get_db()
+    cursor = connection.cursor()
+    message = ""
+    success = False
+    try:
+        if role == 3:
+          # delete from user table
+            cursor.execute("select user_id from autographamt_users where email_id=%s",(userEmail,))
+            userId = cursor.fetchone()
+            if userId:
+                status = json.loads(deleteUser(userId))
+                message += status['message'] 
+                success = status['success']
+            else:
+                message += "User not present."
+            connection.commit()
+        else:
+            message += "UnAuthorized! Only a super admin can delete users."
+    except Exception as e:
+        print(e)
+        message = "Server error."
+    return json.dumps({"success":success,"message":message})
+
+@app.route("/v1/autographamt/organisation/delete",methods=["DELETE"])
+@check_token
+def removeOrg():
+    req = request.get_json(True)
+    orgName= req["organisationName"]
+    orgEmail = req["organisationEmail"]
+    role = checkAuth()
+    connection = get_db()
+    cursor = connection.cursor()
+    message = ""
+    success = False
+    try:
+        if role == 3:
+            # delete organization
+            cursor.execute("select organisation_id from autographamt_organisations where organisation_name=%s and organisation_email=%s",(orgName,orgEmail,))
+            orgId = cursor.fetchone()
+            if orgId:
+                status = json.loads(deleteOrganisation(orgId))
+                message += status['message']
+                success = status['success']
+            else:
+                message += "Organisation not present."
+        else:
+            message += "UnAuthorized! Only a super admin can delete organizations."
+    except Exception as e:
+        print(e)
+        message = "Server error."
+    return json.dumps({"success":success,"message":message})
+
+@app.route("/v1/autographamt/project/delete",methods=["DELETE"])
+@check_token
+def removeProject():
+    req = request.get_json(True)
+    projectName = req["projectName"]
+    orgName = req["organisationName"]
+    role = checkAuth()
+    email = request.email
+    connection = get_db()
+    cursor = connection.cursor()
+    message = ""
+    success = False
+    try:
+        if role == 3:
+            cursor.execute("select organisation_id from autographamt_organisations where organisation_name=%s",(orgName,))
+            orgId = cursor.fetchone()
+            if orgId:
+                cursor.execute("select projectId from autographamt_projects where project_name=%s and organisation_id=%s",(projectName,orgId,))
+                projectId = cursor.fetchone()
+                if projectId:
+                    status = json.loads(deleteProject(projectId))
+                    message += status["message"]
+                    success = status["success"]
+                else:
+                    message += "Project not present."
+            else:
+                message += "Organisation not present."
+        elif role == 2:
+            cursor.execute("select user_id from autographamt_users where email_id=%s",(email,))
+            userId = cursor.fetchone()
+            cursor.execute("select organisation_id from autographamt_organisations where user_id=%s and organisation_name=%s",(userId,orgName,))
+            orgId = cursor.fetchone()
+            if orgId:
+                cursor.execute("select project_id from autographamt_projects where project_name=%s and organisation_id=%s",(projectName,orgId,))
+                projectId = cursor.fetchone()
+                if projectId:
+                    status = json.loads(deleteProject(projectId))
+                    message += status["message"]
+                    success = status["success"]
+                else:
+                    message += "Project not present in the organisation."
+            else:
+                message += "UnAuthorized! Organisation admin can delete projects of his/her organisation only."
+        else:
+            message += "UnAuthorized! Only the organisation admin or super admin can delete projects."
+    except Exception as e:
+        print(e)
+        message = "Server error."
+    return json.dumps({"success":success,"message":message})
+
+def deleteUser(userId):
+    connection = get_db()
+    cursor = connection.cursor()
+    success = False
+    message = ""
+    try:
+        cursor.execute("select role_id from autographamt_users where user_id=%s",(userId,))
+        role = cursor.fetchone()
+        if role==3:
+            message += "Super admin user cannot be removed."
+            return json.dumps({'success':success,'message':message})
+        elif role==2:
+            cursor.execute("select organisation_id from autographamt_organisations where user_id=%s",(userId,))
+            orgIds = cursor.fetchall()
+            if len(orgIds)>0:
+                message = "Organisation admin cannot be deleted."
+                return json.dumps({'success':success,'message':message})
+        cursor.execute("select * from autographamt_assignments where user_id=%s",(userId,))
+        rst = cursor.fetchone()
+        if rst:
+            message += "User has translation assignments."
+            return json.dumps({'success':success,'message':message})
+        cursor.execute("delete from autographamt_users where user_id=%s",(userId,))
+        connection.commit()
+        success = True
+        message = "Deleted user."
+    except Exception as e:
+        print(e)
+        message += "Server error."
+    return json.dumps({'success':success,'message':message})
+
+
+
+def deleteOrganisation(orgId):
+    connection = get_db()
+    cursor = connection.cursor()
+    success = False
+    message = ""
+    try:
+        cursor.execute("select project_id from autographamt_projects where organisation_id=%s",(orgId,))
+        projectIds = cursor.fetchall()
+        for projectId in projectIds:
+            status = json.loads(deleteProject(projectId))
+            if status["success"] == False:
+                message = status["message"]
+                return json.dumps({'success':success,'message':message})
+        cursor.execute("delete from autographamt_organisations where organisation_id=%s",(orgId,))
+        success = True
+        message = "Deleted organization and its projects."
+        connection.commit()
+    except Exception as e:
+        print(e)
+        message = "server error"
+    return json.dumps({'success':success,'message':message})
+
+
+def deleteProject(projectId):
+    connection = get_db()
+    cursor = connection.cursor()
+    success = False
+    message = ""
+    try:
+        cursor.execute("select translation_id from translation_projects_look_up where project_id=%s",(projectId,))
+        translationIds = cursor.fetchall()
+        print("deleting translation_projects_look_up entry")
+        cursor.execute("delete from translation_projects_look_up where project_id=%s",(projectId,))
+        for translationId in translationIds:
+            print("deleting translation")
+            cursor.execute("delete from translations where translation_id=%s",(translationId,))
+        print("deleting assignments")
+        cursor.execute("delete from autographamt_assignments where project_id=%s",(projectId,))
+        print("deleting project")
+        cursor.execute("delete from autographamt_projects where project_id=%s",(projectId,))
+        message += "Deleted project, related assignments and translations."
+        success = True
+        connection.commit()
+    except Exception as e:
+        print(e)
+        message = "Server error"
+    return json.dumps({'success':success,'message':message})
+
+
+def delete_bible_book():
+    # to be written as per the changes made to the sources table and the schema of the new USFM table
 
 #####################################################
 # VACHAN API
