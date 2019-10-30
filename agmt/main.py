@@ -26,6 +26,7 @@ import jwt
 import requests
 import scrypt
 import psycopg2
+from psycopg2 import sql
 from random import randint
 import phrases
 from functools import reduce
@@ -130,7 +131,6 @@ def auth():
                 'lastName': lastName
                 }, jwt_hs256_secret, algorithm='HS256')
         except Exception as ex:
-            print("comes here")
             print(ex)
             pass
         logging.warning('User: \'' + str(email) + '\' logged in successfully')
@@ -638,7 +638,7 @@ def updateProjectTokenTranslations():
         cursor.execute("select language_code from languages where language_id=%s", (targetLanguageId,))
         targetLanguageCode = cursor.fetchone()
         if not targetLanguageCode:
-            return '{"success":false, "message":"Target Language does not exist"}' 
+            return '{"success":false, "message":"Target Language does not exist"}'
         cursor.execute("select * from sources where source_id=%s", (sourceId,))
         rst = cursor.fetchone()
         if not rst:
@@ -905,10 +905,8 @@ def getTokenLists(sourceId, book):
     cursor = connection.cursor()
     cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
     rst = cursor.fetchone()
-    print("comes here",rst)
     cursor.execute("select book_id from bible_books_look_up where book_code=%s", (book,))
     bookId = cursor.fetchone()[0]
-    print('comes here ',bookId)
     tablename = '_'.join(rst[0].split('_')[0:3]) + '_tokens'
     tablename = rst[0].split('_')
     languageCode = tablename[0]
@@ -1205,7 +1203,6 @@ def createBibleSource():
                         s.license=%s",(language, contentId, versionContentCode, 
                             versionContentDescription, year, version, license))
         rst = cursor.fetchone()
-        print('after find')
         if not rst:
             create_clean_bible_table_command = createTableCommand(['ref_id INT NOT NULL', 'verse TEXT', \
                 'cross_reference TEXT', 'foot_notes TEXT'], cleanTableName)
@@ -1228,6 +1225,7 @@ def createBibleSource():
             cursor.close()
             return '{"success": false, "message":"Source already exists"}'
     except Exception as ex:
+        print(ex)
         return '{"success":false, "message":"Server side error"}'
     
 @app.route("/v1/bibles/upload", methods=["POST"])
@@ -1243,31 +1241,25 @@ def uploadSource():
             sources s left join languages l on s.language_id=l.language_id where \
                 source_id=%s", (sourceId,))
         rst = cursor.fetchone()
-        print(rst)
         cursor.close()
         if not rst:
             return '{"success":false, "message":"No source created"}'
         usfmFile = rst[0]["usfm"]
         parsedJsonFile = rst[0]["parsedJson"]
-        print("comes here:",parsedUsfmText["metadata"])
         bookCode = parsedUsfmText["metadata"]["id"]["book"].lower()
-        print("bookCode:",bookCode)
-        print('whats')
         if usfmFile:
             if bookCode in usfmFile:
-                print('happening')
                 return '{"success":false, "message":"Book already Uploaded"}'
         else:
             usfmFile = {}
             parsedJsonFile = {}
         # except Exception as ex:
         #     return '{"success":false, "message":"' + str(ex) + '"}'
-        print('befire parse')
+        # print('befire parse')
         parsedDbData, bookId = parseDataForDBInsert(parsedUsfmText)
-        print("after parse")
+        # print("after parse")
         languageCode = rst[2]
         versionCode = rst[1]
-        print(languageCode, versionCode)
         cursor = connection.cursor()
         usfmFile[bookCode] = wholeUsfmText
         parsedJsonFile[bookCode] = parsedUsfmText
@@ -1283,7 +1275,6 @@ def uploadSource():
         dataForDb = re.sub('"\$', "$$", dataForDb)
         cleanTableName = "%s_%s_bible_cleaned" %(languageCode.lower(), version.lower())
         
-        print(cleanTableName)
         cursor.execute('insert into ' + cleanTableName + ' (ref_id, verse, cross_reference, foot_notes) values '\
             + dataForDb)
         # try:
@@ -1861,6 +1852,20 @@ def removeProject():
         message = "Server error."
     return json.dumps({"success":success,"message":message})
 
+@app.route("/v1/autographamt/source/bible/delete",methods=["DELETE"])
+@check_token
+def removeBible():
+    req = request.get_json(True)
+    sourceId = req["sourceId"]
+    role = checkAuth()
+    if role == 3:
+        status = delete_bible_source(sourceId)
+        return json.dumps(status)
+    else:
+        return json.dumps({"success":False,"message":"Unauthorized attempt"})
+
+
+
 def deleteUser(userId):
     connection = get_db()
     cursor = connection.cursor()
@@ -1928,7 +1933,8 @@ def deleteProject(projectId):
         print("deleting translation_projects_look_up entry")
         cursor.execute("delete from translation_projects_look_up where project_id=%s",(projectId,))
         for translationId in translationIds:
-            print("deleting translation")
+            print("deleting translation:",translationId)
+            cursor.execute("delete from translations_history where translation_id=%s",(translationId,))
             cursor.execute("delete from translations where translation_id=%s",(translationId,))
         print("deleting assignments")
         cursor.execute("delete from autographamt_assignments where project_id=%s",(projectId,))
@@ -1943,8 +1949,26 @@ def deleteProject(projectId):
     return json.dumps({'success':success,'message':message})
 
 
-def delete_bible_book():
-    # to be written as per the changes made to the sources table and the schema of the new USFM table
+def delete_bible_source(source_id):
+    connection = get_db()
+    cursor = connection.cursor()
+    success = False
+    message = ""
+    try:
+        cursor.execute("select table_name from sources where source_id=%s",(source_id,))
+        tablename1 = cursor.fetchone()[0]
+        print('deleting:',tablename1)
+        cursor.execute(sql.SQL("drop table {}").format(sql.Identifier(tablename1)))
+        tablename2 = tablename1[:-7]+'tokens'
+        print('deleting:',tablename2)
+        cursor.execute(sql.SQL("drop table {}").format(sql.Identifier(tablename2)))
+        cursor.execute("delete from sources where source_id=%s",(source_id,))
+        connection.commit()
+        return {"success":True, "message":"Bible deleted."}
+    except Exception as e:
+        print(e)
+        return {"success":False,"message":"server side error"}
+
 
 #####################################################
 # VACHAN API
