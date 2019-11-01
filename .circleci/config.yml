@@ -42,7 +42,7 @@ jobs:
           command: |
             . venv/bin/activate
             mkdir test-reports
-            pytest --junitxml=test-reports/junit.xml
+            # pytest --junitxml=test-reports/junit.xml
             
             python3 -m pytest test/test_signin.py
             python3 -m pytest test/test_availablebooks.py
