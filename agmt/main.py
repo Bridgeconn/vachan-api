@@ -2520,7 +2520,7 @@ def getBibleVerseText2(sourceId, verseId):
         verse = cursor.fetchone()
         if not verse:
             return '{"success": false, "message":"No verse found"}'
-        return make_response({
+        return json.dumps({
             "sourceId": sourceId,
             "bibleBookCode": bookCode,
             "chapterNumber": chapterNumber,
