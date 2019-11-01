@@ -44,7 +44,7 @@ postgres_password = os.environ.get("AGMT_POSTGRES_PASSWORD", "secret")
 postgres_database = os.environ.get("AGMT_POSTGRES_DATABASE", "postgres")
 # postgres_database = os.environ.get("vachan", "vachan")
 host_api_url = os.environ.get("AGMT_HOST_API_URL")
-host_ui_url = os.environ.get("AGMT_HOST_UI_URL")
+host_ui_url = os.environ.get("AGMT_HOST_UI_URL","autographamt.com")
 system_email = os.environ.get("MTV2_EMAIL_ID", "autographamt@gmail.com")
 
 def get_db():                                                                      #--------------To open database connection-------------------#
@@ -148,11 +148,10 @@ def new_registration():
     body = '''Hello %s,<br/><br/>Thanks for your interest to use the AutographaMT web service. <br/>
     You need to confirm your email by opening this link:
 
-    <a href="https://%s/v1/verifications/%s">https://%s/v1/verifications/%s</a>
+    https://%s/v1/verifications/%s
 
-    <br/><br/>The documentation for accessing the API is available at <a \
-        href="https://docs.autographamt.com">https://docs.autographamt.com</a>''' % \
-            (firstName, host_api_url, verification_code, host_api_url, verification_code)
+    <br/><br/>The documentation for accessing the API is available at https://docs.autographamt.com''' % \
+            (firstName, host_api_url, verification_code)
     payload = {
         "to": {email: ""},
         "from": ["noreply@autographamt.in", "Autographa MT"],
@@ -191,14 +190,11 @@ def reset_password():
         # totp = pyotp.TOTP('base32secret3232')       # python otp module
         # verification_code = totp.now()
         verification_code = randint(100001,999999)
-        body = '''Hi,<br/><br/>your request for resetting the password has been recieved. <br/>
-        Your temporary password is %s. Enter your new password by opening this link:
+        body = '''Hi,<br/><br/>Your request for resetting the password has been recieved. <br/>
+        Your temporary password is %s. Use this to create a new password at %s . 
 
-        <a href="https://%s/forgotpassword">https://%s/forgotpassword</a>
-
-        <br/><br/>The documentation for accessing the API is available at <a \
-            href="https://docs.autographamt.com">https://docs.autographamt.com</a>''' % \
-                (verification_code, host_ui_url, host_ui_url)
+        <br/><br/>The documentation for accessing the API is available at https://docs.autographamt.com''' % \
+                (verification_code, host_ui_url)
         payload = {
             "to": {email: ""},
             "from": ["noreply@autographamt.in", "AutographaMT"],
