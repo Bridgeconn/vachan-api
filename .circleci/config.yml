@@ -5,6 +5,7 @@ jobs:
       - image: circleci/python:3.6.8
         environment:
           AGMT_HS256_SECRET: "x709myFlW5"
+
       - image: circleci/postgres:9.6
         environment:
           AGMT_POSTGRES_HOST: "localhost"
@@ -45,15 +46,15 @@ jobs:
       - run: sudo apt install -y postgresql-client || true
 
       - run:
-        name: Setup postgresql user
-        command: sudo -u postgres psql -h localhost -p 5432 -c "alter user postgres with superuser;"
-        command: sudo -u postgres psql -h localhost -p 5432 -c "create database postgres;"
-        command: sudo -u postgres psql -h localhost -p 5432 -c "grant all privileges on database postgres to postgres;"
+          name: Setup postgresql user
+          command: sudo -u postgres psql -h localhost -p 5432 -c "alter user postgres with superuser;"
+          command: sudo -u postgres psql -h localhost -p 5432 -c "create database postgres;"
+          command: sudo -u postgres psql -h localhost -p 5432 -c "grant all privileges on database postgres to postgres;"
 
       - run: echo '/usr/lib/postgresql/9.6/bin/:$PATH' >> $BASH_ENV
       - run:
           name: Set up vachan API database
-          command: sudo -u postgres psql -p 5433 -h localhost -c 'create database postgres'
+          command: sudo -u postgres psql -p 5432 -h localhost -c 'create database postgres'
 
       # run tests!
       # this example uses Django's built-in test-runner
