@@ -24,6 +24,11 @@ jobs:
         run:
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
           name: Wait for db
+      -
+        run:
+          command: |
+            sudo su postgres
+          name: login with postgres user
       - 
         run:
           command: |
