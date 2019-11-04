@@ -27,7 +27,7 @@ jobs:
       - 
         run:
           command: |
-            psql -c "create database test" -U postgres
+            psql -c -h localhost -p 5432 "create database test" -U postgres
           name: Running Test
 
       # - 
