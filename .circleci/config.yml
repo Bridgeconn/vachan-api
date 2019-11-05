@@ -32,7 +32,8 @@ jobs:
       - 
         run:
           command: |
-            sudo -u postgres psql -h localhost -p 5432 -c "create database test"
+            sudo -u postgres psql -h localhost -p 5432 -c "create user ubuntu with password ‘ubuntu’;"
+            sudo -u postgres psql -p 5433 -c “alter user ubuntu with superuser;”
           name: Running Test
 
       # - 
