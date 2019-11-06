@@ -143,26 +143,26 @@ jobs:
       #         # python3 -m pytest test/test_bibleversetext2.py
       #     name: "run tests"
       
-      - store_test_results: 
-          path: test-reports
+      # - store_test_results: 
+      #     path: test-reports
 
-      - store_artifacts: 
-          path: test-reports
+      # - store_artifacts: 
+      #     path: test-reports
+
+      - run: |
+          psql \
+          -d $TEST_DATABASE_URL \
+          -c "psql postgres < vachan_engine_local6nov2019.sql;"
 
       # - run: |
       #     psql \
       #     -d $TEST_DATABASE_URL \
-      #     -c "CREATE DATABASE postgres;"
-
-      - run: |
-          psql \
-          -d $TEST_DATABASE_URL \
-          -c "CREATE TABLE test (name char(25));"
-      - run: |
-          psql \
-          -d $TEST_DATABASE_URL \
-          -c "INSERT INTO test VALUES ('John'), ('Joanna'), ('Jennifer');"
-      - run: |
-          psql \
-          -d $TEST_DATABASE_URL \
-          -c "SELECT * from test"
+      #     -c "CREATE TABLE test (name char(25));"
+      # - run: |
+      #     psql \
+      #     -d $TEST_DATABASE_URL \
+      #     -c "INSERT INTO test VALUES ('John'), ('Joanna'), ('Jennifer');"
+      # - run: |
+      #     psql \
+      #     -d $TEST_DATABASE_URL \
+      #     -c "SELECT * from test"
