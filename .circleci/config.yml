@@ -149,20 +149,20 @@ jobs:
       - store_artifacts: 
           path: test-reports
 
+      # - run: |
+      #     psql \
+      #     -d $TEST_DATABASE_URL \
+      #     -c "CREATE DATABASE postgres;"
+
       - run: |
           psql \
           -d $TEST_DATABASE_URL \
-          -c "CREATE DATABASE postgres;"
-
-      # - run: |
-      #     psql \
-      #     -d $TEST_DATABASE_URL \
-      #     -c "CREATE TABLE test (name char(25));"
-      # - run: |
-      #     psql \
-      #     -d $TEST_DATABASE_URL \
-      #     -c "INSERT INTO test VALUES ('John'), ('Joanna'), ('Jennifer');"
-      # - run: |
-      #     psql \
-      #     -d $TEST_DATABASE_URL \
-      #     -c "SELECT * from test"
+          -c "CREATE TABLE test (name char(25));"
+      - run: |
+          psql \
+          -d $TEST_DATABASE_URL \
+          -c "INSERT INTO test VALUES ('John'), ('Joanna'), ('Jennifer');"
+      - run: |
+          psql \
+          -d $TEST_DATABASE_URL \
+          -c "SELECT * from test"
