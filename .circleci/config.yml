@@ -90,21 +90,63 @@ jobs:
   build:
     
     # Primary container image where all commands run
-    
     docker:
       - image: circleci/python:3.6.2-stretch-browsers
         environment:
           TEST_DATABASE_URL: postgresql://root@localhost/circle_test
-          
+          AGMT_HS256_SECRET: x709myFlW5
     # Service container image
-    
       - image: circleci/postgres:9.6.5-alpine-ram
+
+    filters: 
+      branches: 
+        only: 
+          - master
+          - staging
         
     steps:
       - checkout
       - run: sudo apt-get update
       - run: sudo apt-get install postgresql-client-9.6
       - run: whoami
+      - run: "sudo chown -R circleci:circleci /usr/local/bin"
+      - run: "sudo chown -R circleci:circleci /usr/local/lib/python3.6/site-packages"
+
+      - restore_cache: 
+          keys: 
+            - "v1-dependencies-{{ checksum \"requirements.txt\" }}"
+            - v1-dependencies-
+      - run: 
+          command: |
+              python3 -m venv venv
+              . venv/bin/activate
+              pip3 install -r requirements.txt
+          name: "install dependencies"
+      - save_cache: 
+          key: "v1-dependencies-{{ checksum \"requirements.txt\" }}"
+          paths: 
+            - ./venv
+            - /usr/local/bin
+            - /usr/local/lib/python3.6/site-packages
+
+      - run: 
+          command: |
+              . venv/bin/activate
+              mkdir test-reports
+              # pytest --junitxml=test-reports/junit.xml
+              
+              python3 -m pytest test/test_signin.py
+              # python3 -m pytest test/test_availablebooks.py
+              # python3 -m pytest test/test_bibleversetext.py
+              # python3 -m pytest test/test_bibleversetext2.py
+          name: "run tests"
+      
+      - store_test_results: 
+          path: test-reports
+          
+      - store_artifacts: 
+          path: test-reports
+
       - run: |
           psql \
           -d $TEST_DATABASE_URL \
