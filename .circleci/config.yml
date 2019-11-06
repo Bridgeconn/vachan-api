@@ -148,7 +148,7 @@ jobs:
 
       # - store_artifacts: 
       #     path: test-reports
-      - run: psql -h 127.0.0.1 -u postgres postgres < dump/vachan_engine_local6nov2019.sql
+      - run: psql -h 127.0.0.1 -U postgres postgres < dump/vachan_engine_local6nov2019.sql
 
       # - run: |
       #     psql \
