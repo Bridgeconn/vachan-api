@@ -138,9 +138,9 @@ jobs:
               # pytest --junitxml=test-reports/junit.xml
               
               python3 -m pytest test/test_signin.py
-              # python3 -m pytest test/test_availablebooks.py
-              # python3 -m pytest test/test_bibleversetext.py
-              # python3 -m pytest test/test_bibleversetext2.py
+              python3 -m pytest test/test_availablebooks.py
+              python3 -m pytest test/test_bibleversetext.py
+              python3 -m pytest test/test_bibleversetext2.py
           name: "run tests"
       
       - store_test_results: 
