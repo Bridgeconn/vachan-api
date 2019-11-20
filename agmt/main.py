@@ -27,6 +27,7 @@ import requests
 import scrypt
 import psycopg2
 from psycopg2 import sql
+from psycopg2.extras import execute_values
 from random import randint
 import phrases
 from functools import reduce
@@ -108,12 +109,15 @@ def auth():
     if not est:
         logging.warning('Unregistered user \'%s\' login attempt unsuccessful' % email)
         return '{"success":false, "message":"This email is not registered"}'
-    cursor.execute("SELECT u.password_hash, u.password_salt, r.role_name, u.first_name, u.last_name FROM \
+    cursor.execute("SELECT u.password_hash, u.password_salt, r.role_name, u.first_name, u.last_name,status FROM \
         autographamt_users u LEFT JOIN roles r ON u.role_id = r.role_id WHERE u.email_id = %s \
             and u.verified is True", (email,))
     rst = cursor.fetchone()
     if not rst:
         return '{"success":false, "message":"Email is not Verified"}'
+    active = rst[5]
+    if not active:
+        return '{"success":false, "message":"User account is not active."}'
     password_hash = rst[0].hex()
     password_salt = bytes.fromhex(rst[1].hex())
     password_hash_new = scrypt.hash(password, password_salt).hex()
@@ -165,29 +169,36 @@ def new_registration():
     password_salt = str(uuid.uuid4()).replace("-", "")
     password_hash = scrypt.hash(password, password_salt)
     cursor = connection.cursor()
-    cursor.execute("SELECT email_id FROM autographamt_users WHERE email_id = %s", (email,))
+    cursor.execute("SELECT user_id,status FROM autographamt_users WHERE email_id = %s", (email,))
     rst = cursor.fetchone()
     if not rst:
         cursor.execute("INSERT INTO autographamt_users (first_name, last_name, email_id, \
-            verification_code, password_hash, password_salt, created_at_date) \
-                VALUES (%s, %s, %s, %s, %s, %s, current_timestamp)", \
+            verification_code, password_hash, password_salt, created_at_date,status) \
+                VALUES (%s, %s, %s, %s, %s, %s, current_timestamp,true)", \
                     (firstName, lastName, email, verification_code, password_hash, password_salt))
         cursor.close()
         connection.commit()
         resp = requests.post(url, data=json.dumps(payload), headers=headers)
         return '{"success":true, "message":"Verification Email has been sent to your email id"}'
     else:
-        return '{"success":false, "message":"This email has already been Registered, "}'
+        if rst[1] == False:
+            return '{"success":false, "message":"This email has already been Registered. Account is deactivated. "}'
+        else:    
+            return '{"success":false, "message":"This email has already been Registered, "}'
 
 @app.route("/v1/resetpassword", methods=["POST"])    #-----------------For resetting the password------------------#
 def reset_password():
     email = request.form['email']
     connection = get_db()
     cursor = connection.cursor()
-    cursor.execute("SELECT email_id from autographamt_users WHERE email_id = %s", (email,))
-    if not cursor.fetchone():
+    cursor.execute("SELECT email_id,status from autographamt_users WHERE email_id = %s", (email,))
+    rst = cursor.fetchone()
+    if not rst:
         return '{"success":false, "message":"Email has not yet been registered"}'
     else:
+        active = rst[1]
+        if not active:
+            return '{"success":false, "message":"User account is deactivated."}'    
         headers = {"api-key": sendinblue_key}
         url = "https://api.sendinblue.com/v2.0/email"
         # totp = pyotp.TOTP('base32secret3232')       # python otp module
@@ -316,14 +327,14 @@ def autographamtOrganisations():
             connection = get_db()
             cursor = connection.cursor()
             cursor.execute("select organisation_id, organisation_name, organisation_address, \
-                organisation_phone, organisation_email, verified, user_id from autographamt_organisations\
+                organisation_phone, organisation_email, verified, user_id, status from autographamt_organisations\
                     order by organisation_id")
             rst = cursor.fetchall()
         elif role == 2:
             connection = get_db()
             cursor = connection.cursor()
             cursor.execute("select organisation_id, organisation_name, organisation_address, \
-                organisation_phone, organisation_email, verified, user_id from autographamt_organisations\
+                organisation_phone, organisation_email, verified, user_id, status from autographamt_organisations\
                     where user_id=%s and verified=true order by organisation_id", (userId,))
             rst = cursor.fetchall()
         else:
@@ -340,7 +351,8 @@ def autographamtOrganisations():
                 "organisationEmail":organisationEmail,
                 "verified":verified,
                 "userId":userId,
-            } for organisationId, organisationName, organisationAddress, organisationPhone, organisationEmail, verified, userId in rst
+                "active":status
+            } for organisationId, organisationName, organisationAddress, organisationPhone, organisationEmail, verified, userId, status in rst
         ]
         return json.dumps(organisationsList)
     except Exception as ex:
@@ -356,24 +368,34 @@ def createOrganisations():
     organisationPhone = req["organisationPhone"]
     organisationEmail = req["organisationEmail"]
     email = request.email
-    
-    connection = get_db()
-    cursor = connection.cursor()
+    try:
+        connection = get_db()
+        cursor = connection.cursor()
 
-    cursor.execute("select user_id from autographamt_users where email_id=%s", (email,))
-    userId = cursor.fetchone()[0]
-    cursor.execute("select * from autographamt_organisations where organisation_name=%s and \
-        organisation_email=%s", (organisationName, organisationEmail))
-    rst = cursor.fetchone()
-    if not rst:
-        cursor.execute("insert into autographamt_organisations (organisation_name, \
-            organisation_address, organisation_phone, organisation_email, user_id) values (%s,%s,%s,%s,%s) ", \
-                (organisationName, organisationAddress, organisationPhone, organisationEmail, userId))
-        connection.commit()
-        cursor.close()
-        return '{"success":true, "message":"Organisation request sent"}'
-    else:
-        return '{"success":false, "message":"Organisation already created"}'
+        cursor.execute("select user_id from autographamt_users where email_id=%s", (email,))
+        userId = cursor.fetchone()[0]
+        cursor.execute("select status from autographamt_organisations where organisation_name=%s and \
+            organisation_email=%s", (organisationName, organisationEmail))
+        rst = cursor.fetchone()
+        if not rst:
+            cursor.execute("insert into autographamt_organisations (organisation_name, \
+                organisation_address, organisation_phone, organisation_email, user_id, status) values (%s,%s,%s,%s,%s,true) ", \
+                    (organisationName, organisationAddress, organisationPhone, organisationEmail, userId))
+            connection.commit()
+            cursor.close()
+            return '{"success":true, "message":"Organisation request sent"}'
+        else:
+            status = rst[0]
+            if status == False:
+                cursor.execute("update autographamt_organisations set status=true, verified=false where organisation_name=%s and \
+                    organisation_email=%s", (organisationName, organisationEmail,))
+                connection.commit()
+                cursor.close()
+                return '{"success":true, "message":"Organisation re-activation request sent"}'
+            return '{"success":false, "message":"Organisation already created"}'
+    except Exception as e:
+        print(e)
+        return json.dumps({'success':False,'message':'server error'})
 
 @app.route("/v1/autographamt/users", methods=["GET"])
 @check_token
@@ -382,10 +404,10 @@ def autographamtUsers():
     cursor = connection.cursor()
     role = checkAuth()
     if role == 3:
-        cursor.execute("select user_id, first_name, last_name, email_id, role_id, verified \
+        cursor.execute("select user_id, first_name, last_name, email_id, role_id, verified, status \
             from autographamt_users order by user_id")
     elif role == 2: 
-        cursor.execute("select user_id, first_name, last_name, email_id, role_id, verified \
+        cursor.execute("select user_id, first_name, last_name, email_id, role_id, verified, status \
             from autographamt_users where role_id < 3 order by user_id")
     else:
         cursor.close()
@@ -400,8 +422,9 @@ def autographamtUsers():
             "lastName":lastName,
             "emailId":emailId,
             "roleId":roleId,
-            "verified":verified
-        } for userId, firstName, lastName, emailId, roleId, verified in rst
+            "verified":verified,
+            "active": status
+        } for userId, firstName, lastName, emailId, roleId, verified, status in rst
     ]
     # print(usersList)
     return json.dumps(usersList)
@@ -421,18 +444,19 @@ def getProjects():
             organisationIds = [org[0] for org in cursor.fetchall()]
             rst = []
             for orgId in organisationIds:
-                cursor.execute("select p.project_id, p.project_name, p.source_id, p.target_id, \
-                    p.organisation_id, o.organisation_name, s.version_content_code, s.version_content_description \
+                cursor.execute("select p.project_id, p.project_name, p.source_id, p.target_id,  \
+                    p.organisation_id, o.organisation_name, v.version_code, v.version_description, p.status \
                         from autographamt_projects p left join autographamt_organisations o on \
                         p.organisation_id=o.organisation_id left join sources s on \
-                            s.source_id=p.source_id where p.organisation_id=%s", (orgId,))
+                            s.source_id=p.source_id \
+                            left join versions v on s.version_id = v.version_id where p.organisation_id=%s", (orgId,))
                 rst += cursor.fetchall()
         elif role == 3:
             cursor.execute("select p.project_id, p.project_name, p.source_id, p.target_id, \
-                p.organisation_id, o.organisation_name, s.version_content_code, s.version_content_description \
+                p.organisation_id, o.organisation_name, v.version_code, v.version_description, p.status \
                     from autographamt_projects p left join autographamt_organisations o on \
                     p.organisation_id=o.organisation_id left join sources s on \
-                            s.source_id=p.source_id")
+                            s.source_id=p.source_id left join versions v on s.version_id = v.version_id")
             rst = cursor.fetchall()
         else:
             return '{"success": false ,"message":"Not authorized"}'
@@ -449,8 +473,9 @@ def getProjects():
                 "version":{
                     "name": verName,
                     "code": verCode
-                }
-            } for projectId, projectName, sourceId, targetId, organisationId, organisationName, verCode, verName in rst
+                },
+                "active": status
+            } for projectId, projectName, sourceId, targetId, organisationId, organisationName, verCode, verName, status in rst
         ]
         return json.dumps(projectsList)
     except Exception as ex:
@@ -465,31 +490,41 @@ def createProjects():
     targetLanguageId = req["targetLanguageId"]
     organisationId = req["organisationId"]
     role = checkAuth()
-    print(role)
-    if role > 1:
-        connection = get_db()
-        cursor = connection.cursor()
-        cursor.execute("select l.language_name, l.language_code from sources s left join languages l on \
-            s.language_id=l.language_id where source_id=%s", (sourceId,))
-        sourceLanguage, sourceLanguageCode = cursor.fetchone()
-        cursor.execute("select language_name, language_code from languages where language_id=%s", (targetLanguageId,))
-        targetLanguage, targetLanguageCode = cursor.fetchone()
-        projectName = sourceLanguage + '-to-' + targetLanguage + '|' + sourceLanguageCode + '-to-' + targetLanguageCode
-        print(projectName)
-        cursor.execute("select * from autographamt_projects where organisation_id=%s and source_id=%s and \
-            target_id=%s", (organisationId, sourceId, targetLanguageId))
-        rst = cursor.fetchone()
-        if not rst:
-            print("insert")
-            cursor.execute("insert into autographamt_projects (project_name, source_id, target_id, organisation_id) \
-                values (%s,%s,%s,%s)", (projectName, sourceId, targetLanguageId, organisationId))
-            connection.commit()
-            cursor.close()
-            return '{"success":true, "message":"Project created"}'
+    try:
+        if role > 1:
+            connection = get_db()
+            cursor = connection.cursor()
+            cursor.execute("select l.language_name, l.language_code from sources s left join languages l on \
+                s.language_id=l.language_id where source_id=%s", (sourceId,))
+            sourceLanguage, sourceLanguageCode = cursor.fetchone()
+            cursor.execute("select language_name, language_code from languages where language_id=%s", (targetLanguageId,))
+            targetLanguage, targetLanguageCode = cursor.fetchone()
+            projectName = sourceLanguage + '-to-' + targetLanguage + '|' + sourceLanguageCode + '-to-' + targetLanguageCode
+            cursor.execute("select status from autographamt_projects where organisation_id=%s and source_id=%s and \
+                target_id=%s", (organisationId, sourceId, targetLanguageId))
+            rst = cursor.fetchone()
+            if not rst:
+                cursor.execute("insert into autographamt_projects (project_name, source_id, target_id, organisation_id, status) \
+                    values (%s,%s,%s,%s,true)", (projectName, sourceId, targetLanguageId, organisationId))
+                connection.commit()
+                cursor.close()
+                return '{"success":true, "message":"Project created"}'
+            else:
+                status = rst[0]
+                if status == False:
+                    cursor.execute("update autographamt_projects set status=true where organisation_id=%s and source_id=%s and \
+                        target_id=%s", (organisationId, sourceId, targetLanguageId))
+                    connection.commit()
+                    cursor.close()
+                    return '{"success":true, "message":"Activated the archived project"}'
+                else:
+                    return '{"success":false, "message":"Project already created"}'
         else:
-            return '{"success":false, "message":"Project already created"}'
-    else:
-        return '{"success":false, "message":"UnAuthorized"}'
+            return '{"success":false, "message":"UnAuthorized"}'
+        
+    except Exception as e:
+        print(e)
+        return '{"success":false, "message":"Server Error"}' 
 
 @app.route("/v1/autographamt/projects/assignments/<projectId>", methods=["GET"])
 @check_token
@@ -497,28 +532,34 @@ def getAssignments(projectId):
     '''
     Returns an array of Users assigned under a project
     '''
-    connection = get_db()
-    cursor = connection.cursor()
-    cursor.execute("select u.first_name, u.last_name, u.email_id, a.assignment_id, \
-        a.books, a.user_id, a.project_id from autographamt_assignments a \
-        left join autographamt_users u on u.user_id=a.user_id where project_id=%s", (projectId,))
-    rst = cursor.fetchall()
-    if not rst:
-        return json.dumps([])
-    else:
-        projectUsers = [
-            {
-                "assignmentId":assignmentId,
-                "books":books.split("|"),
-                "user":{
-                    "userName": firstName + " " + lastName,
-                    "userId": userId,
-                    "email": email
-                },
-                "projectId":projectId
-            } for firstName, lastName, email, assignmentId, books, userId, projectId in rst
-        ]
-        return json.dumps(projectUsers)
+    try:
+        connection = get_db()
+        cursor = connection.cursor()
+        cursor.execute("select u.first_name, u.last_name, u.email_id, a.assignment_id, \
+            a.books, a.user_id, a.project_id, u.status from autographamt_assignments a \
+            left join autographamt_users u on u.user_id=a.user_id where project_id=%s", (projectId,))
+        rst = cursor.fetchall()
+        if not rst:
+            return json.dumps([])
+        else:
+            projectUsers = [
+                {
+                    "assignmentId":assignmentId,
+                    "books":books.split("|"),
+                    "user":{
+                        "userName": firstName + " " + lastName,
+                        "userId": userId,
+                        "email": email
+                    },
+                    "projectId":projectId,
+                    "userActive":status,
+                } for firstName, lastName, email, assignmentId, books, userId, projectId, status in rst
+            ]
+            return json.dumps(projectUsers)
+        
+    except Exception as e:
+        print(e) 
+        return json.dumps({'success':False,'message':"Server error"})
 
 @app.route("/v1/autographamt/projects/assignments", methods=["POST"])
 def createAssignments():
@@ -542,11 +583,6 @@ def createAssignments():
         connection.commit()
         cursor.close()
         return '{"success":true, "message":"User Role Assigned"}'
-    # else:
-    # if action == 'add':
-    #     books = list(set(books + rst[1]))
-    # else:
-    #     books = list(set(rst[1]) - set(books))
     
     books = "|".join(books)
     cursor.execute("update autographamt_assignments set books=%s where user_id=%s and \
@@ -611,9 +647,7 @@ def getProjectTranslations(token, projectId):
 @app.route("/v1/autographamt/projects/translations", methods=["POST"])
 @check_token
 def updateProjectTokenTranslations():
-    print('please')
     try:
-        print('token')
         req = request.get_json(True)
         projectId = req["projectId"]
         token = req["token"]
@@ -692,11 +726,12 @@ def getUserProjects():
     else:
         userId = userId[0]
         cursor.execute("select p.project_id, p.project_name, o.organisation_name, a.books, \
-            p.source_id, p.target_id, s.version_content_code, s.version_content_description \
+            p.source_id, p.target_id, v.version_code, v.version_description, p.status \
                 from autographamt_assignments a left join autographamt_projects p on \
                     a.project_id=p.project_id left join autographamt_organisations o on \
                         o.organisation_id=p.organisation_id left join sources s on \
-                            p.source_id=s.source_id where a.user_id=%s", (userId,))
+                            p.source_id=s.source_id left join versions v \
+                            on v.version_id=s.version_id where a.user_id=%s", (userId,))
         rst = cursor.fetchall()
         userProjects = [
             {
@@ -709,8 +744,9 @@ def getUserProjects():
                 "version": {
                     "name": verName,
                     "code": verCode
-                }
-            } for projectId, projectName, organisationName, books, sourceId, targetId, verCode, verName in rst
+                },
+                "active":status
+            } for projectId, projectName, organisationName, books, sourceId, targetId, verCode, verName, status in rst
         ]
         if userProjects == []:
             return '{"success":false, "message":"No projects assigned"}'
@@ -758,8 +794,7 @@ def getProjectStatistics(projectId):
         rst = cursor.fetchone()
         if not rst:
             return '{"sucess":false, "message":"Invalid project id"}'
-        # tableName = 
-        tableName = "_".join(rst[0].split("_")[0:-1]) + "_tokens"
+        tableName = rst[0] + "_tokens"
         bookDict = {}
         cursor.execute("select book_id, book_name, book_code from bible_books_look_up")
         for b_id, b_name, b_code in cursor.fetchall():
@@ -840,18 +875,27 @@ def userApproval():
 @app.route("/v1/sources/books/<sourceId>", methods=["GET"])           #-------------------------To find available books and revision number----------------------#
 @check_token
 def available_books(sourceId):
-    connection = get_db()
-    cursor = connection.cursor()
-    cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
-    rst = cursor.fetchone()
-    if not rst:
-        return '{"success":false, "message":"No data available"}'
-    cursor.close()
-    # 
-    if not rst[0]['usfm']:
-        return '{"success":false, "message":"No Books uploaded under this source"}'
-    else:
-        return json.dumps(list(rst[0]['usfm'].keys()))
+    try:
+        connection = get_db()
+        cursor = connection.cursor()
+        cursor.execute("select table_name,content_type from sources as s left join content_types c on s.content_id=c.content_id where source_id=%s", (sourceId,))
+        rst = cursor.fetchone()
+        if not rst:
+            return '{"success":false, "message":"No data available"}'
+        tablename = rst[0]
+        if rst[1] != 'bible':
+            return json.dumps({'success':False,'message':"Source is "+rst[1]+" not Bible"})    
+        cursor.execute(sql.SQL("select l.book_code from {} as u left join bible_books_look_up as l \
+            on u.book_id=l.book_id").format(sql.Identifier(tablename)))
+        rst = cursor.fetchall()
+        cursor.close()
+        if not rst:
+            return '{"success":false, "message":"No Books uploaded under this source"}'
+        else:
+            return json.dumps(rst)
+    except Exception as e:
+        print(e) 
+        return json.dumps({'success':False,'message':"Server error"})
 
 @app.route("/v1/sources/projects/books/<projectId>/<userId>", methods=["GET"])           #-------------------------To find available books and revision number----------------------#
 @check_token
@@ -860,8 +904,10 @@ def availableProjectBooks(projectId, userId):
         connection = get_db()
         cursor = connection.cursor()
         
-        cursor.execute("select s.usfm_text from sources s left join autographamt_projects p on s.source_id=p.source_id \
+        cursor.execute("select s.table_name from sources s left join autographamt_projects p on s.source_id=p.source_id \
             where p.project_id=%s", (projectId,))
+        tablename = cursor.fetchone()[0]
+        cursor.execute(sql.SQL("select usfm_text from {}").format(sql.Identifier(tablename)))
         rst = cursor.fetchone()
         if not rst:
             return '{"success":false, "message":"No data available"}'
@@ -904,19 +950,15 @@ def getTokenLists(sourceId, book):
     rst = cursor.fetchone()
     cursor.execute("select book_id from bible_books_look_up where book_code=%s", (book,))
     bookId = cursor.fetchone()[0]
-    tablename = '_'.join(rst[0].split('_')[0:3]) + '_tokens'
-    tablename = rst[0].split('_')
-    languageCode = tablename[0]
-    version = tablename[1]+"_"+tablename[2]
-    tablename.pop(-1)
-    tablename = '_'.join(tablename) + '_tokens'
-    cursor.execute("select token from " + tablename + " where book_id=%s", (bookId,))
+    tablename = rst[0] + '_tokens'
+    tablename_parts = tablename.split('_')
+    languageCode = tablename_parts[0]
+    version = '_'.join(tablename_parts[1:-2])
+    cursor.execute(sql.SQL("select token from {} where book_id=%s").format(sql.Identifier(tablename)), (bookId,))
     tokenList = [item[0] for item in cursor.fetchall()]
-    # print("comes here:",tokenList)
     if len(tokenList)==0:
         try:
             print("comes here to tokenize")
-            # phrases.testcall()
             phrases.tokenize(connection, languageCode.lower(), version.lower() , bookId)
             cursor.execute("select token from " + tablename + " where book_id=%s", (bookId,))
             tokenList = [item[0] for item in cursor.fetchall()]
@@ -949,7 +991,7 @@ def generateConcordances(sourceId, book, token):
     cursor = connection.cursor()
     book = book.lower()
     cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
-    tablename = cursor.fetchone()[0]
+    tablename = cursor.fetchone()[0]+"_cleaned"
     # try:
     cursor.execute("select bb.book_code, bb.book_name, l.chapter, l.verse, b.verse from " + tablename + " b \
     left join bcv_map l on b.ref_id=l.ref_id left join bible_books_look_up bb on l.book=bb.book_id \
@@ -1040,60 +1082,18 @@ def parsePunctuationsForDraft(text):
     content = re.sub(r'([!\"#$%&\\\'\(\)\*\+,\.\/:;<=>\?\@\[\]^_`{|\}~\”\“\‘\’।])',r" \1",text)
     return content
 
-'''
-def parseDataForDBInsert(usfmData):
-    print('first')
-    connection = get_db()
-    crossRefPattern = re.compile(r'(\(?(\d+\s)?\S+\s\d+:\d+\,?\)?)')
-    footNotesPattern = re.compile(r'\it(.*)\s?\\f\s?\+.*\\ft\s?(.*)\s?\\f\*\\it\*\*')
-    cursor = connection.cursor()
-    print('Inside parse dat')
-    # cursor.execute("select lid, book, chapter, verse from bcv_lid_map")
-    # lidDict = {int(str(b).zfill(3) + str(c).zfill(3) + str(v).zfill(3)):l for l,b,c,v in cursor.fetchall()}
-    cursor.execute("select book_id, book_code from bible_books_look_up")
-    bookIdDict = {v.lower():k for k,v in cursor.fetchall()}
-    bookName = usfmData["metadata"]["id"]["book"].lower()
-    chapterData = usfmData["chapters"]
-    dbInsertData = []
-    verseContent = []
-    # 
-    bookId = bookIdDict[bookName]
-    for chapter in chapterData:
-        chapterNumber = chapter["header"]["title"]
-        verseData = chapter["verses"]
-        for verse in verseData:
-            verseNumber = verse["number"]
-            verseText = verse["text"]
-            crossRefs = re.sub(crossRefPattern, r'\1', verseText)
-            footNotes = re.sub(footNotesPattern, r'\1', verseText)
-            bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
-                 + str(verseNumber).zfill(3))
-            # lid = lidDict[bcv]
-            dbInsertData.append((bcv, verseText, crossRefs, footNotes))
-            verseContent.append(verseText)
-    tokenList = list(getTokens(' '.join(verseContent)))
-    tokenList = [(bookId, token) for token in tokenList]
-    # 
-    return (dbInsertData, tokenList, bookId)
-'''
-
 def parseDataForDBInsert(usfmData):
     connection = get_db()
-    # crossRefPattern = re.compile(r'(\(?(\d+\s)?\S+\s\d+:\d+\,?\)?)')
-    # footNotesPattern = re.compile(r'\it(.*)\s?\\f\s?\+.*\\ft\s?(.*)\s?\\f\*\\it\*\*')
     normalVersePattern = re.compile(r'\d+$')
     splitVersePattern = re.compile(r'(\d+)(\w)$')
     mergedVersePattern = re.compile(r'(\d+)-(\d+)$')
     cursor = connection.cursor()
-    # cursor.execute("select lid, book, chapter, verse from bcv_lid_map")
-    # lidDict = {int(str(b).zfill(3) + str(c).zfill(3) + str(v).zfill(3)):l for l,b,c,v in cursor.fetchall()}
     cursor.execute("select book_id, book_code from bible_books_look_up")
     bookIdDict = {v.lower():k for k,v in cursor.fetchall()}
     bookName = usfmData["metadata"]["id"]["book"].lower()
     chapterData = usfmData["chapters"]
     dbInsertData = []
     verseContent = []
-    # 
     bookId = bookIdDict[bookName]
     for chapter in chapterData:
         chapterNumber = chapter["header"]["title"]
@@ -1108,14 +1108,10 @@ def parseDataForDBInsert(usfmData):
             verseNumber = verse['number'].strip()
             if normalVersePattern.match(verseNumber):
                 verseText = verse["text"]
-                # dbVerseText = re.sub(r"'", r"''", verseText)
-                dbVerseText = '$' + verseText + '$'
-                # if "'" in dbVerseText:
-                #     print(dbVerseText)
+                dbVerseText = verseText
                 bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
                     + str(verseNumber).zfill(3))
                 ref_id = int(bcv)
-                # dbInsertData.append((ref_id, verseText, crossRefs, footNotes))
                 dbInsertData.append((ref_id, dbVerseText, crossRefs, footNotes))
                 verseContent.append(verseText)
             elif splitVersePattern.match(verseNumber):
@@ -1125,36 +1121,29 @@ def parseDataForDBInsert(usfmData):
                 verseNumber = matchObj.group(1)
                 if postScript == 'a':
                     verseText = verse['text']
-                    # dbVerseText = re.sub("'", "''", verseText)
-                    dbVerseText = '$' + verseText + '$'
+                    dbVerseText = verseText
                     bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
                         + str(verseNumber).zfill(3))
                     ref_id = int(bcv)
-                    # dbInsertData.append((ref_id, verseText, crossRefs, footNotes))
                     dbInsertData.append((ref_id, dbVerseText, crossRefs, footNotes))
                     verseContent.append(verseText)
                 else:
                     prevdbInsertData = dbInsertData[-1]
-                    # prevverseContent = verseContent[-1]
 
                     verseText = prevdbInsertData[1] + ' '+ verse['text']
-                    # dbVerseText = re.sub("'", "''", verseText)
-                    dbVerseText = '$' + verseText + '$'
-                    # dbInsertData[-1] = (prevdbInsertData[0], verseText, prevdbInsertData[2],prevdbInsertData[3])
+                    dbVerseText = verseText
                     dbInsertData[-1] = (prevdbInsertData[0], dbVerseText, prevdbInsertData[2],prevdbInsertData[3])
                     verseContent[-1] = verseText
             elif mergedVersePattern.match(verseNumber):
                 ## keep the whole text in first verseNumber of merged verses
                 verseText = verse['text']
-                # dbVerseText = re.sub("'", "''", verseText)
-                dbVerseText = '$' + verseText + '$'
+                dbVerseText = verseText
                 matchObj = mergedVersePattern.match(verseNumber)
                 verseNumber = matchObj.group(1)
                 verseNumberend = matchObj.group(2)
                 bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
                     + str(verseNumber).zfill(3))
                 ref_id = int(bcv)
-                # dbInsertData.append((ref_id, verseText, crossRefs, footNotes))
                 dbInsertData.append((ref_id, dbVerseText, crossRefs, footNotes))
                 verseContent.append(verseText)
                 ## add empty text in the rest of the verseNumber range
@@ -1168,7 +1157,7 @@ def parseDataForDBInsert(usfmData):
             else:
                 print("!!!Unrecognized pattern in verse number!!!")
                 print("verseNumber:",verse['number'])
-    return (dbInsertData, bookId)
+    return dbInsertData
 
 def createTableCommand(fields, tablename):
     command = 'CREATE TABLE %s (%s)' %(tablename, ', '.join(fields))
@@ -1189,32 +1178,40 @@ def createBibleSource():
         version = versionContentCode.lower() + '_' + str(revision)
         connection = get_db()
         cursor = connection.cursor()
+        bibleTableName = "%s_%s_%s_bible" %(language.lower(), versionContentCode.lower(), str(revision).replace('.', '_'))
         cleanTableName = "%s_%s_%s_bible_cleaned" %(language.lower(), versionContentCode.lower(), str(revision).replace('.', '_'))
         tokenTableName = "%s_%s_%s_bible_tokens" %(language.lower(), versionContentCode.lower(), str(revision).replace('.', '_'))
         cursor.execute("select language_id from languages where language_code=%s", (language,))
         languageId = cursor.fetchone()[0]
         cursor.execute("select s.source_id from sources s left join languages l on \
             s.language_id=l.language_id left join content_types c on s.content_id=c.content_id \
-                where l.language_code=%s and s.content_id=%s and s.version_content_code=%s and \
-                    s.version_content_description=%s and s.year=%s and s.version=%s and \
+                left join versions v on v.version_id=s.version_id \
+                where l.language_code=%s and s.content_id=%s and v.version_code=%s and \
+                    v.version_description=%s and s.year=%s and v.revision=%s and \
                         s.license=%s",(language, contentId, versionContentCode, 
                             versionContentDescription, year, version, license))
         rst = cursor.fetchone()
         if not rst:
+            create_usfm_bible_table_command = createTableCommand(['book_id INT NOT NULL', 'usfm_text TEXT', \
+                'json_text TEXT'], bibleTableName)
             create_clean_bible_table_command = createTableCommand(['ref_id INT NOT NULL', 'verse TEXT', \
                 'cross_reference TEXT', 'foot_notes TEXT'], cleanTableName)
             create_token_bible_table_command = createTableCommand(['token_id BIGSERIAL PRIMARY KEY', \
                 'book_id INT NOT NUll', 'token TEXT NOT NULL'], tokenTableName)
+            cursor.execute(create_usfm_bible_table_command)
             cursor.execute(create_clean_bible_table_command)
             cursor.execute(create_token_bible_table_command)
-            usfmTextJson = json.dumps({
-                "usfm": None,
-                "parsedJson": None
-            })
-            cursor.execute('insert into sources (version_content_code, version_content_description,\
-            table_name, year, license, version, content_id, language_id, usfm_text) values \
-                (%s, %s, %s, %s, %s, %s, %s, %s, %s)', (versionContentCode, versionContentDescription, \
-                    cleanTableName, year, license, version, contentId, languageId, usfmTextJson))
+            cur2 = connection.cursor()
+            cur2.execute("select version_id from versions where version_code=%s and version_description=%s \
+                and revision=%s",(versionContentCode,versionContentDescription,version,))
+            rst2 = cur2.fetchone()
+            if not rst2:
+                cur2.execute("insert into versions(version_code,version_description,revision) values(%s,%s,%s) returning version_id",
+                        (versionContentCode,versionContentDescription,version,))
+                rst2 = cur2.fetchone()
+            version_id = rst2[0]
+            cursor.execute('insert into sources (table_name, year, license, content_id, language_id, version_id,status) values \
+                (%s, %s, %s, %s, %s, %s,true)', (bibleTableName, year, license, contentId, languageId,version_id,))
             connection.commit()
             cursor.close()
             return '{"success": true, "message":"Source Created successfully"}'
@@ -1234,53 +1231,31 @@ def uploadSource():
         parsedUsfmText = req["parsedUsfmText"]
         connection = get_db()
         cursor = connection.cursor()
-        cursor.execute("select s.usfm_text, s.version_content_code, l.language_code, s.version from \
-            sources s left join languages l on s.language_id=l.language_id where \
-                source_id=%s", (sourceId,))
+        cursor.execute("select s.table_name from sources as s where s.source_id=%s", (sourceId,))
         rst = cursor.fetchone()
-        cursor.close()
         if not rst:
             return '{"success":false, "message":"No source created"}'
-        usfmFile = rst[0]["usfm"]
-        parsedJsonFile = rst[0]["parsedJson"]
+        bibleTable = rst[0]
         bookCode = parsedUsfmText["metadata"]["id"]["book"].lower()
-        if usfmFile:
-            if bookCode in usfmFile:
-                return '{"success":false, "message":"Book already Uploaded"}'
-        else:
-            usfmFile = {}
-            parsedJsonFile = {}
-        # except Exception as ex:
-        #     return '{"success":false, "message":"' + str(ex) + '"}'
-        # print('befire parse')
-        parsedDbData, bookId = parseDataForDBInsert(parsedUsfmText)
-        # print("after parse")
-        languageCode = rst[2]
-        versionCode = rst[1]
+        cursor.execute("select book_id from bible_books_look_up where book_code=%s",(bookCode,))
+        bookId = cursor.fetchone()[0]
+        cursor.execute(sql.SQL("select * from {} where book_id=%s").format(sql.Identifier(bibleTable)),(bookId,))
+        rst = cursor.fetchone()
+        cursor.close()
+        if rst:
+            return '{"success":false, "message":"Book already Uploaded"}'
+        parsedDbData = parseDataForDBInsert(parsedUsfmText)
+
+        cleanTableName = bibleTable + "_cleaned" 
+        print(cleanTableName)
         cursor = connection.cursor()
-        usfmFile[bookCode] = wholeUsfmText
-        parsedJsonFile[bookCode] = parsedUsfmText
-        usfmText = json.dumps({
-            "usfm": usfmFile,
-            "parsedJson": parsedJsonFile
-        })
-        version = rst[3]
-        dataForDb = str(parsedDbData)[1:-1]
-        dataForDb = re.sub("\$'", "$$", dataForDb)
-        dataForDb = re.sub("'\$", "$$", dataForDb)
-        dataForDb = re.sub('\$"', "$$", dataForDb)
-        dataForDb = re.sub('"\$', "$$", dataForDb)
-        cleanTableName = "%s_%s_bible_cleaned" %(languageCode.lower(), version.lower())
-        
-        cursor.execute('insert into ' + cleanTableName + ' (ref_id, verse, cross_reference, foot_notes) values '\
-            + dataForDb)
-        # try:
-        #     phrases.tokenize(connection, languageCode.lower(), version.lower() , bookId)
-        # except Exception as ex:
-        #     return '{"success":false, "message":"Phrases method error"}'
-        # cursor = connection.cursor()
-        # version = rst[0]
-        cursor.execute('update sources set usfm_text=%s where source_id=%s', (usfmText, sourceId))
+        execute_values(cursor,sql.SQL('insert into {} (ref_id, verse, cross_reference, foot_notes) values %s').format(sql.Identifier(cleanTableName)),
+            parsedDbData)
+        print("added in ",cleanTableName)
+        print("About to insert to ",bibleTable)
+        usfmJson = str(json.dumps(parsedUsfmText))
+        cursor.execute(sql.SQL('insert into {} (book_id,usfm_text,json_text) values (%s,%s,%s)').format(sql.Identifier(bibleTable)), (bookId, wholeUsfmText,usfmJson,))
+        print("Added to ",bibleTable)
         connection.commit()
         cursor.close()
         return '{"success":true, "message":"Inserted %s into database"}' %(bookCode)
@@ -1298,7 +1273,6 @@ def updateTokenTranslations():
     targetLanguageId = req["targetLanguageId"]
     senses = req["senses"]
     
-    print('got Data')
     userId = 2
     connection = get_db()
     cursor = connection.cursor()
@@ -1313,9 +1287,7 @@ def updateTokenTranslations():
     cursor.execute("select token, translation, senses from translations where source_id=%s and \
         target_id=%s and token=%s",(sourceId, targetLanguageId, token))
     rst = cursor.fetchone()
-    print(rst)
     if not rst:
-        print('new')
         # senses = "|".join(senses)
         cursor.execute("insert into translations (token, translation, source_id, target_id, \
             user_id, senses) values (%s, %s, %s, %s, %s, %s)", (token, translation, sourceId, targetLanguageId, \
@@ -1327,35 +1299,18 @@ def updateTokenTranslations():
         cursor.close()
         return '{"success":true, "message":"Translation has been inserted"}'
     else:
-        print('update')
         if senses == rst[2] and translation == rst[1]:
-            print(senses)
-            print("return 1")
             return '{"success":false, "message":"No New change. This data has already been saved"}'
         if senses != rst[2] and translation == rst[1]:
-            print('senses parsing')
-            print(senses)
             senses = rst[2] + '|' + senses
-        # if senses == rst[2] and translation != rst[1]:
-        #     # senses = checkSenses
-        #     pass
         if senses == "" and translation != rst[1]:
             senses = rst[2]
 
-        print(' 2nd parse')
-        
-        
-        # senses = '|'.join(list(set(senses.split('|'))))
-        # if senses[0] == '|':
-        #     print('3rd parse')
-        #     print(senses)
-        #     senses = senses[1:]
         cursor.execute("update translations set translation=%s, user_id=%s, senses=%s where source_id=%s and \
             target_id=%s and token=%s",(translation, userId, senses, sourceId, targetLanguageId, token))
         cursor.execute("insert into translations_history (token, translation, source_id, target_id, \
             user_id, senses) values (%s, %s, %s, %s, %s, %s)", (token, translation, sourceId, targetLanguageId, \
                 userId, senses))
-        print('values updated')
         connection.commit()
         cursor.close()
         return '{"success":true, "message":"Translation has been updated"}'
@@ -1374,45 +1329,22 @@ def getTransaltedTokensInfo():
         projectIds = [p[0] for p in cursor.fetchall()]
         translationInfo = []
         for p_id in projectIds:
-            cursor.execute("select distinct p.project_id, p.project_name from translation_projects_look_up \
+            cursor.execute("select distinct p.project_id, p.project_name, p.status from translation_projects_look_up \
                 t left join autographamt_projects p on t.project_id=p.project_id where p.project_id=%s", \
                     (p_id,))
             rst = cursor.fetchall()
             if rst:
-                for projectId, projectName in rst:
+                for projectId, projectName, status in rst:
                     translationInfo.append({
                         "projectId": projectId,
-                        "projectName": projectName
+                        "projectName": projectName,
+                        "projectActive":status
                     })
         cursor.close()
         return json.dumps(translationInfo)
     except Exception as ex:
         print(ex)
         return '{"success":false, "message":"Server side issue"}'
-    # cursor.execute("select distinct p.project_id, p.project_name, o.organisation_name ")
-    # cursor.execute("select distinct r.version_content_code, l.language_name, r.language_name \
-    # r.source_id from translations t left join (select distinct s.source_id, s.version_content_code, \
-    # ll.language_name  from translations tt left join sources s on tt.source_id=s.source_id \
-    #     left join languages ll on s.language_id=ll.language_id) \
-    # r on t.source_id=r.source_id left join languages l on t.target_id=l.language_id")
-    # rst = cursor.fetchall()
-    # # 
-    # tokenInformation = {}
-    # for v,t,s in rst:
-        
-    #     if s in tokenInformation:
-    #         temp = tokenInformation[s]
-    #         if v in temp:
-    #             temp[v] = temp[v] + [t]
-    #         else:
-    #             temp[v] = [t]
-    #         tokenInformation[s] = temp
-    #     else:
-    #         tokenInformation[s] = {
-    #             v:[t]
-    #         }
-    # # tokenInformationList = [{k:v} for k,v in tokenInformation.items()]
-    # return json.dumps(tokenInformation)
 
 
 @app.route("/v1/translatedbooks/<sourceId>/<targetId>", methods=["GET"])
@@ -1428,11 +1360,10 @@ def getTranslatedBooks(sourceId, targetId):
     tokenList = list(tokenTranslations.keys())
     cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
     rst = cursor.fetchone()[0]
-    tableName = "_".join(rst.split("_")[0:-1]) + "_tokens"
+    tableName = rst + "_tokens"
     # 
 
-    cursor.execute("select b.book_code, t.token from " + tableName + " t left join \
-        bible_books_look_up b on t.book_id=b.book_id")
+    cursor.execute(sql.SQL("select b.book_code, t.token from {} t left join bible_books_look_up b on t.book_id=b.book_id").format(sql.Identifier(tableName)))
     rstAllTokens = cursor.fetchall()
     bookWiseTokens = {}
     for bookCode, token in rstAllTokens:
@@ -1494,83 +1425,83 @@ def getTranslatedBooks(sourceId, targetId):
 @check_token
 def downloadDraft():
     req = request.get_json(True)
-    # sourceId = req["sourceId"]
-    # targetLanguageId = req["targetLanguageId"]
     projectId = req["projectId"]
     bookList = req["bookList"]
-    connection = get_db()
-    cursor = connection.cursor()
-    # cursor.execute("select t.token, t.translation from translations t left join \
-    #     translation_projects_look_up l on t.translation_id=l.translation_id where l.project_id=%s \
-    #     ", (projectId,))
-
-    # rst = cursor.fetchall()
-    cursor.execute("select source_id from autographamt_projects where project_id=%s", (projectId,))
-    sourceId = cursor.fetchone()[0]
-    
-    usfmMarker = re.compile(r'\\\w+\d?\s?')
-    nonLangComponentsTwoSpaces = re.compile(r'\s[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]\s')
-    nonLangComponentsTrailingSpace = re.compile(r'[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]\s')
-    nonLangComponentsFrontSpace = re.compile(r'\s[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]')
-    nonLangComponents = re.compile(r'[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]')
-
-    # if phrases.loadPhraseTranslations(connection, sourceId, targetLanguageId):
-    if phrases.loadPhraseTranslations(connection, projectId):
+    try:
+        connection = get_db()
+        cursor = connection.cursor()
+        cursor.execute("select source_id from autographamt_projects where project_id=%s", (projectId,))
+        sourceId = cursor.fetchone()[0]
         
-        # cursor.execute("select book_id, book_code from bible_books_look_up where book_code=%s", (bookList[0],))
-        # bookId, bookCode = cursor.fetchone()
-        # tokenTranslatedDict = {k:v for k,v in rst}
-        cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
-        source_rst = cursor.fetchone()
-        
-        # usfmText = source_rst[0]['usfm'][bookCode]
-        finalDraftDict = {}
-        for book in bookList:
-            usfmText = source_rst[0]['usfm'][book]
-            usfmLineList = []
-            for line in usfmText.split('\n'):
-                usfmWordsList = []
-                nonLangCompsTwoSpaces = []
-                nonLangCompsTrailingSpace = []
-                nonLangCompsFrontSpace = []
-                nonLangComps = []
-                markers_in_line = re.findall(usfmMarker,line)
-                for word_seq in re.split(usfmMarker,line):
-                    nonLangCompsTwoSpaces += re.findall(nonLangComponentsTwoSpaces,word_seq)
-                    clean_word_seq = re.sub(nonLangComponentsTwoSpaces,' uuuQQQuuu ',word_seq)
-                    nonLangCompsTrailingSpace += re.findall(nonLangComponentsTrailingSpace,clean_word_seq)
-                    clean_word_seq = re.sub(nonLangComponentsTrailingSpace,' QQQuuu ',clean_word_seq)
-                    nonLangCompsFrontSpace += re.findall(nonLangComponentsFrontSpace,clean_word_seq)
-                    clean_word_seq = re.sub(nonLangComponentsFrontSpace,' uuuQQQ ',clean_word_seq)
-                    nonLangComps += re.findall(nonLangComponents,clean_word_seq)
-                    clean_word_seq = re.sub(nonLangComponents,' QQQ ',clean_word_seq)
+        usfmMarker = re.compile(r'\\\w+\d?\s?')
+        nonLangComponentsTwoSpaces = re.compile(r'\s[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]\s')
+        nonLangComponentsTrailingSpace = re.compile(r'[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]\s')
+        nonLangComponentsFrontSpace = re.compile(r'\s[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]')
+        nonLangComponents = re.compile(r'[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]')
+
+        if phrases.loadPhraseTranslations(connection, projectId):
+            
+            cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
+            tablename = cursor.fetchone()[0]
+            # bookList = ",".join(bookList)
+            cursor.execute(sql.SQL("select usfm_text,book_code from {} bb \
+                    left join bible_books_look_up bl on bb.book_id=bl.book_id \
+                    where bl.book_code = ANY(%s::text[])").format(sql.Identifier(tablename)),('{'+",".join(bookList)+'}',))
+            source_rst = cursor.fetchall()
+            print(source_rst)
+            
+            # usfmText = source_rst[0]['usfm'][bookCode]
+            finalDraftDict = {}
+            for row in source_rst:
+                usfm_text = row[0]
+                book = row[1]
+                usfmLineList = []
+                for line in usfm_text.split('\n'):
+                    usfmWordsList = []
+                    nonLangCompsTwoSpaces = []
+                    nonLangCompsTrailingSpace = []
+                    nonLangCompsFrontSpace = []
+                    nonLangComps = []
+                    markers_in_line = re.findall(usfmMarker,line)
+                    for word_seq in re.split(usfmMarker,line):
+                        nonLangCompsTwoSpaces += re.findall(nonLangComponentsTwoSpaces,word_seq)
+                        clean_word_seq = re.sub(nonLangComponentsTwoSpaces,' uuuQQQuuu ',word_seq)
+                        nonLangCompsTrailingSpace += re.findall(nonLangComponentsTrailingSpace,clean_word_seq)
+                        clean_word_seq = re.sub(nonLangComponentsTrailingSpace,' QQQuuu ',clean_word_seq)
+                        nonLangCompsFrontSpace += re.findall(nonLangComponentsFrontSpace,clean_word_seq)
+                        clean_word_seq = re.sub(nonLangComponentsFrontSpace,' uuuQQQ ',clean_word_seq)
+                        nonLangComps += re.findall(nonLangComponents,clean_word_seq)
+                        clean_word_seq = re.sub(nonLangComponents,' QQQ ',clean_word_seq)
+                        
+                        translated_seq = [ phrases.translateText( clean_word_seq ) ]
                     
-                    translated_seq = [ phrases.translateText( clean_word_seq ) ]
-                
-                for i,marker in enumerate(markers_in_line):
-                    usfmWordsList.append(marker)
-                    usfmWordsList.append(translated_seq[i])
-                if i+1<len(translated_seq):
-                    usfmWordsList += translated_seq[i+1:]
-                outputLine = " ".join(usfmWordsList)
-                
-                for comp in nonLangCompsTwoSpaces:
-                    outputLine = re.sub(r'\s+uuuQQQuuu\s+'," "+comp+" ",outputLine,1)
-                for comp in nonLangCompsTrailingSpace:
-                    outputLine = re.sub(r'\s+QQQuuu\s+',comp+" ",outputLine,1)
-                for comp in nonLangCompsFrontSpace:
-                    outputLine = re.sub(r'\s+uuuQQQ\s+'," "+comp,outputLine,1)
-                for comp in nonLangComps:
-                    outputLine = re.sub(r'\s+QQQ\s+',comp,outputLine,1)
-                
-                usfmLineList.append(outputLine)
-            translatedUsfmText = "\n".join(usfmLineList)
-            finalDraftDict[book] = translatedUsfmText
-        return json.dumps({
-            "translatedUsfmText": finalDraftDict
-        })
-    else:
-        '{"success": false, "message":"No translation available"}'
+                    for i,marker in enumerate(markers_in_line):
+                        usfmWordsList.append(marker)
+                        usfmWordsList.append(translated_seq[i])
+                    if i+1<len(translated_seq):
+                        usfmWordsList += translated_seq[i+1:]
+                    outputLine = " ".join(usfmWordsList)
+                    
+                    for comp in nonLangCompsTwoSpaces:
+                        outputLine = re.sub(r'\s+uuuQQQuuu\s+'," "+comp+" ",outputLine,1)
+                    for comp in nonLangCompsTrailingSpace:
+                        outputLine = re.sub(r'\s+QQQuuu\s+',comp+" ",outputLine,1)
+                    for comp in nonLangCompsFrontSpace:
+                        outputLine = re.sub(r'\s+uuuQQQ\s+'," "+comp,outputLine,1)
+                    for comp in nonLangComps:
+                        outputLine = re.sub(r'\s+QQQ\s+',comp,outputLine,1)
+                    
+                    usfmLineList.append(outputLine)
+                translatedUsfmText = "\n".join(usfmLineList)
+                finalDraftDict[book] = translatedUsfmText
+            return json.dumps({
+                "translatedUsfmText": finalDraftDict
+            })
+        else:
+            return '{"success": false, "message":"No translation available"}'
+    except Exception as e:
+        print(e)
+        return json.dumps({'success':False, 'message':"Server error"})
 
 
 
@@ -1661,85 +1592,98 @@ def getAllTranslatedWords(sourceId, targetLanguageId):
 @app.route('/v1/sources/<sourceid>/<outputtype>', methods=["GET"], defaults={'bookid':None})
 @app.route('/v1/sources/<sourceid>/<outputtype>/<bookid>', methods=["GET"])
 def getbookText(sourceid, outputtype, bookid):
-    connection = get_db()
-    cursor = connection.cursor()
-    outputtype = outputtype.lower()
-    cursor.execute("select usfm_text from sources where source_id=%s", (sourceid,))
-    jsonFile = cursor.fetchone()
-    if not jsonFile:
-        return '{"success":false, "message":"Source File not available. Upload source"}'
-    jsonFile = jsonFile[0]
-    bookIdDict = getBibleBookIds()
-    if outputtype == 'usfm':
-        usfmText = jsonFile["usfm"]
+    try:
+        connection = get_db()
+        cursor = connection.cursor()
+        outputtype = outputtype.lower()
+        bookIdDict = getBibleBookIds()
+        cursor.execute("select table_name from sources where source_id=%s and status=true", (sourceid,))
+        rst = cursor.fetchone()
+        if not rst:
+            return json.dumps({'success':False,'message':'Source not present.'})            
+
+        tableName = rst[0]
+        returnObj = {}
         if bookid:
+            cursor.execute(sql.SQL("select usfm_text, json_text from {} where book_id=%s").format(sql.Identifier(tableName)),(bookid,))
+            sourceContent = cursor.fetchone()
             bookCode = (bookIdDict[int(bookid)]).lower()
-            if bookCode in usfmText:
-                usfmContent = {
-                    bookCode:usfmText[bookCode]
-                }
-                return json.dumps(usfmContent)
+            if not sourceContent:
+                return json.dumps({'success':False,'message':'Book has not been uploaded in the source.'})
+            if outputtype == 'usfm':
+                returnObj[bookCode] = sourceContent[0]
+            elif outputtype == 'json':
+                returnObj[bookCode] = sourceContent[1]
             else:
-                return '{"success":false, "message":"This Book has not been uploaded yet"}'
+                return json.dumps({'success':False,'message':'Unsupported type. Use "usfm" or "json"'})
         else:
-            usfmContent = usfmText
-        return json.dumps({
-            bookCode:usfmContent
-        })
-    elif outputtype == 'json':
-        jsonText = jsonFile["parsedJson"]
-        if bookid:
-            bookCode = (bookIdDict[int(bookid)]).lower()
-            if bookCode in jsonText:
-                jsonContent = {
-                    bookCode:jsonText[bookCode]
-                }
+            cursor.execute(sql.SQL("select book_id,usfm_text, json_text from {}").format(sql.Identifier(tableName)))
+            sourceContents = cursor.fetchall()
+            if not sourceContents:
+                return json.dumps({'success':False,'message':'Book has not been uploaded in the source.'})
+            if outputtype == 'usfm':
+                for row in sourceContents:
+                    returnObj[row[0]] = row[1]
+            elif outputtype == 'json':
+                for row in sourceContents:
+                    bookCode = (bookIdDict[int(row[0])]).lower()
+                    returnObj[bookCode] = row[2]
             else:
-                return '{"success":false, "message":"This Book has not been uploaded yet"}'
-        else:
-            jsonContent = jsonText
-        return json.dumps(jsonContent)
-    else:
-        '{"success":false, "message":"Invalid type. Use either `usfm` or `json`"}'
+                return json.dumps({'success':False,'message':'Unsupported type. Use "usfm" or "json"'})            
+            
+        return json.dumps(returnObj)
+    except Exception as e:
+        print(e)
+        return json.dumps({'success':False,'message':'Server error'})
 
 
 @app.route('/v1/sources/<sourceid>/<outputtype>/<bookid>/<chapterid>', methods=["GET"])
 def getVerseInRange(sourceid, outputtype, bookid, chapterid):
-    connection = get_db()
-    cursor = connection.cursor()
-    outputtype = outputtype.lower()
-    
-    cursor.execute("select table_name, usfm_text from sources where source_id=%s", (sourceid,))
-    rst = cursor.fetchone()
-    if not rst:
-        return '{"success":false, "message":"Source File not available. Upload source"}'
-    if outputtype == "clean":
-        cursor.execute("select b.book_code, b.book_id, b.book_name, t.verse from " + \
-            rst[0] + " t left join bcv_lid_map bcv on t.lid=bcv.lid left join \
-                 bible_books_look_up b on b.book_id=bcv.book where bcv.book=%s \
-                     and bcv.chapter=%s order by bcv.lid", (int(bookid), int(chapterid)))
-        cleanedText = cursor.fetchall()
-        cleanedText = [{
-            "bookId":bookId,
-            "bookName": bookName,
-            "bookCode": bookCode,
-            "text": text
-        } for bookId, bookName, bookCode, text in cleanedText]
-        return json.dumps(cleanedText)
-    elif outputtype == "json":
-        booksIdDict = getBibleBookIds()
-        bookCode = (booksIdDict[int(bookid)]).lower()
-        jsonContent = rst[1]["parsedJson"]
-        # 
-        if bookCode in jsonContent:
-            bookContent = jsonContent[bookCode]
-            chapterContent = bookContent["chapters"]
+    try:
+        pass
+        connection = get_db()
+        cursor = connection.cursor()
+        outputtype = outputtype.lower()
+        
+        cursor.execute("select table_name from sources where source_id=%s", (sourceid,))
+        rst = cursor.fetchone()
+        if not rst:
+            return '{"success":false, "message":"Source File not available. Create source"}'
+
+        if outputtype == "clean":
+            tablename = rst[0] + '_cleaned'
+            cursor.execute(sql.SQL("select b.book_code, b.book_id, b.book_name,bcv.chapter,bcv.verse, t.verse from {} \
+                 t left join bcv_map bcv on t.ref_id=bcv.ref_id left join \
+                     bible_books_look_up b on b.book_id=bcv.book where bcv.book=%s \
+                         and bcv.chapter=%s order by bcv.ref_id").format(sql.Identifier(tablename)), (int(bookid), int(chapterid)))
+            cleanedText = cursor.fetchall()
+            cleanedText = [{
+                "bookId":bookId,
+                "bookName": bookName,
+                "bookCode": bookCode,
+                "chapter":chapter,
+                "verse":verse,
+                "text": text
+            } for  bookCode, bookId, bookName,chapter,verse, text in cleanedText]
+            return json.dumps(cleanedText)
+        elif outputtype == "json":
+            tablename = rst[0]
+            cursor.execute(sql.SQL("select json_text from {} where book_id=%s").format(sql.Identifier(tablename)),(bookid,))
+            rst2 = cursor.fetchone()
+            if not rst2:
+                return '{"success":false, "message":"Book not available"}'
+            booksIdDict = getBibleBookIds()
+            bookCode = (booksIdDict[int(bookid)]).lower()
+            jsonContent = json.loads(rst2[0])
+
+            chapterContent = jsonContent["chapters"]
             chapterContent = chapterContent[int(chapterid) -1]
             return json.dumps(chapterContent)
         else:
-            return '{"success":false, "message":"Book not available"}'
-    else:
-        '{"success":false, "message":"Invalid type. Use either `clean` or `json`"}'
+            '{"success":false, "message":"Invalid type. Use either `clean` or `json`"}'
+    except Exception as e:
+        print(e)
+        return json.dumps({'success':False,'message':'Server error'})
 
 @app.route("/v1/autographamt/user/delete",methods=["DELETE"])
 @check_token
@@ -1774,8 +1718,7 @@ def removeUser():
 @check_token
 def removeOrg():
     req = request.get_json(True)
-    orgName= req["organisationName"]
-    orgEmail = req["organisationEmail"]
+    orgId= req["organisationId"]
     role = checkAuth()
     connection = get_db()
     cursor = connection.cursor()
@@ -1784,9 +1727,9 @@ def removeOrg():
     try:
         if role == 3:
             # delete organization
-            cursor.execute("select organisation_id from autographamt_organisations where organisation_name=%s and organisation_email=%s",(orgName,orgEmail,))
-            orgId = cursor.fetchone()
-            if orgId:
+            cursor.execute("select organisation_id from autographamt_organisations where organisation_id=%s",(orgId,))
+            org = cursor.fetchone()
+            if org:
                 status = json.loads(deleteOrganisation(orgId))
                 message += status['message']
                 success = status['success']
@@ -1803,8 +1746,7 @@ def removeOrg():
 @check_token
 def removeProject():
     req = request.get_json(True)
-    projectName = req["projectName"]
-    orgName = req["organisationName"]
+    projectId = req["projectId"]
     role = checkAuth()
     email = request.email
     connection = get_db()
@@ -1813,28 +1755,24 @@ def removeProject():
     success = False
     try:
         if role == 3:
-            cursor.execute("select organisation_id from autographamt_organisations where organisation_name=%s",(orgName,))
-            orgId = cursor.fetchone()
-            if orgId:
-                cursor.execute("select projectId from autographamt_projects where project_name=%s and organisation_id=%s",(projectName,orgId,))
-                projectId = cursor.fetchone()
-                if projectId:
+                cursor.execute("select * from autographamt_projects where project_id=%s",(projectId,))
+                project = cursor.fetchone()
+                if project:
                     status = json.loads(deleteProject(projectId))
                     message += status["message"]
                     success = status["success"]
                 else:
                     message += "Project not present."
-            else:
-                message += "Organisation not present."
         elif role == 2:
             cursor.execute("select user_id from autographamt_users where email_id=%s",(email,))
             userId = cursor.fetchone()
-            cursor.execute("select organisation_id from autographamt_organisations where user_id=%s and organisation_name=%s",(userId,orgName,))
-            orgId = cursor.fetchone()
-            if orgId:
-                cursor.execute("select project_id from autographamt_projects where project_name=%s and organisation_id=%s",(projectName,orgId,))
-                projectId = cursor.fetchone()
-                if projectId:
+            cursor.execute("select organisation_id from autographamt_organisations where user_id=%s",(userId,))
+            orgIds = cursor.fetchall()
+            orgIds = [row[0] for row in orgIds]
+            if orgIds:
+                cursor.execute("select * from autographamt_projects where project_id=%s and organisation_id= ANY(%s::int[])",(projectId,'{'+','.join(str(n) for n in orgIds)+'}',))
+                project = cursor.fetchone()
+                if project:
                     status = json.loads(deleteProject(projectId))
                     message += status["message"]
                     success = status["success"]
@@ -1849,14 +1787,14 @@ def removeProject():
         message = "Server error."
     return json.dumps({"success":success,"message":message})
 
-@app.route("/v1/autographamt/source/bible/delete",methods=["DELETE"])
+@app.route("/v1/autographamt/source/delete",methods=["DELETE"])
 @check_token
-def removeBible():
+def removeSource():
     req = request.get_json(True)
     sourceId = req["sourceId"]
     role = checkAuth()
     if role == 3:
-        status = delete_bible_source(sourceId)
+        status = delete_source(sourceId)
         return json.dumps(status)
     else:
         return json.dumps({"success":False,"message":"Unauthorized attempt"})
@@ -1878,17 +1816,17 @@ def deleteUser(userId):
             cursor.execute("select organisation_id from autographamt_organisations where user_id=%s",(userId,))
             orgIds = cursor.fetchall()
             if len(orgIds)>0:
-                message = "Organisation admin cannot be deleted."
+                message = "Organisation admin cannot be deleted. Delete the organisation first."
                 return json.dumps({'success':success,'message':message})
         cursor.execute("select * from autographamt_assignments where user_id=%s",(userId,))
         rst = cursor.fetchone()
         if rst:
             message += "User has translation assignments."
             return json.dumps({'success':success,'message':message})
-        cursor.execute("delete from autographamt_users where user_id=%s",(userId,))
+        cursor.execute("update autographamt_users set status=false where user_id=%s",(userId,))
         connection.commit()
         success = True
-        message = "Deleted user."
+        message = "Deactivated user."
     except Exception as e:
         print(e)
         message += "Server error."
@@ -1909,9 +1847,9 @@ def deleteOrganisation(orgId):
             if status["success"] == False:
                 message = status["message"]
                 return json.dumps({'success':success,'message':message})
-        cursor.execute("delete from autographamt_organisations where organisation_id=%s",(orgId,))
+        cursor.execute("update autographamt_organisations set status=false where organisation_id=%s",(orgId,))
         success = True
-        message = "Deleted organization and its projects."
+        message = "Deactivated organization and its projects."
         connection.commit()
     except Exception as e:
         print(e)
@@ -1925,19 +1863,8 @@ def deleteProject(projectId):
     success = False
     message = ""
     try:
-        cursor.execute("select translation_id from translation_projects_look_up where project_id=%s",(projectId,))
-        translationIds = cursor.fetchall()
-        print("deleting translation_projects_look_up entry")
-        cursor.execute("delete from translation_projects_look_up where project_id=%s",(projectId,))
-        for translationId in translationIds:
-            print("deleting translation:",translationId)
-            cursor.execute("delete from translations_history where translation_id=%s",(translationId,))
-            cursor.execute("delete from translations where translation_id=%s",(translationId,))
-        print("deleting assignments")
-        cursor.execute("delete from autographamt_assignments where project_id=%s",(projectId,))
-        print("deleting project")
-        cursor.execute("delete from autographamt_projects where project_id=%s",(projectId,))
-        message += "Deleted project, related assignments and translations."
+        cursor.execute("update autographamt_projects set status=false where project_id=%s",(projectId,))
+        message += "Deactivated project."
         success = True
         connection.commit()
     except Exception as e:
@@ -1946,22 +1873,15 @@ def deleteProject(projectId):
     return json.dumps({'success':success,'message':message})
 
 
-def delete_bible_source(source_id):
+def delete_source(source_id):
     connection = get_db()
     cursor = connection.cursor()
     success = False
     message = ""
     try:
-        cursor.execute("select table_name from sources where source_id=%s",(source_id,))
-        tablename1 = cursor.fetchone()[0]
-        print('deleting:',tablename1)
-        cursor.execute(sql.SQL("drop table {}").format(sql.Identifier(tablename1)))
-        tablename2 = tablename1[:-7]+'tokens'
-        print('deleting:',tablename2)
-        cursor.execute(sql.SQL("drop table {}").format(sql.Identifier(tablename2)))
-        cursor.execute("delete from sources where source_id=%s",(source_id,))
+        cursor.execute("update sources set status=false where source_id=%s",(source_id,))
         connection.commit()
-        return {"success":True, "message":"Bible deleted."}
+        return {"success":True, "message":"Source deactivated."}
     except Exception as e:
         print(e)
         return {"success":False,"message":"server side error"}
