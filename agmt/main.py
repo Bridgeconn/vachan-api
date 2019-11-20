@@ -26,6 +26,7 @@ import jwt
 import requests
 import scrypt
 import psycopg2
+from psycopg2 import sql
 from random import randint
 import phrases
 from functools import reduce
@@ -1760,7 +1761,7 @@ def getVerseInRange(sourceid, outputtype, bookid, chapterid):
 
 def sourcesPattern(*argv):
     languageName, languageCode, languageId, contentType, contentId, sourceId, \
-        versionCode, versionName = argv
+        versionCode, versionName, status = argv
     pattern = {
         "language":{
             "name": languageName.capitalize(),
@@ -1777,7 +1778,8 @@ def sourcesPattern(*argv):
         "version": {
             "code": versionCode,
             "name": versionName
-        }
+        },
+        "status": status
     }
     return pattern
 
@@ -1789,16 +1791,16 @@ def getSources():
     connection = get_db()
     cursor = connection.cursor()
     try:
-        cursor.execute("select s.source_id, s.version_content_code, s.version_content_description, \
-            c.content_id, c.content_type, l.language_id, l.language_name, l.language_code from sources s\
+        cursor.execute("select s.source_id, v.version_code, v.version_description, c.content_id, \
+            c.content_type, l.language_id, l.language_name, l.language_code, s.status from sources s\
                 left join content_types c on s.content_id=c.content_id left join languages l on \
-                    s.language_id=l.language_id")
+                    s.language_id=l.language_id left join versions v on s.version_id=v.version_id")
     except Exception as ex:
         print(ex)
     sourcesList = []
-    for s_id, ver_code, ver_name, cont_id, cont_name, lang_id, lang_name, lang_code in cursor.fetchall():
+    for s_id, ver_code, ver_name, cont_id, cont_name, lang_id, lang_name, lang_code,status in cursor.fetchall():
         sourcesList.append(
-            sourcesPattern(lang_name, lang_code, lang_id, cont_name, cont_id, s_id, ver_code, ver_name)
+            sourcesPattern(lang_name, lang_code, lang_id, cont_name, cont_id, s_id, ver_code, ver_name, status)
         )
     cursor.close()
     return json.dumps(sourcesList)
@@ -1806,7 +1808,7 @@ def getSources():
 def biblePattern(*argv):
     try:
         languageName, languageCode, languageId, script, scriptDirection, localScriptName, sourceId, \
-            versionCode, versionName, version, updatedDate = argv
+            versionCode, versionName, version, updatedDate,status = argv
     except Exception as ex:
         print(ex)
     pattern = {
@@ -1825,7 +1827,8 @@ def biblePattern(*argv):
         },
         "audioBible":[],
         "updatedDate": updatedDate,
-        "sourceId": sourceId
+        "sourceId": sourceId,
+        "status": status
     }
     return pattern
 
@@ -1856,17 +1859,24 @@ def getBibles():
     '''Return the list of availabile Bible Languages and Versions.'''
     connection = get_db()
     cursor = connection.cursor()
+    #use status param to filter by status, default only true
+    status = request.args.get('status')
+    statusQuery = " and s.status=true"
+    if status and status.lower() == "both":
+        statusQuery = ""
+    elif status and status.lower() == "inactive":
+        statusQuery = " and s.status=false"
     try:
-        cursor.execute("select s.source_id, s.version, s.version_content_code, s.version_content_description, \
-            l.language_id, l.language_name, l.language_code, local_script_name, script, \
-                script_direction, created_at_date from sources s left join languages l on s.language_id=l.language_id where \
-                    s.content_id=1")
+        cursor.execute("select s.source_id, v.revision, v.version_code, v.version_description, \
+            l.language_id, l.language_name, l.language_code, local_script_name, script, script_direction, \
+                created_at_date, s.status from sources s left join languages l on s.language_id=l.language_id \
+                    left join versions v on s.version_id= v.version_id where s.content_id=1 "+statusQuery)
     except Exception as ex:
         print(ex)
     biblesList = []
     language = request.args.get('language')
     for s_id, ver, ver_code, ver_name, lang_id, lang_name, lang_code, loc_script_name, script, script_dir, \
-        updatedDate in cursor.fetchall():
+        updatedDate, status in cursor.fetchall():
         biblesList.append(
             biblePattern(
                 lang_name, 
@@ -1879,7 +1889,8 @@ def getBibles():
                 ver_code,
                 ver_name,
                 ver,
-                str(updatedDate)
+                str(updatedDate),
+                status
             )
         )
     cursor.close()
@@ -1913,26 +1924,27 @@ def getBibleBooks(sourceId):
     '''Return the list of books in a Bible Language and Version.'''
     connection = get_db()
     cursor = connection.cursor()
-    cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
+    cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
     rst = cursor.fetchone()
     if not rst:
         return json.dumps({"success": False, "message": "Invalid Source Id"})
-    if 'usfm' not in rst[0]:
+    cursor.execute("select book_id from "+rst[0])
+    bookLists = cursor.fetchall()
+    if not bookLists:
         return json.dumps({"success": False, "message": "No Books uploaded yet"})
-    bookLists = [item for item in rst[0]["usfm"].keys()]
     booksData = []
     cursor.execute("select * from bible_books_look_up order by book_id")
     booksDict = {}
     for bibleBookID, bibleBookFullName, bibleBookCode in cursor.fetchall():
-        booksDict[bibleBookCode] = {
+        booksDict[bibleBookID] = {
             "bibleBookID":bibleBookID,
             "abbreviation": bibleBookCode,
             "bibleBookFullName": bibleBookFullName.capitalize()
         }
     for book in bookLists:
-        if book in booksDict:
+        if book[0] in booksDict:
             booksData.append(
-                booksDict[book]
+                booksDict[book[0]]
             )
     bibleBooks = [
         {
@@ -1947,33 +1959,27 @@ def getBibleBookChapters(sourceId):
     '''Return the list of books and chapter Number in a Bible Language and Version.'''
     connection = get_db()
     cursor = connection.cursor()
-    cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
+    cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
     rst = cursor.fetchone()
     if not rst:
         return json.dumps({"success": False, "message": "Invalid Source Id"})
-    if 'usfm' not in rst[0]:
+    cursor.execute( sql.SQL("select l.book_id,l.book_name,book_code,json_array_length(cast (json_text->'chapters' as json)) \
+        from {} b left join bible_books_look_up l on b.book_id=l.book_id").format(sql.Identifier(rst[0])))
+    bookLists = cursor.fetchall()
+    if not bookLists:
         return json.dumps({"success": False, "message": "No Books uploaded yet"})
-    bookLists = [{"bookName":item,"chapters":len(rst[0]["parsedJson"][item]["chapters"])} for item in rst[0]["usfm"].keys()]
-    booksData = []
-    cursor.execute("select * from bible_books_look_up order by book_id")
     booksDict = {}
-    for bibleBookID, bibleBookFullName, bibleBookCode in cursor.fetchall():
+    for bibleBookID, bibleBookFullName, bibleBookCode, chapters in bookLists:
         booksDict[bibleBookCode] = {
             "bibleBookID":bibleBookID,
             "abbreviation": bibleBookCode,
-            "bibleBookFullName": bibleBookFullName.capitalize()
+            "bibleBookFullName": bibleBookFullName.capitalize(),
+            "chapters": chapters
         }
-    for bookObject in bookLists:
-        book = bookObject["bookName"]
-        if book in booksDict:
-            booksDict[book]["chapters"]= bookObject["chapters"]
-            booksData.append(
-                booksDict[book]
-            )
     bibleBooks = [
         {
             "sourceId": sourceId,
-            "books": booksData
+            "books": booksDict
         }
     ]
     return json.dumps(bibleBooks)
@@ -1983,16 +1989,29 @@ def getBible(sourceId, contentFormat):
     '''Return the bible content for a particular Bible version and format.'''
     connection = get_db()
     cursor = connection.cursor()
-    cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
+    cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
     rst = cursor.fetchone()
     if not rst:
         return json.dumps({"success": False, "message": "Invalid Source Id"})
-    if 'usfm' not in rst[0]:
+    cursor.execute("select count(*) from "+rst[0])
+    if not cursor.fetchone():
         return json.dumps({"success": False, "message": "No Books uploaded yet"})
     if contentFormat.lower() == 'usfm':
-        usfmText = {"sourceId":sourceId,"bibleContent":rst[0]["usfm"]}
+        cursor.execute( sql.SQL("select l.book_code,b.usfm_text from {} b \
+            left join bible_books_look_up l on b.book_id=l.book_id").format(sql.Identifier(rst[0])))
+        bible_data = cursor.fetchall()
+        usfm_text = {}
+        for book,text in bible_data:
+            usfm_text[book]=text
+        usfmText = {"sourceId":sourceId,"bibleContent":usfm_text}
     elif contentFormat.lower() == 'json':
-        usfmText = {"sourceId":sourceId,"bibleContent":rst[0]["parsedJson"]}
+        cursor.execute( sql.SQL("select l.book_code,b.json_text from {} b \
+            left join bible_books_look_up l on b.book_id=l.book_id").format(sql.Identifier(rst[0])))
+        bible_data = cursor.fetchall()
+        json_text = {}
+        for book,text in bible_data:
+            json_text[book]=text
+        usfmText = {"sourceId":sourceId,"bibleContent":json_text}
     else:
         return '{"success": false, "message":"Invalid Content Type"}'
     cursor.close()
@@ -2003,59 +2022,52 @@ def getBible(sourceId, contentFormat):
 def getBook(sourceId,bookCode, contentFormat):
     '''Return the content of a book in a particular version and format.'''
     connection = get_db()
-    cursor = connection.cursor()
-    cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
-    rst = cursor.fetchone()
-    contentType="usfm" if contentFormat.lower() == "usfm" else "parsedJson"
-    if not rst:
-        return json.dumps({"success": False, "message": "Invalid Source Id"})
-    if 'usfm' not in rst[0]:
-        return json.dumps({"success": False, "message": "No Books uploaded yet"})
-    elif contentFormat.lower() == 'json' or contentFormat.lower() == 'usfm':
-        if bookCode in rst[0][contentType]:
-            usfmText = {"sourceId":sourceId,"bibleBookCode":bookCode,"bookContent":rst[0][contentType][bookCode]}
-        else:
-            return json.dumps({"success": False, "message": "Book not uploaded yet"})
-    else:
+    if contentFormat.lower() not in ["usfm","json"]:
         return '{"success": false, "message":"Invalid Content Type"}'
+    cursor = connection.cursor()
+    cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
+    rst = cursor.fetchone()
+    if not rst[0]:
+        return json.dumps({"success": False, "message": "Invalid Source Id"})
+    contentType="usfm_text" if contentFormat.lower() == "usfm" else "json_text"
+    cursor.execute( sql.SQL("select {} from {} b left join bible_books_look_up l \
+        on b.book_id=l.book_id where l.book_code=%s").format(sql.Identifier(contentType),sql.Identifier(rst[0])),[bookCode])
+    rst = cursor.fetchone()
+    if not rst[0]:
+        return json.dumps({"success": False, "message": "Book not uploaded"})
+    else:
+        usfmText = {"sourceId":sourceId,"bibleBookCode":bookCode,"bookContent":rst[0]}
     cursor.close()
     return json.dumps(usfmText)
 
 @app.route("/v1/bibles/<sourceId>/books/<biblebookCode>/chapters", methods=["GET"])
 def getBibleChapters(sourceId, biblebookCode):
-    '''Return a Chapter object with content of all verses for the Chapter.'''
+    '''Return number of Chapters and chapter details for a book.'''
     try:
         connection = get_db()
         cursor = connection.cursor()
-        cursor.execute("select book_id, book_code, book_name from bible_books_look_up \
-            where book_code=%s", (biblebookCode.lower(),))
-        bibleBookData = cursor.fetchone()
-        if not bibleBookData:
-            return '{"success":false, "message":"Invalid book code"}'
         cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
-        tableName = cursor.fetchone()
-        if not tableName:
-            return '{"success":false, "message":"Source doesn\'t exist"}'
-        startId = int(bibleBookData[0]) * 1000000
-        endId = (int(bibleBookData[0]) + 1) * 1000000
-        cursor.execute("select ref_id from " + tableName[0] + " where ref_id > %s \
-            and ref_id < %s order by ref_id", (startId, endId))
-        refIdsList = [x[0] for x in cursor.fetchall()]
-        chapterList = []
-        for ref in refIdsList:
-            chapterNumber = int(str(ref)[-6:-3])
-            if chapterNumber not in chapterList:
-                chapterList.append(chapterNumber)
+        rst = cursor.fetchone()
+        if not rst:
+            return json.dumps({"success": False, "message": "Invalid Source Id"})
+
+        cursor.execute(sql.SQL("select book_name,json_array_length(cast (json_text->'chapters' as json)) \
+        from {} b left join bible_books_look_up l on b.book_id=l.book_id where book_code=%s").\
+            format(sql.Identifier(rst[0])),[biblebookCode.lower()])
+        bible_book_data = cursor.fetchone()
+        if not bible_book_data:
+            return '{"success":false, "message":"Book not uploaded"}'
         chapters = []
-        for num in chapterList:
+        book_name,chapter_count = bible_book_data
+        for num in range(chapter_count):
             chapters.append(
                 {
                     "sourceId": sourceId,
                     "bibleBookCode": biblebookCode.upper(),
                     "chapter":{
-                        "chapterId": "%s.%s" %(biblebookCode, str(num)),
-                        "number": num,
-                        "reference": " ".join(w.capitalize() for w in bibleBookData[2].split(' ')) + " " + str(num)
+                        "chapterId": "%s.%s" %(biblebookCode, str(num+1)),
+                        "number": num+1,
+                        "reference": book_name.title() + " " + str(num+1)
                     }
                 }
             )
@@ -2063,81 +2075,59 @@ def getBibleChapters(sourceId, biblebookCode):
     except Exception as ex:
         return '{"success": false, "message":"%s"}' %(str(ex))
 
-def getChapterList(sourceId,bibleBookData,cursor):
-    '''Return the list of chapters for the given book.'''
-    cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
-    tableName = cursor.fetchone()
-    if not tableName:
-        return '{"success":false, "message":"Source doesn\'t exist"}'
-    startId = int(bibleBookData[0]) * 1000000
-    endId = (int(bibleBookData[0]) + 1) * 1000000
-    cursor.execute("select ref_id from " + tableName[0] + " where ref_id > %s \
-        and ref_id < %s order by ref_id", (startId, endId))
-    refIdsList = [x[0] for x in cursor.fetchall()]
-    chapterList = []
-    for ref in refIdsList:
-        chapterNumber = int(str(ref)[-6:-3])
-        if chapterNumber not in chapterList:
-            chapterList.append(chapterNumber)
-    return chapterList
-
-def getBookById(bookId,cursor):
-    '''Return the book details from the database for the given book id.'''
-    cursor.execute("select book_id, book_code, book_name from bible_books_look_up \
-        where book_id=%s", (bookId,))
-    return cursor.fetchone()
-
 @app.route("/v1/bibles/<sourceId>/books/<bookCode>/chapter/<chapterId>", methods=["GET"])
 def getChapter(sourceId,bookCode,chapterId):
     '''Return the content of a given bible chapter.'''
     connection = get_db()
     cursor = connection.cursor()
-    cursor.execute("select book_id, book_code, book_name from bible_books_look_up \
-            where book_code=%s", (bookCode.lower(),))
-    bibleBookData = cursor.fetchone()
-    if not bibleBookData:
+    bookCode=bookCode.lower()
+    cursor.execute("select book_id from bible_books_look_up where book_code=%s", (bookCode.lower(),))
+    bible_book_data = cursor.fetchone()
+    if not bible_book_data:
         return '{"success":false, "message":"Invalid book code"}'
+    book_id = bible_book_data[0]
     cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
-    tableName = cursor.fetchone()
-    if not tableName:
+    rst = cursor.fetchone()
+    if not rst:
         return '{"success":false, "message":"Source doesn\'t exist"}'
-    chapterList = getChapterList(sourceId,bibleBookData,cursor)
+    table_name=rst[0]
+    cursor.execute(sql.SQL("select json_text->'chapters'->%s from {} where book_id=%s")\
+        .format(sql.Identifier(table_name)),[int(chapterId)-1,book_id])
+    chapter_content = cursor.fetchone()
+    if not chapter_content:
+        return json.dumps({"success": False, "message": "Book not uploaded"})
+    #get data for next and previous chapters
     prevChapter=int(chapterId)-1
-    nextChapter=int(chapterId)+1
     previous={}
     next={}
-    if(prevChapter in chapterList):
+    if(prevChapter > 0):
         previous={"sourceId":sourceId, "bibleBookCode":bookCode, "chapterId":prevChapter}
     else:
-        query = "select MAX(ref_id) from %s where ref_id<%%s" % tableName[0]
-        cursor.execute(query,(str(int(bibleBookData[0])*1000000),))
-        prevBookId = cursor.fetchone()
-        if prevBookId[0] != None:
-            prevBook =getBookById(int(prevBookId[0])//1000000,cursor)
-            previous={"sourceId":sourceId, "bibleBookCode":prevBook[1], "chapterId":(int(prevBookId[0])//1000)%1000}
-    if(nextChapter in chapterList):
+        cursor.execute(sql.SQL("select book_code,json_array_length(cast (json_text->'chapters' as json)) from \
+            {} b left join bible_books_look_up l on b.book_id=l.book_id where b.book_id \
+                = (select max(book_id) from {} where book_id<%s)").format(sql.Identifier(table_name),sql.Identifier(table_name)),[bible_book_data[0]])
+        prev_book = cursor.fetchone()
+        if prev_book:
+            previous={"sourceId":sourceId, "bibleBookCode":prev_book[0], "chapterId":prev_book[1]}
+    #get chapter count and if next chapter less than chapter count return it else get next book
+    cursor.execute(sql.SQL("select json_array_length(cast (json_text->'chapters' as json)) from {} \
+        where book_id=%s").format(sql.Identifier(table_name)),[book_id])
+    chapter_count = cursor.fetchone()[0]
+    nextChapter=int(chapterId)+1
+    if(nextChapter <= chapter_count):
         next={"sourceId":sourceId, "bibleBookCode":bookCode, "chapterId":nextChapter}
     else:
-        query = "select MIN(ref_id) from %s where ref_id>%%s" % tableName[0]
-        cursor.execute(query,(str(int(bibleBookData[0])*1000000+200000),))
-        nextBookId = cursor.fetchone()
-        if nextBookId[0] != None:
-            nextBook =getBookById(int(nextBookId[0])//1000000,cursor)
-            next={"sourceId":sourceId, "bibleBookCode":nextBook[1], "chapterId":(int(nextBookId[0])//1000)%1000}    
-    cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
-    rst = cursor.fetchone()
+        cursor.execute(sql.SQL("select book_code from bible_books_look_up where book_id = \
+            (select min(book_id) from {} where book_id>%s)").format(sql.Identifier(table_name)),[book_id])
+        next_book_id = cursor.fetchone()
+        if next_book_id:
+            next={"sourceId":sourceId, "bibleBookCode":next_book_id[0], "chapterId":1}
     chapterId=int(chapterId)-1
-    if not rst:
-        return json.dumps({"success": False, "message": "Invalid Source Id"})
-    if 'usfm' not in rst[0]:
-        return json.dumps({"success": False, "message": "No Books uploaded yet"})
-    elif bookCode in rst[0]["parsedJson"]:
-        if chapterId>=0 and chapterId<len(rst[0]["parsedJson"][bookCode]["chapters"]):
-            usfmText = {"sourceId":sourceId,"bibleBookCode":bookCode,"chapterId":chapterId+1,"previous":previous,"next":next,"chapterContent":rst[0]["parsedJson"][bookCode]["chapters"][chapterId]}
-        else:
-            return json.dumps({"success": False, "message": "Invalid chapter id"})
+    if (chapterId>=0 and chapterId<chapter_count):
+        usfmText = {"sourceId":sourceId,"bibleBookCode":bookCode,"chapterId":chapterId+1,
+            "previous":previous,"next":next,"chapterContent":chapter_content[0]}
     else:
-        return json.dumps({"success": False, "message": "Book not uploaded yet"})
+        return json.dumps({"success": False, "message": "Invalid chapter id"})
     cursor.close()
     return json.dumps(usfmText)
 
@@ -2147,11 +2137,7 @@ def getBibleVerses(sourceId, biblebookCode, chapterId):
     try:
         connection = get_db()
         cursor = connection.cursor()
-        # try:
-        #     bookCode, chapterNumber = chapterId.split('.')
-        # except:
-        #     return '{"success": false, "message":"Invalid Chapter id format."}'
-        cursor.execute("select book_id, book_code, book_name from bible_books_look_up \
+        cursor.execute("select book_id, book_name from bible_books_look_up \
             where book_code=%s", (biblebookCode.lower(),))
         bibleBookData = cursor.fetchone()
         if not bibleBookData:
@@ -2162,8 +2148,8 @@ def getBibleVerses(sourceId, biblebookCode, chapterId):
             return '{"success":false, "message":"Source doesn\'t exist"}'
         startId = int(bibleBookData[0]) * 1000000 + (int(chapterId) * 1000)
         endId = int(bibleBookData[0]) * 1000000 + ((int(chapterId) + 1) * 1000)
-        cursor.execute("select ref_id from " + tableName[0] + " where ref_id > %s \
-            and ref_id < %s order by ref_id", (startId, endId))
+        cursor.execute(sql.SQL("select ref_id from {} where ref_id > %s and ref_id < %s order by ref_id").\
+            format(sql.Identifier(tableName[0] + "_cleaned")), [startId, endId])
         refIdsList = [x[0] for x in cursor.fetchall()]
         verseList = []
         for ref in refIdsList:
@@ -2180,8 +2166,7 @@ def getBibleVerses(sourceId, biblebookCode, chapterId):
                     "verse": {
                         "verseId": "%s.%s" %(chapterId, str(num)),
                         "number": num,
-                        "reference": " ".join(w.capitalize() for w in bibleBookData[2].split(' ')) \
-                            + " %s: %s "  %(chapterId, str(num))
+                        "reference": bibleBookData[1].title() + " %s:%s "  %(chapterId, str(num))
                     }
                 }
             )
@@ -2189,19 +2174,13 @@ def getBibleVerses(sourceId, biblebookCode, chapterId):
     except Exception as ex:
         return '{"success":false, "message":"%s"}' %(str(ex))
 
-
-
 @app.route("/v1/bibles/<sourceId>/books/<bibleBookCode>/chapters/<chapterId>/verses/<verseId>", methods=["GET"])
 def getBibleVerseText(sourceId, bibleBookCode, chapterId, verseId):
     '''Return a Verse object for a given Bible and Verse.'''
     try:
         connection = get_db()
         cursor = connection.cursor()
-        # try:
-        #     bookCode, chapterNumber, verseNumber = verseId.split('.')
-        # except:
-        #     return '{"success": false, "message":"Invalid Verse id format."}'
-        cursor.execute("select book_id, book_code, book_name from bible_books_look_up \
+        cursor.execute("select book_id, book_name from bible_books_look_up \
             where book_code=%s", (bibleBookCode.lower(),))
         bibleBookData = cursor.fetchone()
         if not bibleBookData:
@@ -2212,7 +2191,8 @@ def getBibleVerseText(sourceId, bibleBookCode, chapterId, verseId):
             return '{"success":false, "message":"Source doesn\'t exist"}'
         bookId = bibleBookData[0]
         ref_id = int(str(bookId).zfill(2) + chapterId.zfill(3) + verseId.zfill(3))
-        cursor.execute("select verse from " + tableName[0] + " where ref_id=%s", (ref_id,))
+        cursor.execute(sql.SQL("select verse from {} where ref_id=%s").\
+            format(sql.Identifier(tableName[0] + "_cleaned")), [ref_id])
         verse = cursor.fetchone()
         if not verse:
             return '{"success": false, "message":"No verse found"}'
@@ -2221,8 +2201,7 @@ def getBibleVerseText(sourceId, bibleBookCode, chapterId, verseId):
             "bibleBookCode": bibleBookCode,
             "chapterNumber": chapterId,
             "verseNumber": verseId,
-            "reference":  " ".join(w.capitalize() for w in bibleBookData[2].split(' ')) \
-                            + " %s: %s "  %(chapterId, str(verseId)),
+            "reference": bibleBookData[1].title() + " %s:%s "  %(chapterId, str(verseId)),
             "verseContent": {
                 "text": verse[0]
             }
@@ -2240,7 +2219,7 @@ def getBibleVerses2(sourceId, chapterId):
             bookCode, chapterNumber = chapterId.split('.')
         except:
             return '{"success": false, "message":"Invalid Chapter id format."}'
-        cursor.execute("select book_id, book_code, book_name from bible_books_look_up \
+        cursor.execute("select book_id, book_name from bible_books_look_up \
             where book_code=%s", (bookCode.lower(),))
         bibleBookData = cursor.fetchone()
         if not bibleBookData:
@@ -2251,8 +2230,8 @@ def getBibleVerses2(sourceId, chapterId):
             return '{"success":false, "message":"Source doesn\'t exist"}'
         startId = int(bibleBookData[0]) * 1000000 + (int(chapterNumber) * 1000)
         endId = int(bibleBookData[0]) * 1000000 + ((int(chapterNumber) + 1) * 1000)
-        cursor.execute("select ref_id from " + tableName[0] + " where ref_id > %s \
-            and ref_id < %s order by ref_id", (startId, endId))
+        cursor.execute(sql.SQL("select ref_id from {} where ref_id > %s and ref_id < %s order by ref_id").\
+            format(sql.Identifier(tableName[0] + "_cleaned")), [startId, endId])
         refIdsList = [x[0] for x in cursor.fetchall()]
         verseList = []
         for ref in refIdsList:
@@ -2269,8 +2248,7 @@ def getBibleVerses2(sourceId, chapterId):
                     "verse": {
                         "verseId": "%s.%s" %(chapterId, str(num)),
                         "number": num,
-                        "reference": " ".join(w.capitalize() for w in bibleBookData[2].split(' ')) \
-                            + " %s: %s "  %(chapterNumber, str(num))
+                        "reference": bibleBookData[1].title() + " %s: %s "  %(chapterNumber, str(num))
                     }
                 }
             )
@@ -2288,7 +2266,7 @@ def getBibleVerseText2(sourceId, verseId):
             bookCode, chapterNumber, verseNumber = verseId.split('.')
         except:
             return '{"success": false, "message":"Invalid Verse id format."}'
-        cursor.execute("select book_id, book_code, book_name from bible_books_look_up \
+        cursor.execute("select book_id, book_name from bible_books_look_up \
             where book_code=%s", (bookCode.lower(),))
         bibleBookData = cursor.fetchone()
         if not bibleBookData:
@@ -2299,22 +2277,21 @@ def getBibleVerseText2(sourceId, verseId):
             return '{"success":false, "message":"Source doesn\'t exist"}'
         bookId = bibleBookData[0]
         ref_id = int(str(bookId).zfill(2) + chapterNumber.zfill(3) + verseNumber.zfill(3))
-        cursor.execute("select verse from " + tableName[0] + " where ref_id=%s", (ref_id,))
+        cursor.execute(sql.SQL("select verse from {} where ref_id=%s").\
+            format(sql.Identifier(tableName[0] + "_cleaned")), [ref_id])
         verse = cursor.fetchone()
         if not verse:
             return '{"success": false, "message":"No verse found"}'
-        return make_response({
+        return json.dumps({
             "sourceId": sourceId,
             "bibleBookCode": bookCode,
             "chapterNumber": chapterNumber,
             "verseNumber": verseNumber,
-            "reference":  " ".join(w.capitalize() for w in bibleBookData[2].split(' ')) \
-                            + " %s: %s "  %(chapterNumber, str(verseNumber)),
+            "reference": bibleBookData[1].title() + " %s: %s "  %(chapterNumber, str(verseNumber)),
             "verseContent": {
                 "text": verse[0]
             }
         })
-        # return jsonify(verse[0])
     except Exception as ex:
         return '{"success":false, "message":"%s"}' %(str(ex))
     
