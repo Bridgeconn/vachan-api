@@ -1714,6 +1714,40 @@ def removeUser():
         message = "Server error."
     return json.dumps({"success":success,"message":message})
 
+@app.route("/v1/autographamt/user/activate",methods=["POST"])
+@check_token
+def activateUser():
+	req = request.get_json(True)
+    userEmail = req["userEmail"]
+    role = checkAuth()
+    connection = get_db()
+    cursor = connection.cursor()
+    message = ""
+    success = False
+    try:
+        if role == 3:
+        	cursor.execute("select user_id,status from autographamt_users where email_id=%s",(userEmail,))
+            row = cursor.fetchone()
+            if row:
+            	userId = row[0]
+            	status = row[1]
+            	if status==True:
+            		message = "User account already active."
+            	else:
+            		cursor.execute("update autographamt_users set status=true where email_id=%s",(userEmail,))
+            		connection.commit()
+            		success = True
+            		message = "User re-activated"
+            else:
+                message = "User not present."
+            connection.commit()
+        else:
+            message += "UnAuthorized! Only a super admin can actiavte user accounts."
+    except Exception as e:
+        print(e)
+        message = "Server error."
+    return json.dumps({"success":success,"message":message})    
+
 @app.route("/v1/autographamt/organisation/delete",methods=["DELETE"])
 @check_token
 def removeOrg():
@@ -1742,6 +1776,40 @@ def removeOrg():
         message = "Server error."
     return json.dumps({"success":success,"message":message})
 
+@app.route("/v1/autographamt/organisation/activate",methods=["POST"])
+@check_token
+def activateOrg():
+    req = request.get_json(True)
+    orgId= req["organisationId"]
+    role = checkAuth()
+    connection = get_db()
+    cursor = connection.cursor()
+    message = ""
+    success = False
+    try:
+        if role == 3:
+            # delete organization
+            cursor.execute("select organisation_id,status from autographamt_organisations where organisation_id=%s",(orgId,))
+            row = cursor.fetchone()
+            if row:
+            	status = row[1]
+            	if status==False:
+            		cursor.execute("update autographamt_organisations set status=true where organisation_id=%s",(orgId,))
+            		connection.commit()
+            		success = True
+            		message = "Organisation re-activated."
+            	else:
+            		message = "Organisation already active"
+            else:
+                message += "Organisation not present."
+        else:
+            message += "UnAuthorized! Only a super admin can activate organizations."
+    except Exception as e:
+        print(e)
+        message = "Server error."
+    return json.dumps({"success":success,"message":message})
+
+
 @app.route("/v1/autographamt/project/delete",methods=["DELETE"])
 @check_token
 def removeProject():
@@ -1765,7 +1833,7 @@ def removeProject():
                     message += "Project not present."
         elif role == 2:
             cursor.execute("select user_id from autographamt_users where email_id=%s",(email,))
-            userId = cursor.fetchone()
+            userId = cursor.fetchone()[0]
             cursor.execute("select organisation_id from autographamt_organisations where user_id=%s",(userId,))
             orgIds = cursor.fetchall()
             orgIds = [row[0] for row in orgIds]
@@ -1787,6 +1855,61 @@ def removeProject():
         message = "Server error."
     return json.dumps({"success":success,"message":message})
 
+@app.route("/v1/autographamt/project/activate",methods=["POST"])
+@check_token
+def activateProject():
+    req = request.get_json(True)
+    projectId = req["projectId"]
+    role = checkAuth()
+    email = request.email
+    connection = get_db()
+    cursor = connection.cursor()
+    message = ""
+    success = False
+    try:
+        if role == 3:
+                cursor.execute("select status from autographamt_projects where project_id=%s",(projectId,))
+                row = cursor.fetchone()
+                if row:
+                    status = row[0]
+                    if status == False:
+                    	cursor.execute('update autographamt_projects set status=true where project_id=%s',(projectId,))
+                    	connection.commit()
+	                    message = "Project re-activated"
+	                    success = True
+	                else:
+	                	message = "Project already active."
+                else:
+                    message = "Project not present."
+        elif role == 2:
+            cursor.execute("select user_id from autographamt_users where email_id=%s",(email,))
+            userId = cursor.fetchone()[0]
+            cursor.execute("select organisation_id from autographamt_organisations where user_id=%s",(userId,))
+            orgIds = cursor.fetchall()
+            orgIds = [row[0] for row in orgIds]
+            if orgIds:
+                cursor.execute("select status from autographamt_projects where project_id=%s and organisation_id= ANY(%s::int[])",(projectId,'{'+','.join(str(n) for n in orgIds)+'}',))
+                row = cursor.fetchone()
+                if row:
+                    status = row[0]
+                    if status == False:
+                    	cursor.execute('update autographamt_projects set status=true where project_id=%s',(projectId,))
+                    	connection.commit()
+	                    message = "Project re-activated"
+	                    success = True
+	                else:
+	                	message = "Project already active."
+                else:
+                    message = "Project not present in the organisation."
+            else:
+                message = "UnAuthorized! Organisation admin can delete projects of his/her organisation only."
+        else:
+            message += "UnAuthorized! Only the organisation admin or super admin can delete projects."
+    except Exception as e:
+        print(e)
+        message = "Server error."
+    return json.dumps({"success":success,"message":message})
+
 @app.route("/v1/autographamt/source/delete",methods=["DELETE"])
 @check_token
 def removeSource():
@@ -1799,6 +1922,29 @@ def removeSource():
     else:
         return json.dumps({"success":False,"message":"Unauthorized attempt"})
 
+@app.route("/v1/autographamt/source/activate",methods=["POST"])
+@check_token
+def activateSource():
+    req = request.get_json(True)
+    sourceId = req["sourceId"]
+    role = checkAuth()
+    connection = get_db()
+    cursor = connection.cursor()
+    if role == 3:
+    	cursor.execute("select status from sources where source_id=%s",(sourceId,))
+    	row = cursor.fetchone()
+    	if row:
+    		status = row[0]
+    		if status==False:
+    			cursor.execute("update sources set status=true where source_id=%s",(sourceId,))
+		        return json.dumps({'success':True,'message':"Source re-activated."})
+    		else:
+    			return json.dumps({'success':False,'message':"Source already active."})
+    	else:
+    		return json.dumps({'success':False,'message':"Source not present."})
+
+    else:
+        return json.dumps({"success":False,"message":"Unauthorized attempt"})
 
 
 def deleteUser(userId):
