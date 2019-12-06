@@ -1193,7 +1193,7 @@ def createBibleSource():
 		rst = cursor.fetchone()
 		if not rst:
 			create_usfm_bible_table_command = createTableCommand(['book_id INT NOT NULL', 'usfm_text TEXT', \
-				'json_text TEXT'], bibleTableName)
+				'json_text JSONB'], bibleTableName)
 			create_clean_bible_table_command = createTableCommand(['ref_id INT NOT NULL', 'verse TEXT', \
 				'cross_reference TEXT', 'foot_notes TEXT'], cleanTableName)
 			create_token_bible_table_command = createTableCommand(['token_id BIGSERIAL PRIMARY KEY', \
@@ -1627,7 +1627,7 @@ def getbookText(sourceid, outputtype, bookid):
 			elif outputtype == 'json':
 				for row in sourceContents:
 					bookCode = (bookIdDict[int(row[0])]).lower()
-					returnObj[bookCode] = row[2]
+					returnObj[row[0]] = row[2]
 			else:
 				return json.dumps({'success':False,'message':'Unsupported type. Use "usfm" or "json"'})            
 			
@@ -1674,7 +1674,7 @@ def getVerseInRange(sourceid, outputtype, bookid, chapterid):
 				return '{"success":false, "message":"Book not available"}'
 			booksIdDict = getBibleBookIds()
 			bookCode = (booksIdDict[int(bookid)]).lower()
-			jsonContent = json.loads(rst2[0])
+			jsonContent = rst2[0]
 
 			chapterContent = jsonContent["chapters"]
 			chapterContent = chapterContent[int(chapterid) -1]
