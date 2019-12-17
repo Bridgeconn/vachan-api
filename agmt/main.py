@@ -1627,7 +1627,7 @@ def getbookText(sourceid, outputtype, bookid):
 			elif outputtype == 'json':
 				for row in sourceContents:
 					bookCode = (bookIdDict[int(row[0])]).lower()
-					returnObj[row[0]] = row[2]
+					returnObj[bookCode] = row[2]
 			else:
 				return json.dumps({'success':False,'message':'Unsupported type. Use "usfm" or "json"'})            
 			
