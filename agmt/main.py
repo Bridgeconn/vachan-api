@@ -1493,85 +1493,95 @@ def getTranslatedBooks(sourceId, targetId):
 @app.route("/v1/downloaddraft", methods=["POST"])
 @check_token
 def downloadDraft():
-    req = request.get_json(True)
-    # sourceId = req["sourceId"]
-    # targetLanguageId = req["targetLanguageId"]
-    projectId = req["projectId"]
-    bookList = req["bookList"]
-    connection = get_db()
-    cursor = connection.cursor()
-    # cursor.execute("select t.token, t.translation from translations t left join \
-    #     translation_projects_look_up l on t.translation_id=l.translation_id where l.project_id=%s \
-    #     ", (projectId,))
+	req = request.get_json(True)
+	projectId = req["projectId"]
+	bookList = req["bookList"]
+	try:
+		connection = get_db()
+		cursor = connection.cursor()
+		cursor.execute("select source_id from autographamt_projects where project_id=%s", (projectId,))
+		sourceId = cursor.fetchone()[0]
+		
+		usfmMarker = re.compile(r'\\\w+\d?\*?\s?')
+		nonLangComponentsTwoSpaces = re.compile(r'\s[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]\s')
+		nonLangComponentsTrailingSpace = re.compile(r'[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]\s')
+		nonLangComponentsFrontSpace = re.compile(r'\s[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]')
+		nonLangComponents = re.compile(r'[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]')
 
-    # rst = cursor.fetchall()
-    cursor.execute("select source_id from autographamt_projects where project_id=%s", (projectId,))
-    sourceId = cursor.fetchone()[0]
-    
-    usfmMarker = re.compile(r'\\\w+\d?\s?')
-    nonLangComponentsTwoSpaces = re.compile(r'\s[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]\s')
-    nonLangComponentsTrailingSpace = re.compile(r'[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]\s')
-    nonLangComponentsFrontSpace = re.compile(r'\s[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]')
-    nonLangComponents = re.compile(r'[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]')
-
-    # if phrases.loadPhraseTranslations(connection, sourceId, targetLanguageId):
-    if phrases.loadPhraseTranslations(connection, projectId):
-        
-        # cursor.execute("select book_id, book_code from bible_books_look_up where book_code=%s", (bookList[0],))
-        # bookId, bookCode = cursor.fetchone()
-        # tokenTranslatedDict = {k:v for k,v in rst}
-        cursor.execute("select usfm_text from sources where source_id=%s", (sourceId,))
-        source_rst = cursor.fetchone()
-        
-        # usfmText = source_rst[0]['usfm'][bookCode]
-        finalDraftDict = {}
-        for book in bookList:
-            usfmText = source_rst[0]['usfm'][book]
-            usfmLineList = []
-            for line in usfmText.split('\n'):
-                usfmWordsList = []
-                nonLangCompsTwoSpaces = []
-                nonLangCompsTrailingSpace = []
-                nonLangCompsFrontSpace = []
-                nonLangComps = []
-                markers_in_line = re.findall(usfmMarker,line)
-                for word_seq in re.split(usfmMarker,line):
-                    nonLangCompsTwoSpaces += re.findall(nonLangComponentsTwoSpaces,word_seq)
-                    clean_word_seq = re.sub(nonLangComponentsTwoSpaces,' uuuQQQuuu ',word_seq)
-                    nonLangCompsTrailingSpace += re.findall(nonLangComponentsTrailingSpace,clean_word_seq)
-                    clean_word_seq = re.sub(nonLangComponentsTrailingSpace,' QQQuuu ',clean_word_seq)
-                    nonLangCompsFrontSpace += re.findall(nonLangComponentsFrontSpace,clean_word_seq)
-                    clean_word_seq = re.sub(nonLangComponentsFrontSpace,' uuuQQQ ',clean_word_seq)
-                    nonLangComps += re.findall(nonLangComponents,clean_word_seq)
-                    clean_word_seq = re.sub(nonLangComponents,' QQQ ',clean_word_seq)
-                    
-                    translated_seq = [ phrases.translateText( clean_word_seq ) ]
-                
-                for i,marker in enumerate(markers_in_line):
-                    usfmWordsList.append(marker)
-                    usfmWordsList.append(translated_seq[i])
-                if i+1<len(translated_seq):
-                    usfmWordsList += translated_seq[i+1:]
-                outputLine = " ".join(usfmWordsList)
-                
-                for comp in nonLangCompsTwoSpaces:
-                    outputLine = re.sub(r'\s+uuuQQQuuu\s+'," "+comp+" ",outputLine,1)
-                for comp in nonLangCompsTrailingSpace:
-                    outputLine = re.sub(r'\s+QQQuuu\s+',comp+" ",outputLine,1)
-                for comp in nonLangCompsFrontSpace:
-                    outputLine = re.sub(r'\s+uuuQQQ\s+'," "+comp,outputLine,1)
-                for comp in nonLangComps:
-                    outputLine = re.sub(r'\s+QQQ\s+',comp,outputLine,1)
-                
-                usfmLineList.append(outputLine)
-            translatedUsfmText = "\n".join(usfmLineList)
-            finalDraftDict[book] = translatedUsfmText
-        return json.dumps({
-            "translatedUsfmText": finalDraftDict
-        })
-    else:
-        '{"success": false, "message":"No translation available"}'
-
+		if phrases.loadPhraseTranslations(connection, projectId):
+			
+			cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
+			tablename = cursor.fetchone()[0]
+			# bookList = ",".join(bookList)
+			cursor.execute(sql.SQL("select usfm_text,book_code from {} bb \
+					left join bible_books_look_up bl on bb.book_id=bl.book_id \
+					where bl.book_code = ANY(%s::text[])").format(sql.Identifier(tablename)),('{'+",".join(bookList)+'}',))
+			source_rst = cursor.fetchall()
+			# print(source_rst)
+			
+			# usfmText = source_rst[0]['usfm'][bookCode]
+			finalDraftDict = {}
+			for row in source_rst:
+				usfm_text = row[0]
+				book = row[1]
+				usfmLineList = []
+				for line in usfm_text.split('\n'):
+					usfmWordsList = []
+					nonLangCompsTwoSpaces = []
+					nonLangCompsTrailingSpace = []
+					nonLangCompsFrontSpace = []
+					nonLangComps = []
+					markers_in_line = re.findall(usfmMarker,line)
+					translated_seq = []
+					for word_seq in re.split(usfmMarker,line):
+						nonLangCompsTwoSpaces += re.findall(nonLangComponentsTwoSpaces,word_seq)
+						clean_word_seq = re.sub(nonLangComponentsTwoSpaces,' uuuQQQuuu ',word_seq)
+						nonLangCompsTrailingSpace += re.findall(nonLangComponentsTrailingSpace,clean_word_seq)
+						clean_word_seq = re.sub(nonLangComponentsTrailingSpace,' QQQuuu ',clean_word_seq)
+						nonLangCompsFrontSpace += re.findall(nonLangComponentsFrontSpace,clean_word_seq)
+						clean_word_seq = re.sub(nonLangComponentsFrontSpace,' uuuQQQ ',clean_word_seq)
+						nonLangComps += re.findall(nonLangComponents,clean_word_seq)
+						clean_word_seq = re.sub(nonLangComponents,' QQQ ',clean_word_seq)
+						if not re.match(r'\s+$',clean_word_seq) and clean_word_seq!='':
+							translated_seq.append(phrases.translateText( clean_word_seq ))
+					
+					for i,marker in enumerate(markers_in_line):
+						usfmWordsList.append(marker)
+						if i<len(translated_seq):
+							usfmWordsList.append(translated_seq[i])
+					if i+1<len(translated_seq):
+						usfmWordsList += translated_seq[i+1:]
+					outputLine = " ".join(usfmWordsList)
+					if 'bdit' in outputLine:
+						print('translated_seq:',translated_seq)
+						print(nonLangComps,nonLangCompsFrontSpace,nonLangCompsTrailingSpace,nonLangCompsTwoSpaces)
+					for comp in nonLangCompsTwoSpaces:
+						outputLine = re.sub(r' uuuQQQuuu '," "+comp+" ",outputLine,1)
+					for comp in nonLangCompsTrailingSpace:
+						outputLine = re.sub(r' QQQuuu ',comp+" ",outputLine,1)
+					for comp in nonLangCompsFrontSpace:
+						outputLine = re.sub(r' uuuQQQ '," "+comp,outputLine,1)
+					for comp in nonLangComps:
+						outputLine = re.sub(r' QQQ ',comp,outputLine,1)
+					outputLine = re.sub(r'\s+',' ',outputLine)
+					# print(outputLine)
+					usfmLineList.append(outputLine)
+				translatedUsfmText = "\n".join(usfmLineList)
+				finalDraftDict[book] = translatedUsfmText
+			return json.dumps({
+				"translatedUsfmText": finalDraftDict
+			})
+		else:
+			return '{"success": false, "message":"No translation available"}'
+	except Exception as e:
+		print(e)
+		print("line:",line)
+		print(marker,'of',markers_in_line)
+		print('usfmWordsList:',usfmWordsList)
+		print('translated_seq:',translated_seq)
+		print('word_seq:',word_seq)
+		print('clean_word_seq:',clean_word_seq)
+		return json.dumps({'success':False, 'message':"Server error"})
 
 
 @app.route("/v1/translationshelps/words/<sourceId>/<token>", methods=["GET"])
