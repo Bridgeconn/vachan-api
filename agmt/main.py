@@ -653,6 +653,7 @@ def updateProjectTokenTranslations():
 		token = req["token"]
 		translation = req["translation"]
 		senses = req["senses"]
+		senses = "|".join(senses)
 		email = request.email
 		# userId=6
 		connection = get_db()
@@ -907,13 +908,12 @@ def availableProjectBooks(projectId, userId):
 		cursor.execute("select s.table_name from sources s left join autographamt_projects p on s.source_id=p.source_id \
 			where p.project_id=%s", (projectId,))
 		tablename = cursor.fetchone()[0]
-		cursor.execute(sql.SQL("select usfm_text from {}").format(sql.Identifier(tablename)))
-		rst = cursor.fetchone()
+		cursor.execute(sql.SQL("select l.book_code from {} as b join bible_books_look_up as l on b.book_id=l.book_id").format(sql.Identifier(tablename)))
+		rst = cursor.fetchall()
+		print("rst:",rst)
 		if not rst:
-			return '{"success":false, "message":"No data available"}'
-		if not rst[0]['usfm']:
 			return '{"success":false, "message":"No Books uploaded under this source"}'
-		allBooks = list(rst[0]['usfm'].keys())
+		allBooks = [t[0] for t in rst]
 		try:
 			cursor.execute("select books from autographamt_assignments where project_id=%s and user_id=%s", \
 				(projectId, userId))
@@ -1193,7 +1193,7 @@ def createBibleSource():
 		rst = cursor.fetchone()
 		if not rst:
 			create_usfm_bible_table_command = createTableCommand(['book_id INT NOT NULL', 'usfm_text TEXT', \
-				'json_text TEXT'], bibleTableName)
+				'json_text JSONB'], bibleTableName)
 			create_clean_bible_table_command = createTableCommand(['ref_id INT NOT NULL', 'verse TEXT', \
 				'cross_reference TEXT', 'foot_notes TEXT'], cleanTableName)
 			create_token_bible_table_command = createTableCommand(['token_id BIGSERIAL PRIMARY KEY', \
@@ -1685,7 +1685,7 @@ def getVerseInRange(sourceid, outputtype, bookid, chapterid):
 				return '{"success":false, "message":"Book not available"}'
 			booksIdDict = getBibleBookIds()
 			bookCode = (booksIdDict[int(bookid)]).lower()
-			jsonContent = json.loads(rst2[0])
+			jsonContent = rst2[0]
 
 			chapterContent = jsonContent["chapters"]
 			chapterContent = chapterContent[int(chapterid) -1]
