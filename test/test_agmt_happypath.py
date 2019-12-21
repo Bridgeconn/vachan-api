@@ -55,8 +55,8 @@ temppass_pattern = re.compile(r'Your temporary password is (\d+)\.')
 
 @pytest.fixture
 def supply_url():
-	return "http://localhost:8000"
-	# return "https://stagingapi.autographamt.com"
+	# return "http://localhost:8000"
+	return "https://stagingapi.autographamt.com"
 
 @pytest.fixture
 def get_translator_accessToken(supply_url):
