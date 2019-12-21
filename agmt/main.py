@@ -653,6 +653,7 @@ def updateProjectTokenTranslations():
 		token = req["token"]
 		translation = req["translation"]
 		senses = req["senses"]
+		senses = "|".join(senses)
 		email = request.email
 		# userId=6
 		connection = get_db()
