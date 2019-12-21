@@ -907,13 +907,12 @@ def availableProjectBooks(projectId, userId):
 		cursor.execute("select s.table_name from sources s left join autographamt_projects p on s.source_id=p.source_id \
 			where p.project_id=%s", (projectId,))
 		tablename = cursor.fetchone()[0]
-		cursor.execute(sql.SQL("select usfm_text from {}").format(sql.Identifier(tablename)))
-		rst = cursor.fetchone()
+		cursor.execute(sql.SQL("select l.book_code from {} as b join bible_books_look_up as l on b.book_id=l.book_id").format(sql.Identifier(tablename)))
+		rst = cursor.fetchall()
+		print("rst:",rst)
 		if not rst:
-			return '{"success":false, "message":"No data available"}'
-		if not rst[0]['usfm']:
 			return '{"success":false, "message":"No Books uploaded under this source"}'
-		allBooks = list(rst[0]['usfm'].keys())
+		allBooks = [t[0] for t in rst]
 		try:
 			cursor.execute("select books from autographamt_assignments where project_id=%s and user_id=%s", \
 				(projectId, userId))
