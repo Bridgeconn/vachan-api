@@ -26,6 +26,7 @@ pytest.organisation_id = None
 pytest.project_id = None
 pytest.source_id = None
 pytest.translated_tokens = []
+pytest.source_present = False
 target_lang_id = 3
 source_usfm = '''\\id MRK
 \\c 1
@@ -54,8 +55,8 @@ temppass_pattern = re.compile(r'Your temporary password is (\d+)\.')
 
 @pytest.fixture
 def supply_url():
-	return "http://localhost:8000"
-	# return "https://stagingapi.autographamt.com"
+	# return "http://localhost:8000"
+	return "https://stagingapi.autographamt.com"
 
 @pytest.fixture
 def get_translator_accessToken(supply_url):
@@ -133,8 +134,8 @@ def get_mail(email_id,password):
 ############## User Account Management ############################
 
 # create test users 
-@pytest.mark.parametrize("firstName,lastName,email, password",[('testuser1','admin',testuser1_email,testuser1_first_password),('testuser2','translator',testuser2_email,testuser2_password)])
-def test_user_register(supply_url,firstName,lastName,email,password):
+@pytest.mark.parametrize("firstName,lastName,email, password,email_password",[('testuser1','admin',testuser1_email,testuser1_first_password,testuser1_email_password),('testuser2','translator',testuser2_email,testuser2_password,testuser2_email_password)])
+def test_user_register(supply_url,get_supAdmin_accessToken, firstName,lastName,email,password,email_password):
 	url = supply_url + "/v1/registrations"
 	data = {'firstName':firstName,
 			'lastName':lastName,
@@ -143,19 +144,26 @@ def test_user_register(supply_url,firstName,lastName,email,password):
 	resp = requests.post(url, data=data)
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
-	assert j['success'] == True,str(j['success'])
-	assert j['message'] == "Verification Email has been sent to your email id",str(j['message'])
-	time.sleep(10)
+	if j['success'] == True:
+		assert j['message'] == "Verification Email has been sent to your email id",str(j['message'])
+		time.sleep(10)
+		# verify by email
+		email = get_mail(email_addr,email_password)
+		matchObj = re.search(verificationCode_pattern,email)
+		verification_code = matchObj.group(1)
+		url = supply_url + "/v1/verifications/" + verification_code
+		resp = requests.get(url,allow_redirects=False)
+		assert resp.status_code == 302,resp.status_code
+	else:
+		assert j['message'] == "This email has already been Registered. Account is deactivated. "
+		# Actiavte deactiavted user
+		url = supply_url + "/v1/autographamt/user/activate"
+		data = {"userEmail":email}
+		resp = requests.post(url, data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
+		j = json.loads(resp.text)
+		assert j['success'] == True
+		assert j['message'] == "User re-activated"
 
-# verify by email
-@pytest.mark.parametrize('email_addr, password',[(testuser1_email,testuser1_email_password),(testuser2_email,testuser2_email_password)])
-def test_user_verify(supply_url,email_addr,password):
-	email = get_mail(email_addr,password)
-	matchObj = re.search(verificationCode_pattern,email)
-	verification_code = matchObj.group(1)
-	url = supply_url + "/v1/verifications/" + verification_code
-	resp = requests.get(url,allow_redirects=False)
-	assert resp.status_code == 302,resp.status_code
 
 # reset password 
 @pytest.mark.parametrize("email",[(testuser1_email),(testuser2_email)])
@@ -211,8 +219,8 @@ def test_org_create(supply_url,get_admin_accessToken,org_name, org_addr, org_pho
 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_admin_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
-	assert j['success'] == True, str(j)
-	assert j['message'] == "Organisation request sent", str(j)
+	if j['success'] == True:
+		assert j['message'] in ["Organisation request sent", "Organisation re-activation request sent"]
 
 # list organisation by super admin
 def test_org_list(supply_url,get_supAdmin_accessToken):
@@ -254,7 +262,11 @@ def test_org_sourceCreate(supply_url,get_supAdmin_accessToken,languageCode,versi
 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
-	assert j['message'] == "Source Created successfully"
+	if j['success'] == True:
+		assert j['message'] == "Source Created successfully"
+	else:
+		assert j['message'] == "Source already exists"
+		pytest.source_present = True
 
 # list sources
 def test_org_sourceGet(supply_url,get_supAdmin_accessToken):
@@ -266,6 +278,13 @@ def test_org_sourceGet(supply_url,get_supAdmin_accessToken):
 	for src in j:
 		if src['language']['code'] == 'aaa' and src['version']['code'] == "TST": 
 			pytest.source_id = src['source']['id']	
+	if pytest.source_present:
+		url = supply_url + "/v1/autographamt/source/activate"
+		data = {'sourceId':pytest.source_id}
+		resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
+		j = json.loads(resp.text)
+		assert j['success'] == True
+		assert j['message'] == "Source re-activated."
 
 # upload source
 @pytest.mark.parametrize('usfm_text,json_obj',[(source_usfm,source_json)])
@@ -278,8 +297,12 @@ def test_org_sourceUpload(supply_url, usfm_text, json_obj):
 	resp = requests.post(url,data=json.dumps(data))
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
-	assert j['success'] == True, j
-	assert j['message'] == "Inserted mrk into database", j['message']
+	if not pytest.source_present:
+		assert j['success'] == True, j
+		assert j['message'] == "Inserted mrk into database", j['message']
+	else:
+		assert j['success'] == False
+		assert j['message'] == "Book already Uploaded"
 
 # create project
 def test_org_projectCreate(supply_url,get_admin_accessToken):
@@ -292,8 +315,8 @@ def test_org_projectCreate(supply_url,get_admin_accessToken):
 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_admin_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
-	assert j['success'] == True, str(j)
-	assert j['message'] == "Project created", str(j)
+	if j['success'] == True:
+		assert j['message'] in ["Project created","Activated the archived project"]
 
 # list users
 def test_org_userList(supply_url,get_admin_accessToken):
@@ -367,8 +390,10 @@ def test_translate_updateToken(supply_url,get_translator_accessToken,token,trans
 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_translator_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200
-	assert j['success'] == True
-	assert j['message'] == "Translation has been inserted"
+	if j['success'] == True:
+		assert j['message'] == "Translation has been inserted"
+	else:
+		assert j['message'] == "No New change. This data has already been saved"
 
 # get tokens 
 def test_translate_gettokenList(supply_url,get_translator_accessToken):
@@ -392,16 +417,24 @@ def test_translate_draft(supply_url,get_translator_accessToken):
 
 ######################## Clean Up ###############################################
 
+def test_delete_userAssignment(supply_url):
+	url = supply_url + "/v1/autographamt/projects/assignments"
+	data = { "userId":pytest.testuser2_userId,
+				"projectId":pytest.project_id}
+	resp = requests.delete(url,data=json.dumps(data))
+	j = json.loads(resp.text)
+	assert resp.status_code == 200
+	assert j['success'] == True
+	assert j['message'] == "User removed from Project"
+
 # delete org & projects
-@pytest.mark.parametrize("organisationEmail,organisationName",[(testuser1_email,"test_org")])
-def test_delete_project(supply_url,get_supAdmin_accessToken,organisationEmail,organisationName):
+def test_delete_project(supply_url,get_supAdmin_accessToken):
 	url = supply_url + "/v1/autographamt/organisation/delete"
-	data = {'organisationEmail':organisationEmail,
-			'organisationName':organisationName}
+	data = {'organisationId':pytest.organisation_id}
 	resp = requests.delete(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200
-	assert j['message'] == "Deleted organization and its projects."
+	assert j['message'] == "Deactivated organization and its projects."
 
 
 # delete users
@@ -412,14 +445,14 @@ def test_delete_user(supply_url,get_supAdmin_accessToken,userEmail):
 	resp = requests.delete(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200
-	assert j['message'] == "Deleted user."
+	assert j['message'] == "Deactivated user."
 
 # delete source
 def test_delete_sourceBible(supply_url,get_supAdmin_accessToken):
-	url = supply_url + "/v1/autographamt/source/bible/delete"
+	url = supply_url + "/v1/autographamt/source/delete"
 	data =  {"sourceId":pytest.source_id}
 	resp = requests.delete(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200
-	assert j['message'] == "Bible deleted."
+	assert j['message'] == "Source deactivated."
 

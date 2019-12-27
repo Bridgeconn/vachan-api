@@ -15,6 +15,7 @@
  -  `sudo apt-get update`
  - `sudo apt-get install python3-pip python3-dev nginx`
  - `sudo apt-get install libpq-dev`
+ - `sudo apt-get install libssl-dev`
 
 ## Postgres Database set Up
 
