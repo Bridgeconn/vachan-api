@@ -1,48 +1,170 @@
+# jobs: 
+#   build: 
+#     docker: 
+#       - 
+#         environment: 
+#           AGMT_HS256_SECRET: x709myFlW5
+#         image: "circleci/python:3.6.8"
+#       - 
+#         environment: 
+#           AGMT_POSTGRES_DATABASE: postgres
+#           AGMT_POSTGRES_HOST: localhost
+#           AGMT_POSTGRES_PASSWORD: postgres
+#           AGMT_POSTGRES_PORT: "5432"
+#           AGMT_POSTGRES_USER: postgres
+#         image: "circleci/postgres:9.6"
+#     filters: 
+#       branches: 
+#         only: 
+#           - master
+#           - staging
+#     steps: 
+#       - checkout
+#       - 
+#         run:
+#           command: dockerize -wait tcp://localhost:5432 -timeout 1m
+#           name: Wait for db
+#       - 
+#         run:
+#           command: |
+#             psql -c "create database test" -U postgres
+#           name: Running Test
+
+#       - 
+#         run: "sudo chown -R circleci:circleci /usr/local/bin"
+#       - 
+#         run: "sudo chown -R circleci:circleci /usr/local/lib/python3.6/site-packages"
+#       - 
+#         restore_cache: 
+#           keys: 
+#             - "v1-dependencies-{{ checksum \"requirements.txt\" }}"
+#             - v1-dependencies-
+#       - 
+#         run: 
+#           command: |
+#               python3 -m venv venv
+#               . venv/bin/activate
+#               pip3 install -r requirements.txt
+#           name: "install dependencies"
+#       - 
+#         save_cache: 
+#           key: "v1-dependencies-{{ checksum \"requirements.txt\" }}"
+#           paths: 
+#             - ./venv
+#             - /usr/local/bin
+#             - /usr/local/lib/python3.6/site-packages
+#       - 
+#         run: "sudo apt install -y postgresql-client || true"
+#       - 
+#         run: 
+#           command: "sudo -u postgres psql -h localhost -p 5432 -c \"grant all privileges on database postgres to postgres;\""
+#           name: "Setup postgresql user"
+#       - 
+#         run: "echo '/usr/lib/postgresql/9.6/bin/:$PATH' >> $BASH_ENV"
+#       - 
+#         run: 
+#           command: "sudo -u postgres psql -p 5432 -h localhost -c 'create database postgres'"
+#           name: "Set up vachan API database"
+#       - 
+#         run: 
+#           command: |
+#               . venv/bin/activate
+#               mkdir test-reports
+#               # pytest --junitxml=test-reports/junit.xml
+              
+#               python3 -m pytest test/test_signin.py
+#               # python3 -m pytest test/test_availablebooks.py
+#               # python3 -m pytest test/test_bibleversetext.py
+#               # python3 -m pytest test/test_bibleversetext2.py
+#           name: "run tests"
+#       - 
+#         store_test_results: 
+#           path: test-reports
+#       - 
+#         store_artifacts: 
+#           path: test-reports
+
+
 version: 2
 jobs:
   build:
+    
+    # Primary container image where all commands run
     docker:
-      - image: circleci/python:3.6.8
-      - image: circleci/postgres:9.6
-    filters:
-      branches:
-        only:
+      - image: circleci/python:3.6.2-stretch-browsers
+        environment:
+          TEST_DATABASE_URL: postgresql://postgres@localhost:5432/postgres
+          AGMT_POSTGRES_DATABASE: postgres
+          AGMT_HS256_SECRET: x709myFlW5
+    # Service container image
+      - image: circleci/postgres:9.6.5-alpine-ram
+
+    filters: 
+      branches: 
+        only: 
           - master
           - staging
+        
     steps:
       - checkout
-      - run: sudo chown -R circleci:circleci /usr/local/bin
-      - run: sudo chown -R circleci:circleci /usr/local/lib/python3.6/site-packages
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "requirements.txt" }}
-            # fallback to using the latest cache if no exact match is found
+      - run: sudo apt-get update
+      - run: sudo apt-get install postgresql-client-9.6
+      - run: whoami
+      - run: "sudo chown -R circleci:circleci /usr/local/bin"
+      - run: "sudo chown -R circleci:circleci /usr/local/lib/python3.6/site-packages"
+
+      - restore_cache: 
+          keys: 
+            - "v1-dependencies-{{ checksum \"requirements.txt\" }}"
             - v1-dependencies-
-      - run:
-          name: install dependencies
+      - run: 
           command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            pip3 install -r requirements.txt
+              python3 -m venv venv
+              . venv/bin/activate
+              pip3 install -r requirements.txt
+          name: "install dependencies"
 
-      - save_cache:
-          paths:
-            - "./venv"
-            - "/usr/local/bin"
-            - "/usr/local/lib/python3.6/site-packages"
-          key: v1-dependencies-{{ checksum "requirements.txt" }}
+      - save_cache: 
+          key: "v1-dependencies-{{ checksum \"requirements.txt\" }}"
+          paths: 
+            - ./venv
+            - /usr/local/bin
+            - /usr/local/lib/python3.6/site-packages
 
-      # run tests!
-      # this example uses Django's built-in test-runner
-      # other common Python testing frameworks include pytest and nose
-      # https://pytest.org
-      - run:
-          name: run tests
+      - run: 
           command: |
-            . venv/bin/activate
-            python3 -m pytest test/test_signin.py
-
-      - store_artifacts:
+              . venv/bin/activate
+              mkdir test-reports
+              # pytest --junitxml=test-reports/junit.xml
+              
+              python3 -m pytest test/test_signin.py
+              python3 -m pytest test/test_availablebooks.py
+              python3 -m pytest test/test_bibleversetext.py
+              python3 -m pytest test/test_bibleversetext2.py
+          name: "run tests"
+      
+      - store_test_results: 
           path: test-reports
-          destination: test-reports
+
+      - store_artifacts: 
+          path: test-reports
+          
+      # - run: psql -h 127.0.0.1 -U postgres postgres < dump/vachan_engine_local6nov2019.sql
+
+      # - run: |
+      #     psql \
+      #     -d $TEST_DATABASE_URL \
+      #     -c "postgres < vachan_engine_local6nov2019.sql;"
+
+      # - run: |
+      #     psql \
+      #     -d $TEST_DATABASE_URL \
+      #     -c "CREATE TABLE test (name char(25));"
+      # - run: |
+      #     psql \
+      #     -d $TEST_DATABASE_URL \
+      #     -c "INSERT INTO test VALUES ('John'), ('Joanna'), ('Jennifer');"
+      # - run: |
+      #     psql \
+      #     -d $TEST_DATABASE_URL \
+      #     -c "SELECT * from test"
