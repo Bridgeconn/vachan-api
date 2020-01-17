@@ -2591,40 +2591,5 @@ def getBibleVerseText2(sourceId, verseId):
     except Exception as ex:
         return '{"success":false, "message":"%s"}' %(str(ex))
 
-# commentries fetch API with language code and without language code
-@app.route("/v1/sources/commentries/<lang_code>", methods=["GET"])
-def getBibleCommentaries(lang_code):
-	try:
-		connection = get_db()
-		cursor = connection.cursor()
-		if lang_code:
-			cursor.execute("select language_id, language_code from languages where language_code=%s;",(lang_code,))
-			language = cursor.fetchone()
-			if not language:
-				return '{"success":false, "message":"language code not available."}'
-
-			languageId = language[0]
-			languageCode = language[1]
-
-			cursor.execute("select * from sources where language_id=%s and content_id=4",(languageId,))
-			source = cursor.fetchone()
-			if not source:
-				return '{"success":false, "message":"Sources not available."}'
-
-			versionId = int(source[9])
-			contentId = int(source[4])
-			sourceId = int(source[0])
-			tableName = source[1]
-
-			cursor.execute("select * from versions where version_id=%s;",(versionId,))
-			version = cursor.fetchone()
-			versionCode = version[1]
-			versionName = version[2]
-
-			return json.dumps([{'language': languageCode, 'commentaries':[{ 'sourceId':sourceId,'code':versionCode,'name':versionName}]}])
-		else:
-			return '{"success":false, "message":"Working for english only"}'
-
-	except Exception as e:
-		print(e)
-		return json.dumps({'success':False,'message':'Server error, Kindly contact to support'})
+######################################################
+######################################################
