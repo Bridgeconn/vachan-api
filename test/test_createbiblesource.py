@@ -13,7 +13,7 @@ def get_adm_accessToken():
 	password = "1189"
 	url = "https://stagingapi.autographamt.com/v1/auth"
 	data = {'email':email,
-			'password':password}
+		'password':password}
 	resp = requests.post(url, data=data)
 	respobj = json.loads(resp.text)
 	token = respobj['accessToken']
@@ -26,7 +26,7 @@ def get_supAdmin_accessToken():
 	password = '221189'
 	url = "https://stagingapi.autographamt.com/v1/auth"
 	data = {'email':email,
-			'password':password}
+		'password':password}
 	resp = requests.post(url, data=data)
 	respobj = json.loads(resp.text)
 	token = respobj['accessToken']
@@ -39,7 +39,7 @@ def get_trans_accessToken():
 	password = '1189'
 	url = "https://stagingapi.autographamt.com/v1/auth"
 	data = {'email':email,
-			'password':password}
+		'password':password}
 	resp = requests.post(url, data=data)
 	respobj = json.loads(resp.text)
 	token = respobj['accessToken']
@@ -50,12 +50,12 @@ def get_trans_accessToken():
 def test_Createbiblesourcesup(supply_url,get_supAdmin_accessToken,languageCode,versionContentCode,versionContentDescription,year,revision,license):
 	url = supply_url + '/v1/sources/bibles'
 	data = {'languageCode':languageCode,
-			'versionContentCode':versionContentCode,
-            'versionContentDescription':versionContentDescription,
-            'year':year,
-            'revision': revision,
-            'license' : license
-            }
+		'versionContentCode':versionContentCode,
+            	'versionContentDescription':versionContentDescription,
+           	 'year':year,
+           	 'revision': revision,
+           	 'license' : license
+           	 }
 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
@@ -66,11 +66,11 @@ def test_Createbiblesourcesup(supply_url,get_supAdmin_accessToken,languageCode,v
 def test_Createbiblesourcesup2(supply_url,get_supAdmin_accessToken,languageCode,versionContentCode,versionContentDescription,year,revision,license):
 	url = supply_url + '/v1/sources/bibles'
 	data = {'languageCode':languageCode,
-			'versionContentCode':versionContentCode,
-            'versionContentDescription':versionContentDescription,
-            'year':year,
-            'revision': revision,
-            'license' : license
+		'versionContentCode':versionContentCode,
+            	'versionContentDescription':versionContentDescription,
+            	'year':year,
+            	'revision': revision,
+            	'license' : license
             }
 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
@@ -83,12 +83,12 @@ def test_Createbiblesourcesup2(supply_url,get_supAdmin_accessToken,languageCode,
 def test_Createbiblesourcead(supply_url,get_supAdmin_accessToken,languageCode,versionContentCode,versionContentDescription,year,revision,license):
 	url = supply_url + '/v1/sources/bibles'
 	data = {'languageCode':languageCode,
-			'versionContentCode':versionContentCode,
-            'versionContentDescription':versionContentDescription,
-            'year':year,
-            'revision': revision,
-            'license' : license
-            }
+		'versionContentCode':versionContentCode,
+           	 'versionContentDescription':versionContentDescription,
+           	 'year':year,
+            	'revision': revision,
+            	'license' : license
+                }
 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text

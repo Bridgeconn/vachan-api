@@ -1,4 +1,5 @@
 import psycopg2, re
+from psycopg2 import sql
 import spacy
 from spacy.matcher import Matcher
 from gensim.models.phrases import Phrases
@@ -77,7 +78,7 @@ def extract_phrases_gensim(conn,lang,version):
 	source_table = lang+'_'+version+'_bible_cleaned'
 
 	cursor = conn.cursor()
-	cursor.execute("select ref_id, verse from " + source_table + " order by ref_id;")
+	cursor.execute(sql.SQL("select ref_id, verse from {} order by ref_id;").format(sql.Identifier(source_table)))
 	verses = cursor.fetchall()
 	text = [cleanNsplit(v[1])for v in verses]
 
@@ -158,22 +159,22 @@ def add_rules_toDB(conn,lang,input_file):
 	rules_table = lang+'_phrase_rules'
 	cursor = conn.cursor()
 
-	cursor.execute("select exists (select * from information_schema.tables where table_name= '" + rules_table + "')")
+	cursor.execute("select exists (select * from information_schema.tables where table_name= %s)",(rules_table,))
 	tableExists = cursor.fetchone()[0]
 
 	print('checking table')
 	if not tableExists:
-		cursor.execute("CREATE TABLE "+rules_table+"(ID INT NOT NUll, Rule TEXT NOT NULL)")
+		cursor.execute(sql.SQL("CREATE TABLE {}(ID INT NOT NUll, Rule TEXT NOT NULL)").format(sql.Identifier(rules_table)))
 		conn.commit()
 	else:
 		print('table found')
-		cursor.execute("DELETE FROM "+rules_table+";")
+		cursor.execute(sql.SQL("DELETE FROM {};").format(sql.Identifier(rules_table)))
 		print('truncated '+rules_table)
 		conn.commit()
 
 	with open(input_file,'r') as infile:
 		for i,line in enumerate(infile):
-			cursor.execute("INSERT INTO "+rules_table+" VALUES(%s,%s)",(i,line))
+			cursor.execute(sql.SQL("INSERT INTO {} VALUES(%s,%s)").format(sql.Identifier(rules_table)),(i,line))
 		conn.commit()
 
 def get_spacyphrases(verse,nlp,matcher):
@@ -223,7 +224,7 @@ def extract_phrases_rulebased(conn,lang,version,start=None,end=None):
 
 	cursor = conn.cursor()
 
-	cursor.execute("select exists (select * from information_schema.tables where table_name= '" + rules_table + "')")
+	cursor.execute("select exists (select * from information_schema.tables where table_name= %s)",(rules_table,))
 	tableExists = cursor.fetchone()[0]
 
 	if not tableExists:
@@ -233,7 +234,7 @@ def extract_phrases_rulebased(conn,lang,version,start=None,end=None):
 		nlp = spacy.load('models/model-final')
 		matcher = Matcher(nlp.vocab)
 
-		cursor.execute("SELECT ID,Rule from "+rules_table+" order by ID;")
+		cursor.execute(sql.SQL("SELECT ID,Rule from {} order by ID;").format(sql.Identifier(rules_table)))
 		rules = cursor.fetchall()
 
 		for row in rules:
@@ -241,12 +242,12 @@ def extract_phrases_rulebased(conn,lang,version,start=None,end=None):
 			matcher.add('rule'+str(row[0]),None,rul)
 
 		if start and end:
-			cursor.execute("select ref_id, verse from " + source_table + " where ref_id>="+str(start)+" and ref_id<"+str(end)+" order by ref_id;")
+			cursor.execute(sql.SQL("select ref_id, verse from {} where ref_id>=%s and ref_id<%s order by ref_id;").format(sql.Identifier(source_table)),(start_refid,end_refid,))
 		elif start and not end:
 			end = start + 1000000
-			cursor.execute("select ref_id, verse from " + source_table + " where ref_id>="+str(start)+" and ref_id<"+str(end)+" order by ref_id;")
+			cursor.execute(sql.SQL("select ref_id, verse from {} where ref_id>=%s and ref_id<%s order by ref_id;").format(sql.Identifier(source_table)),(start_refid,end_refid,))
 		else:
-			cursor.execute("select ref_id, verse from " + source_table + " order by ref_id;")
+			cursor.execute(sql.SQL("select ref_id, verse from {} order by ref_id;").format(sql.Identifier(source_table)))
 		verses = cursor.fetchall()
 		text = [' '.join(cleanNsplit(v[1])) for v in verses]
 		word_split_text = [cleanNsplit(v[1]) for v in verses]
@@ -302,10 +303,10 @@ def tokenize(conn,lang,version,book_id,algo='gensim-ngram'):
 
 	cursor = conn.cursor()
 	tw_table = lang+'_tw'
-	cursor.execute("select exists (select * from information_schema.tables where table_name= '" + tw_table + "')")
+	cursor.execute("select exists (select * from information_schema.tables where table_name=%s)",(tw_table,))
 	tableExists = cursor.fetchone()[0]
 	if tableExists:
-		cursor.execute('select wordforms from '+tw_table+' order by id;')
+		cursor.execute(sql.SQL('select wordforms from {} order by id;').format(sql.Identifier(tw_table)))
 	tws = []
 	for row in cursor.fetchall():
 		wordforms = [x.strip() for x in row[0].split(',')]
@@ -317,23 +318,25 @@ def tokenize(conn,lang,version,book_id,algo='gensim-ngram'):
 
 	source_table = lang+'_'+version+'_bible_cleaned'
 	if start_refid and end_refid:
-		query = "select ref_id, verse from " + source_table + " where ref_id>="+str(start_refid)+" and ref_id<"+str(end_refid)+" order by ref_id;"
+		query = sql.SQL("select ref_id, verse from {} where ref_id>=%s and ref_id<%s order by ref_id;").format(sql.Identifier(source_table),)
+		params = (start_refid,end_refid,)
 	else:
-		query = "select ref_id, verse from " + source_table + " order by ref_id;"
-	cursor.execute(query)
+		params = None
+		query = sql.SQL("select ref_id, verse from {} order by ref_id;").format(sql.Identifier(source_table))
+	cursor.execute(query,params)
 	rows = cursor.fetchall()
 	verses = [(r[0],cleanNsplit(r[1])) for r in rows]
 
 	token_table =lang+'_'+version+'_bible_tokens'
-	cursor.execute("select exists (select * from information_schema.tables where table_name= '" + token_table + "')")
+	cursor.execute("select exists (select * from information_schema.tables where table_name= %s)",(token_table,))
 	tableExists = cursor.fetchone()[0]
 
 	if not tableExists:
-		cursor.execute("CREATE TABLE "+token_table+"(book_id INT NOT NUll, token TEXT NOT NULL)")
+		cursor.execute(sql.SQL("CREATE TABLE {}(book_id INT NOT NUll, token TEXT NOT NULL)").format(sql.Identifier(token_table)))
 		conn.commit()
 	else:
 		# in the assumption that tokenization would always be done for one book at a time
-		cursor.execute("DELETE FROM "+token_table+" WHERE book_id="+str(book_id)+" ;")
+		cursor.execute(sql.SQL("DELETE FROM {} WHERE book_id=%s ;").format(sql.Identifier(token_table)),(book_id,))
 		conn.commit()		
 
 	tokens = []
@@ -363,9 +366,13 @@ def tokenize(conn,lang,version,book_id,algo='gensim-ngram'):
 				if word_token not in stop_words and word_token not in tokens:
 					tokens.append(word_token)
 
-	tokens = sorted(tokens)
+	sorted_tokens = sorted(tokens)
+	tokens = []
+	for tok in sorted_tokens:
+		if not any(char.isdigit() for char in tok):
+			tokens.append(tok)
 	for tok in tokens:
-		cursor.execute("INSERT INTO "+token_table+" (book_id, token) VALUES(%s,%s)",(book_id,tok))
+		cursor.execute(sql.SQL("INSERT INTO {} (book_id, token) VALUES(%s,%s)").format(sql.Identifier(token_table)),(book_id,tok))
 		# print(tok)
 	conn.commit()
 	cursor.close()
@@ -379,7 +386,7 @@ def tokenize(conn,lang,version,book_id,algo='gensim-ngram'):
 
 
 
-################################ Draft Genaration ############################
+################################ Draft Generation ############################
 
 tokenTranslatedDict = {}
 
