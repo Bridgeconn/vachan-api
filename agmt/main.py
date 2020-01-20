@@ -2113,7 +2113,7 @@ def getSources():
 def biblePattern(*argv):
     try:
         languageName, languageCode, languageId, script, scriptDirection, localScriptName, sourceId, \
-            versionCode, versionName, version, updatedDate,status = argv
+            versionCode, versionName, version, metadata, updatedDate,status = argv
     except Exception as ex:
         print(ex)
     pattern = {
@@ -2130,6 +2130,7 @@ def biblePattern(*argv):
             "code": versionCode,
             "longName": version
         },
+        "metadata":metadata,
         "audioBible":[],
         "updatedDate": updatedDate,
         "sourceId": sourceId,
@@ -2172,7 +2173,7 @@ def getBibles():
     elif status and status.lower() == "inactive":
         statusQuery = " and s.status=false"
     try:
-        cursor.execute("select s.source_id, v.revision, v.version_code, v.version_description, \
+        cursor.execute("select s.source_id, v.revision, v.version_code, v.version_description,v.metadata, \
             l.language_id, l.language_name, l.language_code, local_script_name, script, script_direction, \
                 created_at_date, s.status from sources s left join languages l on s.language_id=l.language_id \
                     left join versions v on s.version_id= v.version_id where s.content_id=1 "+statusQuery)
@@ -2180,7 +2181,7 @@ def getBibles():
         print(ex)
     biblesList = []
     language = request.args.get('language')
-    for s_id, ver, ver_code, ver_name, lang_id, lang_name, lang_code, loc_script_name, script, script_dir, \
+    for s_id, ver, ver_code, ver_name, metadata, lang_id, lang_name, lang_code, loc_script_name, script, script_dir, \
         updatedDate, status in cursor.fetchall():
         biblesList.append(
             biblePattern(
@@ -2194,6 +2195,7 @@ def getBibles():
                 ver_code,
                 ver_name,
                 ver,
+                metadata,
                 str(updatedDate),
                 status
             )
@@ -2599,7 +2601,6 @@ def getBibleVerseText2(sourceId, verseId):
         })
     except Exception as ex:
         return '{"success":false, "message":"%s"}' %(str(ex))
-    
 
 ######################################################
 ######################################################
