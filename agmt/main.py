@@ -2589,40 +2589,43 @@ def getBibleVerseText2(sourceId, verseId):
     except Exception as ex:
         return '{"success":false, "message":"%s"}' %(str(ex))
 
-# commentries fetch API with language code and without language code
-@app.route("/v1/sources/commentries/<lang_code>", methods=["GET"])
-def getBibleCommentaries(lang_code):
+def sortCommentariesByLanguage(languageObject,commentary):
+	'''Sort the list of commentaries by language name.'''
+	for index,item in enumerate(languageObject):
+		if item["language"] == commentary["language"]:
+			commentary.pop("language")
+			languageObject[index]["languageVersions"].append(commentary)
+			break
+	else:
+		language = commentary.pop("language")
+		languageObject.append({"language": language,"languageVersions": [commentary]})
+	return languageObject
+
+@app.route("/v1/sources/commentaries", methods=["GET"])
+def getBibleCommentaries():
+	'''Fetch the list of commentaries with an option to filter by language .'''
 	try:
 		connection = get_db()
 		cursor = connection.cursor()
-		if lang_code:
-			cursor.execute("select language_id, language_code from languages where language_code=%s;",(lang_code,))
-			language = cursor.fetchone()
-			if not language:
-				return '{"success":false, "message":"language code not available."}'
-
-			languageId = language[0]
-			languageCode = language[1]
-
-			cursor.execute("select * from sources where language_id=%s and content_id=4",(languageId,))
-			source = cursor.fetchone()
-			if not source:
-				return '{"success":false, "message":"Sources not available."}'
-
-			versionId = int(source[9])
-			contentId = int(source[4])
-			sourceId = int(source[0])
-			tableName = source[1]
-
-			cursor.execute("select * from versions where version_id=%s;",(versionId,))
-			version = cursor.fetchone()
-			versionCode = version[1]
-			versionName = version[2]
-
-			return json.dumps([{'language': languageCode, 'commentaries':[{ 'sourceId':sourceId,'code':versionCode,'name':versionName}]}])
+		query ="select s.source_id,v.version_code,v.version_description,l.language_code from \
+			versions v inner join sources s on v.version_id = s.version_id inner join languages l \
+				on s.language_id=l.language_id where content_id in (select content_id from \
+					content_types where content_type = 'commentary') "
+		#use language code param to filter by language
+		lang_code = request.args.get('language')
+		if lang_code and lang_code.strip():
+			cursor.execute("select language_id from languages where language_code=%s", (lang_code,))
+			language_id = cursor.fetchone()
+			if not language_id:
+				return '{"success": false, "message":""message":"language code not available.""}'
+			cursor.execute(query + " and s.language_id in(%s)", (language_id[0],))
 		else:
-			return '{"success":false, "message":"Working for english only"}'
-
+			cursor.execute(query)
+		rst = cursor.fetchall()
+		commentaries = []
+		for source_id, code, name,language in rst:	
+			commentaries.append({ 'sourceId':source_id,'code':code,'name':name,'language':language})
+		return json.dumps(reduce(sortCommentariesByLanguage,commentaries,[]))
 	except Exception as e:
 		print(e)
-		return json.dumps({'success':False,'message':'Server error, Kindly contact to support'})
+		return json.dumps({'success':False,'message':'Server error, Kindly contact support'})
