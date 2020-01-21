@@ -31,6 +31,7 @@ from psycopg2.extras import execute_values
 from random import randint
 import phrases
 from functools import reduce
+import traceback
 
 logging.basicConfig(filename='API_logs.log', format='%(asctime)s: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
@@ -2601,7 +2602,7 @@ def sortCommentariesByLanguage(languageObject,commentary):
 		languageObject.append({"language": language,"languageVersions": [commentary]})
 	return languageObject
 
-@app.route("/v1/sources/commentaries", methods=["GET"])
+@app.route("/v1/commentaries", methods=["GET"])
 def getBibleCommentaries():
 	'''Fetch the list of commentaries with an option to filter by language .'''
 	try:
@@ -2616,7 +2617,7 @@ def getBibleCommentaries():
 		if lang_code and lang_code.strip():
 			cursor.execute("select language_id from languages where language_code=%s", (lang_code,))
 			language_id = cursor.fetchone()
-			if not language_id:
+			if not language_id or language_id is None:
 				return '{"success": false, "message":""message":"language code not available.""}'
 			cursor.execute(query + " and s.language_id in(%s)", (language_id[0],))
 		else:
@@ -2626,6 +2627,61 @@ def getBibleCommentaries():
 		for source_id, code, name,language in rst:	
 			commentaries.append({ 'sourceId':source_id,'code':code,'name':name,'language':language})
 		return json.dumps(reduce(sortCommentariesByLanguage,commentaries,[]))
-	except Exception as e:
-		print(e)
-		return json.dumps({'success':False,'message':'Server error, Kindly contact support'})
+	except Exception as ex:
+		traceback.print_exc()
+		return '{"success":false, "message":"%s"}' %(str(ex))
+
+@app.route("/v1/commentaries/<sourceId>/<bookCode>/<chapterId>", methods=["GET"])
+def getCommentaryChapter(sourceId,bookCode,chapterId):
+	'''Fetch the list of commentaries with an option to filter by language .'''
+	try:
+		connection = get_db()
+		cursor = connection.cursor()
+		bookCode=bookCode.lower()
+		#Get bible book id
+		cursor.execute("select book_id from bible_books_look_up where book_code=%s", (bookCode.lower(),))
+		bible_book_data = cursor.fetchone()
+		if not bible_book_data:
+			return '{"success":false, "message":"Invalid book code"}'
+		book_id = bible_book_data[0]
+		#Get commentary table
+		cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
+		rst = cursor.fetchone()
+		if not rst:
+			return '{"success":false, "message":"Source doesn\'t exist"}'
+		table_name=rst[0]
+		#Get no of verses in chapter
+		cursor.execute("select max(verse) from bcv_map where book=%s and chapter=%s;", (book_id,chapterId,))
+		rst = cursor.fetchone()
+		if not rst[0]:
+			return '{"success":false, "message":"Chapter doesn\'t exist"}'
+		last_verse=rst[0]
+		#Get commentary
+		cursor.execute(sql.SQL("select verse,commentary from {} where book_id=%s and chapter=%s \
+			order by verse").format(sql.Identifier(table_name)),[book_id,int(chapterId)])
+		commentary = cursor.fetchall()
+		commentariesLenth = len(commentary)
+		commentaries=[]
+		returnJson ={ "sourceId":sourceId,"bookCode":bookCode,"chapterId":chapterId}
+		#If first chapter add book intro
+		bookIntro=""
+		if chapterId == "1":
+			cursor.execute(sql.SQL("select commentary from {} where book_id=%s and chapter=0").\
+				format(sql.Identifier(table_name)),[book_id])
+			bookIntro = cursor.fetchall()[0][0]
+		returnJson["bookIntro"]=bookIntro
+		#Reconstruct verse range and commentaries and put in returnJson
+		for i in range(commentariesLenth):
+			current=commentary[i]
+			if i == 0:
+				returnJson["chapterIntro"]=current[1]
+			else:
+				verseRange=str(current[0])+"-"
+				verseRange += str(commentary[i+1][0]-1) if i != commentariesLenth-1 else str(last_verse)	
+				item={"verses":verseRange,"text":current[1]}
+				commentaries.append(item)
+		returnJson["commentaries"]=commentaries
+		return json.dumps(returnJson)
+	except Exception as ex:
+		traceback.print_exc()
+		return '{"success":false, "message":"%s"}' %(str(ex))
