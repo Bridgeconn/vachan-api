@@ -2645,10 +2645,11 @@ def getCommentaryChapter(sourceId,bookCode,chapterId):
 			return '{"success":false, "message":"Invalid book code"}'
 		book_id = bible_book_data[0]
 		#Get commentary table
-		cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
+		cursor.execute("select table_name from sources where source_id=%s and content_id in(select \
+			content_id from content_types where content_type = 'commentary')", (sourceId,))
 		rst = cursor.fetchone()
 		if not rst:
-			return '{"success":false, "message":"Source doesn\'t exist"}'
+			return '{"success":false, "message":"Invalid commentary Source ID"}'
 		table_name=rst[0]
 		#Get no of verses in chapter
 		cursor.execute("select max(verse) from bcv_map where book=%s and chapter=%s;", (book_id,chapterId,))
@@ -2665,6 +2666,7 @@ def getCommentaryChapter(sourceId,bookCode,chapterId):
 		returnJson ={ "sourceId":sourceId,"bookCode":bookCode,"chapterId":chapterId}
 		#If first chapter add book intro
 		bookIntro=""
+		chapterIntro=""
 		if chapterId == "1":
 			cursor.execute(sql.SQL("select commentary from {} where book_id=%s and chapter=0").\
 				format(sql.Identifier(table_name)),[book_id])
@@ -2673,13 +2675,14 @@ def getCommentaryChapter(sourceId,bookCode,chapterId):
 		#Reconstruct verse range and commentaries and put in returnJson
 		for i in range(commentariesLenth):
 			current=commentary[i]
-			if i == 0:
-				returnJson["chapterIntro"]=current[1]
+			if current[0] == 0:
+				chapterIntro=current[1]
 			else:
 				verseRange=str(current[0])+"-"
 				verseRange += str(commentary[i+1][0]-1) if i != commentariesLenth-1 else str(last_verse)	
 				item={"verses":verseRange,"text":current[1]}
 				commentaries.append(item)
+		returnJson["chapterIntro"] = chapterIntro
 		returnJson["commentaries"]=commentaries
 		return json.dumps(returnJson)
 	except Exception as ex:
