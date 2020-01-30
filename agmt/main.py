@@ -2593,13 +2593,16 @@ def getBibleVerseText2(sourceId, verseId):
 def sortCommentariesByLanguage(languageObject,commentary):
 	'''Sort the list of commentaries by language name.'''
 	for index,item in enumerate(languageObject):
-		if item["language"] == commentary["language"]:
+		if item["languageCode"] == commentary["languageCode"]:
 			commentary.pop("language")
-			languageObject[index]["languageVersions"].append(commentary)
+			commentary.pop("languageCode")
+			languageObject[index]["commentaries"].append(commentary)
 			break
 	else:
+		languageCode = commentary.pop("languageCode")
 		language = commentary.pop("language")
-		languageObject.append({"language": language,"languageVersions": [commentary]})
+		languageObject.append({"language": language,"languageCode":languageCode,
+			"commentaries": [commentary]})
 	return languageObject
 
 @app.route("/v1/commentaries", methods=["GET"])
@@ -2608,8 +2611,8 @@ def getBibleCommentaries():
 	try:
 		connection = get_db()
 		cursor = connection.cursor()
-		query ="select s.source_id,v.version_code,v.version_description,l.language_code from \
-			versions v inner join sources s on v.version_id = s.version_id inner join languages l \
+		query ="select s.source_id,v.version_code,v.version_description,l.language_code,language_name \
+			from versions v inner join sources s on v.version_id = s.version_id inner join languages l \
 				on s.language_id=l.language_id where content_id in (select content_id from \
 					content_types where content_type = 'commentary') "
 		#use language code param to filter by language
@@ -2624,8 +2627,9 @@ def getBibleCommentaries():
 			cursor.execute(query)
 		rst = cursor.fetchall()
 		commentaries = []
-		for source_id, code, name,language in rst:	
-			commentaries.append({ 'sourceId':source_id,'code':code,'name':name,'language':language})
+		for source_id, code, name,language_code,language in rst:	
+			commentaries.append({ 'sourceId':source_id,'code':code,'name':name,
+				'languageCode':language_code,'language':language})
 		return json.dumps(reduce(sortCommentariesByLanguage,commentaries,[]))
 	except Exception as ex:
 		traceback.print_exc()
@@ -2633,7 +2637,7 @@ def getBibleCommentaries():
 
 @app.route("/v1/commentaries/<sourceId>/<bookCode>/<chapterId>", methods=["GET"])
 def getCommentaryChapter(sourceId,bookCode,chapterId):
-	'''Fetch the list of commentaries with an option to filter by language .'''
+	'''Fetch the commentary for a chapter for the given commentary sourceId.'''
 	try:
 		connection = get_db()
 		cursor = connection.cursor()
@@ -2644,47 +2648,33 @@ def getCommentaryChapter(sourceId,bookCode,chapterId):
 		if not bible_book_data:
 			return '{"success":false, "message":"Invalid book code"}'
 		book_id = bible_book_data[0]
+		#Validate chapter
+		cursor.execute("select count(*) from bcv_map where book=%s and chapter=%s;", (book_id,chapterId,))
+		rst = cursor.fetchone()
+		if not rst[0]:
+			return '{"success":false, "message":"Invalid chapter"}'
 		#Get commentary table
 		cursor.execute("select table_name from sources where source_id=%s and content_id in(select \
 			content_id from content_types where content_type = 'commentary')", (sourceId,))
 		rst = cursor.fetchone()
 		if not rst:
-			return '{"success":false, "message":"Invalid commentary Source ID"}'
+			return '{"success":false, "message":"Invalid commentary sourceId"}'
 		table_name=rst[0]
-		#Get no of verses in chapter
-		cursor.execute("select max(verse) from bcv_map where book=%s and chapter=%s;", (book_id,chapterId,))
-		rst = cursor.fetchone()
-		if not rst[0]:
-			return '{"success":false, "message":"Chapter doesn\'t exist"}'
-		last_verse=rst[0]
 		#Get commentary
 		cursor.execute(sql.SQL("select verse,commentary from {} where book_id=%s and chapter=%s \
 			order by verse").format(sql.Identifier(table_name)),[book_id,int(chapterId)])
 		commentary = cursor.fetchall()
-		commentariesLenth = len(commentary)
 		commentaries=[]
-		returnJson ={ "sourceId":sourceId,"bookCode":bookCode,"chapterId":chapterId}
 		#If first chapter add book intro
 		bookIntro=""
-		chapterIntro=""
 		if chapterId == "1":
 			cursor.execute(sql.SQL("select commentary from {} where book_id=%s and chapter=0").\
 				format(sql.Identifier(table_name)),[book_id])
 			bookIntro = cursor.fetchall()[0][0]
-		returnJson["bookIntro"]=bookIntro
-		#Reconstruct verse range and commentaries and put in returnJson
-		for i in range(commentariesLenth):
-			current=commentary[i]
-			if current[0] == 0:
-				chapterIntro=current[1]
-			else:
-				verseRange=str(current[0])+"-"
-				verseRange += str(commentary[i+1][0]-1) if i != commentariesLenth-1 else str(last_verse)	
-				item={"verses":verseRange,"text":current[1]}
-				commentaries.append(item)
-		returnJson["chapterIntro"] = chapterIntro
-		returnJson["commentaries"]=commentaries
-		return json.dumps(returnJson)
+		for row in commentary:
+			commentaries.append({"verse":row[0],"text":row[1]})
+		return json.dumps({ "sourceId":sourceId,"bookCode":bookCode,"chapter":chapterId,\
+			"bookIntro":bookIntro,"commentaries":commentaries})
 	except Exception as ex:
 		traceback.print_exc()
 		return '{"success":false, "message":"%s"}' %(str(ex))
