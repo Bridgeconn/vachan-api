@@ -2630,7 +2630,9 @@ def getBibleCommentaries():
 		for source_id, code, name,language_code,language in rst:	
 			commentaries.append({ 'sourceId':source_id,'code':code,'name':name,
 				'languageCode':language_code,'language':language})
-		return json.dumps(reduce(sortCommentariesByLanguage,commentaries,[]))
+		# Group and sort commentaries by langauge
+		commentaries = reduce(sortCommentariesByLanguage,commentaries,[])
+		return json.dumps(sorted(commentaries,key=lambda x: x['language']))
 	except Exception as ex:
 		traceback.print_exc()
 		return '{"success":false, "message":"%s"}' %(str(ex))
