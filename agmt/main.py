@@ -2676,7 +2676,7 @@ def getCommentaryChapter(sourceId,bookCode,chapterId):
 		for row in commentary:
 			commentaries.append({"verse":row[0],"text":row[1]})
 		return json.dumps({ "sourceId":sourceId,"bookCode":bookCode,"chapter":chapterId,\
-			"bookIntro":bookIntro,"commentaries":commentaries})
+			"bookIntro":bookIntro,"commentaries":sorted(commentaries, key = lambda i: int(i['verse'].split("-")[0])) })
 	except Exception as ex:
 		traceback.print_exc()
 		return '{"success":false, "message":"%s"}' %(str(ex))
