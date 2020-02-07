@@ -2627,7 +2627,7 @@ def getBibleCommentaries():
 		query ="select s.source_id,v.version_code,v.version_description,l.language_code,language_name \
 			,metadata from versions v inner join sources s on v.version_id = s.version_id inner join \
 				languages l on s.language_id=l.language_id where content_id in (select content_id from \
-					content_types where content_type = 'commentary') "
+					content_types where content_type = 'commentary') and s.status=true"
 		#use language code param to filter by language
 		lang_code = request.args.get('language')
 		if lang_code and lang_code.strip():
