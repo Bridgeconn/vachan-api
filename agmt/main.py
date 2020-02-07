@@ -1434,7 +1434,7 @@ def downloadDraft():
 		cursor.execute("select source_id from autographamt_projects where project_id=%s", (projectId,))
 		sourceId = cursor.fetchone()[0]
 		
-		usfmMarker = re.compile(r'\\\w+\d?\s?')
+		usfmMarker = re.compile(r'\\\w+\d?\*?\s?')
 		nonLangComponentsTwoSpaces = re.compile(r'\s[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]\s')
 		nonLangComponentsTrailingSpace = re.compile(r'[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]\s')
 		nonLangComponentsFrontSpace = re.compile(r'\s[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]')
@@ -1449,7 +1449,7 @@ def downloadDraft():
 					left join bible_books_look_up bl on bb.book_id=bl.book_id \
 					where bl.book_code = ANY(%s::text[])").format(sql.Identifier(tablename)),('{'+",".join(bookList)+'}',))
 			source_rst = cursor.fetchall()
-			print(source_rst)
+			# print(source_rst)
 			
 			# usfmText = source_rst[0]['usfm'][bookCode]
 			finalDraftDict = {}
@@ -1464,6 +1464,7 @@ def downloadDraft():
 					nonLangCompsFrontSpace = []
 					nonLangComps = []
 					markers_in_line = re.findall(usfmMarker,line)
+					translated_seq = []
 					for word_seq in re.split(usfmMarker,line):
 						nonLangCompsTwoSpaces += re.findall(nonLangComponentsTwoSpaces,word_seq)
 						clean_word_seq = re.sub(nonLangComponentsTwoSpaces,' uuuQQQuuu ',word_seq)
@@ -1473,25 +1474,30 @@ def downloadDraft():
 						clean_word_seq = re.sub(nonLangComponentsFrontSpace,' uuuQQQ ',clean_word_seq)
 						nonLangComps += re.findall(nonLangComponents,clean_word_seq)
 						clean_word_seq = re.sub(nonLangComponents,' QQQ ',clean_word_seq)
-						
-						translated_seq = [ phrases.translateText( clean_word_seq ) ]
+						if not re.match(r'\s+$',clean_word_seq) and clean_word_seq!='':
+							translated_seq.append(phrases.translateText( clean_word_seq ))
 					
 					for i,marker in enumerate(markers_in_line):
 						usfmWordsList.append(marker)
-						usfmWordsList.append(translated_seq[i])
+						if i<len(translated_seq):
+							usfmWordsList.append(translated_seq[i])
 					if i+1<len(translated_seq):
 						usfmWordsList += translated_seq[i+1:]
 					outputLine = " ".join(usfmWordsList)
-					
+					if 'bdit' in outputLine:
+						print('translated_seq:',translated_seq)
+						print(nonLangComps,nonLangCompsFrontSpace,nonLangCompsTrailingSpace,nonLangCompsTwoSpaces)
 					for comp in nonLangCompsTwoSpaces:
-						outputLine = re.sub(r'\s+uuuQQQuuu\s+'," "+comp+" ",outputLine,1)
+						outputLine = re.sub(r' uuuQQQuuu '," "+comp+" ",outputLine,1)
 					for comp in nonLangCompsTrailingSpace:
-						outputLine = re.sub(r'\s+QQQuuu\s+',comp+" ",outputLine,1)
+						outputLine = re.sub(r' QQQuuu ',comp+" ",outputLine,1)
 					for comp in nonLangCompsFrontSpace:
-						outputLine = re.sub(r'\s+uuuQQQ\s+'," "+comp,outputLine,1)
+						outputLine = re.sub(r' uuuQQQ '," "+comp,outputLine,1)
 					for comp in nonLangComps:
-						outputLine = re.sub(r'\s+QQQ\s+',comp,outputLine,1)
-					
+						outputLine = re.sub(r' QQQ ',comp,outputLine,1)
+					outputLine = re.sub(r'\s+',' ',outputLine)
+					# print(outputLine)
+
 					usfmLineList.append(outputLine)
 				translatedUsfmText = "\n".join(usfmLineList)
 				finalDraftDict[book] = translatedUsfmText
@@ -1502,8 +1508,13 @@ def downloadDraft():
 			return '{"success": false, "message":"No translation available"}'
 	except Exception as e:
 		print(e)
+		print("line:",line)
+		print(marker,'of',markers_in_line)
+		print('usfmWordsList:',usfmWordsList)
+		print('translated_seq:',translated_seq)
+		print('word_seq:',word_seq)
+		print('clean_word_seq:',clean_word_seq)
 		return json.dumps({'success':False, 'message':"Server error"})
-
 
 
 @app.route("/v1/translationshelps/words/<sourceId>/<token>", methods=["GET"])
@@ -2103,7 +2114,7 @@ def getSources():
 def biblePattern(*argv):
     try:
         languageName, languageCode, languageId, script, scriptDirection, localScriptName, sourceId, \
-            versionCode, versionName, version, updatedDate,status = argv
+            versionCode, versionName, version, metadata, updatedDate,status = argv
     except Exception as ex:
         print(ex)
     pattern = {
@@ -2120,6 +2131,7 @@ def biblePattern(*argv):
             "code": versionCode,
             "longName": version
         },
+        "metadata":metadata,
         "audioBible":[],
         "updatedDate": updatedDate,
         "sourceId": sourceId,
@@ -2162,7 +2174,7 @@ def getBibles():
     elif status and status.lower() == "inactive":
         statusQuery = " and s.status=false"
     try:
-        cursor.execute("select s.source_id, v.revision, v.version_code, v.version_description, \
+        cursor.execute("select s.source_id, v.revision, v.version_code, v.version_description,v.metadata, \
             l.language_id, l.language_name, l.language_code, local_script_name, script, script_direction, \
                 created_at_date, s.status from sources s left join languages l on s.language_id=l.language_id \
                     left join versions v on s.version_id= v.version_id where s.content_id=1 "+statusQuery)
@@ -2170,7 +2182,7 @@ def getBibles():
         print(ex)
     biblesList = []
     language = request.args.get('language')
-    for s_id, ver, ver_code, ver_name, lang_id, lang_name, lang_code, loc_script_name, script, script_dir, \
+    for s_id, ver, ver_code, ver_name, metadata, lang_id, lang_name, lang_code, loc_script_name, script, script_dir, \
         updatedDate, status in cursor.fetchall():
         biblesList.append(
             biblePattern(
@@ -2184,6 +2196,7 @@ def getBibles():
                 ver_code,
                 ver_name,
                 ver,
+                metadata,
                 str(updatedDate),
                 status
             )
@@ -2680,3 +2693,5 @@ def getCommentaryChapter(sourceId,bookCode,chapterId):
 	except Exception as ex:
 		traceback.print_exc()
 		return '{"success":false, "message":"%s"}' %(str(ex))
+######################################################
+######################################################
