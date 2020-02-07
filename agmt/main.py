@@ -31,6 +31,7 @@ from psycopg2.extras import execute_values
 from random import randint
 import phrases
 from functools import reduce
+import traceback
 
 logging.basicConfig(filename='API_logs.log', format='%(asctime)s: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
@@ -2602,5 +2603,125 @@ def getBibleVerseText2(sourceId, verseId):
     except Exception as ex:
         return '{"success":false, "message":"%s"}' %(str(ex))
 
+def sortDictionaryByLanguage(languageObject,dictionary):
+	'''Sort the list of dictionaries by language name.'''
+	for index,item in enumerate(languageObject):
+		if item["languageCode"] == dictionary["languageCode"]:
+			dictionary.pop("language")
+			dictionary.pop("languageCode")
+			languageObject[index]["dictionaries"].append(dictionary)
+			break
+	else:
+		languageCode = dictionary.pop("languageCode")
+		language = dictionary.pop("language").capitalize()
+		languageObject.append({"language": language,"languageCode":languageCode,
+			"dictionaries": [dictionary]})
+	return languageObject
+
+@app.route("/v1/dictionaries", methods=["GET"])
+def getDictionaries():
+	'''Fetch the list of dictionaries with an option to filter by language .'''
+	try:
+		connection = get_db()
+		cursor = connection.cursor()
+		query ="select s.source_id,v.version_code,v.version_description,l.language_code,language_name \
+			,metadata from versions v inner join sources s on v.version_id = s.version_id inner join \
+				languages l on s.language_id=l.language_id where content_id in (select content_id from \
+					content_types where content_type = 'translation_words') "
+		#use language code param to filter by language
+		lang_code = request.args.get('language')
+		if lang_code and lang_code.strip():
+			cursor.execute("select language_id from languages where language_code=%s", (lang_code,))
+			language_id = cursor.fetchone()
+			if not language_id or language_id is None:
+				return '{"success": false, "message":""message":"language code not available.""}'
+			cursor.execute(query + " and s.language_id in(%s)", (language_id[0],))
+		else:
+			cursor.execute(query)
+		rst = cursor.fetchall()
+		dictionaries = []
+		for source_id, code, name,language_code,language,metadata in rst:	
+			dictionaries.append({ 'sourceId':source_id,'code':code,'name':name,
+				'languageCode':language_code,'language':language,"metadata":metadata})
+		# Group and sort dictionaries by langauge
+		dictionaries = reduce(sortDictionaryByLanguage,dictionaries,[])
+		return json.dumps(sorted(dictionaries,key=lambda x: x['language']))
+	except Exception as ex:
+		traceback.print_exc()
+		return '{"success":false, "message":"%s"}' %(str(ex))
+
+def sortDictionaryByLetter(dictionary,word):
+	'''Sort the words in the dictionary by letter.'''
+	for index,item in enumerate(dictionary):
+		if item["letter"] == word["letter"].upper():
+			word.pop("letter")
+			dictionary[index]["words"].append(word)
+			break
+	else:
+		letter = word.pop("letter").upper()
+		dictionary.append({"letter": letter,"words": [word]})
+	return dictionary
+
+@app.route("/v1/dictionaries/<sourceId>", methods=["GET"])
+def getDictionaryWords(sourceId):
+	'''Fetch the words of a given dictionary.'''
+	try:
+		connection = get_db()
+		cursor = connection.cursor()
+		#Get dictionary table
+		cursor.execute("select table_name from sources where source_id=%s and content_id in(select \
+			content_id from content_types where content_type = 'translation_words')", (sourceId,))
+		rst = cursor.fetchone()
+		if not rst:
+			return '{"success":false, "message":"Invalid dictionary sourceId"}'
+		table_name=rst[0]
+		#Get dictionary
+		cursor.execute(sql.SQL("select id,wordforms from {} order by keyword")
+			.format(sql.Identifier(table_name)))
+		rst = cursor.fetchall()
+		words = []
+		for id,wordforms in rst:
+			for word in wordforms.split(","):
+				word=word.strip()
+				if len(word)>0:
+					words.append({"letter":word[0],"wordId":id,"word":word})	
+		# Group and sort dictionaries by langauge
+		words = reduce(sortDictionaryByLetter,words,[])
+		return json.dumps(sorted(words,key=lambda x: x['letter']))
+	except Exception as ex:
+		traceback.print_exc()
+		return '{"success":false, "message":"%s"}' %(str(ex))
+
+@app.route("/v1/dictionaries/<sourceId>/<wordId>", methods=["GET"])
+def getDictionaryWord(sourceId,wordId):
+	'''Fetch the meaning for given word of a given dictionary.'''
+	try:
+		connection = get_db()
+		cursor = connection.cursor()
+		#Get dictionary table
+		cursor.execute("select table_name from sources where source_id=%s and content_id in(select \
+			content_id from content_types where content_type = 'translation_words')", (sourceId,))
+		rst = cursor.fetchone()
+		if not rst:
+			return '{"success":false, "message":"Invalid dictionary sourceId"}'
+		table_name=rst[0]
+		#Get dictionary
+		cursor.execute(sql.SQL("select * from {} where id=%s")
+			.format(sql.Identifier(table_name)),[int(wordId)])
+		rst = cursor.fetchone()
+		if not rst:
+			return '{"success":false, "message":"Invalid wordId"}'
+		meaning = {"keyword":rst[1],
+			"wordForms":rst[2],
+			"strongs":rst[3],
+			"definition":rst[4],
+			"translationHelp":rst[5],
+			"seeAlso":rst[6],
+			"ref":rst[7],
+			"examples":rst[8]}	
+		return json.dumps({"sourceId":sourceId, "wordId":wordId, "meaning":meaning})
+	except Exception as ex:
+		traceback.print_exc()
+		return '{"success":false, "message":"%s"}' %(str(ex))
 ######################################################
 ######################################################
