@@ -2723,5 +2723,59 @@ def getDictionaryWord(sourceId,wordId):
 	except Exception as ex:
 		traceback.print_exc()
 		return '{"success":false, "message":"%s"}' %(str(ex))
+        
+def sortInfographicsByBook(infographics, image):
+    '''Sort the infographics by book.'''
+    for index, item in enumerate(infographics):
+        if item["bookId"] == image["bookId"]:
+            image.pop("bookId")
+            image.pop("bookCode")
+            infographics[index]["infographics"].append(image)
+            break
+    else:
+        bookId = image.pop("bookId")
+        bookCode = image.pop("bookCode")
+        infographics.append(
+            {"bookId": bookId, "bookCode": bookCode, "infographics": [image]})
+    return infographics
+
+
+@app.route("/v1/infographics/<languageCode>", methods=["GET"])
+def getInfographics(languageCode):
+    '''Fetch the metadata for the infographics for the given language .'''
+    try:
+        connection = get_db()
+        cursor = connection.cursor()
+        cursor.execute(
+            "select language_id from languages where language_code=%s", (languageCode.strip(),))
+        language_id = cursor.fetchone()
+        if not language_id or language_id is None:
+            return '{"success":false, "message":"Invalid language code"}'
+        cursor.execute("select table_name,metadata from sources s inner join versions v on \
+			s.version_id=v.version_id where content_id in (select content_id from content_types \
+				where content_type='infographics') and language_id in (%s) and status=TRUE;",
+                       (language_id[0],))
+        rst = cursor.fetchone()
+        if not rst:
+            return '{"success":false, "message":"No infographics available for this language"}'
+        table_name = rst[0]
+        url = rst[1]
+        if url is not None:
+            url = url.get("url", "")
+        # Get infographics metadata
+        cursor.execute(sql.SQL("select i.book_id,b.book_code,title,file_name from {} i inner join \
+			bible_books_look_up b on i.book_id=b.book_id order by i.book_id").format(sql.Identifier(table_name)))
+        rst = cursor.fetchall()
+        books = []
+        for bookId, bookCode, title, fileName in rst:
+            books.append({"bookId": bookId, "bookCode": bookCode,
+                          "title": title, "fileName": fileName})
+        # Group and sort dictionaries by book
+        books = reduce(sortInfographicsByBook, books, [])
+        returnJson = {"languageCode": languageCode, "url": url, "books": books}
+        return json.dumps(returnJson)
+    except Exception as ex:
+        traceback.print_exc()
+        return '{"success":false, "message":"%s"}' % (str(ex))
 ######################################################
 ######################################################
