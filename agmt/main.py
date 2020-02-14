@@ -2484,7 +2484,7 @@ def getBibleVerses(sourceId, biblebookCode, chapterId):
 
 @app.route("/v1/bibles/<sourceId>/books/<bibleBookCode>/chapters/<chapterId>/verses/<verseId>", methods=["GET"])
 def getBibleVerseText(sourceId, bibleBookCode, chapterId, verseId):
-    '''Return a Verse object for a given Bible and Verse.'''
+    '''Return a Verse object for a given Bible and Verse.'''
     try:
         connection = get_db()
         cursor = connection.cursor()
@@ -2566,7 +2566,7 @@ def getBibleVerses2(sourceId, chapterId):
 
 @app.route("/v1/bibles/<sourceId>/verses/<verseId>", methods=["GET"])
 def getBibleVerseText2(sourceId, verseId):
-    '''Return a Verse object for a given Bible and Verse.'''
+    '''Return a Verse object for a given Bible and Verse.'''
     try:
         connection = get_db()
         cursor = connection.cursor()
@@ -2603,6 +2603,97 @@ def getBibleVerseText2(sourceId, verseId):
     except Exception as ex:
         return '{"success":false, "message":"%s"}' %(str(ex))
 
+def sortCommentariesByLanguage(languageObject,commentary):
+	'''Sort the list of commentaries by language name.'''
+	for index,item in enumerate(languageObject):
+		if item["languageCode"] == commentary["languageCode"]:
+			commentary.pop("language")
+			commentary.pop("languageCode")
+			languageObject[index]["commentaries"].append(commentary)
+			break
+	else:
+		languageCode = commentary.pop("languageCode")
+		language = commentary.pop("language")
+		languageObject.append({"language": language,"languageCode":languageCode,
+			"commentaries": [commentary]})
+	return languageObject
+
+@app.route("/v1/commentaries", methods=["GET"])
+def getBibleCommentaries():
+	'''Fetch the list of commentaries with an option to filter by language .'''
+	try:
+		connection = get_db()
+		cursor = connection.cursor()
+		query ="select s.source_id,v.version_code,v.version_description,l.language_code,language_name \
+			,metadata from versions v inner join sources s on v.version_id = s.version_id inner join \
+				languages l on s.language_id=l.language_id where content_id in (select content_id from \
+					content_types where content_type = 'commentary') and s.status=true"
+		#use language code param to filter by language
+		lang_code = request.args.get('language')
+		if lang_code and lang_code.strip():
+			cursor.execute("select language_id from languages where language_code=%s", (lang_code,))
+			language_id = cursor.fetchone()
+			if not language_id or language_id is None:
+				return '{"success": false, "message":""message":"language code not available.""}'
+			cursor.execute(query + " and s.language_id in(%s)", (language_id[0],))
+		else:
+			cursor.execute(query)
+		rst = cursor.fetchall()
+		commentaries = []
+		for source_id, code, name,language_code,language,metadata in rst:	
+			commentaries.append({ 'sourceId':source_id,'code':code,'name':name,
+				'languageCode':language_code,'language':language,'metadata':metadata})
+		# Group and sort commentaries by langauge
+		commentaries = reduce(sortCommentariesByLanguage,commentaries,[])
+		return json.dumps(sorted(commentaries,key=lambda x: x['language']))
+	except Exception as ex:
+		traceback.print_exc()
+		return '{"success":false, "message":"%s"}' %(str(ex))
+
+@app.route("/v1/commentaries/<sourceId>/<bookCode>/<chapterId>", methods=["GET"])
+def getCommentaryChapter(sourceId,bookCode,chapterId):
+	'''Fetch the commentary for a chapter for the given commentary sourceId.'''
+	try:
+		connection = get_db()
+		cursor = connection.cursor()
+		bookCode=bookCode.lower()
+		#Get bible book id
+		cursor.execute("select book_id from bible_books_look_up where book_code=%s", (bookCode.lower(),))
+		bible_book_data = cursor.fetchone()
+		if not bible_book_data:
+			return '{"success":false, "message":"Invalid book code"}'
+		book_id = bible_book_data[0]
+		#Validate chapter
+		cursor.execute("select count(*) from bcv_map where book=%s and chapter=%s;", (book_id,chapterId,))
+		rst = cursor.fetchone()
+		if not rst[0]:
+			return '{"success":false, "message":"Invalid chapter"}'
+		#Get commentary table
+		cursor.execute("select table_name from sources where source_id=%s and content_id in(select \
+			content_id from content_types where content_type = 'commentary')", (sourceId,))
+		rst = cursor.fetchone()
+		if not rst:
+			return '{"success":false, "message":"Invalid commentary sourceId"}'
+		table_name=rst[0]
+		#Get commentary
+		cursor.execute(sql.SQL("select verse,commentary from {} where book_id=%s and chapter=%s \
+			order by verse").format(sql.Identifier(table_name)),[book_id,int(chapterId)])
+		commentary = cursor.fetchall()
+		commentaries=[]
+		#If first chapter add book intro
+		bookIntro=""
+		if chapterId == "1":
+			cursor.execute(sql.SQL("select commentary from {} where book_id=%s and chapter=0").\
+				format(sql.Identifier(table_name)),[book_id])
+			bookIntro = cursor.fetchall()[0][0]
+		for row in commentary:
+			commentaries.append({"verse":row[0],"text":row[1]})
+		return json.dumps({ "sourceId":sourceId,"bookCode":bookCode,"chapter":chapterId,\
+			"bookIntro":bookIntro,"commentaries":sorted(commentaries, key = lambda i: int(i['verse'].split("-")[0])) })
+	except Exception as ex:
+		traceback.print_exc()
+		return '{"success":false, "message":"%s"}' %(str(ex))
+		
 def sortDictionaryByLanguage(languageObject,dictionary):
 	'''Sort the list of dictionaries by language name.'''
 	for index,item in enumerate(languageObject):
@@ -2723,7 +2814,7 @@ def getDictionaryWord(sourceId,wordId):
 	except Exception as ex:
 		traceback.print_exc()
 		return '{"success":false, "message":"%s"}' %(str(ex))
-        
+
 def sortInfographicsByBook(infographics, image):
     '''Sort the infographics by book.'''
     for index, item in enumerate(infographics):
