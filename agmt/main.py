@@ -32,7 +32,6 @@ from random import randint
 import phrases
 from functools import reduce
 import traceback
-import pdb
 
 logging.basicConfig(filename='API_logs.log', format='%(asctime)s: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
@@ -43,17 +42,14 @@ sendinblue_key = os.environ.get("AGMT_SENDINBLUE_KEY")
 jwt_hs256_secret = os.environ.get("AGMT_HS256_SECRET", "x709myFlW5")
 postgres_host = os.environ.get("AGMT_POSTGRES_HOST", "localhost")
 postgres_port = os.environ.get("AGMT_POSTGRES_PORT", "5432")
-postgres_user = os.environ.get("AGMT_POSTGRES_USER", "uday")
+postgres_user = os.environ.get("AGMT_POSTGRES_USER", "postgres") #uday
 
-#postgres_password = os.environ.get("AGMT_POSTGRES_PASSWORD", "secret")
-#postgres_database = os.environ.get("AGMT_POSTGRES_DATABASE", "postgres")
-postgres_password = os.environ.get("AGMT_POSTGRES_PASSWORD", "uday@123")
-postgres_database = os.environ.get("AGMT_POSTGRES_DATABASE", "vachan")
+postgres_password = os.environ.get("AGMT_POSTGRES_PASSWORD", "secret") # uday@123
+postgres_database = os.environ.get("AGMT_POSTGRES_DATABASE", "postgres") # vachan
 host_api_url = os.environ.get("AGMT_HOST_API_URL", "localhost:8000")
 host_ui_url = os.environ.get("AGMT_HOST_UI_URL","autographamt.com")
 system_email = os.environ.get("MTV2_EMAIL_ID", "autographamt@gmail.com")
 
-print(postgres_password +" "+  postgres_database )
 def get_db():                                                                      #--------------To open database connection-------------------#
 	"""Opens a new database connection if there is none yet for the
 	current application context.
@@ -63,8 +59,6 @@ def get_db():                                                                   
 			host=postgres_host, port=postgres_port)
 	return g.db
 
-# connection = get_db()
-# print(connection)
 @app.teardown_appcontext                                              #-----------------Close database connection----------------#
 def close_db(error):
 	"""Closes the database again at the end of the request."""
@@ -1446,7 +1440,6 @@ def downloadDraft():
 		cursor = connection.cursor()
 		cursor.execute("select source_id from autographamt_projects where project_id=%s", (projectId,))
 		sourceId = cursor.fetchone()[0]
-		logging.warning('downloaddraft#############' + str(sourceId))
 		usfmMarker = re.compile(r'\\\w+\d?\*?\s?')
 		nonLangComponentsTwoSpaces = re.compile(r'\s[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]\s')
 		nonLangComponentsTrailingSpace = re.compile(r'[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]\s')
@@ -2108,7 +2101,6 @@ def getSources():
     For a complete download of all content types stored in the database
     '''
     connection = get_db()
-    print(connection)
     cursor = connection.cursor()
     try:
         cursor.execute("select s.source_id, v.version_code, v.version_description, c.content_id, \
