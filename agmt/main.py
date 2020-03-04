@@ -32,6 +32,7 @@ from random import randint
 import phrases
 from functools import reduce
 import traceback
+import pdb
 
 logging.basicConfig(filename='API_logs.log', format='%(asctime)s: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
@@ -42,15 +43,17 @@ sendinblue_key = os.environ.get("AGMT_SENDINBLUE_KEY")
 jwt_hs256_secret = os.environ.get("AGMT_HS256_SECRET", "x709myFlW5")
 postgres_host = os.environ.get("AGMT_POSTGRES_HOST", "localhost")
 postgres_port = os.environ.get("AGMT_POSTGRES_PORT", "5432")
-postgres_user = os.environ.get("AGMT_POSTGRES_USER", "postgres")
-postgres_password = os.environ.get("AGMT_POSTGRES_PASSWORD", "secret")
-postgres_database = os.environ.get("AGMT_POSTGRES_DATABASE", "postgres")
-# postgres_password = os.environ.get("AGMT_POSTGRES_PASSWORD", "password")
-# postgres_database = os.environ.get("AGMT_POSTGRES_DATABASE", "vachan_engine_local")
-host_api_url = os.environ.get("AGMT_HOST_API_URL")
+postgres_user = os.environ.get("AGMT_POSTGRES_USER", "uday")
+
+#postgres_password = os.environ.get("AGMT_POSTGRES_PASSWORD", "secret")
+#postgres_database = os.environ.get("AGMT_POSTGRES_DATABASE", "postgres")
+postgres_password = os.environ.get("AGMT_POSTGRES_PASSWORD", "uday@123")
+postgres_database = os.environ.get("AGMT_POSTGRES_DATABASE", "vachan")
+host_api_url = os.environ.get("AGMT_HOST_API_URL", "localhost:8000")
 host_ui_url = os.environ.get("AGMT_HOST_UI_URL","autographamt.com")
 system_email = os.environ.get("MTV2_EMAIL_ID", "autographamt@gmail.com")
 
+print(postgres_password +" "+  postgres_database )
 def get_db():                                                                      #--------------To open database connection-------------------#
 	"""Opens a new database connection if there is none yet for the
 	current application context.
@@ -60,6 +63,8 @@ def get_db():                                                                   
 			host=postgres_host, port=postgres_port)
 	return g.db
 
+# connection = get_db()
+# print(connection)
 @app.teardown_appcontext                                              #-----------------Close database connection----------------#
 def close_db(error):
 	"""Closes the database again at the end of the request."""
@@ -98,6 +103,12 @@ def getBibleBookIds():
 		bookIdDict[int(book_id)] = book_code
 	cursor.close()
 	return bookIdDict
+
+# pass the URL with http, if URL will have SSL then will return the same otherwise wihtout SSL URL will return
+def return_url(url):
+    r = requests.get(url)
+    required_url = r.url
+    return required_url
 
 @app.route("/v1/auth", methods=["POST"])                    #-------------------For login---------------------#
 def auth():
@@ -153,13 +164,14 @@ def new_registration():
 	headers = {"api-key": sendinblue_key}
 	url = "https://api.sendinblue.com/v2.0/email"
 	verification_code = str(uuid.uuid4()).replace("-", "")
+    documentation_url = return_url('http://docs.vachanengine.org/')
 	body = '''Hello %s,<br/><br/>Thanks for your interest to use the AutographaMT web service. <br/>
 	You need to confirm your email by opening this link:
 
 	https://%s/v1/verifications/%s
 
-	<br/><br/>The documentation for accessing the API is available at https://docs.autographamt.com''' % \
-			(firstName, host_api_url, verification_code)
+	<br/><br/>The documentation for accessing the API is available at %s''' % \
+			(firstName, host_api_url, verification_code, documentation_url)
 	payload = {
 		"to": {email: ""},
 		"from": ["noreply@autographamt.in", "Autographa MT"],
@@ -205,11 +217,12 @@ def reset_password():
 		# totp = pyotp.TOTP('base32secret3232')       # python otp module
 		# verification_code = totp.now()
 		verification_code = randint(100001,999999)
+        documentation_url = return_url('http://docs.vachanengine.org/')
 		body = '''Hi,<br/><br/>Your request for resetting the password has been recieved. <br/>
 		Your temporary password is %s. Use this to create a new password at %s . 
 
-		<br/><br/>The documentation for accessing the API is available at https://docs.autographamt.com''' % \
-				(verification_code, host_ui_url)
+		<br/><br/>The documentation for accessing the API is available at %s''' % \
+				(verification_code, host_ui_url, documentation_url)
 		payload = {
 			"to": {email: ""},
 			"from": ["noreply@autographamt.in", "AutographaMT"],
@@ -1433,7 +1446,7 @@ def downloadDraft():
 		cursor = connection.cursor()
 		cursor.execute("select source_id from autographamt_projects where project_id=%s", (projectId,))
 		sourceId = cursor.fetchone()[0]
-		
+		logging.warning('downloaddraft#############' + str(sourceId))
 		usfmMarker = re.compile(r'\\\w+\d?\*?\s?')
 		nonLangComponentsTwoSpaces = re.compile(r'\s[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]\s')
 		nonLangComponentsTrailingSpace = re.compile(r'[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]\s')
@@ -2095,6 +2108,7 @@ def getSources():
     For a complete download of all content types stored in the database
     '''
     connection = get_db()
+    print(connection)
     cursor = connection.cursor()
     try:
         cursor.execute("select s.source_id, v.version_code, v.version_description, c.content_id, \
