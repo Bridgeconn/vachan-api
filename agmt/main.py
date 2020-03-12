@@ -2114,7 +2114,8 @@ def getSources():
 def biblePattern(*argv):
     try:
         languageName, languageCode, languageId, script, scriptDirection, localScriptName, sourceId, \
-            versionCode, versionName, version, metadata, updatedDate,status = argv
+            versionCode, versionName, version, metadata, updatedDate,  status, audio_name, audio_url, \
+				audio_format, audio_books = argv
     except Exception as ex:
         print(ex)
     pattern = {
@@ -2132,7 +2133,7 @@ def biblePattern(*argv):
             "longName": version
         },
         "metadata":metadata,
-        "audioBible":[],
+        "audioBible":{"name":audio_name,"url":audio_url,"format":audio_format,"books":audio_books},
         "updatedDate": updatedDate,
         "sourceId": sourceId,
         "status": status
@@ -2168,22 +2169,24 @@ def getBibles():
     cursor = connection.cursor()
     #use status param to filter by status, default only true
     status = request.args.get('status')
+    query = "select s.source_id, v.revision, v.version_code, v.version_description,v.metadata, \
+        l.language_id, l.language_name, l.language_code, local_script_name, script, script_direction, \
+            created_at_date, s.status, a.name, a.url, a.format, a.books from sources s left join \
+                languages l on s.language_id=l.language_id left join versions v on s.version_id= \
+                    v.version_id left join audio_bibles a on s.source_id=a.source_id where s.content_id=1 "
     statusQuery = " and s.status=true"
     if status and status.lower() == "both":
         statusQuery = ""
     elif status and status.lower() == "inactive":
         statusQuery = " and s.status=false"
     try:
-        cursor.execute("select s.source_id, v.revision, v.version_code, v.version_description,v.metadata, \
-            l.language_id, l.language_name, l.language_code, local_script_name, script, script_direction, \
-                created_at_date, s.status from sources s left join languages l on s.language_id=l.language_id \
-                    left join versions v on s.version_id= v.version_id where s.content_id=1 "+statusQuery)
+        cursor.execute(query+statusQuery)
     except Exception as ex:
         print(ex)
     biblesList = []
     language = request.args.get('language')
-    for s_id, ver, ver_code, ver_name, metadata, lang_id, lang_name, lang_code, loc_script_name, script, script_dir, \
-        updatedDate, status in cursor.fetchall():
+    for s_id, ver, ver_code, ver_name, metadata, lang_id, lang_name, lang_code, loc_script_name, script, \
+        script_dir, updatedDate, status, audio_name, audio_url, audio_format, audio_books in cursor.fetchall():
         biblesList.append(
             biblePattern(
                 lang_name, 
@@ -2198,7 +2201,11 @@ def getBibles():
                 ver,
                 metadata,
                 str(updatedDate),
-                status
+                status,
+				audio_name,
+				audio_url,
+                audio_format,
+				audio_books
             )
         )
     cursor.close()
@@ -2776,7 +2783,8 @@ def getDictionaryWords(sourceId):
 				word=word.strip()
 				if len(word)>0:
 					words.append({"letter":word[0],"wordId":id,"word":word})	
-		# Group and sort dictionaries by langauge
+		# Sort dictionary by word and group by letter
+		words = sorted(words,key=lambda w: w['word'].lower())
 		words = reduce(sortDictionaryByLetter,words,[])
 		return json.dumps(sorted(words,key=lambda x: x['letter']))
 	except Exception as ex:
@@ -2865,6 +2873,49 @@ def getInfographics(languageCode):
         books = reduce(sortInfographicsByBook, books, [])
         returnJson = {"languageCode": languageCode, "url": url, "books": books}
         return json.dumps(returnJson)
+    except Exception as ex:
+        traceback.print_exc()
+        return '{"success":false, "message":"%s"}' % (str(ex))
+def sortAudioBibles(languageObject,audioBible):
+    '''Sort the list of audio bible's by language format by language object.'''
+    for index,item in enumerate(languageObject):
+        if item["language"]["name"] == audioBible["language"]["name"]:
+            audioBible.pop("language")
+            languageObject[index]["audioBibles"].append(audioBible)
+            break
+    else:
+        language = audioBible.pop("language")
+        languageObject.append({"language": language,"audioBibles": [audioBible]})
+    return languageObject
+@app.route("/v1/audiobibles", methods=["GET"])
+def getAudioBibles():
+    '''Fetch the metadata for the audiobibles Option to filter by language.'''
+    try:
+        connection = get_db()
+        cursor = connection.cursor()
+        query = "select a.source_id, name,url, format, language_name, language_code, \
+            l.language_id, books from audio_bibles a inner join sources s on a.source_id=s.source_id \
+                inner join languages l on s.language_id = l.language_id and a.status=TRUE"
+        #use language code param to filter by language
+        lang_code = request.args.get('language')
+        if lang_code and lang_code.strip():
+            cursor.execute("select language_id from languages where language_code=%s", (lang_code,))
+            language_id = cursor.fetchone()
+            if not language_id or language_id is None:
+                return '{"success": false, "message":""message":"language code not available.""}'
+            cursor.execute(query + " and s.language_id in(%s)", (language_id[0],))
+        else:
+            cursor.execute(query)
+        rst = cursor.fetchall()
+        if not rst:
+            return '{"success":false, "message":"No audio bibles available"}'
+        audio_bibles = []
+        for source_id, name, url, format, language, language_code, language_id, books in rst:
+            audio_bibles.append({ 'sourceId':source_id, 'name':name, 'url':url, 'format':format,
+                "books":books, 'language':{'name':language,'code':language_code,'id':language_id}})
+        # Group and sort dictionaries by book
+        audio_bibles = reduce(sortAudioBibles, audio_bibles, [])
+        return json.dumps(audio_bibles)
     except Exception as ex:
         traceback.print_exc()
         return '{"success":false, "message":"%s"}' % (str(ex))
