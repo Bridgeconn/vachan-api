@@ -2991,5 +2991,50 @@ def getVideos():
     except Exception as ex:
         traceback.print_exc()
         return '{"success":false, "message":"%s"}' % (str(ex))
+
+def sortBooksByLanguage(languageObject,bookNames):
+    '''Sort the list of book's by language object.'''
+    for index,item in enumerate(languageObject):
+        if item["language"]["name"] == bookNames["language"]["name"]:
+            bookNames.pop("language")
+            languageObject[index]["bookNames"].append(bookNames)
+            break
+    else:
+        language = bookNames.pop("language")
+        languageObject.append({"language": language,"bookNames": [bookNames]})
+    return languageObject
+
+@app.route("/v1/booknames", methods=["GET"])
+def getBookNames():
+    '''Fetch the bible book names in the native language with an option to filter by language.'''
+    try:
+        connection = get_db()
+        cursor = connection.cursor()
+        query = "select short,abbr,long,b.book_id,book_code,l.language_id,language_code,language_name \
+            from bible_book_names b inner join bible_books_look_up u on b.book_id=u.book_id inner \
+                join languages l on b.language_id=l.language_id"
+        #use language code param to filter by language
+        lang_code = request.args.get('language')
+        if lang_code and lang_code.strip():
+            cursor.execute("select language_id from languages where language_code=%s", (lang_code,))
+            language_id = cursor.fetchone()
+            if not language_id or language_id is None:
+                return '{"success": false, "message":""message":"language code not available.""}'
+            cursor.execute(query + " and l.language_id in(%s)", (language_id[0],))
+        else:
+            cursor.execute(query)
+        rst = cursor.fetchall()
+        if not rst:
+            return '{"success":false, "message":"No Book Names available"}'
+        books = []
+        for short, abbr, long, book_id, book_code, language_id, language_code, language_name in rst:
+           	books.append({ 'book_id':book_id,'book_code':book_code.strip(),'short':short,'abbr':abbr,'long':long,
+                'language':{'name':language_name,'code':language_code,'id':language_id}})
+        # Group and sort dictionaries by book
+        books = reduce(sortBooksByLanguage, books, [])
+        return json.dumps(list(books))
+    except Exception as ex:
+        traceback.print_exc()
+        return '{"success":false, "message":"%s"}' % (str(ex))
 ######################################################
 ######################################################
