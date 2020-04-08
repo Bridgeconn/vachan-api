@@ -15,6 +15,7 @@
  -  `sudo apt-get update`
  - `sudo apt-get install python3-pip python3-dev nginx`
  - `sudo apt-get install libpq-dev`
+ - `sudo apt-get install libssl-dev`
 
 ## Postgres Database set Up
 
@@ -25,6 +26,9 @@
  - Run command `sudo su postgres`. Switches to postgres user
  - Run command `psql` in postgres user shell
  - Run command `CREATE USER <username> WITH SUPERUSER PASSWORD '<password>'`. Enter user username and password fot the DB. For ex: `CREATE USER agmt WITH SUPERUSER PASSWORD 'pass&14'`
+ 
+### Create Database:
+ - Open New Terminal and run command `createdb <db_name>`
  
 ## Set Environment variables: (Command -> `gedit .bashrc` from home directory)
 - Paste follwing with the credentials to the `bashrc` file.
@@ -53,8 +57,8 @@
 
  ### Clone Project and Install dependencies
  - Clone project repo to server
- - Navigate to project directory containing the `setup.py` file.
- - Install Python dependencies by running command `python setup.py install`
+ - Navigate to project directory containing the `requirements.txt` file.
+ - Install Python dependencies by running command `pip3 install -r requirements.txt`
 
 ### Create Initial DB tables
  - Navigate to project directory containing the `db.sql` file. (Inside `agmt` folder)

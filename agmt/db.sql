@@ -31,7 +31,7 @@ CREATE TABLE languages (
 	language_code TEXT NOT NULL,
 	local_script_name TEXT NOT NULL,
 	script TEXT NOT NULL,
-	srcipt_direction TEXT NOT NULL	
+	srcipt_direction TEXT NOT NULL
 );
 
 CREATE TABLE bible_books_look_up (
