@@ -104,6 +104,10 @@ def return_url(url):
     required_url = r.url
     return required_url
 
+@app.route('/', methods=['GET'])
+def index():
+ return jsonify({"message": "OK: I am live...url: http://autographamt.com/ "}), 200
+
 @app.route("/v1/auth", methods=["POST"])                    #-------------------For login---------------------#
 def auth():
 	email = request.form["email"]
