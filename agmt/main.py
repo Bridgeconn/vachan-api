@@ -162,7 +162,7 @@ def new_registration():
 	headers = {"api-key": sendinblue_key}
 	url = "https://api.sendinblue.com/v2.0/email"
 	verification_code = str(uuid.uuid4()).replace("-", "")
-    documentation_url = return_url('http://docs.vachanengine.org/')
+	documentation_url = return_url('http://docs.vachanengine.org/')
 	body = '''Hello %s,<br/><br/>Thanks for your interest to use the AutographaMT web service. <br/>
 	You need to confirm your email by opening this link:
 
@@ -215,7 +215,7 @@ def reset_password():
 		# totp = pyotp.TOTP('base32secret3232')       # python otp module
 		# verification_code = totp.now()
 		verification_code = randint(100001,999999)
-        documentation_url = return_url('http://docs.vachanengine.org/')
+		documentation_url = return_url('http://docs.vachanengine.org/')
 		body = '''Hi,<br/><br/>Your request for resetting the password has been recieved. <br/>
 		Your temporary password is %s. Use this to create a new password at %s . 
 
@@ -3046,5 +3046,39 @@ def getBookNames():
     except Exception as ex:
         traceback.print_exc()
         return '{"success":false, "message":"%s"}' % (str(ex))
+
+@app.route("/v1/search/<sourceId>", methods=["GET"])
+def searchBible(sourceId):
+	'''Fetch the bible verses with the given keyword in the specified sourceId clear text bible'''
+	try:
+		connection = get_db()
+		cursor = connection.cursor()
+		cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
+		tableName = cursor.fetchone()
+		if not tableName:
+			return '{"success":false, "message":"Invalid source Id"}'
+		keyword = request.args.get('keyword')
+		if not keyword:
+			return '{"success":false, "message":"Keyword empty"}'
+		cursor.execute("select book_id,book_code from bible_books_look_up")
+		rst = cursor.fetchall()
+		bookMap={}
+		for book_id,book_code in rst:
+			bookMap[str(book_id)]=book_code
+		cursor.execute(sql.SQL("select ref_id,verse from {} where verse ~* {}").\
+            format(sql.Identifier(tableName[0] + "_cleaned"),sql.Literal(keyword)))
+		rst = cursor.fetchall()
+		if not rst:
+			return '{"success":false, "message":"Keyword not found in bible"}'
+		result =[]
+		for ref_id,verse in rst:
+			ref = str(ref_id)
+			bookCode = bookMap[ref[-8:-6]]
+			result.append({'bookCode':bookCode,'chapter':int(ref[-6:-3]),'verse': int(ref[-3:]),'text':verse})
+		searchResult = {'sourceId':sourceId,'keyword':keyword,'result':result}
+		return json.dumps(searchResult)
+	except Exception as ex:
+		traceback.print_exc()
+		return '{"success":false, "message":"%s"}' % (str(ex))
 ######################################################
 ######################################################
