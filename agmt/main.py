@@ -50,6 +50,11 @@ host_api_url = os.environ.get("AGMT_HOST_API_URL", "localhost:8000")
 host_ui_url = os.environ.get("AGMT_HOST_UI_URL","autographamt.com")
 system_email = os.environ.get("MTV2_EMAIL_ID", "autographamt@gmail.com")
 
+
+print(postgres_database)
+print(postgres_password)
+print(sendinblue_key)
+
 def get_db():                                                                      #--------------To open database connection-------------------#
 	"""Opens a new database connection if there is none yet for the
 	current application context.

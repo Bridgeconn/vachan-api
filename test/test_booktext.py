@@ -68,36 +68,7 @@ def test_booktextsup3(supply_url,get_supAdmin_accessToken):
     resp = requests.get(url,headers={'Authorization': 'bearer{}'.format(get_supAdmin_accessToken)})
     j = json.loads(resp.text)
     assert resp.status_code == 200, resp.text 
-    assert j['success'] == False, str(j)
-    assert j['message'] == "Source File not available. Upload source", str(j)
-
-def test_booktextsup4(supply_url,get_supAdmin_accessToken):
-    url = supply_url +'/v1/sources/4211/usfm/49'
-    resp = requests.get(url,headers={'Authorization': 'bearer{}'.format(get_supAdmin_accessToken)})
-    j = json.loads(resp.text)
-    assert resp.status_code == 200, resp.text 
-    assert j['success'] == False, str(j)
-    assert j['message'] == "Source File not available. Upload source", str(j)
-
-
-def test_booktexttr(supply_url,get_trans_accessToken):
-    url = supply_url +'/v1/sources/3734/usfm'
-    resp = requests.get(url,headers={'Authorization': 'bearer{}'.format(get_trans_accessToken)})
-    j = json.loads(resp.text)
-    assert resp.status_code == 200, resp.text 
-    assert j['success'] == False, str(j)
-    assert j['message'] == "Source File not available. Upload source", str(j)
-
-
-def test_booktexad(supply_url,get_trans_accessToken):
-    url = supply_url +'/v1/sources/3896/usfm'
-    resp = requests.get(url,headers={'Authorization': 'bearer{}'.format(get_trans_accessToken)})
-    j = json.loads(resp.text)
-    assert resp.status_code == 200, resp.text 
-    assert j['success'] == False, str(j)
-    assert j['message'] == "Source File not available. Upload source", str(j)
-
-
-
+    assert j['success'] == False
+    assert j['message'] == "Source not present."
 
 	 
