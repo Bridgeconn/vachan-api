@@ -2635,6 +2635,16 @@ def sortCommentariesByLanguage(languageObject,commentary):
 			"commentaries": [commentary]})
 	return languageObject
 
+def checkAuthorised(cursor,key):
+	'''Check if key authorized'''
+	authorised = False
+	if key and key.strip():
+		cursor.execute("select key from content_types where content_type='commentary'")
+		db_key = cursor.fetchone()
+		if db_key and db_key is not None and key == db_key[0]:
+			authorised = True
+	return authorised
+
 @app.route("/v1/commentaries", methods=["GET"])
 def getBibleCommentaries():
 	'''Fetch the list of commentaries with an option to filter by language .'''
@@ -2657,7 +2667,10 @@ def getBibleCommentaries():
 			cursor.execute(query)
 		rst = cursor.fetchall()
 		commentaries = []
+		authorised = checkAuthorised(cursor,request.args.get('key'))
 		for source_id, code, name,language_code,language,metadata in rst:	
+			if "Copyright" in metadata and metadata["Copyright"]=="True" and not authorised:
+				continue
 			commentaries.append({ 'sourceId':source_id,'code':code,'name':name,
 				'languageCode':language_code,'language':language,'metadata':metadata})
 		# Group and sort commentaries by langauge
@@ -2673,6 +2686,15 @@ def getCommentaryChapter(sourceId,bookCode,chapterId):
 	try:
 		connection = get_db()
 		cursor = connection.cursor()
+		cursor.execute("select metadata->'Copyright' from sources s inner join versions v \
+			on s.version_id=v.version_id where source_id=%s and content_id in(select content_id \
+				from content_types where content_type = 'commentary')", (sourceId,))
+		rst = cursor.fetchone()
+		if rst[0] and rst[0] =="True":
+			#If copyright commentary then check if authorised
+			authorised = checkAuthorised(cursor,request.args.get('key'))
+			if not authorised:
+				return '{"success":false, "message":"Not authorised"}'
 		bookCode=bookCode.lower()
 		#Get bible book id
 		cursor.execute("select book_id from bible_books_look_up where book_code=%s", (bookCode.lower(),))
