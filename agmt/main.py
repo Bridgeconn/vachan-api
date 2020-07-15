@@ -725,6 +725,84 @@ def updateProjectTokenTranslations():
 		print(ex)
 		return '{"success": false, "message":"Server side error"}'
 
+
+@app.route("/v1/autographamt/projects/bulktranslations", methods=["POST"])
+@check_token
+def bulkUpdateProjectTokenTranslations():
+	try:
+		req = request.get_json(True)
+		projectId = req["projectId"]
+		translation_list = req["tokenTranslations"]
+		email = request.email
+
+		connection = get_db()
+		cursor = connection.cursor()
+		cursor.execute("select user_id from autographamt_users where email_id=%s", (email,))
+		userId = cursor.fetchone()[0]
+		cursor.execute("select assignment_id from autographamt_assignments where user_id=%s and \
+			project_id=%s", (userId, projectId))
+		assignmentExists = cursor.fetchone()
+		if not assignmentExists:
+			return '{"success":false, "message":"UnAuthorized/ You haven\'t been assigned this project"}'
+		cursor.execute("select source_id, target_id from autographamt_projects where project_id=%s", (projectId,))
+		sourceId, targetLanguageId = cursor.fetchone()
+		cursor.execute("select language_code from languages where language_id=%s", (targetLanguageId,))
+		targetLanguageCode = cursor.fetchone()
+		if not targetLanguageCode:
+			return '{"success":false, "message":"Target Language does not exist"}'
+		cursor.execute("select * from sources where source_id=%s", (sourceId,))
+		rst = cursor.fetchone()
+		if not rst:
+			return '{"success":false, "message":"Source does not exist"}'
+		
+		if not isinstance(translation_list, list):
+			return '{"success":false, "message":"Incorrect datatype. token-translations should be list"}'		
+		for item in translation_list:
+			token = item['token']
+			translation = item['translation']
+			senses = item['senses']
+
+			if not (isinstance(token, str) and isinstance(translation, str) and isinstance(senses, list)):
+				return '{"success":false, "message":"Incorrect datatypes. Token and translation should be strings and senses, array of strings"}'
+
+			senses = '|'.join(senses)
+			cursor.execute("select t.token, t.translation, t.senses from translations t left join \
+				translation_projects_look_up p on t.translation_id=p.translation_id where p.project_id=%s and \
+				token=%s",(projectId, token))
+			rst = cursor.fetchone()
+			if not rst:
+				cursor.execute("insert into translations (token, translation, source_id, target_id, \
+					user_id, senses) values (%s, %s, %s, %s, %s, %s) returning translation_id", (token, translation, sourceId, targetLanguageId, \
+						userId, senses))
+				translationId = cursor.fetchone()[0]
+				cursor.execute("insert into translation_projects_look_up (translation_id, project_id) values \
+					(%s, %s)", (translationId, projectId))
+				cursor.execute("insert into translations_history (token, translation, source_id, target_id, \
+					user_id, senses) values (%s, %s, %s, %s, %s, %s)", (token, translation, sourceId, targetLanguageId, \
+						userId, senses))
+			else:
+				if senses == rst[2] and translation == rst[1]:
+					# no change
+					pass
+				else:
+					dbSenses = []
+					if rst[2] != "":
+						dbSenses = rst[2].split("|")
+					if senses not in dbSenses:
+						dbSenses.append(senses)
+					senses = "|".join(dbSenses)
+					cursor.execute("update translations set translation=%s, user_id=%s, senses=%s where source_id=%s and \
+						target_id=%s and token=%s",(translation, userId, senses, sourceId, targetLanguageId, token))
+					cursor.execute("insert into translations_history (token, translation, source_id, target_id, \
+						user_id, senses) values (%s, %s, %s, %s, %s, %s)", (token, translation, sourceId, targetLanguageId, \
+							userId, senses))
+		connection.commit()
+		cursor.close()
+		return '{"success":true, "message":"Translations have been added"}'
+	except Exception as ex:
+		print(ex)
+		return '{"success": false, "message":"Server side error"}'
+
 @app.route("/v1/autographamt/users/projects", methods=["GET"])
 @check_token
 def getUserProjects():
