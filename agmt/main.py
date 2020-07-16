@@ -659,14 +659,18 @@ def getProjectTranslations(token, projectId):
 @app.route("/v1/autographamt/projects/translations", methods=["POST"])
 @check_token
 def updateProjectTokenTranslations():
-	# An AgMT API
-	# Adds/updates one token, its translation and senses to the DB
+	'''
+	An AgMT API
+	Adds/updates one token, its translation and senses to the DB
+	'''
 	try:
 		req = request.get_json(True)
 		projectId = req["projectId"]
 		token = req["token"]
 		translation = req["translation"]
 		senses_list = req["senses"]
+		if "" in senses_list:
+			senses_list.remove("")
 		senses = "|".join(senses_list)
 		email = request.email
 		# userId=6
@@ -732,10 +736,12 @@ def updateProjectTokenTranslations():
 @app.route("/v1/autographamt/projects/bulktranslations", methods=["POST"])
 @check_token
 def bulkUpdateProjectTokenTranslations():
-	# An AgMT API
-	# Similar funtion as updateProjectTokenTranslations.
-	# Difference being it takes a 'list' of tokens, their
-	# translations and senses and add/update them to DB
+	'''
+	An AgMT API
+	Similar funtion as updateProjectTokenTranslations.
+	Difference being it takes a 'list' of tokens, their
+	translations and senses and add/update them to DB
+	'''
 	try:
 		req = request.get_json(True)
 		projectId = req["projectId"]
@@ -768,6 +774,8 @@ def bulkUpdateProjectTokenTranslations():
 			token = item['token']
 			translation = item['translation']
 			senses = item['senses']
+			if "" in senses:
+				senses.remove("")
 
 			if not (isinstance(token, str) and isinstance(translation, str) and isinstance(senses, list)):
 				return '{"success":false, "message":"Incorrect datatypes. Token and translation should be strings and senses, array of strings"}'
