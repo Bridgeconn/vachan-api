@@ -750,9 +750,8 @@ def bulkUpdateProjectTokenTranslations():
 	try:
 		req = request.get_json(True)
 		projectId = req["projectId"]
-		translation_list = req["tokenTranslations"]
+		tokenTranslations = req["tokenTranslations"]
 		email = request.email
-
 		connection = get_db()
 		cursor = connection.cursor()
 		cursor.execute("select user_id from autographamt_users where email_id=%s", (email,))
@@ -762,27 +761,30 @@ def bulkUpdateProjectTokenTranslations():
 		assignmentExists = cursor.fetchone()
 		if not assignmentExists:
 			return '{"success":false, "message":"UnAuthorized/ You haven\'t been assigned this project"}'
+
 		cursor.execute("select source_id, target_id from autographamt_projects where project_id=%s", (projectId,))
 		sourceId, targetLanguageId = cursor.fetchone()
 		cursor.execute("select language_code from languages where language_id=%s", (targetLanguageId,))
 		targetLanguageCode = cursor.fetchone()
 		if not targetLanguageCode:
 			return '{"success":false, "message":"Target Language does not exist"}'
+
 		cursor.execute("select * from sources where source_id=%s", (sourceId,))
 		rst = cursor.fetchone()
 		if not rst:
 			return '{"success":false, "message":"Source does not exist"}'
-		
-		if not isinstance(translation_list, list):
-			return '{"success":false, "message":"Incorrect datatype. token-translations should be an array"}'		
-		for item in translation_list:
+
+		if not isinstance(tokenTranslations, list):
+			return '{"success":false, "message":"Incorrect datatype. token-translations should be an array"}'
+
+		for item in tokenTranslations:
 			token = item['token']
 			translation = item['translation']
 			senses = item['senses']
-			if "" in senses:
-				senses.remove("")
-
-			if not (isinstance(token, str) and isinstance(translation, str) and isinstance(senses, list)):
+			# if "" in senses:
+			# 	senses.remove("")
+			splitSense = senses.split(',')
+			if not (isinstance(token, str) and isinstance(translation, str) and isinstance(senses, str)):
 				return '{"success":false, "message":"Incorrect datatypes. Token and translation should be strings and senses, array of strings"}'
 
 			cursor.execute("select t.token, t.translation, t.senses from translations t left join \
@@ -790,7 +792,7 @@ def bulkUpdateProjectTokenTranslations():
 				token=%s",(projectId, token))
 			rst = cursor.fetchone()
 			if not rst:
-				senses = '|'.join(senses)
+				senses = '|'.join(splitSense)
 				cursor.execute("insert into translations (token, translation, source_id, target_id, \
 					user_id, senses) values (%s, %s, %s, %s, %s, %s) returning translation_id", (token, translation, sourceId, targetLanguageId, \
 						userId, senses))
@@ -804,7 +806,7 @@ def bulkUpdateProjectTokenTranslations():
 				dbSenses = []
 				if rst[2] != "":
 						dbSenses = rst[2].split("|")
-				for sense in senses:
+				for sense in splitSense:
 					if sense not in dbSenses:
 						dbSenses.append(sense)
 				senses = "|".join(dbSenses)
