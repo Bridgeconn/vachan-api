@@ -60,7 +60,7 @@ def get_db():                                                                   
 	current application context.
 	"""
 	if not hasattr(g, 'db'):
-		g.db = psycopg2.connect(dbname=postgres_database, user=postgres_user, 
+		g.db = psycopg2.connect(dbname=postgres_database, user=postgres_user,
 			password=postgres_password,	host=postgres_host, port=postgres_port)
 	return g.db
 
@@ -139,13 +139,13 @@ def auth():
 	role = rst[2]
 	firstName = rst[3]
 	lastName = rst[4]
-	
+
 	if password_hash == password_hash_new:
 		try:
 			access_token = jwt.encode({
-				'sub': email, 
-				'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1), 
-				'role': role, 
+				'sub': email,
+				'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1),
+				'role': role,
 				'app':'mt',
 				'firstName': firstName,
 				'lastName': lastName
@@ -199,7 +199,7 @@ def new_registration():
 	else:
 		if rst[1] == False:
 			return '{"success":false, "message":"This email has already been Registered. Account is deactivated. "}'
-		else:    
+		else:
 			return '{"success":false, "message":"This email has already been Registered, "}'
 
 @app.route("/v1/resetpassword", methods=["POST"])    #-----------------For resetting the password------------------#
@@ -214,7 +214,7 @@ def reset_password():
 	else:
 		active = rst[1]
 		if not active:
-			return '{"success":false, "message":"User account is deactivated."}'    
+			return '{"success":false, "message":"User account is deactivated."}'
 		headers = {"api-key": sendinblue_key}
 		url = "https://api.sendinblue.com/v2.0/email"
 		# totp = pyotp.TOTP('base32secret3232')       # python otp module
@@ -222,7 +222,7 @@ def reset_password():
 		verification_code = randint(100001,999999)
 		documentation_url = return_url('http://docs.vachanengine.org/')
 		body = '''Hi,<br/><br/>Your request for resetting the password has been recieved. <br/>
-		Your temporary password is %s. Use this to create a new password at %s . 
+		Your temporary password is %s. Use this to create a new password at %s .
 
 		<br/><br/>The documentation for accessing the API is available at %s''' % \
 				(verification_code, host_ui_url, documentation_url)
@@ -374,7 +374,7 @@ def autographamtOrganisations():
 		return json.dumps(organisationsList)
 	except Exception as ex:
 		print(ex)
-		return '{"success":false, "message":"Server side error"}' 
+		return '{"success":false, "message":"Server side error"}'
 
 @app.route("/v1/autographamt/organisations", methods=["POST"])
 @check_token
@@ -423,7 +423,7 @@ def autographamtUsers():
 	if role == 3:
 		cursor.execute("select user_id, first_name, last_name, email_id, role_id, verified, status \
 			from autographamt_users order by user_id")
-	elif role == 2: 
+	elif role == 2:
 		cursor.execute("select user_id, first_name, last_name, email_id, role_id, verified, status \
 			from autographamt_users where role_id < 3 order by user_id")
 	else:
@@ -538,10 +538,10 @@ def createProjects():
 					return '{"success":false, "message":"Project already created"}'
 		else:
 			return '{"success":false, "message":"UnAuthorized"}'
-		
+
 	except Exception as e:
 		print(e)
-		return '{"success":false, "message":"Server Error"}' 
+		return '{"success":false, "message":"Server Error"}'
 
 @app.route("/v1/autographamt/projects/assignments/<projectId>", methods=["GET"])
 @check_token
@@ -573,9 +573,9 @@ def getAssignments(projectId):
 				} for firstName, lastName, email, assignmentId, books, userId, projectId, status in rst
 			]
 			return json.dumps(projectUsers)
-		
+
 	except Exception as e:
-		print(e) 
+		print(e)
 		return json.dumps({'success':False,'message':"Server error"})
 
 @app.route("/v1/autographamt/projects/assignments", methods=["POST"])
@@ -591,26 +591,26 @@ def createAssignments():
 		userId, projectId
 	))
 	rst = cursor.fetchone()
-	
+
 	if not rst:
-		
+
 		books = "|".join(books)
 		cursor.execute("insert into autographamt_assignments (books, user_id, project_id) \
 			values (%s, %s, %s)", (books, userId, projectId))
 		connection.commit()
 		cursor.close()
 		return '{"success":true, "message":"User Role Assigned"}'
-	
+
 	books = "|".join(books)
 	cursor.execute("update autographamt_assignments set books=%s where user_id=%s and \
 		project_id=%s", (books, userId, projectId))
 	connection.commit()
 	cursor.close()
 	return '{"success":true, "message":"User Role Updated"}'
-		
+
 @app.route("/v1/autographamt/projects/assignments", methods=["DELETE"])
 def removeUserFromProject():
-	
+
 	req = request.get_json(True)
 	userId = req["userId"]
 	projectId = req["projectId"]
@@ -619,9 +619,9 @@ def removeUserFromProject():
 	cursor.execute("select * from autographamt_assignments where user_id=%s and project_id=%s", (
 		userId, projectId
 	))
-	
+
 	rst = cursor.fetchone()
-	
+
 	if not rst:
 		return '{"success":false, "message":"User Role Does Not exist"}'
 	else:
@@ -647,7 +647,7 @@ def getProjectTranslations(token, projectId):
 		translation_projects_look_up p on t.translation_id=p.translation_id where t.token=%s and \
 			p.project_id=%s", (token, projectId))
 	rst = cursor.fetchone()
-	
+
 	if rst:
 		translation, senses = rst
 		if senses.strip() == "":
@@ -747,6 +747,7 @@ def bulkUpdateProjectTokenTranslations():
 	Difference being it takes a 'list' of tokens, their
 	translations and senses and add/update them to DB
 	'''
+
 	try:
 		req = request.get_json(True)
 		projectId = req["projectId"]
@@ -949,7 +950,7 @@ def getProjectStatistics(projectId):
 		else:
 			pendingTokensStatus = float("{0:.2f}".format(reduce(lambda x, y: x + y, pendingPercentageList) / len(pendingPercentageList)))
 			completedTokensStatus = float("{0:.2f}".format(reduce(lambda x, y: x + y, completedPercentageList) / len(completedPercentageList)))
-		
+
 		return json.dumps({
 			"bookWiseData":projectStatistics,
 			"projectData":{
@@ -994,7 +995,7 @@ def available_books(sourceId):
 			return '{"success":false, "message":"No data available"}'
 		tablename = rst[0]
 		if rst[1] != 'bible':
-			return json.dumps({'success':False,'message':"Source is "+rst[1]+" not Bible"})    
+			return json.dumps({'success':False,'message':"Source is "+rst[1]+" not Bible"})
 		cursor.execute(sql.SQL("select l.book_code from {} as u left join bible_books_look_up as l \
 			on u.book_id=l.book_id").format(sql.Identifier(tablename)))
 		rst = cursor.fetchall()
@@ -1004,7 +1005,7 @@ def available_books(sourceId):
 		else:
 			return json.dumps(rst)
 	except Exception as e:
-		print(e) 
+		print(e)
 		return json.dumps({'success':False,'message':"Server error"})
 
 @app.route("/v1/sources/projects/books/<projectId>/<userId>", methods=["GET"])           #-------------------------To find available books and revision number----------------------#
@@ -1013,7 +1014,7 @@ def availableProjectBooks(projectId, userId):
 	try:
 		connection = get_db()
 		cursor = connection.cursor()
-		
+
 		cursor.execute("select s.table_name from sources s left join autographamt_projects p on s.source_id=p.source_id \
 			where p.project_id=%s", (projectId,))
 		tablename = cursor.fetchone()[0]
@@ -1035,7 +1036,7 @@ def availableProjectBooks(projectId, userId):
 		else:
 			assignedBooks = []
 		booksArray = {}
-		
+
 		for book in allBooks:
 			if book not in assignedBooks:
 				booksArray[book] = {
@@ -1074,10 +1075,10 @@ def getTokenLists(sourceId, book):
 		except Exception as ex:
 			print(ex)
 			return '{"success":false, "message":"Phrases method error"}'
-		
+
 	cursor.close()
 	jsonOut = json.dumps(tokenList)
-	print(jsonOut)
+	# print(jsonOut)
 	return jsonOut
 
 def getConcordanceList(db_data):
@@ -1133,7 +1134,7 @@ def getContentTypes():
 		"contentId": contentId
 	} for contentType, contentId in rst]
 	return json.dumps(contentTypes)
-		
+
 @app.route("/v1/languages/<contentId>", methods=["GET"])
 def getLanguages(contentId):
 	connection = get_db()
@@ -1262,7 +1263,7 @@ def parseDataForDBInsert(usfmData):
 					ref_id = int(bcv)
 					dbInsertData.append((ref_id, "", "", ""))
 					verseContent.append('')
-						
+
 			else:
 				print("!!!Unrecognized pattern in verse number!!!")
 				print("verseNumber:",verse['number'])
@@ -1297,7 +1298,7 @@ def createBibleSource():
 				left join versions v on v.version_id=s.version_id \
 				where l.language_code=%s and s.content_id=%s and v.version_code=%s and \
 					v.version_description=%s and s.year=%s and v.revision=%s and \
-						s.license=%s",(language, contentId, versionContentCode, 
+						s.license=%s",(language, contentId, versionContentCode,
 							versionContentDescription, year, version, license))
 		rst = cursor.fetchone()
 		if not rst:
@@ -1330,7 +1331,7 @@ def createBibleSource():
 	except Exception as ex:
 		print(ex)
 		return '{"success":false, "message":"Server side error"}'
-	
+
 @app.route("/v1/bibles/upload", methods=["POST"])
 def uploadSource():
 	try:
@@ -1355,7 +1356,7 @@ def uploadSource():
 			return '{"success":false, "message":"Book already Uploaded"}'
 		parsedDbData = parseDataForDBInsert(parsedUsfmText)
 
-		cleanTableName = bibleTable + "_cleaned" 
+		cleanTableName = bibleTable + "_cleaned"
 		print(cleanTableName)
 		cursor = connection.cursor()
 		execute_values(cursor,sql.SQL('insert into {} (ref_id, verse, cross_reference, foot_notes) values %s').format(sql.Identifier(cleanTableName)),
@@ -1381,14 +1382,14 @@ def updateTokenTranslations():
 	sourceId = req["sourceId"]
 	targetLanguageId = req["targetLanguageId"]
 	senses = req["senses"]
-	
+
 	userId = 2
 	connection = get_db()
 	cursor = connection.cursor()
 	cursor.execute("select language_code from languages where language_id=%s", (targetLanguageId,))
 	targetLanguageCode = cursor.fetchone()
 	if not targetLanguageCode:
-		return '{"success":false, "message":"Target Language does not exist"}' 
+		return '{"success":false, "message":"Target Language does not exist"}'
 	cursor.execute("select * from sources where source_id=%s", (sourceId,))
 	rst = cursor.fetchone()
 	if not rst:
@@ -1470,7 +1471,7 @@ def getTranslatedBooks(sourceId, targetId):
 	cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
 	rst = cursor.fetchone()[0]
 	tableName = rst + "_tokens"
-	# 
+	#
 
 	cursor.execute(sql.SQL("select b.book_code, t.token from {} t left join bible_books_look_up b on t.book_id=b.book_id").format(sql.Identifier(tableName)))
 	rstAllTokens = cursor.fetchall()
@@ -1548,7 +1549,7 @@ def downloadDraft():
 		nonLangComponents = re.compile(r'[!"#$%&\\\'()*+,./:;<=>?@\[\]^_`{|\}~”“‘’।]')
 
 		if phrases.loadPhraseTranslations(connection, projectId):
-			
+
 			cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
 			tablename = cursor.fetchone()[0]
 			# bookList = ",".join(bookList)
@@ -1557,7 +1558,7 @@ def downloadDraft():
 					where bl.book_code = ANY(%s::text[])").format(sql.Identifier(tablename)),('{'+",".join(bookList)+'}',))
 			source_rst = cursor.fetchall()
 			# print(source_rst)
-			
+
 			# usfmText = source_rst[0]['usfm'][bookCode]
 			finalDraftDict = {}
 			for row in source_rst:
@@ -1583,7 +1584,7 @@ def downloadDraft():
 						clean_word_seq = re.sub(nonLangComponents,' QQQ ',clean_word_seq)
 						if not re.match(r'\s+$',clean_word_seq) and clean_word_seq!='':
 							translated_seq.append(phrases.translateText( clean_word_seq ))
-					
+
 					for i,marker in enumerate(markers_in_line):
 						usfmWordsList.append(marker)
 						if i<len(translated_seq):
@@ -1640,7 +1641,7 @@ def getTranslationWords(sourceId, token):
 		tW = cursor.fetchall()
 	except:
 		return '{"success":false, "message":"No Translation Words available"}'
-	# 
+	#
 	if tW:
 		translationWord = {}
 		for keyword, wordforms, strongs, definition, translationhelp in tW:
@@ -1658,11 +1659,11 @@ def getTranslationWords(sourceId, token):
 def getTranslatedWords(sourceId, targetLanguageId, token):
 	connection = get_db()
 	cursor = connection.cursor()
-	
+
 	cursor.execute("select translation, senses from translations where source_id=%s \
 		and target_id=%s and token=%s", (sourceId, targetLanguageId, token))
 	rst = cursor.fetchone()
-	
+
 	if rst:
 		translation, senses = rst
 		print(senses)
@@ -1681,12 +1682,12 @@ def getTranslatedWords(sourceId, targetLanguageId, token):
 def getAllTranslatedWords(sourceId, targetLanguageId):
 	connection = get_db()
 	cursor = connection.cursor()
-	
+
 	cursor.execute("select token,translation, senses from translations where source_id=%s \
 		and target_id=%s", (sourceId, targetLanguageId))
 	rst = cursor.fetchall()
 	print(rst)
-	
+
 	if rst:
 		result = []
 		for item in rst:
@@ -1719,7 +1720,7 @@ def getbookText(sourceid, outputtype, bookid):
 		cursor.execute("select table_name from sources where source_id=%s and status=true", (sourceid,))
 		rst = cursor.fetchone()
 		if not rst:
-			return json.dumps({'success':False,'message':'Source not present.'})            
+			return json.dumps({'success':False,'message':'Source not present.'})
 
 		tableName = rst[0]
 		returnObj = {}
@@ -1748,8 +1749,8 @@ def getbookText(sourceid, outputtype, bookid):
 					bookCode = (bookIdDict[int(row[0])]).lower()
 					returnObj[bookCode] = row[2]
 			else:
-				return json.dumps({'success':False,'message':'Unsupported type. Use "usfm" or "json"'})            
-			
+				return json.dumps({'success':False,'message':'Unsupported type. Use "usfm" or "json"'})
+
 		return json.dumps(returnObj)
 	except Exception as e:
 		print(e)
@@ -1763,7 +1764,7 @@ def getVerseInRange(sourceid, outputtype, bookid, chapterid):
 		connection = get_db()
 		cursor = connection.cursor()
 		outputtype = outputtype.lower()
-		
+
 		cursor.execute("select table_name from sources where source_id=%s", (sourceid,))
 		rst = cursor.fetchone()
 		if not rst:
@@ -1821,7 +1822,7 @@ def removeUser():
 			userId = cursor.fetchone()
 			if userId:
 				status = json.loads(deleteUser(userId))
-				message += status['message'] 
+				message += status['message']
 				success = status['success']
 			else:
 				message += "User not present."
@@ -1865,7 +1866,7 @@ def activateUser():
 	except Exception as e:
 		print(e)
 		message = "Server error."
-	return json.dumps({"success":success,"message":message})    
+	return json.dumps({"success":success,"message":message})
 
 @app.route("/v1/autographamt/organisation/delete",methods=["DELETE"])
 @check_token
@@ -2296,13 +2297,13 @@ def getBibles():
         script_dir, updatedDate, status, audio_name, audio_url, audio_format, audio_books in cursor.fetchall():
         biblesList.append(
             biblePattern(
-                lang_name, 
-                lang_code, 
-                lang_id, 
+                lang_name,
+                lang_code,
+                lang_id,
                 script,
-                script_dir, 
-                loc_script_name, 
-                s_id, 
+                script_dir,
+                loc_script_name,
+                s_id,
                 ver_code,
                 ver_name,
                 ver,
@@ -2438,7 +2439,7 @@ def getBible(sourceId, contentFormat):
         return '{"success": false, "message":"Invalid Content Type"}'
     cursor.close()
     return json.dumps(usfmText)
-    
+
 
 @app.route("/v1/bibles/<sourceId>/books/<bookCode>/<contentFormat>", methods=["GET"])
 def getBook(sourceId,bookCode, contentFormat):
@@ -2765,7 +2766,7 @@ def getBibleCommentaries():
 		rst = cursor.fetchall()
 		commentaries = []
 		authorised = checkAuthorised(cursor,request.args.get('key'))
-		for source_id, code, name,language_code,language,metadata in rst:	
+		for source_id, code, name,language_code,language,metadata in rst:
 			if "Copyright" in metadata and metadata["Copyright"]=="True" and not authorised:
 				continue
 			commentaries.append({ 'sourceId':source_id,'code':code,'name':name,
@@ -2829,7 +2830,7 @@ def getCommentaryChapter(sourceId,bookCode,chapterId):
 	except Exception as ex:
 		traceback.print_exc()
 		return '{"success":false, "message":"%s"}' %(str(ex))
-		
+
 def sortDictionaryByLanguage(languageObject,dictionary):
 	'''Sort the list of dictionaries by language name.'''
 	for index,item in enumerate(languageObject):
@@ -2867,7 +2868,7 @@ def getDictionaries():
 			cursor.execute(query)
 		rst = cursor.fetchall()
 		dictionaries = []
-		for source_id, code, name,language_code,language,metadata in rst:	
+		for source_id, code, name,language_code,language,metadata in rst:
 			dictionaries.append({ 'sourceId':source_id,'code':code,'name':name,
 				'languageCode':language_code,'language':language,"metadata":metadata})
 		# Group and sort dictionaries by langauge
@@ -2911,7 +2912,7 @@ def getDictionaryWords(sourceId):
 			for word in wordforms.split(","):
 				word=word.strip()
 				if len(word)>0:
-					words.append({"letter":word[0],"wordId":id,"word":word})	
+					words.append({"letter":word[0],"wordId":id,"word":word})
 		# Sort dictionary by word and group by letter
 		words = sorted(words,key=lambda w: w['word'].lower())
 		words = reduce(sortDictionaryByLetter,words,[])
@@ -2946,7 +2947,7 @@ def getDictionaryWord(sourceId,wordId):
 			"translationHelp":rst[5],
 			"seeAlso":rst[6],
 			"ref":rst[7],
-			"examples":rst[8]}	
+			"examples":rst[8]}
 		return json.dumps({"sourceId":sourceId, "wordId":wordId, "meaning":meaning})
 	except Exception as ex:
 		traceback.print_exc()
@@ -3051,7 +3052,7 @@ def getAudioBibles():
     except Exception as ex:
         traceback.print_exc()
         return '{"success":false, "message":"%s"}' % (str(ex))
-		
+
 def sortVideosByLanguage(languageObject,video):
     '''Sort the list of video's by language object.'''
     for index,item in enumerate(languageObject):
