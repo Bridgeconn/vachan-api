@@ -64,5 +64,6 @@ env3
 .next
 
 agmt/__pycache__/*
-
+test/__pycache__/*
+vachan-venv/*
 

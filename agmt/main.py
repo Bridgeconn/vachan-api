@@ -60,8 +60,8 @@ def get_db():                                                                   
 	current application context.
 	"""
 	if not hasattr(g, 'db'):
-		g.db = psycopg2.connect(dbname=postgres_database, user=postgres_user, password=postgres_password, \
-			host=postgres_host, port=postgres_port)
+		g.db = psycopg2.connect(dbname=postgres_database, user=postgres_user, 
+			password=postgres_password,	host=postgres_host, port=postgres_port)
 	return g.db
 
 @app.teardown_appcontext                                              #-----------------Close database connection----------------#
@@ -664,13 +664,19 @@ def getProjectTranslations(token, projectId):
 @app.route("/v1/autographamt/projects/translations", methods=["POST"])
 @check_token
 def updateProjectTokenTranslations():
+	'''
+	An AgMT API
+	Adds/updates one token, its translation and senses to the DB
+	'''
 	try:
 		req = request.get_json(True)
 		projectId = req["projectId"]
 		token = req["token"]
 		translation = req["translation"]
-		senses = req["senses"]
-		senses = "|".join(senses)
+		senses_list = req["senses"]
+		if "" in senses_list:
+			senses_list.remove("")
+		senses = "|".join(senses_list)
 		email = request.email
 		# userId=6
 		connection = get_db()
@@ -715,8 +721,9 @@ def updateProjectTokenTranslations():
 			dbSenses = []
 			if rst[2] != "":
 				dbSenses = rst[2].split("|")
-			if senses not in dbSenses:
-				dbSenses.append(senses)
+			for sense in senses_list:
+				if sense not in dbSenses:
+					dbSenses.append(senses)
 			senses = "|".join(dbSenses)
 			cursor.execute("update translations set translation=%s, user_id=%s, senses=%s where source_id=%s and \
 				target_id=%s and token=%s",(translation, userId, senses, sourceId, targetLanguageId, token))
@@ -726,6 +733,89 @@ def updateProjectTokenTranslations():
 			connection.commit()
 			cursor.close()
 			return '{"success":true, "message":"Translation has been updated"}'
+	except Exception as ex:
+		print(ex)
+		return '{"success": false, "message":"Server side error"}'
+
+
+@app.route("/v1/autographamt/projects/bulktranslations", methods=["POST"])
+@check_token
+def bulkUpdateProjectTokenTranslations():
+	'''
+	An AgMT API
+	Similar funtion as updateProjectTokenTranslations.
+	Difference being it takes a 'list' of tokens, their
+	translations and senses and add/update them to DB
+	'''
+	try:
+		req = request.get_json(True)
+		projectId = req["projectId"]
+		translation_list = req["tokenTranslations"]
+		email = request.email
+
+		connection = get_db()
+		cursor = connection.cursor()
+		cursor.execute("select user_id from autographamt_users where email_id=%s", (email,))
+		userId = cursor.fetchone()[0]
+		cursor.execute("select assignment_id from autographamt_assignments where user_id=%s and \
+			project_id=%s", (userId, projectId))
+		assignmentExists = cursor.fetchone()
+		if not assignmentExists:
+			return '{"success":false, "message":"UnAuthorized/ You haven\'t been assigned this project"}'
+		cursor.execute("select source_id, target_id from autographamt_projects where project_id=%s", (projectId,))
+		sourceId, targetLanguageId = cursor.fetchone()
+		cursor.execute("select language_code from languages where language_id=%s", (targetLanguageId,))
+		targetLanguageCode = cursor.fetchone()
+		if not targetLanguageCode:
+			return '{"success":false, "message":"Target Language does not exist"}'
+		cursor.execute("select * from sources where source_id=%s", (sourceId,))
+		rst = cursor.fetchone()
+		if not rst:
+			return '{"success":false, "message":"Source does not exist"}'
+		
+		if not isinstance(translation_list, list):
+			return '{"success":false, "message":"Incorrect datatype. token-translations should be an array"}'		
+		for item in translation_list:
+			token = item['token']
+			translation = item['translation']
+			senses = item['senses']
+			if "" in senses:
+				senses.remove("")
+
+			if not (isinstance(token, str) and isinstance(translation, str) and isinstance(senses, list)):
+				return '{"success":false, "message":"Incorrect datatypes. Token and translation should be strings and senses, array of strings"}'
+
+			cursor.execute("select t.token, t.translation, t.senses from translations t left join \
+				translation_projects_look_up p on t.translation_id=p.translation_id where p.project_id=%s and \
+				token=%s",(projectId, token))
+			rst = cursor.fetchone()
+			if not rst:
+				senses = '|'.join(senses)
+				cursor.execute("insert into translations (token, translation, source_id, target_id, \
+					user_id, senses) values (%s, %s, %s, %s, %s, %s) returning translation_id", (token, translation, sourceId, targetLanguageId, \
+						userId, senses))
+				translationId = cursor.fetchone()[0]
+				cursor.execute("insert into translation_projects_look_up (translation_id, project_id) values \
+					(%s, %s)", (translationId, projectId))
+				cursor.execute("insert into translations_history (token, translation, source_id, target_id, \
+					user_id, senses) values (%s, %s, %s, %s, %s, %s)", (token, translation, sourceId, targetLanguageId, \
+						userId, senses))
+			else:
+				dbSenses = []
+				if rst[2] != "":
+						dbSenses = rst[2].split("|")
+				for sense in senses:
+					if sense not in dbSenses:
+						dbSenses.append(sense)
+				senses = "|".join(dbSenses)
+				cursor.execute("update translations set translation=%s, user_id=%s, senses=%s where source_id=%s and \
+						target_id=%s and token=%s",(translation, userId, senses, sourceId, targetLanguageId, token))
+				cursor.execute("insert into translations_history (token, translation, source_id, target_id, \
+						user_id, senses) values (%s, %s, %s, %s, %s, %s)", (token, translation, sourceId, targetLanguageId, \
+							userId, senses))
+		connection.commit()
+		cursor.close()
+		return '{"success":true, "message":"Translations have been added"}'
 	except Exception as ex:
 		print(ex)
 		return '{"success": false, "message":"Server side error"}'
@@ -2640,6 +2730,16 @@ def sortCommentariesByLanguage(languageObject,commentary):
 			"commentaries": [commentary]})
 	return languageObject
 
+def checkAuthorised(cursor,key):
+	'''Check if key authorized'''
+	authorised = False
+	if key and key.strip():
+		cursor.execute("select key from content_types where content_type='commentary'")
+		db_key = cursor.fetchone()
+		if db_key and db_key is not None and key == db_key[0]:
+			authorised = True
+	return authorised
+
 @app.route("/v1/commentaries", methods=["GET"])
 def getBibleCommentaries():
 	'''Fetch the list of commentaries with an option to filter by language .'''
@@ -2662,7 +2762,10 @@ def getBibleCommentaries():
 			cursor.execute(query)
 		rst = cursor.fetchall()
 		commentaries = []
+		authorised = checkAuthorised(cursor,request.args.get('key'))
 		for source_id, code, name,language_code,language,metadata in rst:	
+			if "Copyright" in metadata and metadata["Copyright"]=="True" and not authorised:
+				continue
 			commentaries.append({ 'sourceId':source_id,'code':code,'name':name,
 				'languageCode':language_code,'language':language,'metadata':metadata})
 		# Group and sort commentaries by langauge
@@ -2678,6 +2781,15 @@ def getCommentaryChapter(sourceId,bookCode,chapterId):
 	try:
 		connection = get_db()
 		cursor = connection.cursor()
+		cursor.execute("select metadata->'Copyright' from sources s inner join versions v \
+			on s.version_id=v.version_id where source_id=%s and content_id in(select content_id \
+				from content_types where content_type = 'commentary')", (sourceId,))
+		rst = cursor.fetchone()
+		if rst[0] and rst[0] =="True":
+			#If copyright commentary then check if authorised
+			authorised = checkAuthorised(cursor,request.args.get('key'))
+			if not authorised:
+				return '{"success":false, "message":"Not authorised"}'
 		bookCode=bookCode.lower()
 		#Get bible book id
 		cursor.execute("select book_id from bible_books_look_up where book_code=%s", (bookCode.lower(),))
