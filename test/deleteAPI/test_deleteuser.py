@@ -22,8 +22,8 @@ def get_adm_accessToken():
 
 @pytest.fixture
 def get_supAdmin_accessToken():
-	email = 'savitha.mark@bridgeconn.com'
-	password = '221189'
+	email = 'joelcjohnson123@gmail.com'
+	password = '111111'
 	url = "https://stagingapi.autographamt.com/v1/auth"
 	data = {'email':email,
 		'password':password}
@@ -47,6 +47,7 @@ def get_trans_accessToken():
 	return token
 
 
+@pytest.mark.skip(reason="need to change the values")
 @pytest.mark.parametrize('userEmail',[('ag21@yopmail.com')])
 def test_delete_user_1(supply_url,get_supAdmin_accessToken,userEmail):
 	url = supply_url + '/v1/autographamt/user/delete'

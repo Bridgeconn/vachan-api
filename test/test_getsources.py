@@ -53,9 +53,7 @@ def test_getsourcessup(supply_url,get_supAdmin_accessToken):
 	assert resp.status_code == 200, resp.text
 	assert isinstance(j,list), j
 	assert 'source' in j[0], j[0]
-	assert 'version' in j[0], j[0]
-	assert 'language' in j[0], j[0]
-	
+
 
 def test_getsourcestr(supply_url,get_trans_accessToken):
 	url = supply_url + '/v1/sources'
@@ -64,9 +62,7 @@ def test_getsourcestr(supply_url,get_trans_accessToken):
 	assert resp.status_code == 200, resp.text
 	assert isinstance(j,list), j
 	assert 'source' in j[0], j[0]
-	assert 'version' in j[0], j[0]
-	assert 'language' in j[0], j[0]
-	
+
 
 def test_getsourcesad(supply_url,get_adm_accessToken):
 	url = supply_url + '/v1/sources'
@@ -74,5 +70,3 @@ def test_getsourcesad(supply_url,get_adm_accessToken):
 	j = json.loads(resp.text)
 	assert isinstance(j,list), j
 	assert 'source' in j[0], j[0]
-	assert 'version' in j[0], j[0]
-	assert 'language' in j[0], j[0]

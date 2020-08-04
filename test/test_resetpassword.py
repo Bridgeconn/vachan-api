@@ -4,33 +4,36 @@ import json
 
 @pytest.fixture
 def url():
-	return "https://stagingapi.autographamt.com"
+	# POST API
+	return "https://stagingapi.autographamt.com/v1/resetpassword"
 
-def restpass(url,email):
-	url = url + "/v1/resetpassword" 
-	data = {'email':email}
-	resp = requests.post(url, data=data)
-	return resp
+data = [
+	("joelcjohnson123@gmail.com"),  # valid email id
+	("joelcjn@yopmail.com")           # invalid email id
+]
 
-def test_restpass_load():
-	url = "https://staging.autographamt.com/"
-	resp = requests.get(url)
-	assert resp.status_code == 200, resp.text
-
-@pytest.mark.parametrize("email",[('ag2@yopmail.com')])
-def test_restpass_success(url,email):
-	resp = restpass(url,email)
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, request.text
-	assert j['success'] == True,str(j['success'])
-	assert j['message'] == "Link to reset password has been sent to the registered mail ID",str(j['message'])
+# -------------------- Check page --------------------#
+def test_pageload():
+	resp = requests.get("https://staging.autographamt.com")
+	assert resp.status_code == 200
 
 
-@pytest.mark.parametrize("email",[('ag33@yopmail.com')])
-def test_restpass_fail(url,email):
-	resp = restpass(url,email)
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, request.text
-	assert j['success'] == False,str(j['success'])
-	assert j['message'] == "Email has not yet been registered",str(j['message'])
+# ----------------------- valid email id --------------------#
+@pytest.mark.parametrize("email", [data[0]])
+def test_valid_id(url, email):
+	resp = requests.post(url, {'email':email})
+	out = json.loads(resp.text)
+	assert resp.status_code == 200
+	assert out['success'] == True
+	assert out['message'] == 'Link to reset password has been sent to the registered mail ID'
+
+
+# ----------------------- invalid email id --------------------#
+@pytest.mark.parametrize("email", [data[1]])
+def test_invalid_id(url, email):
+	resp = requests.post(url, {'email':email})
+	out = json.loads(resp.text)
+	assert resp.status_code == 200
+	assert out['success'] == False
+	assert out['message'] == 'Email has not yet been registered'
 

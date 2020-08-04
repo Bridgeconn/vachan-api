@@ -50,6 +50,11 @@ host_api_url = os.environ.get("AGMT_HOST_API_URL", "localhost:8000")
 host_ui_url = os.environ.get("AGMT_HOST_UI_URL","autographamt.com")
 system_email = os.environ.get("MTV2_EMAIL_ID", "autographamt@gmail.com")
 
+
+print(postgres_database)
+print(postgres_password)
+print(sendinblue_key)
+
 def get_db():                                                                      #--------------To open database connection-------------------#
 	"""Opens a new database connection if there is none yet for the
 	current application context.
@@ -832,7 +837,7 @@ def getUserProjects():
 	else:
 		userId = userId[0]
 		cursor.execute("select p.project_id, p.project_name, o.organisation_name, a.books, \
-			p.source_id, p.target_id, v.version_code, v.version_description, p.status \
+			p.source_id, p.target_id, v.version_code, v.version_description, v.revision, p.status \
 				from autographamt_assignments a left join autographamt_projects p on \
 					a.project_id=p.project_id left join autographamt_organisations o on \
 						o.organisation_id=p.organisation_id left join sources s on \
@@ -849,10 +854,11 @@ def getUserProjects():
 				"targetId": targetId,
 				"version": {
 					"name": verName,
-					"code": verCode
+					"code": verCode,
+					"revision" : revision
 				},
 				"active":status
-			} for projectId, projectName, organisationName, books, sourceId, targetId, verCode, verName, status in rst
+			} for projectId, projectName, organisationName, books, sourceId, targetId, verCode, verName, revision, status in rst
 		]
 		if userProjects == []:
 			return '{"success":false, "message":"No projects assigned"}'

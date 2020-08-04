@@ -88,16 +88,3 @@ def test_getusers(supply_url,get_accessToken):
 	assert 'firstName' in j[0], j[0]
 
 ## POST method with access token
-
-@pytest.mark.parametrize('org_name, org_addr, org_phone, org_email',[('bcs2','Delhi','000','kavitharaju18@gmail.com')])
-def test_createOrg(supply_url,get_accessToken,org_name, org_addr, org_phone, org_email):
-	url = supply_url + '/v1/autographamt/organisations'
-	data = {'organisationName': org_name,
-			'organisationAddress': org_addr,
-			'organisationPhone': org_phone,
-			'organisationEmail': org_email}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_accessToken)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == True, str(j)
-	assert j['message'] == "Organisation request sent", str(j)

@@ -3,108 +3,45 @@ import requests
 import json
 
 @pytest.fixture
-def supply_url():
-	return "https://stagingapi.autographamt.com"
+def url():
+	# GET API
+	return "https://stagingapi.autographamt.com/v1/autographamt/users/projects"
 
 
-@pytest.fixture
-def get_adm_accessToken():
-	email = "alex@yopmail.com"
-	password = "1189"
-	url = "https://stagingapi.autographamt.com/v1/auth"
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	respobj = json.loads(resp.text)
-	token = respobj['accessToken']
+data = [
+	('joelcjohnson123@gmail.com', '111111'),   # user which has projects assigned
+	('none@gmail.com', 'none')                 # user which has empty projects
+]
 
-	return token
 
-@pytest.fixture
-def get_supAdmin_accessToken():
-	email = 'savitha.mark@bridgeconn.com'
-	password = '221189'
-	url = "https://stagingapi.autographamt.com/v1/auth"
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	respobj = json.loads(resp.text)
-	token = respobj['accessToken']
-
-	return token
-
-@pytest.fixture
-def get_adm_accessToken2():
-	email = "ag27@yopmail.com"
-	password = "1189"
-	url = "https://stagingapi.autographamt.com/v1/auth"
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	respobj = json.loads(resp.text)
-	token = respobj['accessToken']
-
+# ------------------------- get access token --------------------------- #
+def get_accesstoken(email, password):
+	auth_url = 'https://stagingapi.autographamt.com/v1/auth'
+	resp = requests.post(auth_url, {'email': email, 'password': password})
+	out = json.loads(resp.text)
+	token = out['accessToken']
 	return token
 
 
-@pytest.fixture
-def get_trans_accessToken():
-	email = 'ag2@yopmail.com'
-	password = '1189'
-	url = "https://stagingapi.autographamt.com/v1/auth"
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	respobj = json.loads(resp.text)
-	token = respobj['accessToken']
-	
-	return token
-
-def test_getUserProjectssup(supply_url,get_supAdmin_accessToken):
-	url = supply_url + '/v1/autographamt/users/projects'
-	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert isinstance(j,list), j
-	assert 'organisationName' in j[0], j[0]
-	assert 'sourceId' in j[0], j[0]
-	assert 'projectId' in j[0], j[0]
-	assert 'targetId'in j[0], j[0]
-	assert 'version' in j[0], j[0]
-	assert 'books' in j[0], j[0]
-	
-def test_getUserProjectsad2(supply_url,get_adm_accessToken2):
-	url = supply_url + '/v1/autographamt/users/projects'
-	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_adm_accessToken2)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == False, str(j)
-	assert j['message'] == "No projects assigned", str(j)
-	
-
-def test_getUserProjectad(supply_url,get_adm_accessToken):
-	url = supply_url + '/v1/autographamt/users/projects'
-	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_adm_accessToken)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert isinstance(j,list), j
-	assert 'organisationName' in j[0], j[0]
-	assert 'sourceId' in j[0], j[0]
-	assert 'projectId' in j[0], j[0]
-	assert 'targetId'in j[0], j[0]
-	assert 'version' in j[0], j[0]
-	assert 'books' in j[0], j[0]
+# ----------------- List user projects----------------#
+@pytest.mark.parametrize('data',[data])
+def test_organisationList_admin(url, data):
+	access_token = get_accesstoken(data[0][0], data[0][1])
+	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(access_token)})
+	out = json.loads(resp.text)
+	assert resp.status_code == 200
+	assert isinstance (out,list)
 
 
-def test_getUserProjecttr(supply_url,get_trans_accessToken):
-	url = supply_url + '/v1/autographamt/users/projects'
-	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_trans_accessToken)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert isinstance(j,list), j
-	assert 'version' in j[0], j[0]
-	assert 'sourceId' in j[0], j[0]
-	assert 'projectId' in j[0], j[0]
-	assert 'targetId'in j[0], j[0]
-	assert 'books' in j[0], j[0]
+
+# ----------------- if no projects available----------------#
+@pytest.mark.skip(reason="need to add the values")
+@pytest.mark.parametrize('data',[data])
+def test_organisationList_admin(url, data):
+	access_token = get_accesstoken(data[1][0], data[1][1])
+	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(access_token)})
+	out = json.loads(resp.text)
+	assert resp.status_code == 200
+	assert out['success'] == False
+	assert out['message'] == "No projects assigned"
 

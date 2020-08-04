@@ -5,11 +5,11 @@ import json
 @pytest.fixture
 def url():
 	# GET API
-	return "https://stagingapi.autographamt.com/v1/sources/projects/books/35/11"
+	return "https://stagingapi.autographamt.com/v1/autographamt/statistics/projects/59"
 
 
 data = [
-	('joelcjohnson123@gmail.com', '111111')    # super admin role
+	('joelcjohnson123@gmail.com', '111111'),     # super admin role
 ]
 
 
@@ -22,9 +22,9 @@ def get_accesstoken(email, password):
 	return token
 
 
-# ----------------- List available project books----------------#
+# ----------------- List projects statistics ----------------#
 @pytest.mark.parametrize('data',[data])
-def test_availablebooks(url, data):
+def test_listprojectstatistcs(url, data):
 	access_token = get_accesstoken(data[0][0], data[0][1])
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(access_token)})
 	out = json.loads(resp.text)

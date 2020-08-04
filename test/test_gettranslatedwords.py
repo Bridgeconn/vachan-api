@@ -59,7 +59,6 @@ def test_getTranslatedwordsad(supply_url,get_adm_accessToken):
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_adm_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
-	# assert isinstance(j,list), j
 	assert j['success'] == False, str(j)
 	assert j['message'] == "No Translation or sense available for this token", str(j)
 	
@@ -68,8 +67,6 @@ def test_getTranslatedwordstr(supply_url,get_trans_accessToken):
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_trans_accessToken)})
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
-	# assert isinstance(j,list), j
-	# print (j)
 
 def test_getTranslatedwordstr2(supply_url,get_trans_accessToken):
 	url = supply_url + '/v1/translations/30/18/कपडे'

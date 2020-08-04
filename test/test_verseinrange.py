@@ -8,19 +8,6 @@ def supply_url():
 	return "https://stagingapi.autographamt.com"
 
 
-# @pytest.fixture
-# def get_adm_accessToken():
-# 	email = "alex@yopmail.com"
-# 	password = "1189"
-# 	url = "https://stagingapi.autographamt.com/v1/auth"
-# 	data = {'email':email,
-# 			'password':password}
-# 	resp = requests.post(url, data=data)
-# 	respobj = json.loads(resp.text)
-# 	token = respobj['accessToken']
-
-# 	return token
-
 @pytest.fixture
 def get_supAdmin_accessToken():
 	email = 'savitha.mark@bridgeconn.com'
@@ -56,7 +43,7 @@ def test_verseinrangesup3(supply_url,get_supAdmin_accessToken):
     j = json.loads(resp.text)
     assert resp.status_code == 200, resp.text 
     assert j['success'] == False, str(j)
-    assert j['message'] == "Source File not available. Upload source", str(j)
+    assert j['message'] == "Source File not available. Create source", str(j)
 
 
 

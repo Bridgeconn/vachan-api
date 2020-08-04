@@ -12,9 +12,5 @@ def test_getTranslatedbookssup(supply_url):
 	j = json.loads(resp.text)
 	assert resp.status_code == 200, resp.text
 	assert isinstance(j,list), j
-	# assert j['success'] == True, str(j)
-	# assert j['message'] == "translated books available", str(j)
-	print (j)
 
-	
   
