@@ -837,7 +837,7 @@ def getUserProjects():
 	else:
 		userId = userId[0]
 		cursor.execute("select p.project_id, p.project_name, o.organisation_name, a.books, \
-			p.source_id, p.target_id, v.version_code, v.version_description, p.status \
+			p.source_id, p.target_id, v.version_code, v.version_description, v.revision, p.status \
 				from autographamt_assignments a left join autographamt_projects p on \
 					a.project_id=p.project_id left join autographamt_organisations o on \
 						o.organisation_id=p.organisation_id left join sources s on \
@@ -854,10 +854,11 @@ def getUserProjects():
 				"targetId": targetId,
 				"version": {
 					"name": verName,
-					"code": verCode
+					"code": verCode,
+					"revision" : revision
 				},
 				"active":status
-			} for projectId, projectName, organisationName, books, sourceId, targetId, verCode, verName, status in rst
+			} for projectId, projectName, organisationName, books, sourceId, targetId, verCode, verName, revision, status in rst
 		]
 		if userProjects == []:
 			return '{"success":false, "message":"No projects assigned"}'
