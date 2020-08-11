@@ -1112,16 +1112,16 @@ def getTokenTranslationList(projectId, book):
 				if item[2]:
 					senses = item[2].split('|')
 					while '' in senses: senses.remove('')
-				tokenList.append({"token":item[0], "translation": item[1], "senses": senses})
+				tokenList.append([item[0], item[1], senses])
 			else:
-				tokenList.append({"token":item[0], "translation": None, "senses": None})
+				tokenList.append([item[0], None, None])
 		if len(tokenList)==0:
 			try:
 				languageCode = source_table.split('_')[0]
 				version = '_'.join(source_table.split('_')[1:3])
 				phrases.tokenize(connection, languageCode.lower(), version.lower() , bookId)
 				cursor.execute(sql.SQL("select token from {} where book_id=%s").format(sql.Identifier(tablename)), (bookId,))
-				tokenList = [{"token":item[0], "translation": None, "senses": None} for item in cursor.fetchall()]
+				tokenList = [["token":item[0], None, None] for item in cursor.fetchall()]
 			except Exception as ex:
 				print(ex)
 				return json.dumps({"success":False, "message":"Phrases method error"})
