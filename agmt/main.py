@@ -50,11 +50,6 @@ host_api_url = os.environ.get("AGMT_HOST_API_URL", "localhost:8000")
 host_ui_url = os.environ.get("AGMT_HOST_UI_URL","autographamt.com")
 system_email = os.environ.get("MTV2_EMAIL_ID", "autographamt@gmail.com")
 
-
-print(postgres_database)
-print(postgres_password)
-print(sendinblue_key)
-
 def get_db():                                                                      #--------------To open database connection-------------------#
 	"""Opens a new database connection if there is none yet for the
 	current application context.
@@ -1059,7 +1054,7 @@ def getTokenLists(sourceId, book):
 	cursor = connection.cursor()
 	cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
 	rst = cursor.fetchone()
-	cursor.execute("select book_id from bible_books_look_up where book_code=%s", (book,))
+	cursor.execute("select book_id from bible_books_look_up where book_code=%s", (book.lower(),))
 	bookId = cursor.fetchone()[0]
 	tablename = rst[0] + '_tokens'
 	tablename_parts = tablename.split('_')
@@ -1081,6 +1076,63 @@ def getTokenLists(sourceId, book):
 	jsonOut = json.dumps(tokenList)
 	# print(jsonOut)
 	return jsonOut
+
+@app.route("/v1/tokentranslationlist/<projectId>/<book>", methods=["GET"])
+@check_token
+def getTokenTranslationList(projectId, book):
+	try:
+		connection = get_db()
+		cursor = connection.cursor()
+		projectId = int(projectId)
+
+		email = request.email
+		cursor.execute("select user_id from autographamt_users where email_id=%s", (email,))
+		userId = cursor.fetchone()[0]
+		cursor.execute("select books from autographamt_assignments where user_id=%s and \
+			project_id=%s", (userId, projectId))
+		assignments = cursor.fetchone()
+		if (not assignments) or (book.lower() not in assignments.split('|')):
+			return '{"success":false, "message":"UnAuthorized! You haven\'t been assigned this book/project"}'
+
+		cursor.execute("select s.table_name from sources as s join autographamt_projects as p \
+		on s.source_id = p.source_id where p.project_id=%s", (projectId,))
+		source_table = cursor.fetchone()[0]
+		tablename = source_table + '_tokens'
+
+		cursor.execute("select book_id from bible_books_look_up where book_code=%s", (book,))
+		bookId = cursor.fetchone()[0]
+		cursor.execute(sql.SQL("SELECT s.token, t.translation, t.senses, l.project_id FROM {} s \
+			LEFT JOIN translations t ON s.token = t.token \
+			LEFT JOIN translation_projects_look_up l ON t.translation_id = l.translation_id \
+			where s.book_id=%s;").format(sql.Identifier(tablename)), (bookId,))
+		tokenList = [ ]
+		for item in cursor.fetchall():
+			if item[3] == projectId:
+				senses = None
+				if item[2]:
+					senses = item[2].split('|')
+					while '' in senses: senses.remove('')
+				tokenList.append({"token":item[0], "translation": item[1], "senses": senses})
+			else:
+				tokenList.append({"token":item[0], "translation": None, "senses": None})
+		if len(tokenList)==0:
+			try:
+				languageCode = source_table.split('_')[0]
+				version = '_'.join(source_table.split('_')[1:3])
+				phrases.tokenize(connection, languageCode.lower(), version.lower() , bookId)
+				cursor.execute(sql.SQL("select token from {} where book_id=%s").format(sql.Identifier(tablename)), (bookId,))
+				tokenList = [{"token":item[0], "translation": None, "senses": None} for item in cursor.fetchall()]
+			except Exception as ex:
+				print(ex)
+				return json.dumps({"success":False, "message":"Phrases method error"})
+		if len(tokenList)==0:
+			return json.dumps({"success":False, "message": "No tokens available. Check if bible books are uploaded."})
+		cursor.close()
+		jsonOut = json.dumps(tokenList)
+		return jsonOut
+	except Exception as e:
+		print(e)
+		return json.dumps({"success":False, "message": "Server side error"})
 
 def getConcordanceList(db_data):
 	concordance = []
