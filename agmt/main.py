@@ -1133,7 +1133,10 @@ def getTokenTranslationList(projectId, book):
 		tablename = source_table + '_tokens'
 
 		cursor.execute("select book_id from bible_books_look_up where book_code=%s", (book,))
-		bookId = cursor.fetchone()[0]
+		bookId_rst = cursor.fetchone()
+		if not bookId_rst:
+			return '{"success":false, "message":"Invalid book code. The 3 letter code expected."}'
+		bookId = bookId_rst[0]
 		cursor.execute(sql.SQL("SELECT s.token, t.translation, t.senses, l.project_id FROM {} s \
 			LEFT JOIN translations t ON s.token = t.token \
 			LEFT JOIN translation_projects_look_up l ON t.translation_id = l.translation_id \
