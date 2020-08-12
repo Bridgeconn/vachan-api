@@ -772,16 +772,29 @@ def bulkUpdateProjectTokenTranslations():
 
 		if not isinstance(tokenTranslations, list):
 			return '{"success":false, "message":"Incorrect datatype. token-translations should be an array"}'
-
+		warning = ''
 		for item in tokenTranslations:
+			if (token not in item) or (translation not in item) or (senses not in item):
+				return '{"success":false, "message":"Mandatory values missing. Token, translation and senses should be present for all entiries. All expected to be strings(empty strings supported for senses)"}'
 			token = item['token']
 			translation = item['translation']
 			senses = item['senses']
-			# if "" in senses:
-			# 	senses.remove("")
-			splitSense = senses.split(',')
+
+			if token == None or token == '':
+				warning += "Skipping empty-token entry:"+str(token)+" "+str(translation)+" "+ str(senses)+". "
+				continue
+			if translation == None or translation == '':
+				translation = ''
+				warning += "Empty value added as translation for "+ token + ". "
+			if senses == None:
+				senses = ''
+
 			if not (isinstance(token, str) and isinstance(translation, str) and isinstance(senses, str)):
-				return '{"success":false, "message":"Incorrect datatypes. Token and translation should be strings and senses, array of strings"}'
+				return '{"success":false, "message":"Incorrect datatypes at token: '+str(token)+'. Token and translation should be strings and senses, a string of comma separated values"}'
+
+			splitSense = senses.split(',')
+			if "" in senses:
+				senses.remove("")
 
 			cursor.execute("select t.token, t.translation, t.senses from translations t left join \
 				translation_projects_look_up p on t.translation_id=p.translation_id where p.project_id=%s and \
@@ -813,7 +826,7 @@ def bulkUpdateProjectTokenTranslations():
 							userId, senses))
 		connection.commit()
 		cursor.close()
-		return '{"success":true, "message":"Translations have been added"}'
+		return '{"success":true, "message":"Translations have been added.'+warning+'"}'
 	except Exception as ex:
 		print(ex)
 		return '{"success": false, "message":"Server side error"}'
