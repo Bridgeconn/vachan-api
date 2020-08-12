@@ -1080,6 +1080,26 @@ def getTokenLists(sourceId, book):
 @app.route("/v1/tokentranslationlist/<projectId>/<book>", methods=["GET"])
 @check_token
 def getTokenTranslationList(projectId, book):
+	'''
+	This method is used to fetch all tokens in a selected book,
+	associated with a project. If a translation is added for it, in that project,
+	that will also be fetched.
+	AUTH: Only accessible to a user who has been assigned that book in that project.
+	INPUT: projectId and 3 letter bookCode(lower or upper cases accepted)
+	OUTPUT FORMAT:
+	[
+	 ['token', null, null],
+	 ['token', 'translation', null],
+	 ['token', 'translation', 'senses1'],
+	 ['token', 'translation', 'senses1,sense2'],
+	 ['token', 'translation', null],
+	 ['token', null, null],
+	 ...
+	]
+	This format of array of arrays and comma seperated string for senses was chosen due to
+	the requirement from UI side (the xlsx npm module)
+	'''
+
 	try:
 		connection = get_db()
 		cursor = connection.cursor()
@@ -1110,8 +1130,9 @@ def getTokenTranslationList(projectId, book):
 			if item[3] == projectId:
 				senses = None
 				if item[2]:
-					senses = item[2].split('|')
-					while '' in senses: senses.remove('')
+					senses = item[2].replace('|',',')
+					if senses[-1] == ',':
+						senses = senses[:-1]
 				tokenList.append([item[0], item[1], senses])
 			else:
 				tokenList.append([item[0], None, None])
@@ -1121,7 +1142,7 @@ def getTokenTranslationList(projectId, book):
 				version = '_'.join(source_table.split('_')[1:3])
 				phrases.tokenize(connection, languageCode.lower(), version.lower() , bookId)
 				cursor.execute(sql.SQL("select token from {} where book_id=%s").format(sql.Identifier(tablename)), (bookId,))
-				tokenList = [["token":item[0], None, None] for item in cursor.fetchall()]
+				tokenList = [[item[0], None, None] for item in cursor.fetchall()]
 			except Exception as ex:
 				print(ex)
 				return json.dumps({"success":False, "message":"Phrases method error"})
