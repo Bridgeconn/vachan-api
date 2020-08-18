@@ -794,8 +794,8 @@ def bulkUpdateProjectTokenTranslations():
 				return '{"success":false, "message":"Incorrect datatypes at token: '+str(token)+'. Token and translation should be strings and senses, a string of comma separated values"}'
 
 			splitSense = senses.split(',')
-			if "" in senses:
-				senses.remove("")
+			if "" in splitSense:
+				splitSense.remove("")
 
 			cursor.execute("select t.token, t.translation, t.senses from translations t left join \
 				translation_projects_look_up p on t.translation_id=p.translation_id where p.project_id=%s and \
