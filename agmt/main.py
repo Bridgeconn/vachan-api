@@ -785,7 +785,8 @@ def bulkUpdateProjectTokenTranslations():
 				continue
 			if translation == None or translation == '':
 				translation = ''
-				warning += "Empty value added as translation for "+ token + ". "
+				warning += "Skipping empty translation for "+ token + ". "
+				continue
 			if senses == None:
 				senses = ''
 
