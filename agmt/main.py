@@ -774,7 +774,7 @@ def bulkUpdateProjectTokenTranslations():
 			return '{"success":false, "message":"Incorrect datatype. token-translations should be an array"}'
 		warning = ''
 		for item in tokenTranslations:
-			if (token not in item) or (translation not in item) or (senses not in item):
+			if ("token" not in item) or ("translation" not in item) or ("senses" not in item):
 				return '{"success":false, "message":"Mandatory values missing. Token, translation and senses should be present for all entiries. All expected to be strings(empty strings supported for senses)"}'
 			token = item['token']
 			translation = item['translation']
