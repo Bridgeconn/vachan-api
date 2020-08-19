@@ -855,7 +855,7 @@ def bulkUpdateProjectTokenTranslations():
 				pass
 		connection.commit()
 		cursor.close()
-		return '{"success":true, "message":"Translations have been added.\\nEmpty token cell  '+str(empty_tokenName)+' \\nEmpty translation cell  '+str(empty_translation)+'\\nEmpty senses  '+str(empty_senses)+'"}'
+		return '{"success":true, "message":"Translations have been added.\\nEmpty token(s)  '+str(empty_tokenName)+' \\nEmpty translation(s)  '+str(empty_translation)+'\\nEmpty sense(s)  '+str(empty_senses)+'"}'
 	except Exception as ex:
 		print(ex)
 		return '{"success": false, "message":"Server side error"}'
