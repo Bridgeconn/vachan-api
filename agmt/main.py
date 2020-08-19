@@ -786,8 +786,9 @@ def bulkUpdateProjectTokenTranslations():
 				token = item['token']
 				translation = item['translation']
 				senses = item['senses']
-			
+				logging.warning('senses \'%s\'' % senses)
 				splitSense = senses.split(',')
+				logging.warning('splitSense \'%s\'' % splitSense)
 				if "" in splitSense:
 					splitSense.remove("")
 				cursor.execute("select t.token, t.translation, t.senses from translations t left join \
@@ -807,8 +808,10 @@ def bulkUpdateProjectTokenTranslations():
 							userId, senses))
 				else:
 					dbSenses = []
-					if rst[2] != "":
+					if rst[2] != None:
+							logging.warning('rst[2] \'%s\'' % rst[2])
 							dbSenses = rst[2].split("|")
+							logging.warning('dbSenses \'%s\'' % dbSenses)
 					for sense in splitSense:
 						if sense not in dbSenses:
 							dbSenses.append(sense)
@@ -858,6 +861,7 @@ def bulkUpdateProjectTokenTranslations():
 		return '{"success":true, "message":"Translations have been added.\\nEmpty token(s)  '+str(empty_tokenName)+' \\nEmpty translation(s)  '+str(empty_translation)+'\\nEmpty sense(s)  '+str(empty_senses)+'"}'
 	except Exception as ex:
 		print(ex)
+		logging.warning('bulktranslations exception \'%s\'' % ex)
 		return '{"success": false, "message":"Server side error"}'
 
 
