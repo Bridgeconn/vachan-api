@@ -762,7 +762,7 @@ def bulkUpdateProjectTokenTranslations():
 		targetLanguageCode = cursor.fetchone()
 		if not targetLanguageCode:
 			return '{"success":false, "message":"Target Language does not exist"}'
-			cursor.execute("select * from sources where source_id=%s", (sourceId,))
+		cursor.execute("select * from sources where source_id=%s", (sourceId,))
 		rst = cursor.fetchone()
 		if not rst:
 			return '{"success":false, "message":"Source does not exist"}'
