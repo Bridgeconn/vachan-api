@@ -42,10 +42,10 @@ sendinblue_key = os.environ.get("AGMT_SENDINBLUE_KEY")
 jwt_hs256_secret = os.environ.get("AGMT_HS256_SECRET", "x709myFlW5")
 postgres_host = os.environ.get("AGMT_POSTGRES_HOST", "localhost")
 postgres_port = os.environ.get("AGMT_POSTGRES_PORT", "5432")
-postgres_user = os.environ.get("AGMT_POSTGRES_USER", "uday") #uday
+postgres_user = os.environ.get("AGMT_POSTGRES_USER", "postgres") #uday
 
-postgres_password = os.environ.get("AGMT_POSTGRES_PASSWORD", "uday@123") # uday@123
-postgres_database = os.environ.get("AGMT_POSTGRES_DATABASE", "vachan") # vachan
+postgres_password = os.environ.get("AGMT_POSTGRES_PASSWORD", "secret") # uday@123
+postgres_database = os.environ.get("AGMT_POSTGRES_DATABASE", "postgres") # vachan
 host_api_url = os.environ.get("AGMT_HOST_API_URL", "localhost:8000")
 host_ui_url = os.environ.get("AGMT_HOST_UI_URL","autographamt.com")
 system_email = os.environ.get("MTV2_EMAIL_ID", "autographamt@gmail.com")
