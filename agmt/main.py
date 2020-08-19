@@ -55,8 +55,8 @@ def get_db():                                                                   
 	current application context.
 	"""
 	if not hasattr(g, 'db'):
-		g.db = psycopg2.connect(dbname=postgres_database, user=postgres_user)
-			# password=postgres_password,	host=postgres_host, port=postgres_port)
+		g.db = psycopg2.connect(dbname=postgres_database, user=postgres_user,
+			password=postgres_password,	host=postgres_host, port=postgres_port)
 	return g.db
 
 @app.teardown_appcontext                                              #-----------------Close database connection----------------#
