@@ -714,7 +714,7 @@ def updateProjectTokenTranslations():
 			if senses == rst[2] and translation == rst[1]:
 				return '{"success":false, "message":"No New change. This data has already been saved"}'
 			dbSenses = []
-			if rst[2] != "":
+			if rst[2] != None or rst[2] != "":
 				dbSenses = rst[2].split("|")
 			for sense in senses_list:
 				if sense not in dbSenses:
@@ -808,7 +808,7 @@ def bulkUpdateProjectTokenTranslations():
 							userId, senses))
 				else:
 					dbSenses = []
-					if rst[2] != None:
+					if rst[2] != None or rst[2] != "":
 							logging.warning('rst[2] \'%s\'' % rst[2])
 							dbSenses = rst[2].split("|")
 							logging.warning('dbSenses \'%s\'' % dbSenses)
