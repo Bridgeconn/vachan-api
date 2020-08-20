@@ -809,7 +809,7 @@ def bulkUpdateProjectTokenTranslations():
 							userId, senses))
 				else:
 					dbSenses = []
-					if rst[2] != None or rst[2] != "":
+					if rst[2] != None:
 							logging.warning('rst[2] \'%s\'' % rst[2])
 							dbSenses = rst[2].split("|")
 							logging.warning('dbSenses \'%s\'' % dbSenses)
