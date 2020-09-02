@@ -1185,7 +1185,7 @@ def getTokenTranslationList(projectId, book):
 					if senses[-1] == ',':
 						senses = senses[:-1]
 				tokenList.append([item[0], item[1], senses])
-			else:
+			elif item[3] == None:
 				tokenList.append([item[0], None, None])
 		if len(tokenList)==0:
 			try:
