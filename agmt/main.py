@@ -1159,7 +1159,7 @@ def getTokenTranslationList(projectId, book):
 		cursor.execute("select books from autographamt_assignments where user_id=%s and \
 			project_id=%s", (userId, projectId))
 		assignments = cursor.fetchone()
-		if (not assignments) or (book.lower() not in assignments.split('|')):
+		if (not assignments) or (book.lower() not in assignments[0].split('|')):
 			return '{"success":false, "message":"UnAuthorized! You haven\'t been assigned this book/project"}'
 
 		cursor.execute("select s.table_name from sources as s join autographamt_projects as p \
