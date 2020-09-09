@@ -1,0 +1,11 @@
+*/__pycache__
+*/*/__pycache__
+.env
+.cache
+*/*/*.log
+.git
+
+agmt/*.log
+*.log
+
+test/*
