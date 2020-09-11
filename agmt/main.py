@@ -3327,7 +3327,7 @@ def searchBible(sourceId):
 		traceback.print_exc()
 		return '{"success":false, "message":"%s"}' % (str(ex))
 
-@app.route("/v1/metadata", methods=["PUT"])
+@app.route("/v1/sources/metadata", methods=["PUT"])
 @check_token
 def addmetadata():
 	'''Append bible metadata for a source .'''
@@ -3345,7 +3345,7 @@ def addmetadata():
 		metadata = rst[0]
 		# append/overwrite new metadata to the existing and update in db
 		metadata.update(newMetadata)
-		cursor.execute("update sources set metadata=%s where source_id=%s",(json.dumps(metadata),sourceId))
+		cursor.execute(sql.SQL("update sources set metadata=%s where source_id=%s"),(json.dumps(metadata),int(sourceId)))
 		connection.commit()
 		cursor.close()
 		return '{"success":true, "message":"Metadata Updated"}'
