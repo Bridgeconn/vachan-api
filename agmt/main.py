@@ -3326,5 +3326,32 @@ def searchBible(sourceId):
 	except Exception as ex:
 		traceback.print_exc()
 		return '{"success":false, "message":"%s"}' % (str(ex))
+
+@app.route("/v1/sources/metadata", methods=["PUT"])
+@check_token
+def addmetadata():
+	'''Append bible metadata for a source .'''
+	try:
+		req = request.get_json(True)
+		sourceId = req["sourceId"]
+		newMetadata = req["metadata"]
+		connection = get_db()
+		cursor = connection.cursor()
+		# get metadata for given source_id
+		cursor.execute("select metadata from sources where source_id=%s",(sourceId,))
+		rst = cursor.fetchone()
+		if not rst:
+			return '{"success":false, "message":"Invalid SourceId"}'
+		metadata = rst[0]
+		# append/overwrite new metadata to the existing and update in db
+		metadata.update(newMetadata)
+		cursor.execute(sql.SQL("update sources set metadata=%s where source_id=%s"),(json.dumps(metadata),int(sourceId)))
+		connection.commit()
+		cursor.close()
+		return '{"success":true, "message":"Metadata Updated"}'
+	except Exception as ex:
+		traceback.print_exc()
+		return '{"success":false, "message":"%s"}' % (str(ex))
+
 ######################################################
 ######################################################
