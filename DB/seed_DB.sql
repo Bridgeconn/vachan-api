@@ -456,10 +456,10 @@ INSERT INTO content_types (content_type) VALUES('videos');
 INSERT INTO content_types (content_type, key) VALUES('commentary','key123');
 
 
-INSERT INTO roles(role_name) VALUES('AGMT TRANSLATOR');
-INSERT INTO roles(role_name) VALUES('AGMT ADMIN');
-INSERT INTO roles(role_name) VALUES('SUPER ADMIN');
-
+INSERT INTO roles(role_name) VALUES('m');
+INSERT INTO roles(role_name) VALUES('ad');
+INSERT INTO roles(role_name) VALUES('sa');
+    
 
 INSERT INTO bible_books_look_up(book_id, book_name, book_code) VALUES(1, 'genesis', 'gen');
 INSERT INTO bible_books_look_up(book_id, book_name, book_code) VALUES(2, 'exodus', 'exo');
