@@ -176,6 +176,8 @@ CREATE TABLE public.bcv_map (
     chapter integer,
     verse integer
 );
+ALTER TABLE ONLY public.bcv_map
+    ADD CONSTRAINT bcvmap_pkey PRIMARY KEY (ref_id);
 
 -- !!!!!!! Add seed data
 
