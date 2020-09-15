@@ -121,7 +121,7 @@ CREATE TABLE public.sources (
     content_id bigint NOT NULL,
     language_id bigint NOT NULL,
     created_at_date timestamp with time zone DEFAULT ('now'::text)::timestamp(2) with time zone,
-    status boolean,
+    status boolean DEFAULT true NOT NULL,
     version_id bigint,
     metadata jsonb
 );
@@ -281,7 +281,7 @@ CREATE TABLE public.autographamt_users (
     verification_code text NOT NULL,
     verified boolean DEFAULT false,
     role_id bigint DEFAULT 1,
-    status boolean
+    status boolean DEFAULT true NOT NULL
 );
 CREATE SEQUENCE public.autographamt_users_user_id_seq
     START WITH 1
@@ -312,7 +312,7 @@ CREATE TABLE public.autographamt_organisations (
     organisation_email text NOT NULL,
     verified boolean DEFAULT false,
     user_id bigint NOT NULL,
-    status boolean
+    status boolean DEFAULT true NOT NULL
 );
 CREATE SEQUENCE public.autographamt_organisations_organisation_id_seq
     START WITH 1
@@ -334,7 +334,7 @@ CREATE TABLE public.autographamt_projects (
     source_id bigint NOT NULL,
     target_id bigint NOT NULL,
     organisation_id bigint NOT NULL,
-    status boolean
+    status boolean DEFAULT true NOT NULL
 );
 CREATE SEQUENCE public.autographamt_projects_project_id_seq
     START WITH 1
