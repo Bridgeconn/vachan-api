@@ -299,6 +299,8 @@ ALTER TABLE ONLY public.autographamt_users
     ADD CONSTRAINT autographamt_users_pkey PRIMARY KEY (user_id);
 ALTER TABLE ONLY public.autographamt_users
     ADD CONSTRAINT autographamt_users_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(role_id);
+ALTER TABLE ONLY public.autographamt_users
+    ADD CONSTRAINT autographamt_users_email_id_key UNIQUE (email_id);
 
 -- !!!!! insert admin user into table as seed data
 
