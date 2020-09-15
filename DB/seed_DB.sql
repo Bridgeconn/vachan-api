@@ -165,7 +165,7 @@ CREATE SEQUENCE public.audio_bibles_id_seq
 ALTER SEQUENCE public.audio_bibles_id_seq OWNED BY public.audio_bibles.audio_bible_id;
 ALTER TABLE ONLY public.audio_bibles ALTER COLUMN audio_bible_id SET DEFAULT nextval('public.audio_bibles_id_seq'::regclass);
 ALTER TABLE ONLY public.audio_bibles
-    ADD CONSTRAINT audio_bibles_pkey PRIMARY KEY (id);
+    ADD CONSTRAINT audio_bibles_pkey PRIMARY KEY (audio_bible_id);
 ALTER TABLE ONLY public.audio_bibles
     ADD CONSTRAINT audio_bibles_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.sources(source_id);
 
