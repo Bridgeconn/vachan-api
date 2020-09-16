@@ -147,7 +147,7 @@ ALTER TABLE ONLY public.sources
 
 
 CREATE TABLE public.audio_bibles (
-    audio_bible_id bigint NOT NULL,
+    id bigint NOT NULL,
     source_id bigint NOT NULL,
     name text NOT NULL,
     url text NOT NULL,
@@ -162,8 +162,8 @@ CREATE SEQUENCE public.audio_bibles_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-ALTER SEQUENCE public.audio_bibles_id_seq OWNED BY public.audio_bibles.audio_bible_id;
-ALTER TABLE ONLY public.audio_bibles ALTER COLUMN audio_bible_id SET DEFAULT nextval('public.audio_bibles_id_seq'::regclass);
+ALTER SEQUENCE public.audio_bibles_id_seq OWNED BY public.audio_bibles.id;
+ALTER TABLE ONLY public.audio_bibles ALTER COLUMN id SET DEFAULT nextval('public.audio_bibles_id_seq'::regclass);
 ALTER TABLE ONLY public.audio_bibles
     ADD CONSTRAINT audio_bibles_pkey PRIMARY KEY (audio_bible_id);
 ALTER TABLE ONLY public.audio_bibles
@@ -192,7 +192,7 @@ ALTER TABLE ONLY public.bible_books_look_up
 
 
 CREATE TABLE public.bible_book_names (
-    bible_book_name_id integer NOT NULL,
+    id integer NOT NULL,
     short text,
     abbr text,
     long text NOT NULL,
@@ -208,8 +208,8 @@ CREATE SEQUENCE public.bible_book_names_id_seq
     NO MAXVALUE
     CACHE 1;
 
-ALTER SEQUENCE public.bible_book_names_id_seq OWNED BY public.bible_book_names.bible_book_name_id;
-ALTER TABLE ONLY public.bible_book_names ALTER COLUMN bible_book_name_id SET DEFAULT nextval('public.bible_book_names_id_seq'::regclass);
+ALTER SEQUENCE public.bible_book_names_id_seq OWNED BY public.bible_book_names.id;
+ALTER TABLE ONLY public.bible_book_names ALTER COLUMN id SET DEFAULT nextval('public.bible_book_names_id_seq'::regclass);
 ALTER TABLE ONLY public.bible_book_names
     ADD CONSTRAINT bible_book_names_pkey PRIMARY KEY (bible_book_name_id);
 ALTER TABLE ONLY public.bible_book_names
@@ -220,7 +220,7 @@ ALTER TABLE ONLY public.bible_book_names
 
 
 CREATE TABLE public.bible_videos (
-    bible_video_id integer NOT NULL,
+    id integer NOT NULL,
     books text NOT NULL,
     url text NOT NULL,
     title text NOT NULL,
@@ -236,8 +236,8 @@ CREATE SEQUENCE public.bible_videos_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-ALTER SEQUENCE public.bible_videos_id_seq OWNED BY public.bible_videos.bible_video_id;
-ALTER TABLE ONLY public.bible_videos ALTER COLUMN bible_video_id SET DEFAULT nextval('public.bible_videos_id_seq'::regclass);
+ALTER SEQUENCE public.bible_videos_id_seq OWNED BY public.bible_videos.id;
+ALTER TABLE ONLY public.bible_videos ALTER COLUMN id SET DEFAULT nextval('public.bible_videos_id_seq'::regclass);
 ALTER TABLE ONLY public.bible_videos
     ADD CONSTRAINT bible_videos_pkey PRIMARY KEY (bible_video_id);
 ALTER TABLE ONLY public.bible_videos
