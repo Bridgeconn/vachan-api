@@ -416,6 +416,14 @@ CREATE TABLE public.translations_history (
     updated_at timestamp with time zone DEFAULT ('now'::text)::timestamp(2) with time zone,
     user_id bigint NOT NULL
 );
+CREATE SEQUENCE public.translations_history_translation_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+ALTER SEQUENCE public.translations_history_translation_id_seq OWNED BY public.translations_history.translation_id;
+ALTER TABLE ONLY public.translations_history ALTER COLUMN translation_id SET DEFAULT nextval('public.translations_history_translation_id_seq'::regclass);
 ALTER TABLE ONLY public.translations_history
     ADD CONSTRAINT translations_history_pkey PRIMARY KEY (translation_id);
 ALTER TABLE ONLY public.translations_history
