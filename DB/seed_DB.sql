@@ -109,7 +109,7 @@ CREATE SEQUENCE public.audio_bibles_id_seq
 ALTER SEQUENCE public.audio_bibles_id_seq OWNED BY public.audio_bibles.id;
 ALTER TABLE ONLY public.audio_bibles ALTER COLUMN id SET DEFAULT nextval('public.audio_bibles_id_seq'::regclass);
 ALTER TABLE ONLY public.audio_bibles
-    ADD CONSTRAINT audio_bibles_pkey PRIMARY KEY (audio_bible_id);
+    ADD CONSTRAINT audio_bibles_pkey PRIMARY KEY (id);
 ALTER TABLE ONLY public.audio_bibles
     ADD CONSTRAINT audio_bibles_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.sources(source_id);
 
@@ -155,7 +155,7 @@ CREATE SEQUENCE public.bible_book_names_id_seq
 ALTER SEQUENCE public.bible_book_names_id_seq OWNED BY public.bible_book_names.id;
 ALTER TABLE ONLY public.bible_book_names ALTER COLUMN id SET DEFAULT nextval('public.bible_book_names_id_seq'::regclass);
 ALTER TABLE ONLY public.bible_book_names
-    ADD CONSTRAINT bible_book_names_pkey PRIMARY KEY (bible_book_name_id);
+    ADD CONSTRAINT bible_book_names_pkey PRIMARY KEY (id);
 ALTER TABLE ONLY public.bible_book_names
     ADD CONSTRAINT bible_book_names_book_id_fkey FOREIGN KEY (book_id) REFERENCES public.bible_books_look_up(book_id);
 ALTER TABLE ONLY public.bible_book_names
@@ -183,7 +183,7 @@ CREATE SEQUENCE public.bible_videos_id_seq
 ALTER SEQUENCE public.bible_videos_id_seq OWNED BY public.bible_videos.id;
 ALTER TABLE ONLY public.bible_videos ALTER COLUMN id SET DEFAULT nextval('public.bible_videos_id_seq'::regclass);
 ALTER TABLE ONLY public.bible_videos
-    ADD CONSTRAINT bible_videos_pkey PRIMARY KEY (bible_video_id);
+    ADD CONSTRAINT bible_videos_pkey PRIMARY KEY (id);
 ALTER TABLE ONLY public.bible_videos
     ADD CONSTRAINT bible_videos_language_id_fkey FOREIGN KEY (language_id) REFERENCES public.languages(language_id);
 
