@@ -2403,9 +2403,9 @@ def getBibles():
 	cursor = connection.cursor()
 	#use status param to filter by status, default only true
 	status = request.args.get('status')
-	query = "select s.source_id, v.revision, v.version_code, v.version_description,v.metadata, \
+	query = "select s.source_id, v.revision, v.version_code, v.version_description,s.metadata, \
 		l.language_id, l.language_name, l.language_code, local_script_name, script, script_direction, \
-			created_at_date, s.status, a.name, a.url, a.format, a.books from sources s left join \
+			created_at_date, s.status, a.name, a.url, a.format, a.books, a.status from sources s left join \
 				languages l on s.language_id=l.language_id left join versions v on s.version_id= \
 					v.version_id left join audio_bibles a on s.source_id=a.source_id where s.content_id=1 "
 	statusQuery = " and s.status=true"
@@ -2420,7 +2420,9 @@ def getBibles():
 	biblesList = []
 	language = request.args.get('language')
 	for s_id, ver, ver_code, ver_name, metadata, lang_id, lang_name, lang_code, loc_script_name, script, \
-		script_dir, updatedDate, status, audio_name, audio_url, audio_format, audio_books in cursor.fetchall():
+		script_dir, updatedDate, status, audio_name, audio_url, audio_format, audio_books, audio_status in cursor.fetchall():
+		if not audio_status:
+			audio_name = audio_url = audio_format = audio_books = None
 		biblesList.append(
 			biblePattern(
 				lang_name,
@@ -2844,6 +2846,85 @@ def getBibleVerseText2(sourceId, verseId):
 	except Exception as ex:
 		return '{"success":false, "message":"%s"}' %(str(ex))
 
+def getContentId(cursor,contentType):
+	'''Get content type id for given content type name'''
+	cursor.execute("select content_id from content_types where content_type=%s", (contentType,))
+	rst = cursor.fetchone()
+	if not rst:
+		#if content type not found, insert value into db
+		cursor.execute("insert into content_types(content_type) values(%s) returning content_id",(contentType,))
+		rst = cursor.fetchone()
+	return rst[0]
+
+def getVersionId(cursor,abbreviation,name,revision):
+	'''Get version id for given details'''
+	revision = abbreviation.lower() + '_' + str(revision)
+	cursor.execute("select version_id from versions where version_code=%s and version_description=%s \
+		and revision=%s",(abbreviation,name,revision))
+	rst = cursor.fetchone()
+	if not rst:
+		#if version does not exist insert into db
+		cursor.execute("insert into versions(version_code,version_description,revision) values(%s,%s,%s) returning version_id",
+				(abbreviation,name,revision,))
+		rst = cursor.fetchone()
+	return rst[0]
+
+def getLanguageId(cursor,language):
+	'''Get language id for given language code'''
+	cursor.execute("select language_id from languages where language_code=%s", (language,))
+	rst = cursor.fetchone()
+	return -1 if not rst else rst[0]
+
+@app.route("/v1/sources/commentary", methods=["POST"])
+@check_token
+def addCommentarySource():
+	'''Add a commentary source, put associated entries in source and versions'''
+	try:
+		req = request.get_json(True)
+		name = req["name"]
+		abbreviation = req["abbreviation"]
+		revision = req["revision"]
+		license = req["license"]
+		year = req["year"]
+		language  = req["language"]
+		commentary = req["commentary"]
+		connection = get_db()
+		cursor = connection.cursor()
+		tableName = "%s_%s_%s_commentary" %(language.lower(), abbreviation.lower(), str(revision).replace('.', '_'))
+		languageId = getLanguageId(cursor,language)
+		if languageId == -1:
+			cursor.close()
+			return '{"success": false, "message":"Language code not found"}'
+
+		#check if commentary exists and insert commentary only if it doesn't exist in the db
+		cursor.execute("select source_id from sources where table_name=%s",(tableName,))
+		rst = cursor.fetchone()
+		if not rst:
+			#create commentary table
+			createCommentary = createTableCommand(['commentary_id SERIAL PRIMARY KEY','book_id INT NOT NULL REFERENCES bible_books_look_up(book_id)', \
+				'chapter INT NOT NULL','verse TEXT NOT NULL', 'commentary TEXT','UNIQUE (book_id, chapter, verse)'], tableName)
+			cursor.execute(createCommentary)
+			contentId = getContentId(cursor,'commentary')
+			version_id = getVersionId(cursor,abbreviation,name,revision)
+			#insert commentary into sources
+			cursor.execute('insert into sources (table_name, year, license, content_id, language_id, version_id,status) values \
+				(%s, %s, %s, %s, %s, %s,true)', (tableName, year, license, contentId, languageId,version_id,))
+			#insert commentary data into table
+			commentaryData = []
+			for row in commentary:
+				commentaryData.append((row['bookId'],row['chapter'],row['verse'],row['commentary']))
+			execute_values(cursor,sql.SQL('insert into {} (book_id, chapter, verse, commentary) values %s').format(sql.Identifier(tableName)),
+				commentaryData)
+			connection.commit()
+			cursor.close()
+			return '{"success": true, "message":"Commentary added successfully"}'
+		else:
+			cursor.close()
+			return '{"success": false, "message":"Commentary already exists"}'
+	except Exception as ex:
+		print(ex)
+		return '{"success":false, "message":"Server side error"}'
+
 def sortCommentariesByLanguage(languageObject,commentary):
 	'''Sort the list of commentaries by language name.'''
 	for index,item in enumerate(languageObject):
@@ -2876,7 +2957,7 @@ def getBibleCommentaries():
 		connection = get_db()
 		cursor = connection.cursor()
 		query ="select s.source_id,v.version_code,v.version_description,l.language_code,language_name \
-			,metadata from versions v inner join sources s on v.version_id = s.version_id inner join \
+			,s.metadata from versions v inner join sources s on v.version_id = s.version_id inner join \
 				languages l on s.language_id=l.language_id where content_id in (select content_id from \
 					content_types where content_type = 'commentary') and s.status=true"
 		#use language code param to filter by language
@@ -2893,7 +2974,7 @@ def getBibleCommentaries():
 		commentaries = []
 		authorised = checkAuthorised(cursor,request.args.get('key'))
 		for source_id, code, name,language_code,language,metadata in rst:
-			if "Copyright" in metadata and metadata["Copyright"]=="True" and not authorised:
+			if metadata and "Copyright" in metadata and metadata["Copyright"]=="True" and not authorised:
 				continue
 			commentaries.append({ 'sourceId':source_id,'code':code,'name':name,
 				'languageCode':language_code,'language':language,'metadata':metadata})
@@ -2910,7 +2991,7 @@ def getCommentaryChapter(sourceId,bookCode,chapterId):
 	try:
 		connection = get_db()
 		cursor = connection.cursor()
-		cursor.execute("select metadata->'Copyright' from sources s inner join versions v \
+		cursor.execute("select s.metadata->'Copyright' from sources s inner join versions v \
 			on s.version_id=v.version_id where source_id=%s and content_id in(select content_id \
 				from content_types where content_type = 'commentary')", (sourceId,))
 		rst = cursor.fetchone()
@@ -2948,7 +3029,9 @@ def getCommentaryChapter(sourceId,bookCode,chapterId):
 		if chapterId == "1":
 			cursor.execute(sql.SQL("select commentary from {} where book_id=%s and chapter=0").\
 				format(sql.Identifier(table_name)),[book_id])
-			bookIntro = cursor.fetchall()[0][0]
+			bookIntro = cursor.fetchall()
+			if bookIntro:
+				bookIntro = bookIntro[0][0]
 		for row in commentary:
 			commentaries.append({"verse":row[0],"text":row[1]})
 		return json.dumps({ "sourceId":sourceId,"bookCode":bookCode,"chapter":chapterId,\
@@ -2957,6 +3040,57 @@ def getCommentaryChapter(sourceId,bookCode,chapterId):
 		traceback.print_exc()
 		return '{"success":false, "message":"%s"}' %(str(ex))
 
+@app.route("/v1/sources/dictionary", methods=["POST"])
+@check_token
+def addDictionarySource():
+	'''Add a dictionary source, put associated entries in source and versions'''
+	try:
+		req = request.get_json(True)
+		name = req["name"]
+		abbreviation = req["abbreviation"]
+		revision = req["revision"]
+		license = req["license"]
+		year = req["year"]
+		language  = req["language"]
+		dictionary = req["dictionary"]
+		connection = get_db()
+		cursor = connection.cursor()
+		tableName = "%s_%s_%s_dictionary" %(language.lower(), abbreviation.lower(), str(revision).replace('.', '_'))
+		languageId = getLanguageId(cursor,language)
+		if languageId == -1:
+			cursor.close()
+			return '{"success": false, "message":"Language code not found"}'
+
+		#check if dictionary exists and insert dictionary only if it doesn't exist in the db
+		cursor.execute("select source_id from sources where table_name=%s",(tableName,))
+		rst = cursor.fetchone()
+		if not rst:
+			#create dictionary table
+			createDictionary = createTableCommand(['id SERIAL PRIMARY KEY','keyword varchar(50)','wordforms text','strongs text', \
+				'definition text','translationhelp text','seealso text','ref text','examples text'], tableName)
+			cursor.execute(createDictionary)
+			contentId = getContentId(cursor,'translation_words')
+			version_id = getVersionId(cursor,abbreviation,name,revision)
+			#insert dictionary into sources
+			cursor.execute('insert into sources (table_name, year, license, content_id, language_id, version_id,status) values \
+				(%s, %s, %s, %s, %s, %s,true)', (tableName, year, license, contentId, languageId,version_id,))
+			#insert dictionary data into table
+			dictionaryData = []
+			for row in dictionary:
+				dictionaryData.append((row['keyword'], row['wordForms'], row['strongs'], row['definition'], row['translationHelp'], 
+					row['seeAlso'], row['ref'], row['examples']))
+			execute_values(cursor,sql.SQL('insert into {} (keyword, wordforms, strongs, definition, translationhelp, seealso, \
+				ref, examples) values %s').format(sql.Identifier(tableName)),dictionaryData)
+			connection.commit()
+			cursor.close()
+			return '{"success": true, "message":"Dictionary added successfully"}'
+		else:
+			cursor.close()
+			return '{"success": false, "message":"Dictionary already exists"}'
+	except Exception as ex:
+		print(ex)
+		return '{"success":false, "message":"Server side error"}'
+		
 def sortDictionaryByLanguage(languageObject,dictionary):
 	'''Sort the list of dictionaries by language name.'''
 	for index,item in enumerate(languageObject):
@@ -2979,7 +3113,7 @@ def getDictionaries():
 		connection = get_db()
 		cursor = connection.cursor()
 		query ="select s.source_id,v.version_code,v.version_description,l.language_code,language_name \
-			,metadata from versions v inner join sources s on v.version_id = s.version_id inner join \
+			,s.metadata from versions v inner join sources s on v.version_id = s.version_id inner join \
 				languages l on s.language_id=l.language_id where content_id in (select content_id from \
 					content_types where content_type = 'translation_words') "
 		#use language code param to filter by language
@@ -3079,6 +3213,59 @@ def getDictionaryWord(sourceId,wordId):
 		traceback.print_exc()
 		return '{"success":false, "message":"%s"}' %(str(ex))
 
+@app.route("/v1/sources/infographic", methods=["POST"])
+@check_token
+def addInfographicSource():
+	'''Add a infographic source, put associated entries in source and versions'''
+	try:
+		req = request.get_json(True)
+		name = req["name"]
+		abbreviation = req["abbreviation"]
+		revision = req["revision"]
+		license = req["license"]
+		year = req["year"]
+		language  = req["language"]
+		url = req["url"]
+		infographics = req["infographics"]
+		connection = get_db()
+		cursor = connection.cursor()
+		tableName = "%s_infographic" %(language.lower())
+		languageId = getLanguageId(cursor,language)
+		if languageId == -1:
+			cursor.close()
+			return '{"success": false, "message":"Language code not found"}'
+
+		#check if table exists and insert infographics only if it doesn't exist in the db
+		cursor.execute("select source_id from sources where table_name=%s",(tableName,))
+		rst = cursor.fetchone()
+		if not rst:
+			#create infographic table
+			createInfographic = createTableCommand(['infographic_id SERIAL PRIMARY KEY', 'book_id INT NOT NULL REFERENCES \
+				bible_books_look_up(book_id)', 'title text NOT NULL', 'file_name text NOT NULL', \
+					'UNIQUE (book_id, file_name)'], tableName)
+			cursor.execute(createInfographic)
+			contentId = getContentId(cursor,'infographics')
+			version_id = getVersionId(cursor,abbreviation,name,revision)
+			metadata = str(json.dumps({"url":url}))
+			#insert infographic into sources
+			cursor.execute('insert into sources (table_name, year, license, content_id, language_id, version_id,metadata,status) \
+				values (%s, %s, %s, %s, %s, %s, %s,true)', (tableName, year, license, contentId, languageId,version_id,metadata))
+			#insert infographic data into table
+			infographicData = []
+			for row in infographics:
+				infographicData.append((row['bookId'], row['title'], row['fileName']))
+			execute_values(cursor,sql.SQL('insert into {} (book_id, title, file_name) values %s').
+				format(sql.Identifier(tableName)),infographicData)
+			connection.commit()
+			cursor.close()
+			return '{"success": true, "message":"Infographics added successfully"}'
+		else:
+			cursor.close()
+			return '{"success": false, "message":"Infographics already exists"}'
+	except Exception as ex:
+		print(ex)
+		return '{"success":false, "message":"Server side error"}'
+	
 def sortInfographicsByBook(infographics, image):
 	'''Sort the infographics by book.'''
 	for index, item in enumerate(infographics):
@@ -3106,7 +3293,7 @@ def getInfographics(languageCode):
 		language_id = cursor.fetchone()
 		if not language_id or language_id is None:
 			return '{"success":false, "message":"Invalid language code"}'
-		cursor.execute("select table_name,metadata from sources s inner join versions v on \
+		cursor.execute("select table_name,s.metadata from sources s inner join versions v on \
 			s.version_id=v.version_id where content_id in (select content_id from content_types \
 				where content_type='infographics') and language_id in (%s) and status=TRUE;",
 					   (language_id[0],))
@@ -3133,7 +3320,41 @@ def getInfographics(languageCode):
 		traceback.print_exc()
 		return '{"success":false, "message":"%s"}' % (str(ex))
 
-
+@app.route("/v1/sources/audiobible", methods=["POST"])
+@check_token
+def addAudioBible():
+	'''Add a audio bible.'''
+	try:
+		req = request.get_json(True)
+		sourceId = req["sourceId"]
+		name = req["name"]
+		url = req["url"]
+		books = req["books"]
+		format = req["format"]
+		connection = get_db()
+		cursor = connection.cursor()
+		#Check if valid sourceId
+		cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
+		rst = cursor.fetchone()
+		if not rst:
+			return '{"success":false, "message":"Invalid sourceId"}'
+		#Check if audio bible exists
+		cursor.execute("select id from audio_bibles where name=%s",(name,))
+		rst = cursor.fetchone()
+		if not rst:
+			#Insert row in table
+			cursor.execute('insert into audio_bibles (source_id, name, url, books, format, status) values \
+				(%s, %s, %s, %s, %s,true)', (sourceId, name, url, json.dumps(books), format,))
+			connection.commit()
+			cursor.close()
+			return '{"success": true, "message":"Audio bible added successfully"}'
+		else:
+			cursor.close()
+			return '{"success": false, "message":"Audio bible already exists"}'
+	except Exception as ex:
+		print(ex)
+		return '{"success":false, "message":"Server side error"}'
+	
 def sortAudioBibles(languageObject,audioBible):
 	'''Sort the list of audio bible's by language format by language object.'''
 	for index,item in enumerate(languageObject):
@@ -3178,6 +3399,42 @@ def getAudioBibles():
 	except Exception as ex:
 		traceback.print_exc()
 		return '{"success":false, "message":"%s"}' % (str(ex))
+
+@app.route("/v1/sources/video", methods=["POST"])
+@check_token
+def addBibleVideos():
+	'''Add videos for given language.'''
+	try:
+		req = request.get_json(True)
+		language = req["language"]
+		videos = req["videos"]
+		connection = get_db()
+		cursor = connection.cursor()
+		languageId = getLanguageId(cursor,language)
+		if languageId == -1:
+			cursor.close()
+			return '{"success": false, "message":"Language code not found"}'
+		cursor.execute("select url from bible_videos")
+		rst=cursor.fetchall()
+		urls = [v [0] for v in rst]
+		added = 0
+		videoData = []
+		skipped =[]
+		for video in videos:
+			#Insert video in table if url not present
+			if video['url'] not in urls:
+				videoData.append((languageId, video['url'], video['books'], video['description'], video['theme'], video['title'],True))
+				added+=1
+			else:
+				skipped.append(video['url'])
+		execute_values(cursor,sql.SQL('insert into bible_videos (language_id,url,books,description,theme,title, status) values %s'),
+			videoData)
+		connection.commit()
+		cursor.close()
+		return json.dumps({"success": True, "message":" Videos added: "+str(added),"Duplicate urls skipped":skipped})
+	except Exception as ex:
+		print(ex)
+		return '{"success":false, "message":"Server side error"}'
 
 def sortVideosByLanguage(languageObject,video):
 	'''Sort the list of video's by language object.'''
