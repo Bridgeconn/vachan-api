@@ -137,9 +137,9 @@ ALTER TABLE ONLY public.bible_books_look_up
 
 CREATE TABLE public.bible_book_names (
     id integer NOT NULL,
-    short text,
+    short text NOT NULL,
     abbr text,
-    long text NOT NULL,
+    long text,
     book_id bigint NOT NULL,
     language_id bigint NOT NULL
 );
