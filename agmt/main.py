@@ -1159,7 +1159,7 @@ def getTokenTranslationList(projectId, book):
 		cursor.execute("select books from autographamt_assignments where user_id=%s and \
 			project_id=%s", (userId, projectId))
 		assignments = cursor.fetchone()
-		if (not assignments) or (book.lower() not in assignments.split('|')):
+		if (not assignments) or (book.lower() not in assignments[0].split('|')):
 			return '{"success":false, "message":"UnAuthorized! You haven\'t been assigned this book/project"}'
 
 		cursor.execute("select s.table_name from sources as s join autographamt_projects as p \
@@ -1185,7 +1185,7 @@ def getTokenTranslationList(projectId, book):
 					if senses[-1] == ',':
 						senses = senses[:-1]
 				tokenList.append([item[0], item[1], senses])
-			else:
+			elif item[3] == None:
 				tokenList.append([item[0], None, None])
 		if len(tokenList)==0:
 			try:
@@ -3583,5 +3583,32 @@ def searchBible(sourceId):
 	except Exception as ex:
 		traceback.print_exc()
 		return '{"success":false, "message":"%s"}' % (str(ex))
+
+@app.route("/v1/sources/metadata", methods=["PUT"])
+@check_token
+def addmetadata():
+	'''Append bible metadata for a source .'''
+	try:
+		req = request.get_json(True)
+		sourceId = req["sourceId"]
+		newMetadata = req["metadata"]
+		connection = get_db()
+		cursor = connection.cursor()
+		# get metadata for given source_id
+		cursor.execute("select metadata from sources where source_id=%s",(sourceId,))
+		rst = cursor.fetchone()
+		if not rst:
+			return '{"success":false, "message":"Invalid SourceId"}'
+		metadata = rst[0]
+		# append/overwrite new metadata to the existing and update in db
+		metadata.update(newMetadata)
+		cursor.execute(sql.SQL("update sources set metadata=%s where source_id=%s"),(json.dumps(metadata),int(sourceId)))
+		connection.commit()
+		cursor.close()
+		return '{"success":true, "message":"Metadata Updated"}'
+	except Exception as ex:
+		traceback.print_exc()
+		return '{"success":false, "message":"%s"}' % (str(ex))
+
 ######################################################
 ######################################################
