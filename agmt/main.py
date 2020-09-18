@@ -2873,7 +2873,7 @@ def getLanguageId(cursor,language):
 	'''Get language id for given language code'''
 	cursor.execute("select language_id from languages where language_code=%s", (language,))
 	rst = cursor.fetchone()
-	return -1 if not rst else rst[0]
+	return None if not rst else rst[0]
 
 @app.route("/v1/sources/commentary", methods=["POST"])
 @check_token
@@ -2882,17 +2882,21 @@ def addCommentarySource():
 	try:
 		req = request.get_json(True)
 		name = req["name"]
-		abbreviation = req["abbreviation"]
-		revision = req["revision"]
+		abbreviation = req["abbreviation"].strip()
+		revision = req["revision"].strip()
 		license = req["license"]
 		year = req["year"]
 		language  = req["language"]
 		commentary = req["commentary"]
+		if " " in abbreviation:
+			return '{"success": false, "message":"Commentary abbreviation must not contain any spaces"}'
+		if " " in revision:
+			return '{"success": false, "message":"Commentary revision must not contain any spaces"}'
 		connection = get_db()
 		cursor = connection.cursor()
 		tableName = "%s_%s_%s_commentary" %(language.lower(), abbreviation.lower(), str(revision).replace('.', '_'))
 		languageId = getLanguageId(cursor,language)
-		if languageId == -1:
+		if languageId is None:
 			cursor.close()
 			return '{"success": false, "message":"Language code not found"}'
 
@@ -2991,10 +2995,11 @@ def getCommentaryChapter(sourceId,bookCode,chapterId):
 	try:
 		connection = get_db()
 		cursor = connection.cursor()
-		cursor.execute("select s.metadata->'Copyright' from sources s inner join versions v \
-			on s.version_id=v.version_id where source_id=%s and content_id in(select content_id \
-				from content_types where content_type = 'commentary')", (sourceId,))
+		cursor.execute("select s.metadata->'Copyright' from sources s where source_id=%s and content_id \
+			in(select content_id from content_types where content_type = 'commentary')", (sourceId,))
 		rst = cursor.fetchone()
+		if not rst:
+			return '{"success":false, "message":"Invalid commentary sourceId"}'
 		if rst[0] and rst[0] =="True":
 			#If copyright commentary then check if authorised
 			authorised = checkAuthorised(cursor,request.args.get('key'))
@@ -3016,8 +3021,6 @@ def getCommentaryChapter(sourceId,bookCode,chapterId):
 		cursor.execute("select table_name from sources where source_id=%s and content_id in(select \
 			content_id from content_types where content_type = 'commentary')", (sourceId,))
 		rst = cursor.fetchone()
-		if not rst:
-			return '{"success":false, "message":"Invalid commentary sourceId"}'
 		table_name=rst[0]
 		#Get commentary
 		cursor.execute(sql.SQL("select verse,commentary from {} where book_id=%s and chapter=%s \
@@ -3047,17 +3050,21 @@ def addDictionarySource():
 	try:
 		req = request.get_json(True)
 		name = req["name"]
-		abbreviation = req["abbreviation"]
-		revision = req["revision"]
+		abbreviation = req["abbreviation"].strip()
+		revision = req["revision"].strip()
 		license = req["license"]
 		year = req["year"]
 		language  = req["language"]
 		dictionary = req["dictionary"]
+		if " " in abbreviation:
+			return '{"success": false, "message":"Dictionary abbreviation must not contain any spaces"}'
+		if " " in revision:
+			return '{"success": false, "message":"Dictionary revision must not contain any spaces"}'
 		connection = get_db()
 		cursor = connection.cursor()
 		tableName = "%s_%s_%s_dictionary" %(language.lower(), abbreviation.lower(), str(revision).replace('.', '_'))
 		languageId = getLanguageId(cursor,language)
-		if languageId == -1:
+		if languageId is None:
 			cursor.close()
 			return '{"success": false, "message":"Language code not found"}'
 
@@ -3231,7 +3238,7 @@ def addInfographicSource():
 		cursor = connection.cursor()
 		tableName = "%s_infographic" %(language.lower())
 		languageId = getLanguageId(cursor,language)
-		if languageId == -1:
+		if languageId is None:
 			cursor.close()
 			return '{"success": false, "message":"Language code not found"}'
 
@@ -3293,10 +3300,9 @@ def getInfographics(languageCode):
 		language_id = cursor.fetchone()
 		if not language_id or language_id is None:
 			return '{"success":false, "message":"Invalid language code"}'
-		cursor.execute("select table_name,s.metadata from sources s inner join versions v on \
-			s.version_id=v.version_id where content_id in (select content_id from content_types \
-				where content_type='infographics') and language_id in (%s) and status=TRUE;",
-					   (language_id[0],))
+		cursor.execute("select table_name,s.metadata from sources s where content_id in (select content_id \
+			from content_types where content_type='infographics') and language_id in (%s) and status=TRUE;",
+				(language_id[0],))
 		rst = cursor.fetchone()
 		if not rst:
 			return '{"success":false, "message":"No infographics available for this language"}'
@@ -3334,10 +3340,11 @@ def addAudioBible():
 		connection = get_db()
 		cursor = connection.cursor()
 		#Check if valid sourceId
-		cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
+		cursor.execute("select table_name from sources where source_id=%s and content_id in (select \
+			content_id from content_types where content_type = 'bible')", (sourceId,))
 		rst = cursor.fetchone()
 		if not rst:
-			return '{"success":false, "message":"Invalid sourceId"}'
+			return '{"success":false, "message":"Invalid bible sourceId"}'
 		#Check if audio bible exists
 		cursor.execute("select id from audio_bibles where name=%s",(name,))
 		rst = cursor.fetchone()
@@ -3411,7 +3418,7 @@ def addBibleVideos():
 		connection = get_db()
 		cursor = connection.cursor()
 		languageId = getLanguageId(cursor,language)
-		if languageId == -1:
+		if languageId is None:
 			cursor.close()
 			return '{"success": false, "message":"Language code not found"}'
 		cursor.execute("select url from bible_videos")
