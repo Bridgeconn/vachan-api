@@ -2880,6 +2880,9 @@ def getLanguageId(cursor,language):
 def addCommentarySource():
 	'''Add a commentary source, put associated entries in source and versions'''
 	try:
+		role = checkAuth()
+		if role != 3:
+			return '{"success":false, "message":"UnAuthorized"}'
 		req = request.get_json(True)
 		name = req["name"]
 		abbreviation = req["abbreviation"].strip()
@@ -3048,6 +3051,9 @@ def getCommentaryChapter(sourceId,bookCode,chapterId):
 def addDictionarySource():
 	'''Add a dictionary source, put associated entries in source and versions'''
 	try:
+		role = checkAuth()
+		if role != 3:
+			return '{"success":false, "message":"UnAuthorized"}'
 		req = request.get_json(True)
 		name = req["name"]
 		abbreviation = req["abbreviation"].strip()
@@ -3225,6 +3231,9 @@ def getDictionaryWord(sourceId,wordId):
 def addInfographicSource():
 	'''Add a infographic source, put associated entries in source and versions'''
 	try:
+		role = checkAuth()
+		if role != 3:
+			return '{"success":false, "message":"UnAuthorized"}'
 		req = request.get_json(True)
 		name = req["name"]
 		abbreviation = req["abbreviation"]
@@ -3331,6 +3340,9 @@ def getInfographics(languageCode):
 def addAudioBible():
 	'''Add a audio bible.'''
 	try:
+		role = checkAuth()
+		if role != 3:
+			return '{"success":false, "message":"UnAuthorized"}'
 		req = request.get_json(True)
 		sourceId = req["sourceId"]
 		name = req["name"]
@@ -3412,6 +3424,9 @@ def getAudioBibles():
 def addBibleVideos():
 	'''Add videos for given language.'''
 	try:
+		role = checkAuth()
+		if role != 3:
+			return '{"success":false, "message":"UnAuthorized"}'
 		req = request.get_json(True)
 		language = req["language"]
 		videos = req["videos"]
@@ -3596,6 +3611,9 @@ def searchBible(sourceId):
 def addmetadata():
 	'''Append bible metadata for a source .'''
 	try:
+		role = checkAuth()
+		if role != 3:
+			return '{"success":false, "message":"UnAuthorized"}'
 		req = request.get_json(True)
 		sourceId = req["sourceId"]
 		newMetadata = req["metadata"]
@@ -3606,7 +3624,7 @@ def addmetadata():
 		rst = cursor.fetchone()
 		if not rst:
 			return '{"success":false, "message":"Invalid SourceId"}'
-		metadata = rst[0]
+		metadata = rst[0] or {}
 		# append/overwrite new metadata to the existing and update in db
 		metadata.update(newMetadata)
 		cursor.execute(sql.SQL("update sources set metadata=%s where source_id=%s"),(json.dumps(metadata),int(sourceId)))
