@@ -3634,6 +3634,58 @@ def addmetadata():
 	except Exception as ex:
 		traceback.print_exc()
 		return '{"success":false, "message":"%s"}' % (str(ex))
+	
+@app.route("/v1/biblebooknames", methods=["POST"])
+@check_token
+def addbiblebooknames():
+    '''Add bible book names for a local language'''
+    try:
+        role = checkAuth()
+        if role != 3:
+            return '{"success":false, "message":"UnAuthorized"}'
+        req = request.get_json(True)
+        language = req["language"]
+        bibleBookNames = req["bibleBookNames"]
+        connection = get_db()
+        cursor = connection.cursor()
+        cursor.execute("select language_id from languages where language_code=%s", (language,))
+        rst = cursor.fetchone()
+        if not rst:
+            cursor.close()
+            return '{"success":false, "message":"Language code not found"}'
+        languageId = rst[0]
+        cursor.execute("select book_id from bible_book_names where language_id=%s",(languageId,))
+        rst = cursor.fetchall()
+        bookIds = [b[0] for b in rst]
+        cursor.execute("select book_id,book_code from bible_books_look_up")
+        rst = cursor.fetchall()
+        bookMap = {row[1]:row[0] for row in rst}
+        bookData = []
+        added = []
+        skipped = []
+        for bibleBookName in bibleBookNames:
+            bookCode = bibleBookName['bookCode']
+            if bookCode not in bookMap:
+                skipped.append(bookCode)
+                continue
+            bookId = bookMap[bookCode]
+            if bookId in added:
+                skipped.append(bookCode)
+                continue
+            if bookId not in bookIds:
+                bookData.append((languageId,bookId,bibleBookName['abbr'],bibleBookName['short'],bibleBookName['long']))
+                added.append(bookId)
+            else:
+                skipped.append(bookCode)
+        execute_values(cursor,sql.SQL('insert into bible_book_names (language_id,book_id,abbr,short,long) values %s'),
+            bookData)
+        connection.commit()
+        cursor.close()
+        return json.dumps({"success": True, "Books added" :len(added),"Existing books skipped":skipped})
+    except Exception as ex:
+        print(ex)
+        return '{"success":false, "message":"Server side error"}'
+        cursor.close()
 
 ######################################################
 ######################################################
