@@ -1,7 +1,7 @@
 # API Refactoring
 ## API Endpoint Design for vachan-api Version 2
 
-## Main Principles followed 
+### Main Principles followed 
 * Uniformity
 	> Attempted to bring uniformity in how each resource is 
 	> * stored in Database
@@ -30,4 +30,36 @@
 	> * defining and specifying all inputs and output format for every API 
 	> Following these practices, we will have good quality API documentaion which will become very useful for our API clients, especially if we expect external clients
 
+### How to setup and run the V2 app
 
+##### Setting up 
+1. Pull the `V2-API-Planning` branch from https://github.com/kavitharaju/vachan-api
+
+* `git pull https://github.com/kavitharaju/vachan-api V2-API-Planning`
+
+* `cd vachan-api`
+
+2. Set up a virtual environment using the requirements.txt file
+
+* `python3 -m venv vachan-ENV`
+
+* `source vachan-ENV/bon/activate`
+
+* `pip install -r requirements.txt`
+
+##### Run App
+From witth in virtual environment,
+1. `cd agmt`
+2. `uvicorn vachan_api_serverV2:app`
+If all goes well, you will get a message like this in terminal
+```
+INFO:     Started server process [17599]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+```
+
+##### Access API docs
+Once the app is running, from your browser access http://127.0.0.1:8000/docs for swagger documentation.
+
+Redoc documentaion is also available at http://127.0.0.1:8000/redoc
