@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Query, Path, Body, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, constr
+from pydantic import BaseModel, constr, AnyUrl
 from typing import Optional, List
 from enum import Enum
 import logging, csv, urllib, os
@@ -53,6 +53,8 @@ def add_contents(content_name: str  = Body(...)):
 	try:
 		pass
 	except Exception as e:
+		raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
+	except Exception as e:
 		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
 	return {'message': "Content type %s created successfully."%content_name }
 
@@ -102,6 +104,8 @@ def add_language(lang_obj : Language = Body(...)):
 	''' Create a new language'''
 	try:
 		pass
+	except Exception as e:
+		raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
 	except Exception as e:
 		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
 	return {"message": f"Language {lang_obj.language} created successfully"}
@@ -158,6 +162,8 @@ def add_version(version_obj : Version = Body(...)):
 	try:
 		pass
 	except Exception as e:
+		raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
+	except Exception as e:
 		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
 	return {"message": f"Version {version_obj.versionAbbreviation} created successfully"}
 
@@ -182,7 +188,7 @@ def edit_version(version_obj: VersionEdit = Body(...)):
 tableNamePattern = constr(regex="^\w\w\w_[A-Z]+_\w+_[a-z]+$")
 
 class Source(BaseModel):
-	tableName : tableNamePattern
+	sourceName : tableNamePattern
 	contentType : str
 	language : langCodePattern
 	version : versionPattern
@@ -195,7 +201,7 @@ class Source(BaseModel):
 
 
 class SourceEdit(BaseModel):
-	sourceId : int
+	sourceName : int
 	contentType : str = None
 	language : langCodePattern = None
 	version : versionPattern = None
@@ -219,16 +225,20 @@ def get_source(contentType: str = None, versionAbbreviation: versionPattern = No
 
 @app.post('/v2/sources', response_model=NormalResponse, status_code=201)
 def add_source(source_obj : Source = Body(...)):
-	''' Create a new source'''
+	''' Creates a new source entry in sources table. Also creates all associtated tables for the contenty type,
+	except for bible_videos and dictionaries. Bible videos are all stored in one table. 
+	And Dictionary table schema is defined at the /v2/dictionary POST method'''
 	try:
 		pass
+	except Exception as e:
+		raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
 	except Exception as e:
 		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
 	return {"message": f"Source {source_obj.version} {source_obj.contentType} created successfully"}
 
 @app.put('/v2/sources', response_model=NormalResponse, status_code=201)
-def edit_version(source_obj: SourceEdit = Body(...)):
-	''' Changes one or more fields of language'''
+def edit_source(source_obj: SourceEdit = Body(...)):
+	''' Changes one or more fields of source '''
 	logging.info(source_obj)
 	try:
 		pass
@@ -246,298 +256,465 @@ def edit_version(source_obj: SourceEdit = Body(...)):
 
 # #################
 
-# #### Bible #######
-# class Bible(Resource):
-#     def get(self, source_id):
-# 		# fetches the details of the specified bible
-# 		# like, verision, revision, language, books present
-#         pass
+############ Bible Books ##########
+BookCodePattern = constr(regex="^[a-z1-9][a-z][a-z]$")
 
-#     def get(self, source_id, book_code, output_type):
-#     	# input: output_types can be usfm, json or text.
-#     	# if text, returns cleaned contents in .._bible_cleaned table. 
-#     	# otherwise, from corresponding column of .._bible table
-# 		# fetches contents of the entire book
-# 		# 
-#         pass
+class BibleBook(BaseModel):
+	bookId : int
+	bookName : str
+	bookCode : BookCodePattern
 
+@app.get('/v2/biblebooks', response_model=List[BibleBook], status_code=200)
+def get_bible_book(bookId: int = None, bookCode: BookCodePattern = None):
+	''' returns the list of book ids, codes and names.
+	If any of the query params are provided the details of corresponding book
+	will be returned'''
+	result = []	
+	try:
+		pass
+	except Exception as e:
+		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+	return result
 
-#     def get(self, source_id, book_code, chapter, output_type):
-#     	# input: output_types can be usfm, json or text.
-#     	# if output_type is usfm,then split the usfm contents by '\c',
-#     	#    check the chapter number of each slice and return the appropriate slice.
-#     	#	 include the usfm head section also with the content if chapter is 1
-#         pass
-
-#     def get(self, ref_id_start, ref_id_end):
-#     	# input: ref_id s can be used smartly to specify any kind of range. It need not be a valid ref_id 
-#     	# 		for example to get all verses of chapter 3 of book 5 we can use 
-#     	# 			ref_id_start = 5003000, ref_id_end= 5004000
-#     	# This APi always returns cleaned text from the .._bible_cleaned table. 
-#     	#     if foot-note or cross-ref is present for a verse, returns that too
-#     	#		[{'ref_id':'',
-#     	#			'verse':"",
-#     	#			'cross-ref':'',
-#     	#			'foot-note':''}, {}, ...]
-#    		pass
+## NOTE
+# This is a predefined table. So it is read-only and no PUT, POST or DELETE methods re defined for it
 
 
-#     def post(self):
-#     	# input: a list of bible books to be added(all post, put and delete methods accept list of items for consistancy)
-#     	#		 [{'sourceId': "", 
-# 		#			'usfm': "",
-# 		#			"json":""}, {}, ...]
-#     	# Adds the contents to .._bible table and .._bible_cleaned table, if contents not already present for the books uploaded
-#     	pass
+# # #### Bible #######
+class AudioBible(BaseModel):
+	audioId: int
+	name: str
+	url: AnyUrl
+	books: dict
+	format: str
+	status: bool
 
-#     def put(self):
-#     	# input: list of updations(all post, put and delete methods accept list of items for consistancy)
-#     	#		[{'souceId':
-#     	#		'usfm': "new value",
-#     	#		'json':"", }, {}, ...]
-#     	# unlike in other put methos, both columns(usfm & json) and values are mandatory in this, 
-#     	# as they are inter-dependant values
-#     	pass
-
-
-# api.add_resource(Bible, '/bible', endpoint = 'bible')
-# api.add_resource(Bible, '/bible/book/<int:source_id>/<text:book_code>/<text:output_type>', endpoint = 'bible/book')
-# api.add_resource(Bible, '/bible/book/chapter/<int:source_id>/<text:book_code>/<int:chapter>/<text:output_type>', endpoint = 'bible/book/chapter')
-# api.add_resource(Bible, '/bible/verse/<int:source_id>/<int:ref_id_start>/<int:ref_id_end>', endpoint = 'bible/verse')
-
-# ### points to discuss, ############
-# # 	1. do we need provision to delete each uploaded  book ?
-# #       we do have 'put' if you need to update it
-# #	2. Do we need a /bible get API to list all bibles(/sources/<text:content_type> does that now) ?
-
-# #############################
-
-# ##### Bible Books #####
-
-# class BibleBook(Resource):
-#     def get(self):
-# 		# fetches all the bible book names(Eng) and codes 
-#         pass
-
-#     def get(self, language_code):
-# 		# fetches all the bible book details in the specified language
-#         pass
+class AudioBibleUpload(BaseModel):
+	name: str
+	url: AnyUrl
+	books: dict
+	format: str
+	status: bool
 
 
-#     def post(self):
-#     	# input: a list of bible book name details in any of languages to be created(all post, put and delete methods accept list of items for consistancy)
-#     	#		 [{'bookId': "",
-#     	#			'languageId': "".
-#     	#			'abbr': "", 
-# 		#			'shortName': ""
-# 		#			'longName': ""}, {}, ...]
-#     	# Note: only bible_book_names table can be updated. Not the bible books look up
+class AudioBibleEdit(BaseModel):
+	audioId: int
+	name: str = None
+	url: str = None
+	books: dict = None
+	format: str = None
+	status: bool = None
 
-#     def put(self):
-#     	# input: list of updations(all post, put and delete methods accept list of items for consistancy)
-#     	#		[{'versionId':
-#     	#		'<column name>': "new value"}, {}, ...]
+class BibleBookContent(BaseModel):
+	bookCode : BookCodePattern
+	USFM: str 
+	JSON: dict
+	audio: AudioBible = None
 
-# api.add_resource(BibleBook, '/biblebook', endpoint = 'biblebook')
-# api.add_resource(BibleBook, '/biblebook/<text:language_code>', endpoint = 'biblebook')
+class BibleBookUpload(BaseModel):
+	USFM: str 
+	JSON: dict
 
-# ##### DB chande suggested #######
+class Reference(BaseModel):
+	# bible : Source = None
+	bookId: int = None
+	bookcode: BookCodePattern
+	chapter: int
+	verseNumber: int
+	verseNumberEnd: int = None
 
+class BibleVerse(BaseModel):
+	reference : Reference
+	verseText: str
+	footNote : str = None
+	crossReference : str = None
+
+class BookContentType(str, Enum):
+	USFM = 'usfm'
+	JSON = 'json'
+	audio = 'audio'
+	all = 'all'
+
+
+@app.post('/v2/bibles/{sourceName}/books', response_model=NormalResponse, status_code=201)
+def add_bible_book(sourceName: tableNamePattern, bibleBookObj : BibleBookUpload = Body(...)):
+	'''Uploads a bible book. It update 3 tables: ..._bible, .._bible_cleaned, ..._bible_tokens'''
+	try:
+		pass
+	except Exception as e:
+		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+	except Exception as e:
+		raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
+	except Exception as e:
+		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+	return {"message": f"Bible book uploaded successfully"}
+
+
+@app.put('/v2/bibles/{sourceName}/books', response_model=NormalResponse, status_code=201)
+def edit_bible_book(sourceName: tableNamePattern, bibleBookObj: BibleBookUpload = Body(...)):
+	''' Changes both usfm and json fileds of bible book. 
+	The contents of the respective bible_clean and bible_tokens tables' contents 
+	should be deleted and new data added. 
+	two fields are mandatory as usfm and json are interdependant'''
+	logging.info(bibleBookObj)
+	try:
+		pass
+	except Exception as e:
+		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+	except Exception as e:
+		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+	except Exception as e:
+		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+	return {"message" : f"Updated bible book and associated tables"}
+
+
+@app.get('/v2/bibles/{sourceName}/books', response_model=List[BookCodePattern], status_code=200)
+def get_available_bible_books(sourceName: tableNamePattern):
+	'''Fetches all the books available(has been uploaded) in the specified bible'''
+	result = []	
+	try:
+		pass
+	except Exception as e:
+		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+	except Exception as e:
+		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+	return result
+
+
+@app.get("/v2/bibles/{sourceName}/books/{bookCode}/{contentType}", response_model=BibleBookContent, status_code=200)
+def get_bible_book(sourceName: tableNamePattern, bookCode: BookCodePattern, contentType: BookContentType = None):	
+	'''Fetches the usfm and/or JSON of the specifed bible book'''
+	result = None
+	try:
+		pass
+	except Exception as e:
+		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+	except Exception as e:
+		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+	return result
+
+@app.get("/v2/bibles/{sourceName}/verses", response_model=List[BibleVerse], status_code=200)
+def get_bible_verse(sourceName: tableNamePattern, bookCode: BookCodePattern = None, chapter: int = None, verse: int = None, lastVerse: int = None):
+	''' Fetches the cleaned contents of bible, within a verse range, if specified.
+	This API could be used for fetching, 
+	 * all verses of a source : with out giving any query params.
+	 * all verses of a book: with only book_code
+	 * all verses of a chapter: with book_code and chapter 
+	 * one verse: with bookCode, chapter and verse(without lastVerse).
+	 * any range of verses within a chapter: using verse and lastVerse appropriately'''
+	result = []	
+	try:
+		pass
+	except Exception as e:
+		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+	except Exception as e:
+		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+	return result
+
+# ##### NOTES for Discussion
+# 1. we use source_id in the input to identify the specific bible. 
+#    It could be replaced with the table name, which is in a more human understandable pattern
+# 2. The API to list all bibles is not provided with a /v2/bible... endpoint, but is available in /v2/sources?contentType=bible
+# 3. AT present the _bible_tokens table is populated upon uploading a new bible book to the DB. 
+#     As this table is used only in AgMT App, this table need to be populated after a request for tokens/creation of project with this source_id from the AgMT App
+# 4. No DELETE API for this resource. To delete(soft) the whole bible, the source's active status can be set to False.
+#      An uploaded bible book can be altered by uploading a new one(PUT), but it cannoted be deleted 
+
+
+
+# ########### Audio bible ###################
+
+@app.post('/v2/bibles/{sourceName}/audios', response_model=NormalResponse, status_code=201)
+def add_audio_bible(sourceName: tableNamePattern, audios:List[AudioBibleUpload] = Body(...)):
+	'''Uploads a list of Audio Bible URLs and other associated info about them.'''
+	try:
+		pass
+	except Exception as e:
+		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+	except Exception as e:
+		raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
+	except Exception as e:
+		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+	return {"message": f"Audio bible details uploaded successfully"}
+
+@app.put('/v2/bibles/{sourceName}/audios', response_model=NormalResponse, status_code=201)
+def edit_audio_bible(sourceName: tableNamePattern, audios: List[AudioBibleEdit] = Body(...)):
+	''' Changes the mentioned fields of audio bible row'''
+	logging.info(audios)
+	try:
+		pass
+	except Exception as e:
+		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+	except Exception as e:
+		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+	except Exception as e:
+		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+	return {"message" : f"Updated audio bible details"}
+
+
+# ### DB change ####
+# # field books should accept only valid book codes(or list of book_codes)
+
+
+
+
+
+
+# ##### Bible Book names in regional languages ########################
+
+# ##### DB change suggested #######
+# Currently, this is a separate table in DB. 
+# It could be added to a metadata column in the _bible table or to a metadata column in bible_books_lookup table
 # # change the columns name from 
 # #	1. 'short' to 'short_name', 
 # #	2. 'long' to 'long_name' and 
 # #	3. 'abbr' to 'abbreviation' 
-
+# in the metadata jSON object
 # ##################################
 
 
-# ##### Commentry #####
+# ##### Commentary #####
 
-# class Commentary(Resource):
-#     def get(self, source_id):
-# 		# fetches the details of the specified commentary
-# 		# like, verision, revision, language, books present
-#         pass
+class Commentary(BaseModel):
+	bookCode : BookCodePattern
+	chapter: int
+	verseNumber: int
+	commentary: str
 
-#     def get(self, source_id, book_code):
-# 		# fetches commentary of the entire book
-#         pass
+@app.get('/v2/commentaries/{sourceName}', response_model=List[Commentary], status_code=200)
+def get_commentary(sourceName: tableNamePattern, bookCode: BookCodePattern = None, chapter: int = None, verse: int = None, lastVerse: int = None):
+	'''Fetches commentries under the specified source.
+	Using the params bookCode, chapter, and verse the result set can be filtered as per need, like in the /v2/bibles/{sourceName}/verses API'''
+	result = []	
+	try:
+		pass
+	except Exception as e:
+		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+	except Exception as e:
+		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+	return result
+
+@app.post('/v2/commentaries/{sourceName}', response_model=NormalResponse, status_code=201)
+def add_commentary(sourceName: tableNamePattern, commentries:List[Commentary] = Body(...)):
+	'''Uploads a list of commentaries.'''
+	try:
+		pass
+	except Exception as e:
+		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+	except Exception as e:
+		raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
+	except Exception as e:
+		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+	return {"message": f"Commentaries uploaded successfully"}
+
+@app.put('/v2/commentaries/{sourceName}', response_model=NormalResponse, status_code=201)
+def edit_commentary(sourceName: tableNamePattern, commentries: List[Commentary] = Body(...)):
+	''' Changes the commentary field to the given value in the row selected using book, chapter, verse values'''
+	logging.info(commentries)
+	try:
+		pass
+	except Exception as e:
+		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+	except Exception as e:
+		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+	except Exception as e:
+		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+	return {"message" : f"Updated commentries"}
 
 
-#     def get(self, source_id, book_code, chapter):
-# 		# fetches commentary of the selected chapter of the book
-#         pass
 
-#     def get(self, ref_id_start, ref_id_end):
-#     	# input: ref_id s can be used smartly to specify any kind of range. It need not be a valid ref_id 
-#     	# 		for example to get all commnataries of chapter 3 of book 5 we can use 
-#     	# 			ref_id_start = 5003000, ref_id_end= 5004000
-#    		pass
-
-#     def post(self):
-#     	# input: a list of commentries to be created(all post, put and delete methods accept list of items for consistancy)
-#     	#		 [{'sourceId': "",
-#     	#			'bookId': "".
-#     	#			'chapter': "", 
-# 		#			'verseNumber': "", 
-# 		#			"commentary":""}, {}, ...]
-#     	# create a new row in the DB
-
-#     def put(self):
-#     	# input: list of updations(all post, put and delete methods accept list of items for consistancy)
-#     	#		[{'sourceId':
-#     	#		'book': "", "chapter": "", "verse": "", 'commentary': "new value"}, {}, ...]
-#     	#		All keys in the input json are mandatory as th book-chapter-verse is the unique identifier of the row
-
-# api.add_resource(Commentary, '/commentary', endpoint = '/commentary')
-# api.add_resource(Bible, '/commentary/<int:source_id>/<int:ref_id_start>/<int:ref_id_end>', endpoint = '/commentary')
-# api.add_resource(Bible, '/commentary/book/<int:source_id>/<text:book_code>', endpoint = '/commentary/book')
-# api.add_resource(Bible, '/commentary/book/chapter/<int:source_id>/<text:book_code>/<int:chapter>', endpoint = '/commentary/book/chapter')
-
-# ###### DB changes suggested ##############
-# #	1. have a consitant pattern in table names
-# #			at present, some table ends with 'notes'(hin_irv_notes) and another with 'commentary' (eng_mhcc commentary) 
-# #			have a common last word like the bible tables
-# #		language_code + version + revision(if present) + contentType can be considered for all content table names
-# ############################################
+## ##NOTE##
+# 1. The API to list all bibles is not provided with a /v2/bible... endpoint, but is available in /v2/sources?contentType=commentary
+# 2. POST and PUT methods takes list of commentary objects and adds them together to DB. Process will be aborted in case of error in any of the rows
+# 3. Type of verseNumber is mentioned as int here. Can be changed if required 
 
 
 # ########### Dictionary ###################
-# class Dictionary(Resource):
-#     def get(self, source_id):
-# 		# fetches the details of the specified dictionary
-# 		# like, verision, revision, language
-#         pass
+letterPattern = constr(regex='^\w$')
+class DictionaryWord(BaseModel):
+	word: str
+	details: dict
 
-#     def get(self, source_id, word_pattern):
-# 		# input: word_pattern can be the full or partial value of the word column
-# 		#		for the entire contents of the dictionary an _ can be passed for word_pattern
-# 		# the API should be written in a way, so that different column names can be handled, 
-# 		#	in case, different dictionary tables have different fields 
-#         pass
+@app.get('/v2/dictionaries/{sourceName}', response_model=List[DictionaryWord], status_code=200)
+def get_dictionary_words(sourceName: tableNamePattern, searchIndex: str = None):
+	'''fetches list of dictionary words and all available details about them.
+	Using the searchIndex appropriately, it is possible to get
+	* All words starting with a letter
+	* All words starting with a substring
+	* An exact word search, giving the whole word'''
+	result = []	
+	try:
+		pass
+	except Exception as e:
+		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+	except Exception as e:
+		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+	return result
 
-#     def post(self):
-#     	# input: a list of commentries to be created(all post, put and delete methods accept list of items for consistancy)
-#     	#		 [{'sourceId': "",
-#     	#			fieldOne: }, {}, ...]
-#     	# create a dictionary table with schema as per the input values(if not already created) and add values to it
 
-#     def put(self):
-#     	# input: list of updations(all post, put and delete methods accept list of items for consistancy)
-#     	#		[{'sourceId':"",
-#     	#		'keyword':"",
-#     	#		'<column name>': "new value"}, {}, ...]
+@app.post('/v2/dictionaries/{sourceName}', response_model=NormalResponse, status_code=201)
+def add_dictionary(sourceName: tableNamePattern, words: List[DictionaryWord] = Body(...)):
+	''' uploads dictionay words'''
+	logging.info(words)
+	try:
+		pass
+	except Exception as e:
+		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+	except Exception as e:
+		raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
+	except Exception as e:
+		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+	return {"message": f"Dictionary table created and words uploaded successfully"}
 
-# api.add_resource(Dictionary, '/dictionary', endpoint = '/infographics')
-# api.add_resource(Dictionary, '/dictionary/<int:source_id>', endpoint = '/infographics')
-# api.add_resource(Dictionary, '/dictionary/<int:source_id>/<text:word_pattern>', endpoint = '/infographics')
+@app.put('/v2/dictionaries/{sourceName}', response_model=NormalResponse, status_code=201)
+def edit_dictionary(sourceName: tableNamePattern, words: List[DictionaryWord] = Body(...)):
+	'''Updates the given fields mentioned in details object, of the specifed word'''
+	logging.info(words)
+	try:
+		pass
+	except Exception as e:
+		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+	except Exception as e:
+		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+	except Exception as e:
+		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+	return {"message" : f"Updated dictionary words"}
 
-# #	1. have a consitant pattern in table names by adding dictionary to the end 
-# #		language_code + version + revision(if present) + contentType can be considered for all content table names
+## ### NOTE ####
+# Currently we only have Strongs numbers as a dictionary table.
+# But we can have a wide variety of lexical collections with varying informations required to be stored in the DB.
+# So suggesting a flexible table structure and APIs to accomodate future needs.
+# ##### DB Change suggested ######
+# 1. Have 3 columns word_id, word and details
+# 	details column will be of JSON datatype and will have 
+# 	all the additional info we have in that collection(for each word) as key-value pairs
+
+
 # ###########################################
 
 
 
 # ########### Infographic ###################
 
-# class Infographics(Resource):
-#     def get(self, source_id):
-# 		# fetches the details of the specified infographic
-# 		# like, verision, revision, language, books present
-#         pass
+class Infographic(BaseModel):
+	bookCode : BookCodePattern
+	infographicsLink : AnyUrl
 
-#     def get(self, source_id, book_code):
-# 		# fetches infographics of the selected book
-#         pass
+@app.get('/v2/infographics/{sourceName}', response_model=List[Infographic], status_code=200)
+def get_infographic(sourceName: tableNamePattern, bookCode: BookCodePattern = None ):
+	'''Fetches the infographics. Can use, bookCode to filter the results'''
+	result = []	
+	try:
+		pass
+	except Exception as e:
+		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+	except Exception as e:
+		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+	return result
 
-#     def post(self):
-#     	# input: a list of commentries to be created(all post, put and delete methods accept list of items for consistancy)
-#     	#		 [{'sourceId': "",
-#     	#			'bookId': "",
-# 		#			"infographics":""}, {}, ...]
-#     	# create a new version in the DB
+@app.post('/v2/infographics/{sourceName}', response_model=NormalResponse, status_code=201)
+def add_infographics(sourceName: tableNamePattern, infographics:List[Infographic] = Body(...)):
+	'''Uploads a list of infograhics.'''
+	try:
+		pass
+	except Exception as e:
+		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+	except Exception as e:
+		raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
+	except Exception as e:
+		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+	return {"message": f"Infographics uploaded successfully"}
 
-#     def put(self):
-#     	# input: list of updations(all post, put and delete methods accept list of items for consistancy)
-#     	#		[{'sourceId':
-#     	#		'bookId': "", 
-#     	#		'infographics': "new value"}, {}, ...]
-#     	#		All fields in the input json are mandatory 
+@app.put('/v2/infographics/{sourceName}', response_model=NormalResponse, status_code=201)
+def edit_infographics(sourceName: tableNamePattern, infographics: List[Infographic] = Body(...)):
+	''' Changes the commentary field to the given value in the row selected using book, chapter, verse values'''
+	logging.info(infographics)
+	try:
+		pass
+	except Exception as e:
+		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+	except Exception as e:
+		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+	except Exception as e:
+		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+	return {"message" : f"Updated infographics"}
 
-# api.add_resource(Infographics, '/infographics', endpoint = '/infographics')
-# api.add_resource(Infographics, '/infographics/<int:source_id>', endpoint = '/infographics')
-# api.add_resource(Infographics, '/infographics/<int:source_id>/<text:book_code>', endpoint = '/infographics')
 
 
-# ###########################################
-
-
-# ########### Audio bible ###################
-# class AudioBible(Resource):
-#     def get(self, bible_source_id):
-# 		# fetches the details of the audio bible
-# 		# available for the specified bible
-#         pass
-
-#     def get(self, bible_source_id, book_code):
-# 		# fetches details of the audio bible
-# 		# available for the specified bible and book
-#         pass
-
-#     def post(self):
-#     	# input: a list of audio bible details to be created(all post, put and delete methods accept list of items for consistancy)
-#     	#		 [{'sourceId': "",
-#     	#			'name': "",
-# 		#			"url":"",...}, {}, ...]
-#     	# create a new version in the DB
-
-#     def put(self):
-#     	# input: list of updations(all post, put and delete methods accept list of items for consistancy)
-#     	#		[{'auidoId':
-#     	#		'<column name>': "new value"}, {}, ...]
-
-# api.add_resource(AudioBible, '/audiobible', endpoint = '/audiobible')
-# api.add_resource(AudioBible, '/audiobible/<int:bible_source_id>', endpoint = '/audiobible')
-# api.add_resource(AudioBible, '/audiobible/<int:bible_source_id>/<text:book_code>', endpoint = '/audiobible')
-
-# ### DB change ####
-# # field books should accept only valid book codes(or list of book_codes)
 
 # ###########################################
 
 
 # ########### bible videos ###################
-# class AudioBible(Resource):
-#     def get(self, id):
-# 		# fetches the details of the bible video
-#         pass
 
-#     def get(self, language_code):
-# 		# fetches details of the bible videos available in that language
-#         pass
+class BibleVideo(BaseModel):
+	bibleVideoId: int
+	books: dict
+	videoLink: AnyUrl
+	title: str
+	description: str
+	theme: str
+	language: str
+	status: bool
 
-#     def get(self, language_code, book_code):
-# 		# fetches details of the bible videos available in that language and book
-#         pass
+class BibleVideoUpload(BaseModel):
+	books: dict
+	videoLink: AnyUrl
+	title: str
+	description: str
+	theme: str
+	language: str
+	status: bool
 
-#     def post(self):
-#     	# input: a list of video bible details to be created(all post, put and delete methods accept list of items for consistancy)
-#     	#		 [{'title':"",
-#     	#			'book': "",
-# 		#			"languageCode":"",...}, {}, ...]
-#     	# create a new entry in the DB
 
-#     def put(self):
-#     	# input: list of updations(all post, put and delete methods accept list of items for consistancy)
-#     	#		[{'videoId':
-#     	#		'<column name>': "new value"}, {}, ...]
+class BibleVideoEdit(BaseModel):
+	bibleVideoId: int
+	books: dict  = None
+	videoLink: AnyUrl  = None
+	title: str  = None
+	description: str  = None
+	theme: str  = None
+	language: str  = None
+	status: bool  = None
 
-# api.add_resource(AudioBible, '/audiobible', endpoint = '/audiobible')
-# api.add_resource(AudioBible, '/audiobible/<int:bible_source_id>', endpoint = '/audiobible')
-# api.add_resource(AudioBible, '/audiobible/<int:bible_source_id>/<text:book_code>', endpoint = '/audiobible')
+@app.get('/v2/biblevideos', response_model=List[BibleVideo], status_code=200)
+def get_bible_video(bookCode: BookCodePattern = None, language:langCodePattern = None, theme: str = None, title: str = None):
+	'''Fetches the infographics. Can use the optional query params book, langugage, title and theme to filter the results'''
+	result = []	
+	try:
+		pass
+	except Exception as e:
+		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+	return result
+
+@app.post('/v2/biblevideos', response_model=NormalResponse, status_code=201)
+def add_bible_video(videos:List[BibleVideoUpload] = Body(...)):
+	'''Uploads a list of bible video links and details.'''
+	try:
+		pass
+	except Exception as e:
+		raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
+	except Exception as e:
+		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+	return {"message": f"BibleVideo details uploaded successfully"}
+
+@app.put('/v2/biblevideos', response_model=NormalResponse, status_code=201)
+def edit_bible_video(videos: List[BibleVideoEdit] = Body(...)):
+	''' Changes the commentary field to the given value in the row selected using book, chapter, verse values'''
+	logging.info(videos)
+	try:
+		pass
+	except Exception as e:
+		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+	except Exception as e:
+		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+	except Exception as e:
+		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+	return {"message" : f"Updated bible video details"}
 
 
 # ### DB change ####
-# # field books should accept only valid book codes(or list of book_codes)
+# # field books should accept only valid book codes and 
+#    datatype should be JSON, like in audio bibles, not comma separated text
 
 # ###########################################
