@@ -3358,6 +3358,9 @@ def addmetadata():
 def addbiblebooknames():
     '''Add bible book names for a local language'''
     try:
+        role = checkAuth()
+        if role != 3:
+            return '{"success":false, "message":"UnAuthorized"}'
         req = request.get_json(True)
         language = req["language"]
         bibleBookNames = req["bibleBookNames"]
