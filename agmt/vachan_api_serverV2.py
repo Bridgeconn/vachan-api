@@ -306,8 +306,9 @@ class AudioBibleEdit(BaseModel):
 
 class BibleBookContent(BaseModel):
 	bookCode : BookCodePattern
-	USFM: str 
-	JSON: dict
+	structure : dict 
+	USFM: str = None
+	JSON: dict = None
 	audio: AudioBible = None
 
 class BibleBookUpload(BaseModel):
@@ -367,9 +368,12 @@ def edit_bible_book(sourceName: tableNamePattern, bibleBookObj: BibleBookUpload 
 	return {"message" : f"Updated bible book and associated tables"}
 
 
-@app.get('/v2/bibles/{sourceName}/books', response_model=List[BookCodePattern], status_code=200, tags=["Bibles"])
-def get_available_bible_books(sourceName: tableNamePattern):
-	'''Fetches all the books available(has been uploaded) in the specified bible'''
+@app.get('/v2/bibles/{sourceName}/books', response_model=List[BibleBookContent], status_code=200, tags=["Bibles"])
+def get_available_bible_books(sourceName: tableNamePattern, bookCode: BookCodePattern = None, contentType: BookContentType = None):
+	'''Fetches all the books available(has been uploaded) in the specified bible
+	* returns all available books and their chapter-verse structure: without bookCode and contentType
+	* returns above details of one book: if bookCode is specified
+	* returns the JSON, USFM and/or Audio contents also: if contentType is given'''
 	result = []	
 	try:
 		pass
@@ -379,18 +383,6 @@ def get_available_bible_books(sourceName: tableNamePattern):
 		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
 	return result
 
-
-@app.get("/v2/bibles/{sourceName}/books/{bookCode}/{contentType}", response_model=BibleBookContent, status_code=200, tags=["Bibles"])
-def get_bible_book(sourceName: tableNamePattern, bookCode: BookCodePattern, contentType: BookContentType = None):	
-	'''Fetches the usfm and/or JSON of the specifed bible book'''
-	result = None
-	try:
-		pass
-	except Exception as e:
-		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
-	except Exception as e:
-		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
-	return result
 
 @app.get("/v2/bibles/{sourceName}/verses", response_model=List[BibleVerse], status_code=200, tags=["Bibles"])
 def get_bible_verse(sourceName: tableNamePattern, bookCode: BookCodePattern = None, chapter: int = None, verse: int = None, lastVerse: int = None, searchPhrase: str = None):
