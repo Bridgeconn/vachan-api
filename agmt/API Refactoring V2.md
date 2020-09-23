@@ -63,3 +63,221 @@ INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 Once the app is running, from your browser access http://127.0.0.1:8000/docs for swagger documentation.
 
 Redoc documentaion is also available at http://127.0.0.1:8000/redoc
+
+### Old APIs and substitutes for them
+<table><tr><th>Sl No</th><th>Old API</th><th>Function</th><th>New API</th></tr>
+<tr>
+<td>1.</td>
+<td><pre>GET "/v1/sources"</pre></td>
+<td>For a complete download of all content types stored in the database</td>
+<td><pre>GET "/v2/sources"</pre></td>
+</tr>
+
+<tr>
+<td>2.</td>
+<td><pre>GET "/v1/bibles"</pre></td>
+<td>Return the list of availabile Bible Languages and Versions.</td>
+<td><pre>GET "/v2/sources?contentType=bible"</pre></td>
+</tr>
+
+<tr>
+<td>3.</td>
+<td><pre>GET "/v1/bibles/languages"</pre></td>
+<td>Return the list of bible languages.</td>
+<td><pre>GET "/v2/sources?contentType=bible"</pre></td>
+</tr>
+
+<tr>
+<td>4.</td>
+<td><pre>GET "/v1/bibles/{sourceId}/books"</pre></td>
+<td>Return the list of books in a Bible Language and Version.</td>
+<td><pre>GET '/v2/bibles/{sourceName}/books'</pre></td>
+</tr>
+<tr>
+<td>5.</td>
+<td><pre>GET "/v1/bibles/{sourceId}/books-chapters"</pre></td>
+<td>Return the list of books and chapter Number in a Bible Language and Version.</td>
+<td><pre>  </pre></td>
+</tr>
+
+<tr>
+<td>6.</td>
+<td><pre>GET "/v1/bibles/{sourceId}/{contentFormat}"</pre></td>
+<td>Return the bible content for a particular Bible version and format.</td>
+<td><pre>GET "/v2/bibles/{sourceName}/books/{bookCode}/{contentType}"</pre></td>
+</tr>
+
+<tr>
+<td>7.</td>
+<td><pre>GET "/v1/bibles/{sourceId}/books/{bookCode}/{contentFormat}"</pre></td>
+<td>Return the content of a book in a particular version and format.</td>
+<td><pre>GET "/v2/bibles/{sourceName}/books/{bookCode}/{contentType}"</pre></td>
+</tr>
+
+<tr>
+<td>8.</td>
+<td><pre>GET "/v1/bibles/{sourceId}/books/{biblebookCode}/chapters"</pre></td>
+<td>Return number of Chapters and chapter details for a book.</td>
+<td><pre>GET "/v2/bibles/{sourceName}/books/{bookCode}/{contentType}"
+OR
+GET "/v2/bibles/{sourceName}/verses?bookCode=gen;chapter=1"</pre></td>
+</tr>
+
+<tr>
+<td>9.</td>
+<td><pre>GET "/v1/bibles/{sourceId}/books/{bookCode}/chapter/{chapterId}"</pre></td>
+<td>Return the content of a given bible chapter.</td>
+<td><pre>GET "/v2/bibles/{sourceName}/verses?bookCode=gen;chapter=1"</pre></td>
+</tr>
+
+<tr>
+<td>10.</td>
+<td><pre>GET "/v1/bibles/{sourceId}/books/{biblebookCode}/chapters/{chapterId}/verses"</pre></td>
+<td>Return Verse Id Array for a Bible Book Chapter.</td>
+<td><pre>GET "/v2/bibles/{sourceName}/verses?bookCode=gen;chapter=1"</pre></td>
+</tr>
+
+<tr>
+<td>11.</td>
+<td><pre>GET "/v1/bibles/{sourceId}/books/{bibleBookCode}/chapters/{chapterId}/verses/<verseId>"</pre></td>
+<td>Return a Verse object for a given Bible and Verse.</td>
+<td><pre>GET "/v2/bibles/{sourceName}/verses?bookCode=gen;chapter=1;verse=1"</pre></td>
+</tr>
+
+<tr>
+<td>12.</td>
+<td><pre>GET "/v1/bibles/{sourceId}/chapters/{chapterId}/verses"</pre></td>
+<td>Return Verse Id Array for a Bible Book Chapter.</td>
+<td><pre>GET "/v2/bibles/{sourceName}/verses?bookCode=gen;chapter=1"</pre></td>
+</tr>
+
+<tr>
+<td>13.</td>
+<td><pre>GET "/v1/bibles/{sourceId}/verses/{verseId>}</pre></td>
+<td>Return a Verse object for a given Bible and Verse.</td>
+<td><pre>GET "/v2/bibles/{sourceName}/verses?bookCode=gen;chapter=1;verse=1"</pre></td>
+</tr>
+
+<tr>
+<td>14.</td>
+<td><pre>POST "/v1/sources/commentary"</pre></td>
+<td>Add a commentary source, put associated entries in source and versions</td>
+<td><pre>POST '/v2/sources'</pre></td>
+</tr>
+
+<tr>
+<td>15.</td>
+<td><pre>GET "/v1/commentaries"</pre></td>
+<td>Fetch the list of commentaries with an option to filter by language .</td>
+<td><pre>GET '/v2/sources?contentType=commentry;languageCode=hin'</pre></td>
+</tr>
+
+<tr>
+<td>16.</td>
+<td><pre>GET "/v1/commentaries/{sourceId}/{bookCode}/<chapterId>"</pre></td>
+<td>Fetch the commentary for a chapter for the given commentary sourceId.</td>
+<td><pre>GET '/v2/commentaries/{sourceName};bookCode=gen;chapter=1'</pre></td>
+</tr>
+
+<tr>
+<td>17.</td>
+<td><pre>POST "/v1/sources/dictionary"</pre></td>
+<td>Add a dictionary source, put associated entries in source and versions</td>
+<td><pre>POST '/v2/sources'
+and 
+POST '/v2/dictionaries/{sourceName}'</pre></td>
+</tr>
+
+<tr>
+<td>18.</td>
+<td><pre>GET "/v1/dictionaries"</pre></td>
+<td>Fetch the list of dictionaries with an option to filter by language .</td>
+<td><pre>GET "v2/sources?contentType=dictionary;language=hin"</pre></td>
+</tr>
+
+<tr>
+<td>19.</td>
+<td><pre>GET "/v1/dictionaries/{sourceId}"</pre></td>
+<td>Fetch the words of a given dictionary.</td>
+<td><pre>GET '/v2/dictionaries/{sourceName}'</pre></td>
+</tr>
+
+<tr>
+<td>20.</td>
+<td><pre>GET "/v1/dictionaries/{sourceId}/<wordId>"</pre></td>
+<td>Fetch the meaning for given word of a given dictionary.</td>
+<td><pre>GET '/v2/dictionaries/{sourceName}?searchIndex=word'</pre></td>
+</tr>
+
+<tr>
+<td>21.</td>
+<td><pre>POST "/v1/sources/infographic"</pre></td>
+<td>Add a infographic source, put associated entries in source and versions</td>
+<td><pre>POST '/v2/sources'
+and 
+POST '/v2/infographics/{sourceName}'</pre></td>
+</tr>
+
+<tr>
+<td>22.</td>
+<td><pre>GET "/v1/infographics/{languageCode}"</pre></td>
+<td>Fetch the metadata for the infographics for the given language .</td>
+<td><pre>GET "/v2/sources?contentType=infographics;language=hin"</pre></td>
+</tr>
+
+<tr>
+<td>23.</td>
+<td><pre>POST "/v1/sources/audiobible"</pre></td>
+<td>Add a audio bible.</td>
+<td><pre>POST '/v2/bibles/{sourceName}/audios</pre></td>
+</tr>
+
+<tr>
+<td>24.</td>
+<td><pre>GET "/v1/audiobibles"</pre></td>
+<td>Fetch the metadata for the audiobibles Option to filter by language.</td>
+<td><pre>   </pre></td>
+</tr>
+
+<tr>
+<td>25.</td>
+<td><pre>POST "/v1/sources/video"</pre></td>
+<td>Add videos for given language.</td>
+<td><pre>POST '/v2/biblevideos'</pre></td>
+</tr>
+
+<tr>
+<td>26.</td>
+<td><pre>GET "/v1/videos"</pre></td>
+<td>Fetch the metadata for the videos with an option to filter by language.</td>
+<td><pre>GET "/v2/biblevideos?language=hin" </pre></td>
+</tr>
+
+<tr>
+<td>27.</td>
+<td><pre>GET "/v1/booknames"</pre></td>
+<td>Fetch the bible book names in the native language with an option to filter by language.</td>
+<td><pre>GET "/v2/bibles/{sourceName}/books"</pre></td>
+</tr>
+
+<tr>
+<td>28.</td>
+<td><pre>GET "/v1/search/{sourceId}"</pre></td>
+<td>Fetch the bible verses with the given keyword in the specified sourceId clear text bible</td>
+<td><pre>   </pre></td>
+</tr>
+
+<tr>
+<td>29.</td>
+<td><pre>PUT "/v1/sources/metadata"</pre></td>
+<td>Append bible metadata for a source .</td>
+<td><pre>PUT "/v2/sources"</pre></td>
+</tr>
+
+<tr>
+<td>30.</td>
+<td><pre>POST "/v1/biblebooknames"</pre></td>
+<td>Add bible book names for a local language</td>
+<td><pre>PUT "/v2/bibles/{sourceName}/books"   </pre></td>
+</tr>
+</table>
