@@ -14,10 +14,10 @@
 	> * Keeping flexibility of schema with JSON objects in places where variation can be expected
 * Human readability/understandability of input output values
 	> have tried to avoid the use of id values as much as possible in inputs and outputs.
-	  Uses language Codes, book Codes, source names etc in place of numbers ids we used in V1
+	> Uses language Codes, book Codes, source names etc in place of number ids we used in V1
 * Better Error Messages
-	> use consistent error message patterns thought out the App
-	> use http_status codes to indicate type of error
+	> * use consistent error message patterns thought out the App
+	> * use http_status codes to indicate type of error
 * Data validation
 	> Make use of the input and output datatype validation provisions in the Fast API as much as possible
 	> * specifies expected datatype like int, string etc
@@ -236,21 +236,23 @@ POST '/v2/infographics/{sourceName}'</pre></td>
 <td>24.</td>
 <td><pre>GET "/v1/audiobibles"</pre></td>
 <td>Fetch the metadata for the audiobibles Option to filter by language.</td>
-<td><pre>   </pre></td>
+<td><pre>GET "/v2/bibles/{sourceName}?contentType=audio"</pre></td>
 </tr>
 
 <tr>
 <td>25.</td>
 <td><pre>POST "/v1/sources/video"</pre></td>
 <td>Add videos for given language.</td>
-<td><pre>POST '/v2/biblevideos'</pre></td>
+<td><pre>POST '/v2/sources'
+and 
+POST '/v2/biblevideos/{sourceName}'</pre></td>
 </tr>
 
 <tr>
 <td>26.</td>
 <td><pre>GET "/v1/videos"</pre></td>
 <td>Fetch the metadata for the videos with an option to filter by language.</td>
-<td><pre>GET "/v2/biblevideos?language=hin" </pre></td>
+<td><pre>GET "/v2/biblevideos/{sourceName}" </pre></td>
 </tr>
 
 <tr>
@@ -264,7 +266,7 @@ POST '/v2/infographics/{sourceName}'</pre></td>
 <td>28.</td>
 <td><pre>GET "/v1/search/{sourceId}"</pre></td>
 <td>Fetch the bible verses with the given keyword in the specified sourceId clear text bible</td>
-<td><pre>   </pre></td>
+<td><pre>GET "/v2/bibles/{sourceName}/verses?searchPhrase=query"</pre></td>
 </tr>
 
 <tr>
