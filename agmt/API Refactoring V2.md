@@ -97,7 +97,7 @@ Redoc documentaion is also available at http://127.0.0.1:8000/redoc
 <td>5.</td>
 <td><pre>GET "/v1/bibles/{sourceId}/books-chapters"</pre></td>
 <td>Return the list of books and chapter Number in a Bible Language and Version.</td>
-<td><pre>  </pre></td>
+<td><pre>GET "/v2/bibles/{sourceName}/books"</pre></td>
 </tr>
 
 <tr>
@@ -118,9 +118,7 @@ Redoc documentaion is also available at http://127.0.0.1:8000/redoc
 <td>8.</td>
 <td><pre>GET "/v1/bibles/{sourceId}/books/{biblebookCode}/chapters"</pre></td>
 <td>Return number of Chapters and chapter details for a book.</td>
-<td><pre>GET "/v2/bibles/{sourceName}/books/{bookCode}/{contentType}"
-OR
-GET "/v2/bibles/{sourceName}/verses?bookCode=gen;chapter=1"</pre></td>
+<td><pre>GET "/v2/bibles/{sourceName}/books?bookCode=gen"</pre></td>
 </tr>
 
 <tr>
