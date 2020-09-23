@@ -38,13 +38,13 @@ class ContentType(BaseModel):
 	contentId : int
 	contentType : str
 
-@app.get('/v2/contents', response_model=List[ContentType], status_code=200)
+@app.get('/v2/contents', response_model=List[ContentType], status_code=200, tags=["Contents Types"])
 def get_contents():
 	'''fetches all the contents types supported and their details '''
 	result = []
 	return result   
 
-@app.post('/v2/contents', response_model=NormalResponse, status_code=201)
+@app.post('/v2/contents', response_model=NormalResponse, status_code=201, tags=["Contents Types"])
 def add_contents(content_name: str  = Body(...)):
 	''' Creates a new content type. 
 	Additional operations required: 
@@ -87,7 +87,7 @@ class LanguageEdit (BaseModel):
 	script : str = None
 	scriptDirection : Direction = None	
 
-@app.get('/v2/languages', response_model=List[Language], status_code=200)
+@app.get('/v2/languages', response_model=List[Language], status_code=200, tags=["Languages"])
 def get_language(language_code : langCodePattern = None):
 		'''fetches all the languages supported in the DB, their code and other details.
 		if query parameter, langauge_code is provided, returns details of that language if pressent
@@ -99,7 +99,7 @@ def get_language(language_code : langCodePattern = None):
 			raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
 		return result
 
-@app.post('/v2/languages', response_model=NormalResponse, status_code=201)
+@app.post('/v2/languages', response_model=NormalResponse, status_code=201, tags=["Languages"])
 def add_language(lang_obj : Language = Body(...)):
 	''' Create a new language'''
 	try:
@@ -110,7 +110,7 @@ def add_language(lang_obj : Language = Body(...)):
 		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
 	return {"message": f"Language {lang_obj.language} created successfully"}
 
-@app.put('/v2/languages', response_model=NormalResponse, status_code=201)
+@app.put('/v2/languages', response_model=NormalResponse, status_code=201, tags=["Languages"])
 def edit_language(lang_obj: LanguageEdit = Body(...)):
 	''' Changes one or more fields of language'''
 	logging.info(lang_obj)
@@ -144,7 +144,7 @@ class VersionEdit(BaseModel):
 	metadata : dict = None
 
 
-@app.get("/v2/versions", response_model=List[Version], status_code=200)
+@app.get("/v2/versions", response_model=List[Version], status_code=200, tags=["Versions"])
 def get_version(version_abbr : versionPattern = None):
 	'''Fetches all versions and their details.
 	If param version_abbr is present, returns details of that version if pressent
@@ -156,7 +156,7 @@ def get_version(version_abbr : versionPattern = None):
 		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
 	return result
 
-@app.post('/v2/versions', response_model=NormalResponse, status_code=201)
+@app.post('/v2/versions', response_model=NormalResponse, status_code=201, tags=["Versions"])
 def add_version(version_obj : Version = Body(...)):
 	''' Create a new language'''
 	try:
@@ -167,7 +167,7 @@ def add_version(version_obj : Version = Body(...)):
 		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
 	return {"message": f"Version {version_obj.versionAbbreviation} created successfully"}
 
-@app.put('/v2/versions', response_model=NormalResponse, status_code=201)
+@app.put('/v2/versions', response_model=NormalResponse, status_code=201, tags=["Versions"])
 def edit_version(version_obj: VersionEdit = Body(...)):
 	''' Changes one or more fields of language'''
 	logging.info(version_obj)
@@ -211,7 +211,7 @@ class SourceEdit(BaseModel):
 	metadata: dict = None
 	active: bool = None
 
-@app.get("/v2/sources", response_model=List[Source], status_code=200)
+@app.get("/v2/sources", response_model=List[Source], status_code=200, tags=["Sources"])
 def get_source(contentType: str = None, versionAbbreviation: versionPattern = None, languageCode: langCodePattern =None, active: bool = True):
 	'''Fetches all sources and their details.
 	If one or more optional params are present, returns a filtered result if pressent
@@ -223,7 +223,7 @@ def get_source(contentType: str = None, versionAbbreviation: versionPattern = No
 		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
 	return result
 
-@app.post('/v2/sources', response_model=NormalResponse, status_code=201)
+@app.post('/v2/sources', response_model=NormalResponse, status_code=201, tags=["Sources"])
 def add_source(source_obj : Source = Body(...)):
 	''' Creates a new source entry in sources table. Also creates all associtated tables for the contenty type,
 	except for bible_videos. Bible videos are all stored in one table. '''
@@ -235,7 +235,7 @@ def add_source(source_obj : Source = Body(...)):
 		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
 	return {"message": f"Source {source_obj.version} {source_obj.contentType} created successfully"}
 
-@app.put('/v2/sources', response_model=NormalResponse, status_code=201)
+@app.put('/v2/sources', response_model=NormalResponse, status_code=201, tags=["Sources"])
 def edit_source(source_obj: SourceEdit = Body(...)):
 	''' Changes one or more fields of source '''
 	logging.info(source_obj)
@@ -263,7 +263,7 @@ class BibleBook(BaseModel):
 	bookName : str
 	bookCode : BookCodePattern
 
-@app.get('/v2/biblebooks', response_model=List[BibleBook], status_code=200)
+@app.get('/v2/biblebooks', response_model=List[BibleBook], status_code=200, tags=["Bible Books"])
 def get_bible_book(bookId: int = None, bookCode: BookCodePattern = None):
 	''' returns the list of book ids, codes and names.
 	If any of the query params are provided the details of corresponding book
@@ -335,7 +335,7 @@ class BookContentType(str, Enum):
 	all = 'all'
 
 
-@app.post('/v2/bibles/{sourceName}/books', response_model=NormalResponse, status_code=201)
+@app.post('/v2/bibles/{sourceName}/books', response_model=NormalResponse, status_code=201, tags=["Bibles"])
 def add_bible_book(sourceName: tableNamePattern, bibleBookObj : BibleBookUpload = Body(...)):
 	'''Uploads a bible book. It update 3 tables: ..._bible, .._bible_cleaned, ..._bible_tokens'''
 	try:
@@ -349,7 +349,7 @@ def add_bible_book(sourceName: tableNamePattern, bibleBookObj : BibleBookUpload 
 	return {"message": f"Bible book uploaded successfully"}
 
 
-@app.put('/v2/bibles/{sourceName}/books', response_model=NormalResponse, status_code=201)
+@app.put('/v2/bibles/{sourceName}/books', response_model=NormalResponse, status_code=201, tags=["Bibles"])
 def edit_bible_book(sourceName: tableNamePattern, bibleBookObj: BibleBookUpload = Body(...)):
 	''' Changes both usfm and json fileds of bible book. 
 	The contents of the respective bible_clean and bible_tokens tables' contents 
@@ -367,7 +367,7 @@ def edit_bible_book(sourceName: tableNamePattern, bibleBookObj: BibleBookUpload 
 	return {"message" : f"Updated bible book and associated tables"}
 
 
-@app.get('/v2/bibles/{sourceName}/books', response_model=List[BookCodePattern], status_code=200)
+@app.get('/v2/bibles/{sourceName}/books', response_model=List[BookCodePattern], status_code=200, tags=["Bibles"])
 def get_available_bible_books(sourceName: tableNamePattern):
 	'''Fetches all the books available(has been uploaded) in the specified bible'''
 	result = []	
@@ -380,7 +380,7 @@ def get_available_bible_books(sourceName: tableNamePattern):
 	return result
 
 
-@app.get("/v2/bibles/{sourceName}/books/{bookCode}/{contentType}", response_model=BibleBookContent, status_code=200)
+@app.get("/v2/bibles/{sourceName}/books/{bookCode}/{contentType}", response_model=BibleBookContent, status_code=200, tags=["Bibles"])
 def get_bible_book(sourceName: tableNamePattern, bookCode: BookCodePattern, contentType: BookContentType = None):	
 	'''Fetches the usfm and/or JSON of the specifed bible book'''
 	result = None
@@ -392,7 +392,7 @@ def get_bible_book(sourceName: tableNamePattern, bookCode: BookCodePattern, cont
 		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
 	return result
 
-@app.get("/v2/bibles/{sourceName}/verses", response_model=List[BibleVerse], status_code=200)
+@app.get("/v2/bibles/{sourceName}/verses", response_model=List[BibleVerse], status_code=200, tags=["Bibles"])
 def get_bible_verse(sourceName: tableNamePattern, bookCode: BookCodePattern = None, chapter: int = None, verse: int = None, lastVerse: int = None, searchPhrase: str = None):
 	''' Fetches the cleaned contents of bible, within a verse range, if specified.
 	This API could be used for fetching, 
@@ -424,7 +424,7 @@ def get_bible_verse(sourceName: tableNamePattern, bookCode: BookCodePattern = No
 
 # ########### Audio bible ###################
 
-@app.post('/v2/bibles/{sourceName}/audios', response_model=NormalResponse, status_code=201)
+@app.post('/v2/bibles/{sourceName}/audios', response_model=NormalResponse, status_code=201, tags=["Bibles"])
 def add_audio_bible(sourceName: tableNamePattern, audios:List[AudioBibleUpload] = Body(...)):
 	'''Uploads a list of Audio Bible URLs and other associated info about them.'''
 	try:
@@ -437,7 +437,7 @@ def add_audio_bible(sourceName: tableNamePattern, audios:List[AudioBibleUpload] 
 		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
 	return {"message": f"Audio bible details uploaded successfully"}
 
-@app.put('/v2/bibles/{sourceName}/audios', response_model=NormalResponse, status_code=201)
+@app.put('/v2/bibles/{sourceName}/audios', response_model=NormalResponse, status_code=201, tags=["Bibles"])
 def edit_audio_bible(sourceName: tableNamePattern, audios: List[AudioBibleEdit] = Body(...)):
 	''' Changes the mentioned fields of audio bible row'''
 	logging.info(audios)
@@ -481,7 +481,7 @@ class Commentary(BaseModel):
 	verseNumber: int
 	commentary: str
 
-@app.get('/v2/commentaries/{sourceName}', response_model=List[Commentary], status_code=200)
+@app.get('/v2/commentaries/{sourceName}', response_model=List[Commentary], status_code=200, tags=["Commentaries"])
 def get_commentary(sourceName: tableNamePattern, bookCode: BookCodePattern = None, chapter: int = None, verse: int = None, lastVerse: int = None):
 	'''Fetches commentries under the specified source.
 	Using the params bookCode, chapter, and verse the result set can be filtered as per need, like in the /v2/bibles/{sourceName}/verses API'''
@@ -494,7 +494,7 @@ def get_commentary(sourceName: tableNamePattern, bookCode: BookCodePattern = Non
 		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
 	return result
 
-@app.post('/v2/commentaries/{sourceName}', response_model=NormalResponse, status_code=201)
+@app.post('/v2/commentaries/{sourceName}', response_model=NormalResponse, status_code=201, tags=["Commentaries"])
 def add_commentary(sourceName: tableNamePattern, commentries:List[Commentary] = Body(...)):
 	'''Uploads a list of commentaries.'''
 	try:
@@ -507,7 +507,7 @@ def add_commentary(sourceName: tableNamePattern, commentries:List[Commentary] = 
 		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
 	return {"message": f"Commentaries uploaded successfully"}
 
-@app.put('/v2/commentaries/{sourceName}', response_model=NormalResponse, status_code=201)
+@app.put('/v2/commentaries/{sourceName}', response_model=NormalResponse, status_code=201, tags=["Commentaries"])
 def edit_commentary(sourceName: tableNamePattern, commentries: List[Commentary] = Body(...)):
 	''' Changes the commentary field to the given value in the row selected using book, chapter, verse values'''
 	logging.info(commentries)
@@ -535,7 +535,7 @@ class DictionaryWord(BaseModel):
 	word: str
 	details: dict
 
-@app.get('/v2/dictionaries/{sourceName}', response_model=List[DictionaryWord], status_code=200)
+@app.get('/v2/dictionaries/{sourceName}', response_model=List[DictionaryWord], status_code=200, tags=["Dictionaries"])
 def get_dictionary_words(sourceName: tableNamePattern, searchIndex: str = None):
 	'''fetches list of dictionary words and all available details about them.
 	Using the searchIndex appropriately, it is possible to get
@@ -552,7 +552,7 @@ def get_dictionary_words(sourceName: tableNamePattern, searchIndex: str = None):
 	return result
 
 
-@app.post('/v2/dictionaries/{sourceName}', response_model=NormalResponse, status_code=201)
+@app.post('/v2/dictionaries/{sourceName}', response_model=NormalResponse, status_code=201, tags=["Dictionaries"])
 def add_dictionary(sourceName: tableNamePattern, words: List[DictionaryWord] = Body(...)):
 	''' uploads dictionay words'''
 	logging.info(words)
@@ -566,7 +566,7 @@ def add_dictionary(sourceName: tableNamePattern, words: List[DictionaryWord] = B
 		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
 	return {"message": f"Dictionary table created and words uploaded successfully"}
 
-@app.put('/v2/dictionaries/{sourceName}', response_model=NormalResponse, status_code=201)
+@app.put('/v2/dictionaries/{sourceName}', response_model=NormalResponse, status_code=201, tags=["Dictionaries"])
 def edit_dictionary(sourceName: tableNamePattern, words: List[DictionaryWord] = Body(...)):
 	'''Updates the given fields mentioned in details object, of the specifed word'''
 	logging.info(words)
@@ -600,7 +600,7 @@ class Infographic(BaseModel):
 	bookCode : BookCodePattern
 	infographicsLink : AnyUrl
 
-@app.get('/v2/infographics/{sourceName}', response_model=List[Infographic], status_code=200)
+@app.get('/v2/infographics/{sourceName}', response_model=List[Infographic], status_code=200, tags=["Infographics"])
 def get_infographic(sourceName: tableNamePattern, bookCode: BookCodePattern = None ):
 	'''Fetches the infographics. Can use, bookCode to filter the results'''
 	result = []	
@@ -612,7 +612,7 @@ def get_infographic(sourceName: tableNamePattern, bookCode: BookCodePattern = No
 		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
 	return result
 
-@app.post('/v2/infographics/{sourceName}', response_model=NormalResponse, status_code=201)
+@app.post('/v2/infographics/{sourceName}', response_model=NormalResponse, status_code=201, tags=["Infographics"])
 def add_infographics(sourceName: tableNamePattern, infographics:List[Infographic] = Body(...)):
 	'''Uploads a list of infograhics.'''
 	try:
@@ -625,7 +625,7 @@ def add_infographics(sourceName: tableNamePattern, infographics:List[Infographic
 		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
 	return {"message": f"Infographics uploaded successfully"}
 
-@app.put('/v2/infographics/{sourceName}', response_model=NormalResponse, status_code=201)
+@app.put('/v2/infographics/{sourceName}', response_model=NormalResponse, status_code=201, tags=["Infographics"])
 def edit_infographics(sourceName: tableNamePattern, infographics: List[Infographic] = Body(...)):
 	''' Changes the commentary field to the given value in the row selected using book, chapter, verse values'''
 	logging.info(infographics)
@@ -677,7 +677,7 @@ class BibleVideoEdit(BaseModel):
 	language: str  = None
 	status: bool  = None
 
-@app.get('/v2/biblevideos', response_model=List[BibleVideo], status_code=200)
+@app.get('/v2/biblevideos', response_model=List[BibleVideo], status_code=200, tags=["Bible Videos"])
 def get_bible_video(bookCode: BookCodePattern = None, language:langCodePattern = None, theme: str = None, title: str = None):
 	'''Fetches the infographics. Can use the optional query params book, langugage, title and theme to filter the results'''
 	result = []	
@@ -687,7 +687,7 @@ def get_bible_video(bookCode: BookCodePattern = None, language:langCodePattern =
 		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
 	return result
 
-@app.post('/v2/biblevideos', response_model=NormalResponse, status_code=201)
+@app.post('/v2/biblevideos', response_model=NormalResponse, status_code=201, tags=["Bible Videos"])
 def add_bible_video(videos:List[BibleVideoUpload] = Body(...)):
 	'''Uploads a list of bible video links and details.'''
 	try:
@@ -698,7 +698,7 @@ def add_bible_video(videos:List[BibleVideoUpload] = Body(...)):
 		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
 	return {"message": f"BibleVideo details uploaded successfully"}
 
-@app.put('/v2/biblevideos', response_model=NormalResponse, status_code=201)
+@app.put('/v2/biblevideos', response_model=NormalResponse, status_code=201, tags=["Bible Videos"])
 def edit_bible_video(videos: List[BibleVideoEdit] = Body(...)):
 	''' Changes the commentary field to the given value in the row selected using book, chapter, verse values'''
 	logging.info(videos)
