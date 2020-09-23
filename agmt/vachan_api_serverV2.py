@@ -226,8 +226,7 @@ def get_source(contentType: str = None, versionAbbreviation: versionPattern = No
 @app.post('/v2/sources', response_model=NormalResponse, status_code=201)
 def add_source(source_obj : Source = Body(...)):
 	''' Creates a new source entry in sources table. Also creates all associtated tables for the contenty type,
-	except for bible_videos and dictionaries. Bible videos are all stored in one table. 
-	And Dictionary table schema is defined at the /v2/dictionary POST method'''
+	except for bible_videos. Bible videos are all stored in one table. '''
 	try:
 		pass
 	except Exception as e:
@@ -394,14 +393,15 @@ def get_bible_book(sourceName: tableNamePattern, bookCode: BookCodePattern, cont
 	return result
 
 @app.get("/v2/bibles/{sourceName}/verses", response_model=List[BibleVerse], status_code=200)
-def get_bible_verse(sourceName: tableNamePattern, bookCode: BookCodePattern = None, chapter: int = None, verse: int = None, lastVerse: int = None):
+def get_bible_verse(sourceName: tableNamePattern, bookCode: BookCodePattern = None, chapter: int = None, verse: int = None, lastVerse: int = None, searchPhrase: str = None):
 	''' Fetches the cleaned contents of bible, within a verse range, if specified.
 	This API could be used for fetching, 
 	 * all verses of a source : with out giving any query params.
 	 * all verses of a book: with only book_code
 	 * all verses of a chapter: with book_code and chapter 
 	 * one verse: with bookCode, chapter and verse(without lastVerse).
-	 * any range of verses within a chapter: using verse and lastVerse appropriately'''
+	 * any range of verses within a chapter: using verse and lastVerse appropriately
+	 * search for a query phrase in a bible and get matching verses: using searchPhrase'''
 	result = []	
 	try:
 		pass
