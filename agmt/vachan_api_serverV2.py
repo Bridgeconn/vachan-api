@@ -158,7 +158,7 @@ def get_version(version_abbr : versionPattern = None):
 
 @app.post('/v2/versions', response_model=NormalResponse, status_code=201, tags=["Versions"])
 def add_version(version_obj : Version = Body(...)):
-	''' Create a new language'''
+	''' Creates a new version '''
 	try:
 		pass
 	except Exception as e:
@@ -169,7 +169,7 @@ def add_version(version_obj : Version = Body(...)):
 
 @app.put('/v2/versions', response_model=NormalResponse, status_code=201, tags=["Versions"])
 def edit_version(version_obj: VersionEdit = Body(...)):
-	''' Changes one or more fields of language'''
+	''' Changes one or more fields of vesrion types table'''
 	logging.info(version_obj)
 	try:
 		pass
@@ -225,8 +225,9 @@ def get_source(contentType: str = None, versionAbbreviation: versionPattern = No
 
 @app.post('/v2/sources', response_model=NormalResponse, status_code=201, tags=["Sources"])
 def add_source(source_obj : Source = Body(...)):
-	''' Creates a new source entry in sources table. Also creates all associtated tables for the contenty type,
-	except for bible_videos. Bible videos are all stored in one table. '''
+	''' Creates a new source entry in sources table. 
+	Also creates all associtated tables for the content type.
+	'''
 	try:
 		pass
 	except Exception as e:
@@ -456,7 +457,7 @@ def edit_audio_bible(sourceName: tableNamePattern, audios: List[AudioBibleEdit] 
 
 # ##### DB change suggested #######
 # Currently, this is a separate table in DB. 
-# It could be added to a metadata column in the _bible table or to a metadata column in bible_books_lookup table
+# It could be added to a metadata column in the _bible table 
 # # change the columns name from 
 # #	1. 'short' to 'short_name', 
 # #	2. 'long' to 'long_name' and 
@@ -646,7 +647,6 @@ class BibleVideo(BaseModel):
 	title: str
 	description: str
 	theme: str
-	language: str
 	status: bool
 
 class BibleVideoUpload(BaseModel):
@@ -655,7 +655,6 @@ class BibleVideoUpload(BaseModel):
 	title: str
 	description: str
 	theme: str
-	language: str
 	status: bool
 
 
@@ -666,12 +665,11 @@ class BibleVideoEdit(BaseModel):
 	title: str  = None
 	description: str  = None
 	theme: str  = None
-	language: str  = None
 	status: bool  = None
 
-@app.get('/v2/biblevideos', response_model=List[BibleVideo], status_code=200, tags=["Bible Videos"])
-def get_bible_video(bookCode: BookCodePattern = None, language:langCodePattern = None, theme: str = None, title: str = None):
-	'''Fetches the infographics. Can use the optional query params book, langugage, title and theme to filter the results'''
+@app.get('/v2/biblevideos/{sourceName}', response_model=List[BibleVideo], status_code=200, tags=["Bible Videos"])
+def get_bible_video(bookCode: BookCodePattern = None, theme: str = None, title: str = None):
+	'''Fetches the Bible video details and URL. Can use the optional query params book, title and theme to filter the results'''
 	result = []	
 	try:
 		pass
@@ -679,7 +677,7 @@ def get_bible_video(bookCode: BookCodePattern = None, language:langCodePattern =
 		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
 	return result
 
-@app.post('/v2/biblevideos', response_model=NormalResponse, status_code=201, tags=["Bible Videos"])
+@app.post('/v2/biblevideos/{sourceName}', response_model=NormalResponse, status_code=201, tags=["Bible Videos"])
 def add_bible_video(videos:List[BibleVideoUpload] = Body(...)):
 	'''Uploads a list of bible video links and details.'''
 	try:
@@ -690,7 +688,7 @@ def add_bible_video(videos:List[BibleVideoUpload] = Body(...)):
 		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
 	return {"message": f"BibleVideo details uploaded successfully"}
 
-@app.put('/v2/biblevideos', response_model=NormalResponse, status_code=201, tags=["Bible Videos"])
+@app.put('/v2/biblevideos/{sourceName}', response_model=NormalResponse, status_code=201, tags=["Bible Videos"])
 def edit_bible_video(videos: List[BibleVideoEdit] = Body(...)):
 	''' Changes the commentary field to the given value in the row selected using book, chapter, verse values'''
 	logging.info(videos)
@@ -706,7 +704,10 @@ def edit_bible_video(videos: List[BibleVideoEdit] = Body(...)):
 
 
 # ### DB change ####
-# # field books should accept only valid book codes and 
+# 1. The BibleVideos is made an entry in contentTypes table
+# 2. new source to be added to sources table and new table to be created for every language, at least(if version name and revision are same)
+# 3. the filed language can then be removed from the table
+# 4. field 'books' should accept only valid book codes and 
 #    datatype should be JSON, like in audio bibles, not comma separated text
 
 # ###########################################
