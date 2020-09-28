@@ -28,7 +28,7 @@
 
 5. No tests
 
-	Often the APIs where developed by the UI developer itself and where only tested using the UI manually. There were no proper test cases created(neither for UI nor for API) at the time of implementation. An Attempt was made to add tests for these APIs afterwards, again with Savitha's and Joel Johnson's help. But, it wasn't effective either. Though tests were written, it hardly check for the possible flaws, and we are often finding them when issues comes up from user end. The problem of tests not being defined during the definition and implementaion of APIs is very evident.
+	Often the APIs were developed by the UI developer itself and were only tested using the UI manually. There were no proper test cases created(neither for UI nor for API) at the time of implementation. An Attempt was made to add tests for these APIs afterwards, again with Savitha's and Joel Johnson's help. But, it wasn't effective either. Though tests were written, it hardly check for the possible flaws, and we are often finding them when issues comes up from user end. The problem of tests not being defined during the definition and implementaion of APIs is very evident.
 
 6. Database changes
 
@@ -45,6 +45,9 @@
 standardized. 
 
 It is important to have the V1 APIs as it is, as currently 3 clients(AgMT, VO and VO App) are using them. So we can have a better parallel version 2 and let the clients switch versions on their conviniance.
+
+A rough time estimate for carrying out this process would be as follows: **6 Months** for the design, development and testing of V2, and another **6 months** for allowing the client projects to transition to the newer APIs, until which the vachan-api V1 should be maintained and supported.
+
 
 ## API Endpoint Design for vachan-api Version 2
 
