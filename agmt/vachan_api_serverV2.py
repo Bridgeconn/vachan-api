@@ -43,8 +43,10 @@ class ContentTypeUpdateResponse(BaseModel):
 	data: ContentType = None
 
 @app.get('/v2/contents', response_model=List[ContentType], status_code=200, tags=["Contents Types"])
-def get_contents():
-	'''fetches all the contents types supported and their details '''
+def get_contents(skip: int = 0, limit: int = 100):
+	'''fetches all the contents types supported and their details
+	* skip=n: skips the first n objects in return list
+	* limit=n: limits the no. of items to be returned to n'''
 	result = []
 	return result   
 
@@ -104,10 +106,12 @@ class LanguageEdit (BaseModel):
 	scriptDirection : Direction = None	
 
 @app.get('/v2/languages', response_model=List[LanguageResponse], status_code=200, tags=["Languages"])
-def get_language(language_code : langCodePattern = None):
+def get_language(language_code : langCodePattern = None, skip: int = 0, limit: int = 100):
 		'''fetches all the languages supported in the DB, their code and other details.
 		if query parameter, langauge_code is provided, returns details of that language if pressent
-		and 404, if not found'''
+		and 404, if not found
+		* skip=n: skips the first n objects in return list
+		* limit=n: limits the no. of items to be returned to n'''
 		result = []	
 		try:
 			pass
@@ -172,10 +176,12 @@ class VersionEdit(BaseModel):
 
 
 @app.get("/v2/versions", response_model=List[VersionResponse], status_code=200, tags=["Versions"])
-def get_version(version_abbr : versionPattern = None):
+def get_version(versionAbbreviation : versionPattern = None, skip: int = 0, limit: int = 100):
 	'''Fetches all versions and their details.
-	If param version_abbr is present, returns details of that version if pressent
-	and 404, if not found'''
+	If param versionAbbreviation is present, returns details of that version if pressent
+	and 404, if not found
+	* skip=n: skips the first n objects in return list
+	* limit=n: limits the no. of items to be returned to n'''
 	result = []	
 	try:
 		pass
@@ -241,10 +247,12 @@ class SourceEdit(BaseModel):
 	active: bool = None
 
 @app.get("/v2/sources", response_model=List[Source], status_code=200, tags=["Sources"])
-def get_source(contentType: str = None, versionAbbreviation: versionPattern = None, languageCode: langCodePattern =None, active: bool = True):
+def get_source(contentType: str = None, versionAbbreviation: versionPattern = None, languageCode: langCodePattern =None, skip: int = 0, limit: int = 100, active: bool = True):
 	'''Fetches all sources and their details.
 	If one or more optional params are present, returns a filtered result if pressent
-	and 404, if not found'''
+	and 404, if not found
+	* skip=n: skips the first n objects in return list
+	* limit=n: limits the no. of items to be returned to n'''
 	result = []	
 	try:
 		pass
@@ -294,10 +302,12 @@ class BibleBook(BaseModel):
 	bookCode : BookCodePattern
 
 @app.get('/v2/biblebooks', response_model=List[BibleBook], status_code=200, tags=["Bible Books"])
-def get_bible_book(bookId: int = None, bookCode: BookCodePattern = None):
+def get_bible_book(bookId: int = None, bookCode: BookCodePattern = None, skip: int = 0, limit: int = 100):
 	''' returns the list of book ids, codes and names.
 	If any of the query params are provided the details of corresponding book
-	will be returned'''
+	will be returned
+	* skip=n: skips the first n objects in return list
+	* limit=n: limits the no. of items to be returned to n'''
 	result = []	
 	try:
 		pass
@@ -407,12 +417,14 @@ def edit_bible_book(sourceName: tableNamePattern, bibleBookObj: BibleBookUpload 
 
 
 @app.get('/v2/bibles/{sourceName}/books', response_model=List[BibleBookContent], status_code=200, tags=["Bibles"])
-def get_available_bible_books(sourceName: tableNamePattern, bookCode: BookCodePattern = None, contentType: BookContentType = None, versification: bool = False):
+def get_available_bible_books(sourceName: tableNamePattern, bookCode: BookCodePattern = None, contentType: BookContentType = None, versification: bool = False, skip: int = 0, limit: int = 100):
 	'''Fetches all the books available(has been uploaded) in the specified bible
 	* returns all available(uploaded) books without bookCode and contentType
 	* returns above details of one book: if bookCode is specified
 	* versification can be set to true if the book structure is required(chapters in a book and verse numbers in each chapter)
-	* returns the JSON, USFM and/or Audio contents also: if contentType is given'''
+	* returns the JSON, USFM and/or Audio contents also: if contentType is given
+	* skip=n: skips the first n objects in return list
+	* limit=n: limits the no. of items to be returned to n'''
 	result = []	
 	try:
 		pass
@@ -424,7 +436,7 @@ def get_available_bible_books(sourceName: tableNamePattern, bookCode: BookCodePa
 
 
 @app.get("/v2/bibles/{sourceName}/verses", response_model=List[BibleVerse], status_code=200, tags=["Bibles"])
-def get_bible_verse(sourceName: tableNamePattern, bookCode: BookCodePattern = None, chapter: int = None, verse: int = None, lastVerse: int = None, searchPhrase: str = None):
+def get_bible_verse(sourceName: tableNamePattern, bookCode: BookCodePattern = None, chapter: int = None, verse: int = None, lastVerse: int = None, searchPhrase: str = None, skip: int = 0, limit: int = 100):
 	''' Fetches the cleaned contents of bible, within a verse range, if specified.
 	This API could be used for fetching, 
 	 * all verses of a source : with out giving any query params.
@@ -432,7 +444,9 @@ def get_bible_verse(sourceName: tableNamePattern, bookCode: BookCodePattern = No
 	 * all verses of a chapter: with book_code and chapter 
 	 * one verse: with bookCode, chapter and verse(without lastVerse).
 	 * any range of verses within a chapter: using verse and lastVerse appropriately
-	 * search for a query phrase in a bible and get matching verses: using searchPhrase'''
+	 * search for a query phrase in a bible and get matching verses: using searchPhrase
+	 * skip=n: skips the first n objects in return list
+	 * limit=n: limits the no. of items to be returned to n'''
 	result = []	
 	try:
 		pass
@@ -517,9 +531,11 @@ class CommentaryUpdateResponse(BaseModel):
 	data: List[Commentary] = None
 
 @app.get('/v2/commentaries/{sourceName}', response_model=List[Commentary], status_code=200, tags=["Commentaries"])
-def get_commentary(sourceName: tableNamePattern, bookCode: BookCodePattern = None, chapter: int = None, verse: int = None, lastVerse: int = None):
+def get_commentary(sourceName: tableNamePattern, bookCode: BookCodePattern = None, chapter: int = None, verse: int = None, lastVerse: int = None, skip: int = 0, limit: int = 100):
 	'''Fetches commentries under the specified source.
-	Using the params bookCode, chapter, and verse the result set can be filtered as per need, like in the /v2/bibles/{sourceName}/verses API'''
+	Using the params bookCode, chapter, and verse the result set can be filtered as per need, like in the /v2/bibles/{sourceName}/verses API
+	* skip=n: skips the first n objects in return list
+	* limit=n: limits the no. of items to be returned to n'''
 	result = []	
 	try:
 		pass
@@ -575,12 +591,14 @@ class DictionaryUpdateResponse(BaseModel):
 	data: List[DictionaryWord] = None
 
 @app.get('/v2/dictionaries/{sourceName}', response_model=List[DictionaryWord], status_code=200, tags=["Dictionaries"])
-def get_dictionary_words(sourceName: tableNamePattern, searchIndex: str = None):
+def get_dictionary_words(sourceName: tableNamePattern, searchIndex: str = None, skip: int = 0, limit: int = 100):
 	'''fetches list of dictionary words and all available details about them.
 	Using the searchIndex appropriately, it is possible to get
 	* All words starting with a letter
 	* All words starting with a substring
-	* An exact word search, giving the whole word'''
+	* An exact word search, giving the whole word
+	* skip=n: skips the first n objects in return list
+	* limit=n: limits the no. of items to be returned to n'''
 	result = []	
 	try:
 		pass
@@ -644,8 +662,10 @@ class InfographicUpdateResponse(BaseModel):
 	data: List[Infographic] = None
 
 @app.get('/v2/infographics/{sourceName}', response_model=List[Infographic], status_code=200, tags=["Infographics"])
-def get_infographic(sourceName: tableNamePattern, bookCode: BookCodePattern = None ):
-	'''Fetches the infographics. Can use, bookCode to filter the results'''
+def get_infographic(sourceName: tableNamePattern, bookCode: BookCodePattern = None, skip: int = 0, limit: int = 100 ):
+	'''Fetches the infographics. Can use, bookCode to filter the results
+	* skip=n: skips the first n objects in return list
+	* limit=n: limits the no. of items to be returned to n'''
 	result = []	
 	try:
 		pass
@@ -722,8 +742,10 @@ class BibleVideoEdit(BaseModel):
 	status: bool  = None
 
 @app.get('/v2/biblevideos/{sourceName}', response_model=List[BibleVideo], status_code=200, tags=["Bible Videos"])
-def get_bible_video(bookCode: BookCodePattern = None, theme: str = None, title: str = None):
-	'''Fetches the Bible video details and URL. Can use the optional query params book, title and theme to filter the results'''
+def get_bible_video(bookCode: BookCodePattern = None, theme: str = None, title: str = None, skip: int = 0, limit: int = 100):
+	'''Fetches the Bible video details and URL. Can use the optional query params book, title and theme to filter the results
+	* skip=n: skips the first n objects in return list
+	* limit=n: limits the no. of items to be returned to n'''
 	result = []	
 	try:
 		pass
