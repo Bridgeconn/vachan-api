@@ -307,7 +307,7 @@ class AudioBibleEdit(BaseModel):
 
 class BibleBookContent(BaseModel):
 	bookCode : BookCodePattern
-	structure : dict 
+	versification : dict = None
 	USFM: str = None
 	JSON: dict = None
 	audio: AudioBible = None
@@ -370,10 +370,11 @@ def edit_bible_book(sourceName: tableNamePattern, bibleBookObj: BibleBookUpload 
 
 
 @app.get('/v2/bibles/{sourceName}/books', response_model=List[BibleBookContent], status_code=200, tags=["Bibles"])
-def get_available_bible_books(sourceName: tableNamePattern, bookCode: BookCodePattern = None, contentType: BookContentType = None):
+def get_available_bible_books(sourceName: tableNamePattern, bookCode: BookCodePattern = None, contentType: BookContentType = None, versification: bool = False):
 	'''Fetches all the books available(has been uploaded) in the specified bible
-	* returns all available books and their chapter-verse structure: without bookCode and contentType
+	* returns all available(uploaded) books without bookCode and contentType
 	* returns above details of one book: if bookCode is specified
+	* versification can be set to true if the book structure is required(chapters in a book and verse numbers in each chapter)
 	* returns the JSON, USFM and/or Audio contents also: if contentType is given'''
 	result = []	
 	try:
