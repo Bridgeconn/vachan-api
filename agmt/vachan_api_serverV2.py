@@ -301,7 +301,7 @@ class BibleBook(BaseModel):
 	bookName : str
 	bookCode : BookCodePattern
 
-@app.get('/v2/biblebooks', response_model=List[BibleBook], status_code=200, tags=["Bible Books"])
+@app.get('/v2/lookup/bible/books', response_model=List[BibleBook], status_code=200, tags=["Lookups"])
 def get_bible_book(bookId: int = None, bookCode: BookCodePattern = None, skip: int = 0, limit: int = 100):
 	''' returns the list of book ids, codes and names.
 	If any of the query params are provided the details of corresponding book
