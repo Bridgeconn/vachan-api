@@ -69,8 +69,8 @@ def add_contents(content_name: str  = Body(...)):
 ##### languages #####
 langCodePattern =constr(regex="^\w\w\w$")
 class Direction(str, Enum):
-	right_to_left = 'right-to-left'
 	left_to_right = 'left-to-right'
+	right_to_left = 'right-to-left'
 
 class Language(BaseModel):
 	language : str 
@@ -78,6 +78,15 @@ class Language(BaseModel):
 	localScriptName : str = None
 	script : str = None
 	scriptDirection : Direction = None
+
+class LanguageResponse(BaseModel):
+	languageId : int
+	language : str 
+	code : langCodePattern 
+	localScriptName : str = None
+	script : str = None
+	scriptDirection : Direction = None
+
 
 class LanguageEdit (BaseModel):
 	languageId: int
@@ -87,7 +96,7 @@ class LanguageEdit (BaseModel):
 	script : str = None
 	scriptDirection : Direction = None	
 
-@app.get('/v2/languages', response_model=List[Language], status_code=200, tags=["Languages"])
+@app.get('/v2/languages', response_model=List[LanguageResponse], status_code=200, tags=["Languages"])
 def get_language(language_code : langCodePattern = None):
 		'''fetches all the languages supported in the DB, their code and other details.
 		if query parameter, langauge_code is provided, returns details of that language if pressent
@@ -136,6 +145,14 @@ class Version(BaseModel):
 	revision : str = "1"
 	metadata : dict = None
 
+class VersionResponse(BaseModel):
+	versionId : int
+	versionAbbreviation : versionPattern
+	versionName : str
+	revision : str 
+	metadata : dict = None
+
+
 class VersionEdit(BaseModel):
 	versionId: int
 	versionAbbreviation : versionPattern = None
@@ -144,7 +161,7 @@ class VersionEdit(BaseModel):
 	metadata : dict = None
 
 
-@app.get("/v2/versions", response_model=List[Version], status_code=200, tags=["Versions"])
+@app.get("/v2/versions", response_model=List[VersionResponse], status_code=200, tags=["Versions"])
 def get_version(version_abbr : versionPattern = None):
 	'''Fetches all versions and their details.
 	If param version_abbr is present, returns details of that version if pressent
