@@ -1,23 +1,7 @@
 version: '2'
  
 services:
-  data:
-    image: postgres:9.6
-    volumes:
-      - /var/lib/postgresql
-    command: "true"
-
-  postgres:
-    restart: always
-    build: ./postgresql
-    env_file:
-      - .env.dev
-    volumes_from:
-      - data
-    ports:
-      - "5432:5432"
-
-  api:
+  web:
     container_name: vachan-api
     restart: always
     build: .
@@ -26,8 +10,6 @@ services:
     volumes:
       - /usr/src/vachan-api
     command: /usr/local/bin/gunicorn -w 2 -b :8000 agmt/main:app
-    depends_on:
-      - postgres
 
   nginx:
     restart: always
@@ -37,7 +19,7 @@ services:
     volumes:
       - /www/vachan-api
     volumes_from:
-      - api
+      - web
     depends_on:
-      - api
+      - web
  
