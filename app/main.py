@@ -2,14 +2,25 @@ from fastapi import FastAPI, Query, Path, Body, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, constr, AnyUrl
 from typing import Optional, List
+from sqlalchemy.orm import Session
 from enum import Enum
 import logging, csv, urllib, os
 
+from . import crud, db_models, schemas
+from .database import SessionLocal, engine
+
+db_models.Base.metadata.create_all(bind=engine)
+
 
 app = FastAPI()
+logging.basicConfig(filename='API_logs.log', format='%(asctime)s: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
 class NormalResponse(BaseModel):
 	message : str
+
+class ErrorResponse(BaseModel):
+	error: str
+	details: str
 
 class VachanApiException(Exception):
     def __init__(self, name: str, detail: str, status_code: int):
@@ -21,26 +32,20 @@ class VachanApiException(Exception):
 async def vachanapi_exception_handler(request: Request, exc: VachanApiException):
     return JSONResponse(
         status_code=exc.status_code,
-        content={"message": f"{exc.name} : {exc.detail}"},
+        content={"error": exc.name, "details" : exc.detail},
     )
 
 
 @app.get('/', response_model=NormalResponse, status_code=200)
 def test():
 	'''tests if app is running and the DB connection'''
-	# connection = get_db()
+	if not DB_connection:
+		DB_connection = get_db()
 	return {"message": "App is up and running"}
 
 
 
 ##### Content types #####
-class ContentType(BaseModel):
-	contentId : int
-	contentType : str
-
-class ContentTypeUpdateResponse(BaseModel):
-	message: str
-	data: ContentType = None
 
 @app.get('/v2/contents', response_model=List[ContentType], status_code=200, tags=["Contents Types"])
 def get_contents(skip: int = 0, limit: int = 100):
@@ -73,37 +78,6 @@ def add_contents(content_name: str  = Body(...)):
 #################
 
 ##### languages #####
-langCodePattern =constr(regex="^\w\w\w$")
-class Direction(str, Enum):
-	left_to_right = 'left-to-right'
-	right_to_left = 'right-to-left'
-
-class Language(BaseModel):
-	language : str 
-	code : langCodePattern 
-	localScriptName : str = None
-	script : str = None
-	scriptDirection : Direction = None
-
-class LanguageResponse(BaseModel):
-	languageId : int
-	language : str 
-	code : langCodePattern 
-	localScriptName : str = None
-	script : str = None
-	scriptDirection : Direction = None
-
-class LanguageUpdateResponse(BaseModel):
-	message: str
-	data: LanguageResponse = None
-
-class LanguageEdit (BaseModel):
-	languageId: int
-	language : str = None
-	code : langCodePattern = None
-	localScriptName : str = None
-	script : str = None
-	scriptDirection : Direction = None	
 
 @app.get('/v2/languages', response_model=List[LanguageResponse], status_code=200, tags=["Languages"])
 def get_language(language_code : langCodePattern = None, skip: int = 0, limit: int = 100):
@@ -149,31 +123,6 @@ def edit_language(lang_obj: LanguageEdit = Body(...)):
 
 ##### Version #####
 
-versionPattern = constr(regex="^[A-Z]+$")
-class Version(BaseModel):
-	versionAbbreviation : versionPattern
-	versionName : str
-	revision : str = "1"
-	metadata : dict = None
-
-class VersionResponse(BaseModel):
-	versionId : int
-	versionAbbreviation : versionPattern
-	versionName : str
-	revision : str 
-	metadata : dict = None
-
-class VersionUpdateResponse(BaseModel):
-	message: str
-	data: VersionResponse = None
-
-class VersionEdit(BaseModel):
-	versionId: int
-	versionAbbreviation : versionPattern = None
-	versionName : str = None
-	revision : str = None
-	metadata : dict = None
-
 
 @app.get("/v2/versions", response_model=List[VersionResponse], status_code=200, tags=["Versions"])
 def get_version(versionAbbreviation : versionPattern = None, skip: int = 0, limit: int = 100):
@@ -218,33 +167,7 @@ def edit_version(version_obj: VersionEdit = Body(...)):
 
 
 ##### Source #####
-tableNamePattern = constr(regex="^\w\w\w_[A-Z]+_\w+_[a-z]+$")
 
-class Source(BaseModel):
-	sourceName : tableNamePattern
-	contentType : str
-	language : langCodePattern
-	version : versionPattern
-	revision: str = "1"
-	year: int
-	license: str = "ISC"
-	metadata: dict = None
-	active: bool = True
-
-class SourceUpdateResponse(BaseModel):
-	message: str
-	data: Source = None
-
-class SourceEdit(BaseModel):
-	sourceName : int
-	contentType : str = None
-	language : langCodePattern = None
-	version : versionPattern = None
-	revision: str = None
-	year: int = None
-	license: str = None
-	metadata: dict = None
-	active: bool = None
 
 @app.get("/v2/sources", response_model=List[Source], status_code=200, tags=["Sources"])
 def get_source(contentType: str = None, versionAbbreviation: versionPattern = None, languageCode: langCodePattern =None, skip: int = 0, limit: int = 100, active: bool = True):
@@ -294,12 +217,7 @@ def edit_source(source_obj: SourceEdit = Body(...)):
 # #################
 
 ############ Bible Books ##########
-BookCodePattern = constr(regex="^[a-z1-9][a-z][a-z]$")
 
-class BibleBook(BaseModel):
-	bookId : int
-	bookName : str
-	bookCode : BookCodePattern
 
 @app.get('/v2/lookup/bible/books', response_model=List[BibleBook], status_code=200, tags=["Lookups"])
 def get_bible_book(bookId: int = None, bookCode: BookCodePattern = None, skip: int = 0, limit: int = 100):
@@ -320,68 +238,6 @@ def get_bible_book(bookId: int = None, bookCode: BookCodePattern = None, skip: i
 
 
 # # #### Bible #######
-class AudioBible(BaseModel):
-	audioId: int
-	name: str
-	url: AnyUrl
-	books: dict
-	format: str
-	status: bool
-
-class AudioBibleUpdateResponse(BaseModel):
-	message: str
-	data: List[AudioBible] = None
-
-class AudioBibleUpload(BaseModel):
-	name: str
-	url: AnyUrl
-	books: dict
-	format: str
-	status: bool
-
-
-class AudioBibleEdit(BaseModel):
-	audioId: int
-	name: str = None
-	url: str = None
-	books: dict = None
-	format: str = None
-	status: bool = None
-
-class BibleBookContent(BaseModel):
-	bookCode : BookCodePattern
-	versification : dict = None
-	USFM: str = None
-	JSON: dict = None
-	audio: AudioBible = None
-
-class BibleBookUpdateResponse(BaseModel):
-	message: str
-	data: BibleBookContent = None
-
-class BibleBookUpload(BaseModel):
-	USFM: str 
-	JSON: dict
-
-class Reference(BaseModel):
-	# bible : Source = None
-	bookId: int = None
-	bookcode: BookCodePattern
-	chapter: int
-	verseNumber: int
-	verseNumberEnd: int = None
-
-class BibleVerse(BaseModel):
-	reference : Reference
-	verseText: str
-	footNote : str = None
-	crossReference : str = None
-
-class BookContentType(str, Enum):
-	USFM = 'usfm'
-	JSON = 'json'
-	audio = 'audio'
-	all = 'all'
 
 
 @app.post('/v2/bibles/{sourceName}/books', response_model=BibleBookUpdateResponse, status_code=201, tags=["Bibles"])
@@ -520,15 +376,6 @@ def edit_audio_bible(sourceName: tableNamePattern, audios: List[AudioBibleEdit] 
 
 # ##### Commentary #####
 
-class Commentary(BaseModel):
-	bookCode : BookCodePattern
-	chapter: int
-	verseNumber: int
-	commentary: str
-
-class CommentaryUpdateResponse(BaseModel):
-	message: str
-	data: List[Commentary] = None
 
 @app.get('/v2/commentaries/{sourceName}', response_model=List[Commentary], status_code=200, tags=["Commentaries"])
 def get_commentary(sourceName: tableNamePattern, bookCode: BookCodePattern = None, chapter: int = None, verse: int = None, lastVerse: int = None, skip: int = 0, limit: int = 100):
@@ -581,14 +428,7 @@ def edit_commentary(sourceName: tableNamePattern, commentries: List[Commentary] 
 
 
 # ########### Dictionary ###################
-letterPattern = constr(regex='^\w$')
-class DictionaryWord(BaseModel):
-	word: str
-	details: dict
 
-class DictionaryUpdateResponse(BaseModel):
-	message: str
-	data: List[DictionaryWord] = None
 
 @app.get('/v2/dictionaries/{sourceName}', response_model=List[DictionaryWord], status_code=200, tags=["Dictionaries"])
 def get_dictionary_words(sourceName: tableNamePattern, searchIndex: str = None, skip: int = 0, limit: int = 100):
@@ -653,13 +493,6 @@ def edit_dictionary(sourceName: tableNamePattern, words: List[DictionaryWord] = 
 
 # ########### Infographic ###################
 
-class Infographic(BaseModel):
-	bookCode : BookCodePattern
-	infographicsLink : AnyUrl
-
-class InfographicUpdateResponse(BaseModel):
-	message: str
-	data: List[Infographic] = None
 
 @app.get('/v2/infographics/{sourceName}', response_model=List[Infographic], status_code=200, tags=["Infographics"])
 def get_infographic(sourceName: tableNamePattern, bookCode: BookCodePattern = None, skip: int = 0, limit: int = 100 ):
@@ -709,37 +542,6 @@ def edit_infographics(sourceName: tableNamePattern, infographics: List[Infograph
 
 
 # ########### bible videos ###################
-
-class BibleVideo(BaseModel):
-	bibleVideoId: int
-	books: dict
-	videoLink: AnyUrl
-	title: str
-	description: str
-	theme: str
-	status: bool
-
-class BibleVideoUpdateResponse(BaseModel):
-	message: str
-	data: List[BibleVideo] = None
-
-class BibleVideoUpload(BaseModel):
-	books: dict
-	videoLink: AnyUrl
-	title: str
-	description: str
-	theme: str
-	status: bool
-
-
-class BibleVideoEdit(BaseModel):
-	bibleVideoId: int
-	books: dict  = None
-	videoLink: AnyUrl  = None
-	title: str  = None
-	description: str  = None
-	theme: str  = None
-	status: bool  = None
 
 @app.get('/v2/biblevideos/{sourceName}', response_model=List[BibleVideo], status_code=200, tags=["Bible Videos"])
 def get_bible_video(bookCode: BookCodePattern = None, theme: str = None, title: str = None, skip: int = 0, limit: int = 100):
