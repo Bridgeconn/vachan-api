@@ -1,10 +1,12 @@
 from fastapi.testclient import TestClient
 import os, sys
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 sys.path.append(os.environ["PWD"])
 
-from main import app
+from main import app, get_db
 
 
 postgres_host = os.environ.get("AGMT_POSTGRES_HOST", "localhost")
