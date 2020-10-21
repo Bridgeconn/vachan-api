@@ -1,6 +1,14 @@
 from typing import List, Optional
+from enum import Enum
+from pydantic import BaseModel, constr, AnyUrl
 
-from pydantic import BaseModel
+class NormalResponse(BaseModel):
+	message : str
+
+class ErrorResponse(BaseModel):
+	error: str
+	details: str
+
 
 class ContentType(BaseModel):
 	contentId : int

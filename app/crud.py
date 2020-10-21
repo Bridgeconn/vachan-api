@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from . import db_models, schemas
+import db_models, schemas
 
 def get_content_types_all(db: Session):
 	return db.query(db_models.ContentType)
