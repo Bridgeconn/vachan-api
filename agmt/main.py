@@ -3377,7 +3377,7 @@ def addAudioBible():
 		if not rst:
 			#Insert row in table
 			cursor.execute('insert into audio_bibles (source_id, name, url, books, format, status) values \
-				(%s, %s, %s, %s, %s,true)', (sourceId, name, url, json.dumps(books), format,))
+				(%s, %s, %s, %s, %s,true)', (sourceId, name, url, books, format,))
 			connection.commit()
 			cursor.close()
 			return '{"success": true, "message":"Audio bible added successfully"}'
