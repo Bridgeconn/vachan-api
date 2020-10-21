@@ -1405,7 +1405,6 @@ def createTableCommand(fields, tablename):
 def createBibleSource():
 	try:
 		req = request.get_json(True)
-		logger.info("%s req......", req)
 		language = req["languageCode"]
 		versionContentCode = req["versionContentCode"]
 		versionContentDescription = req["versionContentDescription"]
@@ -1416,7 +1415,6 @@ def createBibleSource():
 		version = versionContentCode.lower() + '_' + str(revision)
 		connection = get_db()
 		cursor = connection.cursor()
-		logger.info("%s cursor......", cursor)
 		bibleTableName = "%s_%s_%s_bible" %(language.lower(), versionContentCode.lower(), str(revision).replace('.', '_'))
 		cleanTableName = "%s_%s_%s_bible_cleaned" %(language.lower(), versionContentCode.lower(), str(revision).replace('.', '_'))
 		tokenTableName = "%s_%s_%s_bible_tokens" %(language.lower(), versionContentCode.lower(), str(revision).replace('.', '_'))
@@ -1430,7 +1428,6 @@ def createBibleSource():
 						s.license=%s",(language, contentId, versionContentCode,
 							versionContentDescription, year, version, license))
 		rst = cursor.fetchone()
-		logger.info("%s rst......", rst)
 		if not rst:
 			create_usfm_bible_table_command = createTableCommand(['book_id INT NOT NULL', 'usfm_text TEXT', \
 				'json_text JSONB'], bibleTableName)
@@ -1460,7 +1457,7 @@ def createBibleSource():
 			return '{"success": false, "message":"Source already exists"}'
 	except Exception as ex:
 		print(ex)
-		logger.info("%s Exception", ex)
+		logger.error("Exception in createBibleSource: %s", ex)
 		return '{"success":false, "message":"Server side error"}'
 
 @app.route("/v1/bibles/upload", methods=["POST"])
@@ -1473,10 +1470,8 @@ def uploadSource():
 		parsedUsfmText = req["parsedUsfmText"]
 		connection = get_db()
 		cursor = connection.cursor()
-		logger.info("%s v1/bibles/upload..", cursor)
 		cursor.execute("select s.table_name from sources as s where s.source_id=%s", (sourceId,))
 		rst = cursor.fetchone()
-		logger.info("%s rst..", rst)
 		if not rst:
 			return '{"success":false, "message":"No source created"}'
 		bibleTable = rst[0]
@@ -1505,7 +1500,7 @@ def uploadSource():
 		return '{"success":true, "message":"Inserted %s into database"}' %(bookCode)
 	except Exception as ex:
 		print(ex)
-		logger.info("%s Exception..", ex)
+		logger.error("Exception in uploadSource: %s", ex)
 		return '{"success": false, "message":"Server side error"}'
 
 
@@ -3349,13 +3344,11 @@ def getInfographics(languageCode):
 @check_token
 def addAudioBible():
 	'''Add a audio bible.'''
-	logger.info("addAudioBible......")
 	try:
 		role = checkAuth()
 		if role != 3:
 			return '{"success":false, "message":"UnAuthorized"}'
 		req = request.get_json(True)
-		logger.info("%s addAudioBible req......", req)
 		sourceId = req["sourceId"]
 		name = req["name"]
 		url = req["url"]
@@ -3367,13 +3360,11 @@ def addAudioBible():
 		cursor.execute("select table_name from sources where source_id=%s and content_id in (select \
 			content_id from content_types where content_type = 'bible')", (sourceId,))
 		rst = cursor.fetchone()
-		logger.info("%s addAudioBible valid sourceID......", rst)
 		if not rst:
 			return '{"success":false, "message":"Invalid bible sourceId"}'
 		#Check if audio bible exists
 		cursor.execute("select id from audio_bibles where name=%s",(name,))
 		rst = cursor.fetchone()
-		logger.info("%s Check if audio bible exists......", rst)
 		if not rst:
 			#Insert row in table
 			cursor.execute('insert into audio_bibles (source_id, name, url, books, format, status) values \
@@ -3386,7 +3377,7 @@ def addAudioBible():
 			return '{"success": false, "message":"Audio bible already exists"}'
 	except Exception as ex:
 		print(ex)
-		logger.info("%s addAudioBible Exception......", ex)
+		logger.error("Exception in addAudioBible: %s", ex)
 		return '{"success":false, "message":"Server side error"}'
 	
 def sortAudioBibles(languageObject,audioBible):
@@ -3438,26 +3429,21 @@ def getAudioBibles():
 @check_token
 def addBibleVideos():
 	'''Add videos for given language.'''
-	logger.info("Add videos for given language.......")
 	try:
 		role = checkAuth()
 		if role != 3:
 			return '{"success":false, "message":"UnAuthorized"}'
 		req = request.get_json(True)
-		logger.info("%s addBibleVideos req......", req)
 		language = req["language"]
 		videos = req["videos"]
 		connection = get_db()
 		cursor = connection.cursor()
-		logger.info("%s addBibleVideos cursor......", cursor)
 		languageId = getLanguageId(cursor,language)
-		logger.info("%s addBibleVideos languageId......", languageId)
 		if languageId is None:
 			cursor.close()
 			return '{"success": false, "message":"Language code not found"}'
 		cursor.execute("select url from bible_videos")
 		rst=cursor.fetchall()
-		logger.info("%s addBibleVideos rst......", rst)
 		urls = [v [0] for v in rst]
 		added = 0
 		videoData = []
@@ -3476,7 +3462,7 @@ def addBibleVideos():
 		return json.dumps({"success": True, "message":" Videos added: "+str(added),"Duplicate urls skipped":skipped})
 	except Exception as ex:
 		print(ex)
-		logger.info("%s addBibleVideos Exception......", ex)
+		logger.error("Exception in addBibleVideos: %s", ex)
 		return '{"success":false, "message":"Server side error"}'
 
 def sortVideosByLanguage(languageObject,video):
@@ -3631,13 +3617,11 @@ def searchBible(sourceId):
 @check_token
 def addmetadata():
 	'''Append bible metadata for a source .'''
-	logger.info("addmetadata API......")
 	try:
 		role = checkAuth()
 		if role != 3:
 			return '{"success":false, "message":"UnAuthorized"}'
 		req = request.get_json(True)
-		logger.info("%s req......", req)
 		sourceId = req["sourceId"]
 		newMetadata = req["metadata"]
 		connection = get_db()
@@ -3645,7 +3629,6 @@ def addmetadata():
 		# get metadata for given source_id
 		cursor.execute("select metadata from sources where source_id=%s",(sourceId,))
 		rst = cursor.fetchone()
-		logger.info("%s addmetadata rst......", rst)
 		if not rst:
 			return '{"success":false, "message":"Invalid SourceId"}'
 		metadata = rst[0] or {}
@@ -3657,38 +3640,33 @@ def addmetadata():
 		return '{"success":true, "message":"Metadata Updated"}'
 	except Exception as ex:
 		traceback.print_exc()
-		logger.info("%s Exception addmetadata......", ex)
+		logger.error("Exception in addmetadata: %s ", ex)
 		return '{"success":false, "message":"%s"}' % (str(ex))
 	
 @app.route("/v1/biblebooknames", methods=["POST"])
 @check_token
 def addbiblebooknames():
     '''Add bible book names for a local language'''
-    logger.info("addbiblebooknames APIs......")
     try:
         role = checkAuth()
         if role != 3:
             return '{"success":false, "message":"UnAuthorized"}'
         req = request.get_json(True)
-        logger.info("%s req......", req)
         language = req["language"]
         bibleBookNames = req["bibleBookNames"]
         connection = get_db()
         cursor = connection.cursor()
         cursor.execute("select language_id from languages where language_code=%s", (language,))
         rst = cursor.fetchone()
-        logger.info("%s addbiblebooknames rst......", rst)
         if not rst:
             cursor.close()
             return '{"success":false, "message":"Language code not found"}'
         languageId = rst[0]
         cursor.execute("select book_id from bible_book_names where language_id=%s",(languageId,))
         rst = cursor.fetchall()
-        logger.info("%s addbiblebooknames rst 2......", rst)
         bookIds = [b[0] for b in rst]
         cursor.execute("select book_id,book_code from bible_books_look_up")
         rst = cursor.fetchall()
-        logger.info("%s addbiblebooknames from bible_books_look_up......", rst)
         bookMap = {row[1]:row[0] for row in rst}
         bookData = []
         added = []
@@ -3714,9 +3692,8 @@ def addbiblebooknames():
         return json.dumps({"success": True, "Books added" :len(added),"Existing books skipped":skipped})
     except Exception as ex:
         print(ex)
-        logger.info("%s addbiblebooknames Exception......", ex)
+        logger.error("Exception in addbiblebooknames: %s", ex)
         return '{"success":false, "message":"Server side error"}'
-        cursor.close()
 
 ######################################################
 ######################################################
