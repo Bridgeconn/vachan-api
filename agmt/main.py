@@ -34,8 +34,7 @@ from functools import reduce
 import traceback
 
 logging.basicConfig(filename='API_logs.log', format='%(asctime)s: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
-logger = logging.getLogger('API_logs.log')
-logger.setLevel(logging.DEBUG)
+log = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app)
@@ -1457,12 +1456,11 @@ def createBibleSource():
 			return '{"success": false, "message":"Source already exists"}'
 	except Exception as ex:
 		print(ex)
-		logger.error("Exception in createBibleSource: %s", ex)
+		log.error("Exception in createBibleSource: %s", ex)
 		return '{"success":false, "message":"Server side error"}'
 
 @app.route("/v1/bibles/upload", methods=["POST"])
 def uploadSource():
-	logging.info('v1/bibles/upload:  process start')
 	try:
 		req = request.get_json(True)
 		sourceId = req["sourceId"]
@@ -1500,7 +1498,7 @@ def uploadSource():
 		return '{"success":true, "message":"Inserted %s into database"}' %(bookCode)
 	except Exception as ex:
 		print(ex)
-		logger.error("Exception in uploadSource: %s", ex)
+		log.error("Exception in uploadSource: %s", ex)
 		return '{"success": false, "message":"Server side error"}'
 
 
@@ -3377,7 +3375,7 @@ def addAudioBible():
 			return '{"success": false, "message":"Audio bible already exists"}'
 	except Exception as ex:
 		print(ex)
-		logger.error("Exception in addAudioBible: %s", ex)
+		log.error("Exception in addAudioBible: %s", ex)
 		return '{"success":false, "message":"Server side error"}'
 	
 def sortAudioBibles(languageObject,audioBible):
@@ -3462,7 +3460,7 @@ def addBibleVideos():
 		return json.dumps({"success": True, "message":" Videos added: "+str(added),"Duplicate urls skipped":skipped})
 	except Exception as ex:
 		print(ex)
-		logger.error("Exception in addBibleVideos: %s", ex)
+		log.error("Exception in addBibleVideos: %s", ex)
 		return '{"success":false, "message":"Server side error"}'
 
 def sortVideosByLanguage(languageObject,video):
@@ -3640,7 +3638,7 @@ def addmetadata():
 		return '{"success":true, "message":"Metadata Updated"}'
 	except Exception as ex:
 		traceback.print_exc()
-		logger.error("Exception in addmetadata: %s ", ex)
+		log.error("Exception in addmetadata: %s ", ex)
 		return '{"success":false, "message":"%s"}' % (str(ex))
 	
 @app.route("/v1/biblebooknames", methods=["POST"])
@@ -3692,7 +3690,7 @@ def addbiblebooknames():
         return json.dumps({"success": True, "Books added" :len(added),"Existing books skipped":skipped})
     except Exception as ex:
         print(ex)
-        logger.error("Exception in addbiblebooknames: %s", ex)
+        log.error("Exception in addbiblebooknames: %s", ex)
         return '{"success":false, "message":"Server side error"}'
 
 ######################################################
