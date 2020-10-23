@@ -5,6 +5,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from typing import Optional, List
 from sqlalchemy.orm import Session
 import logging, csv, urllib, os
+from logging.handlers import RotatingFileHandler
 
 import crud, db_models, schemas
 from database import SessionLocal, engine
@@ -13,64 +14,72 @@ db_models.Base.metadata.create_all(bind=engine)
 
 
 app = FastAPI()
-logging.basicConfig(filename='API_logs.log', format='%(asctime)s: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
-
+logging.basicConfig(filename='API_logs.log', format='%(asctime)s|%(filename)s:%(lineno)d|%(levelname)-8s: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+log = logging.getLogger(__name__)
+log.setLevel(os.environ.get("VACHAN_LOGGING_LEVEL", "WARNING"))
+handler = RotatingFileHandler("API_logs.log", maxBytes=10000000, backupCount=10)
+log.addHandler(handler)
 
 ######### Error Handling ##############
 
 class DatabaseException(Exception):
-    def __init__(self, detail: str):
-        self.name = "Database Error"
-        self.detail = detail
-        self.status_code = 502
+	def __init__(self, detail: str):
+		self.name = "Database Error"
+		self.detail = detail
+		self.status_code = 502
 
 @app.exception_handler(DatabaseException)
 async def db_exception_handler(request, exc: DatabaseException):
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"error": exc.name, "details" : exc.detail},
-    )
+	log.error("%s: %s"%(exc.name, exc.detail))
+	return JSONResponse(
+		status_code=exc.status_code,
+		content={"error": exc.name, "details" : exc.detail},
+	)
 
 class NotAvailableException(Exception):
-    def __init__(self, detail: str):
-        self.name = "Requested Content Not Available"
-        self.detail = detail
-        self.status_code = 404
+	def __init__(self, detail: str):
+		self.name = "Requested Content Not Available"
+		self.detail = detail
+		self.status_code = 404
 
 @app.exception_handler(NotAvailableException)
 async def NA_exception_handler(request, exc: NotAvailableException):
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"error": exc.name, "details" : exc.detail},
-    )
+	log.error("%s: %s"%(exc.name, exc.detail))
+	return JSONResponse(
+		status_code=exc.status_code,
+		content={"error": exc.name, "details" : exc.detail},
+	)
 
 class AlreadyExistsException(Exception):
-    def __init__(self, detail: str):
-        self.name = "Requested Content Not Available"
-        self.detail = detail
-        self.status_code = 409
+	def __init__(self, detail: str):
+		self.name = "Requested Content Not Available"
+		self.detail = detail
+		self.status_code = 409
 
 @app.exception_handler(AlreadyExistsException)
 async def Exists_exception_handler(request, exc: AlreadyExistsException):
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"error": exc.name, "details" : exc.detail},
-    )
+	log.error("%s: %s"%(exc.name, exc.detail))
+	return JSONResponse(
+		status_code=exc.status_code,
+		content={"error": exc.name, "details" : exc.detail},
+	)
 class TypeException(Exception):
-    def __init__(self, detail: str):
-        self.name = "Not the Required Type"
-        self.detail = detail
-        self.status_code = 415
+	def __init__(self, detail: str):
+		self.name = "Not the Required Type"
+		self.detail = detail
+		self.status_code = 415
 
 @app.exception_handler(TypeException)
 async def Type_exception_handler(request, exc: TypeException):
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"error": exc.name, "details" : exc.detail},
-    )
+	log.error("%s: %s"%(exc.name, exc.detail))
+	return JSONResponse(
+		status_code=exc.status_code,
+		content={"error": exc.name, "details" : exc.detail},
+	)
 
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request, exc):
+	log.error("%s: %s"%("Http Error", exc.detail))
 	return JSONResponse(
 		status_code=exc.status_code,
 		content={"error": "HTTP Error", "details": str(exc.detail)}
@@ -78,7 +87,7 @@ async def http_exception_handler(request, exc):
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
-	logging.info(str(exc))
+	log.error("%s: %s"%("Input Validation Error", str(exc)))
 	return JSONResponse(
 		status_code=422,
 		content={"error": "Input Validation Error" ,"details": str(exc).replace("\n", ". ")}
@@ -86,11 +95,11 @@ async def validation_exception_handler(request, exc):
 ######################################################
 
 def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+	db = SessionLocal()
+	try:
+		yield db
+	finally:
+		db.close()
 
 @app.get('/', response_model=schemas.NormalResponse, responses={422: {"model": schemas.ErrorResponse}}, status_code=200)
 def test():
@@ -166,7 +175,7 @@ def add_language(lang_obj : schemas.Language = Body(...)):
 @app.put('/v2/languages', response_model=schemas.LanguageUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}}, status_code=201, tags=["Languages"])
 def edit_language(lang_obj: schemas.LanguageEdit = Body(...)):
 	''' Changes one or more fields of language'''
-	logging.info(lang_obj)
+	log.info(lang_obj)
 	try:
 		pass
 	except Exception as e:
@@ -216,7 +225,7 @@ def add_version(version_obj : schemas.Version = Body(...)):
 @app.put('/v2/versions', response_model=schemas.VersionUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}}, status_code=201, tags=["Versions"])
 def edit_version(version_obj: schemas.VersionEdit = Body(...)):
 	''' Changes one or more fields of vesrion types table'''
-	logging.info(version_obj)
+	log.info(version_obj)
 	try:
 		pass
 	except Exception as e:
@@ -272,7 +281,7 @@ def add_source(source_obj : schemas.Source = Body(...)):
 @app.put('/v2/sources', response_model=schemas.SourceUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}}, status_code=201, tags=["Sources"])
 def edit_source(source_obj: schemas.SourceEdit = Body(...)):
 	''' Changes one or more fields of source '''
-	logging.info(source_obj)
+	log.info(source_obj)
 	try:
 		pass
 	except Exception as e:
@@ -342,7 +351,7 @@ def edit_bible_book(sourceName: schemas.tableNamePattern, bibleBookObj: schemas.
 	The contents of the respective bible_clean and bible_tokens tables' contents 
 	should be deleted and new data added. 
 	two fields are mandatory as usfm and json are interdependant'''
-	logging.info(bibleBookObj)
+	log.info(bibleBookObj)
 	try:
 		pass
 	except Exception as e:
@@ -439,7 +448,7 @@ def add_audio_bible(sourceName: schemas.tableNamePattern, audios:List[schemas.Au
 @app.put('/v2/bibles/{sourceName}/audios', response_model=schemas.AudioBibleUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=201, tags=["Bibles"])
 def edit_audio_bible(sourceName: schemas.tableNamePattern, audios: List[schemas.AudioBibleEdit] = Body(...)):
 	''' Changes the mentioned fields of audio bible row'''
-	logging.info(audios)
+	log.info(audios)
 	try:
 		pass
 	except Exception as e:
@@ -515,7 +524,7 @@ def add_commentary(sourceName: schemas.tableNamePattern, commentries:List[schema
 @app.put('/v2/commentaries/{sourceName}', response_model=schemas.CommentaryUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=201, tags=["Commentaries"])
 def edit_commentary(sourceName: schemas.tableNamePattern, commentries: List[schemas.Commentary] = Body(...)):
 	''' Changes the commentary field to the given value in the row selected using book, chapter, verse values'''
-	logging.info(commentries)
+	log.info(commentries)
 	try:
 		pass
 	except Exception as e:
@@ -561,7 +570,7 @@ def get_dictionary_words(sourceName: schemas.tableNamePattern, searchIndex: str 
 @app.post('/v2/dictionaries/{sourceName}', response_model=schemas.DictionaryUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=201, tags=["Dictionaries"])
 def add_dictionary(sourceName: schemas.tableNamePattern, words: List[schemas.DictionaryWord] = Body(...)):
 	''' uploads dictionay words'''
-	logging.info(words)
+	log.info(words)
 	try:
 		pass
 	except Exception as e:
@@ -575,7 +584,7 @@ def add_dictionary(sourceName: schemas.tableNamePattern, words: List[schemas.Dic
 @app.put('/v2/dictionaries/{sourceName}', response_model=schemas.DictionaryUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=201, tags=["Dictionaries"])
 def edit_dictionary(sourceName: schemas.tableNamePattern, words: List[schemas.DictionaryWord] = Body(...)):
 	'''Updates the given fields mentioned in details object, of the specifed word'''
-	logging.info(words)
+	log.info(words)
 	try:
 		pass
 	except Exception as e:
@@ -635,7 +644,7 @@ def add_infographics(sourceName: schemas.tableNamePattern, infographics:List[sch
 @app.put('/v2/infographics/{sourceName}', response_model=schemas.InfographicUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=201, tags=["Infographics"])
 def edit_infographics(sourceName: schemas.tableNamePattern, infographics: List[schemas.Infographic] = Body(...)):
 	''' Changes the commentary field to the given value in the row selected using book, chapter, verse values'''
-	logging.info(infographics)
+	log.info(infographics)
 	try:
 		pass
 	except Exception as e:
@@ -686,7 +695,7 @@ def add_bible_video(videos:List[schemas.BibleVideoUpload] = Body(...)):
 @app.put('/v2/biblevideos/{sourceName}', response_model=schemas.BibleVideoUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=201, tags=["Bible Videos"])
 def edit_bible_video(videos: List[schemas.BibleVideoEdit] = Body(...)):
 	''' Changes the commentary field to the given value in the row selected using book, chapter, verse values'''
-	logging.info(videos)
+	log.info(videos)
 	try:
 		pass
 	except Exception as e:
