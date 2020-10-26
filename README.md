@@ -68,6 +68,13 @@ Edit the following contents appropriatetly and paste to the `.bashrc` file
   export VACHAN_POSTGRES_DATABASE="<db_name>"
   export VACHAN_LOGGING_LEVEL="WARNING"
 ```
+After editing .bashrc file they may need to run
+
+`. ~/.bashrc` or 
+
+`source ~/.bashrc`
+
+to refresh the bashrc file or logout and login to refresh it
 
 ### Run the app
 
