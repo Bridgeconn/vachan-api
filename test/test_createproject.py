@@ -1,107 +1,98 @@
 import pytest
 import requests
 import json
-import test_listprojects
 
 @pytest.fixture
-def supply_url():
-	return "https://stagingapi.autographamt.com"
+def url():
+	# POST API 
+	return "https://stagingapi.autographamt.com/v1/autographamt/organisations/projects"
 
 
-@pytest.fixture
-def get_accessTokenadm():
-	email = "alex@yopmail.com"
-	password = "1189"
-	url = "https://stagingapi.autographamt.com/v1/auth"
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	respobj = json.loads(resp.text)
-	token = respobj['accessToken']
+data = [
+	('joelcjohnson123@gmail.com', '111111'),     # super admin role
+	('ag2@yopmail.com', '1189')                  # user role  
+]
 
+def projectdetails():
+	data1 = [
+			(56,3929,26),   # create new project
+			(56,3702,26),   # create existing project
+			(56,3702,'')    # create project with empty values
+	]
+	return data1
+
+def jsondump(data1):
+	jsondump = {'sourceId': data1[0],
+				'targetLanguageId': data1[1],
+				'organisationId': data1[2]
+	}
+	return(jsondump)
+
+
+# ------------------------- get access token --------------------------- #
+def get_accesstoken(email, password):
+	auth_url = 'https://stagingapi.autographamt.com/v1/auth'
+	resp = requests.post(auth_url, {'email': email, 'password': password})
+	out = json.loads(resp.text)
+	token = out['accessToken']
 	return token
 
-@pytest.fixture
-def get_supAdmin_accessToken():
-	email = 'savitha.mark@bridgeconn.com'
-	password = '221189'
-	url = "https://stagingapi.autographamt.com/v1/auth"
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	respobj = json.loads(resp.text)
-	token = respobj['accessToken']
 
-	return token
-
-@pytest.fixture
-def get_accessTokentrans():
-	email = 'ag2@yopmail.com'
-	password = '1189'
-	url = "https://stagingapi.autographamt.com/v1/auth"
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	respobj = json.loads(resp.text)
-	token = respobj['accessToken']
-	return token
-
-@pytest.mark.parametrize('sourceId,targetLanguageID,organisationId',[(56,3702,26)])
-def test_createprojecttr(supply_url,get_accessTokentrans,sourceId,targetLanguageID,organisationId):
-	url = supply_url + '/v1/autographamt/organisations/projects'
-	data = {
-		'sourceId':sourceId,
-    	'targetLanguageId':targetLanguageID,
-    	'organisationId':organisationId
-		}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_accessTokentrans)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == False, str(j)
-	assert j['message'] == "UnAuthorized", str(j)
-	### add code to delete the project
-
-@pytest.mark.parametrize('sourceId,targetLanguageID,organisationId',[(56,4923,26)])
-def test_createprojectsup1(supply_url,get_supAdmin_accessToken,sourceId,targetLanguageID,organisationId):
-	url = supply_url + '/v1/autographamt/organisations/projects'
-	data = {
-		'sourceId':sourceId,
-    	'targetLanguageId':targetLanguageID,
-    	'organisationId':organisationId
-		}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == True, str(j)
-	assert j['message'] == "Project created", str(j)
-	### add code to delete the project
-
-@pytest.mark.parametrize('sourceId,targetLanguageID,organisationId',[(56,3699,13)])
-def test_createprojectad(supply_url,get_supAdmin_accessToken,sourceId,targetLanguageID,organisationId):
-	url = supply_url + '/v1/autographamt/organisations/projects'
-	data = {
-			'sourceId':sourceId,
-    		'targetLanguageId':targetLanguageID,
-    		'organisationId':organisationId
-			}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == True, str(j)
-	assert j['message'] == "Project created", str(j)
+# -------------------- Check page --------------------#
+def test_pageload():
+	resp = requests.get("https://staging.autographamt.com")
+	assert resp.status_code == 200
 
 
-@pytest.mark.parametrize('sourceId,targetLanguageID,organisationId',[(56,3699,13)])
-def test_createproject_existing(supply_url,get_supAdmin_accessToken,sourceId,targetLanguageID,organisationId):
-	url = supply_url + '/v1/autographamt/organisations/projects'
-	data = {
-			'sourceId':sourceId,
-    		'targetLanguageId':targetLanguageID,
-    		'organisationId':organisationId
-			}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == False, str(j)
-	assert j['message'] == "Project already created", str(j)
-	### add code to delete the project
+# ----------------- create new project with su-admin role----------------#
+@pytest.mark.skip(reason="need to change the values")
+@pytest.mark.parametrize('data',[data])
+def test_create_newproject(url, data):
+	access_token = get_accesstoken(data[0][0], data[0][1])
+	proj = projectdetails()
+	jsondata = jsondump(proj[0])
+	resp = requests.post(url,data=json.dumps(jsondata),headers={'Authorization': 'bearer {}'.format(access_token)})
+	out = json.loads(resp.text)
+	assert resp.status_code == 200
+	assert out['success'] == True
+	assert out['message'] == 'Project created'
+
+
+# ----------------- create existing project with su-admin role----------------#
+@pytest.mark.parametrize('data',[data])
+def test_create_existproject(url, data):
+	access_token = get_accesstoken(data[0][0], data[0][1])
+	proj = projectdetails()
+	jsondata = jsondump(proj[1])
+	resp = requests.post(url,data=json.dumps(jsondata),headers={'Authorization': 'bearer {}'.format(access_token)})
+	out = json.loads(resp.text)
+	assert resp.status_code == 200
+	assert out['success'] == False
+	assert out['message'] == 'Project already created'
+
+
+# ----------------- create project with empty values----------------#
+@pytest.mark.parametrize('data',[data])
+def test_create_project_empty(url, data):
+	access_token = get_accesstoken(data[0][0], data[0][1])
+	proj = projectdetails()
+	jsondata = jsondump(proj[2])
+	resp = requests.post(url,data=json.dumps(jsondata),headers={'Authorization': 'bearer {}'.format(access_token)})
+	out = json.loads(resp.text)
+	assert resp.status_code == 200
+	assert out['success'] == False
+	assert out['message'] == 'Server Error'
+
+
+# ----------------- create project with user role----------------#
+@pytest.mark.parametrize('data',[data])
+def test_create_project_usr(url, data):
+	access_token = get_accesstoken(data[1][0], data[1][1])
+	proj = projectdetails()
+	jsondata = jsondump(proj[1])
+	resp = requests.post(url,data=json.dumps(jsondata),headers={'Authorization': 'bearer {}'.format(access_token)})
+	out = json.loads(resp.text)
+	assert resp.status_code == 200
+	assert out['success'] == False
+	assert out['message'] == 'UnAuthorized'
+

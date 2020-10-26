@@ -56,10 +56,14 @@ typings/
 
 # dotenv environment variables file
 .env
+.vscode
+env3
+
 
 # next.js build output
 .next
 
 agmt/__pycache__/*
-
-
+test/__pycache__/*
+vachan-venv/*
+vachan-ENV/*

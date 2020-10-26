@@ -3,98 +3,70 @@ import requests
 import json
 
 @pytest.fixture
-def supply_url():
-	return "https://stagingapi.autographamt.com"
+def url():
+	# GET API
+	return "https://stagingapi.autographamt.com/v1/autographamt/approvals/users"
+
+data = [
+	('alex@yopmail.com', '1189'),                # admin role
+	('joelcjohnson123@gmail.com', '111111'),     # super admin role
+	('ag2@yopmail.com', '1189')                  # normal role
+]
 
 
-@pytest.fixture
-def get_adm_accessToken():
-	email = "alex@yopmail.com"
-	password = "1189"
-	url = "https://stagingapi.autographamt.com/v1/auth"
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	respobj = json.loads(resp.text)
-	token = respobj['accessToken']
+def userlist():
+	data1 = [
+			('12','admin'),   
+			('11', 'admin')  
+	]
+	return data1
 
+def jsondump(data1):
+	jsondump = {'userId': data1[0],
+				'admin': data1[1]
+	}
+	return(jsondump)
+
+# ------------------------- get access token --------------------------- #
+def get_accesstoken(email, password):
+	auth_url = 'https://stagingapi.autographamt.com/v1/auth'
+	resp = requests.post(auth_url, {'email': email, 'password': password})
+	out = json.loads(resp.text)
+	token = out['accessToken']
 	return token
 
-@pytest.fixture
-def get_supAdmin_accessToken():
-	email = 'savitha.mark@bridgeconn.com'
-	password = '221189'
-	url = "https://stagingapi.autographamt.com/v1/auth"
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	respobj = json.loads(resp.text)
-	token = respobj['accessToken']
-
-	return token
-
-@pytest.fixture
-def get_trans_accessToken():
-	email = 'ag2@yopmail.com'
-	password = '1189'
-	url = "https://stagingapi.autographamt.com/v1/auth"
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	respobj = json.loads(resp.text)
-	token = respobj['accessToken']
-
-	return token
+# ----------------- user approval with admin role ----------------#
+@pytest.mark.parametrize('data',[data])
+def test_userapproval(url, data):
+	access_token = get_accesstoken(data[0][0], data[0][1])
+	org = userlist()
+	jsondata = jsondump(org[0])
+	resp = requests.post(url,data=json.dumps(jsondata),headers={'Authorization': 'bearer {}'.format(access_token)})
+	out = json.loads(resp.text)
+	assert out['success'] == True
+	assert out['message'] == "Role Updated"
 
 
-@pytest.mark.parametrize('userId,admin',[('12','admin')])
-def test_Userapprovalsup2(supply_url,get_trans_accessToken,userId,admin):
-	url = supply_url + '/v1/autographamt/approvals/users'
-	data = {
-			'userId':userId,
-			'admin':admin
-			}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_trans_accessToken)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == False, str(j)
-	assert j['message'] == "Unauthorized", str(j)
+# ----------------- user approval with super-admin role ----------------#
+@pytest.mark.parametrize('data',[data])
+def test_userapproval1(url, data):
+	access_token = get_accesstoken(data[1][0], data[1][1])
+	org = userlist()
+	jsondata = jsondump(org[0])
+	resp = requests.post(url,data=json.dumps(jsondata),headers={'Authorization': 'bearer {}'.format(access_token)})
+	out = json.loads(resp.text)
+	assert out['success'] == True
+	assert out['message'] == "Role Updated"
 
-@pytest.mark.parametrize('userId,admin',[('11','admin')])
-def test_Userapprovaltr(supply_url,get_trans_accessToken,userId,admin):
-	url = supply_url + '/v1/autographamt/approvals/users'
-	data = {
-			'userId':userId,
-			'admin':admin
-			}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_trans_accessToken)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == False, str(j)
-	assert j['message'] == "Unauthorized", str(j)
-    
-@pytest.mark.parametrize('userId,admin',[('11','admin')])
-def test_Userapprovalsupc(supply_url,get_supAdmin_accessToken,userId,admin):
-	url = supply_url + '/v1/autographamt/approvals/users'
-	data = {
-			'userId':userId,
-			'admin':admin
-			}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == True, str(j)
-	assert j['message'] == "Role Updated", str(j)
 
-@pytest.mark.parametrize('userId,admin',[('11','admin')])
-def test_Userapprovaladc(supply_url,get_adm_accessToken,userId,admin):
-	url = supply_url + '/v1/autographamt/approvals/users'
-	data = {
-			'userId':userId,
-			'admin':admin
-			}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_adm_accessToken)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == True, str(j)
-	assert j['message'] == "Role Updated", str(j)
+# ----------------- user approval with user role----------------#
+@pytest.mark.parametrize('data',[data])
+def test_userapproval2(url, data):
+	access_token = get_accesstoken(data[2][0], data[2][1])
+	org = userlist()
+	jsondata = jsondump(org[0])
+	resp = requests.post(url,data=json.dumps(jsondata),headers={'Authorization': 'bearer {}'.format(access_token)})
+	out = json.loads(resp.text)
+	assert out['success'] == False
+	assert out['message'] == "Unauthorized"
+

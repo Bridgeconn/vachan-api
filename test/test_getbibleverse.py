@@ -50,12 +50,8 @@ def test_getbibleversessup(supply_url,get_supAdmin_accessToken):
 	url = supply_url + '/v1/bibles/35/books/PRO/chapters/7/verses'
 	resp = requests.get(url,headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
 	j = json.dumps(resp.text)
-	assert resp.status_code == 200, resp.text
-  	# assert isinstance(j,list), j
-	# assert 'verse' in j[0], j[0]
-	# assert 'bibleBookCode' in j[0], j[0]
-	# assert 'sourceId' in j[0], j[0]
-	# assert 'chapterId' in j[0], j[0]
+	assert resp.status_code == 200
+	assert isinstance(j,str)
 
 def test_getbibleverseup2(supply_url,get_supAdmin_accessToken):
 	url = supply_url + '/v1/bibles/89/books/pro/chapters/pro.2/verses'

@@ -3,38 +3,47 @@ import requests
 import json
 
 @pytest.fixture
-def supply_url():
-	return "https://stagingapi.autographamt.com"
+def url():
+	# POST API 
+	return "https://stagingapi.autographamt.com/v1/autographamt/projects/assignments"
 
 
-@pytest.mark.parametrize('userID,projectID,Books',[(30,52,["rev"])])
-def test_projectassignment_newtanslator(supply_url,userID, projectID,Books):
-	url = supply_url + '/v1/autographamt/projects/assignments'
-	data = {'userId': userID,
-			'projectId': projectID,
-			'books': Books
-			}
-	resp = requests.post(url,data=json.dumps(data))
-	j = json.loads(resp.text)
-	print(j)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == True, str(j)
-	assert j['message'] == "User Role Assigned", str(j)
-	### add code to delete assignment
+def userdetails():
+	data = [
+			(9,'65',["mat"]),   # new assign 
+			(9,'65',["mat"])    # existing user with as
+	]
+	return data
 
 
-@pytest.mark.parametrize('userID,projectID,Books',[(30,52,["mat"])])
-def test_projectassignment_existingTranslator(supply_url,userID, projectID,Books):
-	url = supply_url + '/v1/autographamt/projects/assignments'
-	data = {'userId': userID,
-			'projectId': projectID,
-			'books': Books
-			}
-	resp = requests.post(url,data=json.dumps(data))
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == True, str(j)
-	assert j['message'] == "User Role Updated", str(j)
+def jsondump(data1):
+	jsondump = {'userId': data1[0],
+				'projectId': data1[1],
+				'books': data1[2]
+	}
+	return(jsondump)
+
+
+# --------------------- assign new user --------------------#
+def test_projectassignment_newuser(url):
+	usr = userdetails()
+	jsondata = jsondump(usr[0])
+	resp = requests.post(url,data=json.dumps(jsondata))
+	out = json.loads(resp.text)
+	assert resp.status_code == 200
+	assert out['success'] == True
+	assert out['message'] == "User Role Assigned"
+
+
+# --------------------- assign existing user -----------------#
+def test_projectassignment_existingusr(url):
+	usr = userdetails()
+	jsondata = jsondump(usr[1])
+	resp = requests.post(url,data=json.dumps(jsondata))
+	out = json.loads(resp.text)
+	assert resp.status_code == 200
+	assert out['success'] == True
+	assert out['message'] == "User Role Updated"
 
 
 

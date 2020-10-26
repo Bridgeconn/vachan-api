@@ -70,9 +70,6 @@ def test_getbibleverse2sup2(supply_url,get_supAdmin_accessToken):
 	assert resp.status_code == 200, resp.text
 	assert j['success'] == False, str(j)
 	assert j['message'] == "Invalid Chapter id format.", str(j)
-	# assert isinstance(j,list), j
-	# assert 'sourceId' in j[0], j[0]
-	# assert 'chapter' in j[0], j[0]
 
 def test_getbibleverse2sad(supply_url,get_adm_accessToken):
 	url = supply_url + '/v1/bibles/31/chapters/55/verses'

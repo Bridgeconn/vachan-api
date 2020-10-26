@@ -19,6 +19,7 @@ def test_setnewpass_load():
 	resp = requests.get(url)
 	assert resp.status_code == 200, resp.text
 
+@pytest.mark.skip(reason="need to change the values")
 @pytest.mark.parametrize("temporaryPassword,password",[("363588","111111")])
 def test_setnewpass_success(temporaryPassword,password):
 	resp = setnewpass(temporaryPassword,password)

@@ -3,87 +3,71 @@ import requests
 import json
 
 @pytest.fixture
-def supply_url():
-	return "https://stagingapi.autographamt.com"
+def url():
+	# POST API
+	return "https://stagingapi.autographamt.com/v1/autographamt/approvals/organisations"
 
 
-@pytest.fixture
-def get_adm_accessToken():
-	email = "alex@yopmail.com"
-	password = "1189"
-	url = "https://stagingapi.autographamt.com/v1/auth"
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	respobj = json.loads(resp.text)
-	token = respobj['accessToken']
+data = [
+	('alex@yopmail.com', '1189'),                # admin role
+	('joelcjohnson123@gmail.com', '111111'),     # super admin role
+	('ag2@yopmail.com', '1189')                  # normal role
+]
 
-	return token
 
-@pytest.fixture
-def get_supAdmin_accessToken():
-	email = 'savitha.mark@bridgeconn.com'
-	password = '221189'
-	url = "https://stagingapi.autographamt.com/v1/auth"
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	respobj = json.loads(resp.text)
-	token = respobj['accessToken']
+def orglist():
+	data1 = [
+			(26, True)   # new organisation details
+	]
+	return data1
 
-	return token
+def jsondump(data1):
+	jsondump = {'organisationId': data1[0],
+				'verified': data1[1]
+	}
+	return(jsondump)
 
-@pytest.fixture
-def get_trans_accessToken():
-	email = 'ag2@yopmail.com'
-	password = '1189'
-	url = "https://stagingapi.autographamt.com/v1/auth"
-	data = {'email':email,
-			'password':password}
-	resp = requests.post(url, data=data)
-	respobj = json.loads(resp.text)
-	token = respobj['accessToken']
 
+# ------------------------- get access token --------------------------- #
+def get_accesstoken(email, password):
+	auth_url = 'https://stagingapi.autographamt.com/v1/auth'
+	resp = requests.post(auth_url, {'email': email, 'password': password})
+	out = json.loads(resp.text)
+	token = out['accessToken']
 	return token
 
 
-@pytest.mark.parametrize('org_id, verified',[(26,True)])
-def test_Organizationapprovalsup(supply_url,get_supAdmin_accessToken,org_id, verified):
-	url = supply_url + '/v1/autographamt/approvals/organisations'
-	data = {'organisationId':org_id,
-			'verified':verified
-			}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
-	j = json.loads(resp.text)
-	print(j)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == True, str(j)
-	assert j['message'] == "Role Updated", str(j)
+# ------------------ organisation approval with admin role---------------# 
+@pytest.mark.parametrize('data',[data])
+def test_organisationapprov(url, data):
+	access_token = get_accesstoken(data[0][0], data[0][1])
+	org = orglist()
+	jsondata = jsondump(org[0])
+	resp = requests.post(url,data=json.dumps(jsondata),headers={'Authorization': 'bearer {}'.format(access_token)})
+	out = json.loads(resp.text)
+	assert out['success'] == False
+	assert out['message'] == "Unauthorized"
 
 
-@pytest.mark.parametrize('org_id, verified',[(26,True)])
-def test_Organizationapprovalad(supply_url,get_adm_accessToken,org_id, verified):
-	url = supply_url + '/v1/autographamt/approvals/organisations'
-	data = {'organisationId':org_id,
-			'verified':verified
-			}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_adm_accessToken)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == False, str(j)
-	assert j['message'] == "Unauthorized", str(j)
+# ------------------ organisation approval with super-admin role---------------# 
+@pytest.mark.parametrize('data',[data])
+def test_organisationapprov1(url, data):
+	access_token = get_accesstoken(data[1][0], data[1][1])
+	org = orglist()
+	jsondata = jsondump(org[0])
+	resp = requests.post(url,data=json.dumps(jsondata),headers={'Authorization': 'bearer {}'.format(access_token)})
+	out = json.loads(resp.text)
+	assert out['success'] == True
+	assert out['message'] == "Role Updated"
 
 
-@pytest.mark.parametrize('org_id, verified',[(26,True)])
-def test_Organizationapprovaltr(supply_url,get_trans_accessToken,org_id, verified):
-	url = supply_url + '/v1/autographamt/approvals/organisations'
-	data = {'organisationId':org_id,
-			'verified':verified
-			}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_trans_accessToken)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == False, str(j)
-	assert j['message'] == "Unauthorized", str(j)
-
-
+# ------------------ organisation approval with normal role---------------# 
+@pytest.mark.parametrize('data',[data])
+def test_organisationapprov2(url, data):
+	access_token = get_accesstoken(data[2][0], data[2][1])
+	org = orglist()
+	jsondata = jsondump(org[0])
+	resp = requests.post(url,data=json.dumps(jsondata),headers={'Authorization': 'bearer {}'.format(access_token)})
+	out = json.loads(resp.text)
+	assert out['success'] == False
+	assert out['message'] == "Unauthorized"

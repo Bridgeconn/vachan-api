@@ -3,19 +3,15 @@ import requests
 import json
 
 @pytest.fixture
-def supply_url():
-	return "https://stagingapi.autographamt.com"
+def url():
+	# GET API
+	return "https://stagingapi.autographamt.com/v1/languages"
 
-def test_GetAllaLnguages_1(supply_url):
-	url = supply_url + '/v1/languages'
+
+# ----------------- get all language list------------------#
+def test_getLanguageList(url):
 	resp = requests.get(url)
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert isinstance(j,list), j
-	assert 'languageName' in j[0], j[0]
-	assert 'languageId' in j[0], j[0]
-    # # assert 'languageCode' in j[0], j[0]
-	# print(j)
+	out = json.loads(resp.text)
+	assert resp.status_code == 200
+	assert isinstance (out,list)
 
-
-  

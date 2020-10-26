@@ -17,7 +17,6 @@ def get_adm_accessToken():
 	resp = requests.post(url, data=data)
 	respobj = json.loads(resp.text)
 	token = respobj['accessToken']
-
 	return token
 
 @pytest.fixture
@@ -30,7 +29,6 @@ def get_supAdmin_accessToken():
 	resp = requests.post(url, data=data)
 	respobj = json.loads(resp.text)
 	token = respobj['accessToken']
-
 	return token
 
 @pytest.fixture
@@ -43,81 +41,10 @@ def get_trans_accessToken():
 	resp = requests.post(url, data=data)
 	respobj = json.loads(resp.text)
 	token = respobj['accessToken']
-
 	return token
 
-# @pytest.mark.parametrize('projectId',[('67')])
-# def test_delete_project_4(supply_url,get_supAdmin_accessToken,projectId):
-# 	url = supply_url + '/v1/autographamt/project/activate'
-# 	data = {"projectId":projectId
-# 	}
-# 	resp = requests.delete(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
-# 	j = json.loads(resp.text)
-# 	assert resp.status_code == 200
-# 	print(j)
-# 	# assert j['success'] == True, str(j)
-# 	# assert j['message'] == "Project  removed", str(j)
 
-@pytest.mark.parametrize('projectId',[("35")])
-def test_delete_Project_3(supply_url,get_supAdmin_accessToken,projectId):
-	url = supply_url + "/v1/autographamt/project/delete"
-	data = {
-            'projectId': projectId
-	}
-	resp = requests.delete(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200
-	assert j['message'] == "Deactivated project."
-
-@pytest.mark.parametrize('projectId',[('35')])
-def test_activateproject_sup(supply_url,get_supAdmin_accessToken,projectId):
-	url = supply_url + '/v1/autographamt/project/activate'
-	data = {
-			'projectId':projectId
-			}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == True, str(j)
-	assert j['message'] == "Project re-activated", str(j)
-
-@pytest.mark.parametrize('projectId',[('0')])
-def test_activateproject_sup1(supply_url,get_supAdmin_accessToken,projectId):
-	url = supply_url + '/v1/autographamt/project/activate'
-	data = {
-			'projectId':projectId
-			}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == False, str(j)
-	assert j['message'] == "Project not present.", str(j)
-
-@pytest.mark.parametrize('projectId',[('35')])
-def test_activateproject_sup2(supply_url,get_supAdmin_accessToken,projectId):
-	url = supply_url + '/v1/autographamt/project/activate'
-	data = {
-			'projectId':projectId
-			}
-	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
-	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == False, str(j)
-	assert j['message'] == "Project already active.", str(j)
-
-# @pytest.mark.parametrize('projectId',[('35')])
-# def test_activateproject_sup3(supply_url,get_supAdmin_accessToken,projectId):
-# 	url = supply_url + '/v1/autographamt/project/activate'
-# 	data = {
-# 			'projectId':projectId
-# 			}
-# 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_supAdmin_accessToken)})
-# 	j = json.loads(resp.text)
-# 	assert resp.status_code == 200, resp.text
-# 	assert j['success'] == False, str(j)
-# 	assert j['message'] == "Project already active.", str(j)
-
-
+#-----------------------remove project with admin role------------#
 @pytest.mark.parametrize('projectId',[('12')])
 def test_activateproject_1(supply_url,get_trans_accessToken,projectId):
 	url = supply_url + '/v1/autographamt/project/activate'
@@ -131,6 +58,7 @@ def test_activateproject_1(supply_url,get_trans_accessToken,projectId):
 	assert j['message'] == "UnAuthorized! Only the organisation admin or super admin can delete projects.", str(j)
 
 
+#-----------------------remove project with admin role------------#
 @pytest.mark.parametrize('projectId',[('53')])
 def test_activateproject_2(supply_url,get_adm_accessToken,projectId):
 	url = supply_url + '/v1/autographamt/project/activate'
@@ -139,6 +67,6 @@ def test_activateproject_2(supply_url,get_adm_accessToken,projectId):
 			}
 	resp = requests.post(url,data=json.dumps(data),headers={'Authorization': 'bearer {}'.format(get_adm_accessToken)})
 	j = json.loads(resp.text)
-	assert resp.status_code == 200, resp.text
-	assert j['success'] == False, str(j)
-	assert j['message'] == "Project not present in the organisation.", str(j)
+	assert resp.status_code == 200
+	assert j['success'] == False
+	assert j['message'] == "Project not present in the organisation."
