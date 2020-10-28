@@ -427,12 +427,13 @@ def edit_commentary(sourceName: schemas.tableNamePattern, commentries: List[sche
 
 
 @app.get('/v2/dictionaries/{sourceName}', response_model=List[schemas.DictionaryWord], status_code=200, tags=["Dictionaries"])
-def get_dictionary_words(sourceName: schemas.tableNamePattern, searchIndex: str = None, skip: int = 0, limit: int = 100):
+def get_dictionary_words(sourceName: schemas.tableNamePattern, searchIndex: str = None, wordListOnly: bool = False, skip: int = 0, limit: int = 100):
 	'''fetches list of dictionary words and all available details about them.
 	Using the searchIndex appropriately, it is possible to get
 	* All words starting with a letter
 	* All words starting with a substring
 	* An exact word search, giving the whole word
+	* By setting the wordListOnly flag to True, only the words would be inlcuded in the return object, without the details
 	* skip=n: skips the first n objects in return list
 	* limit=n: limits the no. of items to be returned to n'''
 	result = []	
