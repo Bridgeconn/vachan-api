@@ -1,137 +1,109 @@
-# API Server Set up Documentation - Python Flask
+# Vachan-api
 
-## Reference online resource
-- [Ubuntu 18.04](https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-uswgi-and-nginx-on-ubuntu-18-04)
-- [Ubuntu 16.04](https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-uwsgi-and-nginx-on-ubuntu-16-04)
+The server application that provides REST APIs to interact with the underlying Databases (SQL and Graph) and modules in Vachan-Engine.
 
-## Prerequisites
- - Ubuntu Server 18.04/16.04
- - DNS
+Currently serving 3 client applications, VachanOnline website, the Vachan Mobile App and AutographaMT Bible translation tool.
 
-## Server Initial Set up
+## Implementation Details
 
-### Install primary python packages and nginx
-> Run commands
- -  `sudo apt-get update`
- - `sudo apt-get install python3-pip python3-dev nginx`
- - `sudo apt-get install libpq-dev`
- - `sudo apt-get install libssl-dev`
+Implemented Using
+- Python 3.7.5
+- Fastapi framework
+- Postgresql Database
+- DGraph Database
 
-## Postgres Database set Up
+## How to set up locally for development and testing
 
-### Install Postgress SQL:
- - Run Command `sudo apt-get install postgresql`
+### Clone git repo
 
-### Create Postgres user and password:
- - Run command `sudo su postgres`. Switches to postgres user
- - Run command `psql` in postgres user shell
- - Run command `CREATE USER <username> WITH SUPERUSER PASSWORD '<password>'`. Enter user username and password fot the DB. For ex: `CREATE USER agmt WITH SUPERUSER PASSWORD 'pass&14'`
- 
-### Create Database:
- - Open New Terminal and run command `createdb <db_name>`
- 
-## Set Environment variables: (Command -> `gedit .bashrc` from home directory)
-- Paste follwing with the credentials to the `bashrc` file.
-  ```
-  export AGMT_SENDINBLUE_KEY="<send_in_blue_key>"
-  export AGMT_HS256_SECRET="<jwt_token_key>"
-  export AGMT_POSTGRES_HOST="localhost"
-  export AGMT_POSTGRES_PORT="5432"
-  export AGMT_POSTGRES_USER="<db_user>"
-  export AGMT_POSTGRES_PASSWORD="<db_password>"
-  export AGMT_POSTGRES_DATABASE="<db_name>"
-  ```
+```git clone https://github.com/Bridgeconn/vachan-api.git```
 
-## Python Virtual Environment
+```git checkout version-2```
 
-### Install Virtual Environment
- - Run command `sudo pip3 install virtualenv`
 
-### Create Virtual Environment
- - Run Command `virtualenv myprojectenv`. You can enter your custom name instead of `myprojectenv`.
+### Set up virtual Environment
 
-### Activate Virtual Environment
- - Run Command `source myprojectenv/bin/activate`. Activate the virtual environment before installing dependencies.
+```cd vachan-api```
 
- ## Set Up your Flask Application
+```python3 -m venv vachan-ENV```
 
- ### Clone Project and Install dependencies
- - Clone project repo to server
- - Navigate to project directory containing the `requirements.txt` file.
- - Install Python dependencies by running command `pip3 install -r requirements.txt`
+```source vachan-ENV/bin/activate```
 
-### Create Initial DB tables
- - Navigate to project directory containing the `db.sql` file. (Inside `agmt` folder)
- - Run Command `psql -d <db_name> -f ./db.sql`
- 
-### Test Flask App
- - Run Command `gunicorn main:app` inside the project folder containing the `main.py` file.
- - If the gunicorn server has started successfully, close and set up Nginx and Gunicorn WSGI.
+```pip install --upgrade pip```
 
-## Set up and enable the configuration files for Flask API server
- - Assuming the Server user Name is `amt`, python virtual environment name is `venv3`, the project folder name is `vachan-api` and the `main.py` file is in `vachan-api/agmt/` folder then the config files will be like:
- - Save config files in project directory named `vachanconfig`
+```pip install -r requirements.txt``` 
 
-### Set up Gunicorn
+### Set up Postgresql Database
 
-#### Gunicorn config file
- - Copy and edit the files according to the project credentials and directories and save file as `gunicorn.service`. You could use your custom name for the file.
-    ```
-    [Unit]
-    Description=gunicorn daemon
-    After=network.target
-    
-    [Service]
-    User=amt
-    Group=amt
-    WorkingDirectory=/home/amt/vachan-api/agmt
-    Environment="AGMT_SENDINBLUE_KEY=<send_in_blue_key>"
-    Environment="AGMT_HS256_SECRET=<jwt_algorithm_key>"
-    Environment="AGMT_POSTGRES_USER=<db_user_name>"
-    Environment="AGMT_POSTGRES_PASSWORD=<db_password>"
-    Environment="AGMT_POSTGRES_DATABASE=<db_name>"
-    Environment="AGMT_HOST_API_URL=<api_url>"
-    Environment="AGMT_HOST_UI_URL=<UI_url>"
-    ExecStart=/home/amt/venv3/bin/gunicorn --workers 3 --bind unix:/home/amt/vachan-api/agmt/agmt.sock   main:app
-    
-    [Install]
-    WantedBy=multi-user.target
-    ```
+Prerequisite: Postgresql (refer [postgresql website](https://www.postgresql.org/download/linux/ubuntu/) for installation and setup)
 
-#### Link files in `systemd` folder
- - Run Command to create sym link of the `gunicorn.service` file in `systemd` folder
-   - `sudo ln -s /home/amt/vachan-api/vachnaconfig/gunicorn.service /etc/systemd/system/`
+1. login to psql (command line interface for Postgres) using your username and password
+2. create a new database, in the name you want
+  `CREATE DATABASE db_name;`
+3. exit from psql ( `\q` or ctl+d )
+4. from terminal use command 
+  
+  `>>> cd DB`
+  
+  `>>> psql db_name < seed_DB.sql`
+  (use your username and password if required)
 
-#### Start Gunicorn service
- - Run the commands
-   - `sudo systemctl start gunicorn.service`
-   - `sudo systemctl enable gunicorn.service`
 
-### Set up Nginx config file
+### Set up Environmental Variables
 
-#### Nginx file
- - Copy and edit the files according to the project credentials and directories and save file as `nginx.conf`. You could use your custom name for the file.
- - For enabling ssl refer online documentation.
+go to the home directory and open `.bashrc` file
 
-    ```
-    server {
-        listen 80;
-        server_name <server_domain_name>;
-    
-       location / {
-            include proxy_params;
-            proxy_pass http://unix:/home/amt/vachan-api/agmt/agmt.sock;
-        }
-    
-    }
-    ```
+```cd ```
 
-#### Link files to `sites-enabled`
- - `nginx.conf` file has to be linked first to `sites-available` and from `sites-available` to `sites-enabled`.
- - Run the commands
-    - `sudo ln -s /home/amt/vachan-api/vachnaconfig/nginx.conf /etc/nginx/sites-available/`
-    - `sudo ln -s /etc/nginx/sites-available/nginx.conf /etc/nginx/sites-enabled`
- - Run command `sudo nginx -t` to check for syntax errors in the `nginx.conf` file.
+```gedit .bashrc```
 
-#### Start Nginx process with our latest config
- - Run Command `sudo systemctl restart nginx`
+Edit the following contents appropriatetly and paste to the `.bashrc` file
+```
+  export VACHAN_SENDINBLUE_KEY="<send_in_blue_key>"
+  export VACHAN_HS256_SECRET="<jwt_token_key>"
+  export VACHAN_POSTGRES_HOST="localhost"
+  export VACHAN_POSTGRES_PORT="5432"
+  export VACHAN_POSTGRES_USER="<db_user>"
+  export VACHAN_POSTGRES_PASSWORD="<db_password>"
+  export VACHAN_POSTGRES_DATABASE="<db_name>"
+  export VACHAN_LOGGING_LEVEL="WARNING"
+```
+After editing .bashrc file they may need to run
+
+`. ~/.bashrc` or 
+
+`source ~/.bashrc`
+
+to refresh the bashrc file or logout and login to refresh it
+
+### Run the app
+
+From the vachan-api folder
+1. `cd app`
+2. `uvicorn main:app`
+
+If all goes well, you will get a message like this in terminal
+```
+INFO:     Started server process [17599]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+```
+
+If you need to run the app on another port `--port` can be used. To run in debug mode `--debug` can be used
+
+```uvicorn main:app --port=7000 --debug```
+
+### Access Documentations
+
+Once the app is running, from your browser access http://127.0.0.1:8000/docs for swagger documentation.
+
+Redoc documentaion is also available at http://127.0.0.1:8000/redoc
+
+### Run Test
+
+To run all the testcases, from the folder vachan-api/app run the command
+
+```pytest```
+
+For runing testselectively, refer [pytest docs](https://docs.pytest.org/en/stable/usage.html#specifying-tests-selecting-tests)
