@@ -553,6 +553,7 @@ def get_dictionary_words(sourceName: schemas.tableNamePattern, searchIndex: str 
 	* All words starting with a letter
 	* All words starting with a substring
 	* An exact word search, giving the whole word
+	* By setting the wordListOnly flag to True, only the words would be inlcuded in the return object, without the details
 	* skip=n: skips the first n objects in return list
 	* limit=n: limits the no. of items to be returned to n'''
 	result = []	

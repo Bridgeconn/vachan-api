@@ -191,7 +191,7 @@ class CommentaryUpdateResponse(BaseModel):
 letterPattern = constr(regex='^\w$')
 class DictionaryWord(BaseModel):
 	word: str
-	details: dict
+	details: dict = None
 
 class DictionaryUpdateResponse(BaseModel):
 	message: str
