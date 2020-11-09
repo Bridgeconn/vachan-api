@@ -4,30 +4,30 @@ unit_url = "/v2/contents"
 
 def test_get_default():
 	'''positive test case, without optional params'''
-	response = client.get()
+	response = client.get(unit_url)
 	assert response.status_code == 200
-	assert isInstance( response.json(), list)
+	assert isinstance( response.json(), list)
 	for item in response.json():
 		assert "contentId" in item
-		assert isInstance(item['contentId'], int)
+		assert isinstance(item['contentId'], int)
 		assert "contentType" in item
 
 def test_get_limit():
 	'''positive test case, with optional param, limit'''
 	response = client.get(unit_url+"?limit=3")
 	assert response.status_code == 200
-	assert isInstance( response.json(), list)
+	assert isinstance( response.json(), list)
 	assert len(response.json()) < 3
 
 def test_get_skip():
 	'''positive test case, with optional param, skip'''
 	response1 = client.get(unit_url+"?skip=0")
 	assert response1.status_code == 200
-	assert isInstance( response1.json(), list)
+	assert isinstance( response1.json(), list)
 	if len(response1.json()) > 1:
 		response2 = client.get(unit_url+"?skip=1")
 		assert response2.status_code == 200
-		assert isInstance( response2.json(), list)
+		assert isinstance( response2.json(), list)
 		assert response1.json()[1] == response2.json()[0]
 
 def test_get_notavailable_contentType():
@@ -81,15 +81,15 @@ def test_post_default():
 	assert response.status_code == 200
 	assert response.json()['message'] == "Content type %s created successfully."%data
 	assert response.json()["data"]["contentType"] == data
-	assert isInstance(response.json()["data"]["contentId"], int)
+	assert isinstance(response.json()["data"]["contentId"], int)
 
 def test_get_filterbycontentType():
 	'''test again for bible contentType fetch after POST call'''
 	response = client.get(unit_url+"?contentType=Bible")
 	assert response.status_code == 200
-	assert isInstance( response.json(), list)
+	assert isinstance( response.json(), list)
 	assert response.json()[0]['contentType'] == "Bible"
-	assert isInstance(response.json()[0]['contentId'], int) 
+	assert isinstance(response.json()[0]['contentId'], int) 
 
 def test_post_incorrectdatatype1():
 	'''the input data object should a json with "contentType" key within it'''
