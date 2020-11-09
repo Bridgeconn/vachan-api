@@ -17,7 +17,7 @@ def test_get_limit():
 	response = client.get(unit_url+"?limit=3")
 	assert response.status_code == 200
 	assert isinstance( response.json(), list)
-	assert len(response.json()) < 3
+	assert len(response.json()) <= 3
 
 def test_get_skip():
 	'''positive test case, with optional param, skip'''
@@ -50,37 +50,37 @@ def test_get_incorrectvalue_limit1():
 	response = client.get(unit_url+"?limit=abc")
 	assert response.status_code == 422
 	assert "error" in response.json()
-	assert response.json()['error'] == "Input validation Error"
+	assert response.json()['error'] == "Input Validation Error"
 
 def test_get_incorrectvalue_limit2():
 	'''limit should be a positive integer'''
 	response = client.get(unit_url+"?limit=-1")
 	assert response.status_code == 422
 	assert "error" in response.json()
-	assert response.json()['error'] == "Input validation Error"
+	assert response.json()['error'] == "Input Validation Error"
 
 def test_get_incorrectvalue_skip1():
 	'''skip should be an integer'''
 	response = client.get(unit_url+"?skip=abc")
 	assert response.status_code == 422
 	assert "error" in response.json()
-	assert response.json()['error'] == "Input validation Error"
+	assert response.json()['error'] == "Input Validation Error"
 	
 def test_get_incorrectvalue_skip2():
 	'''skip should be a positive integer'''
 	response = client.get(unit_url+"?skip=-10")
 	assert response.status_code == 422
 	assert "error" in response.json()
-	assert response.json()['error'] == "Input validation Error"
+	assert response.json()['error'] == "Input Validation Error"
 
 def test_post_default():
 	'''positive test case, checking for correct return object'''
 	data = {"contentType":"Bible"}
 	headers = {"contentType": "application/json", "accept": "application/json"}
 	response = client.post(unit_url, headers=headers, json=data)
-	assert response.status_code == 200
-	assert response.json()['message'] == "Content type %s created successfully."%data
-	assert response.json()["data"]["contentType"] == data
+	assert response.status_code == 201
+	assert response.json()['message'] == "Content type created successfully."
+	assert response.json()["data"]["contentType"] == "Bible"
 	assert isinstance(response.json()["data"]["contentId"], int)
 
 def test_get_filterbycontentType():
@@ -98,7 +98,7 @@ def test_post_incorrectdatatype1():
 	response = client.post(unit_url, headers=headers, json=data)
 	assert response.status_code == 422
 	assert "error" in response.json()
-	assert response.json()['error'] == "Input validation Error"
+	assert response.json()['error'] == "Input Validation Error"
 
 def test_post_incorrectdatatype2():
 	'''contentType should not be integer, as per the Database datatype constarints'''
@@ -107,7 +107,7 @@ def test_post_incorrectdatatype2():
 	response = client.post(unit_url, headers=headers, json=data)
 	assert response.status_code == 422
 	assert "error" in response.json()
-	assert response.json()['error'] == "Input validation Error"
+	assert response.json()['error'] == "Input Validation Error"
 
 def test_post_missingvalue_contenttype():
 	'''contentType is mandatory in input data object'''
@@ -116,7 +116,7 @@ def test_post_missingvalue_contenttype():
 	response = client.post(unit_url, headers=headers, json=data)
 	assert response.status_code == 422
 	assert "error" in response.json()
-	assert response.json()['error'] == "Input validation Error"
+	assert response.json()['error'] == "Input Validation Error"
 
 def test_post_incorrectvalue_contenttype():
 	''' The contentType name should not contain spaces, as this name would be used for creating tables'''
@@ -125,5 +125,5 @@ def test_post_incorrectvalue_contenttype():
 	response = client.post(unit_url, headers=headers, json=data)
 	assert response.status_code == 422
 	assert "error" in response.json()
-	assert response.json()['error'] == "Input validation Error"
+	assert response.json()['error'] == "Input Validation Error"
 
