@@ -87,7 +87,7 @@ def test_get_filterbycontentType():
 	'''test again for bible contentType fetch after POST call'''
 	response = client.get(unit_url+"?contentType=Bible")
 	assert response.status_code == 200
-	assert isInstance( response1.json(), list)
+	assert isInstance( response.json(), list)
 	assert response.json()[0]['contentType'] == "Bible"
 	assert isInstance(response.json()[0]['contentId'], int) 
 
