@@ -9,6 +9,7 @@
 5. Have proper automated tests in place for all API endpoints.
 6. Have proper authentication implemented for APIs and access to resources in DB.
 7. Use linter for a cleaner code and use of better programming practices.
-8. If possible, include Graph DB APIs also as part of vachan-api.
+8. Having proper logging for all APIs
+9. If possible, include Graph DB APIs also as part of vachan-api.
 
 
