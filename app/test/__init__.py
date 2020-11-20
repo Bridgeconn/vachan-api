@@ -1,38 +1,33 @@
 from fastapi.testclient import TestClient
 import os, sys
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 sys.path.append(os.environ["PWD"])
 
-from main import app
+from main import app, get_db
 
-client = TestClient(app)
 
 postgres_host = os.environ.get("AGMT_POSTGRES_HOST", "localhost")
 postgres_port = os.environ.get("AGMT_POSTGRES_PORT", "5432")
 postgres_user = os.environ.get("AGMT_POSTGRES_USER", "postgres") 
 postgres_password = os.environ.get("AGMT_POSTGRES_PASSWORD", "secret") 
-
 postgres_database = "test_DB" 
 
-def get_db():                                                                      #--------------To open database connection-------------------#
-	"""Opens a new database connection to test DB if there is none yet for the
-	current application context.
-	"""
-	if not hasattr(g, 'db'):
-		g.db = psycopg2.connect(dbname=postgres_database, user=postgres_user,
-			password=postgres_password,	host=postgres_host, port=postgres_port)
-	return g.db
+SQLALCHEMY_DATABASE_URL = "postgresql://%s:%s@%s/%s"%(postgres_user,postgres_password,postgres_host,postgres_database)
+
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-@pytest.fixture(autouse=True)
-def _mock_db_connection(mocker, get_db):
-    """
-    This will alter application database connection settings, once and for all the tests
-    in unit tests module.
-    :param mocker: pytest-mock plugin fixture
-    :param get_db: connection class
-    :return: True upon successful monkey-patching
-    """
-    mocker.patch('db.database.dbc', get_db)
-    return True
+def override_get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+app.dependency_overrides[get_db] = override_get_db
+
+client = TestClient(app)
