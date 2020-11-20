@@ -1,8 +1,11 @@
 from fastapi import FastAPI, Query, Path, Body, Request
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from typing import Optional, List
 from sqlalchemy.orm import Session
 import logging, csv, urllib, os
+from logging.handlers import RotatingFileHandler
 
 import crud, db_models, schemas
 from database import SessionLocal, engine
@@ -11,30 +14,95 @@ db_models.Base.metadata.create_all(bind=engine)
 
 
 app = FastAPI()
-logging.basicConfig(filename='API_logs.log', format='%(asctime)s: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+logging.basicConfig(filename='API_logs.log', format='%(asctime)s|%(filename)s:%(lineno)d|%(levelname)-8s: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+log = logging.getLogger(__name__)
+log.setLevel(os.environ.get("VACHAN_LOGGING_LEVEL", "WARNING"))
+handler = RotatingFileHandler("API_logs.log", maxBytes=10000000, backupCount=10)
+log.addHandler(handler)
 
+######### Error Handling ##############
 
-class VachanApiException(Exception):
-    def __init__(self, name: str, detail: str, status_code: int):
-        self.name = name
-        self.detail = detail
-        self.status_code = status_code
+class DatabaseException(Exception):
+	def __init__(self, detail: str):
+		self.name = "Database Error"
+		self.detail = detail
+		self.status_code = 502
 
-@app.exception_handler(VachanApiException)
-async def vachanapi_exception_handler(request: Request, exc: VachanApiException):
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"error": exc.name, "details" : exc.detail},
-    )
+@app.exception_handler(DatabaseException)
+async def db_exception_handler(request, exc: DatabaseException):
+	log.error("%s: %s"%(exc.name, exc.detail))
+	return JSONResponse(
+		status_code=exc.status_code,
+		content={"error": exc.name, "details" : exc.detail},
+	)
+
+class AlreadyExistsException(Exception):
+	def __init__(self, detail: str):
+		self.name = "Requested Content Not Available"
+		self.detail = detail
+		self.status_code = 409
+
+@app.exception_handler(AlreadyExistsException)
+async def Exists_exception_handler(request, exc: AlreadyExistsException):
+	log.error("%s: %s"%(exc.name, exc.detail))
+	return JSONResponse(
+		status_code=exc.status_code,
+		content={"error": exc.name, "details" : exc.detail},
+	)
+
+class InCorrectDataException(Exception):
+	def __init__(self, detail: str):
+		self.name = "Input Validation Error"
+		self.detail = detail
+		self.status_code = 422
+
+@app.exception_handler(InCorrectDataException)
+async def InCorrectData_exception_handler(request, exc: InCorrectDataException):
+	log.error("%s: %s"%(exc.name, exc.detail))
+	return JSONResponse(
+		status_code=exc.status_code,
+		content={"error": exc.name, "details" : exc.detail},
+	)
+
+class TypeException(Exception):
+	def __init__(self, detail: str):
+		self.name = "Not the Required Type"
+		self.detail = detail
+		self.status_code = 415
+
+@app.exception_handler(TypeException)
+async def Type_exception_handler(request, exc: TypeException):
+	log.error("%s: %s"%(exc.name, exc.detail))
+	return JSONResponse(
+		status_code=exc.status_code,
+		content={"error": exc.name, "details" : exc.detail},
+	)
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request, exc):
+	log.error("%s: %s"%("Http Error", exc.detail))
+	return JSONResponse(
+		status_code=exc.status_code,
+		content={"error": "HTTP Error", "details": str(exc.detail)}
+	)
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+	log.error("%s: %s"%("Input Validation Error", str(exc)))
+	return JSONResponse(
+		status_code=422,
+		content={"error": "Input Validation Error" ,"details": str(exc).replace("\n", ". ")}
+	)
+######################################################
 
 def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+	db = SessionLocal()
+	try:
+		yield db
+	finally:
+		db.close()
 
-@app.get('/', response_model=schemas.NormalResponse, status_code=200)
+@app.get('/', response_model=schemas.NormalResponse, responses={422: {"model": schemas.ErrorResponse}}, status_code=200)
 def test():
 	'''tests if app is running and the DB connection'''
 	return {"message": "App is up and running"}
@@ -43,7 +111,7 @@ def test():
 
 ##### Content types #####
 
-@app.get('/v2/contents', response_model=List[schemas.ContentType], status_code=200, tags=["Contents Types"])
+@app.get('/v2/contents', response_model=List[schemas.ContentType], responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Contents Types"])
 def get_contents(skip: int = 0, limit: int = 100):
 	'''fetches all the contents types supported and their details
 	* skip=n: skips the first n objects in return list
@@ -51,7 +119,7 @@ def get_contents(skip: int = 0, limit: int = 100):
 	result = []
 	return result   
 
-@app.post('/v2/contents', response_model=schemas.ContentTypeUpdateResponse, status_code=201, tags=["Contents Types"])
+@app.post('/v2/contents', response_model=schemas.ContentTypeUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}}, status_code=201, tags=["Contents Types"])
 def add_contents(content_name: str  = Body(...)):
 	''' Creates a new content type. 
 	Additional operations required: 
@@ -60,9 +128,9 @@ def add_contents(content_name: str  = Body(...)):
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
+		raise AlreadyExistsException("%s already present"%(content_name))
 	except Exception as e:
-		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+		raise DatabaseException(str(e))
 	return {'message': "Content type %s created successfully."%content_name , "data": None}
 
 ## Notes ####
@@ -75,7 +143,7 @@ def add_contents(content_name: str  = Body(...)):
 
 ##### languages #####
 
-@app.get('/v2/languages', response_model=List[schemas.LanguageResponse], status_code=200, tags=["Languages"])
+@app.get('/v2/languages', response_model=List[schemas.LanguageResponse], responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Languages"])
 def get_language(language_code : schemas.langCodePattern = None, skip: int = 0, limit: int = 100):
 		'''fetches all the languages supported in the DB, their code and other details.
 		if query parameter, langauge_code is provided, returns details of that language if pressent
@@ -86,30 +154,30 @@ def get_language(language_code : schemas.langCodePattern = None, skip: int = 0, 
 		try:
 			pass
 		except Exception as e:
-			raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+			raise DatabaseException(str(e))
 		return result
 
-@app.post('/v2/languages', response_model=schemas.LanguageUpdateResponse, status_code=201, tags=["Languages"])
+@app.post('/v2/languages', response_model=schemas.LanguageUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}}, status_code=201, tags=["Languages"])
 def add_language(lang_obj : schemas.Language = Body(...)):
 	''' Create a new language'''
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
+		raise AlreadyExistsException("%s already present"%(str(lang_obj)) )
 	except Exception as e:
-		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+		raise DatabaseException(str(e))
 	return {"message": f"Language {lang_obj.language} created successfully", "data": None}
 
-@app.put('/v2/languages', response_model=schemas.LanguageUpdateResponse, status_code=201, tags=["Languages"])
+@app.put('/v2/languages', response_model=schemas.LanguageUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}}, status_code=201, tags=["Languages"])
 def edit_language(lang_obj: schemas.LanguageEdit = Body(...)):
 	''' Changes one or more fields of language'''
-	logging.info(lang_obj)
+	log.info(lang_obj)
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+		raise InCorrectDataException("%s not available"%(str(lang_obj)))
 	except Exception as e:
-		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+		raise DatabaseException(str(e))
 	return {"message" : f"Updated language field(s)", 'data': None}
 
 ## NOTE
@@ -120,7 +188,7 @@ def edit_language(lang_obj: schemas.LanguageEdit = Body(...)):
 ##### Version #####
 
 
-@app.get("/v2/versions", response_model=List[schemas.VersionResponse], status_code=200, tags=["Versions"])
+@app.get("/v2/versions", response_model=List[schemas.VersionResponse], responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Versions"])
 def get_version(versionAbbreviation : schemas.versionPattern = None, skip: int = 0, limit: int = 100):
 	'''Fetches all versions and their details.
 	If param versionAbbreviation is present, returns details of that version if pressent
@@ -131,30 +199,30 @@ def get_version(versionAbbreviation : schemas.versionPattern = None, skip: int =
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+		raise DatabaseException(str(e))
 	return result
 
-@app.post('/v2/versions', response_model=schemas.VersionUpdateResponse, status_code=201, tags=["Versions"])
+@app.post('/v2/versions', response_model=schemas.VersionUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}}, status_code=201, tags=["Versions"])
 def add_version(version_obj : schemas.Version = Body(...)):
 	''' Creates a new version '''
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
+		raise AlreadyExistsException("%s already present"%(str(version_obj)))
 	except Exception as e:
-		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+		raise DatabaseException(str(e))
 	return {"message": f"Version {version_obj.versionAbbreviation} created successfully", "data": None}
 
-@app.put('/v2/versions', response_model=schemas.VersionUpdateResponse, status_code=201, tags=["Versions"])
+@app.put('/v2/versions', response_model=schemas.VersionUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}}, status_code=201, tags=["Versions"])
 def edit_version(version_obj: schemas.VersionEdit = Body(...)):
 	''' Changes one or more fields of vesrion types table'''
-	logging.info(version_obj)
+	log.info(version_obj)
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+		raise InCorrectDataException("%s not available"%(str(version_obj)))
 	except Exception as e:
-		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+		raise DatabaseException(str(e))
 	return {"message" : f"Updated version field(s)", "data": None}
 
 ## NOTE
@@ -165,7 +233,7 @@ def edit_version(version_obj: schemas.VersionEdit = Body(...)):
 ##### Source #####
 
 
-@app.get("/v2/sources", response_model=List[schemas.Source], status_code=200, tags=["Sources"])
+@app.get("/v2/sources", response_model=List[schemas.Source], responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Sources"])
 def get_source(contentType: str = None, versionAbbreviation: schemas.versionPattern = None, languageCode: schemas.langCodePattern =None, skip: int = 0, limit: int = 100, active: bool = True):
 	'''Fetches all sources and their details.
 	If one or more optional params are present, returns a filtered result if pressent
@@ -176,10 +244,10 @@ def get_source(contentType: str = None, versionAbbreviation: schemas.versionPatt
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+		raise DatabaseException(str(e))
 	return result
 
-@app.post('/v2/sources', response_model=schemas.SourceUpdateResponse, status_code=201, tags=["Sources"])
+@app.post('/v2/sources', response_model=schemas.SourceUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}}, status_code=201, tags=["Sources"])
 def add_source(source_obj : schemas.Source = Body(...)):
 	''' Creates a new source entry in sources table. 
 	Also creates all associtated tables for the content type.
@@ -187,21 +255,21 @@ def add_source(source_obj : schemas.Source = Body(...)):
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
+		raise AlreadyExistsException("%s already present"%(str(source_obj)))
 	except Exception as e:
-		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+		raise DatabaseException(str(e))
 	return {"message": f"Source {source_obj.version} {source_obj.contentType} created successfully", "data": None}
 
-@app.put('/v2/sources', response_model=schemas.SourceUpdateResponse, status_code=201, tags=["Sources"])
+@app.put('/v2/sources', response_model=schemas.SourceUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}}, status_code=201, tags=["Sources"])
 def edit_source(source_obj: schemas.SourceEdit = Body(...)):
 	''' Changes one or more fields of source '''
-	logging.info(source_obj)
+	log.info(source_obj)
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+		raise InCorrectDataException("%s not available"%(str(source_obj)))
 	except Exception as e:
-		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+		raise DatabaseException(str(e))
 	return {"message" : f"Updated source field(s)", "data": None}
 
 
@@ -215,7 +283,7 @@ def edit_source(source_obj: schemas.SourceEdit = Body(...)):
 ############ Bible Books ##########
 
 
-@app.get('/v2/lookup/bible/books', response_model=List[schemas.BibleBook], status_code=200, tags=["Lookups"])
+@app.get('/v2/lookup/bible/books', response_model=List[schemas.BibleBook], responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Lookups"])
 def get_bible_book(bookId: int = None, bookCode: schemas.BookCodePattern = None, skip: int = 0, limit: int = 100):
 	''' returns the list of book ids, codes and names.
 	If any of the query params are provided the details of corresponding book
@@ -226,7 +294,7 @@ def get_bible_book(bookId: int = None, bookCode: schemas.BookCodePattern = None,
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+		raise DatabaseException(str(e))
 	return result
 
 ## NOTE
@@ -236,39 +304,42 @@ def get_bible_book(bookId: int = None, bookCode: schemas.BookCodePattern = None,
 # # #### Bible #######
 
 
-@app.post('/v2/bibles/{sourceName}/books', response_model=schemas.BibleBookUpdateResponse, status_code=201, tags=["Bibles"])
+@app.post('/v2/bibles/{sourceName}/books', response_model=schemas.BibleBookUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}, 415: {"model": schemas.ErrorResponse}}, status_code=201, tags=["Bibles"])
 def add_bible_book(sourceName: schemas.tableNamePattern, bibleBookObj : schemas.BibleBookUpload = Body(...)):
 	'''Uploads a bible book. It update 3 tables: ..._bible, .._bible_cleaned, ..._bible_tokens'''
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+		raise TypeException("The source is not of the required type, for this function")
 	except Exception as e:
-		raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
+		bookName_from_usfm = ''
+		src = "%s %s "%(sourceName.value, bookName_from_usfm)
+		raise AlreadyExistsException("%s already present"%(src))
 	except Exception as e:
-		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+		raise DatabaseException(str(e))
 	return {"message": f"Bible book uploaded successfully", "data": None }
 
 
-@app.put('/v2/bibles/{sourceName}/books', response_model=schemas.BibleBookUpdateResponse, status_code=201, tags=["Bibles"])
+@app.put('/v2/bibles/{sourceName}/books', response_model=schemas.BibleBookUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 415: {"model": schemas.ErrorResponse}}, status_code=201, tags=["Bibles"])
 def edit_bible_book(sourceName: schemas.tableNamePattern, bibleBookObj: schemas.BibleBookUpload = Body(...)):
 	''' Changes both usfm and json fileds of bible book. 
 	The contents of the respective bible_clean and bible_tokens tables' contents 
 	should be deleted and new data added. 
 	two fields are mandatory as usfm and json are interdependant'''
-	logging.info(bibleBookObj)
+	log.info(bibleBookObj)
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+		bookName_from_usfm = ''
+		raise InCorrectDataException("Bible book %s %s not available"%(sourceName.value, bookName_from_usfm))
 	except Exception as e:
-		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+		raise TypeException("The source is not of the required type, for this function")
 	except Exception as e:
-		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+		raise DatabaseException(str(e))
 	return {"message" : f"Updated bible book and associated tables", "data": None}
 
 
-@app.get('/v2/bibles/{sourceName}/books', response_model=List[schemas.BibleBookContent], status_code=200, tags=["Bibles"])
+@app.get('/v2/bibles/{sourceName}/books', response_model=List[schemas.BibleBookContent], responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 415: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
 def get_available_bible_books(sourceName: schemas.tableNamePattern, bookCode: schemas.BookCodePattern = None, contentType: schemas.BookContentType = None, versification: bool = False, skip: int = 0, limit: int = 100):
 	'''Fetches all the books available(has been uploaded) in the specified bible
 	* returns all available(uploaded) books without bookCode and contentType
@@ -281,13 +352,13 @@ def get_available_bible_books(sourceName: schemas.tableNamePattern, bookCode: sc
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+		raise TypeException("The source is not of the required type, for this function")
 	except Exception as e:
-		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+		raise DatabaseException(str(e))
 	return result
 
 
-@app.get("/v2/bibles/{sourceName}/verses", response_model=List[schemas.BibleVerse], status_code=200, tags=["Bibles"])
+@app.get("/v2/bibles/{sourceName}/verses", response_model=List[schemas.BibleVerse], responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
 def get_bible_verse(sourceName: schemas.tableNamePattern, bookCode: schemas.BookCodePattern = None, chapter: int = None, verse: int = None, lastVerse: int = None, searchPhrase: str = None, skip: int = 0, limit: int = 100):
 	''' Fetches the cleaned contents of bible, within a verse range, if specified.
 	This API could be used for fetching, 
@@ -303,9 +374,9 @@ def get_bible_verse(sourceName: schemas.tableNamePattern, bookCode: schemas.Book
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+		raise TypeException("The source is not of the required type, for this function")
 	except Exception as e:
-		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+		raise DatabaseException(str(e))
 	return result
 
 # ##### NOTES for Discussion
@@ -321,31 +392,31 @@ def get_bible_verse(sourceName: schemas.tableNamePattern, bookCode: schemas.Book
 
 # ########### Audio bible ###################
 
-@app.post('/v2/bibles/{sourceName}/audios', response_model=schemas.AudioBibleUpdateResponse, status_code=201, tags=["Bibles"])
+@app.post('/v2/bibles/{sourceName}/audios', response_model=schemas.AudioBibleUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=201, tags=["Bibles"])
 def add_audio_bible(sourceName: schemas.tableNamePattern, audios:List[schemas.AudioBibleUpload] = Body(...)):
 	'''Uploads a list of Audio Bible URLs and other associated info about them.'''
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+		raise TypeException("The source is not of the required type, for this function")
 	except Exception as e:
-		raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
+		raise AlreadyExistsException("Source %s, audios: %s already present"%(sourceName, audios))
 	except Exception as e:
-		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+		raise DatabaseException(str(e))
 	return {"message": f"Audio bible details uploaded successfully", "data": None}
 
-@app.put('/v2/bibles/{sourceName}/audios', response_model=schemas.AudioBibleUpdateResponse, status_code=201, tags=["Bibles"])
+@app.put('/v2/bibles/{sourceName}/audios', response_model=schemas.AudioBibleUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=201, tags=["Bibles"])
 def edit_audio_bible(sourceName: schemas.tableNamePattern, audios: List[schemas.AudioBibleEdit] = Body(...)):
 	''' Changes the mentioned fields of audio bible row'''
-	logging.info(audios)
+	log.info(audios)
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+		raise InCorrectDataException("Source %s, %s not available"%(sourceName, audios))
 	except Exception as e:
-		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+		raise TypeException("The source is not of the required type, for this function")
 	except Exception as e:
-		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+		raise DatabaseException(str(e))
 	return {"message" : f"Updated audio bible details", "data": None}
 
 
@@ -373,7 +444,7 @@ def edit_audio_bible(sourceName: schemas.tableNamePattern, audios: List[schemas.
 # ##### Commentary #####
 
 
-@app.get('/v2/commentaries/{sourceName}', response_model=List[schemas.Commentary], status_code=200, tags=["Commentaries"])
+@app.get('/v2/commentaries/{sourceName}', response_model=List[schemas.Commentary], responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Commentaries"])
 def get_commentary(sourceName: schemas.tableNamePattern, bookCode: schemas.BookCodePattern = None, chapter: int = None, verse: int = None, lastVerse: int = None, skip: int = 0, limit: int = 100):
 	'''Fetches commentries under the specified source.
 	Using the params bookCode, chapter, and verse the result set can be filtered as per need, like in the /v2/bibles/{sourceName}/verses API
@@ -383,36 +454,34 @@ def get_commentary(sourceName: schemas.tableNamePattern, bookCode: schemas.BookC
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
-	except Exception as e:
-		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+		raise TypeException("The source is not of the required type, for this function")
 	return result
 
-@app.post('/v2/commentaries/{sourceName}', response_model=schemas.CommentaryUpdateResponse, status_code=201, tags=["Commentaries"])
+@app.post('/v2/commentaries/{sourceName}', response_model=schemas.CommentaryUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=201, tags=["Commentaries"])
 def add_commentary(sourceName: schemas.tableNamePattern, commentries:List[schemas.Commentary] = Body(...)):
 	'''Uploads a list of commentaries.'''
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+		raise TypeException("The source is not of the required type, for this function")
 	except Exception as e:
-		raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
+		raise AlreadyExistsException("%s already present"%sourceName.value)
 	except Exception as e:
-		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+		raise DatabaseException(str(e))
 	return {"message": f"Commentaries uploaded successfully", "data": None}
 
-@app.put('/v2/commentaries/{sourceName}', response_model=schemas.CommentaryUpdateResponse, status_code=201, tags=["Commentaries"])
+@app.put('/v2/commentaries/{sourceName}', response_model=schemas.CommentaryUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=201, tags=["Commentaries"])
 def edit_commentary(sourceName: schemas.tableNamePattern, commentries: List[schemas.Commentary] = Body(...)):
 	''' Changes the commentary field to the given value in the row selected using book, chapter, verse values'''
-	logging.info(commentries)
+	log.info(commentries)
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+		raise InCorrectDataException("Requested content not available")
 	except Exception as e:
-		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+		raise TypeException("The source is not of the required type, for this function")
 	except Exception as e:
-		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+		raise DatabaseException(str(e))
 	return {"message" : f"Updated commentries", "data": None}
 
 
@@ -426,8 +495,8 @@ def edit_commentary(sourceName: schemas.tableNamePattern, commentries: List[sche
 # ########### Dictionary ###################
 
 
-@app.get('/v2/dictionaries/{sourceName}', response_model=List[schemas.DictionaryWord], status_code=200, tags=["Dictionaries"])
-def get_dictionary_words(sourceName: schemas.tableNamePattern, searchIndex: str = None, wordListOnly: bool = False, skip: int = 0, limit: int = 100):
+@app.get('/v2/dictionaries/{sourceName}', response_model=List[schemas.DictionaryWord], responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Dictionaries"])
+def get_dictionary_words(sourceName: schemas.tableNamePattern, searchIndex: str = None, skip: int = 0, limit: int = 100):
 	'''fetches list of dictionary words and all available details about them.
 	Using the searchIndex appropriately, it is possible to get
 	* All words starting with a letter
@@ -440,38 +509,38 @@ def get_dictionary_words(sourceName: schemas.tableNamePattern, searchIndex: str 
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+		raise TypeException("The source is not of the required type, for this function")
 	except Exception as e:
-		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+		raise DatabaseException(str(e))
 	return result
 
 
-@app.post('/v2/dictionaries/{sourceName}', response_model=schemas.DictionaryUpdateResponse, status_code=201, tags=["Dictionaries"])
+@app.post('/v2/dictionaries/{sourceName}', response_model=schemas.DictionaryUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=201, tags=["Dictionaries"])
 def add_dictionary(sourceName: schemas.tableNamePattern, words: List[schemas.DictionaryWord] = Body(...)):
 	''' uploads dictionay words'''
-	logging.info(words)
+	log.info(words)
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+		raise TypeException("The source is not of the required type, for this function")
 	except Exception as e:
-		raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
+		raise AlreadyExistsException("Content already present")
 	except Exception as e:
-		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+		raise DatabaseException(str(e))
 	return {"message": f"Dictionary table created and words uploaded successfully", "data": None}
 
-@app.put('/v2/dictionaries/{sourceName}', response_model=schemas.DictionaryUpdateResponse, status_code=201, tags=["Dictionaries"])
+@app.put('/v2/dictionaries/{sourceName}', response_model=schemas.DictionaryUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=201, tags=["Dictionaries"])
 def edit_dictionary(sourceName: schemas.tableNamePattern, words: List[schemas.DictionaryWord] = Body(...)):
 	'''Updates the given fields mentioned in details object, of the specifed word'''
-	logging.info(words)
+	log.info(words)
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+		raise InCorrectDataException("Requested content not available")
 	except Exception as e:
-		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+		raise TypeException("The source is not of the required type, for this function")
 	except Exception as e:
-		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+		raise DatabaseException(str(e))
 	return {"message" : f"Updated dictionary words", "data": None}
 
 ## ### NOTE ####
@@ -491,7 +560,7 @@ def edit_dictionary(sourceName: schemas.tableNamePattern, words: List[schemas.Di
 # ########### Infographic ###################
 
 
-@app.get('/v2/infographics/{sourceName}', response_model=List[schemas.Infographic], status_code=200, tags=["Infographics"])
+@app.get('/v2/infographics/{sourceName}', response_model=List[schemas.Infographic], responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Infographics"])
 def get_infographic(sourceName: schemas.tableNamePattern, bookCode: schemas.BookCodePattern = None, skip: int = 0, limit: int = 100 ):
 	'''Fetches the infographics. Can use, bookCode to filter the results
 	* skip=n: skips the first n objects in return list
@@ -500,36 +569,36 @@ def get_infographic(sourceName: schemas.tableNamePattern, bookCode: schemas.Book
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+		raise TypeException("The source is not of the required type, for this function")
 	except Exception as e:
-		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+		raise DatabaseException(str(e))
 	return result
 
-@app.post('/v2/infographics/{sourceName}', response_model=schemas.InfographicUpdateResponse, status_code=201, tags=["Infographics"])
+@app.post('/v2/infographics/{sourceName}', response_model=schemas.InfographicUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=201, tags=["Infographics"])
 def add_infographics(sourceName: schemas.tableNamePattern, infographics:List[schemas.Infographic] = Body(...)):
 	'''Uploads a list of infograhics.'''
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+		raise TypeException("The source is not of the required type, for this function")
 	except Exception as e:
-		raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
+		raise AlreadyExistsException("Content already present")
 	except Exception as e:
-		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+		raise DatabaseException(str(e))
 	return {"message": f"Infographics uploaded successfully", "data": None}
 
-@app.put('/v2/infographics/{sourceName}', response_model=schemas.InfographicUpdateResponse, status_code=201, tags=["Infographics"])
+@app.put('/v2/infographics/{sourceName}', response_model=schemas.InfographicUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=201, tags=["Infographics"])
 def edit_infographics(sourceName: schemas.tableNamePattern, infographics: List[schemas.Infographic] = Body(...)):
 	''' Changes the commentary field to the given value in the row selected using book, chapter, verse values'''
-	logging.info(infographics)
+	log.info(infographics)
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+		raise InCorrectDataException("Requested content not available")
 	except Exception as e:
-		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+		raise TypeException("The source is not of the required type, for this function")
 	except Exception as e:
-		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+		raise DatabaseException(str(e))
 	return {"message" : f"Updated infographics", "data": None}
 
 
@@ -540,7 +609,7 @@ def edit_infographics(sourceName: schemas.tableNamePattern, infographics: List[s
 
 # ########### bible videos ###################
 
-@app.get('/v2/biblevideos/{sourceName}', response_model=List[schemas.BibleVideo], status_code=200, tags=["Bible Videos"])
+@app.get('/v2/biblevideos/{sourceName}', response_model=List[schemas.BibleVideo], responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Bible Videos"])
 def get_bible_video(bookCode: schemas.BookCodePattern = None, theme: str = None, title: str = None, skip: int = 0, limit: int = 100):
 	'''Fetches the Bible video details and URL. Can use the optional query params book, title and theme to filter the results
 	* skip=n: skips the first n objects in return list
@@ -549,32 +618,36 @@ def get_bible_video(bookCode: schemas.BookCodePattern = None, theme: str = None,
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+		TypeException("Source is not the required type. Expected Bible Videos")
+	except Exception as e:
+		raise DatabaseException(str(e))
 	return result
 
-@app.post('/v2/biblevideos/{sourceName}', response_model=schemas.BibleVideoUpdateResponse, status_code=201, tags=["Bible Videos"])
+@app.post('/v2/biblevideos/{sourceName}', response_model=schemas.BibleVideoUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=201, tags=["Bible Videos"])
 def add_bible_video(videos:List[schemas.BibleVideoUpload] = Body(...)):
 	'''Uploads a list of bible video links and details.'''
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
+		raise TypeException("source is not of the required type for this function, Expected Bible Videos")
 	except Exception as e:
-		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+		raise AlreadyExistsException("Content already present")
+	except Exception as e:
+		raise DatabaseException(str(e))
 	return {"message": f"BibleVideo details uploaded successfully", "data": None}
 
-@app.put('/v2/biblevideos/{sourceName}', response_model=schemas.BibleVideoUpdateResponse, status_code=201, tags=["Bible Videos"])
+@app.put('/v2/biblevideos/{sourceName}', response_model=schemas.BibleVideoUpdateResponse, responses={502: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}, 415:{"model": schemas.ErrorResponse}}, status_code=201, tags=["Bible Videos"])
 def edit_bible_video(videos: List[schemas.BibleVideoEdit] = Body(...)):
 	''' Changes the commentary field to the given value in the row selected using book, chapter, verse values'''
-	logging.info(videos)
+	log.info(videos)
 	try:
 		pass
 	except Exception as e:
-		raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
+		raise TypeException("The source is not of the required type, for this function")
 	except Exception as e:
-		raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
+		raise InCorrectDataException("Requested content not available")
 	except Exception as e:
-		raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
+		raise DatabaseException(str(e))
 	return {"message" : f"Updated bible video details", "data": None}
 
 
