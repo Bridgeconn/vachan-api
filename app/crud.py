@@ -9,7 +9,7 @@ def get_content_types(db: Session, contentType: str =None, skip: int = 0, limit:
 def get_content_type(db: Session, contentType: str):
 	return db.query(db_models.ContentType).filter(db_models.ContentType.contentType == contentType).first()
 
-def create_content_type(db: Session, content: schemas.ContentType):
+def create_content_type(db: Session, content: schemas.ContentTypeCreate):
     db_content = db_models.ContentType(contentType = content.contentType)
     db.add(db_content)
     db.commit()
