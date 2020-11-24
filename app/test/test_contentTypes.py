@@ -7,7 +7,9 @@ def test_get_default():
 	response = client.get(unit_url)
 	assert response.status_code == 200
 	assert isinstance( response.json(), list)
+	assert len(response.json()) > 0
 	for item in response.json():
+		print(item)
 		assert "contentId" in item
 		assert isinstance(item['contentId'], int)
 		assert "contentType" in item
@@ -78,18 +80,12 @@ def test_post_default():
 	data = {"contentType":"Bible"}
 	headers = {"contentType": "application/json", "accept": "application/json"}
 	response = client.post(unit_url, headers=headers, json=data)
+	print(response.json())
+
 	assert response.status_code == 201
 	assert response.json()['message'] == "Content type created successfully"
 	assert response.json()["data"]["contentType"] == "Bible"
 	assert isinstance(response.json()["data"]["contentId"], int)
-
-def test_get_filterbycontentType():
-	'''test again for bible contentType fetch after POST call'''
-	response = client.get(unit_url+"?contentType=Bible")
-	assert response.status_code == 200
-	assert isinstance( response.json(), list)
-	assert response.json()[0]['contentType'] == "Bible"
-	assert isinstance(response.json()[0]['contentId'], int) 
 
 def test_post_incorrectdatatype1():
 	'''the input data object should a json with "contentType" key within it'''
