@@ -33,17 +33,17 @@ def test_get_skip():
 def test_get_notavailable_contentType():
 	''' fetch bible contentType before it is added'''
 	response = client.get(unit_url+"?contentType=Bible")
-	assert response.status_code == 404
-	assert "error" in response.json()
-	assert response.json()['error'] == "Requested Content Not Available"
+	assert response.status_code == 200
+	assert isinstance( response.json(), list)
+	assert len(response.json())==0
 
 
 def test_get_notavailable_pagination():
 	'''fetch a non existant page, with skip and limit values'''
 	response = client.get(unit_url+"?skip=1000;limit=10")
-	assert response.status_code == 404
-	assert "error" in response.json()
-	assert response.json()['error'] == "Requested Content Not Available"
+	assert response.status_code == 200
+	assert isinstance( response.json(), list)
+	assert len(response.json())==0
 
 def test_get_incorrectvalue_limit1():
 	'''limit should be an integer'''
@@ -79,7 +79,7 @@ def test_post_default():
 	headers = {"contentType": "application/json", "accept": "application/json"}
 	response = client.post(unit_url, headers=headers, json=data)
 	assert response.status_code == 201
-	assert response.json()['message'] == "Content type created successfully."
+	assert response.json()['message'] == "Content type created successfully"
 	assert response.json()["data"]["contentType"] == "Bible"
 	assert isinstance(response.json()["data"]["contentId"], int)
 

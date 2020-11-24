@@ -1,6 +1,6 @@
 from typing import List, Optional
 from enum import Enum
-from pydantic import BaseModel, constr, AnyUrl
+from pydantic import BaseModel, constr, AnyUrl, Field
 
 class NormalResponse(BaseModel):
 	message : str
@@ -9,10 +9,14 @@ class ErrorResponse(BaseModel):
 	error: str
 	details: str
 
+class ContentTypeCreate(BaseModel):
+	contentType : constr(regex="^[^0-9\s]+$")
 
 class ContentType(BaseModel):
 	contentId : int
 	contentType : str
+	class Config:
+		orm_mode = True
 
 class ContentTypeUpdateResponse(BaseModel):
 	message: str

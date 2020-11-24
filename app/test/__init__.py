@@ -9,11 +9,11 @@ sys.path.append(os.environ["PWD"])
 from main import app, get_db
 
 
-postgres_host = os.environ.get("AGMT_POSTGRES_HOST", "localhost")
-postgres_port = os.environ.get("AGMT_POSTGRES_PORT", "5432")
-postgres_user = os.environ.get("AGMT_POSTGRES_USER", "postgres") 
-postgres_password = os.environ.get("AGMT_POSTGRES_PASSWORD", "secret") 
-postgres_database = "test_DB" 
+postgres_host = os.environ.get("VACHAN_POSTGRES_HOST", "localhost")
+postgres_port = os.environ.get("VACHAN_POSTGRES_PORT", "5432")
+postgres_user = os.environ.get("VACHAN_POSTGRES_USER", "postgres") 
+postgres_database = os.environ.get("VACHAN_POSTGRES_DATABASE", "test_DB") 
+postgres_password = os.environ.get("VACHAN_POSTGRES_PASSWORD", "secret") 
 
 SQLALCHEMY_DATABASE_URL = "postgresql://%s:%s@%s/%s"%(postgres_user,postgres_password,postgres_host,postgres_database)
 

@@ -7,8 +7,8 @@ from database import Base
 class ContentType(Base):
     __tablename__ = "content_types"
 
-    content_id = Column(Integer, primary_key=True, index=True)
-    content_type = Column(String, unique=True)
+    contentId = Column('content_id',Integer, primary_key=True, index=True)
+    contentType = Column('content_type',String, unique=True)
     key = Column(String)
 
 
