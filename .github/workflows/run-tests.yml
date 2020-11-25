@@ -37,7 +37,7 @@ jobs:
         run: python -m pip install --upgrade pip | pip install -r requirements.txt
       
       - name: Set up database
-        run: psql vachan < db/seed_db.sql
+        run: psql vachan < vachan-api/db/seed_db.sql
         
       - name: change Python path
         run: echo "::set-env name=PYTHONPATH::${PWD}" | echo "PYTHONPATH=${PWD}/app" >> $GITHUB_ENV
