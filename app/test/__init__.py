@@ -10,9 +10,6 @@ from sqlalchemy.orm import sessionmaker
 from app.main import app, get_db
 from app.database import Base, SQLALCHEMY_DATABASE_URL
 
-
-
-
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 Session = sessionmaker()
 

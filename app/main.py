@@ -142,7 +142,8 @@ def test():
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}},  status_code=200,
     tags=["Contents Types"])
-def get_contents(content_type: Optional[str] = '', skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
+def get_contents(content_type: str = Query(None), skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
     '''fetches all the contents types supported and their details
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n'''
@@ -165,11 +166,12 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
         2. Define input, output resources and all required APIs to handle this content'''
     logging.info('In add_contents')
     logging.debug('content: %s',content)
-    if crud.get_content_type(db_, content.contentType):
+    if len(crud.get_content_types(db_, content.contentType)) > 0:
         logging.error('Error in add_contents')
         raise AlreadyExistsException("%s already present"%(content.contentType))
     try:
-        return {'message': "Content type created successfully", "data": crud.create_content_type(db_=db_, content=content)}
+        return {'message': "Content type created successfully",
+        "data": crud.create_content_type(db_=db_, content=content)}
     except Exception as exe:
         logging.error('Error in add_contents')
         raise DatabaseException(str(exe))
