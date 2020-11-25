@@ -40,7 +40,7 @@ jobs:
         run: echo "${PWD}"
       
       - name: Set up database
-        run: psql vachan < vachan-api/db/seed_DB.sql
+        run: psql vachan < /home/runner/work/vachan-api/vachan-api/db/seed_DB.sql
         
       - name: change Python path
         run: echo "PYTHONPATH=${PWD}/app" >> $GITHUB_ENV
