@@ -2,6 +2,7 @@
 
 import logging
 import os
+import json
 from typing import Optional, List
 from logging.handlers import RotatingFileHandler
 from fastapi import FastAPI, Query, Path, Body, Depends
@@ -19,12 +20,12 @@ db_models.Base.metadata.create_all(bind=engine)
 
 
 app = FastAPI()
-logging.basicConfig(filename='../logs/API_logs.log',
-    format='%(asctime)s|%(filename)s:%(lineno)d|%(levelname)-8s: %(message)s',
-    datefmt='%m/%d/%Y %I:%M:%S %p')
 log = logging.getLogger(__name__)
 log.setLevel(os.environ.get("VACHAN_LOGGING_LEVEL", "WARNING"))
 handler = RotatingFileHandler('../logs/API_logs.log', maxBytes=10000000, backupCount=10)
+fmt = logging.Formatter(fmt='%(asctime)s|%(filename)s:%(lineno)d|%(levelname)-8s: %(message)s',
+    datefmt='%m/%d/%Y %I:%M:%S %p')
+handler.setFormatter(fmt)
 log.addHandler(handler)
 
 ######### Error Handling ##############
@@ -40,7 +41,8 @@ class DatabaseException(Exception):
 @app.exception_handler(DatabaseException)
 async def db_exception_handler(request, exc: DatabaseException):
     '''logs and returns error details'''
-    log.error("Request:%s",request)
+    log.error("Request URL:%s %s,  from : %s",
+        request.method ,request.url.path, request.client.host)
     log.error("%s: %s",exc.name, exc.detail)
     return JSONResponse(
         status_code=exc.status_code,
@@ -58,7 +60,8 @@ class NotAvailableException(Exception):
 @app.exception_handler(NotAvailableException)
 async def na_exception_handler(request, exc: NotAvailableException):
     '''logs and returns error details'''
-    log.error("Request:%s",request)
+    log.error("Request URL:%s %s,  from : %s",
+        request.method ,request.url.path, request.client.host)
     log.error("%s: %s",exc.name, exc.detail)
     return JSONResponse(
         status_code=exc.status_code,
@@ -76,7 +79,8 @@ class AlreadyExistsException(Exception):
 @app.exception_handler(AlreadyExistsException)
 async def exists_exception_handler(request, exc: AlreadyExistsException):
     '''logs and returns error details'''
-    log.error("Request:%s",request)
+    log.error("Request URL:%s %s,  from : %s",
+        request.method ,request.url.path, request.client.host)
     log.error("%s: %s",exc.name, exc.detail)
     return JSONResponse(
         status_code=exc.status_code,
@@ -93,7 +97,8 @@ class TypeException(Exception):
 @app.exception_handler(TypeException)
 async def type_exception_handler(request, exc: TypeException):
     '''logs and returns error details'''
-    log.error("Request:%s",request)
+    log.error("Request URL:%s %s,  from : %s",
+        request.method ,request.url.path, request.client.host)
     log.error("%s: %s",exc.name, exc.detail)
     return JSONResponse(
         status_code=exc.status_code,
@@ -103,7 +108,8 @@ async def type_exception_handler(request, exc: TypeException):
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request, exc):
     '''logs and returns error details'''
-    log.error("Request:%s",request)
+    log.error("Request URL:%s %s, from : %s",
+        request.method ,request.url.path, request.client.host)
     log.error("Http Error: %s", exc.detail)
     return JSONResponse(
         status_code=exc.status_code,
@@ -113,7 +119,8 @@ async def http_exception_handler(request, exc):
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
     '''logs and returns error details'''
-    log.error("Request:%s",request)
+    log.error("Request URL:%s %s, from : %s",
+        request.method ,request.url.path, request.client.host)
     log.error("Input Validation Error: %s", str(exc))
     return JSONResponse(
         status_code=422,

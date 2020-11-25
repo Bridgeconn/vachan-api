@@ -32,8 +32,8 @@ def test_get_skip():
         assert response1.json()[1] == response2.json()[0]
 
 def test_get_notavailable_content_type():
-    ''' fetch bible contentType before it is added'''
-    response = client.get(UNIT_URL+"?content_type=Bible")
+    ''' request a not available content, Ensure there is not partial matching'''
+    response = client.get(UNIT_URL+"?content_type=bib")
     assert response.status_code == 200
     assert isinstance( response.json(), list)
     assert len(response.json())==0
