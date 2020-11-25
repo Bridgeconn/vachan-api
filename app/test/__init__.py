@@ -1,36 +1,33 @@
-from fastapi.testclient import TestClient
-import os, sys
+'''Set testing environment'''
+
+import os
+import sys
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-sys.path.append(os.environ["PWD"])
-
-from main import app, get_db
-from database import Base
+from app.main import app, get_db
+from app.database import Base, SQLALCHEMY_DATABASE_URL
 
 
-postgres_host = os.environ.get("VACHAN_POSTGRES_HOST", "localhost")
-postgres_user = os.environ.get("VACHAN_POSTGRES_USER", "postgres") 
-postgres_database = os.environ.get("VACHAN_POSTGRES_DATABASE", "postgres") 
-postgres_password = os.environ.get("VACHAN_POSTGRES_PASSWORD", "secret") 
 
-SQLALCHEMY_DATABASE_URL = "postgresql://%s:%s@%s/%s"%(postgres_user,postgres_password,postgres_host,postgres_database)
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 Session = sessionmaker()
 
 
 def override_get_db():
-	connection = engine.connect()
-	trans = connection.begin()
-	db = Session(bind=connection)
-	try:
-		yield db
-	finally:
-		db.close()
-		trans.rollback()
-		connection.close()
+    '''To use a separate transaction for test sessions which can then be rolled back'''
+    connection = engine.connect()
+    trans = connection.begin()
+    db_ = Session(bind=connection)
+    try:
+        yield db_
+    finally:
+        db_.close()
+        trans.rollback()
+        connection.close()
 
 app.dependency_overrides[get_db] = override_get_db
 

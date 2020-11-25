@@ -15,13 +15,13 @@ class ErrorResponse(BaseModel):
 
 class ContentTypeCreate(BaseModel):
     '''Input object to ceate a new content type'''
-    contentType : constr(regex="^[^0-9\s]+$")
+    contentType : constr(regex=r"^[^0-9\s]+$")
 
 class ContentType(BaseModel):
     '''output object for content types'''
     contentId : int
     contentType : str
-    class Config: # pylint: disable=too-few-public-methods 
+    class Config: # pylint: disable=too-few-public-methods
         '''For SQL Alchemy'''
         orm_mode = True
 
@@ -30,9 +30,7 @@ class ContentTypeUpdateResponse(BaseModel):
     message: str
     data: ContentType = None
 
-
-
-LangCodePattern =constr(regex="^\\w\\w\\w$")
+LangCodePattern =constr(regex=r"^\w\w\w$")
 class Direction(str, Enum):
     '''To specify direction of script'''
     left_to_right = 'left-to-right'
@@ -40,8 +38,8 @@ class Direction(str, Enum):
 
 class Language(BaseModel):
     '''To create new language'''
-    language : str 
-    code : LangCodePattern 
+    language : str
+    code : LangCodePattern
     localScriptName : str = None
     script : str = None
     scriptDirection : Direction = None
@@ -49,8 +47,8 @@ class Language(BaseModel):
 class LanguageResponse(BaseModel):
     '''Return object of languages'''
     languageId : int
-    language : str 
-    code : LangCodePattern 
+    language : str
+    code : LangCodePattern
     localScriptName : str = None
     script : str = None
     scriptDirection : Direction = None
@@ -67,9 +65,9 @@ class LanguageEdit (BaseModel):
     code : LangCodePattern = None
     localScriptName : str = None
     script : str = None
-    scriptDirection : Direction = None  
+    scriptDirection : Direction = None
 
-VersionPattern = constr(regex="^[A-Z]+$")
+VersionPattern = constr(regex=r"^[A-Z]+$")
 class Version(BaseModel):
     '''input object of version'''
     versionAbbreviation : VersionPattern
@@ -82,7 +80,7 @@ class VersionResponse(BaseModel):
     versionId : int
     versionAbbreviation : VersionPattern
     versionName : str
-    revision : str 
+    revision : str
     metadata : dict = None
 
 class VersionUpdateResponse(BaseModel):
@@ -99,7 +97,7 @@ class VersionEdit(BaseModel):
     metadata : dict = None
 
 
-TableNamePattern = constr(regex="^\\w\\w\\w_[A-Z]+_\\w+_[a-z]+$")
+TableNamePattern = constr(regex=r"^\w\w\w_[A-Z]+_\w+_[a-z]+$")
 
 class Source(BaseModel):
     '''Input object of sources'''
@@ -130,7 +128,7 @@ class SourceEdit(BaseModel):
     metadata: dict = None
     active: bool = None
 
-BookCodePattern = constr(regex="^[a-z1-9][a-z][a-z]$")
+BookCodePattern = constr(regex=r"^[a-z1-9][a-z][a-z]$")
 
 class BibleBook(BaseModel):
     '''response object of Bible book'''
@@ -185,7 +183,7 @@ class BibleBookUpdateResponse(BaseModel):
 
 class BibleBookUpload(BaseModel):
     '''Input object of bible book'''
-    USFM: str 
+    USFM: str
     JSON: dict
 
 class Reference(BaseModel):
@@ -223,7 +221,7 @@ class CommentaryUpdateResponse(BaseModel):
     message: str
     data: List[Commentary] = None
 
-LetterPattern = constr(regex='^\\w$')
+LetterPattern = constr(regex=r'^\w$')
 class DictionaryWord(BaseModel):
     '''Response object of dictionary word'''
     word: str

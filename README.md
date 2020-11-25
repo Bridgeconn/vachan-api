@@ -104,6 +104,6 @@ Redoc documentaion is also available at http://127.0.0.1:8000/redoc
 
 To run all the testcases, from the folder vachan-api/app run the command
 
-```pytest```
+```python -m pytest```
 
 For runing testselectively, refer [pytest docs](https://docs.pytest.org/en/stable/usage.html#specifying-tests-selecting-tests)
