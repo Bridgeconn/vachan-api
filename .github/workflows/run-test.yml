@@ -43,6 +43,7 @@ jobs:
         
       - name: Run tests
         run: |
+          touch logs/API_logs.log
           cd app 
           python -m pytest
 
