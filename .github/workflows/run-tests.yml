@@ -28,10 +28,10 @@ jobs:
         run: source VACHAN_VENV/bin/activate
         
       - name: install packages
-        run: pip install -r requirements.txt
+        run: python -m pip install --upgrade pip | pip install -r requirements.txt
         
       - name: change directory
-        run: cd app
+        run: cd app | echo "::set-env name=PYTHONPATH::${PWD}"
         
       - name: Run tests
         run: python -m pytest
