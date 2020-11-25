@@ -36,10 +36,7 @@ jobs:
           sudo service postgresql start
           sudo -u postgres psql -c "CREATE DATABASE vachan;"
           sudo -u postgres psql vachan < /home/runner/work/vachan-api/vachan-api/db/seed_DB.sql
-          sudo -u postgres psql
-          \password postgres
-          secret
-          \q
+          sudo -u postgres psql -c "ALTER USER postgres SET password TO 'secret';"
         
       - name: change Python path
         run: echo "PYTHONPATH=${PWD}/app" >> $GITHUB_ENV
