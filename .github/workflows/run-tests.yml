@@ -30,8 +30,8 @@ jobs:
       - name: install packages
         run: python -m pip install --upgrade pip | pip install -r requirements.txt
         
-      - name: change directory
-        run: cd app | echo "::set-env name=PYTHONPATH::${PWD}"
+      - name: change Python path
+        run: echo "::set-env name=PYTHONPATH::${PWD}" | echo "PYTHONPATH=${PWD}/app" >> $GITHUB_ENV
         
       - name: Run tests
         run: python -m pytest
