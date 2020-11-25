@@ -1,242 +1,281 @@
-from typing import List, Optional
+'''Defines all input and output classes for API endpoints'''
+
+from typing import List
 from enum import Enum
-from pydantic import BaseModel, constr, AnyUrl, Field
+from pydantic import BaseModel, constr, AnyUrl
 
 class NormalResponse(BaseModel):
-	message : str
+    '''Response with only a message'''
+    message : str
 
 class ErrorResponse(BaseModel):
-	error: str
-	details: str
+    '''common error response object'''
+    error: str
+    details: str
 
 class ContentTypeCreate(BaseModel):
-	contentType : constr(regex="^[^0-9\s]+$")
+    '''Input object to ceate a new content type'''
+    contentType : constr(regex="^[^0-9\s]+$")
 
 class ContentType(BaseModel):
-	contentId : int
-	contentType : str
-	class Config:
-		orm_mode = True
+    '''output object for content types'''
+    contentId : int
+    contentType : str
+    class Config: # pylint: disable=too-few-public-methods 
+        '''For SQL Alchemy'''
+        orm_mode = True
 
 class ContentTypeUpdateResponse(BaseModel):
-	message: str
-	data: ContentType = None
+    '''Object usedtTo update content type'''
+    message: str
+    data: ContentType = None
 
 
 
-langCodePattern =constr(regex="^\w\w\w$")
+LangCodePattern =constr(regex="^\\w\\w\\w$")
 class Direction(str, Enum):
-	left_to_right = 'left-to-right'
-	right_to_left = 'right-to-left'
+    '''To specify direction of script'''
+    left_to_right = 'left-to-right'
+    right_to_left = 'right-to-left'
 
 class Language(BaseModel):
-	language : str 
-	code : langCodePattern 
-	localScriptName : str = None
-	script : str = None
-	scriptDirection : Direction = None
+    '''To create new language'''
+    language : str 
+    code : LangCodePattern 
+    localScriptName : str = None
+    script : str = None
+    scriptDirection : Direction = None
 
 class LanguageResponse(BaseModel):
-	languageId : int
-	language : str 
-	code : langCodePattern 
-	localScriptName : str = None
-	script : str = None
-	scriptDirection : Direction = None
+    '''Return object of languages'''
+    languageId : int
+    language : str 
+    code : LangCodePattern 
+    localScriptName : str = None
+    script : str = None
+    scriptDirection : Direction = None
 
 class LanguageUpdateResponse(BaseModel):
-	message: str
-	data: LanguageResponse = None
+    '''Return object of language update'''
+    message: str
+    data: LanguageResponse = None
 
 class LanguageEdit (BaseModel):
-	languageId: int
-	language : str = None
-	code : langCodePattern = None
-	localScriptName : str = None
-	script : str = None
-	scriptDirection : Direction = None	
+    '''Input object of language update'''
+    languageId: int
+    language : str = None
+    code : LangCodePattern = None
+    localScriptName : str = None
+    script : str = None
+    scriptDirection : Direction = None  
 
-
-
-versionPattern = constr(regex="^[A-Z]+$")
+VersionPattern = constr(regex="^[A-Z]+$")
 class Version(BaseModel):
-	versionAbbreviation : versionPattern
-	versionName : str
-	revision : str = "1"
-	metadata : dict = None
+    '''input object of version'''
+    versionAbbreviation : VersionPattern
+    versionName : str
+    revision : str = "1"
+    metadata : dict = None
 
 class VersionResponse(BaseModel):
-	versionId : int
-	versionAbbreviation : versionPattern
-	versionName : str
-	revision : str 
-	metadata : dict = None
+    '''Return object of version'''
+    versionId : int
+    versionAbbreviation : VersionPattern
+    versionName : str
+    revision : str 
+    metadata : dict = None
 
 class VersionUpdateResponse(BaseModel):
-	message: str
-	data: VersionResponse = None
+    '''Return object of version update'''
+    message: str
+    data: VersionResponse = None
 
 class VersionEdit(BaseModel):
-	versionId: int
-	versionAbbreviation : versionPattern = None
-	versionName : str = None
-	revision : str = None
-	metadata : dict = None
+    '''input object of version update'''
+    versionId: int
+    versionAbbreviation : VersionPattern = None
+    versionName : str = None
+    revision : str = None
+    metadata : dict = None
 
 
-tableNamePattern = constr(regex="^\w\w\w_[A-Z]+_\w+_[a-z]+$")
+TableNamePattern = constr(regex="^\\w\\w\\w_[A-Z]+_\\w+_[a-z]+$")
 
 class Source(BaseModel):
-	sourceName : tableNamePattern
-	contentType : str
-	language : langCodePattern
-	version : versionPattern
-	revision: str = "1"
-	year: int
-	license: str = "ISC"
-	metadata: dict = None
-	active: bool = True
+    '''Input object of sources'''
+    sourceName : TableNamePattern
+    contentType : str
+    language : LangCodePattern
+    version : VersionPattern
+    revision: str = "1"
+    year: int
+    license: str = "ISC"
+    metadata: dict = None
+    active: bool = True
 
 class SourceUpdateResponse(BaseModel):
-	message: str
-	data: Source = None
+    '''response object of sources'''
+    message: str
+    data: Source = None
 
 class SourceEdit(BaseModel):
-	sourceName : int
-	contentType : str = None
-	language : langCodePattern = None
-	version : versionPattern = None
-	revision: str = None
-	year: int = None
-	license: str = None
-	metadata: dict = None
-	active: bool = None
+    '''Input object of source update'''
+    sourceName : int
+    contentType : str = None
+    language : LangCodePattern = None
+    version : VersionPattern = None
+    revision: str = None
+    year: int = None
+    license: str = None
+    metadata: dict = None
+    active: bool = None
 
 BookCodePattern = constr(regex="^[a-z1-9][a-z][a-z]$")
 
 class BibleBook(BaseModel):
-	bookId : int
-	bookName : str
-	bookCode : BookCodePattern
+    '''response object of Bible book'''
+    bookId : int
+    bookName : str
+    bookCode : BookCodePattern
 
 class AudioBible(BaseModel):
-	audioId: int
-	name: str
-	url: AnyUrl
-	books: dict
-	format: str
-	status: bool
+    '''Response object of Audio Bible'''
+    audioId: int
+    name: str
+    url: AnyUrl
+    books: dict
+    format: str
+    status: bool
 
 class AudioBibleUpdateResponse(BaseModel):
-	message: str
-	data: List[AudioBible] = None
+    '''Response object of auido bible update'''
+    message: str
+    data: List[AudioBible] = None
 
 class AudioBibleUpload(BaseModel):
-	name: str
-	url: AnyUrl
-	books: dict
-	format: str
-	status: bool
+    '''Input object of Audio Bible'''
+    name: str
+    url: AnyUrl
+    books: dict
+    format: str
+    status: bool
 
 
 class AudioBibleEdit(BaseModel):
-	audioId: int
-	name: str = None
-	url: str = None
-	books: dict = None
-	format: str = None
-	status: bool = None
+    ''' Input object of Auido Bible'''
+    audioId: int
+    name: str = None
+    url: str = None
+    books: dict = None
+    format: str = None
+    status: bool = None
 
 class BibleBookContent(BaseModel):
-	bookCode : BookCodePattern
-	versification : dict = None
-	USFM: str = None
-	JSON: dict = None
-	audio: AudioBible = None
+    '''Response object of Bible book contents'''
+    bookCode : BookCodePattern
+    versification : dict = None
+    USFM: str = None
+    JSON: dict = None
+    audio: AudioBible = None
 
 class BibleBookUpdateResponse(BaseModel):
-	message: str
-	data: BibleBookContent = None
+    '''Input object of Bible book update'''
+    message: str
+    data: BibleBookContent = None
 
 class BibleBookUpload(BaseModel):
-	USFM: str 
-	JSON: dict
+    '''Input object of bible book'''
+    USFM: str 
+    JSON: dict
 
 class Reference(BaseModel):
-	# bible : Source = None
-	bookId: int = None
-	bookcode: BookCodePattern
-	chapter: int
-	verseNumber: int
-	verseNumberEnd: int = None
+    '''Response object of bible refernce'''
+    # bible : Source = None
+    bookId: int = None
+    bookcode: BookCodePattern
+    chapter: int
+    verseNumber: int
+    verseNumberEnd: int = None
 
 class BibleVerse(BaseModel):
-	reference : Reference
-	verseText: str
-	footNote : str = None
-	crossReference : str = None
+    '''Response object of Bible Verse'''
+    reference : Reference
+    verseText: str
+    footNote : str = None
+    crossReference : str = None
 
 class BookContentType(str, Enum):
-	USFM = 'usfm'
-	JSON = 'json'
-	audio = 'audio'
-	all = 'all'
+    '''choices for bible content types'''
+    USFM = 'usfm'
+    JSON = 'json'
+    audio = 'audio'
+    all = 'all'
 
 class Commentary(BaseModel):
-	bookCode : BookCodePattern
-	chapter: int
-	verseNumber: int
-	commentary: str
+    '''Response object for commentaries'''
+    bookCode : BookCodePattern
+    chapter: int
+    verseNumber: int
+    commentary: str
 
 class CommentaryUpdateResponse(BaseModel):
-	message: str
-	data: List[Commentary] = None
+    '''Response object for commentary update'''
+    message: str
+    data: List[Commentary] = None
 
-letterPattern = constr(regex='^\w$')
+LetterPattern = constr(regex='^\\w$')
 class DictionaryWord(BaseModel):
-	word: str
-	details: dict = None
+    '''Response object of dictionary word'''
+    word: str
+    details: dict = None
 
 class DictionaryUpdateResponse(BaseModel):
-	message: str
-	data: List[DictionaryWord] = None
+    '''Response object of dictionary word update'''
+    message: str
+    data: List[DictionaryWord] = None
 
 class Infographic(BaseModel):
-	bookCode : BookCodePattern
-	infographicsLink : AnyUrl
+    '''Response object of infographics'''
+    bookCode : BookCodePattern
+    infographicsLink : AnyUrl
 
 class InfographicUpdateResponse(BaseModel):
-	message: str
-	data: List[Infographic] = None
+    '''Response object of infographics update'''
+    message: str
+    data: List[Infographic] = None
 
 
 class BibleVideo(BaseModel):
-	bibleVideoId: int
-	books: dict
-	videoLink: AnyUrl
-	title: str
-	description: str
-	theme: str
-	status: bool
+    '''Response object of Bible Vedios'''
+    bibleVideoId: int
+    books: dict
+    videoLink: AnyUrl
+    title: str
+    description: str
+    theme: str
+    status: bool
 
 class BibleVideoUpdateResponse(BaseModel):
-	message: str
-	data: List[BibleVideo] = None
+    '''Response object of Bible Video update'''
+    message: str
+    data: List[BibleVideo] = None
 
 class BibleVideoUpload(BaseModel):
-	books: dict
-	videoLink: AnyUrl
-	title: str
-	description: str
-	theme: str
-	status: bool
+    '''Input Object of bible Videos'''
+    books: dict
+    videoLink: AnyUrl
+    title: str
+    description: str
+    theme: str
+    status: bool
 
 
 class BibleVideoEdit(BaseModel):
-	bibleVideoId: int
-	books: dict  = None
-	videoLink: AnyUrl  = None
-	title: str  = None
-	description: str  = None
-	theme: str  = None
-	status: bool  = None
+    '''Input object of Bible Video update'''
+    bibleVideoId: int
+    books: dict  = None
+    videoLink: AnyUrl  = None
+    title: str  = None
+    description: str  = None
+    theme: str  = None
+    status: bool  = None

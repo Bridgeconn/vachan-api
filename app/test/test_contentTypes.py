@@ -34,7 +34,7 @@ def test_get_skip():
 
 def test_get_notavailable_contentType():
 	''' fetch bible contentType before it is added'''
-	response = client.get(unit_url+"?contentType=Bible")
+	response = client.get(unit_url+"?content_type=Bible")
 	assert response.status_code == 200
 	assert isinstance( response.json(), list)
 	assert len(response.json())==0

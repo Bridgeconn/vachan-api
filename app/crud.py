@@ -4,16 +4,21 @@ from sqlalchemy.orm import Session
 import db_models
 import schemas
 
-def get_content_types(db: Session, contentType: str =None, skip: int = 0, limit: int = 100):
-	return db.query(db_models.ContentType).filter(db_models.ContentType.contentType.like('%{}%'.\
-		format(contentType))).offset(skip).limit(limit).all()
+def get_content_types(db_: Session, content_type: str =None, skip: int = 0, limit: int = 100):
+    '''Fetched all rows, with pagination'''
+    print('content_type:%s'%content_type)
+    return db_.query(db_models.ContentType).filter(db_models.ContentType.contentType.like('%{}%'.\
+        format(content_type))).offset(skip).limit(limit).all()
 
-def get_content_type(db: Session, contentType: str):
-	return db.query(db_models.ContentType).filter(db_models.ContentType.contentType == contentType).first()
+def get_content_type(db_: Session, content_type: str):
+    '''Fetches a specific row'''
+    return db_.query(db_models.ContentType).filter(
+        db_models.ContentType.contentType == content_type).first()
 
-def create_content_type(db: Session, content: schemas.ContentTypeCreate):
+def create_content_type(db_: Session, content: schemas.ContentTypeCreate):
+    '''Adds a row to table'''
     db_content = db_models.ContentType(contentType = content.contentType)
-    db.add(db_content)
-    db.commit()
-    db.refresh(db_content)
+    db_.add(db_content)
+    db_.commit()
+    db_.refresh(db_content)
     return db_content

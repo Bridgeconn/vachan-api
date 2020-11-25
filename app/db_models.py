@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship
 from database import Base
 
 
-class ContentType(Base):
+class ContentType(Base): # pylint: disable=too-few-public-methods 
     '''Corresponds to table content_types in vachan DB(postgres)'''
     __tablename__ = "content_types"
 
