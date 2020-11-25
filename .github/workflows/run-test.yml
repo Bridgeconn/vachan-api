@@ -36,14 +36,10 @@ jobs:
       - name: install packages
         run: python -m pip install --upgrade pip | pip install -r requirements.txt
       
-      - name: check pwd
-        run: echo "${PWD}"
-      
       - name: Set up database
         run: |
           sudo apt-get install postgresql libpq-dev
           sudo service postgresql start
-          sudo -u postgres createuser --superuser "postgres"
           sudo -u postgres psql -c "CREATE DATABASE vachan;"
           sudo -u postgres psql vachan < /home/runner/work/vachan-api/vachan-api/db/seed_DB.sql
         
