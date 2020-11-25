@@ -22,7 +22,7 @@ jobs:
             architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
       - uses: harmon758/postgresql-action@v1
         with:
-          postgresql version: '12.3'  # See https://hub.docker.com/_/postgres for available versions
+          postgresql version: '12'  # See https://hub.docker.com/_/postgres for available versions
           postgresql db: 'vachan'
           postgresql user: 'postgres'
           postgresql password: 'secret' 
