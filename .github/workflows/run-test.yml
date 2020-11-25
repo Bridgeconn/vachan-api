@@ -20,13 +20,7 @@ jobs:
         with:
             python-version: '3.7.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
             architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
-#       - uses: harmon758/postgresql-action@v1
-#         with:
-#           postgresql version: '12'  # See https://hub.docker.com/_/postgres for available versions
-#           postgresql db: 'vachan'
-#           postgresql user: 'postgres'
-#           postgresql password: 'secret' 
-      
+   
       - name: Create Virtual Environment
         run: python -m venv VACHAN_VENV
       
@@ -42,6 +36,10 @@ jobs:
           sudo service postgresql start
           sudo -u postgres psql -c "CREATE DATABASE vachan;"
           sudo -u postgres psql vachan < /home/runner/work/vachan-api/vachan-api/db/seed_DB.sql
+          sudo -u postgres psql
+          \password postgres
+          secret
+          \q
         
       - name: change Python path
         run: echo "PYTHONPATH=${PWD}/app" >> $GITHUB_ENV
