@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 
 postgres_host = os.environ.get("VACHAN_POSTGRES_HOST", "localhost")
 postgres_user = os.environ.get("VACHAN_POSTGRES_USER", "postgres")
-postgres_database = os.environ.get("VACHAN_POSTGRES_DATABASE", "postgres")
+postgres_database = os.environ.get("VACHAN_POSTGRES_DATABASE", "vachan")
 postgres_password = os.environ.get("VACHAN_POSTGRES_PASSWORD", "secret")
 
 SQLALCHEMY_DATABASE_URL = "postgresql://%s:%s@%s/%s"%(
