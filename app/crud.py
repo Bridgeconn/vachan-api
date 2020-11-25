@@ -1,6 +1,8 @@
-from sqlalchemy.orm import Session
+''' Place to define all Database CRUD operations'''
 
-import db_models, schemas
+from sqlalchemy.orm import Session
+import db_models
+import schemas
 
 def get_content_types(db: Session, contentType: str =None, skip: int = 0, limit: int = 100):
 	return db.query(db_models.ContentType).filter(db_models.ContentType.contentType.like('%{}%'.\
