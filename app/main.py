@@ -160,7 +160,7 @@ def get_contents(content_type: str = Query(None), skip: int = Query(0, ge=0),
         return crud.get_content_types(db_, content_type, skip, limit)
     except Exception as exe:
         logging.error('Error in get_contents')
-        raise DatabaseException(str(exe))
+        raise DatabaseException(str(exe)) from exe
 
 @app.post('/v2/contents', response_model=schemas.ContentTypeUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -181,7 +181,7 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
         "data": crud.create_content_type(db_=db_, content=content)}
     except Exception as exe:
         logging.error('Error in add_contents')
-        raise DatabaseException(str(exe))
+        raise DatabaseException(str(exe)) from exe
 
 #################
 
