@@ -32,6 +32,7 @@ jobs:
       
       - name: Set up database
         run: |
+          cd db
           sudo apt-get install postgresql libpq-dev
           sudo service postgresql start
           sudo -u postgres psql -c "CREATE DATABASE vachan;"
