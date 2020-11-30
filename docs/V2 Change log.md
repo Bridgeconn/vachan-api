@@ -16,6 +16,8 @@ Adds seperate  set of tests for each API endpoint. Has both positive and negativ
 
 For testing, it connects to the original database, but rolls back all the changes after each test. So each test is independant of each other from a DB perspective.
 
+For every API endpoint, we perform certain common tests like checking for the correct response object with the default parameters, validation of each of the parameters based on their types, value, etc
+
 ## Database Changes
 
 ### content_types table
@@ -25,3 +27,11 @@ For testing, it connects to the original database, but rolls back all the change
 * Removes the sequence used for content_id and use SERIAL datatype instead.
 * Adds bible, commentary and infographics as before to the table as seed data. Changes translation_words to dictionary. Also adds bible_video as a content type. 
 
+### languages table
+
+* Removes the sequence used for language_id and use SERIAL datatype instead.
+* Removes the language_id from the CSV file used to import the seed languages list. This was done to make sure the sequence value for the ID column would work properly.
+* Uses `char(3) UNIQUE NOT NULL` for language_code instead of just `text`
+* Makes language_name `NOT NULL`
+* Removes the columns local_script_name and script, which did not have value for any of the rows in seed data and wasn't being used by any of the Apps.
+* Sets `'left-to-right'` as the default value for script direction at DB itself. This ensures that the 7K languages imported from CSV as seed data, which didnot have this value set, will also have a default value for this column.
