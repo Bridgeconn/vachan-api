@@ -2,16 +2,16 @@
 
 import logging
 import os
-import json
-from typing import Optional, List
+from typing import List
 from logging.handlers import RotatingFileHandler
-from fastapi import FastAPI, Query, Path, Body, Depends
+from fastapi import FastAPI, Query, Body, Depends
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 
-import crud 
+import crud
 import db_models
 import schemas
 from database import SessionLocal, engine
@@ -30,12 +30,34 @@ log.addHandler(handler)
 
 ######### Error Handling ##############
 
+class GenericException(Exception):
+    '''Format for Database error'''
+    def __init__(self, detail: str):
+        super().__init__()
+        self.name = "Error"
+        self.detail = detail
+        self.status_code = 500
+
+@app.exception_handler(GenericException)
+async def generic_exception_handler(request, exc: GenericException):
+    '''logs and returns error details'''
+    log.error("Request URL:%s %s,  from : %s",
+        request.method ,request.url.path, request.client.host)
+    log.error("%s: %s",exc.name, exc.detail)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": exc.name, "details" : exc.detail},
+    )
+
+
+
 class DatabaseException(Exception):
     '''Format for Database error'''
     def __init__(self, detail: str):
         super().__init__()
         self.name = "Database Error"
-        self.detail = detail
+        self.detail = str(detail.__dict__['orig']).replace('DETAIL:','')
+        self.logging_info = detail.__dict__
         self.status_code = 502
 
 @app.exception_handler(DatabaseException)
@@ -43,7 +65,7 @@ async def db_exception_handler(request, exc: DatabaseException):
     '''logs and returns error details'''
     log.error("Request URL:%s %s,  from : %s",
         request.method ,request.url.path, request.client.host)
-    log.error("%s: %s",exc.name, exc.detail)
+    log.error("%s: %s",exc.name, exc.logging_info)
     return JSONResponse(
         status_code=exc.status_code,
         content={"error": exc.name, "details" : exc.detail},
@@ -134,7 +156,8 @@ def get_db():
     try:
         yield db_
     finally:
-        db_.close()
+        pass
+        # db_.close()
 
 @app.get('/', response_model=schemas.NormalResponse, status_code=200)
 def test():
@@ -154,83 +177,123 @@ def get_contents(content_type: str = Query(None), skip: int = Query(0, ge=0),
     '''fetches all the contents types supported and their details
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n'''
-    logging.info('In get_contents')
-    logging.debug('contentType:%s, skip: %s, limit: %s',content_type, skip, limit)
+    log.info('In get_contents')
+    log.debug('contentType:%s, skip: %s, limit: %s',content_type, skip, limit)
     try:
         return crud.get_content_types(db_, content_type, skip, limit)
+    except SQLAlchemyError as exe:
+        log.error('Error in get_contents')
+        raise DatabaseException(exe) from exe
     except Exception as exe:
-        logging.error('Error in get_contents')
-        raise DatabaseException(str(exe)) from exe
+        log.error('Error in get_contents')
+        raise GenericException(str(exe)) from exe
 
 @app.post('/v2/contents', response_model=schemas.ContentTypeUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Contents Types"])
 def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_db)):
-    ''' Creates a new content type. 
-    Additional operations required: 
+    ''' Creates a new content type.
+    Additional operations required:
         1. Add corresponding table creation functions to Database.
         2. Define input, output resources and all required APIs to handle this content'''
-    logging.info('In add_contents')
-    logging.debug('content: %s',content)
-    if len(crud.get_content_types(db_, content.contentType)) > 0:
-        logging.error('Error in add_contents')
-        raise AlreadyExistsException("%s already present"%(content.contentType))
+    log.info('In add_contents')
+    log.debug('content: %s',content)
     try:
+        if len(crud.get_content_types(db_, content.contentType)) > 0:
+            log.error('Error in add_contents')
+            raise AlreadyExistsException("%s already present"%(content.contentType))
         return {'message': "Content type created successfully",
         "data": crud.create_content_type(db_=db_, content=content)}
+    except SQLAlchemyError as exe:
+        log.error('Error in add_contents')
+        raise DatabaseException(exe) from exe
+    except AlreadyExistsException as exe:
+        raise exe from exe
     except Exception as exe:
-        logging.error('Error in add_contents')
-        raise DatabaseException(str(exe)) from exe
+        log.error('Error in add_contents')
+        raise GenericException(str(exe)) from exe
 
 #################
 
 ##### languages #####
 
-# @app.get('/v2/languages', response_model=List[schemas.LanguageResponse], status_code=200, tags=["Languages"])
-# def get_language(language_code : schemas.langCodePattern = None, skip: int = 0, limit: int = 100):
-#       '''fetches all the languages supported in the DB, their code and other details.
-#       if query parameter, langauge_code is provided, returns details of that language if pressent
-#       and 404, if not found
-#       * skip=n: skips the first n objects in return list
-#       * limit=n: limits the no. of items to be returned to n'''
-#       result = [] 
-#       try:
-#           pass
-#       except Exception as e:
-#           raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
-#       return result
+@app.get('/v2/languages',
+    response_model=List[schemas.LanguageResponse],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Languages"])
+def get_language(language_code : schemas.LangCodePattern = Query(None),
+    language_name: str = Query(None),
+    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
+    '''fetches all the languages supported in the DB, their code and other details.
+    if query parameter, langauge_code is provided, returns details of that language if pressent
+    and 404, if not found
+    * skip=n: skips the first n objects in return list
+    * limit=n: limits the no. of items to be returned to n'''
+    log.info('In get_language')
+    log.debug('langauge_code:%s, language_name: %s, skip: %s, limit: %s',
+        language_code, language_name, skip, limit)
+    try:
+        return crud.get_languages(db_, language_code, language_name, skip = skip, limit = limit)
+    except SQLAlchemyError as exe:
+        log.error('Error in get_language')
+        raise DatabaseException(exe) from exe
+    except Exception as exe:
+        log.error('Error in get_language')
+        raise GenericException(str(exe)) from exe
 
-# @app.post('/v2/languages', response_model=schemas.LanguageUpdateResponse, status_code=201, tags=["Languages"])
-# def add_language(lang_obj : schemas.Language = Body(...)):
-#   ''' Create a new language'''
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
-#   except Exception as e:
-#       raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
-#   return {"message": f"Language {lang_obj.language} created successfully", "data": None}
+@app.post('/v2/languages', response_model=schemas.LanguageUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Languages"])
+def add_language(lang_obj : schemas.LanguageCreate = Body(...), db_: Session = Depends(get_db)):
+    ''' Creates a new language'''
+    log.info('In add_language')
+    log.debug('lang_obj: %s',lang_obj)
+    try:
+        if len(crud.get_languages(db_, language_code = lang_obj.code)) > 0:
+            log.error('Error in add_language')
+            raise AlreadyExistsException("%s already present"%(lang_obj.code))
+        return {'message': "Language created successfully",
+        "data": crud.create_language(db_=db_, lang=lang_obj)}
+    except SQLAlchemyError as exe:
+        log.error('Error in add_language')
+        raise DatabaseException(exe) from exe
+    except AlreadyExistsException as exe:
+        raise exe from exe
+    except Exception as exe:
+        log.error('Error in add_language')
+        raise GenericException(str(exe)) from exe
 
-# @app.put('/v2/languages', response_model=schemas.LanguageUpdateResponse, status_code=201, tags=["Languages"])
-# def edit_language(lang_obj: schemas.LanguageEdit = Body(...)):
-#   ''' Changes one or more fields of language'''
-#   logging.info(lang_obj)
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
-#   except Exception as e:
-#       raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
-#   return {"message" : f"Updated language field(s)", 'data': None}
+@app.put('/v2/languages', response_model=schemas.LanguageUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Languages"])
+def edit_language(lang_obj: schemas.LanguageEdit = Body(...), db_: Session = Depends(get_db)):
+    ''' Changes one or more fields of language'''
+    log.info('In edit_language')
+    log.debug('lang_obj: %s',lang_obj)
+    try:
+        if len(crud.get_languages(db_, language_id = lang_obj.languageId)) == 0:
+            log.error('Error in edit_language')
+            raise NotAvailableException("Language id %s not found"%(lang_obj.languageId))
+        return {'message': "Language edited successfully",
+        "data": crud.update_language(db_=db_, lang=lang_obj)}
+    except SQLAlchemyError as exe:
+        log.error('Error in edit_language')
+        raise DatabaseException(exe) from exe
+    except NotAvailableException as exe:
+        raise exe from exe
+    except Exception as exe:
+        log.error('Error in edit_language')
+        raise GenericException(str(exe)) from exe
 
-# ## NOTE
-# # DELETE method not implemeneted for this resource
-# # ################################
+# ################################
 
 
 # ##### Version #####
 
+#pylint: disable=line-too-long
 
 # @app.get("/v2/versions", response_model=List[schemas.VersionResponse], status_code=200, tags=["Versions"])
 # def get_version(versionAbbreviation : schemas.versionPattern = None, skip: int = 0, limit: int = 100):
@@ -239,7 +302,7 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
 #   and 404, if not found
 #   * skip=n: skips the first n objects in return list
 #   * limit=n: limits the no. of items to be returned to n'''
-#   result = [] 
+#   result = []
 #   try:
 #       pass
 #   except Exception as e:
@@ -284,7 +347,7 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
 #   and 404, if not found
 #   * skip=n: skips the first n objects in return list
 #   * limit=n: limits the no. of items to be returned to n'''
-#   result = [] 
+#   result = []
 #   try:
 #       pass
 #   except Exception as e:
@@ -293,7 +356,7 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
 
 # @app.post('/v2/sources', response_model=schemas.SourceUpdateResponse, status_code=201, tags=["Sources"])
 # def add_source(source_obj : schemas.Source = Body(...)):
-#   ''' Creates a new source entry in sources table. 
+#   ''' Creates a new source entry in sources table.
 #   Also creates all associtated tables for the content type.
 #   '''
 #   try:
@@ -318,7 +381,7 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
 
 
 # # Point to discuss
-# # * A separate DELETE method is not defined. 
+# # * A separate DELETE method is not defined.
 # #   But soft delete can be performed by using the PUT method, and setting active to "False"
 # # * uses language code, content name, version name etc, instead of their ID values like in previous implementation
 
@@ -334,7 +397,7 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
 #   will be returned
 #   * skip=n: skips the first n objects in return list
 #   * limit=n: limits the no. of items to be returned to n'''
-#   result = [] 
+#   result = []
 #   try:
 #       pass
 #   except Exception as e:
@@ -364,9 +427,9 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
 
 # @app.put('/v2/bibles/{sourceName}/books', response_model=schemas.BibleBookUpdateResponse, status_code=201, tags=["Bibles"])
 # def edit_bible_book(sourceName: schemas.tableNamePattern, bibleBookObj: schemas.BibleBookUpload = Body(...)):
-#   ''' Changes both usfm and json fileds of bible book. 
-#   The contents of the respective bible_clean and bible_tokens tables' contents 
-#   should be deleted and new data added. 
+#   ''' Changes both usfm and json fileds of bible book.
+#   The contents of the respective bible_clean and bible_tokens tables' contents
+#   should be deleted and new data added.
 #   two fields are mandatory as usfm and json are interdependant'''
 #   logging.info(bibleBookObj)
 #   try:
@@ -389,7 +452,7 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
 #   * returns the JSON, USFM and/or Audio contents also: if contentType is given
 #   * skip=n: skips the first n objects in return list
 #   * limit=n: limits the no. of items to be returned to n'''
-#   result = [] 
+#   result = []
 #   try:
 #       pass
 #   except Exception as e:
@@ -402,16 +465,16 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
 # @app.get("/v2/bibles/{sourceName}/verses", response_model=List[schemas.BibleVerse], status_code=200, tags=["Bibles"])
 # def get_bible_verse(sourceName: schemas.tableNamePattern, bookCode: schemas.BookCodePattern = None, chapter: int = None, verse: int = None, lastVerse: int = None, searchPhrase: str = None, skip: int = 0, limit: int = 100):
 #   ''' Fetches the cleaned contents of bible, within a verse range, if specified.
-#   This API could be used for fetching, 
+#   This API could be used for fetching,
 #    * all verses of a source : with out giving any query params.
 #    * all verses of a book: with only book_code
-#    * all verses of a chapter: with book_code and chapter 
+#    * all verses of a chapter: with book_code and chapter
 #    * one verse: with bookCode, chapter and verse(without lastVerse).
 #    * any range of verses within a chapter: using verse and lastVerse appropriately
 #    * search for a query phrase in a bible and get matching verses: using searchPhrase
 #    * skip=n: skips the first n objects in return list
 #    * limit=n: limits the no. of items to be returned to n'''
-#   result = [] 
+#   result = []
 #   try:
 #       pass
 #   except Exception as e:
@@ -421,13 +484,13 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
 #   return result
 
 # # ##### NOTES for Discussion
-# # 1. we use source_id in the input to identify the specific bible. 
+# # 1. we use source_id in the input to identify the specific bible.
 # #    It could be replaced with the table name, which is in a more human understandable pattern
 # # 2. The API to list all bibles is not provided with a /v2/bible... endpoint, but is available in /v2/sources?contentType=bible
-# # 3. AT present the _bible_tokens table is populated upon uploading a new bible book to the DB. 
+# # 3. AT present the _bible_tokens table is populated upon uploading a new bible book to the DB.
 # #     As this table is used only in AgMT App, this table need to be populated after a request for tokens/creation of project with this source_id from the AgMT App
 # # 4. No DELETE API for this resource. To delete(soft) the whole bible, the source's active status can be set to False.
-# #      An uploaded bible book can be altered by uploading a new one(PUT), but it cannoted be deleted 
+# #      An uploaded bible book can be altered by uploading a new one(PUT), but it cannoted be deleted
 
 
 
@@ -472,12 +535,12 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
 # # ##### Bible Book names in regional languages ########################
 
 # # ##### DB change suggested #######
-# # Currently, this is a separate table in DB. 
-# # It could be added to a metadata column in the _bible table 
-# # # change the columns name from 
-# # #   1. 'short' to 'short_name', 
-# # #   2. 'long' to 'long_name' and 
-# # #   3. 'abbr' to 'abbreviation' 
+# # Currently, this is a separate table in DB.
+# # It could be added to a metadata column in the _bible table
+# # # change the columns name from
+# # #   1. 'short' to 'short_name',
+# # #   2. 'long' to 'long_name' and
+# # #   3. 'abbr' to 'abbreviation'
 # # in the metadata jSON object
 # # ##################################
 
@@ -491,7 +554,7 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
 #   Using the params bookCode, chapter, and verse the result set can be filtered as per need, like in the /v2/bibles/{sourceName}/verses API
 #   * skip=n: skips the first n objects in return list
 #   * limit=n: limits the no. of items to be returned to n'''
-#   result = [] 
+#   result = []
 #   try:
 #       pass
 #   except Exception as e:
@@ -532,7 +595,7 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
 # ## ##NOTE##
 # # 1. The API to list all bibles is not provided with a /v2/bible... endpoint, but is available in /v2/sources?contentType=commentary
 # # 2. POST and PUT methods takes list of commentary objects and adds them together to DB. Process will be aborted in case of error in any of the rows
-# # 3. Type of verseNumber is mentioned as int here. Can be changed if required 
+# # 3. Type of verseNumber is mentioned as int here. Can be changed if required
 
 
 # # ########### Dictionary ###################
@@ -548,7 +611,7 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
 #   * By setting the wordListOnly flag to True, only the words would be inlcuded in the return object, without the details
 #   * skip=n: skips the first n objects in return list
 #   * limit=n: limits the no. of items to be returned to n'''
-#   result = [] 
+#   result = []
 #   try:
 #       pass
 #   except Exception as e:
@@ -592,7 +655,7 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
 # # So suggesting a flexible table structure and APIs to accomodate future needs.
 # # ##### DB Change suggested ######
 # # 1. Have 3 columns word_id, word and details
-# #     details column will be of JSON datatype and will have 
+# #     details column will be of JSON datatype and will have
 # #     all the additional info we have in that collection(for each word) as key-value pairs
 
 
@@ -608,7 +671,7 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
 #   '''Fetches the infographics. Can use, bookCode to filter the results
 #   * skip=n: skips the first n objects in return list
 #   * limit=n: limits the no. of items to be returned to n'''
-#   result = [] 
+#   result = []
 #   try:
 #       pass
 #   except Exception as e:
@@ -657,7 +720,7 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
 #   '''Fetches the Bible video details and URL. Can use the optional query params book, title and theme to filter the results
 #   * skip=n: skips the first n objects in return list
 #   * limit=n: limits the no. of items to be returned to n'''
-#   result = [] 
+#   result = []
 #   try:
 #       pass
 #   except Exception as e:
@@ -694,7 +757,7 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
 # # 1. The BibleVideos is made an entry in contentTypes table
 # # 2. new source to be added to sources table and new table to be created for every language, at least(if version name and revision are same)
 # # 3. the filed language can then be removed from the table
-# # 4. field 'books' should accept only valid book codes and 
+# # 4. field 'books' should accept only valid book codes and
 # #    datatype should be JSON, like in audio bibles, not comma separated text
 
 # # ###########################################
