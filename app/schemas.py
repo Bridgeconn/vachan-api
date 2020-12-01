@@ -2,7 +2,7 @@
 
 from typing import List
 from enum import Enum
-from pydantic import BaseModel, constr, AnyUrl
+from pydantic import BaseModel, constr, AnyUrl, create_model
 
 class NormalResponse(BaseModel):
     '''Response with only a message'''
@@ -65,13 +65,15 @@ class LanguageEdit (BaseModel):
     code : LangCodePattern = None
     scriptDirection : Direction = None
 
+MetaDataPattern = constr(regex=r"^\{\s*\"[^\"]+\"\s*:\s*\"[^\"]+\"\s*(,\s*\"[^\"]+\"\s*:\s*\"[^\"]+\"\s*)*")
+
 VersionPattern = constr(regex=r"^[A-Z]+$")
-class Version(BaseModel):
+class VersionCreate(BaseModel):
     '''input object of version'''
     versionAbbreviation : VersionPattern
     versionName : str
     revision : str = "1"
-    metadata : dict = None
+    metaData : dict = None
 
 class VersionResponse(BaseModel):
     '''Return object of version'''
@@ -79,7 +81,11 @@ class VersionResponse(BaseModel):
     versionAbbreviation : VersionPattern
     versionName : str
     revision : str
-    metadata : dict = None
+    metaData : dict = None
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
 
 class VersionUpdateResponse(BaseModel):
     '''Return object of version update'''
@@ -92,7 +98,7 @@ class VersionEdit(BaseModel):
     versionAbbreviation : VersionPattern = None
     versionName : str = None
     revision : str = None
-    metadata : dict = None
+    metaData : dict = None
 
 
 TableNamePattern = constr(regex=r"^\w\w\w_[A-Z]+_\w+_[a-z]+$")

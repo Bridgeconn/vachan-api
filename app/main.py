@@ -53,11 +53,14 @@ async def generic_exception_handler(request, exc: GenericException):
 
 class DatabaseException(Exception):
     '''Format for Database error'''
-    def __init__(self, detail: str):
+    def __init__(self, detail):
         super().__init__()
         self.name = "Database Error"
-        self.detail = str(detail.__dict__['orig']).replace('DETAIL:','')
         self.logging_info = detail.__dict__
+        if 'orig' in detail.__dict__:
+            self.detail = str(detail.__dict__['orig']).replace('DETAIL:','')
+        else:
+            self.detail = str(detail)
         self.status_code = 502
 
 @app.exception_handler(DatabaseException)
@@ -291,53 +294,89 @@ def edit_language(lang_obj: schemas.LanguageEdit = Body(...), db_: Session = Dep
 # ################################
 
 
-# ##### Version #####
+##### Version #####
 
-#pylint: disable=line-too-long
+@app.get('/v2/versions',
+    response_model=List[schemas.VersionResponse],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Versions"])
+def get_version(version_abbreviation : schemas.VersionPattern = Query(None), #pylint: disable=too-many-arguments
+    version_name: str = Query(None), revision : str = Query(None),
+    metadata: schemas.MetaDataPattern = Query(None),
+    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
+    '''Fetches all versions and their details.
+    If param versionAbbreviation is present, returns details of that version if pressent
+    and 404, if not found
+    * skip=n: skips the first n objects in return list
+    * limit=n: limits the no. of items to be returned to n'''
+    log.info('In get_version')
+    log.debug('version_abbreviation:%s, skip: %s, limit: %s',
+        version_abbreviation, skip, limit)
+    try:
+        return crud.get_versions(db_, version_abbreviation,
+            version_name, revision, metadata, skip = skip, limit = limit)
+    except SQLAlchemyError as exe:
+        log.error('Error in get_version')
+        raise DatabaseException(exe) from exe
+    except Exception as exe:
+        log.error('Error in get_version')
+        raise GenericException(str(exe)) from exe
 
-# @app.get("/v2/versions", response_model=List[schemas.VersionResponse], status_code=200, tags=["Versions"])
-# def get_version(versionAbbreviation : schemas.versionPattern = None, skip: int = 0, limit: int = 100):
-#   '''Fetches all versions and their details.
-#   If param versionAbbreviation is present, returns details of that version if pressent
-#   and 404, if not found
-#   * skip=n: skips the first n objects in return list
-#   * limit=n: limits the no. of items to be returned to n'''
-#   result = []
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
-#   return result
+@app.post('/v2/versions', response_model=schemas.VersionUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Versions"])
+def add_version(version_obj : schemas.VersionCreate = Body(...),
+    db_: Session = Depends(get_db)):
+    ''' Creates a new version '''
+    log.info('In add_version')
+    log.debug('version_obj: %s',version_obj)
+    try:
+        if len(crud.get_versions(db_, version_obj.versionAbbreviation)) > 0:
+            log.error('Error in add_version')
+            raise AlreadyExistsException("%s already present"%(version_obj.versionAbbreviation))
+        return {'message': "Version created successfully",
+        "data": crud.create_version(db_=db_, version=version_obj)}
+    except SQLAlchemyError as exe:
+        log.error('Error in add_version')
+        raise DatabaseException(exe) from exe
+    except AlreadyExistsException as exe:
+        raise exe from exe
+    except Exception as exe:
+        log.error('Error in add_version')
+        raise GenericException(str(exe)) from exe
 
-# @app.post('/v2/versions', response_model=schemas.VersionUpdateResponse, status_code=201, tags=["Versions"])
-# def add_version(version_obj : schemas.Version = Body(...)):
-#   ''' Creates a new version '''
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
-#   except Exception as e:
-#       raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
-#   return {"message": f"Version {version_obj.versionAbbreviation} created successfully", "data": None}
+@app.put('/v2/versions', response_model=schemas.VersionUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Versions"])
+def edit_version(ver_obj: schemas.VersionEdit = Body(...), db_: Session = Depends(get_db)):
+    ''' Changes one or more fields of vesrion types table'''
+    log.info('In edit_version')
+    log.debug('ver_obj: %s',ver_obj)
+    try:
+        if len(crud.get_versions(db_, version_id = ver_obj.versionId)) == 0:
+            log.error('Error in edit_version')
+            raise NotAvailableException("Version id %s not found"%(ver_obj.versionId))
+        return {'message': "Version edited successfully",
+        "data": crud.update_version(db_=db_, version=ver_obj)}
+    except SQLAlchemyError as exe:
+        log.error('Error in edit_version')
+        raise DatabaseException(exe) from exe
+    except NotAvailableException as exe:
+        raise exe from exe
+    except Exception as exe:
+        log.error('Error in edit_version')
+        raise GenericException(str(exe)) from exe
 
-# @app.put('/v2/versions', response_model=schemas.VersionUpdateResponse, status_code=201, tags=["Versions"])
-# def edit_version(version_obj: schemas.VersionEdit = Body(...)):
-#   ''' Changes one or more fields of vesrion types table'''
-#   logging.info(version_obj)
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
-#   except Exception as e:
-#       raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
-#   return {"message" : f"Updated version field(s)", "data": None}
-
-# ## NOTE
-# # DELETE method not implemeneted for this resource
-# # ################################
+## NOTE
+# DELETE method not implemeneted for this resource
+# ################################
 
 
 # ##### Source #####
+
+#pylint: disable=line-too-long
 
 
 # @app.get("/v2/sources", response_model=List[schemas.Source], status_code=200, tags=["Sources"])

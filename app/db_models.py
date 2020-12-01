@@ -1,6 +1,6 @@
 ''' Defines SQL Alchemy models for each Database Table'''
 
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, JSON
 # from sqlalchemyimport Boolean, ForeignKey
 # from sqlalchemy.orm import relationship
 
@@ -22,3 +22,13 @@ class Language(Base): # pylint: disable=too-few-public-methods
     code = Column('language_code', String, unique=True, index=True)
     language = Column('language_name', String)
     scriptDirection = Column('script_direction', String)
+
+class Version(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table versions in vachan DB(postgres)'''
+    __tablename__ = 'versions'
+
+    versionId = Column('version_id', Integer, primary_key=True)
+    versionAbbreviation = Column('version_code', String, unique=True, index=True)
+    versionName = Column('version_description', String)
+    revision = Column('revision', String)
+    metaData = Column('metadata', JSON)

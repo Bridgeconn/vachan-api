@@ -22,3 +22,11 @@ CREATE TABLE public.languages (
 alter table languages alter column script_direction set default 'left-to-right';
 
 \COPY languages (language_code,language_name) FROM 'languages.csv' DELIMITER ',' CSV HEADER;
+
+CREATE TABLE public.versions (
+    version_id SERIAL PRIMARY KEY,
+    version_code text UNIQUE NOT NULL,
+    version_description text NOT NULL,
+    revision text NOT NULL,
+    metadata jsonb
+);
