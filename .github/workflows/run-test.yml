@@ -20,16 +20,7 @@ jobs:
         with:
             python-version: '3.7.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
             architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
-   
-      - name: Create Virtual Environment
-        run: python -m venv VACHAN_VENV
-      
-      - name: Use VENV
-        run: source VACHAN_VENV/bin/activate
-        
-      - name: install packages
-        run: python -m pip install --upgrade pip | pip install -r requirements.txt
-      
+  
       - name: Set up database
         run: |
           cd db
@@ -42,8 +33,11 @@ jobs:
       - name: change Python path
         run: echo "PYTHONPATH=${PWD}/app" >> $GITHUB_ENV
         
-      - name: Run tests
+      - name: Set up App and run tests
         run: |
+          python -m venv VACHAN_VENV
+          source VACHAN_VENV/bin/activate
+          python -m pip install --upgrade pip | pip install -r requirements.txt
           mkdir logs
           touch logs/API_logs.log
           cd app 
