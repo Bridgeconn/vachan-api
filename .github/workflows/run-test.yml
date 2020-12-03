@@ -35,9 +35,7 @@ jobs:
         
       - name: Set up App and run tests
         run: |
-          python -m venv VACHAN_VENV
-          source VACHAN_VENV/bin/activate
-          python -m pip install --upgrade pip | pip install -r requirements.txt
+          pip install -r requirements.txt
           mkdir logs
           touch logs/API_logs.log
           cd app 
