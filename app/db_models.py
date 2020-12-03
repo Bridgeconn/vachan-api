@@ -30,5 +30,5 @@ class Version(Base): # pylint: disable=too-few-public-methods
     versionId = Column('version_id', Integer, primary_key=True)
     versionAbbreviation = Column('version_code', String, unique=True, index=True)
     versionName = Column('version_description', String)
-    revision = Column('revision', String)
+    revision = Column('revision', Integer)
     metaData = Column('metadata', JSON)

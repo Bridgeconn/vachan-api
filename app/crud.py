@@ -71,7 +71,7 @@ def get_versions(db_: Session, version_abbr = None, version_name = None, revisio
     if version_name:
         query = query.filter(db_models.Version.versionName == version_name.strip())
     if revision:
-        query = query.filter(db_models.Version.revision == revision.strip())
+        query = query.filter(db_models.Version.revision == revision)
     if metadata:
         meta = json.loads(metadata)
         for key in meta:
@@ -85,7 +85,7 @@ def create_version(db_: Session, version: schemas.VersionCreate):
     db_content = db_models.Version(
         versionAbbreviation = version.versionAbbreviation.upper().strip(),
         versionName = version.versionName.strip(),
-        revision = version.revision.strip(),
+        revision = version.revision,
         metaData = version.metaData)
     db_.add(db_content)
     db_.commit()

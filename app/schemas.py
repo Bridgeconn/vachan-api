@@ -65,14 +65,15 @@ class LanguageEdit (BaseModel):
     code : LangCodePattern = None
     scriptDirection : Direction = None
 
-MetaDataPattern = constr(regex=r"^\{\s*\"[^\"]+\"\s*:\s*\"[^\"]+\"\s*(,\s*\"[^\"]+\"\s*:\s*\"[^\"]+\"\s*)*")
+MetaDataPattern = constr(
+    regex=r"^\{\s*\"[^\"]+\"\s*:\s*\"[^\"]+\"\s*(,\s*\"[^\"]+\"\s*:\s*\"[^\"]+\"\s*)*")
 
 VersionPattern = constr(regex=r"^[A-Z]+$")
 class VersionCreate(BaseModel):
     '''input object of version'''
     versionAbbreviation : VersionPattern
     versionName : str
-    revision : str = "1"
+    revision : int = 1
     metaData : dict = None
 
 class VersionResponse(BaseModel):
@@ -80,7 +81,7 @@ class VersionResponse(BaseModel):
     versionId : int
     versionAbbreviation : VersionPattern
     versionName : str
-    revision : str
+    revision : int
     metaData : dict = None
     class Config: # pylint: disable=too-few-public-methods
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
@@ -97,7 +98,7 @@ class VersionEdit(BaseModel):
     versionId: int
     versionAbbreviation : VersionPattern = None
     versionName : str = None
-    revision : str = None
+    revision : int = None
     metaData : dict = None
 
 
@@ -122,7 +123,7 @@ class SourceUpdateResponse(BaseModel):
 
 class SourceEdit(BaseModel):
     '''Input object of source update'''
-    sourceName : int
+    sourceName : TableNamePattern
     contentType : str = None
     language : LangCodePattern = None
     version : VersionPattern = None

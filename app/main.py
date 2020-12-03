@@ -301,7 +301,7 @@ def edit_language(lang_obj: schemas.LanguageEdit = Body(...), db_: Session = Dep
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Versions"])
 def get_version(version_abbreviation : schemas.VersionPattern = Query(None), #pylint: disable=too-many-arguments
-    version_name: str = Query(None), revision : str = Query(None),
+    version_name: str = Query(None), revision : int = Query(None),
     metadata: schemas.MetaDataPattern = Query(None),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
     '''Fetches all versions and their details.
@@ -368,10 +368,6 @@ def edit_version(ver_obj: schemas.VersionEdit = Body(...), db_: Session = Depend
     except Exception as exe:
         log.error('Error in edit_version')
         raise GenericException(str(exe)) from exe
-
-## NOTE
-# DELETE method not implemeneted for this resource
-# ################################
 
 
 # ##### Source #####
