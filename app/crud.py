@@ -24,20 +24,14 @@ def create_content_type(db_: Session, content: schemas.ContentTypeCreate):
 def get_languages(db_: Session, language_code = None, language_name = None, #pylint: disable=too-many-arguments
     language_id = None, skip: int = 0, limit: int = 100):
     '''Fetches rows of language, with pagination and various filters'''
-    if language_code and language_name:
-        return db_.query(db_models.Language).filter(
-            db_models.Language.code == language_code.lower(),
-            db_models.Language.language == language_name.lower()).all()
-    if language_name:
-        return db_.query(db_models.Language).filter(
-            db_models.Language.language == language_name.lower()).all()
+    query = db_.query(db_models.Language)
     if language_code:
-        return db_.query(db_models.Language).filter(
-            db_models.Language.code == language_code.lower()).all()
+        query = query.filter(db_models.Language.code == language_code.lower())
+    if language_name:
+        query = query.filter(db_models.Language.language == language_name.lower())
     if language_id is not None:
-        return db_.query(db_models.Language).filter(
-            db_models.Language.languageId == language_id).all()
-    return db_.query(db_models.Language).offset(skip).limit(limit).all()
+        query = query.filter(db_models.Language.languageId == language_id)
+    return query.offset(skip).limit(limit).all()
 
 def create_language(db_: Session, lang: schemas.LanguageCreate):
     '''Adds a row to languages table'''
