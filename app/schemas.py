@@ -30,18 +30,16 @@ class ContentTypeUpdateResponse(BaseModel):
     message: str
     data: ContentType = None
 
-LangCodePattern =constr(regex=r"^\w\w\w$")
+LangCodePattern =constr(regex=r"^[a-zA-Z][a-zA-Z][a-zA-Z]$")
 class Direction(str, Enum):
     '''To specify direction of script'''
     left_to_right = 'left-to-right'
     right_to_left = 'right-to-left'
 
-class Language(BaseModel):
+class LanguageCreate(BaseModel):
     '''To create new language'''
     language : str
     code : LangCodePattern
-    localScriptName : str = None
-    script : str = None
     scriptDirection : Direction = None
 
 class LanguageResponse(BaseModel):
@@ -49,9 +47,11 @@ class LanguageResponse(BaseModel):
     languageId : int
     language : str
     code : LangCodePattern
-    localScriptName : str = None
-    script : str = None
     scriptDirection : Direction = None
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
 
 class LanguageUpdateResponse(BaseModel):
     '''Return object of language update'''
@@ -63,8 +63,6 @@ class LanguageEdit (BaseModel):
     languageId: int
     language : str = None
     code : LangCodePattern = None
-    localScriptName : str = None
-    script : str = None
     scriptDirection : Direction = None
 
 VersionPattern = constr(regex=r"^[A-Z]+$")
