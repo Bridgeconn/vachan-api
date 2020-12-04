@@ -332,9 +332,13 @@ def add_version(version_obj : schemas.VersionCreate = Body(...),
     log.info('In add_version')
     log.debug('version_obj: %s',version_obj)
     try:
-        if len(crud.get_versions(db_, version_obj.versionAbbreviation)) > 0:
+        if not version_obj.revision:
+            version_obj.revision = 1
+        if len(crud.get_versions(db_, version_obj.versionAbbreviation,
+            revision =version_obj.revision)) > 0:
             log.error('Error in add_version')
-            raise AlreadyExistsException("%s already present"%(version_obj.versionAbbreviation))
+            raise AlreadyExistsException("%s, %s already present"%(
+                version_obj.versionAbbreviation, version_obj.revision))
         return {'message': "Version created successfully",
         "data": crud.create_version(db_=db_, version=version_obj)}
     except SQLAlchemyError as exe:
@@ -351,7 +355,7 @@ def add_version(version_obj : schemas.VersionCreate = Body(...),
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Versions"])
 def edit_version(ver_obj: schemas.VersionEdit = Body(...), db_: Session = Depends(get_db)):
-    ''' Changes one or more fields of vesrion types table'''
+    ''' Changes one or more fields of version types table'''
     log.info('In edit_version')
     log.debug('ver_obj: %s',ver_obj)
     try:

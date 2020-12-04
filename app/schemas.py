@@ -66,7 +66,8 @@ class LanguageEdit (BaseModel):
     scriptDirection : Direction = None
 
 MetaDataPattern = constr(
-    regex=r"^\{\s*\"[^\"]+\"\s*:\s*\"[^\"]+\"\s*(,\s*\"[^\"]+\"\s*:\s*\"[^\"]+\"\s*)*")
+    regex=r"^\{\s*[\"\'][^\"]+[\"\']\s*:\s*[\"\'][^\"]+[\"\']\s*" + 
+        r"(,\s*[\"\'][^\"]+[\"\']\s*:\s*[\"\'][^\"]+[\"\']\s*)*")
 
 VersionPattern = constr(regex=r"^[A-Z]+$")
 class VersionCreate(BaseModel):

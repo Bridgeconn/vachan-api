@@ -25,8 +25,9 @@ alter table languages alter column script_direction set default 'left-to-right';
 
 CREATE TABLE public.versions (
     version_id SERIAL PRIMARY KEY,
-    version_code text UNIQUE NOT NULL,
+    version_code text NOT NULL,
     version_description text NOT NULL,
-    revision text NOT NULL,
-    metadata jsonb
+    revision integer NOT NULL,
+    metadata jsonb,
+    UNIQUE(version_code, revision)
 );
