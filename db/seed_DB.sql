@@ -16,10 +16,9 @@ CREATE TABLE public.languages (
     language_id SERIAL PRIMARY KEY,
     language_code char(3) UNIQUE NOT NULL,
     language_name text NOT NULL,
-    script_direction text
+    script_direction text DEFAULT 'left-to-right'
 );
 
-alter table languages alter column script_direction set default 'left-to-right';
 
 \COPY languages (language_code,language_name) FROM 'languages.csv' DELIMITER ',' CSV HEADER;
 
@@ -27,7 +26,7 @@ CREATE TABLE public.versions (
     version_id SERIAL PRIMARY KEY,
     version_code text NOT NULL,
     version_description text NOT NULL,
-    revision integer NOT NULL,
+    revision integer DEFAULT 1,
     metadata jsonb,
     UNIQUE(version_code, revision)
 );
