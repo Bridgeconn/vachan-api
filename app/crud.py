@@ -1,8 +1,7 @@
 ''' Place to define all Database CRUD operations'''
 import json
-from sqlalchemy import String
 from sqlalchemy.orm import Session
-# from  sqlalchemy.dialects.postgresql.JSON.Comparator import astext
+
 import db_models
 import schemas
 

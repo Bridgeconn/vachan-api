@@ -2,7 +2,7 @@
 
 from typing import List
 from enum import Enum
-from pydantic import BaseModel, constr, AnyUrl, create_model
+from pydantic import BaseModel, constr, AnyUrl
 
 class NormalResponse(BaseModel):
     '''Response with only a message'''
@@ -66,7 +66,7 @@ class LanguageEdit (BaseModel):
     scriptDirection : Direction = None
 
 MetaDataPattern = constr(
-    regex=r"^\{\s*[\"\'][^\"]+[\"\']\s*:\s*[\"\'][^\"]+[\"\']\s*" + 
+    regex=r"^\{\s*[\"\'][^\"]+[\"\']\s*:\s*[\"\'][^\"]+[\"\']\s*" +
         r"(,\s*[\"\'][^\"]+[\"\']\s*:\s*[\"\'][^\"]+[\"\']\s*)*")
 
 VersionPattern = constr(regex=r"^[A-Z]+$")
