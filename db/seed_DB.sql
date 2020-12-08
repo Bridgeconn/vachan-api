@@ -30,3 +30,21 @@ CREATE TABLE public.versions (
     metadata jsonb,
     UNIQUE(version_code, revision)
 );
+
+
+CREATE TABLE public.sources (
+    source_id SERIAL PRIMARY KEY,
+    table_name text UNIQUE,
+    year integer NOT NULL,
+    license text DEFAULT 'CC BY SA'::text,
+    content_id int NOT NULL REFERENCES content_types(content_type_id) ON DELETE CASCADE,
+    language_id int NOT NULL REFERENCES languages(language_id) ON DELETE CASCADE,
+    version_id int NOT NULL REFERENCES versions(version_id) ON DELETE CASCADE,
+    created_at timestamp with time zone DEFAULT NOW(),
+    created_user int NULL,
+    last_updated_at  timestamp with time zone DEFAULT NOW(),
+    last_updated_user int NULL,
+    active boolean DEFAULT true NOT NULL,
+    metadata jsonb NULL
+);
+
