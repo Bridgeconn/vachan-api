@@ -1,9 +1,11 @@
 ''' Place to define all Database CRUD operations'''
 import json
+import sqlalchemy
 from sqlalchemy.orm import Session
 
 import db_models
 import schemas
+from custom_exceptions import NotAvailableException
 
 def get_content_types(db_: Session, content_type: str =None, skip: int = 0, limit: int = 100):
     '''Fetches all content types, with pagination'''
@@ -86,7 +88,7 @@ def create_version(db_: Session, version: schemas.VersionCreate):
     return db_content
 
 def update_version(db_: Session, version: schemas.VersionEdit):
-    '''changes one or more fields of language, selected via language id'''
+    '''changes one or more fields of versions, selected via version id'''
     db_content = db_.query(db_models.Version).get(version.versionId)
     if version.versionAbbreviation:
         db_content.versionAbbreviation = version.versionAbbreviation
@@ -98,4 +100,113 @@ def update_version(db_: Session, version: schemas.VersionEdit):
         db_content.metaData = version.metaData
     db_.commit()
     db_.refresh(db_content)
+    return db_content
+
+def get_sources(db_: Session, content_type=None, version_abbreviation=None, revision=None, #pylint: disable=too-many-arguments
+    language_code=None, metadata=None, table_name=None, skip: int = 0, limit: int = 100):
+    '''Fetches the rows of sources table'''
+    query = db_.query(db_models.Source)
+    if content_type:
+        query = query.filter(db_models.Source.contentType.has(contentType = content_type.strip()))
+    if version_abbreviation:
+        query = query.filter(
+            db_models.Source.version.has(versionAbbreviation = version_abbreviation.strip()))
+    if revision:
+        query = query.filter(
+            db_models.Source.version.has(revision = revision))
+    if language_code:
+        query = query.filter(db_models.Source.language.has(code = language_code.strip()))
+    if metadata:
+        meta = json.loads(metadata)
+        for key in meta:
+            query = query.filter(db_models.Source.metaData.op('->>')(key) == meta[key])
+    if table_name:
+        query = query.filter(db_models.Source.sourceName == table_name)
+    res = query.offset(skip).limit(limit).all()
+    # print("************")
+    # for item in res:
+    #     print(item.__dict__["metaData"])
+    return res
+
+def create_source(db_: Session, source: schemas.SourceCreate, table_name, user_id = None):
+    '''Adds a row to sources table'''
+    content_type = db_.query(db_models.ContentType).filter(
+        db_models.ContentType.contentType == source.contentType.strip()).first()
+    if not content_type:
+        raise NotAvailableException("ContentType, %s, not found in Database"
+            %source.contentType.strip())
+    version = db_.query(db_models.Version).filter(
+        db_models.Version.versionAbbreviation == source.version,
+        db_models.Version.revision == source.revision).first()
+    if not version:
+        raise NotAvailableException("Version, %s %s, not found in Database"%(source.version,
+            source.revision))
+    language = db_.query(db_models.Language).filter(
+        db_models.Language.code == source.language).first()
+    if not language:
+        raise NotAvailableException("Language code, %s, not found in Database"%source.language)
+
+    db_content = db_models.Source(
+        year = source.year,
+        sourceName = table_name,
+        contentId = content_type.contentId,
+        versionId = version.versionId,
+        languageId = language.languageId,
+        metaData = source.metaData,
+        active = True)
+    if source.license is not None:
+        db_content.license = source.license
+    if user_id:
+        db_content.created_user = user_id
+    db_.add(db_content)
+    db_.commit()
+    db_.refresh(db_content)
+    return db_content
+
+def update_source(db_: Session, source: schemas.VersionEdit, user_id = None): #pylint: disable=too-many-branches
+    '''changes one or more fields of sources, selected via sourceName or table_name'''
+    db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source.sourceName).first()
+    if source.version or source.revision:
+        if source.version:
+            ver = source.version
+        else:
+            ver = db_content.version.versionAbbreviation
+        if source.revision:
+            rev = source.revision
+        else:
+            rev = db_content.version.revision
+        version = db_.query(db_models.Version).filter(
+            db_models.Version.versionAbbreviation == ver,
+            db_models.Version.revision == rev).first()
+        if not version:
+            raise NotAvailableException("Version, %s %s, not found in Database"%(ver,
+                rev))
+        db_content.versionId = version.versionId
+        table_name_parts = db_content.sourceName.split("_")
+        db_content.sourceName = "_".join([table_name_parts[0],ver, rev, table_name_parts[-1]])
+
+    if source.language:
+        language = db_.query(db_models.Language).filter(
+            db_models.Language.code == source.language).first()
+        if not language:
+            raise NotAvailableException("Language code, %s, not found in Database"%source.language)
+        db_content.languageId = language.languageId
+        table_name_parts = db_content.sourceName.split("_")
+        db_content.sourceName = "_".join([source.language]+table_name_parts[1:])
+    if source.year:
+        db_content.year = source.year
+    if source.license:
+        db_content.license = source.license
+    if source.metaData:
+        db_content.metaData = source.metaData
+    if source.active:
+        db_content.active = source.active
+    if user_id:
+        db_content.UpdatedUser = user_id
+    db_.commit()
+    db_.refresh(db_content)
+    sql_statement = sqlalchemy.text("ALTER TABLE IF EXISTS %s RENAME TO %s"%(
+        source.sourceName, db_content.sourceName))
+    db_.execute(sql_statement)
     return db_content

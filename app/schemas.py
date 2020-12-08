@@ -105,33 +105,45 @@ class VersionEdit(BaseModel):
 
 TableNamePattern = constr(regex=r"^\w\w\w_[A-Z]+_\w+_[a-z]+$")
 
-class Source(BaseModel):
+class SourceCreate(BaseModel):
     '''Input object of sources'''
-    sourceName : TableNamePattern
     contentType : str
     language : LangCodePattern
     version : VersionPattern
     revision: str = "1"
     year: int
     license: str = "ISC"
-    metadata: dict = None
+    metaData: dict = None
+
+class SourceResponse(BaseModel):
+    '''Output object of sources'''
+    sourceName : TableNamePattern
+    contentType : ContentType = None
+    language : LanguageResponse = None
+    version : VersionResponse = None
+    # revision: str = "1"
+    year: int
+    license: str = "ISC"
+    metaData: dict = None
     active: bool = True
+    class Config: # pylint: disable=too-few-public-methods
+        '''For Pydantic'''
+        orm_mode = True
 
 class SourceUpdateResponse(BaseModel):
-    '''response object of sources'''
+    '''response object of sources update'''
     message: str
-    data: Source = None
+    data: SourceResponse = None
 
 class SourceEdit(BaseModel):
     '''Input object of source update'''
     sourceName : TableNamePattern
-    contentType : str = None
     language : LangCodePattern = None
     version : VersionPattern = None
     revision: str = None
     year: int = None
     license: str = None
-    metadata: dict = None
+    metaData: dict = None
     active: bool = None
 
 BookCodePattern = constr(regex=r"^[a-z1-9][a-z][a-z]$")
