@@ -390,3 +390,38 @@ def test_put_default():
     assert response.json()['message'] == "Source edited successfully"
     assert_positive_get(response.json()['data'])
     assert response.json()['data']['metaData'] == {'owner': 'new owner'}
+
+def test_soft_delete():
+    '''Soft delete is achived by updating the active flag to Fasle'''
+    version_data = {
+        "versionAbbreviation": "TTT",
+        "versionName": "test version",
+    }
+    add_version(version_data)
+    data = {
+        "contentType": "bible",
+        'language': 'mal',
+        "version": "TTT",
+        "year": 2020
+    }
+    response = check_post(data)
+    assert response.json()['data']['active']
+
+    data_update = {
+        'sourceName': 'mal_TTT_1_bible',
+        'active': False
+    }
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    response = client.put(UNIT_URL, headers=headers, json=data_update)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Source edited successfully"
+    assert_positive_get(response.json()['data'])
+    assert not response.json()['data']['active']
+
+    response = client.get(UNIT_URL + '?active=False')
+    assert response.status_code == 200
+    assert len(response.json()) > 0
+    for item in response.json():
+        assert_positive_get(item)
+        assert not item['active']
+    assert 'mal_TTT_1_bible' in [item['sourceName'] for item in response.json()]

@@ -200,7 +200,7 @@ def update_source(db_: Session, source: schemas.VersionEdit, user_id = None): #p
         db_content.license = source.license
     if source.metaData:
         db_content.metaData = source.metaData
-    if source.active:
+    if source.active is not None:
         db_content.active = source.active
     if user_id:
         db_content.UpdatedUser = user_id
