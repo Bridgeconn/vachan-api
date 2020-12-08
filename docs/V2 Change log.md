@@ -42,3 +42,11 @@ For every API endpoint, we perform certain common tests like checking for the co
 * Uses integer data type for revision field, instead of text, to avoid any special character coming in, as its value is to be used in table name.
 * Make the combination of version_code and revision unique
 * Sets default value of revision as 1
+
+### sources table
+
+* Removes the sequence used for source_id and use SERIAL datatype instead.
+* The field, table_name, is made unique
+* Adds four columns created_at, created_user, last_updated_at, last_updated_user to track DB changes. the first two are to be set while source creation. The other two, when a user performs any action on the respective content tables.(These two columns are not for tracking updations on sources table rows but the actual content tables like hin_IRV_1_bible)
+* Renames the column status to active, which is used for soft delete and re-activation.
+
