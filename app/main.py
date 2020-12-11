@@ -427,28 +427,37 @@ def edit_source(source_obj: schemas.SourceEdit = Body(...), db_: Session = Depen
 # # #################
 
 # ############ Bible Books ##########
-#pylint: disable=line-too-long
 
 
-# @app.get('/v2/lookup/bible/books', response_model=List[schemas.BibleBook], status_code=200, tags=["Lookups"])
-# def get_bible_book(bookId: int = None, bookCode: schemas.BookCodePattern = None, skip: int = 0, limit: int = 100):
-#   ''' returns the list of book ids, codes and names.
-#   If any of the query params are provided the details of corresponding book
-#   will be returned
-#   * skip=n: skips the first n objects in return list
-#   * limit=n: limits the no. of items to be returned to n'''
-#   result = []
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
-#   return result
+@app.get('/v2/lookup/bible/books',
+    response_model=List[schemas.BibleBook],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Lookups"])
+def get_bible_book(book_id: int = None, book_code: schemas.BookCodePattern = None, #pylint: disable=too-many-arguments
+    book_name: str = None,
+    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
+    ''' returns the list of book ids, codes and names.
+    If any of the query params are provided the details of corresponding book
+    will be returned
+    * skip=n: skips the first n objects in return list
+    * limit=n: limits the no. of items to be returned to n'''
+    log.info('In get_bible_book')
+    log.debug('book_id: %s, book_code: %s, book_name: %s, skip: %s, limit: %s',
+        book_id, book_code, book_name, skip, limit)
+    try:
+        return crud.get_bible_books(db_, book_id, book_code, book_name,
+            skip = skip, limit = limit)
+    except SQLAlchemyError as exe:
+        log.exception('Error in get_bible_book')
+        raise DatabaseException(exe) from exe
+    except Exception as exe:
+        log.exception('Error in get_bible_book')
+        raise GenericException(str(exe)) from exe
 
-# ## NOTE
-# # This is a predefined table. So it is read-only and no PUT, POST or DELETE methods re defined for it
 
 
 # # # #### Bible #######
+#pylint: disable=line-too-long
 
 
 # @app.post('/v2/bibles/{sourceName}/books', response_model=schemas.BibleBookUpdateResponse, status_code=201, tags=["Bibles"])
