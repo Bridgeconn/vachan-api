@@ -311,14 +311,14 @@ def test_get_after_adding_data():
     check_default_get(UNIT_URL, assert_positive_get)
 
     # filter with contentType
-    response = client.get(UNIT_URL + "?content_type=commentary")
+    response = client.get(UNIT_URL + "?content_type=commentary&latest_revision=false")
     assert response.status_code == 200
     assert len(response.json()) >= 3
     for item in response.json():
         assert_positive_get(item)
 
     # filter with language
-    response = client.get(UNIT_URL + "?language_code=hin")
+    response = client.get(UNIT_URL + "?language_code=hin&latest_revision=false")
     assert response.status_code == 200
     assert len(response.json()) >= 3
     for item in response.json():
@@ -332,14 +332,14 @@ def test_get_after_adding_data():
         assert_positive_get(item)
 
     # filter with version
-    response = client.get(UNIT_URL + "?version_abbreviation=TTT")
+    response = client.get(UNIT_URL + "?version_abbreviation=TTT&latest_revision=false")
     assert response.status_code == 200
     assert len(response.json()) >= 9
     for item in response.json():
         assert_positive_get(item)
 
     # filter with metadata
-    response = client.get(UNIT_URL + '?metadata={"owner": "myself"}')
+    response = client.get(UNIT_URL + '?metadata={"owner": "myself"}&latest_revision=false')
     assert response.status_code == 200
     assert len(response.json()) == 3
     for item in response.json():

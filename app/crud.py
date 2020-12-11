@@ -102,8 +102,10 @@ def update_version(db_: Session, version: schemas.VersionEdit):
     db_.refresh(db_content)
     return db_content
 
-def get_sources(db_: Session, content_type=None, version_abbreviation=None, revision=None, #pylint: disable=too-many-arguments
-    language_code=None, metadata=None, table_name=None, skip: int = 0, limit: int = 100):
+def get_sources(db_: Session, #pylint: disable=too-many-arguments, disable-msg=too-many-locals, disable=too-many-branches
+    content_type=None, version_abbreviation=None, revision=None,
+    language_code=None, metadata=None, active=True, latest_revision = True, table_name=None,
+    skip: int = 0, limit: int = 100):
     '''Fetches the rows of sources table'''
     query = db_.query(db_models.Source)
     if content_type:
@@ -120,13 +122,44 @@ def get_sources(db_: Session, content_type=None, version_abbreviation=None, revi
         meta = json.loads(metadata)
         for key in meta:
             query = query.filter(db_models.Source.metaData.op('->>')(key) == meta[key])
+    if active:
+        query = query.filter(db_models.Source.active)
+    else:
+        query = query.filter(db_models.Source.active == False) #pylint: disable=singleton-comparison
     if table_name:
         query = query.filter(db_models.Source.sourceName == table_name)
-    res = query.offset(skip).limit(limit).all()
-    # print("************")
-    # for item in res:
-    #     print(item.__dict__["metaData"])
-    return res
+
+    res = query.join(db_models.Version).order_by(db_models.Version.revision.desc()
+        ).offset(skip).limit(limit).all()
+    if not latest_revision or revision:
+        return res
+
+    # sub_qry = query.join(db_models.Version, func.max(db_models.Version.revision).label(
+    #     "latest_rev")).group_by(
+    #     db_models.Source.contentId, db_models.Source.languageId,
+    #     db_models.Version.versionAbbreviation
+    #     ).subquery('sub_qry')
+    # latest_res = query.filter(db_models.Source.contentId == sub_qry.c.contentType.contentId,
+    #     db_models.Source.languageId == sub_qry.c.language.languageId,
+    #     db_models.Source.version.has(versionAbbreviation = sub_qry.c.version.versionAbbreviation),
+    #     db_models.Source.version.has(revision = sub_qry.c.latest_rev)
+    #     ).offset(skip).limit(limit).all()
+
+    # Filtering out the latest versions here from the query result.
+    # Had tried to include that into the query, but it seemed very difficult.
+    latest_res = []
+    for res_item in res:
+        exculde = False
+        x_parts = res_item.sourceName.split('_')
+        for latest_item in latest_res:
+            y_parts = latest_item.sourceName.split('_')
+            if x_parts[:1]+x_parts[-1:] == y_parts[:1]+y_parts[-1:]:
+                if x_parts[2] < y_parts[3]:
+                    exculde = True
+                    break
+        if not exculde:
+            latest_res.append(res_item)
+    return latest_res
 
 def create_source(db_: Session, source: schemas.SourceCreate, table_name, user_id = None):
     '''Adds a row to sources table'''

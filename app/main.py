@@ -341,20 +341,25 @@ def edit_version(ver_obj: schemas.VersionEdit = Body(...), db_: Session = Depend
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Sources"])
 def get_source(content_type: str = None, version_abbreviation: schemas.VersionPattern = None, #pylint: disable=too-many-arguments
     revision: int = None, language_code: schemas.LangCodePattern =None,
-    metadata: schemas.MetaDataPattern = Query(None),
+    metadata: schemas.MetaDataPattern = Query(None), active: bool = True,
+    latest_revision: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
     '''Fetches all sources and their details.
     If one or more optional params are present, returns a filtered result if pressent
-    and 404, if not found
+    and [], if not found.
+    If revision is not explictly set or latest_revision is not set to False,
+    then only the highest number revision from the avaliable list in each version would be returned.
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n'''
     log.info('In get_source')
     log.debug('contentType:%s, versionAbbreviation: %s, revision: %s,\
-        languageCode: %s, metadata: %s, skip: %s, limit: %s',
-        content_type, version_abbreviation, revision, language_code, metadata, skip, limit)
+        languageCode: %s, metadata: %s, latest_revision: %s, active: %s, skip: %s, limit: %s',
+        content_type, version_abbreviation, revision, language_code, metadata, latest_revision,
+        active, skip, limit)
     try:
         return crud.get_sources(db_, content_type, version_abbreviation, revision,
-    language_code, metadata, skip = skip, limit = limit)
+            language_code, metadata, latest_revision = latest_revision, active = active,
+            skip = skip, limit = limit)
     except SQLAlchemyError as exe:
         log.exception('Error in get_source')
         raise DatabaseException(exe) from exe
