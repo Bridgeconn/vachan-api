@@ -14,9 +14,9 @@ The maximum file size for log file is set as 10000000 bytes. After which logging
 
 Adds seperate  set of tests for each API endpoint. Has both positive and negative testcases in each set.
 
-For testing, it connects to the original database, but rolls back all the changes after each test. So each test is independant of each other from a DB perspective.
+For testing, it connects to the original database, but rolls back all the changes after each test function. So each test is independant of each other from a DB perspective.
 
-For every API endpoint, we perform certain common tests like checking for the correct response object with the default parameters, validation of each of the parameters based on their types, value, etc
+For every API endpoint, we perform certain common tests like checking for the correct response object with the default parameters, validation of each of the parameters based on their types, value, etc plus more tests based on itsown bussiness logic.
 
 ## Database Changes
 
@@ -35,3 +35,10 @@ For every API endpoint, we perform certain common tests like checking for the co
 * Makes language_name `NOT NULL`
 * Removes the columns local_script_name and script, which did not have value for any of the rows in seed data and wasn't being used by any of the Apps.
 * Sets `'left-to-right'` as the default value for script direction at DB itself. This ensures that the 7K languages imported from CSV as seed data, which didnot have this value set, will also have a default value for this column.
+
+### versions table
+
+* Removes the sequence used for version_id and use SERIAL datatype instead.
+* Uses integer data type for revision field, instead of text, to avoid any special character coming in, as its value is to be used in table name.
+* Make the combination of version_code and revision unique
+* Sets default value of revision as 1
