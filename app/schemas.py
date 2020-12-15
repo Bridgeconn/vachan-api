@@ -2,7 +2,7 @@
 
 from typing import List
 from enum import Enum
-from pydantic import BaseModel, constr, AnyUrl
+from pydantic import BaseModel, constr, AnyUrl, validator
 
 class NormalResponse(BaseModel):
     '''Response with only a message'''
@@ -231,17 +231,53 @@ class BookContentType(str, Enum):
     audio = 'audio'
     all = 'all'
 
-class Commentary(BaseModel):
+class CommentaryCreate(BaseModel):
     '''Response object for commentaries'''
     bookCode : BookCodePattern
     chapter: int
-    verseNumber: int
+    verseStart: int = None
+    verseEnd: int = None
     commentary: str
+
+    @validator('verseStart', 'verseEnd')
+    def check_verses(cls, v):
+        '''verse fields should be greater than or equal to -1'''
+        if v < -1:
+            raise ValueError('verse fields should be greater than or equal to -1')
+        return v
+
+    @validator('verseEnd')
+    def check_range(cls, v, values):
+        '''verse start should be less than or equal to verse end'''
+        print(values)
+        if 'verseStart' in values and v < values['verseStart']:
+            raise ValueError('verse start should be less than or equal to verse end')
+        return v
+
+    @validator('chapter')
+    def check_chapter(cls, v):
+        '''chapter fields should be greater than or equal to -1'''
+        if v < -1:
+            raise ValueError('chapter fields should be greater than or equal to -1')
+        return v
+
+
+class CommentaryResponse(BaseModel):
+    '''Response object for commentaries'''
+    book : BibleBook
+    chapter: int
+    verseStart: int = None
+    verseEnd: int = None
+    commentary: str
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
 
 class CommentaryUpdateResponse(BaseModel):
     '''Response object for commentary update'''
     message: str
-    data: List[Commentary] = None
+    data: List[CommentaryResponse] = None
 
 LetterPattern = constr(regex=r'^\w$')
 class DictionaryWord(BaseModel):

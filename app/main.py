@@ -18,7 +18,6 @@ from database import SessionLocal, engine
 from custom_exceptions import GenericException, DatabaseException
 from custom_exceptions import NotAvailableException, AlreadyExistsException, TypeException
 
-db_models.Base.metadata.create_all(bind=engine)
 
 
 app = FastAPI()
@@ -121,6 +120,10 @@ def get_db():
     finally:
         pass
         # db_.close()
+
+db_models.map_all_dynamic_tables(db_= next(get_db()))
+db_models.Base.metadata.create_all(bind=engine)
+
 
 @app.get('/', response_model=schemas.NormalResponse, status_code=200)
 def test():
@@ -596,55 +599,89 @@ def get_bible_book(book_id: int = None, book_code: schemas.BookCodePattern = Non
 
 # # ##### Commentary #####
 
+@app.get('/v2/commentaries/{source_name}',
+    response_model=List[schemas.CommentaryResponse],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Commentaries"])
+def get_commentary(source_name: schemas.TableNamePattern, book_code: schemas.BookCodePattern = None, #pylint: disable=too-many-arguments
+    chapter: int = None, verse: int = None, last_verse: int = None,
+    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
+    '''Fetches commentries under the specified source.
+    Using the params bookCode, chapter, and verse the result set can be filtered as per need, like in the /v2/bibles/{sourceName}/verses API
+    * Value 0 for verse and last_verse indicate chapter introduction and -1 indicate chapter epilogue.
+    * Similarly 0 for chapter means book introduction and -1 for chapter means book epilogue
+    * skip=n: skips the first n objects in return list
+    * limit=n: limits the no. of items to be returned to n'''
+    log.info('In get_commentary')
+    log.debug('source_name: %s, book_code: %s, chapter: %s, verse:%s,\
+        last_verse:%s, skip: %s, limit: %s',
+        source_name, book_code, chapter, verse, last_verse, skip, limit)
+    try:
+        return crud.get_commentaries(db_, source_name, book_code, chapter, verse, last_verse,
+            skip = skip, limit = limit)
+    except SQLAlchemyError as exe:
+        log.exception('Error in get_commentary')
+        raise DatabaseException(exe) from exe
+    except Exception as exe:
+        log.exception('Error in get_commentary')
+        raise GenericException(str(exe)) from exe
 
-# @app.get('/v2/commentaries/{sourceName}', response_model=List[schemas.Commentary], status_code=200, tags=["Commentaries"])
-# def get_commentary(sourceName: schemas.tableNamePattern, bookCode: schemas.BookCodePattern = None, chapter: int = None, verse: int = None, lastVerse: int = None, skip: int = 0, limit: int = 100):
-#   '''Fetches commentries under the specified source.
-#   Using the params bookCode, chapter, and verse the result set can be filtered as per need, like in the /v2/bibles/{sourceName}/verses API
-#   * skip=n: skips the first n objects in return list
-#   * limit=n: limits the no. of items to be returned to n'''
-#   result = []
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
-#   except Exception as e:
-#       raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
-#   return result
-
-# @app.post('/v2/commentaries/{sourceName}', response_model=schemas.CommentaryUpdateResponse, status_code=201, tags=["Commentaries"])
-# def add_commentary(sourceName: schemas.tableNamePattern, commentries:List[schemas.Commentary] = Body(...)):
-#   '''Uploads a list of commentaries.'''
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
-#   except Exception as e:
-#       raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
-#   except Exception as e:
-#       raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
-#   return {"message": f"Commentaries uploaded successfully", "data": None}
-
-# @app.put('/v2/commentaries/{sourceName}', response_model=schemas.CommentaryUpdateResponse, status_code=201, tags=["Commentaries"])
-# def edit_commentary(sourceName: schemas.tableNamePattern, commentries: List[schemas.Commentary] = Body(...)):
-#   ''' Changes the commentary field to the given value in the row selected using book, chapter, verse values'''
-#   logging.info(commentries)
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
-#   except Exception as e:
-#       raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
-#   except Exception as e:
-#       raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
-#   return {"message" : f"Updated commentries", "data": None}
+@app.post('/v2/commentaries/{source_name}', response_model=schemas.CommentaryUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Commentaries"])
+def add_commentary(source_name : schemas.TableNamePattern, commentaries: List[schemas.CommentaryCreate] = Body(...),
+    db_: Session = Depends(get_db)):
+    '''Uploads a list of commentaries.
+    * Duplicate commentries are allowed.
+    That is, if new commentries are uploaded for verses which already have commentaries, 
+    they will be accepted, and added to database
+    * Value 0 for verse and last_verse indicate chapter introduction and -1 indicate chapter epilogue.
+    * Similarly 0 for chapter means book introduction and -1 for chapter means book epilogue,
+    verses fields can be null in these cases'''
+    log.info('In add_commentary')
+    log.debug('source_name: %s, commentaries: %s',source_name, commentaries)
+    try:
+        return {'message': "Commentaries added successfully",
+        "data": crud.upload_commentaries(db_=db_, source_name=source_name, commentaries=commentaries,
+            user_id=None)}
+    except SQLAlchemyError as exe:
+        log.exception('Error in add_commentary')
+        raise DatabaseException(exe) from exe
+    except AlreadyExistsException as exe:
+        log.exception('Error in add_commentary')
+        raise exe from exe
+    except NotAvailableException as exe:
+        log.exception('Error in add_commentary')
+        raise exe from exe
+    except Exception as exe:
+        log.exception('Error in add_commentary')
+        raise GenericException(str(exe)) from exe
 
 
-
-# ## ##NOTE##
-# # 1. The API to list all bibles is not provided with a /v2/bible... endpoint, but is available in /v2/sources?contentType=commentary
-# # 2. POST and PUT methods takes list of commentary objects and adds them together to DB. Process will be aborted in case of error in any of the rows
-# # 3. Type of verseNumber is mentioned as int here. Can be changed if required
+@app.put('/v2/commentaries/{source_name}', response_model=schemas.CommentaryUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Commentaries"])
+def edit_commentary(source_name: schemas.TableNamePattern,
+    commentaries: List[schemas.CommentaryCreate] = Body(...), db_: Session = Depends(get_db)):
+    ''' Changes the commentary field to the given value in the row selected using 
+    book, chapter, verseStart and verseEnd values'''
+    log.info('In edit_commentary')
+    log.debug('source_name: %s, commentaries: %s',source_name, commentaries)
+    try:
+        return {'message': "Commentaries updated successfully",
+        "data": crud.update_commentaries(db_=db_, source_name=source_name, commentaries=commentaries,
+            user_id=None)}
+    except SQLAlchemyError as exe:
+        log.exception('Error in edit_commentary')
+        raise DatabaseException(exe) from exe
+    except NotAvailableException as exe:
+        log.exception('Error in edit_commentary')
+        raise exe from exe
+    except Exception as exe:
+        log.exception('Error in edit_commentary')
+        raise GenericException(str(exe)) from exe
 
 
 # # ########### Dictionary ###################
