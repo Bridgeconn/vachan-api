@@ -86,7 +86,7 @@ def test_post_without_abbr():
     data = {
         "versionName": "Xyz version to test",
         "revision": "1",
-        "metaData": {"owner": "someone", "access-key": "123xyz"}
+        "metaData": {"owner": "some", "access-key": "123xyz"}
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
@@ -98,7 +98,7 @@ def test_post_wrong_abbr():
         "versionAbbreviation": "XY Z",
         "versionName": "Xyz version to test",
         "revision": "1",
-        "metaData": {"owner": "someone", "access-key": "123xyz"}
+        "metaData": {"owner": "one", "access-key": "123xyz"}
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
@@ -114,7 +114,7 @@ def test_post_wrong_revision():
         "versionAbbreviation": "XY Z",
         "versionName": "Xyz version to test",
         "revision": "1.0",
-        "metaData": {"owner": "someone", "access-key": "123xyz"}
+        "metaData": {"owner": "another one", "access-key": "123xyz"}
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
@@ -133,16 +133,19 @@ def test_post_without_name():
     data = {
         "versionAbbreviation": "XYZ",
         "revision": "1",
-        "metaData": {"owner": "someone", "access-key": "123xyz"}
+        "metaData": {"owner": "no one", "access-key": "123xyz"}
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
 
 def test_get():
-    '''test get on empty table'''
+    '''Test get before adding data to table. Usually run on new test DB on local or github.
+    If the testing is done on a DB that already has data(staging), the response wont be empty.'''
     response = client.get(UNIT_URL)
-    assert_not_available_content(response)
+    if len(response.json()) == 0:
+        assert_not_available_content(response)
+
 
 def test_get_wrong_abbr():
     '''abbreviation with space, number'''

@@ -15,6 +15,8 @@ import crud
 import db_models
 import schemas
 from database import SessionLocal, engine
+from custom_exceptions import GenericException, DatabaseException
+from custom_exceptions import NotAvailableException, AlreadyExistsException, TypeException
 
 db_models.Base.metadata.create_all(bind=engine)
 
@@ -30,13 +32,6 @@ log.addHandler(handler)
 
 ######### Error Handling ##############
 
-class GenericException(Exception):
-    '''Format for Database error'''
-    def __init__(self, detail: str):
-        super().__init__()
-        self.name = "Error"
-        self.detail = detail
-        self.status_code = 500
 
 @app.exception_handler(GenericException)
 async def generic_exception_handler(request, exc: GenericException):
@@ -49,20 +44,6 @@ async def generic_exception_handler(request, exc: GenericException):
         content={"error": exc.name, "details" : exc.detail},
     )
 
-
-
-class DatabaseException(Exception):
-    '''Format for Database error'''
-    def __init__(self, detail):
-        super().__init__()
-        self.name = "Database Error"
-        self.logging_info = detail.__dict__
-        if 'orig' in detail.__dict__:
-            self.detail = str(detail.__dict__['orig']).replace('DETAIL:','')
-        else:
-            self.detail = str(detail)
-        self.status_code = 502
-
 @app.exception_handler(DatabaseException)
 async def db_exception_handler(request, exc: DatabaseException):
     '''logs and returns error details'''
@@ -74,13 +55,6 @@ async def db_exception_handler(request, exc: DatabaseException):
         content={"error": exc.name, "details" : exc.detail},
     )
 
-class NotAvailableException(Exception):
-    '''Format for not available Exception'''
-    def __init__(self, detail: str):
-        super().__init__()
-        self.name = "Requested Content Not Available"
-        self.detail = detail
-        self.status_code = 404
 
 @app.exception_handler(NotAvailableException)
 async def na_exception_handler(request, exc: NotAvailableException):
@@ -93,13 +67,6 @@ async def na_exception_handler(request, exc: NotAvailableException):
         content={"error": exc.name, "details" : exc.detail},
     )
 
-class AlreadyExistsException(Exception):
-    '''Format for already exists error'''
-    def __init__(self, detail: str):
-        super().__init__()
-        self.name = "Already Exists"
-        self.detail = detail
-        self.status_code = 409
 
 @app.exception_handler(AlreadyExistsException)
 async def exists_exception_handler(request, exc: AlreadyExistsException):
@@ -111,13 +78,6 @@ async def exists_exception_handler(request, exc: AlreadyExistsException):
         status_code=exc.status_code,
         content={"error": exc.name, "details" : exc.detail},
     )
-class TypeException(Exception):
-    '''Format for type error'''
-    def __init__(self, detail: str):
-        super().__init__()
-        self.name = "Not the Required Type"
-        self.detail = detail
-        self.status_code = 415
 
 @app.exception_handler(TypeException)
 async def type_exception_handler(request, exc: TypeException):
@@ -185,10 +145,10 @@ def get_contents(content_type: str = Query(None), skip: int = Query(0, ge=0),
     try:
         return crud.get_content_types(db_, content_type, skip, limit)
     except SQLAlchemyError as exe:
-        log.error('Error in get_contents')
+        log.exception('Error in get_contents')
         raise DatabaseException(exe) from exe
     except Exception as exe:
-        log.error('Error in get_contents')
+        log.exception('Error in get_contents')
         raise GenericException(str(exe)) from exe
 
 @app.post('/v2/contents', response_model=schemas.ContentTypeUpdateResponse,
@@ -204,17 +164,17 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
     log.debug('content: %s',content)
     try:
         if len(crud.get_content_types(db_, content.contentType)) > 0:
-            log.error('Error in add_contents')
             raise AlreadyExistsException("%s already present"%(content.contentType))
         return {'message': "Content type created successfully",
         "data": crud.create_content_type(db_=db_, content=content)}
     except SQLAlchemyError as exe:
-        log.error('Error in add_contents')
+        log.exception('Error in add_contents')
         raise DatabaseException(exe) from exe
     except AlreadyExistsException as exe:
+        log.exception('Error in add_contents')
         raise exe from exe
     except Exception as exe:
-        log.error('Error in add_contents')
+        log.exception('Error in add_contents')
         raise GenericException(str(exe)) from exe
 
 #################
@@ -239,10 +199,10 @@ def get_language(language_code : schemas.LangCodePattern = Query(None),
     try:
         return crud.get_languages(db_, language_code, language_name, skip = skip, limit = limit)
     except SQLAlchemyError as exe:
-        log.error('Error in get_language')
+        log.exception('Error in get_language')
         raise DatabaseException(exe) from exe
     except Exception as exe:
-        log.error('Error in get_language')
+        log.exception('Error in get_language')
         raise GenericException(str(exe)) from exe
 
 @app.post('/v2/languages', response_model=schemas.LanguageUpdateResponse,
@@ -255,17 +215,17 @@ def add_language(lang_obj : schemas.LanguageCreate = Body(...), db_: Session = D
     log.debug('lang_obj: %s',lang_obj)
     try:
         if len(crud.get_languages(db_, language_code = lang_obj.code)) > 0:
-            log.error('Error in add_language')
             raise AlreadyExistsException("%s already present"%(lang_obj.code))
         return {'message': "Language created successfully",
         "data": crud.create_language(db_=db_, lang=lang_obj)}
     except SQLAlchemyError as exe:
-        log.error('Error in add_language')
+        log.exception('Error in add_language')
         raise DatabaseException(exe) from exe
     except AlreadyExistsException as exe:
+        log.exception('Error in add_language')
         raise exe from exe
     except Exception as exe:
-        log.error('Error in add_language')
+        log.exception('Error in add_language')
         raise GenericException(str(exe)) from exe
 
 @app.put('/v2/languages', response_model=schemas.LanguageUpdateResponse,
@@ -278,17 +238,17 @@ def edit_language(lang_obj: schemas.LanguageEdit = Body(...), db_: Session = Dep
     log.debug('lang_obj: %s',lang_obj)
     try:
         if len(crud.get_languages(db_, language_id = lang_obj.languageId)) == 0:
-            log.error('Error in edit_language')
             raise NotAvailableException("Language id %s not found"%(lang_obj.languageId))
         return {'message': "Language edited successfully",
         "data": crud.update_language(db_=db_, lang=lang_obj)}
     except SQLAlchemyError as exe:
-        log.error('Error in edit_language')
+        log.exception('Error in edit_language')
         raise DatabaseException(exe) from exe
     except NotAvailableException as exe:
+        log.exception('Error in edit_language')
         raise exe from exe
     except Exception as exe:
-        log.error('Error in edit_language')
+        log.exception('Error in edit_language')
         raise GenericException(str(exe)) from exe
 
 # ################################
@@ -316,10 +276,10 @@ def get_version(version_abbreviation : schemas.VersionPattern = Query(None), #py
         return crud.get_versions(db_, version_abbreviation,
             version_name, revision, metadata, skip = skip, limit = limit)
     except SQLAlchemyError as exe:
-        log.error('Error in get_version')
+        log.exception('Error in get_version')
         raise DatabaseException(exe) from exe
     except Exception as exe:
-        log.error('Error in get_version')
+        log.exception('Error in get_version')
         raise GenericException(str(exe)) from exe
 
 @app.post('/v2/versions', response_model=schemas.VersionUpdateResponse,
@@ -336,18 +296,18 @@ def add_version(version_obj : schemas.VersionCreate = Body(...),
             version_obj.revision = 1
         if len(crud.get_versions(db_, version_obj.versionAbbreviation,
             revision =version_obj.revision)) > 0:
-            log.error('Error in add_version')
             raise AlreadyExistsException("%s, %s already present"%(
                 version_obj.versionAbbreviation, version_obj.revision))
         return {'message': "Version created successfully",
         "data": crud.create_version(db_=db_, version=version_obj)}
     except SQLAlchemyError as exe:
-        log.error('Error in add_version')
+        log.exception('Error in add_version')
         raise DatabaseException(exe) from exe
     except AlreadyExistsException as exe:
+        log.exception('Error in add_version')
         raise exe from exe
     except Exception as exe:
-        log.error('Error in add_version')
+        log.exception('Error in add_version')
         raise GenericException(str(exe)) from exe
 
 @app.put('/v2/versions', response_model=schemas.VersionUpdateResponse,
@@ -360,73 +320,114 @@ def edit_version(ver_obj: schemas.VersionEdit = Body(...), db_: Session = Depend
     log.debug('ver_obj: %s',ver_obj)
     try:
         if len(crud.get_versions(db_, version_id = ver_obj.versionId)) == 0:
-            log.error('Error in edit_version')
             raise NotAvailableException("Version id %s not found"%(ver_obj.versionId))
         return {'message': "Version edited successfully",
         "data": crud.update_version(db_=db_, version=ver_obj)}
     except SQLAlchemyError as exe:
-        log.error('Error in edit_version')
+        log.exception('Error in edit_version')
         raise DatabaseException(exe) from exe
     except NotAvailableException as exe:
+        log.exception('Error in edit_version')
         raise exe from exe
     except Exception as exe:
-        log.error('Error in edit_version')
+        log.exception('Error in edit_version')
         raise GenericException(str(exe)) from exe
 
 
 # ##### Source #####
+@app.get('/v2/sources',
+    response_model=List[schemas.SourceResponse],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Sources"])
+def get_source(content_type: str = None, version_abbreviation: schemas.VersionPattern = None, #pylint: disable=too-many-arguments
+    revision: int = None, language_code: schemas.LangCodePattern =None,
+    metadata: schemas.MetaDataPattern = Query(None), active: bool = True,
+    latest_revision: bool = True,
+    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
+    '''Fetches all sources and their details.
+    If one or more optional params are present, returns a filtered result if pressent
+    and [], if not found.
+    If revision is not explictly set or latest_revision is not set to False,
+    then only the highest number revision from the avaliable list in each version would be returned.
+    * skip=n: skips the first n objects in return list
+    * limit=n: limits the no. of items to be returned to n'''
+    log.info('In get_source')
+    log.debug('contentType:%s, versionAbbreviation: %s, revision: %s,\
+        languageCode: %s, metadata: %s, latest_revision: %s, active: %s, skip: %s, limit: %s',
+        content_type, version_abbreviation, revision, language_code, metadata, latest_revision,
+        active, skip, limit)
+    try:
+        return crud.get_sources(db_, content_type, version_abbreviation, revision,
+            language_code, metadata, latest_revision = latest_revision, active = active,
+            skip = skip, limit = limit)
+    except SQLAlchemyError as exe:
+        log.exception('Error in get_source')
+        raise DatabaseException(exe) from exe
+    except Exception as exe:
+        log.exception('Error in get_source')
+        raise GenericException(str(exe)) from exe
 
-#pylint: disable=line-too-long
+@app.post('/v2/sources', response_model=schemas.SourceUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Sources"])
+def add_source(source_obj : schemas.SourceCreate = Body(...),
+    db_: Session = Depends(get_db)):
+    ''' Creates a new source entry in sources table.
+    Also creates all associtated tables for the content type. Not yet.
+    '''
+    log.info('In add_source')
+    log.debug('source_obj: %s',source_obj)
+    try:
+        if not source_obj.revision:
+            source_obj.revision = 1
+        table_name = source_obj.language + "_" + source_obj.version + "_" +\
+        source_obj.revision + "_" + source_obj.contentType
+        if len(crud.get_sources(db_, table_name = table_name)) > 0:
+            raise AlreadyExistsException("%s already present"%table_name)
+        return {'message': "Source created successfully",
+        "data": crud.create_source(db_=db_, source=source_obj, table_name=table_name,
+            user_id=None)}
+    except SQLAlchemyError as exe:
+        log.exception('Error in add_source')
+        raise DatabaseException(exe) from exe
+    except AlreadyExistsException as exe:
+        log.exception('Error in add_source')
+        raise exe from exe
+    except NotAvailableException as exe:
+        log.exception('Error in add_source')
+        raise exe from exe
+    except Exception as exe:
+        log.exception('Error in add_source')
+        raise GenericException(str(exe)) from exe
 
-
-# @app.get("/v2/sources", response_model=List[schemas.Source], status_code=200, tags=["Sources"])
-# def get_source(contentType: str = None, versionAbbreviation: schemas.versionPattern = None, languageCode: schemas.langCodePattern =None, skip: int = 0, limit: int = 100, active: bool = True):
-#   '''Fetches all sources and their details.
-#   If one or more optional params are present, returns a filtered result if pressent
-#   and 404, if not found
-#   * skip=n: skips the first n objects in return list
-#   * limit=n: limits the no. of items to be returned to n'''
-#   result = []
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
-#   return result
-
-# @app.post('/v2/sources', response_model=schemas.SourceUpdateResponse, status_code=201, tags=["Sources"])
-# def add_source(source_obj : schemas.Source = Body(...)):
-#   ''' Creates a new source entry in sources table.
-#   Also creates all associtated tables for the content type.
-#   '''
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
-#   except Exception as e:
-#       raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
-#   return {"message": f"Source {source_obj.version} {source_obj.contentType} created successfully", "data": None}
-
-# @app.put('/v2/sources', response_model=schemas.SourceUpdateResponse, status_code=201, tags=["Sources"])
-# def edit_source(source_obj: schemas.SourceEdit = Body(...)):
-#   ''' Changes one or more fields of source '''
-#   logging.info(source_obj)
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
-#   except Exception as e:
-#       raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
-#   return {"message" : f"Updated source field(s)", "data": None}
-
-
-# # Point to discuss
-# # * A separate DELETE method is not defined.
-# #   But soft delete can be performed by using the PUT method, and setting active to "False"
-# # * uses language code, content name, version name etc, instead of their ID values like in previous implementation
+@app.put('/v2/sources', response_model=schemas.SourceUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Sources"])
+def edit_source(source_obj: schemas.SourceEdit = Body(...), db_: Session = Depends(get_db)):
+    ''' Changes one or more fields of source '''
+    log.info('In edit_source')
+    log.debug('source_obj: %s',source_obj)
+    try:
+        if len(crud.get_sources(db_, table_name = source_obj.sourceName)) == 0:
+            raise NotAvailableException("Source %s not found"%(source_obj.sourceName))
+        return {'message': "Source edited successfully",
+        "data": crud.update_source(db_=db_, source=source_obj, user_id=None)}
+    except SQLAlchemyError as exe:
+        log.exception('Error in edit_source')
+        raise DatabaseException(exe) from exe
+    except NotAvailableException as exe:
+        log.exception('Error in edit_source')
+        raise exe from exe
+    except Exception as exe:
+        log.exception('Error in edit_source')
+        raise GenericException(str(exe)) from exe
 
 # # #################
 
 # ############ Bible Books ##########
+#pylint: disable=line-too-long
 
 
 # @app.get('/v2/lookup/bible/books', response_model=List[schemas.BibleBook], status_code=200, tags=["Lookups"])
