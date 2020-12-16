@@ -7,6 +7,7 @@ import db_models
 import schemas
 from database import engine
 from custom_exceptions import NotAvailableException
+from logger import log
 
 def get_content_types(db_: Session, content_type: str =None, skip: int = 0, limit: int = 100):
     '''Fetches all content types, with pagination'''
@@ -197,6 +198,7 @@ def create_source(db_: Session, source: schemas.SourceCreate, table_name, user_i
     db_.refresh(db_content)
     db_models.create_dynamic_table(table_name, content_type.contentType)
     db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine)
+    log.warning("User %s, creates a new table %s", user_id, db_content.sourceName)
     return db_content
 
 def update_source(db_: Session, source: schemas.VersionEdit, user_id = None): #pylint: disable=too-many-branches
@@ -245,6 +247,8 @@ def update_source(db_: Session, source: schemas.VersionEdit, user_id = None): #p
     sql_statement = sqlalchemy.text("ALTER TABLE IF EXISTS %s RENAME TO %s"%(
         source.sourceName, db_content.sourceName))
     db_.execute(sql_statement)
+    log.warning("User %s, renames table %s to %s", user_id, source.sourceName,
+        db_content.sourceName)
     db_models.create_dynamic_table(db_content.sourceName, db_content.contentType.contentType)
     db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine)
     return db_content
@@ -261,7 +265,7 @@ def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None, #
         query = query.filter(db_models.BibleBook.bookName == book_name.lower())
     return query.offset(skip).limit(limit).all()
 
-def get_commentaries(db_:Session, source_name, book_code=None, chapter=None, 
+def get_commentaries(db_:Session, source_name, book_code=None, chapter=None, #pylint: disable=too-many-arguments
     verse=None, last_verse=None, skip=0, limit=100):
     '''Fetches rows of commentries from the table specified by source_name'''
     model_cls = db_models.dynamicTables[source_name]

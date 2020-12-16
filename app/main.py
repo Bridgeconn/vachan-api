@@ -1,9 +1,7 @@
 '''Defines all API endpoints for the web server app'''
 
-import logging
 import os
 from typing import List
-from logging.handlers import RotatingFileHandler
 from fastapi import FastAPI, Query, Body, Depends
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -14,6 +12,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import crud
 import db_models
 import schemas
+from logger import log
 from database import SessionLocal, engine
 from custom_exceptions import GenericException, DatabaseException
 from custom_exceptions import NotAvailableException, AlreadyExistsException, TypeException
@@ -21,13 +20,6 @@ from custom_exceptions import NotAvailableException, AlreadyExistsException, Typ
 
 
 app = FastAPI()
-log = logging.getLogger(__name__)
-log.setLevel(os.environ.get("VACHAN_LOGGING_LEVEL", "WARNING"))
-handler = RotatingFileHandler('../logs/API_logs.log', maxBytes=10000000, backupCount=10)
-fmt = logging.Formatter(fmt='%(asctime)s|%(filename)s:%(lineno)d|%(levelname)-8s: %(message)s',
-    datefmt='%m/%d/%Y %I:%M:%S %p')
-handler.setFormatter(fmt)
-log.addHandler(handler)
 
 ######### Error Handling ##############
 
