@@ -6,6 +6,8 @@ class GenericException(Exception):
     def __init__(self, detail: str):
         super().__init__()
         self.name = "Error"
+        print("comes in GenericException")
+        print(detail)
         self.detail = detail
         self.status_code = 500
 

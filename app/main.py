@@ -1,6 +1,5 @@
 '''Defines all API endpoints for the web server app'''
 
-import os
 from typing import List
 from fastapi import FastAPI, Query, Body, Depends
 from fastapi.responses import JSONResponse
@@ -23,6 +22,16 @@ app = FastAPI()
 
 ######### Error Handling ##############
 
+@app.exception_handler(Exception)
+async def any_exception_handler(request, exc: Exception):
+    '''logs and returns error details'''
+    log.error("Request URL:%s %s,  from : %s",
+        request.method ,request.url.path, request.client.host)
+    log.error("%s: %s",'Error', str(exe))
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": 'Error', "details" : str(exc)},
+    )
 
 @app.exception_handler(GenericException)
 async def generic_exception_handler(request, exc: GenericException):
@@ -392,6 +401,9 @@ def add_source(source_obj : schemas.SourceCreate = Body(...),
     except NotAvailableException as exe:
         log.exception('Error in add_source')
         raise exe from exe
+    except GenericException as exe:
+        log.exception('Error in add_source')
+        raise exe from exe
     except Exception as exe:
         log.exception('Error in add_source')
         raise GenericException(str(exe)) from exe
@@ -625,9 +637,10 @@ def get_commentary(source_name: schemas.TableNamePattern, book_code: schemas.Boo
 def add_commentary(source_name : schemas.TableNamePattern, commentaries: List[schemas.CommentaryCreate] = Body(...),
     db_: Session = Depends(get_db)):
     '''Uploads a list of commentaries.
-    * Duplicate commentries are allowed.
-    That is, if new commentries are uploaded for verses which already have commentaries, 
-    they will be accepted, and added to database
+    * Duplicate commentries are allowed for same verses,
+    unless they have excalty same values for reference range.
+    That is, if commentary is present for (gen, 1, 1-10) and new entries are made for (gen, 1, 1-20) 
+    or (gen, 1, 5-10), they will be accepted and added to DB
     * Value 0 for verse and last_verse indicate chapter introduction and -1 indicate chapter epilogue.
     * Similarly 0 for chapter means book introduction and -1 for chapter means book epilogue,
     verses fields can be null in these cases'''
@@ -644,6 +657,9 @@ def add_commentary(source_name : schemas.TableNamePattern, commentaries: List[sc
         log.exception('Error in add_commentary')
         raise exe from exe
     except NotAvailableException as exe:
+        log.exception('Error in add_commentary')
+        raise exe from exe
+    except TypeException as exe:
         log.exception('Error in add_commentary')
         raise exe from exe
     except Exception as exe:
@@ -670,6 +686,9 @@ def edit_commentary(source_name: schemas.TableNamePattern,
         raise DatabaseException(exe) from exe
     except NotAvailableException as exe:
         log.exception('Error in edit_commentary')
+        raise exe from exe
+    except TypeException as exe:
+        log.exception('Error in add_commentary')
         raise exe from exe
     except Exception as exe:
         log.exception('Error in edit_commentary')

@@ -2,6 +2,7 @@
 
 from sqlalchemy import Column, Integer, String, JSON
 from sqlalchemy import Boolean, ForeignKey, DateTime
+from sqlalchemy import UniqueConstraint
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, Session
 from sqlalchemy.ext.declarative import declared_attr
@@ -76,6 +77,10 @@ class Commentary(): # pylint: disable=too-few-public-methods
     verseStart = Column('verse_start', Integer)
     verseEnd = Column('verse_end', Integer)
     commentary = Column('commentary', String)
+    __table_args__ = (
+        UniqueConstraint('book_id', 'chapter', 'verse_start', 'verse_end',
+            name='unique_reference_range'),
+                     )
 
 dynamicTables = {}
 def create_dynamic_table(source_name, content_type):
@@ -83,16 +88,14 @@ def create_dynamic_table(source_name, content_type):
     if content_type == 'commentary':
         dynamicTables[source_name] = type(
             source_name,(Commentary, Base,),{"__tablename__": source_name})
-        print("Creates a commentary table")
     else:
         raise GenericException("Table structure not defined for this content type")
 
 
 def map_all_dynamic_tables(db_: Session):
-    '''Fetches list of dymanic tables from sources table
+    '''Fetches list of dynamic tables from sources table
     and maps them according to their content types'''
 
     all_src = db_.query(Source).all()
-    print('comes in map_dynamic_tables')
     for src in all_src:
         create_dynamic_table(src.sourceName, src.contentType.contentType)

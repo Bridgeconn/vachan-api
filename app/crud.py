@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 import db_models
 import schemas
 from database import engine
-from custom_exceptions import NotAvailableException
+from custom_exceptions import NotAvailableException, TypeException
 from logger import log
 
 def get_content_types(db_: Session, content_type: str =None, skip: int = 0, limit: int = 100):
@@ -194,11 +194,11 @@ def create_source(db_: Session, source: schemas.SourceCreate, table_name, user_i
     if user_id:
         db_content.created_user = user_id
     db_.add(db_content)
-    db_.commit()
-    db_.refresh(db_content)
     db_models.create_dynamic_table(table_name, content_type.contentType)
     db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine)
     log.warning("User %s, creates a new table %s", user_id, db_content.sourceName)
+    db_.commit()
+    db_.refresh(db_content)
     return db_content
 
 def update_source(db_: Session, source: schemas.VersionEdit, user_id = None): #pylint: disable=too-many-branches
@@ -286,6 +286,8 @@ def upload_commentaries(db_: Session, source_name, commentaries, user_id=None):
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
         raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'commentary':
+        raise TypeException('The operation is supported only on commentaries')
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
     prev_book_code = None
@@ -317,6 +319,8 @@ def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
         raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'commentary':
+        raise TypeException('The operation is supported only on commentaries')
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
     prev_book_code = None
