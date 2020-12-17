@@ -146,13 +146,17 @@ class SourceEdit(BaseModel):
     metaData: dict = None
     active: bool = None
 
-BookCodePattern = constr(regex=r"^[a-z1-9][a-z][a-z]$")
+BookCodePattern = constr(regex=r"^[a-zA-Z1-9][a-zA-Z][a-zA-Z]$")
 
 class BibleBook(BaseModel):
     '''response object of Bible book'''
     bookId : int
     bookName : str
     bookCode : BookCodePattern
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
 
 class AudioBible(BaseModel):
     '''Response object of Audio Bible'''

@@ -48,3 +48,10 @@ CREATE TABLE public.sources (
     metadata jsonb NULL
 );
 
+CREATE TABLE public.bible_books_look_up (
+    book_id int PRIMARY KEY,
+    book_name text NOT NULL,
+    book_code char(3) NOT NULL
+);
+
+\COPY bible_books_look_up (book_id,book_name, book_code) FROM 'bible_books.csv' DELIMITER ',' CSV HEADER;

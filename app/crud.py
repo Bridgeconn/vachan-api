@@ -243,3 +243,15 @@ def update_source(db_: Session, source: schemas.VersionEdit, user_id = None): #p
         source.sourceName, db_content.sourceName))
     db_.execute(sql_statement)
     return db_content
+
+def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None, #pylint: disable=too-many-arguments
+    skip=0, limit=100):
+    '''Fetches rows of bible_books_lookup, with pagination and various filters'''
+    query = db_.query(db_models.BibleBook)
+    if book_id:
+        query = query.filter(db_models.BibleBook.bookId == book_id)
+    if book_code:
+        query = query.filter(db_models.BibleBook.bookCode == book_code.lower())
+    if book_name is not None:
+        query = query.filter(db_models.BibleBook.bookName == book_name.lower())
+    return query.offset(skip).limit(limit).all()

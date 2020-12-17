@@ -51,3 +51,11 @@ class Source(Base): # pylint: disable=too-few-public-methods
     metaData = Column('metadata', JSON)
     createdUser = Column('created_user', Integer)
     UpdatedUser = Column('last_updated_user', Integer)
+
+class BibleBook(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table bible_books_look_up in vachan DB(postgres)'''
+    __tablename__ = 'bible_books_look_up'
+
+    bookId = Column('book_id', Integer, primary_key=True)
+    bookName = Column('book_name', String)
+    bookCode = Column('book_code', String)

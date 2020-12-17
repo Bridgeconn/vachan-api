@@ -50,3 +50,6 @@ For every API endpoint, we perform certain common tests like checking for the co
 * Adds four columns created_at, created_user, last_updated_at, last_updated_user to track DB changes. the first two are to be set while source creation. The other two, when a user performs any action on the respective content tables.(These two columns are not for tracking updations on sources table rows but the actual content tables like hin_IRV_1_bible)
 * Renames the column status to active, which is used for soft delete and re-activation.
 
+### bible_books_look_up
+
+* Stores the bible book names, ids and codes in an external CSV file and copies to table as seed data. Ealier it was being added as 66 insert statements within the seed DB creation script.
