@@ -240,26 +240,26 @@ class CommentaryCreate(BaseModel):
     commentary: str
 
     @validator('verseStart', 'verseEnd')
-    def check_verses(cls, v):
+    def check_verses(cls, val): # pylint: disable=R0201 disable=E0213
         '''verse fields should be greater than or equal to -1'''
-        if v < -1:
+        if val < -1:
             raise ValueError('verse fields should be greater than or equal to -1')
-        return v
+        return val
 
     @validator('verseEnd')
-    def check_range(cls, v, values):
+    def check_range(cls, val, values): # pylint: disable=R0201 disable=E0213
         '''verse start should be less than or equal to verse end'''
         print(values)
-        if 'verseStart' in values and v < values['verseStart']:
+        if 'verseStart' in values and val < values['verseStart']:
             raise ValueError('verse start should be less than or equal to verse end')
-        return v
+        return val
 
     @validator('chapter')
-    def check_chapter(cls, v):
+    def check_chapter(cls, val): # pylint: disable=R0201 disable=E0213
         '''chapter fields should be greater than or equal to -1'''
-        if v < -1:
+        if val < -1:
             raise ValueError('chapter fields should be greater than or equal to -1')
-        return v
+        return val
 
 
 class CommentaryResponse(BaseModel):

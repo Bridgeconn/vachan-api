@@ -10,14 +10,14 @@ from sqlalchemy.ext.declarative import declared_attr
 from database import Base
 from custom_exceptions import GenericException
 
-class ContentType(Base): # pylint: disable=too-few-public-methods 
+class ContentType(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table content_types in vachan DB(postgres)'''
     __tablename__ = "content_types"
 
     contentId = Column('content_type_id', Integer, primary_key=True)
     contentType = Column('content_type', String, unique=True)
 
-class Language(Base): # pylint: disable=too-few-public-methods 
+class Language(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table languages in vachan DB(postgres)'''
     __tablename__ = 'languages'
 
@@ -68,10 +68,12 @@ class Commentary(): # pylint: disable=too-few-public-methods
     '''Corresponds to the dynamically created commentary tables in vachan Db(postgres)'''
     commentaryId = Column('commentary_id', Integer, primary_key=True, autoincrement=True)
     @declared_attr
-    def bookId(cls):
+    def book_id(cls): # pylint: disable=E0213
+        '''For modelling the bookId field in derived classes'''
         return Column('book_id', Integer, ForeignKey('bible_books_look_up.book_id'))
     @declared_attr
-    def book(cls):
+    def book(cls): # pylint: disable=E0213
+        '''For modelling the book field in derived classes'''
         return relationship(BibleBook)
     chapter = Column('chapter', Integer)
     verseStart = Column('verse_start', Integer)

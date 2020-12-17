@@ -305,7 +305,7 @@ def upload_commentaries(db_: Session, source_name, commentaries, user_id=None):
         if item.verseStart is not None and item.verseEnd is None:
             item.verseEnd = item.verseStart
         row = model_cls(
-            bookId = book.bookId,
+            book_id = book.bookId,
             chapter = item.chapter,
             verseStart = item.verseStart,
             verseEnd = item.verseEnd,
@@ -319,7 +319,7 @@ def upload_commentaries(db_: Session, source_name, commentaries, user_id=None):
     return db_content
 
 def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
-    '''Update rows, that matches book, chapter and verse range fields in the commentary table 
+    '''Update rows, that matches book, chapter and verse range fields in the commentary table
     specified by source_name'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
@@ -338,7 +338,7 @@ def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
             if not book:
                 raise NotAvailableException('Bible Book code, %s, not found in database')
         row = db_.query(model_cls).filter(
-            model_cls.bookId == book.bookId,
+            model_cls.book_id == book.bookId,
             model_cls.chapter == item.chapter,
             model_cls.verseStart == item.verseStart,
             model_cls.verseEnd == item.verseEnd).first()

@@ -27,7 +27,7 @@ async def any_exception_handler(request, exc: Exception):
     '''logs and returns error details'''
     log.error("Request URL:%s %s,  from : %s",
         request.method ,request.url.path, request.client.host)
-    log.error("%s: %s",'Error', str(exe))
+    log.error("%s: %s",'Error', str(exc))
     return JSONResponse(
         status_code=exc.status_code,
         content={"error": 'Error', "details" : str(exc)},
@@ -646,7 +646,7 @@ def add_commentary(source_name : schemas.TableNamePattern, commentaries: List[sc
     '''Uploads a list of commentaries.
     * Duplicate commentries are allowed for same verses,
     unless they have excalty same values for reference range.
-    That is, if commentary is present for (gen, 1, 1-10) and new entries are made for (gen, 1, 1-20) 
+    That is, if commentary is present for (gen, 1, 1-10) and new entries are made for (gen, 1, 1-20)
     or (gen, 1, 5-10), they will be accepted and added to DB
     * Value 0 for verse and last_verse indicate chapter introduction and -1 indicate chapter epilogue.
     * Similarly 0 for chapter means book introduction and -1 for chapter means book epilogue,
@@ -680,7 +680,7 @@ def add_commentary(source_name : schemas.TableNamePattern, commentaries: List[sc
     status_code=201, tags=["Commentaries"])
 def edit_commentary(source_name: schemas.TableNamePattern,
     commentaries: List[schemas.CommentaryCreate] = Body(...), db_: Session = Depends(get_db)):
-    ''' Changes the commentary field to the given value in the row selected using 
+    ''' Changes the commentary field to the given value in the row selected using
     book, chapter, verseStart and verseEnd values'''
     log.info('In edit_commentary')
     log.debug('source_name: %s, commentaries: %s',source_name, commentaries)

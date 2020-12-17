@@ -22,7 +22,7 @@ def check_post(data: list):
     '''prior steps and post attempt, without checking the response'''
     version_data = {
         "versionAbbreviation": "TTT",
-        "versionName": "test version",
+        "versionName": "test version for commentaries",
     }
     add_version(version_data)
     source_data = {
@@ -30,7 +30,7 @@ def check_post(data: list):
         "language": "hin",
         "version": "TTT",
         "revision": 1,
-        "year": 2020,
+        "year": 2000,
         "license": "MIT",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
@@ -54,7 +54,7 @@ def test_post_default():
     		'commentary':'Chapter Epilogue. God completes creation in 6 days.'},
     	{'bookCode':'gen', 'chapter':-1, 'commentary':'book Epilogue.'}
     ]
-    response, source_name = check_post(data)
+    response = check_post(data)[0]
     assert response.status_code == 201
     assert response.json()['message'] == "Commentaries added successfully"
     assert len(data) == len(response.json()['data'])
@@ -66,7 +66,7 @@ def test_post_default():
 def test_post_duplicate():
     '''Negative test to add two commentaries with same reference range'''
     data = [
-    	{'bookCode':'gen', 'chapter':1, 'verseStart':1, 
+    	{'bookCode':'gen', 'chapter':1, 'verseStart':1,
         "verseEnd":1, 'commentary':'first verse of Genesis'}
     ]
     resp, source_name = check_post(data)
@@ -83,7 +83,7 @@ def test_post_incorrect_data():
     ''' tests to check input validation in post API'''
 
     # single data object instead of list
-    data = {'bookCode':'gen', 'chapter':1, 'verseStart':1, 
+    data = {'bookCode':'gen', 'chapter':1, 'verseStart':1,
         "verseEnd":1, 'commentary':'first verse of Genesis'}
     resp, source_name = check_post(data)
     assert_input_validation_error(resp)
@@ -91,14 +91,14 @@ def test_post_incorrect_data():
     # data object with missing mandatory fields
     headers = {"contentType": "application/json", "accept": "application/json"}
     data = [
-        {'chapter':1, 'verseStart':1, 
+        {'chapter':1, 'verseStart':1,
         "verseEnd":1, 'commentary':'first verse of Genesis'}
     ]
     response = client.post(UNIT_URL+source_name, headers=headers, json=data)
     assert_input_validation_error(response)
 
     data = [
-        {'bookCode':'gen', 'verseStart':1, 
+        {'bookCode':'gen', 'verseStart':1,
         "verseEnd":1, 'commentary':'first verse of Genesis'}
     ]
     response = client.post(UNIT_URL+source_name, headers=headers, json=data)
@@ -113,14 +113,14 @@ def test_post_incorrect_data():
     # incorrect data values in fields
 
     data = [
-        {'bookCode':'genesis', 'chapter':1, 'verseStart':1, 
+        {'bookCode':'genesis', 'chapter':1, 'verseStart':1,
         "verseEnd":1, 'commentary':'first verse of Genesis'}
     ]
     response = client.post(UNIT_URL+source_name, headers=headers, json=data)
     assert_input_validation_error(response)
 
     data = [
-        {'bookCode':'gen', 'chapter':'introduction', 'verseStart':1, 
+        {'bookCode':'gen', 'chapter':'introduction', 'verseStart':1,
         "verseEnd":1, 'commentary':'first verse of Genesis'}
     ]
     response = client.post(UNIT_URL+source_name, headers=headers, json=data)
@@ -135,7 +135,7 @@ def test_post_incorrect_data():
 
 
     data = [
-        {'bookCode':'gen', 'chapter':1, 'verseStart':10, 
+        {'bookCode':'gen', 'chapter':1, 'verseStart':10,
         "verseEnd":1, 'commentary':'first verse of Genesis'}
     ]
     response = client.post(UNIT_URL+source_name, headers=headers, json=data)
@@ -143,11 +143,11 @@ def test_post_incorrect_data():
 
     source_name1 = source_name.replace('commentary', 'bible')
     response = client.post(UNIT_URL+source_name1, headers=headers, json=[])
-    response.status_code == 404
+    assert response.status_code == 404
 
     source_name2 = source_name.replace('1', '2')
     response = client.post(UNIT_URL+source_name2, headers=headers, json=[])
-    response.status_code == 404
+    assert response.status_code == 404
 
 def test_get_after_data_upload():
     '''Add some data into the table and do all get tests'''
@@ -163,13 +163,13 @@ def test_get_after_data_upload():
             'commentary':'Chapter Epilogue. God completes creation in 6 days.'},
         {'bookCode':'gen', 'chapter':-1, 'commentary':'book Epilogue.'},
 
-        {'bookCode':'exo', 'chapter':1, 'verseStart':1, 
+        {'bookCode':'exo', 'chapter':1, 'verseStart':1,
             "verseEnd":1, 'commentary':'first verse of Exodus'},
-        {'bookCode':'exo', 'chapter':1, 'verseStart':1, 
+        {'bookCode':'exo', 'chapter':1, 'verseStart':1,
         "verseEnd":10, 'commentary':'first para of Exodus'},
-        {'bookCode':'exo', 'chapter':1, 'verseStart':1, 
+        {'bookCode':'exo', 'chapter':1, 'verseStart':1,
         "verseEnd":25, 'commentary':'first few paras of Exodus'},
-        {'bookCode':'exo', 'chapter':1, 'verseStart':20, 
+        {'bookCode':'exo', 'chapter':1, 'verseStart':20,
         "verseEnd":25, 'commentary':'a middle para of Exodus'},
         {'bookCode':'exo', 'chapter':0, 'commentary':'Book intro to Exodus'}
     ]
@@ -239,6 +239,10 @@ def test_get_after_data_upload():
     assert response.status_code == 200
     assert len(response.json()) == 1
 
+    # not available
+    response = client.get(UNIT_URL+source_name+'?book_code=rev&chapter=1&verse=3&last_verse=13')
+    assert_not_available_content(response)
+
 def test_get_incorrect_data():
     '''Check for input validations in get'''
     source_name = 'hin_TTT'
@@ -262,6 +266,7 @@ def test_get_incorrect_data():
     assert_input_validation_error(response)
 
     resp, source_name = check_post([])
+    assert resp.status_code == 201
     source_name = source_name.replace('commentary', 'bible')
     response = client.get(UNIT_URL+source_name)
     assert response.status_code == 404
@@ -310,27 +315,28 @@ def test_put_after_upload():
 def test_put_incorrect_data():
     ''' tests to check input validation in put API'''
 
-    post_data = [{'bookCode':'gen', 'chapter':1, 'verseStart':1, 
+    post_data = [{'bookCode':'gen', 'chapter':1, 'verseStart':1,
         "verseEnd":1, 'commentary':'first verse of Genesis'}]
     resp, source_name = check_post(post_data)
+    assert resp.status_code == 201
 
     # single data object instead of list
     headers = {"contentType": "application/json", "accept": "application/json"}
-    data = {'bookCode':'gen', 'chapter':1, 'verseStart':1, 
+    data = {'bookCode':'gen', 'chapter':1, 'verseStart':1,
         "verseEnd":1, 'commentary':'new commentary'}
     response = client.put(UNIT_URL+source_name, headers=headers, json=data)
     assert_input_validation_error(response)
 
     # data object with missing mandatory fields
     data = [
-        {'chapter':1, 'verseStart':1, 
+        {'chapter':1, 'verseStart':1,
         "verseEnd":1, 'commentary':'first verse of Genesis'}
     ]
     response = client.put(UNIT_URL+source_name, headers=headers, json=data)
     assert_input_validation_error(response)
 
     data = [
-        {'bookCode':'gen', 'verseStart':1, 
+        {'bookCode':'gen', 'verseStart':1,
         "verseEnd":1, 'commentary':'first verse of Genesis'}
     ]
     response = client.put(UNIT_URL+source_name, headers=headers, json=data)
@@ -345,14 +351,14 @@ def test_put_incorrect_data():
     # incorrect data values in fields
 
     data = [
-        {'bookCode':'genesis', 'chapter':1, 'verseStart':1, 
+        {'bookCode':'genesis', 'chapter':1, 'verseStart':1,
         "verseEnd":1, 'commentary':'first verse of Genesis'}
     ]
     response = client.put(UNIT_URL+source_name, headers=headers, json=data)
     assert_input_validation_error(response)
 
     data = [
-        {'bookCode':'gen', 'chapter':'introduction', 'verseStart':1, 
+        {'bookCode':'gen', 'chapter':'introduction', 'verseStart':1,
         "verseEnd":1, 'commentary':'first verse of Genesis'}
     ]
     response = client.put(UNIT_URL+source_name, headers=headers, json=data)
@@ -367,7 +373,7 @@ def test_put_incorrect_data():
 
 
     data = [
-        {'bookCode':'gen', 'chapter':1, 'verseStart':10, 
+        {'bookCode':'gen', 'chapter':1, 'verseStart':10,
         "verseEnd":1, 'commentary':'first verse of Genesis'}
     ]
     response = client.put(UNIT_URL+source_name, headers=headers, json=data)
@@ -375,8 +381,8 @@ def test_put_incorrect_data():
 
     source_name1 = source_name.replace('commentary', 'bible')
     response = client.put(UNIT_URL+source_name1, headers=headers, json=[])
-    response.status_code == 404
+    assert response.status_code == 404
 
     source_name2 = source_name.replace('1', '2')
     response = client.put(UNIT_URL+source_name2, headers=headers, json=[])
-    response.status_code == 404
+    assert response.status_code == 404
