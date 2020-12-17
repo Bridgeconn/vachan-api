@@ -252,8 +252,8 @@ def test_post_duplicate():
         "version": "TTT",
         "year": 2020
     }
-    check_post(data)
     headers = {"contentType": "application/json", "accept": "application/json"}
+    check_post(data)
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert response.status_code == 409
     assert response.json()['error'] == "Already Exists"
