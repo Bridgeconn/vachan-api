@@ -195,7 +195,7 @@ def create_source(db_: Session, source: schemas.SourceCreate, table_name, user_i
         db_content.created_user = user_id
     db_.add(db_content)
     db_models.create_dynamic_table(table_name, content_type.contentType)
-    db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine)
+    db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine, checkfirst=True)
     log.warning("User %s, creates a new table %s", user_id, db_content.sourceName)
     db_.commit()
     db_.refresh(db_content)
@@ -268,13 +268,17 @@ def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None, #
 def get_commentaries(db_:Session, source_name, book_code=None, chapter=None, #pylint: disable=too-many-arguments
     verse=None, last_verse=None, skip=0, limit=100):
     '''Fetches rows of commentries from the table specified by source_name'''
+    if source_name not in db_models.dynamicTables:
+        raise NotAvailableException('%s not found in database.'%source_name)
+    if not source_name.endswith('commentary'):
+        raise TypeException('The operation is supported only on commentaries')
     model_cls = db_models.dynamicTables[source_name]
     query = db_.query(model_cls)
     if book_code:
-        query = query.filter(model_cls.book.has(bookCode=book_code))
-    if chapter:
+        query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
+    if chapter is not None:
         query = query.filter(model_cls.chapter == chapter)
-    if verse:
+    if verse is not None:
         if last_verse is None:
             last_verse = verse
         query = query.filter(model_cls.verseStart <= verse, model_cls.verseEnd >= last_verse)
@@ -294,10 +298,12 @@ def upload_commentaries(db_: Session, source_name, commentaries, user_id=None):
     for item in commentaries:
         if item.bookCode != prev_book_code:
             book = db_.query(db_models.BibleBook).filter(
-                db_models.BibleBook.bookCode == item.bookCode ).first()
+                db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
             prev_book_code = item.bookCode
             if not book:
                 raise NotAvailableException('Bible Book code, %s, not found in database')
+        if item.verseStart is not None and item.verseEnd is None:
+            item.verseEnd = item.verseStart
         row = model_cls(
             bookId = book.bookId,
             chapter = item.chapter,
@@ -327,7 +333,7 @@ def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
     for item in commentaries:
         if item.bookCode != prev_book_code:
             book = db_.query(db_models.BibleBook).filter(
-                db_models.BibleBook.bookCode == item.bookCode ).first()
+                db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
             prev_book_code = item.bookCode
             if not book:
                 raise NotAvailableException('Bible Book code, %s, not found in database')

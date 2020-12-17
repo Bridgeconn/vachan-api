@@ -608,7 +608,8 @@ def get_bible_book(book_id: int = None, book_code: schemas.BookCodePattern = Non
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Commentaries"])
 def get_commentary(source_name: schemas.TableNamePattern, book_code: schemas.BookCodePattern = None, #pylint: disable=too-many-arguments
-    chapter: int = None, verse: int = None, last_verse: int = None,
+    chapter: int = Query(None, ge=-1), verse: int = Query(None, ge=-1),
+    last_verse: int = Query(None, ge=-1),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
     '''Fetches commentries under the specified source.
     Using the params bookCode, chapter, and verse the result set can be filtered as per need, like in the /v2/bibles/{sourceName}/verses API
@@ -626,6 +627,12 @@ def get_commentary(source_name: schemas.TableNamePattern, book_code: schemas.Boo
     except SQLAlchemyError as exe:
         log.exception('Error in get_commentary')
         raise DatabaseException(exe) from exe
+    except NotAvailableException as exe:
+        log.exception('Error in get_commentary')
+        raise exe from exe
+    except TypeException as exe:
+        log.exception('Error in get_commentary')
+        raise exe from exe
     except Exception as exe:
         log.exception('Error in get_commentary')
         raise GenericException(str(exe)) from exe

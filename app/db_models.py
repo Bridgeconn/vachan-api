@@ -81,6 +81,7 @@ class Commentary(): # pylint: disable=too-few-public-methods
         UniqueConstraint('book_id', 'chapter', 'verse_start', 'verse_end',
             name='unique_reference_range'),
                      )
+    __table_args__ = {'extend_existing': True}
 
 dynamicTables = {}
 def create_dynamic_table(source_name, content_type):
