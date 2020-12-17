@@ -12,11 +12,24 @@ The maximum file size for log file is set as 10000000 bytes. After which logging
 
 ## Testing
 
-Adds seperate  set of tests for each API endpoint. Has both positive and negative testcases in each set.
+Adds tests for each API endpoint. Has both positive and negative testcases for each one. The tests relating to one set of APIs(normally those APIs that do GET, PUT and POST operations on one type of DB table) are added per test file, for having modularity.
 
-For testing, it connects to the original database, but rolls back all the changes after each test function. So each test is independant of each other from a DB perspective.
+For testing, it connects to the original database, but rolls back all the changes after each test function. So each test fuction is independant of each other from a DB perspective. This allows us to run tests selectively.
 
 For every API endpoint, we perform certain common tests like checking for the correct response object with the default parameters, validation of each of the parameters based on their types, value, etc plus more tests based on itsown bussiness logic.
+
+#### Issue in dynamic table creation
+
+For testing, we normally use a separate database transaction, which is rolled back after each test function, there by, undoing all DB operations we performed during the test.
+
+In the testing of APIs of dynamic tables(bibles, commentaries etc), the source creation APIs, called by the test client, create new tables in DB. These table creation operations are performed not as transactions attached to the open session, but are bound to the engine(that is how it is done in SQLAlchemy), which makes it not possible to undo by rolling back the session or transaction. 
+
+The effect it makes is that, the tables thus created would remain in the DB even after testing. They will be empty as we are able to roll back all insert or update operations on it. We have created the table creation procedure such that, this wont throw an error when a new table has to be created in same name(when we run the same test next time). But it does show a warning like shown below when we create a new table of same name. 
+
+```SAWarning: This declarative base already contains a class with the same class name and module name as db_models.hin_TTT_1_commentary, and will be replaced in the string-lookup table.```
+
+If we are running tests on local machines, or on git actions, I think this can be overlooked. It will only be an issue if we are to run the tests on (staging) servers. Then also it wont create any issue that prevents the normal functioning of the app, just that a few empty tables will be left as residue in the staging database.
+
 
 ## Database Changes
 
@@ -53,3 +66,9 @@ For every API endpoint, we perform certain common tests like checking for the co
 ### bible_books_look_up
 
 * Stores the bible book names, ids and codes in an external CSV file and copies to table as seed data. Ealier it was being added as 66 insert statements within the seed DB creation script.
+* We are now using book_id = 41 for Matthew, instead of 40 we used in version 1.This will increment all book_ids in NT by one. This is done as per [the standard followed in USFM]()https://github.com/ubsicap/usfm/blob/master/docs/identification/books.rst
+
+### commentaries table
+
+* we were using one `verse` field in V1. Now we have `verse_start` and `verse_end` in its place. 
+This is done because, from the data we have on V1, it is clear that all entries in them have verse ranges instead of one verse. We were using `text` type for that field and indicating range as `1-10` separated by `-`. The only exceptions were in chapter introductions which has `0` for verse field. As querying this text field is less efficient in terms of performance as well as expressibility, it has been modiifed as two `int` fields. We continue to use `0` to indicate chapter intro and `-1` to indicate chapter epilogue for `verseStart` and `verseEnd`.
