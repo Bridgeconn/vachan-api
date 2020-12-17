@@ -1,67 +1,67 @@
 book_id,book_name,book_code
-1,"genesis","gen"
-2,"exodus","exo"
-3,"leviticus","lev"
-4,"numbers","num"
-5,"deuteronomy","deu"
-6,"joshua","jos"
-7,"judges","jdg"
-8,"ruth","rut"
-9,"1 samuel","1sa"
-10,"2 samuel","2sa"
-11,"1 kings","1ki"
-12,"2 kings","2ki"
-13,"1 chronicles","1ch"
-14,"2 chronicles","2ch"
-15,"ezra","ezr"
-16,"nehemiah","neh"
-17,"esther","est"
-18,"job","job"
-19,"psalms","psa"
-20,"proverbs","pro"
-21,"ecclesiastes","ecc"
-22,"song of solomon","sng"
-23,"isaiah","isa"
-24,"jeremiah","jer"
-25,"lamentations","lam"
-26,"ezekiel","ezk"
-27,"daniel","dan"
-28,"hosea","hos"
-29,"joel","jol"
-30,"amos","amo"
-31,"obadiah","oba"
-32,"jonah","jon"
-33,"micah","mic"
-34,"nahum","nam"
-35,"habakkuk","hab"
-36,"zephaniah","zep"
-37,"haggai","hag"
-38,"zechariah","zec"
-39,"malachi","mal"
-40,"matthew","mat"
-41,"mark","mrk"
-42,"luke","luk"
-43,"john","jhn"
-44,"acts","act"
-45,"romans","rom"
-46,"1 corinthians","1co"
-47,"2 corinthians","2co"
-48,"galatians","gal"
-49,"ephesians","eph"
-50,"philippians","php"
-51,"colossians","col"
-52,"1 thessalonians","1th"
-53,"2 thessalonians","2th"
-54,"1 timothy","1ti"
-55,"2 timothy","2ti"
-56,"titus","tit"
-57,"philemon","phm"
-58,"hebrews","heb"
-59,"james","jas"
-60,"1 peter","1pe"
-61,"2 peter","2pe"
-62,"1 john","1jn"
-63,"2 john","2jn"
-64,"3 john","3jn"
-65,"jude","jud"
-66,"revelation","rev"
+1,genesis,gen
+2,exodus,exo
+3,leviticus,lev
+4,numbers,num
+5,deuteronomy,deu
+6,joshua,jos
+7,judges,jdg
+8,ruth,rut
+9,1 samuel,1sa
+10,2 samuel,2sa
+11,1 kings,1ki
+12,2 kings,2ki
+13,1 chronicles,1ch
+14,2 chronicles,2ch
+15,ezra,ezr
+16,nehemiah,neh
+17,esther,est
+18,job,job
+19,psalms,psa
+20,proverbs,pro
+21,ecclesiastes,ecc
+22,song of solomon,sng
+23,isaiah,isa
+24,jeremiah,jer
+25,lamentations,lam
+26,ezekiel,ezk
+27,daniel,dan
+28,hosea,hos
+29,joel,jol
+30,amos,amo
+31,obadiah,oba
+32,jonah,jon
+33,micah,mic
+34,nahum,nam
+35,habakkuk,hab
+36,zephaniah,zep
+37,haggai,hag
+38,zechariah,zec
+39,malachi,mal
+41,matthew,mat
+42,mark,mrk
+43,luke,luk
+44,john,jhn
+45,acts,act
+46,romans,rom
+47,1 corinthians,1co
+48,2 corinthians,2co
+49,galatians,gal
+50,ephesians,eph
+51,philippians,php
+52,colossians,col
+53,1 thessalonians,1th
+54,2 thessalonians,2th
+55,1 timothy,1ti
+56,2 timothy,2ti
+57,titus,tit
+58,philemon,phm
+59,hebrews,heb
+60,james,jas
+61,1 peter,1pe
+62,2 peter,2pe
+63,1 john,1jn
+64,2 john,2jn
+65,3 john,3jn
+66,jude,jud
+67,revelation,rev
