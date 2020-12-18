@@ -27,9 +27,13 @@ async def any_exception_handler(request, exc: Exception):
     '''logs and returns error details'''
     log.error("Request URL:%s %s,  from : %s",
         request.method ,request.url.path, request.client.host)
-    log.error("%s: %s",'Error', str(exc))
+    log.exception("%s: %s",'Error', str(exc))
+    if status_code in exc:
+        status_code=exc.status_code
+    else:
+        status_code = 500
     return JSONResponse(
-        status_code=exc.status_code,
+        status_code =status_code,
         content={"error": 'Error', "details" : str(exc)},
     )
 
