@@ -240,8 +240,15 @@ class CommentaryCreate(BaseModel):
     commentary: str
 
     @validator('verseStart', 'verseEnd')
-    def check_verses(cls, val): # pylint: disable=R0201 disable=E0213
+    def check_verses(cls, val, values): # pylint: disable=R0201 disable=E0213
         '''verse fields should be greater than or equal to -1'''
+        if 'chapter' in values and values['chapter'] in [-1, 0]:
+            if val not in [-1, 0, None]:
+                raise ValueError('verse fields should be 0, for book introductions and epilogues')
+            val = 0
+        if val is None:
+            raise ValueError('verse fields must have a value\
+                except for book introduction and epilogue')
         if val < -1:
             raise ValueError('verse fields should be greater than or equal to -1')
         return val
@@ -249,7 +256,6 @@ class CommentaryCreate(BaseModel):
     @validator('verseEnd')
     def check_range(cls, val, values): # pylint: disable=R0201 disable=E0213
         '''verse start should be less than or equal to verse end'''
-        print(values)
         if 'verseStart' in values and val < values['verseStart']:
             raise ValueError('verse start should be less than or equal to verse end')
         return val
