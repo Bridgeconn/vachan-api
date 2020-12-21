@@ -247,8 +247,8 @@ class CommentaryCreate(BaseModel):
                 raise ValueError('verse fields should be 0, for book introductions and epilogues')
             val = 0
         if val is None:
-            raise ValueError('verse fields must have a value\
-                except for book introduction and epilogue')
+            raise ValueError('verse fields must have a value, '+ 
+                'except for book introduction and epilogue')
         if val < -1:
             raise ValueError('verse fields should be greater than or equal to -1')
         return val
@@ -264,7 +264,7 @@ class CommentaryCreate(BaseModel):
     def check_chapter(cls, val): # pylint: disable=R0201 disable=E0213
         '''chapter fields should be greater than or equal to -1'''
         if val < -1:
-            raise ValueError('chapter fields should be greater than or equal to -1')
+            raise ValueError('chapter field should be greater than or equal to -1')
         return val
 
 
