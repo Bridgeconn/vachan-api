@@ -247,7 +247,7 @@ class CommentaryCreate(BaseModel):
                 raise ValueError('verse fields should be 0, for book introductions and epilogues')
             val = 0
         if val is None:
-            raise ValueError('verse fields must have a value, '+ 
+            raise ValueError('verse fields must have a value, '+
                 'except for book introduction and epilogue')
         if val < -1:
             raise ValueError('verse fields should be greater than or equal to -1')
