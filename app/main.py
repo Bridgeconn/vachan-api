@@ -723,6 +723,7 @@ def get_dictionary_word(source_name: schemas.TableNamePattern, search_word: str 
     * All words starting with a letter
     * All words starting with a substring
     * An exact word search, giving the whole word and setting exactMatch to True
+    * Based on any key value pair in details, which should be specified as a dict/JSON like string
     * By setting the wordListOnly flag to True, only the words would be inlcuded
      in the return object, without the details
     * skip=n: skips the first n objects in return list
@@ -805,17 +806,6 @@ def edit_dictionary_word(source_name: schemas.TableNamePattern,
     except Exception as exe:
         log.exception('Error in edit_dictionary_word')
         raise GenericException(str(exe)) from exe
-
-
-
-# ## ### NOTE ####
-# # Currently we only have Strongs numbers as a dictionary table.
-# # But we can have a wide variety of lexical collections with varying informations required to be stored in the DB.
-# # So suggesting a flexible table structure and APIs to accomodate future needs.
-# # ##### DB Change suggested ######
-# # 1. Have 3 columns word_id, word and details
-# #     details column will be of JSON datatype and will have
-# #     all the additional info we have in that collection(for each word) as key-value pairs
 
 
 # # ###########################################
