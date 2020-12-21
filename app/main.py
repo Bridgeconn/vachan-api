@@ -716,7 +716,7 @@ def edit_commentary(source_name: schemas.TableNamePattern,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Dictionaries"])
 def get_dictionary_word(source_name: schemas.TableNamePattern, search_word: str = None, #pylint: disable=too-many-arguments
-    exact_match: bool = False, word_list_only: bool = False,
+    exact_match: bool = False, word_list_only: bool = False, details:str = None,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
     '''fetches list of dictionary words and all available details about them.
     Using the searchIndex appropriately, it is possible to get
@@ -728,11 +728,12 @@ def get_dictionary_word(source_name: schemas.TableNamePattern, search_word: str 
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n'''
     log.info('In get_dictionary_word')
-    log.debug('source_name: %s, search_word: %s, exact_match: %s, word_list_only:%s, \
-        skip: %s, limit: %s', source_name, search_word, exact_match, word_list_only, skip, limit)
+    log.debug('source_name: %s, search_word: %s, exact_match: %s, word_list_only:%s, details:%s\
+        skip: %s, limit: %s', source_name, search_word, exact_match, word_list_only, details,
+        skip, limit)
     try:
         return crud.get_dictionary_words(db_, source_name, search_word, exact_match=exact_match,
-            word_list_only=word_list_only, skip = skip, limit = limit)
+            word_list_only=word_list_only, details=details, skip = skip, limit = limit)
     except SQLAlchemyError as exe:
         log.exception('Error in get_dictionary_word')
         raise DatabaseException(exe) from exe

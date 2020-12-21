@@ -144,6 +144,19 @@ def test_get_after_data_upload():
     for item in response.json():
         assert item['details'] is None
 
+    # with details
+    response = client.get(UNIT_URL+source_name+'?details={"type":"odd"}')
+    assert response.status_code == 200
+    assert len(response.json()) == 3
+    for item in response.json():
+        assert item['details']['type'] == "odd"
+
+    response = client.get(UNIT_URL+source_name+'?details={"type":"even"}')
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+    for item in response.json():
+        assert item['details']['type'] == "even"
+
 def test_get_incorrect_data():
     '''Check for input validations in get'''
 

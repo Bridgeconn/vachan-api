@@ -355,8 +355,8 @@ def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
     db_.refresh(source_db_content)
     return db_content
 
-def get_dictionary_words(db_:Session, source_name, search_word = None, exact_match=False,  #pylint: disable=too-many-arguments
-    word_list_only=False, skip=0, limit=100):
+def get_dictionary_words(db_:Session, source_name, search_word = None, details = None,  #pylint: disable=too-many-arguments
+    exact_match=False, word_list_only=False, skip=0, limit=100):
     '''Fetches rows of dictionary from the table specified by source_name'''
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
@@ -371,6 +371,10 @@ def get_dictionary_words(db_:Session, source_name, search_word = None, exact_mat
         query = query.filter(model_cls.word == search_word)
     elif search_word:
         query = query.filter(model_cls.word.like(search_word+"%"))
+    if details:
+        det = json.loads(details)
+        for key in det:
+            query = query.filter(model_cls.details.op('->>')(key) == det[key])
     return query.offset(skip).limit(limit).all()
 
 def upload_dictionary_words(db_: Session, source_name, dictionary_words, user_id=None):
