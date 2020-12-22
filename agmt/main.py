@@ -381,10 +381,10 @@ def autographamtOrganisations():
 @check_token
 def createOrganisations():
 	req = request.get_json(True)
-	organisationName = req["organisationName"]
-	organisationAddress = req["organisationAddress"]
+	organisationName = req["organisationName"].strip()
+	organisationAddress = req["organisationAddress"].strip()
 	organisationPhone = req["organisationPhone"]
-	organisationEmail = req["organisationEmail"]
+	organisationEmail = req["organisationEmail"].strip()
 	email = request.email
 	try:
 		connection = get_db()
@@ -392,8 +392,7 @@ def createOrganisations():
 
 		cursor.execute("select user_id from autographamt_users where email_id=%s", (email,))
 		userId = cursor.fetchone()[0]
-		cursor.execute("select status from autographamt_organisations where organisation_name=%s and \
-			organisation_email=%s", (organisationName, organisationEmail))
+		cursor.execute("select status from autographamt_organisations where organisation_name=%s ", (organisationName, ))
 		rst = cursor.fetchone()
 		if not rst:
 			cursor.execute("insert into autographamt_organisations (organisation_name, \
@@ -405,8 +404,7 @@ def createOrganisations():
 		else:
 			status = rst[0]
 			if status == False:
-				cursor.execute("update autographamt_organisations set status=true, verified=false where organisation_name=%s and \
-					organisation_email=%s", (organisationName, organisationEmail,))
+				cursor.execute("update autographamt_organisations set status=true, verified=false where organisation_name=%s", (organisationName,))
 				connection.commit()
 				cursor.close()
 				return '{"success":true, "message":"Organisation re-activation request sent"}'
