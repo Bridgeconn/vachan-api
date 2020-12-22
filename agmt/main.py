@@ -392,7 +392,8 @@ def createOrganisations():
 
 		cursor.execute("select user_id from autographamt_users where email_id=%s", (email,))
 		userId = cursor.fetchone()[0]
-		cursor.execute("select status from autographamt_organisations where organisation_name=%s ", (organisationName, ))
+		cursor.execute("select status from autographamt_organisations where organisation_name=%s and \
+			organisation_email=%s", (organisationName, organisationEmail))
 		rst = cursor.fetchone()
 		if not rst:
 			cursor.execute("insert into autographamt_organisations (organisation_name, \
@@ -404,7 +405,8 @@ def createOrganisations():
 		else:
 			status = rst[0]
 			if status == False:
-				cursor.execute("update autographamt_organisations set status=true, verified=false where organisation_name=%s", (organisationName,))
+				cursor.execute("update autographamt_organisations set status=true, verified=false where organisation_name=%s and \
+					organisation_email=%s", (organisationName, organisationEmail,))
 				connection.commit()
 				cursor.close()
 				return '{"success":true, "message":"Organisation re-activation request sent"}'
