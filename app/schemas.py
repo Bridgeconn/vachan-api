@@ -286,15 +286,24 @@ class CommentaryUpdateResponse(BaseModel):
     data: List[CommentaryResponse] = None
 
 LetterPattern = constr(regex=r'^\w$')
-class DictionaryWord(BaseModel):
+class DictionaryWordCreate(BaseModel):
+    '''Upload object of dictionary word'''
+    word: str
+    details: dict = None
+
+class DictionaryWordResponse(BaseModel):
     '''Response object of dictionary word'''
     word: str
     details: dict = None
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
 
 class DictionaryUpdateResponse(BaseModel):
     '''Response object of dictionary word update'''
     message: str
-    data: List[DictionaryWord] = None
+    data: List[DictionaryWordResponse] = None
 
 class Infographic(BaseModel):
     '''Response object of infographics'''

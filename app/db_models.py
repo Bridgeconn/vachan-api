@@ -84,12 +84,23 @@ class Commentary(): # pylint: disable=too-few-public-methods
         {'extend_existing': True}
                      )
 
+class Dictionary(): # pylint: disable=too-few-public-methods
+    '''Corresponds to the dynamically created dictionary tables in vachan Db(postgres)'''
+    wordId = Column('word_id', Integer, primary_key=True, autoincrement=True)
+    word = Column('word', String, unique=True)
+    details = Column('details', JSON)
+    __table_args__ = {'extend_existing': True}
+
+
 dynamicTables = {}
 def create_dynamic_table(source_name, content_type):
     '''To map or create one dynamic table based on the content Type'''
     if content_type == 'commentary':
         dynamicTables[source_name] = type(
             source_name,(Commentary, Base,),{"__tablename__": source_name})
+    elif content_type == 'dictionary':
+        dynamicTables[source_name] = type(
+            source_name,(Dictionary, Base,),{"__tablename__": source_name})
     else:
         raise GenericException("Table structure not defined for this content type")
 

@@ -353,5 +353,72 @@ def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
     source_db_content.updatedUser = user_id
     db_.commit()
     db_.refresh(source_db_content)
-    print(source_db_content.__dict__)
+    return db_content
+
+def get_dictionary_words(db_:Session, source_name, search_word = None, details = None,  #pylint: disable=too-many-arguments
+    exact_match=False, word_list_only=False, skip=0, limit=100):
+    '''Fetches rows of dictionary from the table specified by source_name'''
+    if source_name not in db_models.dynamicTables:
+        raise NotAvailableException('%s not found in database.'%source_name)
+    if not source_name.endswith('dictionary'):
+        raise TypeException('The operation is supported only on dictionaries')
+    model_cls = db_models.dynamicTables[source_name]
+    if word_list_only:
+        query = db_.query(model_cls.word)
+    else:
+        query = db_.query(model_cls)
+    if search_word and exact_match:
+        query = query.filter(model_cls.word == search_word)
+    elif search_word:
+        query = query.filter(model_cls.word.like(search_word+"%"))
+    if details:
+        det = json.loads(details)
+        for key in det:
+            query = query.filter(model_cls.details.op('->>')(key) == det[key])
+    return query.offset(skip).limit(limit).all()
+
+def upload_dictionary_words(db_: Session, source_name, dictionary_words, user_id=None):
+    '''Adds rows to the dictionary table specified by source_name'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'dictionary':
+        raise TypeException('The operation is supported only on dictionaries')
+    model_cls = db_models.dynamicTables[source_name]
+    db_content = []
+    for item in dictionary_words:
+        row = model_cls(
+            word = item.word,
+            details = item.details)
+        db_content.append(row)
+    db_.add_all(db_content)
+    db_.commit()
+    db_.expire_all()
+    source_db_content.updatedUser = user_id
+    db_.commit()
+    return db_content
+
+def update_dictionary_words(db_: Session, source_name, dictionary_words, user_id=None):
+    '''Update rows, that matches the word field in the dictionary table specified by source_name'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'dictionary':
+        raise TypeException('The operation is supported only on dictionaries')
+    model_cls = db_models.dynamicTables[source_name]
+    db_content = []
+    for item in dictionary_words:
+        row = db_.query(model_cls).filter(model_cls.word == item.word).first()
+        if not row:
+            raise NotAvailableException("Dictionary row with word:%s, not found for %s"%(
+                    item.word, source_name))
+        row.details = item.details
+        db_.flush()
+        db_content.append(row)
+    db_.commit()
+    source_db_content.updatedUser = user_id
+    db_.commit()
+    db_.refresh(source_db_content)
     return db_content

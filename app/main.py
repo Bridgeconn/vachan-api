@@ -645,22 +645,24 @@ def get_commentary(source_name: schemas.TableNamePattern, book_code: schemas.Boo
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Commentaries"])
-def add_commentary(source_name : schemas.TableNamePattern, commentaries: List[schemas.CommentaryCreate] = Body(...),
-    db_: Session = Depends(get_db)):
+def add_commentary(source_name : schemas.TableNamePattern,
+    commentaries: List[schemas.CommentaryCreate] = Body(...), db_: Session = Depends(get_db)):
     '''Uploads a list of commentaries.
     * Duplicate commentries are allowed for same verses,
     unless they have excalty same values for reference range.
-    That is, if commentary is present for (gen, 1, 1-10) and new entries are made for (gen, 1, 1-20)
+    That is, if commentary is present for (gen, 1, 1-10) and
+    new entries are made for (gen, 1, 1-20)
     or (gen, 1, 5-10), they will be accepted and added to DB
-    * Value 0 for verse and last_verse indicate chapter introduction and -1 indicate chapter epilogue.
+    * Value 0 for verse and last_verse indicate chapter introduction and
+    -1 indicate chapter epilogue.
     * Similarly 0 for chapter means book introduction and -1 for chapter means book epilogue,
     verses fields can be null in these cases'''
     log.info('In add_commentary')
     log.debug('source_name: %s, commentaries: %s',source_name, commentaries)
     try:
         return {'message': "Commentaries added successfully",
-        "data": crud.upload_commentaries(db_=db_, source_name=source_name, commentaries=commentaries,
-            user_id=None)}
+        "data": crud.upload_commentaries(db_=db_, source_name=source_name,
+            commentaries=commentaries, user_id=None)}
     except SQLAlchemyError as exe:
         log.exception('Error in add_commentary')
         raise DatabaseException(exe) from exe
@@ -690,8 +692,8 @@ def edit_commentary(source_name: schemas.TableNamePattern,
     log.debug('source_name: %s, commentaries: %s',source_name, commentaries)
     try:
         return {'message': "Commentaries updated successfully",
-        "data": crud.update_commentaries(db_=db_, source_name=source_name, commentaries=commentaries,
-            user_id=None)}
+        "data": crud.update_commentaries(db_=db_, source_name=source_name,
+            commentaries=commentaries, user_id=None)}
     except SQLAlchemyError as exe:
         log.exception('Error in edit_commentary')
         raise DatabaseException(exe) from exe
@@ -699,7 +701,7 @@ def edit_commentary(source_name: schemas.TableNamePattern,
         log.exception('Error in edit_commentary')
         raise exe from exe
     except TypeException as exe:
-        log.exception('Error in add_commentary')
+        log.exception('Error in edit_commentary')
         raise exe from exe
     except Exception as exe:
         log.exception('Error in edit_commentary')
@@ -709,62 +711,101 @@ def edit_commentary(source_name: schemas.TableNamePattern,
 # # ########### Dictionary ###################
 
 
-# @app.get('/v2/dictionaries/{sourceName}', response_model=List[schemas.DictionaryWord], status_code=200, tags=["Dictionaries"])
-# def get_dictionary_words(sourceName: schemas.tableNamePattern, searchIndex: str = None, wordListOnly: bool = False, skip: int = 0, limit: int = 100):
-#   '''fetches list of dictionary words and all available details about them.
-#   Using the searchIndex appropriately, it is possible to get
-#   * All words starting with a letter
-#   * All words starting with a substring
-#   * An exact word search, giving the whole word
-#   * By setting the wordListOnly flag to True, only the words would be inlcuded in the return object, without the details
-#   * skip=n: skips the first n objects in return list
-#   * limit=n: limits the no. of items to be returned to n'''
-#   result = []
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
-#   except Exception as e:
-#       raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
-#   return result
+@app.get('/v2/dictionaries/{source_name}',
+    response_model=List[schemas.DictionaryWordResponse],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Dictionaries"])
+def get_dictionary_word(source_name: schemas.TableNamePattern, search_word: str = None, #pylint: disable=too-many-arguments
+    exact_match: bool = False, word_list_only: bool = False, details:str = None,
+    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
+    '''fetches list of dictionary words and all available details about them.
+    Using the searchIndex appropriately, it is possible to get
+    * All words starting with a letter
+    * All words starting with a substring
+    * An exact word search, giving the whole word and setting exactMatch to True
+    * Based on any key value pair in details, which should be specified as a dict/JSON like string
+    * By setting the wordListOnly flag to True, only the words would be inlcuded
+     in the return object, without the details
+    * skip=n: skips the first n objects in return list
+    * limit=n: limits the no. of items to be returned to n'''
+    log.info('In get_dictionary_word')
+    log.debug('source_name: %s, search_word: %s, exact_match: %s, word_list_only:%s, details:%s\
+        skip: %s, limit: %s', source_name, search_word, exact_match, word_list_only, details,
+        skip, limit)
+    try:
+        return crud.get_dictionary_words(db_, source_name, search_word, exact_match=exact_match,
+            word_list_only=word_list_only, details=details, skip = skip, limit = limit)
+    except SQLAlchemyError as exe:
+        log.exception('Error in get_dictionary_word')
+        raise DatabaseException(exe) from exe
+    except NotAvailableException as exe:
+        log.exception('Error in get_dictionary_word')
+        raise exe from exe
+    except TypeException as exe:
+        log.exception('Error in get_dictionary_word')
+        raise exe from exe
+    except Exception as exe:
+        log.exception('Error in get_dictionary_word')
+        raise GenericException(str(exe)) from exe
 
 
-# @app.post('/v2/dictionaries/{sourceName}', response_model=schemas.DictionaryUpdateResponse, status_code=201, tags=["Dictionaries"])
-# def add_dictionary(sourceName: schemas.tableNamePattern, words: List[schemas.DictionaryWord] = Body(...)):
-#   ''' uploads dictionay words'''
-#   logging.info(words)
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
-#   except Exception as e:
-#       raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
-#   except Exception as e:
-#       raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
-#   return {"message": f"Dictionary table created and words uploaded successfully", "data": None}
+@app.post('/v2/dictionaries/{source_name}', response_model=schemas.DictionaryUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Dictionaries"])
+def add_dictionary_word(source_name : schemas.TableNamePattern,
+    dictionary_words: List[schemas.DictionaryWordCreate] = Body(...), db_: Session = Depends(get_db)):
+    ''' uploads dictionay words and their details. 'Details' should be of JSON datatype and  have
+    all the additional info we have for each word, as key-value pairs'''
+    log.info('In add_dictionary_word')
+    log.debug('source_name: %s, dictionary_words: %s',source_name, dictionary_words)
+    try:
+        return {'message': "Dictionary words added successfully",
+        "data": crud.upload_dictionary_words(db_=db_, source_name=source_name,
+            dictionary_words=dictionary_words, user_id=None)}
+    except SQLAlchemyError as exe:
+        log.exception('Error in add_dictionary_word')
+        raise DatabaseException(exe) from exe
+    except AlreadyExistsException as exe:
+        log.exception('Error in add_dictionary_word')
+        raise exe from exe
+    except NotAvailableException as exe:
+        log.exception('Error in add_dictionary_word')
+        raise exe from exe
+    except TypeException as exe:
+        log.exception('Error in add_dictionary_word')
+        raise exe from exe
+    except Exception as exe:
+        log.exception('Error in add_dictionary_word')
+        raise GenericException(str(exe)) from exe
 
-# @app.put('/v2/dictionaries/{sourceName}', response_model=schemas.DictionaryUpdateResponse, status_code=201, tags=["Dictionaries"])
-# def edit_dictionary(sourceName: schemas.tableNamePattern, words: List[schemas.DictionaryWord] = Body(...)):
-#   '''Updates the given fields mentioned in details object, of the specifed word'''
-#   logging.info(words)
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
-#   except Exception as e:
-#       raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
-#   except Exception as e:
-#       raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
-#   return {"message" : f"Updated dictionary words", "data": None}
 
-# ## ### NOTE ####
-# # Currently we only have Strongs numbers as a dictionary table.
-# # But we can have a wide variety of lexical collections with varying informations required to be stored in the DB.
-# # So suggesting a flexible table structure and APIs to accomodate future needs.
-# # ##### DB Change suggested ######
-# # 1. Have 3 columns word_id, word and details
-# #     details column will be of JSON datatype and will have
-# #     all the additional info we have in that collection(for each word) as key-value pairs
+@app.put('/v2/dictionaries/{source_name}', response_model=schemas.DictionaryUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Dictionaries"])
+def edit_dictionary_word(source_name: schemas.TableNamePattern,
+    dictionary_words: List[schemas.DictionaryWordCreate] = Body(...),
+    db_: Session = Depends(get_db)):
+    '''Updates the given fields mentioned in details object, of the specifed word'''
+    log.info('In edit_dictionary_word')
+    log.debug('source_name: %s, dictionary_words: %s',source_name, dictionary_words)
+    try:
+        return {'message': "Dictionary words updated successfully",
+        "data": crud.update_dictionary_words(db_=db_, source_name=source_name,
+            dictionary_words=dictionary_words, user_id=None)}
+    except SQLAlchemyError as exe:
+        log.exception('Error in edit_dictionary_word')
+        raise DatabaseException(exe) from exe
+    except NotAvailableException as exe:
+        log.exception('Error in edit_dictionary_word')
+        raise exe from exe
+    except TypeException as exe:
+        log.exception('Error in edit_dictionary_word')
+        raise exe from exe
+    except Exception as exe:
+        log.exception('Error in edit_dictionary_word')
+        raise GenericException(str(exe)) from exe
 
 
 # # ###########################################

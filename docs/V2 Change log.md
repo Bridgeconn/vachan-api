@@ -72,3 +72,12 @@ If we are running tests on local machines, or on git actions, I think this can b
 
 * we were using one `verse` field in V1. Now we have `verse_start` and `verse_end` in its place. 
 This is done because, from the data we have on V1, it is clear that all entries in them have verse ranges instead of one verse. We were using `text` type for that field and indicating range as `1-10` separated by `-`. The only exceptions were in chapter introductions which has `0` for verse field. As querying this text field is less efficient in terms of performance as well as expressibility, it has been modiifed as two `int` fields. We continue to use `0` to indicate chapter intro and `-1` to indicate chapter epilogue for `verseStart` and `verseEnd`.
+
+### dictionary table
+
+Currently we only have Strongs numbers as a dictionary table.
+But we can have a wide variety of lexical collections with varying informations required to be stored in the DB. So chhosing a flexible table structure and APIs to accomodate future needs.
+* Have only 3 predefined columns; word_id, word and details
+* details column will be of JSON datatype and will have all the additional info we have in that collection(for each word) as key-value pairs
+* querying is possible based on any of the key value pair in details
+* updation is not possible on single key value pair, but only as the whole details object
