@@ -39,5 +39,5 @@ jobs:
           mkdir logs
           touch logs/API_logs.log
           cd app 
-          python -m pytest
+          python -m pytest --ignore=test/test_sources.py
 

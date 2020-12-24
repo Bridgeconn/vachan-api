@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 
 import db_models
 import schemas
-from custom_exceptions import NotAvailableException
+from database import engine
+from custom_exceptions import NotAvailableException, TypeException
+from logger import log
 
 def get_content_types(db_: Session, content_type: str =None, skip: int = 0, limit: int = 100):
     '''Fetches all content types, with pagination'''
@@ -192,6 +194,9 @@ def create_source(db_: Session, source: schemas.SourceCreate, table_name, user_i
     if user_id:
         db_content.created_user = user_id
     db_.add(db_content)
+    db_models.create_dynamic_table(table_name, content_type.contentType)
+    db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine, checkfirst=True)
+    log.warning("User %s, creates a new table %s", user_id, db_content.sourceName)
     db_.commit()
     db_.refresh(db_content)
     return db_content
@@ -236,12 +241,16 @@ def update_source(db_: Session, source: schemas.VersionEdit, user_id = None): #p
     if source.active is not None:
         db_content.active = source.active
     if user_id:
-        db_content.UpdatedUser = user_id
+        db_content.updatedUser = user_id
     db_.commit()
     db_.refresh(db_content)
     sql_statement = sqlalchemy.text("ALTER TABLE IF EXISTS %s RENAME TO %s"%(
         source.sourceName, db_content.sourceName))
     db_.execute(sql_statement)
+    log.warning("User %s, renames table %s to %s", user_id, source.sourceName,
+        db_content.sourceName)
+    db_models.create_dynamic_table(db_content.sourceName, db_content.contentType.contentType)
+    db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine)
     return db_content
 
 def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None, #pylint: disable=too-many-arguments
@@ -255,3 +264,94 @@ def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None, #
     if book_name is not None:
         query = query.filter(db_models.BibleBook.bookName == book_name.lower())
     return query.offset(skip).limit(limit).all()
+
+def get_commentaries(db_:Session, source_name, book_code=None, chapter=None, #pylint: disable=too-many-arguments
+    verse=None, last_verse=None, skip=0, limit=100):
+    '''Fetches rows of commentries from the table specified by source_name'''
+    if source_name not in db_models.dynamicTables:
+        raise NotAvailableException('%s not found in database.'%source_name)
+    if not source_name.endswith('commentary'):
+        raise TypeException('The operation is supported only on commentaries')
+    model_cls = db_models.dynamicTables[source_name]
+    query = db_.query(model_cls)
+    if book_code:
+        query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
+    if chapter is not None:
+        query = query.filter(model_cls.chapter == chapter)
+    if verse is not None:
+        if last_verse is None:
+            last_verse = verse
+        query = query.filter(model_cls.verseStart <= verse, model_cls.verseEnd >= last_verse)
+    return query.offset(skip).limit(limit).all()
+
+def upload_commentaries(db_: Session, source_name, commentaries, user_id=None):
+    '''Adds rows to the commentary table specified by source_name'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'commentary':
+        raise TypeException('The operation is supported only on commentaries')
+    model_cls = db_models.dynamicTables[source_name]
+    db_content = []
+    prev_book_code = None
+    for item in commentaries:
+        if item.bookCode != prev_book_code:
+            book = db_.query(db_models.BibleBook).filter(
+                db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
+            prev_book_code = item.bookCode
+            if not book:
+                raise NotAvailableException('Bible Book code, %s, not found in database')
+        if item.verseStart is not None and item.verseEnd is None:
+            item.verseEnd = item.verseStart
+        row = model_cls(
+            book_id = book.bookId,
+            chapter = item.chapter,
+            verseStart = item.verseStart,
+            verseEnd = item.verseEnd,
+            commentary = item.commentary)
+        db_content.append(row)
+    db_.add_all(db_content)
+    db_.commit()
+    db_.expire_all()
+    source_db_content.updatedUser = user_id
+    db_.commit()
+    return db_content
+
+def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
+    '''Update rows, that matches book, chapter and verse range fields in the commentary table
+    specified by source_name'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'commentary':
+        raise TypeException('The operation is supported only on commentaries')
+    model_cls = db_models.dynamicTables[source_name]
+    db_content = []
+    prev_book_code = None
+    for item in commentaries:
+        if item.bookCode != prev_book_code:
+            book = db_.query(db_models.BibleBook).filter(
+                db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
+            prev_book_code = item.bookCode
+            if not book:
+                raise NotAvailableException('Bible Book code, %s, not found in database')
+        row = db_.query(model_cls).filter(
+            model_cls.book_id == book.bookId,
+            model_cls.chapter == item.chapter,
+            model_cls.verseStart == item.verseStart,
+            model_cls.verseEnd == item.verseEnd).first()
+        if not row:
+            raise NotAvailableException("Commentary row with bookCode:%s, chapter:%s, \
+                verseStart:%s, verseEnd:%s, not found for %s"%(
+                    item.bookCode, item.chapter, item.verseStart, item.verseEnd, source_name))
+        row.commentary = item.commentary
+        db_.flush()
+        db_content.append(row)
+    db_.commit()
+    source_db_content.updatedUser = user_id
+    db_.commit()
+    db_.refresh(source_db_content)
+    print(source_db_content.__dict__)
+    return db_content

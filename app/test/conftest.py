@@ -29,9 +29,11 @@ def db_transaction():
     '''Begins an external transaction at the start of every function'''
     global CONN #pylint: disable=W0603
     log.warning("TESTING: Starts new database transaction")
-    CONN = engine.connect()
-    trans = CONN.begin()
-    yield CONN
-    log.warning("TESTING: Rolls back database transaction")
-    trans.rollback()
-    CONN.close()
+    try:
+        CONN = engine.connect()
+        trans = CONN.begin()
+        yield CONN
+    finally:
+        log.warning("TESTING: Rolls back database transaction")
+        trans.rollback()
+        CONN.close()
