@@ -27,17 +27,17 @@ def check_post(data: list):
         "contentType": "infographics",
         "language": "urd",
         "version": "TTT",
-        "revision": 1,
-        "year": 2020
+        "year": 2020,
+        "revision": 1
     }
+    headers = {"contentType": "application/json", "accept": "application/json"}
     source = add_source(source_data)
     source_name = source.json()['data']['sourceName']
-    headers = {"contentType": "application/json", "accept": "application/json"}
-    response = client.post(UNIT_URL+source_name, headers=headers, json=data)
-    return response, source_name
+    resp = client.post(UNIT_URL+source_name, headers=headers, json=data)
+    return resp, source_name
 
 def test_post_default():
-    '''Positive test to upload commentries, with various kins of ref ranges supported'''
+    '''Positive test to upload infographics'''
     data = [
     	{'bookCode':'gen', 'title':"creation", "infographicLink":"http://somewhere.com/something"},
         {'bookCode':'gen', 'title':"abraham's family",
@@ -50,10 +50,9 @@ def test_post_default():
     response = check_post(data)[0]
     assert response.status_code == 201
     assert response.json()['message'] == "Infographics added successfully"
-    assert len(data) == len(response.json()['data'])
     for item in response.json()['data']:
         assert_positive_get(item)
-
+    assert len(data) == len(response.json()['data'])
 
 def test_post_duplicate():
     '''Negative test to add two infographics Links with same book and title'''
@@ -134,15 +133,16 @@ def test_post_incorrect_data():
     assert_input_validation_error(response)
 
     source_name1 = source_name.replace('infographics', 'info')
-    response = client.post(UNIT_URL+source_name1, headers=headers, json=[])
+    data = []
+    response = client.post(UNIT_URL+source_name1, headers=headers, json=data)
     assert response.status_code == 404
 
-    source_name2 = source_name.replace('1', '2')
+    source_name2 = source_name.replace('1', '11')
     response = client.post(UNIT_URL+source_name2, headers=headers, json=[])
     assert response.status_code == 404
 
 def test_get_after_data_upload():
-    '''Add some data into the table and do all get tests'''
+    '''Add some infographics data into the table and do all get tests'''
     data = [
         {'bookCode':'gen', 'title':"creation",
         "infographicLink":"http://somewhere.com/something"},
@@ -157,9 +157,8 @@ def test_get_after_data_upload():
         {'bookCode':'rev', 'title':"the Gods reveals himself in new testament",
         "infographicLink":"http://somewhere.com/something"}
     ]
-    resp, source_name = check_post(data)
-
-    assert resp.status_code == 201
+    res, source_name = check_post(data)
+    assert res.status_code == 201
 
     check_default_get(UNIT_URL+source_name, assert_positive_get)
 
@@ -191,11 +190,11 @@ def test_get_after_data_upload():
 
 def test_get_incorrect_data():
     '''Check for input validations in get'''
-    source_name = 'hin_TTT'
+    source_name = 'urd_TTT'
     response = client.get(UNIT_URL+source_name)
     assert_input_validation_error(response)
 
-    source_name = 'hin_TTT_1_infographics'
+    source_name = 'urd_TTT_1_infographics'
     response = client.get(UNIT_URL+source_name+'?book_code=60')
     assert_input_validation_error(response)
 
@@ -238,11 +237,11 @@ def test_put_after_upload():
 
     # not available PUT
     new_data[0]['bookCode'] = 'mrk'
-    response = client.put(UNIT_URL+source_name,headers=headers, json=new_data)
+    response = client.put(UNIT_URL+source_name, headers=headers, json=new_data)
     assert response.status_code == 404
 
-    source_name = source_name.replace('1', '2')
-    response = client.put(UNIT_URL+source_name,headers=headers, json=[])
+    source_name = source_name.replace('1', '10')
+    response = client.put(UNIT_URL+source_name, headers=headers, json=[])
     assert response.status_code == 404
 
 def test_put_incorrect_data():
@@ -315,6 +314,6 @@ def test_put_incorrect_data():
     response = client.put(UNIT_URL+source_name1, headers=headers, json=[])
     assert response.status_code == 404
 
-    source_name2 = source_name.replace('1', '2')
+    source_name2 = source_name.replace('1', '10')
     response = client.put(UNIT_URL+source_name2, headers=headers, json=[])
     assert response.status_code == 404
