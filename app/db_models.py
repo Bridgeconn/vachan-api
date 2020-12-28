@@ -91,6 +91,23 @@ class Dictionary(): # pylint: disable=too-few-public-methods
     details = Column('details', JSON)
     __table_args__ = {'extend_existing': True}
 
+class Infographic(): # pylint: disable=too-few-public-methods
+    '''Corresponds to the dynamically created infographics tables in vachan Db(postgres)'''
+    infographicId = Column('infographic_id', Integer, primary_key=True, autoincrement=True)
+    @declared_attr
+    def book_id(cls): # pylint: disable=E0213
+        '''For modelling the bookId field in derived classes'''
+        return Column('book_id', Integer, ForeignKey('bible_books_look_up.book_id'))
+    @declared_attr
+    def book(cls): # pylint: disable=E0213
+        '''For modelling the book field in derived classes'''
+        return relationship(BibleBook)
+    title = Column('title', String)
+    infographicLink = Column('infographic_url', String)
+    __table_args__ = (
+        UniqueConstraint('book_id', 'title'),
+        {'extend_existing': True}
+                     )
 
 dynamicTables = {}
 def create_dynamic_table(source_name, content_type):
@@ -101,6 +118,9 @@ def create_dynamic_table(source_name, content_type):
     elif content_type == 'dictionary':
         dynamicTables[source_name] = type(
             source_name,(Dictionary, Base,),{"__tablename__": source_name})
+    elif content_type == 'infographics':
+        dynamicTables[source_name] = type(
+            source_name,(Infographic, Base,),{"__tablename__": source_name})
     else:
         raise GenericException("Table structure not defined for this content type")
 
