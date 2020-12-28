@@ -305,15 +305,26 @@ class DictionaryUpdateResponse(BaseModel):
     message: str
     data: List[DictionaryWordResponse] = None
 
-class Infographic(BaseModel):
-    '''Response object of infographics'''
+class InfographicCreate(BaseModel):
+    '''Input object of infographics'''
     bookCode : BookCodePattern
-    infographicsLink : AnyUrl
+    title: str
+    infographicLink : AnyUrl
+
+class InfographicResponse(BaseModel):
+    '''Response object of infographics'''
+    book : BibleBook
+    title: str
+    infographicLink : AnyUrl
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
 
 class InfographicUpdateResponse(BaseModel):
     '''Response object of infographics update'''
     message: str
-    data: List[Infographic] = None
+    data: List[InfographicResponse] = None
 
 
 class BibleVideo(BaseModel):

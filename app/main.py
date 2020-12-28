@@ -814,49 +814,91 @@ def edit_dictionary_word(source_name: schemas.TableNamePattern,
 
 # # ########### Infographic ###################
 
+@app.get('/v2/infographics/{source_name}',
+    response_model=List[schemas.InfographicResponse],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Infographics"])
+def get_infographic(source_name: schemas.TableNamePattern, book_code: schemas.BookCodePattern=None, #pylint: disable=too-many-arguments
+    title: str=None,
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
+    '''Fetches the infographics. Can use, bookCode and/or title to filter the results
+    * skip=n: skips the first n objects in return list
+    * limit=n: limits the no. of items to be returned to n'''
+    log.info('In get_infographic')
+    log.debug('source_name: %s, book_code: %s skip: %s, limit: %s',
+        source_name, book_code, skip, limit)
+    try:
+        return crud.get_infographics(db_, source_name, book_code, title,
+        skip = skip, limit = limit)
+    except SQLAlchemyError as exe:
+        log.exception('Error in get_infographic')
+        raise DatabaseException(exe) from exe
+    except NotAvailableException as exe:
+        log.exception('Error in get_infographic')
+        raise exe from exe
+    except TypeException as exe:
+        log.exception('Error in get_infographic')
+        raise exe from exe
+    except Exception as exe:
+        log.exception('Error in get_infographic')
+        raise GenericException(str(exe)) from exe
 
-# @app.get('/v2/infographics/{sourceName}', response_model=List[schemas.Infographic], status_code=200, tags=["Infographics"])
-# def get_infographic(sourceName: schemas.tableNamePattern, bookCode: schemas.BookCodePattern = None, skip: int = 0, limit: int = 100 ):
-#   '''Fetches the infographics. Can use, bookCode to filter the results
-#   * skip=n: skips the first n objects in return list
-#   * limit=n: limits the no. of items to be returned to n'''
-#   result = []
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
-#   except Exception as e:
-#       raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
-#   return result
+@app.post('/v2/infographics/{source_name}', response_model=schemas.InfographicUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Infographics"])
+def add_infographics(source_name : schemas.TableNamePattern,
+    infographics: List[schemas.InfographicCreate] = Body(...), db_: Session = Depends(get_db)):
+    '''Uploads a list of infograhics.'''
+    log.info('In add_infographics')
+    log.debug('source_name: %s, infographics: %s',source_name, infographics)
+    try:
+        return {'message': "Infographics added successfully",
+        "data": crud.upload_infographics(db_=db_, source_name=source_name,
+            infographics=infographics, user_id=None)}
+    except SQLAlchemyError as exe:
+        log.exception('Error in add_infographics')
+        raise DatabaseException(exe) from exe
+    except AlreadyExistsException as exe:
+        log.exception('Error in add_infographics')
+        raise exe from exe
+    except NotAvailableException as exe:
+        log.exception('Error in add_infographics')
+        raise exe from exe
+    except TypeException as exe:
+        log.exception('Error in add_infographics')
+        raise exe from exe
+    except Exception as exe:
+        log.exception('Error in add_infographics')
+        raise GenericException(str(exe)) from exe
 
-# @app.post('/v2/infographics/{sourceName}', response_model=schemas.InfographicUpdateResponse, status_code=201, tags=["Infographics"])
-# def add_infographics(sourceName: schemas.tableNamePattern, infographics:List[schemas.Infographic] = Body(...)):
-#   '''Uploads a list of infograhics.'''
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
-#   except Exception as e:
-#       raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
-#   except Exception as e:
-#       raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
-#   return {"message": f"Infographics uploaded successfully", "data": None}
-
-# @app.put('/v2/infographics/{sourceName}', response_model=schemas.InfographicUpdateResponse, status_code=201, tags=["Infographics"])
-# def edit_infographics(sourceName: schemas.tableNamePattern, infographics: List[schemas.Infographic] = Body(...)):
-#   ''' Changes the commentary field to the given value in the row selected using book, chapter, verse values'''
-#   logging.info(infographics)
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
-#   except Exception as e:
-#       raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
-#   except Exception as e:
-#       raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
-#   return {"message" : f"Updated infographics", "data": None}
-
-
+@app.put('/v2/infographics/{source_name}', response_model=schemas.InfographicUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Infographics"])
+def edit_infographics(source_name: schemas.TableNamePattern,
+    infographics: List[schemas.InfographicCreate] = Body(...),
+    db_: Session = Depends(get_db)):
+    ''' Changes the infographic link to the given value in the row selected using
+    book and title'''
+    log.info('In edit_infographics')
+    log.debug('source_name: %s, infographics: %s',source_name, infographics)
+    try:
+        return {'message': "Infographics updated successfully",
+        "data": crud.update_infographics(db_=db_, source_name=source_name,
+            infographics=infographics, user_id=None)}
+    except SQLAlchemyError as exe:
+        log.exception('Error in edit_infographics')
+        raise DatabaseException(exe) from exe
+    except NotAvailableException as exe:
+        log.exception('Error in edit_infographics')
+        raise exe from exe
+    except TypeException as exe:
+        log.exception('Error in edit_infographics')
+        raise exe from exe
+    except Exception as exe:
+        log.exception('Error in edit_infographics')
+        raise GenericException(str(exe)) from exe
 
 
 # # ###########################################

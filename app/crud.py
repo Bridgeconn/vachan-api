@@ -422,3 +422,83 @@ def update_dictionary_words(db_: Session, source_name, dictionary_words, user_id
     db_.commit()
     db_.refresh(source_db_content)
     return db_content
+
+def get_infographics(db_:Session, source_name, book_code=None, title=None,  #pylint: disable=too-many-arguments
+    skip=0, limit=100):
+    '''Fetches rows of infographics from the table specified by source_name'''
+    if source_name not in db_models.dynamicTables:
+        raise NotAvailableException('%s not found in database.'%source_name)
+    if not source_name.endswith('infographics'):
+        raise TypeException('The operation is supported only on infographics')
+    model_cls = db_models.dynamicTables[source_name]
+    query = db_.query(model_cls)
+    if book_code:
+        query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
+    if title:
+        query = query.filter(model_cls.title == title.strip())
+    return query.offset(skip).limit(limit).all()
+
+def upload_infographics(db_: Session, source_name, infographics, user_id=None):
+    '''Adds rows to the infographics table specified by source_name'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'infographics':
+        raise TypeException('The operation is supported only on infographics')
+    model_cls = db_models.dynamicTables[source_name]
+    db_content = []
+    prev_book_code = None
+    for item in infographics:
+        if item.bookCode != prev_book_code:
+            book = db_.query(db_models.BibleBook).filter(
+                db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
+            prev_book_code = item.bookCode
+            if not book:
+                raise NotAvailableException('Bible Book code, %s, not found in database')
+        row = model_cls(
+            book_id = book.bookId,
+            title = item.title,
+            infographicLink = item.infographicLink)
+        db_content.append(row)
+    db_.add_all(db_content)
+    db_.commit()
+    db_.expire_all()
+    source_db_content.updatedUser = user_id
+    db_.commit()
+    return db_content
+
+def update_infographics(db_: Session, source_name, infographics, user_id=None):
+    '''Update rows, that matches book, and title in the infographic table
+    specified by source_name'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'infographics':
+        raise TypeException('The operation is supported only on infographics')
+    model_cls = db_models.dynamicTables[source_name]
+    db_content = []
+    prev_book_code = None
+    for item in infographics:
+        if item.bookCode != prev_book_code:
+            book = db_.query(db_models.BibleBook).filter(
+                db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
+            prev_book_code = item.bookCode
+            if not book:
+                raise NotAvailableException('Bible Book code, %s, not found in database')
+        row = db_.query(model_cls).filter(
+            model_cls.book_id == book.bookId,
+            model_cls.title == item.title).first()
+        if not row:
+            raise NotAvailableException("Infographics row with bookCode:%s, title:%s, \
+                not found for %s"%(
+                    item.bookCode, item.title, source_name))
+        row.infographicLink = item.infographicLink
+        db_.flush()
+        db_content.append(row)
+    db_.commit()
+    source_db_content.updatedUser = user_id
+    db_.commit()
+    db_.refresh(source_db_content)
+    return db_content
