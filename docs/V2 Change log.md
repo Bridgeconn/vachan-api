@@ -90,3 +90,11 @@ But we can have a wide variety of lexical collections with varying informations 
 * The field `filename` is renamed as `infographic_url`. 
 * Though the type is `Text` for `infographic_url` in database, from the python code it ensures that, only a proper URL can be added to this field.
 * The `infographic_url` field is not unique which would allow the same link to be added for multiple books, if applicable.
+
+### bible_video table
+
+* `bible_video` is made an entry in contentTypes table
+* New source to be added to sources table and new table to be created for every language, at least(if version name and revision are same)
+* removes the field language from the table
+* field `books` has datatype array of strings, instead of comma separated text. (From the python code it is ensured that it accept only valid book codes, becasue array of FKs is not possible)
+* `title` field is made unique(for one table. Repetition is possible with different language, version or revision) and is used to identify rows uniquely for updation. `title` field cannot be altered via API.
