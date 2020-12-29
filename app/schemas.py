@@ -330,7 +330,7 @@ class InfographicUpdateResponse(BaseModel):
 class BibleVideo(BaseModel):
     '''Response object of Bible Vedios'''
     title: str
-    books: list
+    books: List[BookCodePattern]
     videoLink: AnyUrl
     description: str
     theme: str
@@ -348,7 +348,7 @@ class BibleVideoUpdateResponse(BaseModel):
 class BibleVideoUpload(BaseModel):
     '''Input Object of bible Videos'''
     title: str
-    books: list
+    books: List[BookCodePattern]
     videoLink: AnyUrl
     description: str
     theme: str
@@ -358,7 +358,7 @@ class BibleVideoUpload(BaseModel):
 class BibleVideoEdit(BaseModel):
     '''Input object of Bible Video update'''
     title: str
-    books: list  = None
+    books: List[BookCodePattern]  = None
     videoLink: AnyUrl  = None
     description: str  = None
     theme: str  = None

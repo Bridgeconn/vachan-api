@@ -575,7 +575,7 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
             raise NotAvailableException("Bible Video row with title:%s, \
                 not found for %s"%(
                     item.title, source_name))
-        if 'books' in item:
+        if item.books:
             for book_code in item.books:
                 # verifying if the book codes are valid as we dont use FK for this field
                 book = db_.query(db_models.BibleBook).filter(
@@ -584,13 +584,13 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
                     raise NotAvailableException('Bible Book code, %s, not found in database'
                         %book_code )
             row.books = item.books
-        if 'theme' in item:
+        if item.theme:
             row.theme = item.theme.strip()
-        if 'description' in item:
+        if item.description:
             row.description = item.description.strip()
-        if 'active' in item:
+        if item.active is not None:
             row.active = item.active
-        if 'videoLink' in item:
+        if item.videoLink:
             row.videoLink = item.videoLink
         db_.flush()
         db_content.append(row)

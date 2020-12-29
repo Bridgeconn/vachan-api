@@ -588,20 +588,19 @@ def get_bible_book(book_id: int = None, book_code: schemas.BookCodePattern = Non
 # # # field books should accept only valid book codes(or list of book_codes)
 
 
-
-
-
-
 # # ##### Bible Book names in regional languages ########################
 
 # # ##### DB change suggested #######
 # # Currently, this is a separate table in DB.
-# # It could be added to a metadata column in the _bible table
+# # It could be added to a metadata column in the _bible table, if required.
+# # The info, if available will be present in the usfm and JSON.
+# # So if it just for displaying and not required for querying, it could be avoided.
 # # # change the columns name from
 # # #   1. 'short' to 'short_name',
 # # #   2. 'long' to 'long_name' and
 # # #   3. 'abbr' to 'abbreviation'
 # # in the metadata jSON object
+
 # # ##################################
 
 
@@ -710,7 +709,6 @@ def edit_commentary(source_name: schemas.TableNamePattern,
 
 # # ########### Dictionary ###################
 
-
 @app.get('/v2/dictionaries/{source_name}',
     response_model=List[schemas.DictionaryWordResponse],
     responses={502: {"model": schemas.ErrorResponse},
@@ -806,11 +804,7 @@ def edit_dictionary_word(source_name: schemas.TableNamePattern,
     except Exception as exe:
         log.exception('Error in edit_dictionary_word')
         raise GenericException(str(exe)) from exe
-
-
 # # ###########################################
-
-
 
 # # ########### Infographic ###################
 
@@ -899,8 +893,6 @@ def edit_infographics(source_name: schemas.TableNamePattern,
     except Exception as exe:
         log.exception('Error in edit_infographics')
         raise GenericException(str(exe)) from exe
-
-
 # # ###########################################
 
 
@@ -991,15 +983,4 @@ def edit_bible_video(source_name: schemas.TableNamePattern,
     except Exception as exe:
         log.exception('Error in edit_bible_video')
         raise GenericException(str(exe)) from exe
-
-
-
-
-# # ### DB change ####
-# # 1. The BibleVideos is made an entry in contentTypes table
-# # 2. new source to be added to sources table and new table to be created for every language, at least(if version name and revision are same)
-# # 3. the filed language can then be removed from the table
-# # 4. field 'books' should accept only valid book codes and
-# #    datatype should be JSON, like in audio bibles, not comma separated text
-
 # # ###########################################
