@@ -423,7 +423,7 @@ def update_dictionary_words(db_: Session, source_name, dictionary_words, user_id
     db_.refresh(source_db_content)
     return db_content
 
-def get_infographics(db_:Session, source_name, book_code=None, title=None,  #pylint: disable=too-many-arguments
+def get_infographics(db_:Session, source_name, book_code=None, title=None, #pylint: disable=too-many-arguments
     skip=0, limit=100):
     '''Fetches rows of infographics from the table specified by source_name'''
     if source_name not in db_models.dynamicTables:
@@ -455,10 +455,11 @@ def upload_infographics(db_: Session, source_name, infographics, user_id=None):
                 db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
             prev_book_code = item.bookCode
             if not book:
-                raise NotAvailableException('Bible Book code, %s, not found in database')
+                raise NotAvailableException('Bible Book code, %s, not found in database'
+                    %item.bookCode)
         row = model_cls(
             book_id = book.bookId,
-            title = item.title,
+            title = item.title.strip(),
             infographicLink = item.infographicLink)
         db_content.append(row)
     db_.add_all(db_content)
@@ -486,15 +487,111 @@ def update_infographics(db_: Session, source_name, infographics, user_id=None):
                 db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
             prev_book_code = item.bookCode
             if not book:
-                raise NotAvailableException('Bible Book code, %s, not found in database')
+                raise NotAvailableException('Bible Book code, %s, not found in database'
+                    %item.bookCode)
         row = db_.query(model_cls).filter(
             model_cls.book_id == book.bookId,
-            model_cls.title == item.title).first()
+            model_cls.title == item.title.strip()).first()
         if not row:
             raise NotAvailableException("Infographics row with bookCode:%s, title:%s, \
                 not found for %s"%(
                     item.bookCode, item.title, source_name))
         row.infographicLink = item.infographicLink
+        db_.flush()
+        db_content.append(row)
+    db_.commit()
+    source_db_content.updatedUser = user_id
+    db_.commit()
+    db_.refresh(source_db_content)
+    return db_content
+
+def get_bible_videos(db_:Session, source_name, book_code=None, title=None, theme=None, active=True, #pylint: disable=too-many-arguments
+    skip=0, limit=100):
+    '''fetches rows of bible videos as per provided source_name and filters'''
+    if source_name not in db_models.dynamicTables:
+        raise NotAvailableException('%s not found in database.'%source_name)
+    if not source_name.endswith('bible_video'):
+        raise TypeException('The operation is supported only on bible_video')
+    model_cls = db_models.dynamicTables[source_name]
+    query = db_.query(model_cls)
+    if book_code:
+        query = query.filter(model_cls.books.any(book_code.lower()))
+    if title:
+        query = query.filter(model_cls.title == title.strip())
+    if theme:
+        query = query.filter(model_cls.theme == theme.strip())
+    query = query.filter(model_cls.active == active)
+    return query.offset(skip).limit(limit).all()
+
+
+
+def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
+    '''Adds rows to the bible videos table specified by source_name'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'bible_video':
+        raise TypeException('The operation is supported only on bible_video')
+    model_cls = db_models.dynamicTables[source_name]
+    db_content = []
+    for item in videos:
+        for book_code in item.books:
+            # verifying if the book codes are valid as we dont use FK for this field
+            book = db_.query(db_models.BibleBook).filter(
+                db_models.BibleBook.bookCode == book_code.lower() ).first()
+            if not book:
+                raise NotAvailableException('Bible Book code, %s, not found in database'%book_code)
+        row = model_cls(
+            title = item.title.strip(),
+            theme = item.theme.strip(),
+            description = item.description.strip(),
+            active = item.active,
+            books = item.books,
+            videoLink = item.videoLink)
+        db_content.append(row)
+    db_.add_all(db_content)
+    db_.commit()
+    db_.expire_all()
+    source_db_content.updatedUser = user_id
+    db_.commit()
+    return db_content
+
+
+def update_bible_videos(db_: Session, source_name, videos, user_id=None):
+    '''Update rows, that matches title in the bible videos table
+    specified by source_name'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'bible_video':
+        raise TypeException('The operation is supported only on bible_video')
+    model_cls = db_models.dynamicTables[source_name]
+    db_content = []
+    for item in videos:
+        row = db_.query(model_cls).filter(model_cls.title == item.title.strip()).first()
+        if not row:
+            raise NotAvailableException("Bible Video row with title:%s, \
+                not found for %s"%(
+                    item.title, source_name))
+        if 'books' in item:
+            for book_code in item.books:
+                # verifying if the book codes are valid as we dont use FK for this field
+                book = db_.query(db_models.BibleBook).filter(
+                    db_models.BibleBook.bookCode == book_code.lower() ).first()
+                if not book:
+                    raise NotAvailableException('Bible Book code, %s, not found in database'
+                        %book_code )
+            row.books = item.books
+        if 'theme' in item:
+            row.theme = item.theme.strip()
+        if 'description' in item:
+            row.description = item.description.strip()
+        if 'active' in item:
+            row.active = item.active
+        if 'videoLink' in item:
+            row.videoLink = item.videoLink
         db_.flush()
         db_content.append(row)
     db_.commit()

@@ -906,42 +906,93 @@ def edit_infographics(source_name: schemas.TableNamePattern,
 
 # # ########### bible videos ###################
 
-# @app.get('/v2/biblevideos/{sourceName}', response_model=List[schemas.BibleVideo], status_code=200, tags=["Bible Videos"])
-# def get_bible_video(bookCode: schemas.BookCodePattern = None, theme: str = None, title: str = None, skip: int = 0, limit: int = 100):
-#   '''Fetches the Bible video details and URL. Can use the optional query params book, title and theme to filter the results
-#   * skip=n: skips the first n objects in return list
-#   * limit=n: limits the no. of items to be returned to n'''
-#   result = []
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
-#   return result
+@app.get('/v2/biblevideos/{source_name}',
+    response_model=List[schemas.BibleVideo],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bible Videos"])
+def get_bible_video(source_name: schemas.TableNamePattern, book_code: schemas.BookCodePattern=None, #pylint: disable=too-many-arguments
+    title: str=None, theme: str=None, active: bool=True,
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
+    '''Fetches the Bible video details and URL. Can use the optional query params book, title and theme to filter the results
+    * skip=n: skips the first n objects in return list
+    * limit=n: limits the no. of items to be returned to n'''
+    log.info('In get_bible_video')
+    log.debug('source_name: %s, book_code: %s, title: %s, theme: %s, skip: %s, limit: %s',
+        source_name, book_code, title, theme, skip, limit)
+    try:
+        return crud.get_bible_videos(db_, source_name, book_code, title, theme, active,
+        skip=skip, limit=limit)
+    except SQLAlchemyError as exe:
+        log.exception('Error in get_bible_video')
+        raise DatabaseException(exe) from exe
+    except NotAvailableException as exe:
+        log.exception('Error in get_bible_video')
+        raise exe from exe
+    except TypeException as exe:
+        log.exception('Error in get_bible_video')
+        raise exe from exe
+    except Exception as exe:
+        log.exception('Error in get_bible_video')
+        raise GenericException(str(exe)) from exe
 
-# @app.post('/v2/biblevideos/{sourceName}', response_model=schemas.BibleVideoUpdateResponse, status_code=201, tags=["Bible Videos"])
-# def add_bible_video(videos:List[schemas.BibleVideoUpload] = Body(...)):
-#   '''Uploads a list of bible video links and details.'''
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Already exists", detail="Content already present", status_code=409)
-#   except Exception as e:
-#       raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
-#   return {"message": f"BibleVideo details uploaded successfully", "data": None}
+@app.post('/v2/biblevideos/{source_name}', response_model=schemas.BibleVideoUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Bible Videos"])
+def add_bible_video(source_name : schemas.TableNamePattern,
+    videos: List[schemas.BibleVideoUpload] = Body(...), db_: Session = Depends(get_db)):
+    '''Uploads a list of bible video links and details.'''
+    log.info('In add_bible_video')
+    log.debug('source_name: %s, videos: %s',source_name, videos)
+    try:
+        return {'message': "Bible videos added successfully",
+        "data": crud.upload_bible_videos(db_=db_, source_name=source_name,
+            videos=videos, user_id=None)}
+    except SQLAlchemyError as exe:
+        log.exception('Error in add_bible_video')
+        raise DatabaseException(exe) from exe
+    except AlreadyExistsException as exe:
+        log.exception('Error in add_bible_video')
+        raise exe from exe
+    except NotAvailableException as exe:
+        log.exception('Error in add_bible_video')
+        raise exe from exe
+    except TypeException as exe:
+        log.exception('Error in add_bible_video')
+        raise exe from exe
+    except Exception as exe:
+        log.exception('Error in add_bible_video')
+        raise GenericException(str(exe)) from exe
 
-# @app.put('/v2/biblevideos/{sourceName}', response_model=schemas.BibleVideoUpdateResponse, status_code=201, tags=["Bible Videos"])
-# def edit_bible_video(videos: List[schemas.BibleVideoEdit] = Body(...)):
-#   ''' Changes the commentary field to the given value in the row selected using book, chapter, verse values'''
-#   logging.info(videos)
-#   try:
-#       pass
-#   except Exception as e:
-#       raise VachanApiException(name="Not available", detail="Requested content not available", status_code=404)
-#   except Exception as e:
-#       raise VachanApiException(name="Incorrect Content Type", detail="The source is not of the required type, for this function", status_code=415)
-#   except Exception as e:
-#       raise VachanApiException(name="Database Error", detail=str(e), status_code=502)
-#   return {"message" : f"Updated bible video details", "data": None}
+
+@app.put('/v2/biblevideos/{source_name}', response_model=schemas.BibleVideoUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Bible Videos"])
+def edit_bible_video(source_name: schemas.TableNamePattern,
+    videos: List[schemas.BibleVideoEdit] = Body(...),
+    db_: Session = Depends(get_db)):
+    ''' Changes the selected rows of bible videos table. each row identified by '''
+    log.info('In edit_bible_video')
+    log.debug('source_name: %s, videos: %s',source_name, videos)
+    try:
+        return {'message': "Bible videos updated successfully",
+        "data": crud.update_bible_videos(db_=db_, source_name=source_name,
+            videos=videos, user_id=None)}
+    except SQLAlchemyError as exe:
+        log.exception('Error in edit_bible_video')
+        raise DatabaseException(exe) from exe
+    except NotAvailableException as exe:
+        log.exception('Error in edit_bible_video')
+        raise exe from exe
+    except TypeException as exe:
+        log.exception('Error in edit_bible_video')
+        raise exe from exe
+    except Exception as exe:
+        log.exception('Error in edit_bible_video')
+        raise GenericException(str(exe)) from exe
+
+
 
 
 # # ### DB change ####
