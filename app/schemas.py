@@ -329,13 +329,16 @@ class InfographicUpdateResponse(BaseModel):
 
 class BibleVideo(BaseModel):
     '''Response object of Bible Vedios'''
-    bibleVideoId: int
-    books: dict
-    videoLink: AnyUrl
     title: str
+    books: list
+    videoLink: AnyUrl
     description: str
     theme: str
-    status: bool
+    active: bool
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
 
 class BibleVideoUpdateResponse(BaseModel):
     '''Response object of Bible Video update'''
@@ -344,20 +347,19 @@ class BibleVideoUpdateResponse(BaseModel):
 
 class BibleVideoUpload(BaseModel):
     '''Input Object of bible Videos'''
-    books: dict
-    videoLink: AnyUrl
     title: str
+    books: list
+    videoLink: AnyUrl
     description: str
     theme: str
-    status: bool
+    active: bool = True
 
 
 class BibleVideoEdit(BaseModel):
     '''Input object of Bible Video update'''
-    bibleVideoId: int
-    books: dict  = None
+    title: str
+    books: list  = None
     videoLink: AnyUrl  = None
-    title: str  = None
     description: str  = None
     theme: str  = None
-    status: bool  = None
+    active: bool  = None

@@ -1,6 +1,6 @@
 ''' Defines SQL Alchemy models for each Database Table'''
 
-from sqlalchemy import Column, Integer, String, JSON
+from sqlalchemy import Column, Integer, String, JSON, ARRAY
 from sqlalchemy import Boolean, ForeignKey, DateTime
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.sql import func
@@ -109,6 +109,18 @@ class Infographic(): # pylint: disable=too-few-public-methods
         {'extend_existing': True}
                      )
 
+class BibleVideo(): # pylint: disable=too-few-public-methods
+    '''Corresponds to the dynamically created bible videos tables in vachan Db(postgres)'''
+    bibleVideoId  = Column('bible_video_id', Integer, primary_key=True, autoincrement=True)
+    title = Column('title', String, unique=True)
+    theme = Column('theme', String)
+    description = Column('description', String)
+    videoLink = Column('video_link', String)
+    active = Column('active', Boolean)
+    books = Column('books', ARRAY(String))
+    __table_args__ = {'extend_existing': True}
+
+
 dynamicTables = {}
 def create_dynamic_table(source_name, content_type):
     '''To map or create one dynamic table based on the content Type'''
@@ -121,6 +133,9 @@ def create_dynamic_table(source_name, content_type):
     elif content_type == 'infographics':
         dynamicTables[source_name] = type(
             source_name,(Infographic, Base,),{"__tablename__": source_name})
+    elif content_type == 'bible_video':
+        dynamicTables[source_name] = type(
+            source_name,(BibleVideo, Base,),{"__tablename__": source_name})
     else:
         raise GenericException("Table structure not defined for this content type")
 
