@@ -165,7 +165,7 @@ class AudioBible(BaseModel):
     url: AnyUrl
     books: dict
     format: str
-    status: bool
+    active: bool
 
 class AudioBibleUpdateResponse(BaseModel):
     '''Response object of auido bible update'''
@@ -178,7 +178,7 @@ class AudioBibleUpload(BaseModel):
     url: AnyUrl
     books: dict
     format: str
-    status: bool
+    active: bool
 
 
 class AudioBibleEdit(BaseModel):
@@ -188,7 +188,7 @@ class AudioBibleEdit(BaseModel):
     url: str = None
     books: dict = None
     format: str = None
-    status: bool = None
+    active: bool = None
 
 class BibleBookContent(BaseModel):
     '''Response object of Bible book contents'''
@@ -197,6 +197,7 @@ class BibleBookContent(BaseModel):
     USFM: str = None
     JSON: dict = None
     audio: AudioBible = None
+    active: bool
 
 class BibleBookUpdateResponse(BaseModel):
     '''Input object of Bible book update'''
@@ -238,6 +239,7 @@ class CommentaryCreate(BaseModel):
     verseStart: int = None
     verseEnd: int = None
     commentary: str
+    active: bool = True
 
     @validator('verseStart', 'verseEnd')
     def check_verses(cls, val, values): # pylint: disable=R0201 disable=E0213
@@ -267,6 +269,42 @@ class CommentaryCreate(BaseModel):
             raise ValueError('chapter field should be greater than or equal to -1')
         return val
 
+class CommentaryEdit(BaseModel):
+    '''Response object for commentaries'''
+    bookCode : BookCodePattern
+    chapter: int
+    verseStart: int = None
+    verseEnd: int = None
+    commentary: str = None
+    active: bool = None
+
+    @validator('verseStart', 'verseEnd')
+    def check_verses(cls, val, values): # pylint: disable=R0201 disable=E0213
+        '''verse fields should be greater than or equal to -1'''
+        if 'chapter' in values and values['chapter'] in [-1, 0]:
+            if val not in [-1, 0, None]:
+                raise ValueError('verse fields should be 0, for book introductions and epilogues')
+            val = 0
+        if val is None:
+            raise ValueError('verse fields must have a value, '+
+                'except for book introduction and epilogue')
+        if val < -1:
+            raise ValueError('verse fields should be greater than or equal to -1')
+        return val
+
+    @validator('verseEnd')
+    def check_range(cls, val, values): # pylint: disable=R0201 disable=E0213
+        '''verse start should be less than or equal to verse end'''
+        if 'verseStart' in values and val < values['verseStart']:
+            raise ValueError('verse start should be less than or equal to verse end')
+        return val
+
+    @validator('chapter')
+    def check_chapter(cls, val): # pylint: disable=R0201 disable=E0213
+        '''chapter fields should be greater than or equal to -1'''
+        if val < -1:
+            raise ValueError('chapter field should be greater than or equal to -1')
+        return val
 
 class CommentaryResponse(BaseModel):
     '''Response object for commentaries'''
@@ -275,6 +313,7 @@ class CommentaryResponse(BaseModel):
     verseStart: int = None
     verseEnd: int = None
     commentary: str
+    active: bool
     class Config: # pylint: disable=too-few-public-methods
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
@@ -290,11 +329,19 @@ class DictionaryWordCreate(BaseModel):
     '''Upload object of dictionary word'''
     word: str
     details: dict = None
+    active: bool = True
+
+class DictionaryWordEdit(BaseModel):
+    '''Upload object of dictionary word'''
+    word: str
+    details: dict = None
+    active: bool = None
 
 class DictionaryWordResponse(BaseModel):
     '''Response object of dictionary word'''
     word: str
     details: dict = None
+    active: bool = None
     class Config: # pylint: disable=too-few-public-methods
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
@@ -310,12 +357,21 @@ class InfographicCreate(BaseModel):
     bookCode : BookCodePattern
     title: str
     infographicLink : AnyUrl
+    active: bool = True
+
+class InfographicEdit(BaseModel):
+    '''Input object of infographics Update'''
+    bookCode : BookCodePattern
+    title: str
+    infographicLink : AnyUrl = None
+    active: bool = None
 
 class InfographicResponse(BaseModel):
     '''Response object of infographics'''
     book : BibleBook
     title: str
     infographicLink : AnyUrl
+    active: bool
     class Config: # pylint: disable=too-few-public-methods
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''

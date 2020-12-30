@@ -266,7 +266,7 @@ def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None, #
     return query.offset(skip).limit(limit).all()
 
 def get_commentaries(db_:Session, source_name, book_code=None, chapter=None, #pylint: disable=too-many-arguments
-    verse=None, last_verse=None, skip=0, limit=100):
+    verse=None, last_verse=None, active=True, skip=0, limit=100):
     '''Fetches rows of commentries from the table specified by source_name'''
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
@@ -282,6 +282,7 @@ def get_commentaries(db_:Session, source_name, book_code=None, chapter=None, #py
         if last_verse is None:
             last_verse = verse
         query = query.filter(model_cls.verseStart <= verse, model_cls.verseEnd >= last_verse)
+    query = query.filter(model_cls.active == active)
     return query.offset(skip).limit(limit).all()
 
 def upload_commentaries(db_: Session, source_name, commentaries, user_id=None):
@@ -309,7 +310,8 @@ def upload_commentaries(db_: Session, source_name, commentaries, user_id=None):
             chapter = item.chapter,
             verseStart = item.verseStart,
             verseEnd = item.verseEnd,
-            commentary = item.commentary)
+            commentary = item.commentary,
+            active=item.active)
         db_content.append(row)
     db_.add_all(db_content)
     db_.commit()
@@ -346,7 +348,10 @@ def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
             raise NotAvailableException("Commentary row with bookCode:%s, chapter:%s, \
                 verseStart:%s, verseEnd:%s, not found for %s"%(
                     item.bookCode, item.chapter, item.verseStart, item.verseEnd, source_name))
-        row.commentary = item.commentary
+        if item.commentary:
+            row.commentary = item.commentary
+        if item.active is not None:
+            row.active = item.active
         db_.flush()
         db_content.append(row)
     db_.commit()
@@ -356,7 +361,7 @@ def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
     return db_content
 
 def get_dictionary_words(db_:Session, source_name, search_word = None, details = None,  #pylint: disable=too-many-arguments
-    exact_match=False, word_list_only=False, skip=0, limit=100):
+    exact_match=False, word_list_only=False, active=True, skip=0, limit=100):
     '''Fetches rows of dictionary from the table specified by source_name'''
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
@@ -375,7 +380,9 @@ def get_dictionary_words(db_:Session, source_name, search_word = None, details =
         det = json.loads(details)
         for key in det:
             query = query.filter(model_cls.details.op('->>')(key) == det[key])
-    return query.offset(skip).limit(limit).all()
+    query = query.filter(model_cls.active == active)
+    res = query.offset(skip).limit(limit).all()
+    return res
 
 def upload_dictionary_words(db_: Session, source_name, dictionary_words, user_id=None):
     '''Adds rows to the dictionary table specified by source_name'''
@@ -390,7 +397,8 @@ def upload_dictionary_words(db_: Session, source_name, dictionary_words, user_id
     for item in dictionary_words:
         row = model_cls(
             word = item.word,
-            details = item.details)
+            details = item.details,
+            active = item.active)
         db_content.append(row)
     db_.add_all(db_content)
     db_.commit()
@@ -414,7 +422,10 @@ def update_dictionary_words(db_: Session, source_name, dictionary_words, user_id
         if not row:
             raise NotAvailableException("Dictionary row with word:%s, not found for %s"%(
                     item.word, source_name))
-        row.details = item.details
+        if item.details:
+            row.details = item.details
+        if item.active is not None:
+            row.active = item.active
         db_.flush()
         db_content.append(row)
     db_.commit()
@@ -424,7 +435,7 @@ def update_dictionary_words(db_: Session, source_name, dictionary_words, user_id
     return db_content
 
 def get_infographics(db_:Session, source_name, book_code=None, title=None, #pylint: disable=too-many-arguments
-    skip=0, limit=100):
+    active=True, skip=0, limit=100):
     '''Fetches rows of infographics from the table specified by source_name'''
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
@@ -436,6 +447,7 @@ def get_infographics(db_:Session, source_name, book_code=None, title=None, #pyli
         query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
     if title:
         query = query.filter(model_cls.title == title.strip())
+    query = query.filter(model_cls.active == active)
     return query.offset(skip).limit(limit).all()
 
 def upload_infographics(db_: Session, source_name, infographics, user_id=None):
@@ -460,7 +472,8 @@ def upload_infographics(db_: Session, source_name, infographics, user_id=None):
         row = model_cls(
             book_id = book.bookId,
             title = item.title.strip(),
-            infographicLink = item.infographicLink)
+            infographicLink = item.infographicLink,
+            active=item.active)
         db_content.append(row)
     db_.add_all(db_content)
     db_.commit()
@@ -496,7 +509,10 @@ def update_infographics(db_: Session, source_name, infographics, user_id=None):
             raise NotAvailableException("Infographics row with bookCode:%s, title:%s, \
                 not found for %s"%(
                     item.bookCode, item.title, source_name))
-        row.infographicLink = item.infographicLink
+        if item.infographicLink:
+            row.infographicLink = item.infographicLink
+        if item.active is not None:
+            row.active = item.active
         db_.flush()
         db_content.append(row)
     db_.commit()

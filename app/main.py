@@ -612,7 +612,7 @@ def get_bible_book(book_id: int = None, book_code: schemas.BookCodePattern = Non
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Commentaries"])
 def get_commentary(source_name: schemas.TableNamePattern, book_code: schemas.BookCodePattern = None, #pylint: disable=too-many-arguments
     chapter: int = Query(None, ge=-1), verse: int = Query(None, ge=-1),
-    last_verse: int = Query(None, ge=-1),
+    last_verse: int = Query(None, ge=-1), active: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
     '''Fetches commentries under the specified source.
     Using the params bookCode, chapter, and verse the result set can be filtered as per need, like in the /v2/bibles/{sourceName}/verses API
@@ -626,7 +626,7 @@ def get_commentary(source_name: schemas.TableNamePattern, book_code: schemas.Boo
         source_name, book_code, chapter, verse, last_verse, skip, limit)
     try:
         return crud.get_commentaries(db_, source_name, book_code, chapter, verse, last_verse,
-            skip = skip, limit = limit)
+            active=active, skip = skip, limit = limit)
     except SQLAlchemyError as exe:
         log.exception('Error in get_commentary')
         raise DatabaseException(exe) from exe
@@ -684,7 +684,7 @@ def add_commentary(source_name : schemas.TableNamePattern,
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Commentaries"])
 def edit_commentary(source_name: schemas.TableNamePattern,
-    commentaries: List[schemas.CommentaryCreate] = Body(...), db_: Session = Depends(get_db)):
+    commentaries: List[schemas.CommentaryEdit] = Body(...), db_: Session = Depends(get_db)):
     ''' Changes the commentary field to the given value in the row selected using
     book, chapter, verseStart and verseEnd values'''
     log.info('In edit_commentary')
@@ -714,8 +714,8 @@ def edit_commentary(source_name: schemas.TableNamePattern,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Dictionaries"])
 def get_dictionary_word(source_name: schemas.TableNamePattern, search_word: str = None, #pylint: disable=too-many-arguments
-    exact_match: bool = False, word_list_only: bool = False, details:str = None,
-    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
+    exact_match: bool=False, word_list_only: bool=False, details:str=None, active: bool=True,
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
     '''fetches list of dictionary words and all available details about them.
     Using the searchIndex appropriately, it is possible to get
     * All words starting with a letter
@@ -732,7 +732,7 @@ def get_dictionary_word(source_name: schemas.TableNamePattern, search_word: str 
         skip, limit)
     try:
         return crud.get_dictionary_words(db_, source_name, search_word, exact_match=exact_match,
-            word_list_only=word_list_only, details=details, skip = skip, limit = limit)
+            word_list_only=word_list_only, details=details, active=active, skip=skip, limit=limit)
     except SQLAlchemyError as exe:
         log.exception('Error in get_dictionary_word')
         raise DatabaseException(exe) from exe
@@ -783,7 +783,7 @@ def add_dictionary_word(source_name : schemas.TableNamePattern,
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Dictionaries"])
 def edit_dictionary_word(source_name: schemas.TableNamePattern,
-    dictionary_words: List[schemas.DictionaryWordCreate] = Body(...),
+    dictionary_words: List[schemas.DictionaryWordEdit] = Body(...),
     db_: Session = Depends(get_db)):
     '''Updates the given fields mentioned in details object, of the specifed word'''
     log.info('In edit_dictionary_word')
@@ -813,7 +813,7 @@ def edit_dictionary_word(source_name: schemas.TableNamePattern,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Infographics"])
 def get_infographic(source_name: schemas.TableNamePattern, book_code: schemas.BookCodePattern=None, #pylint: disable=too-many-arguments
-    title: str=None,
+    title: str=None, active: bool=True,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
     '''Fetches the infographics. Can use, bookCode and/or title to filter the results
     * skip=n: skips the first n objects in return list
@@ -823,7 +823,7 @@ def get_infographic(source_name: schemas.TableNamePattern, book_code: schemas.Bo
         source_name, book_code, skip, limit)
     try:
         return crud.get_infographics(db_, source_name, book_code, title,
-        skip = skip, limit = limit)
+        active=active, skip = skip, limit = limit)
     except SQLAlchemyError as exe:
         log.exception('Error in get_infographic')
         raise DatabaseException(exe) from exe
@@ -871,7 +871,7 @@ def add_infographics(source_name : schemas.TableNamePattern,
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Infographics"])
 def edit_infographics(source_name: schemas.TableNamePattern,
-    infographics: List[schemas.InfographicCreate] = Body(...),
+    infographics: List[schemas.InfographicEdit] = Body(...),
     db_: Session = Depends(get_db)):
     ''' Changes the infographic link to the given value in the row selected using
     book and title'''

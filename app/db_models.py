@@ -79,6 +79,7 @@ class Commentary(): # pylint: disable=too-few-public-methods
     verseStart = Column('verse_start', Integer)
     verseEnd = Column('verse_end', Integer)
     commentary = Column('commentary', String)
+    active = Column('active', Boolean)
     __table_args__ = (
         UniqueConstraint('book_id', 'chapter', 'verse_start', 'verse_end'),
         {'extend_existing': True}
@@ -89,6 +90,7 @@ class Dictionary(): # pylint: disable=too-few-public-methods
     wordId = Column('word_id', Integer, primary_key=True, autoincrement=True)
     word = Column('word', String, unique=True)
     details = Column('details', JSON)
+    active = Column('active', Boolean)
     __table_args__ = {'extend_existing': True}
 
 class Infographic(): # pylint: disable=too-few-public-methods
@@ -104,6 +106,7 @@ class Infographic(): # pylint: disable=too-few-public-methods
         return relationship(BibleBook)
     title = Column('title', String)
     infographicLink = Column('infographic_url', String)
+    active = Column('active', Boolean)
     __table_args__ = (
         UniqueConstraint('book_id', 'title'),
         {'extend_existing': True}
