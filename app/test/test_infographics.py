@@ -1,6 +1,6 @@
 '''Test cases for infographics related APIs'''
 from . import client
-from . import check_default_get
+from . import check_default_get, check_soft_delete
 from . import assert_input_validation_error, assert_not_available_content
 from .test_versions import check_post as add_version
 from .test_sources import check_post as add_source
@@ -277,12 +277,6 @@ def test_put_incorrect_data():
     response = client.put(UNIT_URL+source_name, headers=headers, json=data)
     assert_input_validation_error(response)
 
-    data = [
-        {'bookCode':'mat', 'title':"12 apostles"}
-    ]
-    response = client.put(UNIT_URL+source_name, headers=headers, json=data)
-    assert_input_validation_error(response)
-
     # incorrect data values in fields
 
     data = [
@@ -303,13 +297,6 @@ def test_put_incorrect_data():
     response = client.put(UNIT_URL+source_name, headers=headers, json=data)
     assert_input_validation_error(response)
 
-
-    data = [
-        {'bookCode':'mat', 'title':"12 apostles",
-        "infographicsLink":"http://somewhere.com/something"}    ]
-    response = client.put(UNIT_URL+source_name, headers=headers, json=data)
-    assert_input_validation_error(response)
-
     source_name1 = source_name.replace('infographics', 'graphics')
     response = client.put(UNIT_URL+source_name1, headers=headers, json=[])
     assert response.status_code == 404
@@ -317,3 +304,27 @@ def test_put_incorrect_data():
     source_name2 = source_name.replace('1', '10')
     response = client.put(UNIT_URL+source_name2, headers=headers, json=[])
     assert response.status_code == 404
+
+def test_soft_delete():
+    '''check soft delete in infographics'''
+    data = [
+        {'bookCode':'mat', 'title':"12 apostles",
+        "infographicLink":"http://somewhere.com/something"},
+        {'bookCode':'mat', 'title':"miracles",
+        "infographicLink":"http://somewhere.com/something"},
+        {'bookCode':'mat', 'title':"Words of Jesus",
+        "infographicLink":"http://somewhere.com/something"},
+        {'bookCode':'rev', 'title':"7 churches of Asia Minor",
+        "infographicLink":"http://somewhere.com/something"},
+        {'bookCode':'rev', 'title':"Creatures in Heaven",
+        "infographicLink":"http://somewhere.com/something"},
+        {'bookCode':'rev', 'title':"All the Sevens",
+        "infographicLink":"http://somewhere.com/something"}
+    ]
+
+    delete_data = [
+        {'bookCode':'rev', 'title':"Creatures in Heaven"},
+        {'bookCode':'rev', 'title':"All the Sevens"}
+    ]
+    check_soft_delete(UNIT_URL, check_post, data, delete_data)
+    

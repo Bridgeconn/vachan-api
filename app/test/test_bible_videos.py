@@ -1,6 +1,6 @@
 '''Test cases for bible videos related APIs'''
 from . import client
-from . import check_default_get
+from . import check_default_get, check_soft_delete
 from .test_sources import check_post as add_source
 from .test_versions import check_post as add_version
 from . import assert_input_validation_error, assert_not_available_content
@@ -318,3 +318,27 @@ def test_put_incorrect_data():
     source_name2 = source_name.replace('1', '13')
     response = client.put(UNIT_URL+source_name2, headers=headers, json=[])
     assert response.status_code == 404
+
+def test_soft_delete():
+    '''check soft delete in infographics'''
+    data = [
+        {'title':'Words of Jesus', 'theme': 'New testament',
+            'description':"brief description",
+            'books': ['mat', 'mrk', 'luk', 'jhn'],
+            'videoLink': 'https://www.youtube.com/biblevideos/vid',
+            'status':True},
+        {'title':'Miracles of Jesus', 'theme': 'New testament', 'description':"brief description",
+            'books': ['mat', 'mrk', 'luk', 'jhn'],
+            'videoLink': 'https://www.youtube.com/biblevideos/vid',
+            'status':True},
+        {'title':'Miracles the Israelites saw', 'theme': 'Old testament',
+            'description':"brief description",
+            'books': ['exo'], 'videoLink': 'https://www.youtube.com/biblevideos/vid', 'status':True}
+    ]
+
+    delete_data = [
+        {'title':'Words of Jesus'},
+        {'title':'Miracles of Jesus'}
+    ]
+    check_soft_delete(UNIT_URL, check_post, data, delete_data)
+    
