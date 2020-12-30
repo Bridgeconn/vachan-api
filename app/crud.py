@@ -244,13 +244,13 @@ def update_source(db_: Session, source: schemas.VersionEdit, user_id = None): #p
         db_content.updatedUser = user_id
     db_.commit()
     db_.refresh(db_content)
-    sql_statement = sqlalchemy.text("ALTER TABLE IF EXISTS %s RENAME TO %s"%(
-        source.sourceName, db_content.sourceName))
-    db_.execute(sql_statement)
-    log.warning("User %s, renames table %s to %s", user_id, source.sourceName,
-        db_content.sourceName)
+    if source.sourceName != db_content.sourceName:
+        sql_statement = sqlalchemy.text("ALTER TABLE IF EXISTS %s RENAME TO %s"%(
+            source.sourceName, db_content.sourceName))
+        db_.execute(sql_statement)
+        log.warning("User %s, renames table %s to %s", user_id, source.sourceName,
+            db_content.sourceName)
     db_models.create_dynamic_table(db_content.sourceName, db_content.contentType.contentType)
-    db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine)
     return db_content
 
 def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None, #pylint: disable=too-many-arguments

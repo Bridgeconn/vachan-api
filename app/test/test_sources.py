@@ -50,7 +50,7 @@ def test_post_default():
     }
     add_version(version_data)
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "hin",
         "version": "TTT",
         "revision": 1,
@@ -68,7 +68,7 @@ def test_post_wrong_version():
     }
     add_version(version_data)
     data1 = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "hin",
         "version": "TTD",
         "revision": 1,
@@ -83,7 +83,7 @@ def test_post_wrong_version():
     assert response.json()['details'] == "Version, TTD 1, not found in Database"
 
     data2 = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "hin",
         "version": "TTT",
         "revision": 2,
@@ -97,7 +97,7 @@ def test_post_wrong_version():
     assert response.json()['details'] == "Version, TTT 2, not found in Database"
 
     data3 = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "hin",
         "version": "TTT",
         "revision": 1,
@@ -115,7 +115,7 @@ def test_post_wrong_lang():
     }
     add_version(version_data)
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "aaj",
         "version": "TTT",
         "revision": 1,
@@ -154,7 +154,7 @@ def test_post_wrong_content():
 def test_post_wrong_year():
     '''Negative test with text in year field'''
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "hin",
         "version": "TTT",
         "revision": 1,
@@ -169,7 +169,7 @@ def test_post_wrong_year():
 def test_post_wrong_metadata():
     '''Negative test with incorrect format for metadata'''
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "hin",
         "version": "TTT",
         "revision": 1,
@@ -196,7 +196,7 @@ def test_post_missing_mandatory_info():
 
     # no language
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "version": "TTT",
         "revision": 1,
         "year": 2020
@@ -206,7 +206,7 @@ def test_post_missing_mandatory_info():
 
     # no version
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "hin",
         "revision": 1,
         "year": 2020
@@ -216,7 +216,7 @@ def test_post_missing_mandatory_info():
 
     # no year
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "hin",
         "version": "TTT"
     }
@@ -232,7 +232,7 @@ def test_post_missing_some_info():
     }
     add_version(version_data)
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "hin",
         "version": "TTT",
         "year": 2020
@@ -247,7 +247,7 @@ def test_post_duplicate():
     }
     add_version(version_data)
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "hin",
         "version": "TTT",
         "year": 2020
@@ -285,7 +285,7 @@ def test_get_after_adding_data():
     }
     add_version(version_data)
     data = {
-        "contentType": "bible",
+        "contentType": "infographics",
         "version": "TTT",
         "year": 2020
     }
@@ -362,7 +362,7 @@ def test_put_default():
     version_data['revision'] = 2
     add_version(version_data)
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         'language': 'mal',
         "version": "TTT",
         "year": 2020
@@ -370,7 +370,7 @@ def test_put_default():
     check_post(data)
 
     data_update = {
-        "sourceName": 'mal_TTT_1_bible',
+        "sourceName": 'mal_TTT_1_commentary',
         "revision": 2
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -379,10 +379,10 @@ def test_put_default():
     assert response.json()['message'] == "Source edited successfully"
     assert_positive_get(response.json()['data'])
     assert response.json()['data']['version']['revision'] == 2
-    assert response.json()['data']['sourceName'] == "mal_TTT_2_bible"
+    assert response.json()['data']['sourceName'] == "mal_TTT_2_commentary"
 
     data_update = {
-        'sourceName': 'mal_TTT_2_bible',
+        'sourceName': 'mal_TTT_2_commentary',
         'metaData': {'owner': 'new owner'}
     }
     response = client.put(UNIT_URL, headers=headers, json=data_update)
@@ -399,7 +399,7 @@ def test_soft_delete():
     }
     add_version(version_data)
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         'language': 'mal',
         "version": "TTT",
         "year": 2020
@@ -408,7 +408,7 @@ def test_soft_delete():
     assert response.json()['data']['active']
 
     data_update = {
-        'sourceName': 'mal_TTT_1_bible',
+        'sourceName': 'mal_TTT_1_commentary',
         'active': False
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -424,4 +424,4 @@ def test_soft_delete():
     for item in response.json():
         assert_positive_get(item)
         assert not item['active']
-    assert 'mal_TTT_1_bible' in [item['sourceName'] for item in response.json()]
+    assert 'mal_TTT_1_commentary' in [item['sourceName'] for item in response.json()]
