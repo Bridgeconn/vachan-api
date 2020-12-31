@@ -606,7 +606,29 @@ def createAssignments():
 	cursor.execute("update autographamt_assignments set books=%s where user_id=%s and \
 		project_id=%s", (books, userId, projectId))
 	connection.commit()
-	cursor.close()
+	# send email notification
+	try:
+		cursor.execute("SELECT first_name, email_id from autographamt_users where user_id=%s",(userId,))
+		name, email = cursor.fetchone()
+		cursor.execute("SELECT project_name from autographamt_projects where project_id=%s",(projectId,))
+		project = cursor.fetchone()[0]
+		cursor.close()
+		headers = {"api-key": sendinblue_key}
+		url = "https://api.sendinblue.com/v2.0/email"
+		body = '''Hello %s,<br/><br/>
+		Books %s has been assigned to you in project %s.<br/><br/>
+		AutographaMT'''%(name, books.replace('|', ", "), project)
+		payload = {
+			"to": {email: ""},
+			"from": ["noreply@autographamt.in", "Autographa MT"],
+			"subject": "AutographaMT - New work assignment",
+			"html": body,
+			}
+		resp = requests.post(url, data=json.dumps(payload), headers=headers)
+	except Exception as e:
+		print(e)
+		return '{"success":false, "message":'+str(e)+'}'
+
 	return '{"success":true, "message":"User Role Updated"}'
 
 @app.route("/v1/autographamt/projects/assignments", methods=["DELETE"])
