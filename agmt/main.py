@@ -381,10 +381,10 @@ def autographamtOrganisations():
 @check_token
 def createOrganisations():
 	req = request.get_json(True)
-	organisationName = req["organisationName"]
-	organisationAddress = req["organisationAddress"]
+	organisationName = req["organisationName"].strip()
+	organisationAddress = req["organisationAddress"].strip()
 	organisationPhone = req["organisationPhone"]
-	organisationEmail = req["organisationEmail"]
+	organisationEmail = req["organisationEmail"].strip()
 	email = request.email
 	try:
 		connection = get_db()
@@ -400,7 +400,28 @@ def createOrganisations():
 				organisation_address, organisation_phone, organisation_email, user_id, status) values (%s,%s,%s,%s,%s,true) ", \
 					(organisationName, organisationAddress, organisationPhone, organisationEmail, userId))
 			connection.commit()
-			cursor.close()
+			# send email notification
+			try:
+				cursor.execute("SELECT email_id from autographamt_users where role_id=3")
+				all_super_admins = cursor.fetchall()
+				cursor.close()
+				headers = {"api-key": sendinblue_key}
+				url = "https://api.sendinblue.com/v2.0/email"
+				body = '''Hello Super Admin,<br/><br/>
+				A new organization request has come for, %s. Please check and approve.<br/><br/>
+				AutographaMT'''%(organisationName)
+				for row in all_super_admins:
+					email = row[0]
+					payload = {
+						"to": {email: ""},
+						"from": ["noreply@autographamt.in", "Autographa MT"],
+						"subject": "AutographaMT - New Organisation Request",
+						"html": body,
+						}
+					resp = requests.post(url, data=json.dumps(payload), headers=headers)
+			except Exception as e:
+				print(e)
+				return '{"success":false, "message":"'+str(e)+'"}'
 			return '{"success":true, "message":"Organisation request sent"}'
 		else:
 			status = rst[0]
@@ -411,6 +432,7 @@ def createOrganisations():
 				cursor.close()
 				return '{"success":true, "message":"Organisation re-activation request sent"}'
 			return '{"success":false, "message":"Organisation already created"}'
+
 	except Exception as e:
 		print(e)
 		return json.dumps({'success':False,'message':'server error'})
@@ -606,7 +628,29 @@ def createAssignments():
 	cursor.execute("update autographamt_assignments set books=%s where user_id=%s and \
 		project_id=%s", (books, userId, projectId))
 	connection.commit()
-	cursor.close()
+	# send email notification
+	try:
+		cursor.execute("SELECT first_name, email_id from autographamt_users where user_id=%s",(userId,))
+		name, email = cursor.fetchone()
+		cursor.execute("SELECT project_name from autographamt_projects where project_id=%s",(projectId,))
+		project = cursor.fetchone()[0]
+		cursor.close()
+		headers = {"api-key": sendinblue_key}
+		url = "https://api.sendinblue.com/v2.0/email"
+		body = '''Hello %s,<br/><br/>
+		Books %s has been assigned to you in project %s.<br/><br/>
+		AutographaMT'''%(name, books.replace('|', ", "), project)
+		payload = {
+			"to": {email: ""},
+			"from": ["noreply@autographamt.in", "Autographa MT"],
+			"subject": "AutographaMT - New work assignment",
+			"html": body,
+			}
+		resp = requests.post(url, data=json.dumps(payload), headers=headers)
+	except Exception as e:
+		print(e)
+		return '{"success":false, "message":'+str(e)+'}'
+
 	return '{"success":true, "message":"User Role Updated"}'
 
 @app.route("/v1/autographamt/projects/assignments", methods=["DELETE"])
@@ -926,17 +970,41 @@ def organisationApprovals():
 		if role == 3:
 			connection = get_db()
 			cursor = connection.cursor()
-			cursor.execute("select o.user_id, u.role_id from autographamt_organisations o left join \
+			cursor.execute("select o.user_id, u.role_id, u.first_name, u.email_id from autographamt_organisations o left join \
 				autographamt_users u on o.user_id=u.user_id where o.organisation_id=%s", \
 					(organisationId,))
-			userId, roleId = cursor.fetchone()
+			userId, roleId, name, email = cursor.fetchone()
 			cursor.execute("update autographamt_organisations set verified=%s where \
 				organisation_id=%s", (verified, organisationId))
 			if roleId < 3:
 				cursor.execute("update autographamt_users set role_id=2 where user_id=%s", (userId,))
 			# cursor
 			connection.commit()
-			cursor.close()
+			# send email notification
+			try:
+				cursor.execute("SELECT organisation_name from autographamt_organisations where organisation_id=%s",(organisationId,))
+				org_name = cursor.fetchone()[0]
+				cursor.close()
+				headers = {"api-key": sendinblue_key}
+				url = "https://api.sendinblue.com/v2.0/email"
+				if verified:
+					body = '''Hello %s,<br/><br/>
+					Your request to create organization,%s, has been approved.<br/><br/>
+					AutographaMT'''%(name, org_name)
+				else:
+					body = '''Hello %s,<br/><br/>
+					Your request to create organization,%s, has not been approved.<br/><br/>
+					AutographaMT'''%(name, org_name)
+				payload = {
+					"to": {email: ""},
+					"from": ["noreply@autographamt.in", "Autographa MT"],
+					"subject": "AutographaMT - New Organisation",
+					"html": body,
+					}
+				resp = requests.post(url, data=json.dumps(payload), headers=headers)
+			except Exception as e:
+				print(e)
+				return '{"success":false, "message":'+str(e)+'}'
 			return '{"success":true, "message":"Role Updated"}'
 		else:
 			# cursor.close()
