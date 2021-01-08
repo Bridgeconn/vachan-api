@@ -199,6 +199,10 @@ def create_source(db_: Session, source: schemas.SourceCreate, table_name, user_i
     if content_type.contentType == 'bible':
         db_models.dynamicTables[db_content.sourceName+'_cleaned'].__table__.create(
             bind=engine, checkfirst=True)
+        log.warning("User %s, creates a new table %s", user_id, db_content.sourceName+'_cleaned')
+        db_models.dynamicTables[db_content.sourceName+'_audio'].__table__.create(
+            bind=engine, checkfirst=True)
+        log.warning("User %s, creates a new table %s", user_id, db_content.sourceName+'_audio')
     log.warning("User %s, creates a new table %s", user_id, db_content.sourceName)
     db_.commit()
     db_.refresh(db_content)
@@ -665,11 +669,6 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None):
     db_.add_all(db_content2)
     source_db_content.updatedUser = user_id
     db_.commit()
-    for it in db_content:
-        print(it.active)
-        print(it.__dict__)
-        print(it.book_id)
-        print(it.book)
     return db_content
 
 def update_bible_books(db_: Session, source_name, books, user_id=None):
@@ -687,6 +686,8 @@ def update_bible_books(db_: Session, source_name, books, user_id=None):
         book = db_.query(db_models.BibleBook).filter(
             db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
         row = db_.query(model_cls).filter(model_cls.book_id == book.bookId).first()
+        if not row:
+            raise NotAvailableException("Bible book, %s, not found in Database"%item.bookCode)
         if item.USFM:
             row.USFM = item.USFM
             row.JSON = item.JSON
@@ -725,6 +726,67 @@ def update_bible_books(db_: Session, source_name, books, user_id=None):
     return db_content
 
 
+def upload_bible_audios(db_:Session, source_name, audios, user_id=None):
+    '''Add audio bible related contents to _bible_audio table'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'bible':
+        raise TypeException('The operation is supported only on bible')
+    model_cls = db_models.dynamicTables[source_name+'_audio']
+    db_content = []
+    for item in audios:
+        for buk in item.books:
+            book = db_.query(db_models.BibleBook).filter(
+                db_models.BibleBook.bookCode == buk.strip().lower()).first()
+            if not book:
+                raise NotAvailableException('Bible Book code, %s, not found in database')
+        row = model_cls(
+            name=item.name.strip(),
+            url=item.url.strip(),
+            books=item.books,
+            format=item.format.strip(),
+            active=item.active)
+        db_content.append(row)
+    db_.add_all(db_content)
+    db_.commit()
+    return db_content
+
+def update_bible_audios(db_: Session, source_name, audios, user_id=None):
+    '''Update any details of a bible Auido row. 
+    Use name as row-identifier, which cannot be changed'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'bible':
+        raise TypeException('The operation is supported only on bible')
+    model_cls = db_models.dynamicTables[source_name+'_audio']
+    db_content = []
+    for item in audios:
+        row = db_.query(model_cls).filter(model_cls.name == item.name.strip()).first()
+        if not row:
+            raise NotAvailableException("Bible audio, %s, not found in database"%item.name)
+        if item.url:
+            row.url = item.url.strip()
+        if item.books is not None:
+            for buk in item.books:
+                book = db_.query(db_models.BibleBook).filter(
+                    db_models.BibleBook.bookCode == buk.strip().lower()).first()
+                if not book:
+                    raise NotAvailableException('Bible Book code, %s, not found in database')
+            row.books = item.books
+        if item.format:
+            row.format = item.format.strip()
+        if item.active is not None:
+            row.active = item.active
+        db_content.append(row)
+    source_db_content.updatedUser = user_id
+    db_.commit()
+    return db_content
+
+    
     
 
 def get_available_bible_books(db_, source_name, book_code, content_type,

@@ -158,7 +158,7 @@ class BibleContentCleaned(): # pylint: disable=too-few-public-methods
         return relationship(BibleBook)
     chapter = Column('chapter', Integer)
     verseNumber = Column('verse_number', Integer)
-    verseText = Column('verseText', String)
+    verseText = Column('verse_text', String)
     # footNote = Column('footnote', String)
     # crossReference = Column('cross_reference')
     active = Column('active', Boolean, default=True)
@@ -174,7 +174,7 @@ class BibleAudio(): # pylint: disable=too-few-public-methods
     url = Column('audio_link', String)
     books = Column('books', ARRAY(String))
     format = Column('audio_format', String)
-    active = Column('active', Boolean)
+    active = Column('active', Boolean, default=True)
 
 dynamicTables = {}
 def create_dynamic_table(source_name, content_type):
@@ -185,6 +185,9 @@ def create_dynamic_table(source_name, content_type):
         dynamicTables[source_name+'_cleaned'] = type(
             source_name+'_cleaned',(BibleContentCleaned, Base,),
             {"__tablename__": source_name+'_cleaned'})
+        dynamicTables[source_name+'_audio'] = type(
+            source_name+'_audio',(BibleAudio, Base,),
+            {"__tablename__": source_name+'_audio'})
     elif content_type == 'commentary':
         dynamicTables[source_name] = type(
             source_name,(Commentary, Base,),{"__tablename__": source_name})

@@ -578,7 +578,7 @@ def get_bible_verse(source_name: schemas.TableNamePattern, #pylint: disable=too-
 
 # # ########### Audio bible ###################
 
-@app.post('/v2/bibles/{source_name}/audios', response_model=schemas.BibleBookUpdateResponse,
+@app.post('/v2/bibles/{source_name}/audios', response_model=schemas.AudioBibleUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bibles"])
@@ -587,12 +587,12 @@ def add_audio_bible(source_name : schemas.TableNamePattern,
     '''uploads audio(links and related info, not files) for a bible'''
     log.info('In add_audio_bible')
     log.debug('source_name: %s, audios: %s',source_name, audios)
-    return {'message': "Bible audios uploaded and processed successfully",
+    return {'message': "Bible audios details uploaded successfully",
         "data": crud.upload_bible_audios(db_=db_, source_name=source_name,
         audios=audios, user_id=None)}
 
 
-@app.put('/v2/bibles/{source_name}/audios', response_model=schemas.BibleBookUpdateResponse,
+@app.put('/v2/bibles/{source_name}/audios', response_model=schemas.AudioBibleUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bibles"])
@@ -602,7 +602,7 @@ def edit_audio_bible(source_name: schemas.TableNamePattern,
     Name is used to identify row and cannot be changed'''
     log.info('In edit_audio_bible')
     log.debug('source_name: %s, audios: %s',source_name, audios)
-    return {'message': "Bible audios uploaded and processed successfully",
+    return {'message': "Bible audios details updated successfully",
         "data": crud.update_bible_audios(db_=db_, source_name=source_name,
         audios=audios, user_id=None)}
 
