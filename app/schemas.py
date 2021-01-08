@@ -2,7 +2,7 @@
 
 from typing import List
 from enum import Enum
-from pydantic import BaseModel, constr, AnyUrl, validator
+from pydantic import BaseModel, constr, AnyUrl, validator, root_validator
 
 class NormalResponse(BaseModel):
     '''Response with only a message'''
@@ -160,12 +160,16 @@ class BibleBook(BaseModel):
 
 class AudioBible(BaseModel):
     '''Response object of Audio Bible'''
-    audioId: int
+    # audioId: int
     name: str
     url: AnyUrl
-    books: dict
+    books:  List[BookCodePattern]
     format: str
     active: bool
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
 
 class AudioBibleUpdateResponse(BaseModel):
     '''Response object of auido bible update'''
@@ -176,44 +180,72 @@ class AudioBibleUpload(BaseModel):
     '''Input object of Audio Bible'''
     name: str
     url: AnyUrl
-    books: dict
+    books:  List[BookCodePattern]
     format: str
-    active: bool
-
+    active: bool = True
 
 class AudioBibleEdit(BaseModel):
     ''' Input object of Auido Bible'''
-    audioId: int
-    name: str = None
+    name: str
     url: str = None
-    books: dict = None
+    books: List[BookCodePattern] = None
     format: str = None
     active: bool = None
 
 class BibleBookContent(BaseModel):
     '''Response object of Bible book contents'''
-    bookCode : BookCodePattern
+    book : BibleBook
+    bookName: str = None
     versification : dict = None
     USFM: str = None
     JSON: dict = None
     audio: AudioBible = None
     active: bool
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
 
 class BibleBookUpdateResponse(BaseModel):
     '''Input object of Bible book update'''
     message: str
-    data: BibleBookContent = None
+    data: List[BibleBookContent] = None
 
 class BibleBookUpload(BaseModel):
     '''Input object of bible book'''
     USFM: str
     JSON: dict
 
+class BibleBookEdit(BaseModel):
+    '''Input object of bible book'''
+    bookCode: BookCodePattern = None
+    USFM: str = None
+    JSON: dict = None
+    active: bool = None
+
+    @root_validator
+    def check_for_usfm_json(cls, values): # pylint: disable=R0201 disable=E0213
+        '''USFM and JSON should be updated together. If they are absent, bookCode is required'''
+        print(">>>>>>>>>>>>>>>>>>>>>>>>")
+        print(values)
+        if (values['USFM'] is not None and values['JSON'] is None) or (
+            values['USFM'] is not None and values['JSON'] is None):
+            raise ValueError(
+                'USFM and JSON are inter-dependant. So both should be updated together')
+        if "bookCode" not in values or values['bookCode'] is None:
+            if "JSON" in values:
+                print(values['JSON'])
+                values["bookCode"] = values['JSON']['book']['bookCode'].lower()
+            else:
+                raise ValueError('"bookCode" is required to identiy the row to be updated')
+        print("<<<<<<<<<<<<<<<<<<<<<<<<<<")
+        print(values)
+        return values
+
 class Reference(BaseModel):
     '''Response object of bible refernce'''
-    # bible : Source = None
-    bookId: int = None
-    bookcode: BookCodePattern
+    bible : TableNamePattern = None
+    book: BibleBook
     chapter: int
     verseNumber: int
     verseNumberEnd: int = None

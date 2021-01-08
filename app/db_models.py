@@ -123,11 +123,69 @@ class BibleVideo(): # pylint: disable=too-few-public-methods
     books = Column('books', ARRAY(String))
     __table_args__ = {'extend_existing': True}
 
+class BibleContent(): # pylint: disable=too-few-public-methods
+    '''Corresponds to the dynamically created bible tables in vachan Db(postgres)'''
+    bookContentId  = Column('bible_content_id', Integer, primary_key=True, autoincrement=True)
+    @declared_attr
+    def book_id(cls): # pylint: disable=E0213
+        '''For modelling the bookId field in bible content classes'''
+        return Column('book_id', Integer, ForeignKey('bible_books_look_up.book_id'), unique=True)
+    @declared_attr
+    def book(cls): # pylint: disable=E0213
+        '''For modelling the book field in bible content classes'''
+        return relationship(BibleBook)
+    USFM = Column('usfm', String)
+    JSON = Column('json_object', JSON)
+    active = Column('active', Boolean, default=True)
+    __table_args__ = {'extend_existing': True}
+
+def createRefId(context):
+    bbb = str(context.get_current_parameters()['book_id']).zfill(3)
+    ccc = str(context.get_current_parameters()['chapter']).zfill(3)
+    vvv = str(context.get_current_parameters()['verse_number']).zfill(3)
+    return bbb + ccc + vvv
+
+class BibleContentCleaned(): # pylint: disable=too-few-public-methods
+    '''Corresponds to the dynamically created bible_cleaned tables in vachan Db(postgres)'''
+    refId  = Column('ref_id', Integer, primary_key=True, default=createRefId)
+    @declared_attr
+    def book_id(cls): # pylint: disable=E0213
+        '''For modelling the bookId field in bible content classes'''
+        return Column('book_id', Integer, ForeignKey('bible_books_look_up.book_id'))
+    @declared_attr
+    def book(cls): # pylint: disable=E0213
+        '''For modelling the book field in bible content classes'''
+        return relationship(BibleBook)
+    chapter = Column('chapter', Integer)
+    verseNumber = Column('verse_number', Integer)
+    verseText = Column('verseText', String)
+    # footNote = Column('footnote', String)
+    # crossReference = Column('cross_reference')
+    active = Column('active', Boolean, default=True)
+    __table_args__ = (
+        UniqueConstraint('book_id', 'chapter', 'verse_number'),
+        {'extend_existing': True}
+                     )
+
+class BibleAudio(): # pylint: disable=too-few-public-methods
+    '''Corresponds to the dynamically created bible_audio tables in vachan Db(postgres)'''
+    audioId  = Column('bible_audio_id', Integer, primary_key=True, autoincrement=True)
+    name = Column('name', String, unique=True)
+    url = Column('audio_link', String)
+    books = Column('books', ARRAY(String))
+    format = Column('audio_format', String)
+    active = Column('active', Boolean)
 
 dynamicTables = {}
 def create_dynamic_table(source_name, content_type):
     '''To map or create one dynamic table based on the content Type'''
-    if content_type == 'commentary':
+    if content_type == 'bible':
+        dynamicTables[source_name] = type(
+            source_name,(BibleContent, Base,),{"__tablename__": source_name})
+        dynamicTables[source_name+'_cleaned'] = type(
+            source_name+'_cleaned',(BibleContentCleaned, Base,),
+            {"__tablename__": source_name+'_cleaned'})
+    elif content_type == 'commentary':
         dynamicTables[source_name] = type(
             source_name,(Commentary, Base,),{"__tablename__": source_name})
     elif content_type == 'dictionary':
@@ -140,7 +198,8 @@ def create_dynamic_table(source_name, content_type):
         dynamicTables[source_name] = type(
             source_name,(BibleVideo, Base,),{"__tablename__": source_name})
     else:
-        raise GenericException("Table structure not defined for this content type")
+        raise GenericException("Table structure not defined for this content type:%s"
+            %content_type)
 
 
 def map_all_dynamic_tables(db_: Session):

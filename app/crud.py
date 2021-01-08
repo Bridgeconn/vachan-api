@@ -196,12 +196,15 @@ def create_source(db_: Session, source: schemas.SourceCreate, table_name, user_i
     db_.add(db_content)
     db_models.create_dynamic_table(table_name, content_type.contentType)
     db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine, checkfirst=True)
+    if content_type.contentType == 'bible':
+        db_models.dynamicTables[db_content.sourceName+'_cleaned'].__table__.create(
+            bind=engine, checkfirst=True)
     log.warning("User %s, creates a new table %s", user_id, db_content.sourceName)
     db_.commit()
     db_.refresh(db_content)
     return db_content
 
-def update_source(db_: Session, source: schemas.VersionEdit, user_id = None): #pylint: disable=too-many-branches
+def update_source(db_: Session, source: schemas.SourceEdit, user_id = None): #pylint: disable=too-many-branches
     '''changes one or more fields of sources, selected via sourceName or table_name'''
     db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source.sourceName).first()
@@ -248,8 +251,14 @@ def update_source(db_: Session, source: schemas.VersionEdit, user_id = None): #p
         sql_statement = sqlalchemy.text("ALTER TABLE IF EXISTS %s RENAME TO %s"%(
             source.sourceName, db_content.sourceName))
         db_.execute(sql_statement)
-        log.warning("User %s, renames table %s to %s", user_id, source.sourceName,
+        log.warning("User %s, renames table %s to %s", user_id, db_content.sourceName,
             db_content.sourceName)
+        if db_content.contentType.contentType == 'bible':
+            sql_statement = sqlalchemy.text("ALTER TABLE IF EXISTS %s RENAME TO %s"%(
+                source.sourceName+"_cleaned", db_content.sourceName+"_cleaned"))
+            db_.execute(sql_statement)
+            log.warning("User %s, renames table %s to %s", user_id, source.sourceName+"_cleaned",
+                db_content.sourceName+"_cleaned")
     db_models.create_dynamic_table(db_content.sourceName, db_content.contentType.contentType)
     return db_content
 
@@ -615,3 +624,114 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
     db_.commit()
     db_.refresh(source_db_content)
     return db_content
+
+def upload_bible_books(db_: Session, source_name, books, user_id=None):
+    '''Adds rows to the bible table and corresponding bible_cleaned specified by source_name'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'bible':
+        raise TypeException('The operation is supported only on bible')
+    model_cls = db_models.dynamicTables[source_name]
+    model_cls_2 = db_models.dynamicTables[source_name+'_cleaned']
+    db_content = []
+    db_content2 = []
+    for item in books:
+        book_code = item.JSON['book']['bookCode']
+        book = db_.query(db_models.BibleBook).filter(
+                db_models.BibleBook.bookCode == book_code.lower() ).first()
+        if not book:
+            raise NotAvailableException('Bible Book code, %s, not found in database'
+                %book_code)
+        row = model_cls(
+            book_id=book.bookId,
+            USFM=item.USFM,
+            JSON=item.JSON,
+            active=True)
+        db_.flush()
+        db_content.append(row)
+        for chapter in item.JSON["chapters"]:
+            chapter_number = int(chapter['chapterNumber'])
+            for content in chapter['contents']:
+                if 'verseNumber' in content:
+                    row_other = model_cls_2(
+                        book_id = book.bookId,
+                        chapter = chapter_number,
+                        verseNumber = content['verseNumber'],
+                        verseText = content['verseText'].strip())
+                    db_content2.append(row_other)
+    db_.add_all(db_content)
+    db_.add_all(db_content2)
+    source_db_content.updatedUser = user_id
+    db_.commit()
+    for it in db_content:
+        print(it.active)
+        print(it.__dict__)
+        print(it.book_id)
+        print(it.book)
+    return db_content
+
+def update_bible_books(db_: Session, source_name, books, user_id=None):
+    '''change values of bible books already uploaded'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'bible':
+        raise TypeException('The operation is supported only on bible')
+    # update the bible table
+    model_cls = db_models.dynamicTables[source_name]
+    db_content = []
+    for item in books:
+        book = db_.query(db_models.BibleBook).filter(
+            db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
+        row = db_.query(model_cls).filter(model_cls.book_id == book.bookId).first()
+        if item.USFM:
+            row.USFM = item.USFM
+            row.JSON = item.JSON
+        if item.active is not None:
+            row.active = item.active
+        db_.flush()
+        db_content.append(row)
+    # update bible cleaned table
+    db_content2 = []
+    model_cls_2 = db_models.dynamicTables[source_name+'_cleaned']
+    for item in books:
+        book = db_.query(db_models.BibleBook).filter(
+            db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
+        if item.USFM: # delete all verses and add them again
+            db_.query(model_cls_2).filter(
+                model_cls_2.book_id == book.bookId).delete()
+            for chapter in item.JSON["chapters"]:
+                chapter_number = int(chapter['chapterNumber'])
+                for content in chapter['contents']:
+                    if 'verseNumber' in content:
+                        row_other = model_cls_2(
+                            book_id = book.bookId,
+                            chapter = chapter_number,
+                            verseNumber = content['verseNumber'],
+                            verseText = content['verseText'].strip())
+                        db_content2.append(row_other)
+            db_.add_all(db_content2)
+        if item.active is not None: # set all the verse rows' active flag accordingly
+            rows = db_.query(model_cls_2).filter(
+                model_cls_2.book_id == book.bookId).all()
+            for row in rows:
+                row.active = item.active
+    db_.commit()
+    source_db_content.updatedUser = user_id
+    db_.commit()
+    return db_content
+
+
+    
+
+def get_available_bible_books(db_, source_name, book_code, content_type,
+            versification, active=True, skip=0, limit=100):
+    return []
+
+
+def get_bible_verses(db_, source_name, book_code, chapter, verse, lastVerse,
+            searchPhrase, active=True, skip=0, limit=100):
+    return []
