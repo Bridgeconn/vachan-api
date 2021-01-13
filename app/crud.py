@@ -1,7 +1,7 @@
 ''' Place to define all Database CRUD operations'''
 import json
 import sqlalchemy
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, Load, noload, load_only, defer, joinedload
 
 import db_models
 import schemas
@@ -195,6 +195,7 @@ def create_source(db_: Session, source: schemas.SourceCreate, table_name, user_i
         db_content.created_user = user_id
     db_.add(db_content)
     db_models.create_dynamic_table(table_name, content_type.contentType)
+    print(db_models.dynamicTables)
     db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine, checkfirst=True)
     if content_type.contentType == 'bible':
         db_models.dynamicTables[db_content.sourceName+'_cleaned'].__table__.create(
@@ -669,6 +670,8 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None):
     db_.add_all(db_content2)
     source_db_content.updatedUser = user_id
     db_.commit()
+    for item in db_content:
+        print(item.__dict__)
     return db_content
 
 def update_bible_books(db_: Session, source_name, books, user_id=None):
@@ -734,23 +737,35 @@ def upload_bible_audios(db_:Session, source_name, audios, user_id=None):
         raise NotAvailableException('Source %s, not found in database'%source_name)
     if source_db_content.contentType.contentType != 'bible':
         raise TypeException('The operation is supported only on bible')
-    model_cls = db_models.dynamicTables[source_name+'_audio']
+    model_cls_audio = db_models.dynamicTables[source_name+'_audio']
+    model_cls_bible = db_models.dynamicTables[source_name]
     db_content = []
+    db_content2 = []
     for item in audios:
         for buk in item.books:
             book = db_.query(db_models.BibleBook).filter(
                 db_models.BibleBook.bookCode == buk.strip().lower()).first()
             if not book:
                 raise NotAvailableException('Bible Book code, %s, not found in database')
-        row = model_cls(
-            name=item.name.strip(),
-            url=item.url.strip(),
-            books=item.books,
-            format=item.format.strip(),
-            active=item.active)
-        db_content.append(row)
+            bible_table_row = db_.query(model_cls_bible).filter(
+                model_cls_bible.book_id == book.bookId).first()
+            if not bible_table_row:
+                bible_table_row = model_cls_bible(
+                    book_id=book.bookId
+                    )
+                db_content2.append(bible_table_row)
+            row = model_cls_audio(
+                name=item.name.strip(),
+                url=item.url.strip(),
+                book_id=book.bookId,
+                format=item.format.strip(),
+                active=item.active)
+            db_content.append(row)
     db_.add_all(db_content)
+    db_.add_all(db_content2)
     db_.commit()
+    for item in db_content:
+        print(item.__dict__)
     return db_content
 
 def update_bible_audios(db_: Session, source_name, audios, user_id=None):
@@ -765,33 +780,79 @@ def update_bible_audios(db_: Session, source_name, audios, user_id=None):
     model_cls = db_models.dynamicTables[source_name+'_audio']
     db_content = []
     for item in audios:
-        row = db_.query(model_cls).filter(model_cls.name == item.name.strip()).first()
-        if not row:
-            raise NotAvailableException("Bible audio, %s, not found in database"%item.name)
-        if item.url:
-            row.url = item.url.strip()
-        if item.books is not None:
-            for buk in item.books:
-                book = db_.query(db_models.BibleBook).filter(
-                    db_models.BibleBook.bookCode == buk.strip().lower()).first()
-                if not book:
-                    raise NotAvailableException('Bible Book code, %s, not found in database')
-            row.books = item.books
-        if item.format:
-            row.format = item.format.strip()
-        if item.active is not None:
-            row.active = item.active
-        db_content.append(row)
+        for buk in item.books:
+            book = db_.query(db_models.BibleBook).filter(
+                db_models.BibleBook.bookCode == buk.strip().lower()).first()
+            if not book:
+                raise NotAvailableException('Bible Book code, %s, not found in database')
+            row = db_.query(model_cls).filter(model_cls.book_id == book.bookId).first()
+            if not row:
+                raise NotAvailableException("Bible audio for, %s, not found in database"%item.name)
+            if item.name:
+                row.name = item.name.strip()
+            if item.url:
+                row.url = item.url.strip()
+            if item.format:
+                row.format = item.format.strip()
+            if item.active is not None:
+                row.active = item.active
+            db_content.append(row)
     source_db_content.updatedUser = user_id
     db_.commit()
     return db_content
 
     
     
+def get_bible_versification(db_, source_name, book_code, active=True):
+    '''select the reference list from bible_cleaned table'''
+    model_cls = db_models.dynamicTables[source_name+"_cleaned"]
+    query = db_.query(model_cls).prefix_with(
+        "'"+source_name+"' as bible, ")
+    query = query.options(defer(model_cls.verseText))
+    query = query.filter(model_cls.book.has(bookCode = book_code.lower()),
+        model_cls.active == active )
+    return query.all()
 
-def get_available_bible_books(db_, source_name, book_code, content_type,
-            versification, active=True, skip=0, limit=100):
-    return []
+
+def get_available_bible_books(db_, source_name, book_code=None, content_type=None, #pylint: disable=too-many-arguments
+    versification=False, active=True, skip=0, limit=100):
+    '''fetches the contents of .._bible table based of provided source_name and other options'''
+    if source_name not in db_models.dynamicTables:
+        raise NotAvailableException('%s not found in database.'%source_name)
+    if not source_name.endswith('_bible'):
+        raise TypeException('The operation is supported only on bible')
+    model_cls = db_models.dynamicTables[source_name]
+    # model_cls_audio = db_models.dynamicTables[source_name+"_audio"]
+    query = db_.query(model_cls).options(joinedload(model_cls.book))
+    if content_type == "usfm":
+        query = query.options(defer(model_cls.JSON))
+    elif content_type == "json":
+        query = query.options(defer(model_cls.USFM))
+    elif content_type == "all":
+        query = query.join(model_cls.audio).filter(
+            model_cls.audio.has(active=active))
+    elif content_type == "audio":
+        query = query.options(joinedload(model_cls.audio),
+            defer(model_cls.JSON), defer(model_cls.USFM)).filter(
+            model_cls.audio.has(active=active))
+    elif content_type is None:
+        print("comes in None to exclude USFM and JSON")
+        query = query.options(defer(model_cls.JSON), defer(model_cls.USFM))
+    if book_code:
+        query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
+    fetched = query.filter(model_cls.active == active).offset(skip).limit(limit).all()
+    results = [res.__dict__ for res in fetched]
+    for res in results:
+        print(res)
+    if versification:
+        added_results = []
+        for res in results:
+            ref_list = get_bible_versification(db_, source_name, res.book.bookCode, active)
+            added_res = res
+            added_res['versification'] = ref_list
+            added_results.append(added_res)
+        return added_results
+    return results
 
 
 def get_bible_verses(db_, source_name, book_code, chapter, verse, lastVerse,

@@ -161,11 +161,11 @@ class BibleBook(BaseModel):
 class AudioBible(BaseModel):
     '''Response object of Audio Bible'''
     # audioId: int
-    name: str
-    url: AnyUrl
-    books:  List[BookCodePattern]
-    format: str
-    active: bool
+    name: str = None
+    url: AnyUrl = None
+    # book:  BibleBook
+    format: str = None
+    active: bool = None
     class Config: # pylint: disable=too-few-public-methods
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
@@ -186,17 +186,29 @@ class AudioBibleUpload(BaseModel):
 
 class AudioBibleEdit(BaseModel):
     ''' Input object of Auido Bible'''
-    name: str
+    name: str = None
     url: str = None
-    books: List[BookCodePattern] = None
+    books: List[BookCodePattern]
     format: str = None
     active: bool = None
+
+class Reference(BaseModel):
+    '''Response object of bible refernce'''
+    bible : TableNamePattern = None
+    book: BibleBook
+    chapter: int
+    verseNumber: int
+    verseNumberEnd: int = None
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
 
 class BibleBookContent(BaseModel):
     '''Response object of Bible book contents'''
     book : BibleBook
     bookName: str = None
-    versification : dict = None
+    versification : List[Reference] = None
     USFM: str = None
     JSON: dict = None
     audio: AudioBible = None
@@ -226,29 +238,16 @@ class BibleBookEdit(BaseModel):
     @root_validator
     def check_for_usfm_json(cls, values): # pylint: disable=R0201 disable=E0213
         '''USFM and JSON should be updated together. If they are absent, bookCode is required'''
-        print(">>>>>>>>>>>>>>>>>>>>>>>>")
-        print(values)
         if (values['USFM'] is not None and values['JSON'] is None) or (
-            values['USFM'] is not None and values['JSON'] is None):
+            values['JSON'] is not None and values['USFM'] is None):
             raise ValueError(
-                'USFM and JSON are inter-dependant. So both should be updated together')
+                'USFM and JSON are inter-dependant. So both should be updated together.')
         if "bookCode" not in values or values['bookCode'] is None:
             if "JSON" in values:
-                print(values['JSON'])
                 values["bookCode"] = values['JSON']['book']['bookCode'].lower()
             else:
                 raise ValueError('"bookCode" is required to identiy the row to be updated')
-        print("<<<<<<<<<<<<<<<<<<<<<<<<<<")
-        print(values)
         return values
-
-class Reference(BaseModel):
-    '''Response object of bible refernce'''
-    bible : TableNamePattern = None
-    book: BibleBook
-    chapter: int
-    verseNumber: int
-    verseNumberEnd: int = None
 
 class BibleVerse(BaseModel):
     '''Response object of Bible Verse'''

@@ -471,6 +471,7 @@ def get_bible_book(book_id: int = None, book_code: schemas.BookCodePattern = Non
 
 
 @app.post('/v2/bibles/{source_name}/books', response_model=schemas.BibleBookUpdateResponse,
+    response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bibles"])
@@ -485,6 +486,7 @@ def add_bible_book(source_name : schemas.TableNamePattern,
 
 
 @app.put('/v2/bibles/{source_name}/books', response_model=schemas.BibleBookUpdateResponse,
+    response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bibles"])
@@ -502,6 +504,7 @@ def edit_bible_book(source_name: schemas.TableNamePattern,
 
 @app.get('/v2/bibles/{source_name}/books',
     response_model=List[schemas.BibleBookContent],
+    response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
 def get_available_bible_book(source_name: schemas.TableNamePattern, #pylint: disable=too-many-arguments
@@ -539,6 +542,7 @@ def get_available_bible_book(source_name: schemas.TableNamePattern, #pylint: dis
 
 @app.get('/v2/bibles/{source_name}/verses',
     response_model=List[schemas.BibleVerse],
+    response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
 def get_bible_verse(source_name: schemas.TableNamePattern, #pylint: disable=too-many-arguments
@@ -599,7 +603,7 @@ def add_audio_bible(source_name : schemas.TableNamePattern,
 def edit_audio_bible(source_name: schemas.TableNamePattern,
     audios: List[schemas.AudioBibleEdit] = Body(...), db_: Session = Depends(get_db)):
     ''' Changes the mentioned fields of audio bible row.
-    Name is used to identify row and cannot be changed'''
+    book code is used to identify row and al least one is mandatory'''
     log.info('In edit_audio_bible')
     log.debug('source_name: %s, audios: %s',source_name, audios)
     return {'message': "Bible audios details updated successfully",
