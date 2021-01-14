@@ -829,7 +829,7 @@ def get_available_bible_books(db_, source_name, book_code=None, content_type=Non
     elif content_type == "json":
         query = query.options(defer(model_cls.USFM))
     elif content_type == "all":
-        query = query.join(model_cls.audio).filter(
+        query = query.options(joinedload(model_cls.audio)).filter(
             model_cls.audio.has(active=active))
     elif content_type == "audio":
         query = query.options(joinedload(model_cls.audio),
