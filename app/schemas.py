@@ -253,8 +253,12 @@ class BibleVerse(BaseModel):
     '''Response object of Bible Verse'''
     reference : Reference
     verseText: str
-    footNote : str = None
-    crossReference : str = None
+    # footNote : str = None
+    # crossReference : str = None
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
 
 class BookContentType(str, Enum):
     '''choices for bible content types'''

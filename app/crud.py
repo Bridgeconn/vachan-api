@@ -670,8 +670,6 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None):
     db_.add_all(db_content2)
     source_db_content.updatedUser = user_id
     db_.commit()
-    for item in db_content:
-        print(item.__dict__)
     return db_content
 
 def update_bible_books(db_: Session, source_name, books, user_id=None):
@@ -764,8 +762,6 @@ def upload_bible_audios(db_:Session, source_name, audios, user_id=None):
     db_.add_all(db_content)
     db_.add_all(db_content2)
     db_.commit()
-    for item in db_content:
-        print(item.__dict__)
     return db_content
 
 def update_bible_audios(db_: Session, source_name, audios, user_id=None):
@@ -836,14 +832,11 @@ def get_available_bible_books(db_, source_name, book_code=None, content_type=Non
             defer(model_cls.JSON), defer(model_cls.USFM)).filter(
             model_cls.audio.has(active=active))
     elif content_type is None:
-        print("comes in None to exclude USFM and JSON")
         query = query.options(defer(model_cls.JSON), defer(model_cls.USFM))
     if book_code:
         query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
     fetched = query.filter(model_cls.active == active).offset(skip).limit(limit).all()
     results = [res.__dict__ for res in fetched]
-    for res in results:
-        print(res)
     if versification:
         added_results = []
         for res in results:
@@ -855,6 +848,34 @@ def get_available_bible_books(db_, source_name, book_code=None, content_type=Non
     return results
 
 
-def get_bible_verses(db_, source_name, book_code, chapter, verse, lastVerse,
-            searchPhrase, active=True, skip=0, limit=100):
-    return []
+def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, verse=None,
+    lastVerse=None, searchPhrase=None, active=True, skip=0, limit=100):
+    '''queries the bible cleaned table for verses'''
+    if source_name not in db_models.dynamicTables:
+        raise NotAvailableException('%s not found in database.'%source_name)
+    if not source_name.endswith('_bible'):
+        raise TypeException('The operation is supported only on bible')
+    model_cls = db_models.dynamicTables[source_name+'_cleaned']
+    query = db_.query(model_cls)
+    if book_code:
+        query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
+    if chapter:
+        query = query.filter(model_cls.chapter == chapter)
+    if verse:
+        if not lastVerse:
+            lastVerse = verse
+        query = query.filter(model_cls.verseNumber >= verse, model_cls.verseNumber <= lastVerse)
+    if searchPhrase:
+        query = query.filter(model_cls.verseText.like('%'+searchPhrase.strip()+"%"))
+    results = query.filter(model_cls.active == active).offset(skip).limit(limit).all()
+    ref_combined_results = []
+    for res in results:
+        ref_combined = {}
+        ref_combined['verseText'] = res.verseText
+        ref = { "bible": source_name,
+                "book": res.book,
+                "chapter": res.chapter,
+                "verseNumber":res.verseNumber}
+        ref_combined['reference'] = ref
+        ref_combined_results.append(ref_combined)
+    return ref_combined_results

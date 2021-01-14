@@ -563,21 +563,8 @@ def get_bible_verse(source_name: schemas.TableNamePattern, #pylint: disable=too-
     log.debug('source_name: %s, book_code: %s, chapter: %s, verse:%s, last_verse:%s,\
         search_phrase:%s, active:%s, skip: %s, limit: %s',
         source_name, book_code, chapter, verse, last_verse, search_phrase, active, skip, limit)
-    try:
-        return crud.get_bible_verses(db_, source_name, book_code, chapter, verse, last_verse,
-            search_phrase, active=active, skip = skip, limit = limit)
-    except SQLAlchemyError as exe:
-        log.exception('Error in get_bible_verse')
-        raise DatabaseException(exe) from exe
-    except NotAvailableException as exe:
-        log.exception('Error in get_bible_verse')
-        raise exe from exe
-    except TypeException as exe:
-        log.exception('Error in get_bible_verse')
-        raise exe from exe
-    except Exception as exe:
-        log.exception('Error in get_bible_verse')
-        raise GenericException(str(exe)) from exe
+    return crud.get_bible_verses(db_, source_name, book_code, chapter, verse, last_verse,
+        search_phrase, active=active, skip = skip, limit = limit)
 
 
 # # ########### Audio bible ###################
