@@ -127,7 +127,10 @@ class BibleAudio(): # pylint: disable=too-few-public-methods
     '''Corresponds to the dynamically created bible_audio tables in vachan Db(postgres)'''
     audioId  = Column('bible_audio_id', Integer, primary_key=True, autoincrement=True)
     name = Column('name', String)
-    book_id = Column('book_id', Integer, unique=True)
+    @declared_attr
+    def book_id(self):
+        table_name = self.__tablename__.replace("_audio", "")
+        return Column('book_id', Integer, ForeignKey(table_name+'.book_id'), unique=True)
     url = Column('audio_link', String)
     format = Column('audio_format', String)
     active = Column('active', Boolean, default=True)
@@ -148,10 +151,8 @@ class BibleContent(): # pylint: disable=too-few-public-methods
     @declared_attr
     def audio(self): # pylint: disable=E0213
         '''For modelling the audio field in bible content classes'''
-        this_table = self.__tablename__
         refering_table = self.__tablename__+"_audio"
-        return relationship(BibleAudio, foreign_keys=[self.book_id],
-            primaryjoin=this_table+'.book_id=='+refering_table+'.book_id')
+        return relationship(refering_table, uselist=False)
     active = Column('active', Boolean, default=True)
     __table_args__ = {'extend_existing': True}
 
@@ -187,15 +188,12 @@ dynamicTables = {}
 def create_dynamic_table(source_name, content_type):
     '''To map or create one dynamic table based on the content Type'''
     if content_type == 'bible':
-        print("going to create bible table's class")
         dynamicTables[source_name] = type(
             source_name,(BibleContent, Base,),
             {"__tablename__": source_name})
-        print("Done. Now going to create bible_cleaned table's class")
         dynamicTables[source_name+'_cleaned'] = type(
             source_name+'_cleaned',(BibleContentCleaned, Base,),
             {"__tablename__": source_name+'_cleaned'})
-        print("Done. Now going to create bible_cleaned table's class")
         dynamicTables[source_name+'_audio'] = type(
             source_name+'_audio',(BibleAudio, Base,),
             {"__tablename__": source_name+'_audio'})

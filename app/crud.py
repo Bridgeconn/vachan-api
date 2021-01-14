@@ -8,6 +8,7 @@ import schemas
 from database import engine
 from custom_exceptions import NotAvailableException, TypeException
 from logger import log
+import pdb; 
 
 def get_content_types(db_: Session, content_type: str =None, skip: int = 0, limit: int = 100):
     '''Fetches all content types, with pagination'''
@@ -195,7 +196,6 @@ def create_source(db_: Session, source: schemas.SourceCreate, table_name, user_i
         db_content.created_user = user_id
     db_.add(db_content)
     db_models.create_dynamic_table(table_name, content_type.contentType)
-    print(db_models.dynamicTables)
     db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine, checkfirst=True)
     if content_type.contentType == 'bible':
         db_models.dynamicTables[db_content.sourceName+'_cleaned'].__table__.create(
