@@ -1250,7 +1250,7 @@ def getTokenTranslationList(projectId, book):
 			LEFT JOIN translations t ON s.token = t.token \
 			LEFT JOIN translation_projects_look_up l ON t.translation_id = l.translation_id \
 			where s.book_id=%s;").format(sql.Identifier(tablename)), (bookId,))
-		tokenList = [ ]
+		token_List = {}
 		for item in cursor.fetchall():
 			if item[3] == projectId:
 				senses = None
@@ -1258,9 +1258,10 @@ def getTokenTranslationList(projectId, book):
 					senses = item[2].replace('|',',')
 					if senses[-1] == ',':
 						senses = senses[:-1]
-				tokenList.append([item[0], item[1], senses])
-			elif item[3] == None:
-				tokenList.append([item[0], None, None])
+				token_List[item[0]] = [item[1], senses]
+			elif item[0] not in token_List:
+				token_List[item[0]] = [None, None]
+		tokenList = [[key]+token_List[key] for key in token_List]
 		if len(tokenList)==0:
 			try:
 				languageCode = source_table.split('_')[0]
@@ -1278,6 +1279,7 @@ def getTokenTranslationList(projectId, book):
 		return jsonOut
 	except Exception as e:
 		print(e)
+		traceback.print_exc()
 		return json.dumps({"success":False, "message": "Server side error"})
 
 def getConcordanceList(db_data):
