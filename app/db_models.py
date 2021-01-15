@@ -134,6 +134,7 @@ class BibleAudio(): # pylint: disable=too-few-public-methods
     url = Column('audio_link', String)
     format = Column('audio_format', String)
     active = Column('active', Boolean, default=True)
+    __table_args__ = {'extend_existing': True}
 
 class BibleContent(): # pylint: disable=too-few-public-methods
     '''Corresponds to the dynamically created bible tables in vachan Db(postgres)'''
@@ -148,11 +149,11 @@ class BibleContent(): # pylint: disable=too-few-public-methods
         return relationship(BibleBook, uselist=False)
     USFM = Column('usfm', String)
     JSON = Column('json_object', JSON)
-    @declared_attr
-    def audio(self): # pylint: disable=E0213
-        '''For modelling the audio field in bible content classes'''
-        refering_table = self.__tablename__+"_audio"
-        return relationship(refering_table, uselist=False)
+    # @declared_attr
+    # def audio(self): # pylint: disable=E0213
+    #     '''For modelling the audio field in bible content classes'''
+    #     refering_table = self.__tablename__+"_audio"
+    #     return relationship(refering_table, uselist=False)
     active = Column('active', Boolean, default=True)
     __table_args__ = {'extend_existing': True}
 

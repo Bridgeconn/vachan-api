@@ -643,7 +643,11 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None):
     db_content = []
     db_content2 = []
     for item in books:
-        book_code = item.JSON['book']['bookCode']
+        try:
+            book_code = item.JSON['book']['bookCode']
+        except Exception as exe:
+            raise TypeException("JSON is not of the required format."+\
+                " book.bookCode should be present") from exe
         book = db_.query(db_models.BibleBook).filter(
                 db_models.BibleBook.bookCode == book_code.lower() ).first()
         if not book:
@@ -656,10 +660,22 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None):
             active=True)
         db_.flush()
         db_content.append(row)
+        if "chapters" not in item.JSON:
+            raise TypeException("JSON is not of the required format")
         for chapter in item.JSON["chapters"]:
-            chapter_number = int(chapter['chapterNumber'])
+            if "chapterNumber" not in chapter or "contents" not in chapter:
+                raise TypeException("JSON is not of the required format."+\
+                    " Chapters should have chapterNumber and contents")
+            try:
+                chapter_number = int(chapter['chapterNumber'])
+            except Exception as exe:
+                raise TypeException("JSON is not of the required format."+\
+                    " chapterNumber should be an interger") from exe
             for content in chapter['contents']:
                 if 'verseNumber' in content:
+                    if "verseText" not in content:
+                        raise TypeException(
+                            "JSON is not of the required format. verseText not found")
                     row_other = model_cls_2(
                         book_id = book.bookId,
                         chapter = chapter_number,
