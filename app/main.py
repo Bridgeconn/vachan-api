@@ -6,7 +6,8 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+import psycopg2
 
 import crud
 import db_models
@@ -48,15 +49,19 @@ async def generic_exception_handler(request, exc: GenericException):
         content={"error": exc.name, "details" : exc.detail},
     )
 
-@app.exception_handler(DatabaseException)
-async def db_exception_handler(request, exc: DatabaseException):
+@app.exception_handler(SQLAlchemyError)
+async def db_exception_handler(request, exc: SQLAlchemyError):
     '''logs and returns error details'''
     log.error("Request URL:%s %s,  from : %s",
         request.method ,request.url.path, request.client.host)
-    log.error("%s: %s",exc.name, exc.logging_info)
+    if exc.orig:
+        detail = str(exc.orig).replace('DETAIL:','')
+    else:
+        detail = str(exc)
+    log.exception("%s: %s",exc.name, detail)
     return JSONResponse(
-        status_code=exc.status_code,
-        content={"error": exc.name, "details" : exc.detail},
+        status_code=502,
+        content={"error": "Database Error", "details" : detail},
     )
 
 
@@ -65,7 +70,7 @@ async def na_exception_handler(request, exc: NotAvailableException):
     '''logs and returns error details'''
     log.error("Request URL:%s %s,  from : %s",
         request.method ,request.url.path, request.client.host)
-    log.error("%s: %s",exc.name, exc.detail)
+    log.exception("%s: %s",exc.name, exc.detail)
     return JSONResponse(
         status_code=exc.status_code,
         content={"error": exc.name, "details" : exc.detail},
@@ -114,6 +119,17 @@ async def validation_exception_handler(request, exc):
     return JSONResponse(
         status_code=422,
         content={"error": "Input Validation Error" ,"details": str(exc).replace("\n", ". ")}
+    )
+
+@app.exception_handler(IntegrityError)
+async def unique_violation_exception_handler(request, exc: IntegrityError):
+    '''logs and returns error details'''
+    log.error("Request URL:%s %s,  from : %s",
+        request.method ,request.url.path, request.client.host)
+    log.error("%s: %s","Already Exists", exc.__dict__)
+    return JSONResponse(
+        status_code=409,
+        content={"error": "Already Exists", "details" : str(exc.orig).replace("DETAIL","")},
     )
 ######################################################
 
@@ -481,7 +497,7 @@ def add_bible_book(source_name : schemas.TableNamePattern,
     log.info('In add_bible_book')
     log.debug('source_name: %s, books: %s',source_name, books)
     return {'message': "Bible books uploaded and processed successfully",
-    "data": crud.upload_bible_books(db_=db_, source_name=source_name,
+        "data": crud.upload_bible_books(db_=db_, source_name=source_name,
         books=books, user_id=None)}
 
 
