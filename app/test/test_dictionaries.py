@@ -65,8 +65,8 @@ def test_post_duplicate():
     headers = {"contentType": "application/json", "accept": "application/json"}
     data[0]['details'] = {"digit": 1, "type":"natural number"}
     response = client.post(UNIT_URL+source_name, headers=headers, json=data)
-    assert response.status_code == 502
-    assert response.json()['error'] == "Database Error"
+    assert response.status_code == 409
+    assert response.json()['error'] == "Already Exists"
 
 def test_post_incorrect_data():
     ''' tests to check input validation in post API'''

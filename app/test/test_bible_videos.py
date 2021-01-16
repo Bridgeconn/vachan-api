@@ -68,8 +68,8 @@ def test_post_duplicate():
     headers = {"contentType": "application/json", "accept": "application/json"}
     data[0]['videoLink'] = 'https://www.youtube.com/biblevideos/anothervid'
     response2 = client.post(UNIT_URL+source_name, headers=headers, json=data)
-    assert response2.status_code == 502
-    assert response2.json()['error'] == "Database Error"
+    assert response2.status_code == 409
+    assert response2.json()['error'] == "Already Exists"
 
 def test_post_incorrect_data():
     ''' tests to check input validation in post API'''
