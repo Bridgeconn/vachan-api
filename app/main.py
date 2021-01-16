@@ -54,11 +54,11 @@ async def db_exception_handler(request, exc: SQLAlchemyError):
     '''logs and returns error details'''
     log.error("Request URL:%s %s,  from : %s",
         request.method ,request.url.path, request.client.host)
-    if exc.orig:
+    if hasattr(exc, 'orig'):
         detail = str(exc.orig).replace('DETAIL:','')
     else:
         detail = str(exc)
-    log.exception("%s: %s",exc.name, detail)
+    log.exception("%s: %s","Database Error", detail)
     return JSONResponse(
         status_code=502,
         content={"error": "Database Error", "details" : detail},

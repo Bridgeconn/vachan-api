@@ -149,11 +149,11 @@ class BibleContent(): # pylint: disable=too-few-public-methods
         return relationship(BibleBook, uselist=False)
     USFM = Column('usfm', String)
     JSON = Column('json_object', JSON)
-    # @declared_attr
-    # def audio(self): # pylint: disable=E0213
-    #     '''For modelling the audio field in bible content classes'''
-    #     refering_table = self.__tablename__+"_audio"
-    #     return relationship(refering_table, uselist=False)
+    @declared_attr
+    def audio(self): # pylint: disable=E0213
+        '''For modelling the audio field in bible content classes'''
+        refering_table = self.__tablename__+"_audio"
+        return relationship(dynamicTables[refering_table], uselist=False)
     active = Column('active', Boolean, default=True)
     __table_args__ = {'extend_existing': True}
 
@@ -189,15 +189,15 @@ dynamicTables = {}
 def create_dynamic_table(source_name, content_type):
     '''To map or create one dynamic table based on the content Type'''
     if content_type == 'bible':
+        dynamicTables[source_name+'_audio'] = type(
+            source_name+'_audio',(BibleAudio, Base,),
+            {"__tablename__": source_name+'_audio'})
         dynamicTables[source_name] = type(
             source_name,(BibleContent, Base,),
             {"__tablename__": source_name})
         dynamicTables[source_name+'_cleaned'] = type(
             source_name+'_cleaned',(BibleContentCleaned, Base,),
             {"__tablename__": source_name+'_cleaned'})
-        dynamicTables[source_name+'_audio'] = type(
-            source_name+'_audio',(BibleAudio, Base,),
-            {"__tablename__": source_name+'_audio'})
     elif content_type == 'commentary':
         dynamicTables[source_name] = type(
             source_name,(Commentary, Base,),{"__tablename__": source_name})
