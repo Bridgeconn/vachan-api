@@ -166,11 +166,7 @@ def get_contents(content_type: str = Query(None), skip: int = Query(0, ge=0),
     * limit=n: limits the no. of items to be returned to n'''
     log.info('In get_contents')
     log.debug('contentType:%s, skip: %s, limit: %s',content_type, skip, limit)
-    try:
-        return crud.get_content_types(db_, content_type, skip, limit)
-    except Exception as exe:
-        log.exception('Error in get_contents')
-        raise exe from exe
+    return crud.get_content_types(db_, content_type, skip, limit)
 
 @app.post('/v2/contents', response_model=schemas.ContentTypeUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -183,14 +179,10 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
         2. Define input, output resources and all required APIs to handle this content'''
     log.info('In add_contents')
     log.debug('content: %s',content)
-    try:
-        if len(crud.get_content_types(db_, content.contentType)) > 0:
-            raise AlreadyExistsException("%s already present"%(content.contentType))
-        return {'message': "Content type created successfully",
-        "data": crud.create_content_type(db_=db_, content=content)}
-    except Exception as exe:
-        log.exception('Error in add_contents')
-        raise exe from exe
+    if len(crud.get_content_types(db_, content.contentType)) > 0:
+        raise AlreadyExistsException("%s already present"%(content.contentType))
+    return {'message': "Content type created successfully",
+    "data": crud.create_content_type(db_=db_, content=content)}
 
 #################
 
@@ -211,11 +203,7 @@ def get_language(language_code : schemas.LangCodePattern = Query(None),
     log.info('In get_language')
     log.debug('langauge_code:%s, language_name: %s, skip: %s, limit: %s',
         language_code, language_name, skip, limit)
-    try:
-        return crud.get_languages(db_, language_code, language_name, skip = skip, limit = limit)
-    except Exception as exe:
-        log.exception('Error in get_language')
-        raise exe from exe
+    return crud.get_languages(db_, language_code, language_name, skip = skip, limit = limit)
 
 @app.post('/v2/languages', response_model=schemas.LanguageUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -225,14 +213,10 @@ def add_language(lang_obj : schemas.LanguageCreate = Body(...), db_: Session = D
     ''' Creates a new language'''
     log.info('In add_language')
     log.debug('lang_obj: %s',lang_obj)
-    try:
-        if len(crud.get_languages(db_, language_code = lang_obj.code)) > 0:
-            raise AlreadyExistsException("%s already present"%(lang_obj.code))
-        return {'message': "Language created successfully",
-        "data": crud.create_language(db_=db_, lang=lang_obj)}
-    except Exception as exe:
-        log.exception('Error in add_language')
-        raise exe from exe
+    if len(crud.get_languages(db_, language_code = lang_obj.code)) > 0:
+        raise AlreadyExistsException("%s already present"%(lang_obj.code))
+    return {'message': "Language created successfully",
+    "data": crud.create_language(db_=db_, lang=lang_obj)}
 
 @app.put('/v2/languages', response_model=schemas.LanguageUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -242,14 +226,10 @@ def edit_language(lang_obj: schemas.LanguageEdit = Body(...), db_: Session = Dep
     ''' Changes one or more fields of language'''
     log.info('In edit_language')
     log.debug('lang_obj: %s',lang_obj)
-    try:
-        if len(crud.get_languages(db_, language_id = lang_obj.languageId)) == 0:
-            raise NotAvailableException("Language id %s not found"%(lang_obj.languageId))
-        return {'message': "Language edited successfully",
+    if len(crud.get_languages(db_, language_id = lang_obj.languageId)) == 0:
+        raise NotAvailableException("Language id %s not found"%(lang_obj.languageId))
+    return {'message': "Language edited successfully",
         "data": crud.update_language(db_=db_, lang=lang_obj)}
-    except Exception as exe:
-        log.exception('Error in edit_language')
-        raise exe from exe
 
 # ################################
 
@@ -272,12 +252,8 @@ def get_version(version_abbreviation : schemas.VersionPattern = Query(None), #py
     log.info('In get_version')
     log.debug('version_abbreviation:%s, skip: %s, limit: %s',
         version_abbreviation, skip, limit)
-    try:
-        return crud.get_versions(db_, version_abbreviation,
-            version_name, revision, metadata, skip = skip, limit = limit)
-    except Exception as exe:
-        log.exception('Error in get_version')
-        raise exe from exe
+    return crud.get_versions(db_, version_abbreviation,
+        version_name, revision, metadata, skip = skip, limit = limit)
 
 @app.post('/v2/versions', response_model=schemas.VersionUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
