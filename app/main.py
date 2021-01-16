@@ -43,7 +43,7 @@ async def generic_exception_handler(request, exc: GenericException):
     '''logs and returns error details'''
     log.error("Request URL:%s %s,  from : %s",
         request.method ,request.url.path, request.client.host)
-    log.error("%s: %s",exc.name, exc.detail)
+    log.exception("%s: %s",exc.name, exc.detail)
     return JSONResponse(
         status_code=exc.status_code,
         content={"error": exc.name, "details" : exc.detail},
@@ -82,7 +82,7 @@ async def exists_exception_handler(request, exc: AlreadyExistsException):
     '''logs and returns error details'''
     log.error("Request URL:%s %s,  from : %s",
         request.method ,request.url.path, request.client.host)
-    log.error("%s: %s",exc.name, exc.detail)
+    log.exception("%s: %s",exc.name, exc.detail)
     return JSONResponse(
         status_code=exc.status_code,
         content={"error": exc.name, "details" : exc.detail},
@@ -93,7 +93,7 @@ async def type_exception_handler(request, exc: TypeException):
     '''logs and returns error details'''
     log.error("Request URL:%s %s,  from : %s",
         request.method ,request.url.path, request.client.host)
-    log.error("%s: %s",exc.name, exc.detail)
+    log.exception("%s: %s",exc.name, exc.detail)
     return JSONResponse(
         status_code=exc.status_code,
         content={"error": exc.name, "details" : exc.detail},
@@ -104,7 +104,7 @@ async def http_exception_handler(request, exc):
     '''logs and returns error details'''
     log.error("Request URL:%s %s, from : %s",
         request.method ,request.url.path, request.client.host)
-    log.error("Http Error: %s", exc.detail)
+    log.exception("Http Error: %s", exc.detail)
     return JSONResponse(
         status_code=exc.status_code,
         content={"error": "HTTP Error", "details": str(exc.detail)}
@@ -115,7 +115,7 @@ async def validation_exception_handler(request, exc):
     '''logs and returns error details'''
     log.error("Request URL:%s %s, from : %s",
         request.method ,request.url.path, request.client.host)
-    log.error("Input Validation Error: %s", str(exc))
+    log.exception("Input Validation Error: %s", str(exc))
     return JSONResponse(
         status_code=422,
         content={"error": "Input Validation Error" ,"details": str(exc).replace("\n", ". ")}
@@ -126,7 +126,7 @@ async def unique_violation_exception_handler(request, exc: IntegrityError):
     '''logs and returns error details'''
     log.error("Request URL:%s %s,  from : %s",
         request.method ,request.url.path, request.client.host)
-    log.error("%s: %s","Already Exists", exc.__dict__)
+    log.exception("%s: %s","Already Exists", exc.__dict__)
     return JSONResponse(
         status_code=409,
         content={"error": "Already Exists", "details" : str(exc.orig).replace("DETAIL","")},
@@ -168,12 +168,9 @@ def get_contents(content_type: str = Query(None), skip: int = Query(0, ge=0),
     log.debug('contentType:%s, skip: %s, limit: %s',content_type, skip, limit)
     try:
         return crud.get_content_types(db_, content_type, skip, limit)
-    except SQLAlchemyError as exe:
-        log.exception('Error in get_contents')
-        raise DatabaseException(exe) from exe
     except Exception as exe:
         log.exception('Error in get_contents')
-        raise GenericException(str(exe)) from exe
+        raise exe from exe
 
 @app.post('/v2/contents', response_model=schemas.ContentTypeUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -191,15 +188,9 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
             raise AlreadyExistsException("%s already present"%(content.contentType))
         return {'message': "Content type created successfully",
         "data": crud.create_content_type(db_=db_, content=content)}
-    except SQLAlchemyError as exe:
-        log.exception('Error in add_contents')
-        raise DatabaseException(exe) from exe
-    except AlreadyExistsException as exe:
-        log.exception('Error in add_contents')
-        raise exe from exe
     except Exception as exe:
         log.exception('Error in add_contents')
-        raise GenericException(str(exe)) from exe
+        raise exe from exe
 
 #################
 
@@ -222,12 +213,9 @@ def get_language(language_code : schemas.LangCodePattern = Query(None),
         language_code, language_name, skip, limit)
     try:
         return crud.get_languages(db_, language_code, language_name, skip = skip, limit = limit)
-    except SQLAlchemyError as exe:
-        log.exception('Error in get_language')
-        raise DatabaseException(exe) from exe
     except Exception as exe:
         log.exception('Error in get_language')
-        raise GenericException(str(exe)) from exe
+        raise exe from exe
 
 @app.post('/v2/languages', response_model=schemas.LanguageUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -242,15 +230,9 @@ def add_language(lang_obj : schemas.LanguageCreate = Body(...), db_: Session = D
             raise AlreadyExistsException("%s already present"%(lang_obj.code))
         return {'message': "Language created successfully",
         "data": crud.create_language(db_=db_, lang=lang_obj)}
-    except SQLAlchemyError as exe:
-        log.exception('Error in add_language')
-        raise DatabaseException(exe) from exe
-    except AlreadyExistsException as exe:
-        log.exception('Error in add_language')
-        raise exe from exe
     except Exception as exe:
         log.exception('Error in add_language')
-        raise GenericException(str(exe)) from exe
+        raise exe from exe
 
 @app.put('/v2/languages', response_model=schemas.LanguageUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -265,15 +247,9 @@ def edit_language(lang_obj: schemas.LanguageEdit = Body(...), db_: Session = Dep
             raise NotAvailableException("Language id %s not found"%(lang_obj.languageId))
         return {'message': "Language edited successfully",
         "data": crud.update_language(db_=db_, lang=lang_obj)}
-    except SQLAlchemyError as exe:
-        log.exception('Error in edit_language')
-        raise DatabaseException(exe) from exe
-    except NotAvailableException as exe:
-        log.exception('Error in edit_language')
-        raise exe from exe
     except Exception as exe:
         log.exception('Error in edit_language')
-        raise GenericException(str(exe)) from exe
+        raise exe from exe
 
 # ################################
 
@@ -299,12 +275,9 @@ def get_version(version_abbreviation : schemas.VersionPattern = Query(None), #py
     try:
         return crud.get_versions(db_, version_abbreviation,
             version_name, revision, metadata, skip = skip, limit = limit)
-    except SQLAlchemyError as exe:
-        log.exception('Error in get_version')
-        raise DatabaseException(exe) from exe
     except Exception as exe:
         log.exception('Error in get_version')
-        raise GenericException(str(exe)) from exe
+        raise exe from exe
 
 @app.post('/v2/versions', response_model=schemas.VersionUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -315,24 +288,15 @@ def add_version(version_obj : schemas.VersionCreate = Body(...),
     ''' Creates a new version '''
     log.info('In add_version')
     log.debug('version_obj: %s',version_obj)
-    try:
-        if not version_obj.revision:
-            version_obj.revision = 1
-        if len(crud.get_versions(db_, version_obj.versionAbbreviation,
-            revision =version_obj.revision)) > 0:
-            raise AlreadyExistsException("%s, %s already present"%(
-                version_obj.versionAbbreviation, version_obj.revision))
-        return {'message': "Version created successfully",
-        "data": crud.create_version(db_=db_, version=version_obj)}
-    except SQLAlchemyError as exe:
-        log.exception('Error in add_version')
-        raise DatabaseException(exe) from exe
-    except AlreadyExistsException as exe:
-        log.exception('Error in add_version')
-        raise exe from exe
-    except Exception as exe:
-        log.exception('Error in add_version')
-        raise GenericException(str(exe)) from exe
+    if not version_obj.revision:
+        version_obj.revision = 1
+    if len(crud.get_versions(db_, version_obj.versionAbbreviation,
+        revision =version_obj.revision)) > 0:
+        raise AlreadyExistsException("%s, %s already present"%(
+            version_obj.versionAbbreviation, version_obj.revision))
+    return {'message': "Version created successfully",
+    "data": crud.create_version(db_=db_, version=version_obj)}
+
 
 @app.put('/v2/versions', response_model=schemas.VersionUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -342,21 +306,10 @@ def edit_version(ver_obj: schemas.VersionEdit = Body(...), db_: Session = Depend
     ''' Changes one or more fields of version types table'''
     log.info('In edit_version')
     log.debug('ver_obj: %s',ver_obj)
-    try:
-        if len(crud.get_versions(db_, version_id = ver_obj.versionId)) == 0:
-            raise NotAvailableException("Version id %s not found"%(ver_obj.versionId))
-        return {'message': "Version edited successfully",
-        "data": crud.update_version(db_=db_, version=ver_obj)}
-    except SQLAlchemyError as exe:
-        log.exception('Error in edit_version')
-        raise DatabaseException(exe) from exe
-    except NotAvailableException as exe:
-        log.exception('Error in edit_version')
-        raise exe from exe
-    except Exception as exe:
-        log.exception('Error in edit_version')
-        raise GenericException(str(exe)) from exe
-
+    if len(crud.get_versions(db_, version_id = ver_obj.versionId)) == 0:
+        raise NotAvailableException("Version id %s not found"%(ver_obj.versionId))
+    return {'message': "Version edited successfully",
+    "data": crud.update_version(db_=db_, version=ver_obj)}
 
 # ##### Source #####
 @app.get('/v2/sources',
@@ -380,16 +333,9 @@ def get_source(content_type: str = None, version_abbreviation: schemas.VersionPa
         languageCode: %s, metadata: %s, latest_revision: %s, active: %s, skip: %s, limit: %s',
         content_type, version_abbreviation, revision, language_code, metadata, latest_revision,
         active, skip, limit)
-    try:
-        return crud.get_sources(db_, content_type, version_abbreviation, revision,
-            language_code, metadata, latest_revision = latest_revision, active = active,
-            skip = skip, limit = limit)
-    except SQLAlchemyError as exe:
-        log.exception('Error in get_source')
-        raise DatabaseException(exe) from exe
-    except Exception as exe:
-        log.exception('Error in get_source')
-        raise GenericException(str(exe)) from exe
+    return crud.get_sources(db_, content_type, version_abbreviation, revision,
+        language_code, metadata, latest_revision = latest_revision, active = active,
+        skip = skip, limit = limit)
 
 @app.post('/v2/sources', response_model=schemas.SourceUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -402,31 +348,16 @@ def add_source(source_obj : schemas.SourceCreate = Body(...),
     '''
     log.info('In add_source')
     log.debug('source_obj: %s',source_obj)
-    try:
-        if not source_obj.revision:
-            source_obj.revision = 1
-        table_name = source_obj.language + "_" + source_obj.version + "_" +\
-        source_obj.revision + "_" + source_obj.contentType
-        if len(crud.get_sources(db_, table_name = table_name)) > 0:
-            raise AlreadyExistsException("%s already present"%table_name)
-        return {'message': "Source created successfully",
-        "data": crud.create_source(db_=db_, source=source_obj, table_name=table_name,
-            user_id=None)}
-    except SQLAlchemyError as exe:
-        log.exception('Error in add_source')
-        raise DatabaseException(exe) from exe
-    except AlreadyExistsException as exe:
-        log.exception('Error in add_source')
-        raise exe from exe
-    except NotAvailableException as exe:
-        log.exception('Error in add_source')
-        raise exe from exe
-    except GenericException as exe:
-        log.exception('Error in add_source')
-        raise exe from exe
-    except Exception as exe:
-        log.exception('Error in add_source')
-        raise GenericException(str(exe)) from exe
+    if not source_obj.revision:
+        source_obj.revision = 1
+    table_name = source_obj.language + "_" + source_obj.version + "_" +\
+    source_obj.revision + "_" + source_obj.contentType
+    if len(crud.get_sources(db_, table_name = table_name)) > 0:
+        raise AlreadyExistsException("%s already present"%table_name)
+    return {'message': "Source created successfully",
+    "data": crud.create_source(db_=db_, source=source_obj, table_name=table_name,
+        user_id=None)}
+
 
 @app.put('/v2/sources', response_model=schemas.SourceUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -436,20 +367,10 @@ def edit_source(source_obj: schemas.SourceEdit = Body(...), db_: Session = Depen
     ''' Changes one or more fields of source '''
     log.info('In edit_source')
     log.debug('source_obj: %s',source_obj)
-    try:
-        if len(crud.get_sources(db_, table_name = source_obj.sourceName)) == 0:
-            raise NotAvailableException("Source %s not found"%(source_obj.sourceName))
-        return {'message': "Source edited successfully",
-        "data": crud.update_source(db_=db_, source=source_obj, user_id=None)}
-    except SQLAlchemyError as exe:
-        log.exception('Error in edit_source')
-        raise DatabaseException(exe) from exe
-    except NotAvailableException as exe:
-        log.exception('Error in edit_source')
-        raise exe from exe
-    except Exception as exe:
-        log.exception('Error in edit_source')
-        raise GenericException(str(exe)) from exe
+    if len(crud.get_sources(db_, table_name = source_obj.sourceName)) == 0:
+        raise NotAvailableException("Source %s not found"%(source_obj.sourceName))
+    return {'message': "Source edited successfully",
+    "data": crud.update_source(db_=db_, source=source_obj, user_id=None)}
 
 # # #################
 
@@ -471,17 +392,8 @@ def get_bible_book(book_id: int = None, book_code: schemas.BookCodePattern = Non
     log.info('In get_bible_book')
     log.debug('book_id: %s, book_code: %s, book_name: %s, skip: %s, limit: %s',
         book_id, book_code, book_name, skip, limit)
-    try:
-        return crud.get_bible_books(db_, book_id, book_code, book_name,
-            skip = skip, limit = limit)
-    except SQLAlchemyError as exe:
-        log.exception('Error in get_bible_book')
-        raise DatabaseException(exe) from exe
-    except Exception as exe:
-        log.exception('Error in get_bible_book')
-        raise GenericException(str(exe)) from exe
-
-
+    return crud.get_bible_books(db_, book_id, book_code, book_name,
+        skip = skip, limit = limit)
 
 # #### Bible #######
 
@@ -539,21 +451,8 @@ def get_available_bible_book(source_name: schemas.TableNamePattern, #pylint: dis
     log.debug('source_name: %s, book_code: %s, contentType: %s, versification:%s,\
         active:%s, skip: %s, limit: %s',
         source_name, book_code, content_type, versification, active, skip, limit)
-    try:
-        return crud.get_available_bible_books(db_, source_name, book_code, content_type,
-            versification, active=active, skip = skip, limit = limit)
-    except SQLAlchemyError as exe:
-        log.exception('Error in get_available_bible_book')
-        raise DatabaseException(exe) from exe
-    except NotAvailableException as exe:
-        log.exception('Error in get_available_bible_book')
-        raise exe from exe
-    except TypeException as exe:
-        log.exception('Error in get_available_bible_book')
-        raise exe from exe
-    except Exception as exe:
-        log.exception('Error in get_available_bible_book')
-        raise GenericException(str(exe)) from exe
+    return crud.get_available_bible_books(db_, source_name, book_code, content_type,
+        versification, active=active, skip = skip, limit = limit)
 
 
 @app.get('/v2/bibles/{source_name}/verses',
@@ -635,21 +534,8 @@ def get_commentary(source_name: schemas.TableNamePattern, book_code: schemas.Boo
     log.debug('source_name: %s, book_code: %s, chapter: %s, verse:%s,\
         last_verse:%s, skip: %s, limit: %s',
         source_name, book_code, chapter, verse, last_verse, skip, limit)
-    try:
-        return crud.get_commentaries(db_, source_name, book_code, chapter, verse, last_verse,
-            active=active, skip = skip, limit = limit)
-    except SQLAlchemyError as exe:
-        log.exception('Error in get_commentary')
-        raise DatabaseException(exe) from exe
-    except NotAvailableException as exe:
-        log.exception('Error in get_commentary')
-        raise exe from exe
-    except TypeException as exe:
-        log.exception('Error in get_commentary')
-        raise exe from exe
-    except Exception as exe:
-        log.exception('Error in get_commentary')
-        raise GenericException(str(exe)) from exe
+    return crud.get_commentaries(db_, source_name, book_code, chapter, verse, last_verse,
+        active=active, skip = skip, limit = limit)
 
 @app.post('/v2/commentaries/{source_name}', response_model=schemas.CommentaryUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -669,25 +555,9 @@ def add_commentary(source_name : schemas.TableNamePattern,
     verses fields can be null in these cases'''
     log.info('In add_commentary')
     log.debug('source_name: %s, commentaries: %s',source_name, commentaries)
-    try:
-        return {'message': "Commentaries added successfully",
-        "data": crud.upload_commentaries(db_=db_, source_name=source_name,
-            commentaries=commentaries, user_id=None)}
-    except SQLAlchemyError as exe:
-        log.exception('Error in add_commentary')
-        raise DatabaseException(exe) from exe
-    except AlreadyExistsException as exe:
-        log.exception('Error in add_commentary')
-        raise exe from exe
-    except NotAvailableException as exe:
-        log.exception('Error in add_commentary')
-        raise exe from exe
-    except TypeException as exe:
-        log.exception('Error in add_commentary')
-        raise exe from exe
-    except Exception as exe:
-        log.exception('Error in add_commentary')
-        raise GenericException(str(exe)) from exe
+    return {'message': "Commentaries added successfully",
+    "data": crud.upload_commentaries(db_=db_, source_name=source_name,
+        commentaries=commentaries, user_id=None)}
 
 
 @app.put('/v2/commentaries/{source_name}', response_model=schemas.CommentaryUpdateResponse,
@@ -700,23 +570,9 @@ def edit_commentary(source_name: schemas.TableNamePattern,
     book, chapter, verseStart and verseEnd values'''
     log.info('In edit_commentary')
     log.debug('source_name: %s, commentaries: %s',source_name, commentaries)
-    try:
-        return {'message': "Commentaries updated successfully",
-        "data": crud.update_commentaries(db_=db_, source_name=source_name,
-            commentaries=commentaries, user_id=None)}
-    except SQLAlchemyError as exe:
-        log.exception('Error in edit_commentary')
-        raise DatabaseException(exe) from exe
-    except NotAvailableException as exe:
-        log.exception('Error in edit_commentary')
-        raise exe from exe
-    except TypeException as exe:
-        log.exception('Error in edit_commentary')
-        raise exe from exe
-    except Exception as exe:
-        log.exception('Error in edit_commentary')
-        raise GenericException(str(exe)) from exe
-
+    return {'message': "Commentaries updated successfully",
+    "data": crud.update_commentaries(db_=db_, source_name=source_name,
+        commentaries=commentaries, user_id=None)}
 
 # # ########### Dictionary ###################
 
@@ -741,21 +597,8 @@ def get_dictionary_word(source_name: schemas.TableNamePattern, search_word: str 
     log.debug('source_name: %s, search_word: %s, exact_match: %s, word_list_only:%s, details:%s\
         skip: %s, limit: %s', source_name, search_word, exact_match, word_list_only, details,
         skip, limit)
-    try:
-        return crud.get_dictionary_words(db_, source_name, search_word, exact_match=exact_match,
-            word_list_only=word_list_only, details=details, active=active, skip=skip, limit=limit)
-    except SQLAlchemyError as exe:
-        log.exception('Error in get_dictionary_word')
-        raise DatabaseException(exe) from exe
-    except NotAvailableException as exe:
-        log.exception('Error in get_dictionary_word')
-        raise exe from exe
-    except TypeException as exe:
-        log.exception('Error in get_dictionary_word')
-        raise exe from exe
-    except Exception as exe:
-        log.exception('Error in get_dictionary_word')
-        raise GenericException(str(exe)) from exe
+    return crud.get_dictionary_words(db_, source_name, search_word, exact_match=exact_match,
+        word_list_only=word_list_only, details=details, active=active, skip=skip, limit=limit)
 
 
 @app.post('/v2/dictionaries/{source_name}', response_model=schemas.DictionaryUpdateResponse,
@@ -769,25 +612,9 @@ def add_dictionary_word(source_name : schemas.TableNamePattern,
     all the additional info we have for each word, as key-value pairs'''
     log.info('In add_dictionary_word')
     log.debug('source_name: %s, dictionary_words: %s',source_name, dictionary_words)
-    try:
-        return {'message': "Dictionary words added successfully",
+    return {'message': "Dictionary words added successfully",
         "data": crud.upload_dictionary_words(db_=db_, source_name=source_name,
-            dictionary_words=dictionary_words, user_id=None)}
-    except SQLAlchemyError as exe:
-        log.exception('Error in add_dictionary_word')
-        raise DatabaseException(exe) from exe
-    except AlreadyExistsException as exe:
-        log.exception('Error in add_dictionary_word')
-        raise exe from exe
-    except NotAvailableException as exe:
-        log.exception('Error in add_dictionary_word')
-        raise exe from exe
-    except TypeException as exe:
-        log.exception('Error in add_dictionary_word')
-        raise exe from exe
-    except Exception as exe:
-        log.exception('Error in add_dictionary_word')
-        raise GenericException(str(exe)) from exe
+        dictionary_words=dictionary_words, user_id=None)}
 
 
 @app.put('/v2/dictionaries/{source_name}', response_model=schemas.DictionaryUpdateResponse,
@@ -800,22 +627,10 @@ def edit_dictionary_word(source_name: schemas.TableNamePattern,
     '''Updates the given fields mentioned in details object, of the specifed word'''
     log.info('In edit_dictionary_word')
     log.debug('source_name: %s, dictionary_words: %s',source_name, dictionary_words)
-    try:
-        return {'message': "Dictionary words updated successfully",
+    return {'message': "Dictionary words updated successfully",
         "data": crud.update_dictionary_words(db_=db_, source_name=source_name,
-            dictionary_words=dictionary_words, user_id=None)}
-    except SQLAlchemyError as exe:
-        log.exception('Error in edit_dictionary_word')
-        raise DatabaseException(exe) from exe
-    except NotAvailableException as exe:
-        log.exception('Error in edit_dictionary_word')
-        raise exe from exe
-    except TypeException as exe:
-        log.exception('Error in edit_dictionary_word')
-        raise exe from exe
-    except Exception as exe:
-        log.exception('Error in edit_dictionary_word')
-        raise GenericException(str(exe)) from exe
+        dictionary_words=dictionary_words, user_id=None)}
+
 # # ###########################################
 
 # # ########### Infographic ###################
@@ -833,21 +648,8 @@ def get_infographic(source_name: schemas.TableNamePattern, book_code: schemas.Bo
     log.info('In get_infographic')
     log.debug('source_name: %s, book_code: %s skip: %s, limit: %s',
         source_name, book_code, skip, limit)
-    try:
-        return crud.get_infographics(db_, source_name, book_code, title,
+    return crud.get_infographics(db_, source_name, book_code, title,
         active=active, skip = skip, limit = limit)
-    except SQLAlchemyError as exe:
-        log.exception('Error in get_infographic')
-        raise DatabaseException(exe) from exe
-    except NotAvailableException as exe:
-        log.exception('Error in get_infographic')
-        raise exe from exe
-    except TypeException as exe:
-        log.exception('Error in get_infographic')
-        raise exe from exe
-    except Exception as exe:
-        log.exception('Error in get_infographic')
-        raise GenericException(str(exe)) from exe
 
 @app.post('/v2/infographics/{source_name}', response_model=schemas.InfographicUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -858,25 +660,9 @@ def add_infographics(source_name : schemas.TableNamePattern,
     '''Uploads a list of infograhics.'''
     log.info('In add_infographics')
     log.debug('source_name: %s, infographics: %s',source_name, infographics)
-    try:
-        return {'message': "Infographics added successfully",
+    return {'message': "Infographics added successfully",
         "data": crud.upload_infographics(db_=db_, source_name=source_name,
-            infographics=infographics, user_id=None)}
-    except SQLAlchemyError as exe:
-        log.exception('Error in add_infographics')
-        raise DatabaseException(exe) from exe
-    except AlreadyExistsException as exe:
-        log.exception('Error in add_infographics')
-        raise exe from exe
-    except NotAvailableException as exe:
-        log.exception('Error in add_infographics')
-        raise exe from exe
-    except TypeException as exe:
-        log.exception('Error in add_infographics')
-        raise exe from exe
-    except Exception as exe:
-        log.exception('Error in add_infographics')
-        raise GenericException(str(exe)) from exe
+        infographics=infographics, user_id=None)}
 
 @app.put('/v2/infographics/{source_name}', response_model=schemas.InfographicUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -889,22 +675,9 @@ def edit_infographics(source_name: schemas.TableNamePattern,
     book and title'''
     log.info('In edit_infographics')
     log.debug('source_name: %s, infographics: %s',source_name, infographics)
-    try:
-        return {'message': "Infographics updated successfully",
+    return {'message': "Infographics updated successfully",
         "data": crud.update_infographics(db_=db_, source_name=source_name,
-            infographics=infographics, user_id=None)}
-    except SQLAlchemyError as exe:
-        log.exception('Error in edit_infographics')
-        raise DatabaseException(exe) from exe
-    except NotAvailableException as exe:
-        log.exception('Error in edit_infographics')
-        raise exe from exe
-    except TypeException as exe:
-        log.exception('Error in edit_infographics')
-        raise exe from exe
-    except Exception as exe:
-        log.exception('Error in edit_infographics')
-        raise GenericException(str(exe)) from exe
+        infographics=infographics, user_id=None)}
 # # ###########################################
 
 
@@ -924,21 +697,9 @@ def get_bible_video(source_name: schemas.TableNamePattern, book_code: schemas.Bo
     log.info('In get_bible_video')
     log.debug('source_name: %s, book_code: %s, title: %s, theme: %s, skip: %s, limit: %s',
         source_name, book_code, title, theme, skip, limit)
-    try:
-        return crud.get_bible_videos(db_, source_name, book_code, title, theme, active,
+    return crud.get_bible_videos(db_, source_name, book_code, title, theme, active,
         skip=skip, limit=limit)
-    except SQLAlchemyError as exe:
-        log.exception('Error in get_bible_video')
-        raise DatabaseException(exe) from exe
-    except NotAvailableException as exe:
-        log.exception('Error in get_bible_video')
-        raise exe from exe
-    except TypeException as exe:
-        log.exception('Error in get_bible_video')
-        raise exe from exe
-    except Exception as exe:
-        log.exception('Error in get_bible_video')
-        raise GenericException(str(exe)) from exe
+
 
 @app.post('/v2/biblevideos/{source_name}', response_model=schemas.BibleVideoUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -949,25 +710,9 @@ def add_bible_video(source_name : schemas.TableNamePattern,
     '''Uploads a list of bible video links and details.'''
     log.info('In add_bible_video')
     log.debug('source_name: %s, videos: %s',source_name, videos)
-    try:
-        return {'message': "Bible videos added successfully",
+    return {'message': "Bible videos added successfully",
         "data": crud.upload_bible_videos(db_=db_, source_name=source_name,
-            videos=videos, user_id=None)}
-    except SQLAlchemyError as exe:
-        log.exception('Error in add_bible_video')
-        raise DatabaseException(exe) from exe
-    except AlreadyExistsException as exe:
-        log.exception('Error in add_bible_video')
-        raise exe from exe
-    except NotAvailableException as exe:
-        log.exception('Error in add_bible_video')
-        raise exe from exe
-    except TypeException as exe:
-        log.exception('Error in add_bible_video')
-        raise exe from exe
-    except Exception as exe:
-        log.exception('Error in add_bible_video')
-        raise GenericException(str(exe)) from exe
+        videos=videos, user_id=None)}
 
 
 @app.put('/v2/biblevideos/{source_name}', response_model=schemas.BibleVideoUpdateResponse,
@@ -980,20 +725,7 @@ def edit_bible_video(source_name: schemas.TableNamePattern,
     ''' Changes the selected rows of bible videos table. each row identified by '''
     log.info('In edit_bible_video')
     log.debug('source_name: %s, videos: %s',source_name, videos)
-    try:
-        return {'message': "Bible videos updated successfully",
+    return {'message': "Bible videos updated successfully",
         "data": crud.update_bible_videos(db_=db_, source_name=source_name,
-            videos=videos, user_id=None)}
-    except SQLAlchemyError as exe:
-        log.exception('Error in edit_bible_video')
-        raise DatabaseException(exe) from exe
-    except NotAvailableException as exe:
-        log.exception('Error in edit_bible_video')
-        raise exe from exe
-    except TypeException as exe:
-        log.exception('Error in edit_bible_video')
-        raise exe from exe
-    except Exception as exe:
-        log.exception('Error in edit_bible_video')
-        raise GenericException(str(exe)) from exe
+        videos=videos, user_id=None)}
 # # ###########################################
