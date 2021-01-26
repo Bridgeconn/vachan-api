@@ -187,7 +187,7 @@ class AudioBibleUpload(BaseModel):
 class AudioBibleEdit(BaseModel):
     ''' Input object of Auido Bible'''
     name: str = None
-    url: str = None
+    url: AnyUrl = None
     books: List[BookCodePattern]
     format: str = None
     active: bool = None

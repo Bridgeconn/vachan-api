@@ -1,14 +1,13 @@
 ''' Place to define all Database CRUD operations'''
 import json
 import sqlalchemy
-from sqlalchemy.orm import Session, Load, noload, load_only, defer, joinedload
+from sqlalchemy.orm import Session, defer, joinedload
 
 import db_models
 import schemas
 from database import engine
-from custom_exceptions import NotAvailableException, TypeException
+from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException
 from logger import log
-import pdb; 
 
 def get_content_types(db_: Session, content_type: str =None, skip: int = 0, limit: int = 100):
     '''Fetches all content types, with pagination'''
@@ -653,11 +652,19 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None):
         if not book:
             raise NotAvailableException('Bible Book code, %s, not found in database'
                 %book_code)
-        row = model_cls(
-            book_id=book.bookId,
-            USFM=item.USFM,
-            JSON=item.JSON,
-            active=True)
+        row = db_.query(model_cls).filter(model_cls.book_id == book.bookId).first()
+        if row:
+            if row.USFM:
+                raise AlreadyExistsException("Bible book, %s, already present in DB"%book.bookCode)
+            row.USFM = item.USFM
+            row.JSON = item.JSON
+            row.active = True
+        else:
+            row = model_cls(
+                book_id=book.bookId,
+                USFM=item.USFM,
+                JSON=item.JSON,
+                active=True)
         db_.flush()
         db_content.append(row)
         if "chapters" not in item.JSON:
@@ -732,6 +739,7 @@ def update_bible_books(db_: Session, source_name, books, user_id=None):
                             verseText = content['verseText'].strip())
                         db_content2.append(row_other)
             db_.add_all(db_content2)
+            db_.flush()
         if item.active is not None: # set all the verse rows' active flag accordingly
             rows = db_.query(model_cls_2).filter(
                 model_cls_2.book_id == book.bookId).all()
@@ -836,27 +844,31 @@ def get_available_bible_books(db_, source_name, book_code=None, content_type=Non
     model_cls = db_models.dynamicTables[source_name]
     # model_cls_audio = db_models.dynamicTables[source_name+"_audio"]
     query = db_.query(model_cls).options(joinedload(model_cls.book))
+    fetched = None
+    if book_code:
+        query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
     if content_type == "usfm":
         query = query.options(defer(model_cls.JSON))
     elif content_type == "json":
         query = query.options(defer(model_cls.USFM))
     elif content_type == "all":
         query = query.options(joinedload(model_cls.audio)).filter(
-            model_cls.audio.has(active=active))
+            sqlalchemy.or_(model_cls.active == active, model_cls.audio.has(active=active)))
+        fetched = query.offset(skip).limit(limit).all()
     elif content_type == "audio":
         query = query.options(joinedload(model_cls.audio),
             defer(model_cls.JSON), defer(model_cls.USFM)).filter(
             model_cls.audio.has(active=active))
+        fetched = query.offset(skip).limit(limit).all()
     elif content_type is None:
         query = query.options(defer(model_cls.JSON), defer(model_cls.USFM))
-    if book_code:
-        query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
-    fetched = query.filter(model_cls.active == active).offset(skip).limit(limit).all()
+    if not fetched:
+        fetched = query.filter(model_cls.active == active).offset(skip).limit(limit).all()
     results = [res.__dict__ for res in fetched]
     if versification:
         added_results = []
         for res in results:
-            ref_list = get_bible_versification(db_, source_name, res.book.bookCode, active)
+            ref_list = get_bible_versification(db_, source_name, res["book"].bookCode, active)
             added_res = res
             added_res['versification'] = ref_list
             added_results.append(added_res)
