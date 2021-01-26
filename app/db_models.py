@@ -130,7 +130,7 @@ class BibleAudio(): # pylint: disable=too-few-public-methods
     @declared_attr
     def book_id(self):
         '''FK column referncing bible contents'''
-        table_name = self.__tablename__.replace("_audio", "")
+        table_name = self.__tablename__.replace("_audio", "") #pylint: disable=E1101
         return Column('book_id', Integer, ForeignKey(table_name+'.book_id'), unique=True)
     url = Column('audio_link', String)
     format = Column('audio_format', String)
@@ -154,9 +154,6 @@ class BibleContent(): # pylint: disable=too-few-public-methods
     def audio(self): # pylint: disable=E0213 
         '''For modelling the audio field in bible content classes'''
         refering_table = self.__tablename__+"_audio" #pylint: disable=E1101
-        # join_cndn = 'and_('+self.__tablename__+'.book_id =='+refering_table+'.book_id, '+\
-        # self.__tablename__+'.active == '+refering_table+'.active)'
-        # return relationship(dynamicTables[refering_table], primaryjoin=join_cndn, uselist=False)
         return relationship(dynamicTables[refering_table], uselist=False)
     active = Column('active', Boolean, default=True)
     __table_args__ = {'extend_existing': True}

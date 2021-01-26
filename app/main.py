@@ -7,14 +7,13 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-import psycopg2
 
 import crud
 import db_models
 import schemas
 from logger import log
 from database import SessionLocal, engine
-from custom_exceptions import GenericException, DatabaseException
+from custom_exceptions import GenericException
 from custom_exceptions import NotAvailableException, AlreadyExistsException, TypeException
 
 
@@ -501,7 +500,7 @@ def get_commentary(source_name: schemas.TableNamePattern, book_code: schemas.Boo
     '''Fetches commentries under the specified source.
     Using the params bookCode, chapter, and verse the result set can be filtered as per need,
     like in the /v2/bibles/{sourceName}/verses API
-    * Value 0 for verse and last_verse indicate chapter introduction and -1 indicate 
+    * Value 0 for verse and last_verse indicate chapter introduction and -1 indicate
     chapter epilogue.
     * Similarly 0 for chapter means book introduction and -1 for chapter means book epilogue
     * skip=n: skips the first n objects in return list

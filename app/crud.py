@@ -629,7 +629,7 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
     db_.refresh(source_db_content)
     return db_content
 
-def upload_bible_books(db_: Session, source_name, books, user_id=None):
+def upload_bible_books(db_: Session, source_name, books, user_id=None): #pylint: disable=too-many-branches, disable=too-many-locals
     '''Adds rows to the bible table and corresponding bible_cleaned specified by source_name'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
@@ -695,7 +695,7 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None):
     db_.commit()
     return db_content
 
-def update_bible_books(db_: Session, source_name, books, user_id=None):
+def update_bible_books(db_: Session, source_name, books, user_id=None): #pylint: disable=too-many-locals, disable=too-many-branches
     '''change values of bible books already uploaded'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
@@ -785,11 +785,12 @@ def upload_bible_audios(db_:Session, source_name, audios, user_id=None):
             db_content.append(row)
     db_.add_all(db_content)
     db_.add_all(db_content2)
+    source_db_content.updatedUser = user_id
     db_.commit()
     return db_content
 
 def update_bible_audios(db_: Session, source_name, audios, user_id=None):
-    '''Update any details of a bible Auido row. 
+    '''Update any details of a bible Auido row.
     Use name as row-identifier, which cannot be changed'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
@@ -821,8 +822,8 @@ def update_bible_audios(db_: Session, source_name, audios, user_id=None):
     db_.commit()
     return db_content
 
-    
-    
+
+
 def get_bible_versification(db_, source_name, book_code, active=True):
     '''select the reference list from bible_cleaned table'''
     model_cls = db_models.dynamicTables[source_name+"_cleaned"]
@@ -834,7 +835,7 @@ def get_bible_versification(db_, source_name, book_code, active=True):
     return query.all()
 
 
-def get_available_bible_books(db_, source_name, book_code=None, content_type=None, #pylint: disable=too-many-arguments
+def get_available_bible_books(db_, source_name, book_code=None, content_type=None, #pylint: disable=too-many-arguments, disable=too-many-locals
     versification=False, active=True, skip=0, limit=100):
     '''fetches the contents of .._bible table based of provided source_name and other options'''
     if source_name not in db_models.dynamicTables:
@@ -876,8 +877,8 @@ def get_available_bible_books(db_, source_name, book_code=None, content_type=Non
     return results
 
 
-def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, verse=None,
-    lastVerse=None, searchPhrase=None, active=True, skip=0, limit=100):
+def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, verse=None, #pylint: disable=too-many-locals, disable=too-many-arguments
+    last_verse=None, search_phrase=None, active=True, skip=0, limit=100):
     '''queries the bible cleaned table for verses'''
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
@@ -890,11 +891,11 @@ def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, ver
     if chapter:
         query = query.filter(model_cls.chapter == chapter)
     if verse:
-        if not lastVerse:
-            lastVerse = verse
-        query = query.filter(model_cls.verseNumber >= verse, model_cls.verseNumber <= lastVerse)
-    if searchPhrase:
-        query = query.filter(model_cls.verseText.like('%'+searchPhrase.strip()+"%"))
+        if not last_verse:
+            last_verse = verse
+        query = query.filter(model_cls.verseNumber >= verse, model_cls.verseNumber <= last_verse)
+    if search_phrase:
+        query = query.filter(model_cls.verseText.like('%'+search_phrase.strip()+"%"))
     results = query.filter(model_cls.active == active).offset(skip).limit(limit).all()
     ref_combined_results = []
     for res in results:

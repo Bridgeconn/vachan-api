@@ -1,7 +1,7 @@
 '''Test cases for bible videos related APIs'''
 import json
 from . import client
-from . import check_default_get, check_soft_delete
+from . import check_default_get
 from . import assert_input_validation_error, assert_not_available_content
 from .test_sources import check_post as add_source
 from .test_versions import check_post as add_version
@@ -45,7 +45,7 @@ gospel_books_data = [
             "Book code is in lowercase. "
         ]
     }
-    }''')},    
+    }''')},
         {"USFM":"\\id mrk\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two",
          "JSON":json.loads('''{
     "book": {
@@ -81,7 +81,7 @@ gospel_books_data = [
             "Book code is in lowercase. "
         ]
     }
-    }''')},    
+    }''')},
         {"USFM":"\\id luk\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two",
          "JSON":json.loads('''{
     "book": {
@@ -117,7 +117,7 @@ gospel_books_data = [
             "Book code is in lowercase. "
         ]
     }
-    }''')},    
+    }''')},
         {"USFM":"\\id jhn\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two",
          "JSON":json.loads('''{
     "book": {
@@ -153,7 +153,7 @@ gospel_books_data = [
             "Book code is in lowercase. "
         ]
     }
-    }''')},    
+    }''')},
 ]
 
 audio_data = [
@@ -429,7 +429,7 @@ def test_put_audios():
     update_data = [
     {
         "books": ['mat'],
-        "url":"https://www.someotherplace.com/mat_file" 
+        "url":"https://www.someotherplace.com/mat_file"
     }]
     response = client.put(UNIT_URL+source+'/audios', json=update_data, headers=headers)
     assert response.status_code == 201
@@ -440,25 +440,25 @@ def test_put_audios():
     update_data = [
     {
         "format": 'mp3',
-        "url":"https://www.someotherplace.com/mat_file" 
+        "url":"https://www.someotherplace.com/mat_file"
     }]
     response1 = client.put(UNIT_URL+source+'/audios', json=update_data, headers=headers)
-    assert_input_validation_error(response1) 
+    assert_input_validation_error(response1)
 
-    # invalid data   
+    # invalid data
     update_data = [{
         "books": ['mat'],
-        "active":"noooo" 
+        "active":"noooo"
     }]
     response2 = client.put(UNIT_URL+source+'/audios', json=update_data, headers=headers)
-    assert_input_validation_error(response2) 
+    assert_input_validation_error(response2)
 
     update_data = [{
         "books": ['mat'],
-        "url":"invalid url" 
+        "url":"invalid url"
     }]
     response2 = client.put(UNIT_URL+source+'/audios', json=update_data, headers=headers)
-    assert_input_validation_error(response2) 
+    assert_input_validation_error(response2)
 
 def test_get_books_contenttype():
     '''Add some books data into the table and do content type related get tests'''
@@ -546,14 +546,14 @@ def test_get_books_filter():
     resp = client.get(UNIT_URL+source_name+'/books')
     assert resp.status_code == 200
     assert len(resp.json()) == 8
-    assert resp.json()[0]['book']['bookCode'] in added_books    
+    assert resp.json()[0]['book']['bookCode'] in added_books
 
-    # book_code after uploading audio data 
+    # book_code after uploading audio data
     response = client.get(UNIT_URL+source_name+'/books?book_code=mat')
     assert response.status_code == 200
     assert len(response.json()) == 1
     assert response.json()[0]['book']['bookCode'] == 'mat'
-    
+
     response = client.get(UNIT_URL+source_name+'/books?book_code=rev')
     assert response.status_code == 200
     assert len(response.json()) == 1
@@ -569,7 +569,7 @@ def test_get_books_filter():
     assert_not_available_content(res3)
 
 def test_get_books_versification():
-    '''add some usfm and audio data and test get api based on book_code and active filters '''    
+    '''add some usfm and audio data and test get api based on book_code and active filters '''
     res, source_name = check_post(gospel_books_data)
     assert res.status_code == 201
 
@@ -632,7 +632,7 @@ def test_get_verses():
     assert response.status_code == 200
     assert len(response.json()) == 8
     for item in response.json():
-        assert_positive_get_for_verse(item)    
+        assert_positive_get_for_verse(item)
 
     response = client.get(UNIT_URL+source_name+'/verses?book_code=mat')
     assert response.status_code == 200
@@ -770,7 +770,7 @@ def test_book_delete():
     assert_not_available_content(res1)
     assert_not_available_content(res2)
 
-    # add audio 
+    # add audio
     resp = client.post(UNIT_URL+source+'/audios', json=audio_data, headers=headers)
     assert resp.status_code == 201
     assert resp.json()['message'] == "Bible audios details uploaded successfully"
@@ -780,4 +780,4 @@ def test_book_delete():
     assert res1.status_code == 200
     assert len(res1.json()) == 6
     assert res2.status_code == 200
-    assert len(res2.json()) == 8 
+    assert len(res2.json()) == 8
