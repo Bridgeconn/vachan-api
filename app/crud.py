@@ -88,6 +88,8 @@ def update_license(db_: Session, license_obj: schemas.LicenseEdit, user_id=None)
     '''changes one or more fields of license, selected via license code'''
     db_content = db_.query(db_models.License).filter(
         db_models.License.code == license_obj.code.strip().upper()).first()
+    if not db_content:
+        raise NotAvailableException("License with code, %s, not found in database"%license_obj.code)
     if license_obj.name:
         db_content.name = license_obj.name
     if license_obj.license:

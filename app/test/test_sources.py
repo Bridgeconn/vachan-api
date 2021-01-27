@@ -22,6 +22,7 @@ def assert_positive_get(item):
     assert "versionId" in item['version']
     assert "year" in item
     assert "license" in item
+    assert isinstance(item["license"], dict)
     assert "metaData" in item
     assert item['metaData'] is None or isinstance(item['metaData'], dict)
     assert "active" in item
@@ -55,7 +56,7 @@ def test_post_default():
         "version": "TTT",
         "revision": 1,
         "year": 2020,
-        "license": "MIT",
+        "license": "CC-BY-SA",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     check_post(data)
@@ -73,7 +74,7 @@ def test_post_wrong_version():
         "version": "TTD",
         "revision": 1,
         "year": 2020,
-        "license": "MIT",
+        "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -88,7 +89,7 @@ def test_post_wrong_version():
         "version": "TTT",
         "revision": 2,
         "year": 2020,
-        "license": "MIT",
+        "license": "CC-BY-SA",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     response = client.post(UNIT_URL, headers=headers, json=data2)
@@ -102,7 +103,7 @@ def test_post_wrong_version():
         "version": "TTT",
         "revision": 1,
         "year": 2020,
-        "license": "MIT",
+        "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     check_post(data3)
@@ -120,7 +121,7 @@ def test_post_wrong_lang():
         "version": "TTT",
         "revision": 1,
         "year": 2020,
-        "license": "MIT",
+        "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -142,7 +143,7 @@ def test_post_wrong_content():
         "version": "TTT",
         "revision": 1,
         "year": 2020,
-        "license": "MIT",
+        "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -150,6 +151,21 @@ def test_post_wrong_content():
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
     assert response.json()['details'] == "ContentType, bibl, not found in Database"
+
+    # '''Negative test with not a valid license from license table'''
+    data = {
+        "contentType": "infographics",
+        "language": "hin",
+        "version": "TTT",
+        "revision": 1,
+        "year": 2020,
+        "license": "XYZ-123",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    response = client.post(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"
+    assert "License" in response.json()['details']
 
 def test_post_wrong_year():
     '''Negative test with text in year field'''
@@ -159,12 +175,13 @@ def test_post_wrong_year():
         "version": "TTT",
         "revision": 1,
         "year": "twenty twenty",
-        "license": "MIT",
+        "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
+
 
 def test_post_wrong_metadata():
     '''Negative test with incorrect format for metadata'''
@@ -174,7 +191,7 @@ def test_post_wrong_metadata():
         "version": "TTT",
         "revision": 1,
         "year": "twenty twenty",
-        "license": "MIT",
+        "license": "ISC",
         "metaData": '["owner"="someone", "access-key"="123xyz"]'
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -303,7 +320,7 @@ def test_get_after_adding_data():
     data['contentType'] = 'commentary'
     data['revision'] = 1
     data['metaData'] = {'owner': 'myself'}
-    data['license'] = "not licensed"
+    data['license'] = "ISC"
     for lang in ['hin', 'mar', 'tel']:
         data['language'] = lang
         check_post(data)
@@ -337,6 +354,20 @@ def test_get_after_adding_data():
     assert len(response.json()) >= 9
     for item in response.json():
         assert_positive_get(item)
+
+    # filter with license
+    response = client.get(UNIT_URL + "?license=CC-BY-SA")
+    assert response.status_code == 200
+    assert len(response.json()) >= 6
+    for item in response.json():
+        assert_positive_get(item)
+
+    response = client.get(UNIT_URL + "?license=ISC")
+    assert response.status_code == 200
+    assert len(response.json()) >= 3
+    for item in response.json():
+        assert_positive_get(item)
+
 
     # filter with metadata
     response = client.get(UNIT_URL + '?metadata={"owner": "myself"}&latest_revision=false')

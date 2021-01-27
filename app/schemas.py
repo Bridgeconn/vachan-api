@@ -79,7 +79,7 @@ class LicenseCreate(BaseModel):
     name: str
     code : LicenseCodePattern
     license : str
-    permissions : List[LicensePermisssion] = ['Private use']
+    permissions : List[LicensePermisssion] = ['Private_use']
 
 class LicenseShortResponse(BaseModel):
     '''Return object of licenses without the full text'''

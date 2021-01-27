@@ -238,9 +238,10 @@ def edit_language(lang_obj: schemas.LanguageEdit = Body(...), db_: Session = Dep
     response_model=List[schemas.LicenseResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Licenses"])
-def get_license(license_code : str = Query(None), license_name: str = Query(None),
-    permission: schemas.LicensePermisssion = Query(None), active: bool = Query(True),
-    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
+def get_license(license_code : schemas.LicenseCodePattern=Query(None), #pylint: disable=too-many-arguments
+    license_name: str=Query(None),
+    permission: schemas.LicensePermisssion=Query(None), active: bool=Query(True),
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
     '''fetches all the licenses supported in the DB, their code and other details.
     if query parameter, code is provided, returns details of that language if pressent
     and [], if not found
@@ -249,7 +250,8 @@ def get_license(license_code : str = Query(None), license_name: str = Query(None
     log.info('In get_license')
     log.debug('license_code:%s, license_name: %s, permission:%s, active:%s, skip: %s, limit: %s',
         license_code, license_name, permission, active, skip, limit)
-    return crud.get_licenses(db_, license_code, license_name, permission, active, skip = skip, limit = limit)
+    return crud.get_licenses(db_, license_code, license_name, permission,
+        active, skip = skip, limit = limit)
 
 @app.post('/v2/licenses', response_model=schemas.LicenseUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \

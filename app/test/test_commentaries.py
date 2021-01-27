@@ -32,7 +32,7 @@ def check_post(data: list):
         "version": "TTT",
         "revision": 1,
         "year": 2000,
-        "license": "MIT",
+        "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     source = add_source(source_data)
