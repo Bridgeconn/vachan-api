@@ -147,8 +147,8 @@ def update_version(db_: Session, version: schemas.VersionEdit):
     return db_content
 
 def get_sources(db_: Session, #pylint: disable=too-many-arguments, disable-msg=too-many-locals, disable=too-many-branches
-    content_type=None, version_abbreviation=None, revision=None,
-    language_code=None, metadata=None, active=True, latest_revision = True, table_name=None,
+    content_type=None, version_abbreviation=None, revision=None, language_code=None,
+    license_abbreviation=None, metadata=None, latest_revision=True, active=True, table_name=None,
     skip: int = 0, limit: int = 100):
     '''Fetches the rows of sources table'''
     query = db_.query(db_models.Source)
@@ -160,6 +160,8 @@ def get_sources(db_: Session, #pylint: disable=too-many-arguments, disable-msg=t
     if revision:
         query = query.filter(
             db_models.Source.version.has(revision = revision))
+    if license_abbreviation:
+        query = query.filter(db_models.Source.license.has(code = license_abbreviation.strip()))
     if language_code:
         query = query.filter(db_models.Source.language.has(code = language_code.strip()))
     if metadata:
@@ -222,6 +224,10 @@ def create_source(db_: Session, source: schemas.SourceCreate, table_name, user_i
         db_models.Language.code == source.language).first()
     if not language:
         raise NotAvailableException("Language code, %s, not found in Database"%source.language)
+    license_obj = db_.query(db_models.License).filter(
+        db_models.License.code == source.license).first()
+    if not license_obj:
+        raise NotAvailableException("License code, %s, not found in Database"%source.license)
 
     db_content = db_models.Source(
         year = source.year,
@@ -229,10 +235,9 @@ def create_source(db_: Session, source: schemas.SourceCreate, table_name, user_i
         contentId = content_type.contentId,
         versionId = version.versionId,
         languageId = language.languageId,
+        licenseId = license_obj.licenseId,
         metaData = source.metaData,
         active = True)
-    if source.license is not None:
-        db_content.license = source.license
     if user_id:
         db_content.created_user = user_id
     db_.add(db_content)
@@ -281,10 +286,14 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None): #py
         db_content.languageId = language.languageId
         table_name_parts = db_content.sourceName.split("_")
         db_content.sourceName = "_".join([source.language]+table_name_parts[1:])
+    if source.license:
+        license_obj = db_.query(db_models.License).filter(
+            db_models.License.code == source.license).first()
+        if not license_obj:
+            raise NotAvailableException("License code, %s, not found in Database"%source.license)
+        db_content.licenseId = license_obj.licenseId
     if source.year:
         db_content.year = source.year
-    if source.license:
-        db_content.license = source.license
     if source.metaData:
         db_content.metaData = source.metaData
     if source.active is not None:

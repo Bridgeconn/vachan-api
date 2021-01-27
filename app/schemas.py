@@ -65,7 +65,7 @@ class LanguageEdit (BaseModel):
     code : LangCodePattern = None
     scriptDirection : Direction = None
 
-LicenseCodePattern =constr(regex=r"^[a-zA-Z0-9]+$")
+LicenseCodePattern =constr(regex=r"^[a-zA-Z0-9\.\_\-]+$")
 class LicensePermisssion(str, Enum):
     '''To specify direction of script'''
     commercial = "Commercial_use"
@@ -80,6 +80,18 @@ class LicenseCreate(BaseModel):
     code : LicenseCodePattern
     license : str
     permissions : List[LicensePermisssion] = ['Private use']
+
+class LicenseShortResponse(BaseModel):
+    '''Return object of licenses without the full text'''
+    name : str
+    code : LicenseCodePattern
+    permissions : List[LicensePermisssion]
+    active: bool
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
+
 
 class LicenseResponse(BaseModel):
     '''Return object of licenses'''
@@ -153,7 +165,7 @@ class SourceCreate(BaseModel):
     version : VersionPattern
     revision: str = "1"
     year: int
-    license: str = "ISC"
+    license: LicenseCodePattern = "CC-BY-SA"
     metaData: dict = None
 
 class SourceResponse(BaseModel):
@@ -164,7 +176,7 @@ class SourceResponse(BaseModel):
     version : VersionResponse = None
     # revision: str = "1"
     year: int
-    license: str = "ISC"
+    license: LicenseShortResponse
     metaData: dict = None
     active: bool = True
     class Config: # pylint: disable=too-few-public-methods
@@ -183,7 +195,7 @@ class SourceEdit(BaseModel):
     version : VersionPattern = None
     revision: str = None
     year: int = None
-    license: str = None
+    license: LicenseCodePattern = None
     metaData: dict = None
     active: bool = None
 

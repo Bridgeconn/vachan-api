@@ -333,6 +333,7 @@ def edit_version(ver_obj: schemas.VersionEdit = Body(...), db_: Session = Depend
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Sources"])
 def get_source(content_type: str = None, version_abbreviation: schemas.VersionPattern = None, #pylint: disable=too-many-arguments
     revision: int = None, language_code: schemas.LangCodePattern =None,
+    license_code: schemas.LicenseCodePattern=None,
     metadata: schemas.MetaDataPattern = Query(None), active: bool = True,
     latest_revision: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
@@ -344,13 +345,13 @@ def get_source(content_type: str = None, version_abbreviation: schemas.VersionPa
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n'''
     log.info('In get_source')
-    log.debug('contentType:%s, versionAbbreviation: %s, revision: %s,\
-        languageCode: %s, metadata: %s, latest_revision: %s, active: %s, skip: %s, limit: %s',
-        content_type, version_abbreviation, revision, language_code, metadata, latest_revision,
-        active, skip, limit)
+    log.debug('contentType:%s, versionAbbreviation: %s, revision: %s, languageCode: %s,\
+        license_code:%s, metadata: %s, latest_revision: %s, active: %s, skip: %s, limit: %s',
+        content_type, version_abbreviation, revision, language_code, license_code, metadata,
+        latest_revision, active, skip, limit)
     return crud.get_sources(db_, content_type, version_abbreviation, revision,
-        language_code, metadata, latest_revision = latest_revision, active = active,
-        skip = skip, limit = limit)
+        language_code, license_code, metadata, latest_revision=latest_revision, active=active,
+        skip=skip, limit=limit)
 
 @app.post('/v2/sources', response_model=schemas.SourceUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
