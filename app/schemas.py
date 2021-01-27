@@ -65,6 +65,47 @@ class LanguageEdit (BaseModel):
     code : LangCodePattern = None
     scriptDirection : Direction = None
 
+LicenseCodePattern =constr(regex=r"^[a-zA-Z0-9]+$")
+class LicensePermisssion(str, Enum):
+    '''To specify direction of script'''
+    commercial = "Commercial_use"
+    modification = "Modification"
+    distribution = "Distribution"
+    patent = "Patent_use"
+    private = "Private_use"
+
+class LicenseCreate(BaseModel):
+    '''To create and upload new license'''
+    name: str
+    code : LicenseCodePattern
+    license : str
+    permissions : List[LicensePermisssion] = ['Private use']
+
+class LicenseResponse(BaseModel):
+    '''Return object of licenses'''
+    name : str
+    code : LicenseCodePattern
+    license : str
+    permissions : List[LicensePermisssion]
+    active: bool
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
+
+class LicenseUpdateResponse(BaseModel):
+    '''Return object of language update'''
+    message: str
+    data: LicenseResponse = None
+
+class LicenseEdit (BaseModel):
+    '''Input object of language update'''
+    code: LicenseCodePattern
+    name : str = None
+    license : str = None
+    permissions : List[LicensePermisssion] = None
+    active: bool = None
+
 MetaDataPattern = constr(
     regex=r"^\{\s*[\"\'][^\"]+[\"\']\s*:\s*[\"\'][^\"]+[\"\']\s*" +
         r"(,\s*[\"\'][^\"]+[\"\']\s*:\s*[\"\'][^\"]+[\"\']\s*)*")

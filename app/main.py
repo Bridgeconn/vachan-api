@@ -196,7 +196,7 @@ def get_language(language_code : schemas.LangCodePattern = Query(None),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
     '''fetches all the languages supported in the DB, their code and other details.
     if query parameter, langauge_code is provided, returns details of that language if pressent
-    and 404, if not found
+    and [], if not found
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n'''
     log.info('In get_language')
@@ -232,6 +232,46 @@ def edit_language(lang_obj: schemas.LanguageEdit = Body(...), db_: Session = Dep
 
 # ################################
 
+
+########### Licenses ######################
+@app.get('/v2/licenses',
+    response_model=List[schemas.LicenseResponse],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Licenses"])
+def get_license(license_code : str = Query(None), license_name: str = Query(None),
+    permission: schemas.LicensePermisssion = Query(None), active: bool = Query(True),
+    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
+    '''fetches all the licenses supported in the DB, their code and other details.
+    if query parameter, code is provided, returns details of that language if pressent
+    and [], if not found
+    * skip=n: skips the first n objects in return list
+    * limit=n: limits the no. of items to be returned to n'''
+    log.info('In get_license')
+    log.debug('license_code:%s, license_name: %s, permission:%s, active:%s, skip: %s, limit: %s',
+        license_code, license_name, permission, active, skip, limit)
+    return crud.get_licenses(db_, license_code, license_name, permission, active, skip = skip, limit = limit)
+
+@app.post('/v2/licenses', response_model=schemas.LicenseUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Licenses"])
+def add_license(license_obj : schemas.LicenseCreate = Body(...), db_: Session = Depends(get_db)):
+    ''' Uploads a new license'''
+    log.info('In add_license')
+    log.debug('license_obj: %s',license_obj)
+    return {'message': "License uploaded successfully",
+        "data": crud.create_license(db_, license_obj, user_id=None)}
+
+@app.put('/v2/licenses', response_model=schemas.LicenseUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Licenses"])
+def edit_license(license_obj: schemas.LicenseEdit = Body(...), db_: Session = Depends(get_db)):
+    ''' Changes one or more fields of license'''
+    log.info('In edit_license')
+    log.debug('license_obj: %s',license_obj)
+    return {'message': "License edited successfully",
+        "data": crud.update_license(db_=db_, license_obj=license_obj, user_id=None)}
 
 ##### Version #####
 

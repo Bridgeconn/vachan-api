@@ -59,6 +59,48 @@ def update_language(db_: Session, lang: schemas.LanguageEdit):
     db_.refresh(db_content)
     return db_content
 
+def get_licenses(db_: Session, license_code = None, license_name = None, #pylint: disable=too-many-arguments
+    permission = None, active=True, skip: int = 0, limit: int = 100):
+    '''Fetches rows of licenses, with pagination and various filters'''
+    query = db_.query(db_models.License)
+    if license_code:
+        query = query.filter(db_models.License.code == license_code.upper())
+    if license_name:
+        query = query.filter(db_models.License.name == license_name.strip())
+    if permission is not None:
+        query = query.filter(db_models.License.permissions.any(permission))
+    return query.filter(db_models.License.active == active).offset(skip).limit(limit).all()
+
+def create_license(db_: Session, license_obj: schemas.LicenseCreate, user_id=None):
+    '''Adds a new license to Database'''
+    db_content = db_models.License(code = license_obj.code.upper(),
+        name = license_obj.name.strip(),
+        license = license_obj.license,
+        permissions = license_obj.permissions,
+        active=True,
+        createdUser=user_id)
+    db_.add(db_content)
+    db_.commit()
+    db_.refresh(db_content)
+    return db_content
+
+def update_license(db_: Session, license_obj: schemas.LicenseEdit, user_id=None):
+    '''changes one or more fields of license, selected via license code'''
+    db_content = db_.query(db_models.License).filter(
+        db_models.License.code == license_obj.code.strip().upper()).first()
+    if license_obj.name:
+        db_content.name = license_obj.name
+    if license_obj.license:
+        db_content.license = license_obj.license
+    if license_obj.permissions:
+        db_content.permissions = license_obj.permissions
+    if license_obj.active is not None:
+        db_content.active = license_obj.active
+    db_content.updatedUser = user_id
+    db_.commit()
+    db_.refresh(db_content)
+    return db_content
+
 def get_versions(db_: Session, version_abbr = None, version_name = None, revision = None, #pylint: disable=too-many-arguments
     metadata = None, version_id = None, skip: int = 0, limit: int = 100):
     '''Fetches rows of versions table, with various filters and pagination'''
