@@ -1,12 +1,12 @@
 ''' Place to define all Database CRUD operations'''
 import json
 import sqlalchemy
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, defer, joinedload
 
 import db_models
 import schemas
 from database import engine
-from custom_exceptions import NotAvailableException, TypeException
+from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException
 from logger import log
 
 def get_content_types(db_: Session, content_type: str =None, skip: int = 0, limit: int = 100):
@@ -59,6 +59,50 @@ def update_language(db_: Session, lang: schemas.LanguageEdit):
     db_.refresh(db_content)
     return db_content
 
+def get_licenses(db_: Session, license_code = None, license_name = None, #pylint: disable=too-many-arguments
+    permission = None, active=True, skip: int = 0, limit: int = 100):
+    '''Fetches rows of licenses, with pagination and various filters'''
+    query = db_.query(db_models.License)
+    if license_code:
+        query = query.filter(db_models.License.code == license_code.upper())
+    if license_name:
+        query = query.filter(db_models.License.name == license_name.strip())
+    if permission is not None:
+        query = query.filter(db_models.License.permissions.any(permission))
+    return query.filter(db_models.License.active == active).offset(skip).limit(limit).all()
+
+def create_license(db_: Session, license_obj: schemas.LicenseCreate, user_id=None):
+    '''Adds a new license to Database'''
+    db_content = db_models.License(code = license_obj.code.upper(),
+        name = license_obj.name.strip(),
+        license = license_obj.license,
+        permissions = license_obj.permissions,
+        active=True,
+        createdUser=user_id)
+    db_.add(db_content)
+    db_.commit()
+    db_.refresh(db_content)
+    return db_content
+
+def update_license(db_: Session, license_obj: schemas.LicenseEdit, user_id=None):
+    '''changes one or more fields of license, selected via license code'''
+    db_content = db_.query(db_models.License).filter(
+        db_models.License.code == license_obj.code.strip().upper()).first()
+    if not db_content:
+        raise NotAvailableException("License with code, %s, not found in database"%license_obj.code)
+    if license_obj.name:
+        db_content.name = license_obj.name
+    if license_obj.license:
+        db_content.license = license_obj.license
+    if license_obj.permissions:
+        db_content.permissions = license_obj.permissions
+    if license_obj.active is not None:
+        db_content.active = license_obj.active
+    db_content.updatedUser = user_id
+    db_.commit()
+    db_.refresh(db_content)
+    return db_content
+
 def get_versions(db_: Session, version_abbr = None, version_name = None, revision = None, #pylint: disable=too-many-arguments
     metadata = None, version_id = None, skip: int = 0, limit: int = 100):
     '''Fetches rows of versions table, with various filters and pagination'''
@@ -105,8 +149,8 @@ def update_version(db_: Session, version: schemas.VersionEdit):
     return db_content
 
 def get_sources(db_: Session, #pylint: disable=too-many-arguments, disable-msg=too-many-locals, disable=too-many-branches
-    content_type=None, version_abbreviation=None, revision=None,
-    language_code=None, metadata=None, active=True, latest_revision = True, table_name=None,
+    content_type=None, version_abbreviation=None, revision=None, language_code=None,
+    license_abbreviation=None, metadata=None, latest_revision=True, active=True, table_name=None,
     skip: int = 0, limit: int = 100):
     '''Fetches the rows of sources table'''
     query = db_.query(db_models.Source)
@@ -118,6 +162,8 @@ def get_sources(db_: Session, #pylint: disable=too-many-arguments, disable-msg=t
     if revision:
         query = query.filter(
             db_models.Source.version.has(revision = revision))
+    if license_abbreviation:
+        query = query.filter(db_models.Source.license.has(code = license_abbreviation.strip()))
     if language_code:
         query = query.filter(db_models.Source.language.has(code = language_code.strip()))
     if metadata:
@@ -180,6 +226,10 @@ def create_source(db_: Session, source: schemas.SourceCreate, table_name, user_i
         db_models.Language.code == source.language).first()
     if not language:
         raise NotAvailableException("Language code, %s, not found in Database"%source.language)
+    license_obj = db_.query(db_models.License).filter(
+        db_models.License.code == source.license).first()
+    if not license_obj:
+        raise NotAvailableException("License code, %s, not found in Database"%source.license)
 
     db_content = db_models.Source(
         year = source.year,
@@ -187,21 +237,27 @@ def create_source(db_: Session, source: schemas.SourceCreate, table_name, user_i
         contentId = content_type.contentId,
         versionId = version.versionId,
         languageId = language.languageId,
+        licenseId = license_obj.licenseId,
         metaData = source.metaData,
         active = True)
-    if source.license is not None:
-        db_content.license = source.license
     if user_id:
         db_content.created_user = user_id
     db_.add(db_content)
     db_models.create_dynamic_table(table_name, content_type.contentType)
     db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine, checkfirst=True)
+    if content_type.contentType == 'bible':
+        db_models.dynamicTables[db_content.sourceName+'_cleaned'].__table__.create(
+            bind=engine, checkfirst=True)
+        log.warning("User %s, creates a new table %s", user_id, db_content.sourceName+'_cleaned')
+        db_models.dynamicTables[db_content.sourceName+'_audio'].__table__.create(
+            bind=engine, checkfirst=True)
+        log.warning("User %s, creates a new table %s", user_id, db_content.sourceName+'_audio')
     log.warning("User %s, creates a new table %s", user_id, db_content.sourceName)
     db_.commit()
     db_.refresh(db_content)
     return db_content
 
-def update_source(db_: Session, source: schemas.VersionEdit, user_id = None): #pylint: disable=too-many-branches
+def update_source(db_: Session, source: schemas.SourceEdit, user_id = None): #pylint: disable=too-many-branches
     '''changes one or more fields of sources, selected via sourceName or table_name'''
     db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source.sourceName).first()
@@ -232,10 +288,14 @@ def update_source(db_: Session, source: schemas.VersionEdit, user_id = None): #p
         db_content.languageId = language.languageId
         table_name_parts = db_content.sourceName.split("_")
         db_content.sourceName = "_".join([source.language]+table_name_parts[1:])
+    if source.license:
+        license_obj = db_.query(db_models.License).filter(
+            db_models.License.code == source.license).first()
+        if not license_obj:
+            raise NotAvailableException("License code, %s, not found in Database"%source.license)
+        db_content.licenseId = license_obj.licenseId
     if source.year:
         db_content.year = source.year
-    if source.license:
-        db_content.license = source.license
     if source.metaData:
         db_content.metaData = source.metaData
     if source.active is not None:
@@ -244,13 +304,19 @@ def update_source(db_: Session, source: schemas.VersionEdit, user_id = None): #p
         db_content.updatedUser = user_id
     db_.commit()
     db_.refresh(db_content)
-    sql_statement = sqlalchemy.text("ALTER TABLE IF EXISTS %s RENAME TO %s"%(
-        source.sourceName, db_content.sourceName))
-    db_.execute(sql_statement)
-    log.warning("User %s, renames table %s to %s", user_id, source.sourceName,
-        db_content.sourceName)
+    if source.sourceName != db_content.sourceName:
+        sql_statement = sqlalchemy.text("ALTER TABLE IF EXISTS %s RENAME TO %s"%(
+            source.sourceName, db_content.sourceName))
+        db_.execute(sql_statement)
+        log.warning("User %s, renames table %s to %s", user_id, db_content.sourceName,
+            db_content.sourceName)
+        if db_content.contentType.contentType == 'bible':
+            sql_statement = sqlalchemy.text("ALTER TABLE IF EXISTS %s RENAME TO %s"%(
+                source.sourceName+"_cleaned", db_content.sourceName+"_cleaned"))
+            db_.execute(sql_statement)
+            log.warning("User %s, renames table %s to %s", user_id, source.sourceName+"_cleaned",
+                db_content.sourceName+"_cleaned")
     db_models.create_dynamic_table(db_content.sourceName, db_content.contentType.contentType)
-    db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine)
     return db_content
 
 def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None, #pylint: disable=too-many-arguments
@@ -266,7 +332,7 @@ def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None, #
     return query.offset(skip).limit(limit).all()
 
 def get_commentaries(db_:Session, source_name, book_code=None, chapter=None, #pylint: disable=too-many-arguments
-    verse=None, last_verse=None, skip=0, limit=100):
+    verse=None, last_verse=None, active=True, skip=0, limit=100):
     '''Fetches rows of commentries from the table specified by source_name'''
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
@@ -282,6 +348,7 @@ def get_commentaries(db_:Session, source_name, book_code=None, chapter=None, #py
         if last_verse is None:
             last_verse = verse
         query = query.filter(model_cls.verseStart <= verse, model_cls.verseEnd >= last_verse)
+    query = query.filter(model_cls.active == active)
     return query.offset(skip).limit(limit).all()
 
 def upload_commentaries(db_: Session, source_name, commentaries, user_id=None):
@@ -309,7 +376,8 @@ def upload_commentaries(db_: Session, source_name, commentaries, user_id=None):
             chapter = item.chapter,
             verseStart = item.verseStart,
             verseEnd = item.verseEnd,
-            commentary = item.commentary)
+            commentary = item.commentary,
+            active=item.active)
         db_content.append(row)
     db_.add_all(db_content)
     db_.commit()
@@ -346,7 +414,10 @@ def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
             raise NotAvailableException("Commentary row with bookCode:%s, chapter:%s, \
                 verseStart:%s, verseEnd:%s, not found for %s"%(
                     item.bookCode, item.chapter, item.verseStart, item.verseEnd, source_name))
-        row.commentary = item.commentary
+        if item.commentary:
+            row.commentary = item.commentary
+        if item.active is not None:
+            row.active = item.active
         db_.flush()
         db_content.append(row)
     db_.commit()
@@ -356,7 +427,7 @@ def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
     return db_content
 
 def get_dictionary_words(db_:Session, source_name, search_word = None, details = None,  #pylint: disable=too-many-arguments
-    exact_match=False, word_list_only=False, skip=0, limit=100):
+    exact_match=False, word_list_only=False, active=True, skip=0, limit=100):
     '''Fetches rows of dictionary from the table specified by source_name'''
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
@@ -375,7 +446,9 @@ def get_dictionary_words(db_:Session, source_name, search_word = None, details =
         det = json.loads(details)
         for key in det:
             query = query.filter(model_cls.details.op('->>')(key) == det[key])
-    return query.offset(skip).limit(limit).all()
+    query = query.filter(model_cls.active == active)
+    res = query.offset(skip).limit(limit).all()
+    return res
 
 def upload_dictionary_words(db_: Session, source_name, dictionary_words, user_id=None):
     '''Adds rows to the dictionary table specified by source_name'''
@@ -390,7 +463,8 @@ def upload_dictionary_words(db_: Session, source_name, dictionary_words, user_id
     for item in dictionary_words:
         row = model_cls(
             word = item.word,
-            details = item.details)
+            details = item.details,
+            active = item.active)
         db_content.append(row)
     db_.add_all(db_content)
     db_.commit()
@@ -414,7 +488,10 @@ def update_dictionary_words(db_: Session, source_name, dictionary_words, user_id
         if not row:
             raise NotAvailableException("Dictionary row with word:%s, not found for %s"%(
                     item.word, source_name))
-        row.details = item.details
+        if item.details:
+            row.details = item.details
+        if item.active is not None:
+            row.active = item.active
         db_.flush()
         db_content.append(row)
     db_.commit()
@@ -422,3 +499,465 @@ def update_dictionary_words(db_: Session, source_name, dictionary_words, user_id
     db_.commit()
     db_.refresh(source_db_content)
     return db_content
+
+def get_infographics(db_:Session, source_name, book_code=None, title=None, #pylint: disable=too-many-arguments
+    active=True, skip=0, limit=100):
+    '''Fetches rows of infographics from the table specified by source_name'''
+    if source_name not in db_models.dynamicTables:
+        raise NotAvailableException('%s not found in database.'%source_name)
+    if not source_name.endswith('infographics'):
+        raise TypeException('The operation is supported only on infographics')
+    model_cls = db_models.dynamicTables[source_name]
+    query = db_.query(model_cls)
+    if book_code:
+        query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
+    if title:
+        query = query.filter(model_cls.title == title.strip())
+    query = query.filter(model_cls.active == active)
+    return query.offset(skip).limit(limit).all()
+
+def upload_infographics(db_: Session, source_name, infographics, user_id=None):
+    '''Adds rows to the infographics table specified by source_name'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'infographics':
+        raise TypeException('The operation is supported only on infographics')
+    model_cls = db_models.dynamicTables[source_name]
+    db_content = []
+    prev_book_code = None
+    for item in infographics:
+        if item.bookCode != prev_book_code:
+            book = db_.query(db_models.BibleBook).filter(
+                db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
+            prev_book_code = item.bookCode
+            if not book:
+                raise NotAvailableException('Bible Book code, %s, not found in database'
+                    %item.bookCode)
+        row = model_cls(
+            book_id = book.bookId,
+            title = item.title.strip(),
+            infographicLink = item.infographicLink,
+            active=item.active)
+        db_content.append(row)
+    db_.add_all(db_content)
+    db_.commit()
+    db_.expire_all()
+    source_db_content.updatedUser = user_id
+    db_.commit()
+    return db_content
+
+def update_infographics(db_: Session, source_name, infographics, user_id=None):
+    '''Update rows, that matches book, and title in the infographic table
+    specified by source_name'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'infographics':
+        raise TypeException('The operation is supported only on infographics')
+    model_cls = db_models.dynamicTables[source_name]
+    db_content = []
+    prev_book_code = None
+    for item in infographics:
+        if item.bookCode != prev_book_code:
+            book = db_.query(db_models.BibleBook).filter(
+                db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
+            prev_book_code = item.bookCode
+            if not book:
+                raise NotAvailableException('Bible Book code, %s, not found in database'
+                    %item.bookCode)
+        row = db_.query(model_cls).filter(
+            model_cls.book_id == book.bookId,
+            model_cls.title == item.title.strip()).first()
+        if not row:
+            raise NotAvailableException("Infographics row with bookCode:%s, title:%s, \
+                not found for %s"%(
+                    item.bookCode, item.title, source_name))
+        if item.infographicLink:
+            row.infographicLink = item.infographicLink
+        if item.active is not None:
+            row.active = item.active
+        db_.flush()
+        db_content.append(row)
+    db_.commit()
+    source_db_content.updatedUser = user_id
+    db_.commit()
+    db_.refresh(source_db_content)
+    return db_content
+
+def get_bible_videos(db_:Session, source_name, book_code=None, title=None, theme=None, active=True, #pylint: disable=too-many-arguments
+    skip=0, limit=100):
+    '''fetches rows of bible videos as per provided source_name and filters'''
+    if source_name not in db_models.dynamicTables:
+        raise NotAvailableException('%s not found in database.'%source_name)
+    if not source_name.endswith('bible_video'):
+        raise TypeException('The operation is supported only on bible_video')
+    model_cls = db_models.dynamicTables[source_name]
+    query = db_.query(model_cls)
+    if book_code:
+        query = query.filter(model_cls.books.any(book_code.lower()))
+    if title:
+        query = query.filter(model_cls.title == title.strip())
+    if theme:
+        query = query.filter(model_cls.theme == theme.strip())
+    query = query.filter(model_cls.active == active)
+    return query.offset(skip).limit(limit).all()
+
+
+
+def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
+    '''Adds rows to the bible videos table specified by source_name'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'bible_video':
+        raise TypeException('The operation is supported only on bible_video')
+    model_cls = db_models.dynamicTables[source_name]
+    db_content = []
+    for item in videos:
+        for book_code in item.books:
+            # verifying if the book codes are valid as we dont use FK for this field
+            book = db_.query(db_models.BibleBook).filter(
+                db_models.BibleBook.bookCode == book_code.lower() ).first()
+            if not book:
+                raise NotAvailableException('Bible Book code, %s, not found in database'%book_code)
+        row = model_cls(
+            title = item.title.strip(),
+            theme = item.theme.strip(),
+            description = item.description.strip(),
+            active = item.active,
+            books = item.books,
+            videoLink = item.videoLink)
+        db_content.append(row)
+    db_.add_all(db_content)
+    db_.commit()
+    db_.expire_all()
+    source_db_content.updatedUser = user_id
+    db_.commit()
+    return db_content
+
+
+def update_bible_videos(db_: Session, source_name, videos, user_id=None):
+    '''Update rows, that matches title in the bible videos table
+    specified by source_name'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'bible_video':
+        raise TypeException('The operation is supported only on bible_video')
+    model_cls = db_models.dynamicTables[source_name]
+    db_content = []
+    for item in videos:
+        row = db_.query(model_cls).filter(model_cls.title == item.title.strip()).first()
+        if not row:
+            raise NotAvailableException("Bible Video row with title:%s, \
+                not found for %s"%(
+                    item.title, source_name))
+        if item.books:
+            for book_code in item.books:
+                # verifying if the book codes are valid as we dont use FK for this field
+                book = db_.query(db_models.BibleBook).filter(
+                    db_models.BibleBook.bookCode == book_code.lower() ).first()
+                if not book:
+                    raise NotAvailableException('Bible Book code, %s, not found in database'
+                        %book_code )
+            row.books = item.books
+        if item.theme:
+            row.theme = item.theme.strip()
+        if item.description:
+            row.description = item.description.strip()
+        if item.active is not None:
+            row.active = item.active
+        if item.videoLink:
+            row.videoLink = item.videoLink
+        db_.flush()
+        db_content.append(row)
+    db_.commit()
+    source_db_content.updatedUser = user_id
+    db_.commit()
+    db_.refresh(source_db_content)
+    return db_content
+
+def upload_bible_books(db_: Session, source_name, books, user_id=None): #pylint: disable=too-many-branches, disable=too-many-locals
+    '''Adds rows to the bible table and corresponding bible_cleaned specified by source_name'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'bible':
+        raise TypeException('The operation is supported only on bible')
+    model_cls = db_models.dynamicTables[source_name]
+    model_cls_2 = db_models.dynamicTables[source_name+'_cleaned']
+    db_content = []
+    db_content2 = []
+    for item in books:
+        try:
+            book_code = item.JSON['book']['bookCode']
+        except Exception as exe:
+            raise TypeException("JSON is not of the required format."+\
+                " book.bookCode should be present") from exe
+        book = db_.query(db_models.BibleBook).filter(
+                db_models.BibleBook.bookCode == book_code.lower() ).first()
+        if not book:
+            raise NotAvailableException('Bible Book code, %s, not found in database'
+                %book_code)
+        row = db_.query(model_cls).filter(model_cls.book_id == book.bookId).first()
+        if row:
+            if row.USFM:
+                raise AlreadyExistsException("Bible book, %s, already present in DB"%book.bookCode)
+            row.USFM = item.USFM
+            row.JSON = item.JSON
+            row.active = True
+        else:
+            row = model_cls(
+                book_id=book.bookId,
+                USFM=item.USFM,
+                JSON=item.JSON,
+                active=True)
+        db_.flush()
+        db_content.append(row)
+        if "chapters" not in item.JSON:
+            raise TypeException("JSON is not of the required format")
+        for chapter in item.JSON["chapters"]:
+            if "chapterNumber" not in chapter or "contents" not in chapter:
+                raise TypeException("JSON is not of the required format."+\
+                    " Chapters should have chapterNumber and contents")
+            try:
+                chapter_number = int(chapter['chapterNumber'])
+            except Exception as exe:
+                raise TypeException("JSON is not of the required format."+\
+                    " chapterNumber should be an interger") from exe
+            for content in chapter['contents']:
+                if 'verseNumber' in content:
+                    if "verseText" not in content:
+                        raise TypeException(
+                            "JSON is not of the required format. verseText not found")
+                    row_other = model_cls_2(
+                        book_id = book.bookId,
+                        chapter = chapter_number,
+                        verseNumber = content['verseNumber'],
+                        verseText = content['verseText'].strip())
+                    db_content2.append(row_other)
+    db_.add_all(db_content)
+    db_.add_all(db_content2)
+    source_db_content.updatedUser = user_id
+    db_.commit()
+    return db_content
+
+def update_bible_books(db_: Session, source_name, books, user_id=None): #pylint: disable=too-many-locals, disable=too-many-branches
+    '''change values of bible books already uploaded'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'bible':
+        raise TypeException('The operation is supported only on bible')
+    # update the bible table
+    model_cls = db_models.dynamicTables[source_name]
+    db_content = []
+    for item in books:
+        book = db_.query(db_models.BibleBook).filter(
+            db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
+        row = db_.query(model_cls).filter(model_cls.book_id == book.bookId).first()
+        if not row:
+            raise NotAvailableException("Bible book, %s, not found in Database"%item.bookCode)
+        if item.USFM:
+            row.USFM = item.USFM
+            row.JSON = item.JSON
+        if item.active is not None:
+            row.active = item.active
+        db_.flush()
+        db_content.append(row)
+    # update bible cleaned table
+    db_content2 = []
+    model_cls_2 = db_models.dynamicTables[source_name+'_cleaned']
+    for item in books:
+        book = db_.query(db_models.BibleBook).filter(
+            db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
+        if item.USFM: # delete all verses and add them again
+            db_.query(model_cls_2).filter(
+                model_cls_2.book_id == book.bookId).delete()
+            for chapter in item.JSON["chapters"]:
+                chapter_number = int(chapter['chapterNumber'])
+                for content in chapter['contents']:
+                    if 'verseNumber' in content:
+                        row_other = model_cls_2(
+                            book_id = book.bookId,
+                            chapter = chapter_number,
+                            verseNumber = content['verseNumber'],
+                            verseText = content['verseText'].strip())
+                        db_content2.append(row_other)
+            db_.add_all(db_content2)
+            db_.flush()
+        if item.active is not None: # set all the verse rows' active flag accordingly
+            rows = db_.query(model_cls_2).filter(
+                model_cls_2.book_id == book.bookId).all()
+            for row in rows:
+                row.active = item.active
+    db_.commit()
+    source_db_content.updatedUser = user_id
+    db_.commit()
+    return db_content
+
+
+def upload_bible_audios(db_:Session, source_name, audios, user_id=None):
+    '''Add audio bible related contents to _bible_audio table'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'bible':
+        raise TypeException('The operation is supported only on bible')
+    model_cls_audio = db_models.dynamicTables[source_name+'_audio']
+    model_cls_bible = db_models.dynamicTables[source_name]
+    db_content = []
+    db_content2 = []
+    for item in audios:
+        for buk in item.books:
+            book = db_.query(db_models.BibleBook).filter(
+                db_models.BibleBook.bookCode == buk.strip().lower()).first()
+            if not book:
+                raise NotAvailableException('Bible Book code, %s, not found in database')
+            bible_table_row = db_.query(model_cls_bible).filter(
+                model_cls_bible.book_id == book.bookId).first()
+            if not bible_table_row:
+                bible_table_row = model_cls_bible(
+                    book_id=book.bookId
+                    )
+                db_content2.append(bible_table_row)
+            row = model_cls_audio(
+                name=item.name.strip(),
+                url=item.url.strip(),
+                book_id=book.bookId,
+                format=item.format.strip(),
+                active=item.active)
+            db_content.append(row)
+    db_.add_all(db_content)
+    db_.add_all(db_content2)
+    source_db_content.updatedUser = user_id
+    db_.commit()
+    return db_content
+
+def update_bible_audios(db_: Session, source_name, audios, user_id=None):
+    '''Update any details of a bible Auido row.
+    Use name as row-identifier, which cannot be changed'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    if source_db_content.contentType.contentType != 'bible':
+        raise TypeException('The operation is supported only on bible')
+    model_cls = db_models.dynamicTables[source_name+'_audio']
+    db_content = []
+    for item in audios:
+        for buk in item.books:
+            book = db_.query(db_models.BibleBook).filter(
+                db_models.BibleBook.bookCode == buk.strip().lower()).first()
+            if not book:
+                raise NotAvailableException('Bible Book code, %s, not found in database')
+            row = db_.query(model_cls).filter(model_cls.book_id == book.bookId).first()
+            if not row:
+                raise NotAvailableException("Bible audio for, %s, not found in database"%item.name)
+            if item.name:
+                row.name = item.name.strip()
+            if item.url:
+                row.url = item.url.strip()
+            if item.format:
+                row.format = item.format.strip()
+            if item.active is not None:
+                row.active = item.active
+            db_content.append(row)
+    source_db_content.updatedUser = user_id
+    db_.commit()
+    return db_content
+
+
+
+def get_bible_versification(db_, source_name, book_code, active=True):
+    '''select the reference list from bible_cleaned table'''
+    model_cls = db_models.dynamicTables[source_name+"_cleaned"]
+    query = db_.query(model_cls).prefix_with(
+        "'"+source_name+"' as bible, ")
+    query = query.options(defer(model_cls.verseText))
+    query = query.filter(model_cls.book.has(bookCode = book_code.lower()),
+        model_cls.active == active )
+    return query.all()
+
+
+def get_available_bible_books(db_, source_name, book_code=None, content_type=None, #pylint: disable=too-many-arguments, disable=too-many-locals
+    versification=False, active=True, skip=0, limit=100):
+    '''fetches the contents of .._bible table based of provided source_name and other options'''
+    if source_name not in db_models.dynamicTables:
+        raise NotAvailableException('%s not found in database.'%source_name)
+    if not source_name.endswith('_bible'):
+        raise TypeException('The operation is supported only on bible')
+    model_cls = db_models.dynamicTables[source_name]
+    # model_cls_audio = db_models.dynamicTables[source_name+"_audio"]
+    query = db_.query(model_cls).options(joinedload(model_cls.book))
+    fetched = None
+    if book_code:
+        query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
+    if content_type == "usfm":
+        query = query.options(defer(model_cls.JSON))
+    elif content_type == "json":
+        query = query.options(defer(model_cls.USFM))
+    elif content_type == "all":
+        query = query.options(joinedload(model_cls.audio)).filter(
+            sqlalchemy.or_(model_cls.active == active, model_cls.audio.has(active=active)))
+        fetched = query.offset(skip).limit(limit).all()
+    elif content_type == "audio":
+        query = query.options(joinedload(model_cls.audio),
+            defer(model_cls.JSON), defer(model_cls.USFM)).filter(
+            model_cls.audio.has(active=active))
+        fetched = query.offset(skip).limit(limit).all()
+    elif content_type is None:
+        query = query.options(defer(model_cls.JSON), defer(model_cls.USFM))
+    if not fetched:
+        fetched = query.filter(model_cls.active == active).offset(skip).limit(limit).all()
+    results = [res.__dict__ for res in fetched]
+    if versification:
+        added_results = []
+        for res in results:
+            ref_list = get_bible_versification(db_, source_name, res["book"].bookCode, active)
+            added_res = res
+            added_res['versification'] = ref_list
+            added_results.append(added_res)
+        return added_results
+    return results
+
+
+def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, verse=None, #pylint: disable=too-many-locals, disable=too-many-arguments
+    last_verse=None, search_phrase=None, active=True, skip=0, limit=100):
+    '''queries the bible cleaned table for verses'''
+    if source_name not in db_models.dynamicTables:
+        raise NotAvailableException('%s not found in database.'%source_name)
+    if not source_name.endswith('_bible'):
+        raise TypeException('The operation is supported only on bible')
+    model_cls = db_models.dynamicTables[source_name+'_cleaned']
+    query = db_.query(model_cls)
+    if book_code:
+        query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
+    if chapter:
+        query = query.filter(model_cls.chapter == chapter)
+    if verse:
+        if not last_verse:
+            last_verse = verse
+        query = query.filter(model_cls.verseNumber >= verse, model_cls.verseNumber <= last_verse)
+    if search_phrase:
+        query = query.filter(model_cls.verseText.like('%'+search_phrase.strip()+"%"))
+    results = query.filter(model_cls.active == active).offset(skip).limit(limit).all()
+    ref_combined_results = []
+    for res in results:
+        ref_combined = {}
+        ref_combined['verseText'] = res.verseText
+        ref = { "bible": source_name,
+                "book": res.book,
+                "chapter": res.chapter,
+                "verseNumber":res.verseNumber}
+        ref_combined['reference'] = ref
+        ref_combined_results.append(ref_combined)
+    return ref_combined_results

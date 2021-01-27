@@ -2,7 +2,7 @@
 
 from typing import List
 from enum import Enum
-from pydantic import BaseModel, constr, AnyUrl, validator
+from pydantic import BaseModel, constr, AnyUrl, validator, root_validator
 
 class NormalResponse(BaseModel):
     '''Response with only a message'''
@@ -65,6 +65,59 @@ class LanguageEdit (BaseModel):
     code : LangCodePattern = None
     scriptDirection : Direction = None
 
+LicenseCodePattern =constr(regex=r"^[a-zA-Z0-9\.\_\-]+$")
+class LicensePermisssion(str, Enum):
+    '''To specify direction of script'''
+    commercial = "Commercial_use"
+    modification = "Modification"
+    distribution = "Distribution"
+    patent = "Patent_use"
+    private = "Private_use"
+
+class LicenseCreate(BaseModel):
+    '''To create and upload new license'''
+    name: str
+    code : LicenseCodePattern
+    license : str
+    permissions : List[LicensePermisssion] = ['Private_use']
+
+class LicenseShortResponse(BaseModel):
+    '''Return object of licenses without the full text'''
+    name : str
+    code : LicenseCodePattern
+    permissions : List[LicensePermisssion]
+    active: bool
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
+
+
+class LicenseResponse(BaseModel):
+    '''Return object of licenses'''
+    name : str
+    code : LicenseCodePattern
+    license : str
+    permissions : List[LicensePermisssion]
+    active: bool
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
+
+class LicenseUpdateResponse(BaseModel):
+    '''Return object of language update'''
+    message: str
+    data: LicenseResponse = None
+
+class LicenseEdit (BaseModel):
+    '''Input object of language update'''
+    code: LicenseCodePattern
+    name : str = None
+    license : str = None
+    permissions : List[LicensePermisssion] = None
+    active: bool = None
+
 MetaDataPattern = constr(
     regex=r"^\{\s*[\"\'][^\"]+[\"\']\s*:\s*[\"\'][^\"]+[\"\']\s*" +
         r"(,\s*[\"\'][^\"]+[\"\']\s*:\s*[\"\'][^\"]+[\"\']\s*)*")
@@ -112,7 +165,7 @@ class SourceCreate(BaseModel):
     version : VersionPattern
     revision: str = "1"
     year: int
-    license: str = "ISC"
+    license: LicenseCodePattern = "CC-BY-SA"
     metaData: dict = None
 
 class SourceResponse(BaseModel):
@@ -123,7 +176,7 @@ class SourceResponse(BaseModel):
     version : VersionResponse = None
     # revision: str = "1"
     year: int
-    license: str = "ISC"
+    license: LicenseShortResponse
     metaData: dict = None
     active: bool = True
     class Config: # pylint: disable=too-few-public-methods
@@ -142,7 +195,7 @@ class SourceEdit(BaseModel):
     version : VersionPattern = None
     revision: str = None
     year: int = None
-    license: str = None
+    license: LicenseCodePattern = None
     metaData: dict = None
     active: bool = None
 
@@ -160,12 +213,16 @@ class BibleBook(BaseModel):
 
 class AudioBible(BaseModel):
     '''Response object of Audio Bible'''
-    audioId: int
-    name: str
-    url: AnyUrl
-    books: dict
-    format: str
-    status: bool
+    # audioId: int
+    name: str = None
+    url: AnyUrl = None
+    # book:  BibleBook
+    format: str = None
+    active: bool = None
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
 
 class AudioBibleUpdateResponse(BaseModel):
     '''Response object of auido bible update'''
@@ -176,53 +233,85 @@ class AudioBibleUpload(BaseModel):
     '''Input object of Audio Bible'''
     name: str
     url: AnyUrl
-    books: dict
+    books:  List[BookCodePattern]
     format: str
-    status: bool
-
+    active: bool = True
 
 class AudioBibleEdit(BaseModel):
     ''' Input object of Auido Bible'''
-    audioId: int
     name: str = None
-    url: str = None
-    books: dict = None
+    url: AnyUrl = None
+    books: List[BookCodePattern]
     format: str = None
-    status: bool = None
+    active: bool = None
+
+class Reference(BaseModel):
+    '''Response object of bible refernce'''
+    bible : TableNamePattern = None
+    book: BibleBook
+    chapter: int
+    verseNumber: int
+    verseNumberEnd: int = None
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
 
 class BibleBookContent(BaseModel):
     '''Response object of Bible book contents'''
-    bookCode : BookCodePattern
-    versification : dict = None
+    book : BibleBook
+    bookName: str = None
+    versification : List[Reference] = None
     USFM: str = None
     JSON: dict = None
     audio: AudioBible = None
+    active: bool
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
 
 class BibleBookUpdateResponse(BaseModel):
     '''Input object of Bible book update'''
     message: str
-    data: BibleBookContent = None
+    data: List[BibleBookContent] = None
 
 class BibleBookUpload(BaseModel):
     '''Input object of bible book'''
     USFM: str
     JSON: dict
 
-class Reference(BaseModel):
-    '''Response object of bible refernce'''
-    # bible : Source = None
-    bookId: int = None
-    bookcode: BookCodePattern
-    chapter: int
-    verseNumber: int
-    verseNumberEnd: int = None
+class BibleBookEdit(BaseModel):
+    '''Input object of bible book'''
+    bookCode: BookCodePattern = None
+    USFM: str = None
+    JSON: dict = None
+    active: bool = None
+
+    @root_validator
+    def check_for_usfm_json(cls, values): # pylint: disable=R0201 disable=E0213
+        '''USFM and JSON should be updated together. If they are absent, bookCode is required'''
+        if (values['USFM'] is not None and values['JSON'] is None) or (
+            values['JSON'] is not None and values['USFM'] is None):
+            raise ValueError(
+                'USFM and JSON are inter-dependant. So both should be updated together.')
+        if "bookCode" not in values or values['bookCode'] is None:
+            if "JSON" in values:
+                values["bookCode"] = values['JSON']['book']['bookCode'].lower()
+            else:
+                raise ValueError('"bookCode" is required to identiy the row to be updated')
+        return values
 
 class BibleVerse(BaseModel):
     '''Response object of Bible Verse'''
     reference : Reference
     verseText: str
-    footNote : str = None
-    crossReference : str = None
+    # footNote : str = None
+    # crossReference : str = None
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
 
 class BookContentType(str, Enum):
     '''choices for bible content types'''
@@ -238,6 +327,7 @@ class CommentaryCreate(BaseModel):
     verseStart: int = None
     verseEnd: int = None
     commentary: str
+    active: bool = True
 
     @validator('verseStart', 'verseEnd')
     def check_verses(cls, val, values): # pylint: disable=R0201 disable=E0213
@@ -267,6 +357,42 @@ class CommentaryCreate(BaseModel):
             raise ValueError('chapter field should be greater than or equal to -1')
         return val
 
+class CommentaryEdit(BaseModel):
+    '''Response object for commentaries'''
+    bookCode : BookCodePattern
+    chapter: int
+    verseStart: int = None
+    verseEnd: int = None
+    commentary: str = None
+    active: bool = None
+
+    @validator('verseStart', 'verseEnd')
+    def check_verses(cls, val, values): # pylint: disable=R0201 disable=E0213
+        '''verse fields should be greater than or equal to -1'''
+        if 'chapter' in values and values['chapter'] in [-1, 0]:
+            if val not in [-1, 0, None]:
+                raise ValueError('verse fields should be 0, for book introductions and epilogues')
+            val = 0
+        if val is None:
+            raise ValueError('verse fields must have a value, '+
+                'except for book introduction and epilogue')
+        if val < -1:
+            raise ValueError('verse fields should be greater than or equal to -1')
+        return val
+
+    @validator('verseEnd')
+    def check_range(cls, val, values): # pylint: disable=R0201 disable=E0213
+        '''verse start should be less than or equal to verse end'''
+        if 'verseStart' in values and val < values['verseStart']:
+            raise ValueError('verse start should be less than or equal to verse end')
+        return val
+
+    @validator('chapter')
+    def check_chapter(cls, val): # pylint: disable=R0201 disable=E0213
+        '''chapter fields should be greater than or equal to -1'''
+        if val < -1:
+            raise ValueError('chapter field should be greater than or equal to -1')
+        return val
 
 class CommentaryResponse(BaseModel):
     '''Response object for commentaries'''
@@ -275,6 +401,7 @@ class CommentaryResponse(BaseModel):
     verseStart: int = None
     verseEnd: int = None
     commentary: str
+    active: bool
     class Config: # pylint: disable=too-few-public-methods
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
@@ -290,11 +417,19 @@ class DictionaryWordCreate(BaseModel):
     '''Upload object of dictionary word'''
     word: str
     details: dict = None
+    active: bool = True
+
+class DictionaryWordEdit(BaseModel):
+    '''Upload object of dictionary word'''
+    word: str
+    details: dict = None
+    active: bool = None
 
 class DictionaryWordResponse(BaseModel):
     '''Response object of dictionary word'''
     word: str
     details: dict = None
+    active: bool = None
     class Config: # pylint: disable=too-few-public-methods
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
@@ -305,26 +440,49 @@ class DictionaryUpdateResponse(BaseModel):
     message: str
     data: List[DictionaryWordResponse] = None
 
-class Infographic(BaseModel):
-    '''Response object of infographics'''
+class InfographicCreate(BaseModel):
+    '''Input object of infographics'''
     bookCode : BookCodePattern
-    infographicsLink : AnyUrl
+    title: str
+    infographicLink : AnyUrl
+    active: bool = True
+
+class InfographicEdit(BaseModel):
+    '''Input object of infographics Update'''
+    bookCode : BookCodePattern
+    title: str
+    infographicLink : AnyUrl = None
+    active: bool = None
+
+class InfographicResponse(BaseModel):
+    '''Response object of infographics'''
+    book : BibleBook
+    title: str
+    infographicLink : AnyUrl
+    active: bool
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
 
 class InfographicUpdateResponse(BaseModel):
     '''Response object of infographics update'''
     message: str
-    data: List[Infographic] = None
+    data: List[InfographicResponse] = None
 
 
 class BibleVideo(BaseModel):
     '''Response object of Bible Vedios'''
-    bibleVideoId: int
-    books: dict
-    videoLink: AnyUrl
     title: str
+    books: List[BookCodePattern]
+    videoLink: AnyUrl
     description: str
     theme: str
-    status: bool
+    active: bool
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
 
 class BibleVideoUpdateResponse(BaseModel):
     '''Response object of Bible Video update'''
@@ -333,20 +491,19 @@ class BibleVideoUpdateResponse(BaseModel):
 
 class BibleVideoUpload(BaseModel):
     '''Input Object of bible Videos'''
-    books: dict
-    videoLink: AnyUrl
     title: str
+    books: List[BookCodePattern]
+    videoLink: AnyUrl
     description: str
     theme: str
-    status: bool
+    active: bool = True
 
 
 class BibleVideoEdit(BaseModel):
     '''Input object of Bible Video update'''
-    bibleVideoId: int
-    books: dict  = None
+    title: str
+    books: List[BookCodePattern]  = None
     videoLink: AnyUrl  = None
-    title: str  = None
     description: str  = None
     theme: str  = None
-    status: bool  = None
+    active: bool  = None

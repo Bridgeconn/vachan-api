@@ -30,6 +30,11 @@ The effect it makes is that, the tables thus created would remain in the DB even
 
 If we are running tests on local machines, or on git actions, I think this can be overlooked. It will only be an issue if we are to run the tests on (staging) servers. Then also it wont create any issue that prevents the normal functioning of the app, just that a few empty tables will be left as residue in the staging database.
 
+## Deactivation of contents
+
+An active field is included in `sources` table as well as the dynamic tables like `commentaries`, `dictionary`, `bible` etc. This is by default set as `True` indicating the content is active. It can be set to `False` using the `PUT` API of respective table. The `GET`  methods take an optional param `active` to filter active and deactivated contents, which is by default set as `True` returning only active contents on all fetches unless specified other wise. This enables us to implement a soft delete feature. 
+
+Having this on `sources` tables allows us to deactivate an entire source(one table) and having it on other tables allow item vice deactivation like selected commentaries in a set, one book of a bible etc.
 
 ## Database Changes
 
@@ -72,12 +77,32 @@ If we are running tests on local machines, or on git actions, I think this can b
 
 * we were using one `verse` field in V1. Now we have `verse_start` and `verse_end` in its place. 
 This is done because, from the data we have on V1, it is clear that all entries in them have verse ranges instead of one verse. We were using `text` type for that field and indicating range as `1-10` separated by `-`. The only exceptions were in chapter introductions which has `0` for verse field. As querying this text field is less efficient in terms of performance as well as expressibility, it has been modiifed as two `int` fields. We continue to use `0` to indicate chapter intro and `-1` to indicate chapter epilogue for `verseStart` and `verseEnd`.
+* Combination of fields `book_id`, `chapter`, `verse_start`, `verse_end` are made unique. This acts as a composite candidate key for updation of `commentary` field. Only the `commentary` field is editable via API.
+* adds an `active` field to enable row(item) vice soft delete
+ 
 
 ### dictionary table
 
 Currently we only have Strongs numbers as a dictionary table.
 But we can have a wide variety of lexical collections with varying informations required to be stored in the DB. So chhosing a flexible table structure and APIs to accomodate future needs.
-* Have only 3 predefined columns; word_id, word and details
-* details column will be of JSON datatype and will have all the additional info we have in that collection(for each word) as key-value pairs
-* querying is possible based on any of the key value pair in details
-* updation is not possible on single key value pair, but only as the whole details object
+* Have only 3 predefined columns; `word_id`, `word` and `details`
+* `details` column will be of JSON datatype and will have all the additional info we have in that collection(for each word) as key-value pairs
+* querying is possible based on any of the key value pair in `details`
+* In `details` field, updation is not possible on single key value pair, but only as the whole object.
+* adds an `active` field to enable row(item) vice soft delete
+
+### infographics table
+
+* The combination of `book_id` and `title` is made unique, and is used are a composite candidate key for updation of `infograhic_url`, which is the only field editable via API.
+* The field `filename` is renamed as `infographic_url`. 
+* Though the type is `Text` for `infographic_url` in database, from the python code it ensures that, only a proper URL can be added to this field.
+* The `infographic_url` field is not unique which would allow the same link to be added for multiple books, if applicable.
+* adds an `active` field to enable row(item) vice soft delete
+
+### bible_video table
+
+* `bible_video` is made an entry in contentTypes table
+* New source to be added to sources table and new table to be created for every language, at least(if version name and revision are same)
+* removes the field language from the table
+* field `books` has datatype array of strings, instead of comma separated text. (From the python code it is ensured that it accept only valid book codes, becasue array of FKs is not possible)
+* `title` field is made unique(for one table. Repetition is possible with different language, version or revision) and is used to identify rows uniquely for updation. `title` field cannot be altered via API.

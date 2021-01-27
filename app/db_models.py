@@ -1,6 +1,6 @@
 ''' Defines SQL Alchemy models for each Database Table'''
 
-from sqlalchemy import Column, Integer, String, JSON
+from sqlalchemy import Column, Integer, String, JSON, ARRAY
 from sqlalchemy import Boolean, ForeignKey, DateTime
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.sql import func
@@ -26,6 +26,21 @@ class Language(Base): # pylint: disable=too-few-public-methods
     language = Column('language_name', String)
     scriptDirection = Column('script_direction', String)
 
+class License(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table licenses in vachan DB(postgres)'''
+    __tablename__ = 'licenses'
+
+    licenseId = Column('license_id', Integer, primary_key=True)
+    code = Column('license_code', String, unique=True, index=True)
+    name = Column('license_name', String)
+    license = Column('license_text', String)
+    permissions = Column('permissions', ARRAY(String))
+    active = Column('active', Boolean)
+    # metaData = Column('metadata', JSON)
+    createdUser = Column('created_user', Integer)
+    updatedUser = Column('last_updated_user', Integer)
+    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+
 class Version(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table versions in vachan DB(postgres)'''
     __tablename__ = 'versions'
@@ -43,7 +58,8 @@ class Source(Base): # pylint: disable=too-few-public-methods
     sourceId = Column('source_id', Integer, primary_key=True)
     sourceName = Column('table_name', String, unique=True)
     year = Column('year', Integer)
-    license = Column('license', String)
+    licenseId = Column('license_id', Integer, ForeignKey('licenses.license_id'))
+    license = relationship(License)
     contentId = Column('content_id', Integer, ForeignKey('content_types.content_type_id'))
     contentType = relationship('ContentType')
     languageId = Column('language_id', Integer, ForeignKey('languages.language_id'))
@@ -79,6 +95,7 @@ class Commentary(): # pylint: disable=too-few-public-methods
     verseStart = Column('verse_start', Integer)
     verseEnd = Column('verse_end', Integer)
     commentary = Column('commentary', String)
+    active = Column('active', Boolean)
     __table_args__ = (
         UniqueConstraint('book_id', 'chapter', 'verse_start', 'verse_end'),
         {'extend_existing': True}
@@ -89,20 +106,131 @@ class Dictionary(): # pylint: disable=too-few-public-methods
     wordId = Column('word_id', Integer, primary_key=True, autoincrement=True)
     word = Column('word', String, unique=True)
     details = Column('details', JSON)
+    active = Column('active', Boolean)
     __table_args__ = {'extend_existing': True}
 
+class Infographic(): # pylint: disable=too-few-public-methods
+    '''Corresponds to the dynamically created infographics tables in vachan Db(postgres)'''
+    infographicId = Column('infographic_id', Integer, primary_key=True, autoincrement=True)
+    @declared_attr
+    def book_id(cls): # pylint: disable=E0213
+        '''For modelling the bookId field in derived classes'''
+        return Column('book_id', Integer, ForeignKey('bible_books_look_up.book_id'))
+    @declared_attr
+    def book(cls): # pylint: disable=E0213
+        '''For modelling the book field in derived classes'''
+        return relationship(BibleBook)
+    title = Column('title', String)
+    infographicLink = Column('infographic_url', String)
+    active = Column('active', Boolean)
+    __table_args__ = (
+        UniqueConstraint('book_id', 'title'),
+        {'extend_existing': True}
+                     )
+
+class BibleVideo(): # pylint: disable=too-few-public-methods
+    '''Corresponds to the dynamically created bible videos tables in vachan Db(postgres)'''
+    bibleVideoId  = Column('bible_video_id', Integer, primary_key=True, autoincrement=True)
+    title = Column('title', String, unique=True)
+    theme = Column('theme', String)
+    description = Column('description', String)
+    videoLink = Column('video_link', String)
+    active = Column('active', Boolean)
+    books = Column('books', ARRAY(String))
+    __table_args__ = {'extend_existing': True}
+
+class BibleAudio(): # pylint: disable=too-few-public-methods
+    '''Corresponds to the dynamically created bible_audio tables in vachan Db(postgres)'''
+    audioId  = Column('bible_audio_id', Integer, primary_key=True, autoincrement=True)
+    name = Column('name', String)
+    @declared_attr
+    def book_id(self):
+        '''FK column referncing bible contents'''
+        table_name = self.__tablename__.replace("_audio", "") #pylint: disable=E1101
+        return Column('book_id', Integer, ForeignKey(table_name+'.book_id'), unique=True)
+    url = Column('audio_link', String)
+    format = Column('audio_format', String)
+    active = Column('active', Boolean, default=True)
+    __table_args__ = {'extend_existing': True}
+
+class BibleContent(): # pylint: disable=too-few-public-methods
+    '''Corresponds to the dynamically created bible tables in vachan Db(postgres)'''
+    bookContentId  = Column('bible_content_id', Integer, primary_key=True, autoincrement=True)
+    @declared_attr
+    def book_id(cls): # pylint: disable=E0213
+        '''For modelling the bookId field in bible content classes'''
+        return Column('book_id', Integer, ForeignKey('bible_books_look_up.book_id'), unique=True)
+    @declared_attr
+    def book(cls): # pylint: disable=E0213
+        '''For modelling the book field in bible content classes'''
+        return relationship(BibleBook, uselist=False)
+    USFM = Column('usfm', String)
+    JSON = Column('json_object', JSON)
+    @declared_attr
+    def audio(self): # pylint: disable=E0213 
+        '''For modelling the audio field in bible content classes'''
+        refering_table = self.__tablename__+"_audio" #pylint: disable=E1101
+        return relationship(dynamicTables[refering_table], uselist=False)
+    active = Column('active', Boolean, default=True)
+    __table_args__ = {'extend_existing': True}
+
+def create_ref_id(context):
+    '''generate refid value'''
+    bbb = str(context.get_current_parameters()['book_id']).zfill(3)
+    ccc = str(context.get_current_parameters()['chapter']).zfill(3)
+    vvv = str(context.get_current_parameters()['verse_number']).zfill(3)
+    return bbb + ccc + vvv
+
+class BibleContentCleaned(): # pylint: disable=too-few-public-methods
+    '''Corresponds to the dynamically created bible_cleaned tables in vachan Db(postgres)'''
+    refId  = Column('ref_id', Integer, primary_key=True, default=create_ref_id)
+    @declared_attr
+    def book_id(cls): # pylint: disable=E0213
+        '''For modelling the bookId field in bible content classes'''
+        return Column('book_id', Integer, ForeignKey('bible_books_look_up.book_id'))
+    @declared_attr
+    def book(cls): # pylint: disable=E0213
+        '''For modelling the book field in bible content classes'''
+        return relationship(BibleBook)
+    chapter = Column('chapter', Integer)
+    verseNumber = Column('verse_number', Integer)
+    verseText = Column('verse_text', String)
+    # footNote = Column('footnote', String)
+    # crossReference = Column('cross_reference')
+    active = Column('active', Boolean, default=True)
+    __table_args__ = (
+        UniqueConstraint('book_id', 'chapter', 'verse_number'),
+        {'extend_existing': True}
+                     )
 
 dynamicTables = {}
 def create_dynamic_table(source_name, content_type):
     '''To map or create one dynamic table based on the content Type'''
-    if content_type == 'commentary':
+    if content_type == 'bible':
+        dynamicTables[source_name+'_audio'] = type(
+            source_name+'_audio',(BibleAudio, Base,),
+            {"__tablename__": source_name+'_audio'})
+        dynamicTables[source_name] = type(
+            source_name,(BibleContent, Base,),
+            {"__tablename__": source_name})
+        dynamicTables[source_name+'_cleaned'] = type(
+            source_name+'_cleaned',(BibleContentCleaned, Base,),
+            {"__tablename__": source_name+'_cleaned'})
+    elif content_type == 'commentary':
         dynamicTables[source_name] = type(
             source_name,(Commentary, Base,),{"__tablename__": source_name})
     elif content_type == 'dictionary':
         dynamicTables[source_name] = type(
             source_name,(Dictionary, Base,),{"__tablename__": source_name})
+    elif content_type == 'infographics':
+        dynamicTables[source_name] = type(
+            source_name,(Infographic, Base,),{"__tablename__": source_name})
+    elif content_type == 'bible_video':
+        dynamicTables[source_name] = type(
+            source_name,(BibleVideo, Base,),{"__tablename__": source_name})
     else:
-        raise GenericException("Table structure not defined for this content type")
+        raise GenericException("Table structure not defined for this content type:%s"
+            %content_type)
 
 
 def map_all_dynamic_tables(db_: Session):
