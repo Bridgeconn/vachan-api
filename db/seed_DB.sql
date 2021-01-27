@@ -22,6 +22,22 @@ CREATE TABLE public.languages (
 
 \COPY languages (language_code,language_name) FROM 'languages.csv' DELIMITER ',' CSV HEADER;
 
+CREATE TABLE public.licenses (
+    license_id SERIAL PRIMARY KEY,
+    license_code text UNIQUE NOT NULL,
+    license_name text NOT NULL,
+    license_text text NOT NULL,
+    permissions text[],
+    created_at timestamp with time zone DEFAULT NOW(),
+    created_user int NULL,
+    last_updated_at  timestamp with time zone DEFAULT NOW(),
+    last_updated_user int NULL,
+    active boolean DEFAULT true NOT NULL,
+    metadata jsonb NULL
+);
+
+\COPY licenses (license_code, license_name, license_text, permissions) FROM 'licenses.csv' DELIMITER ',' CSV HEADER;
+
 CREATE TABLE public.versions (
     version_id SERIAL PRIMARY KEY,
     version_code text NOT NULL,
