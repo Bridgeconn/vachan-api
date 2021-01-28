@@ -146,8 +146,9 @@ db_models.Base.metadata.create_all(bind=engine)
 
 
 @app.get('/', response_model=schemas.NormalResponse, status_code=200)
-def test():
+def test(db_: Session = Depends(get_db)):
     '''tests if app is running and the DB connection'''
+    db_.query(db_models.Language).first()
     return {"message": "App is up and running"}
 
 
