@@ -135,7 +135,7 @@ class LicenseCreate(BaseModel):
                 "name": "GNU Public License version 3",
                 "code": "GPL-3",
                 "license": "...actual license text here...",
-                "permissions": 
+                "permissions":
                     ["Commercial_use", "Modification", "Distribution", "Patent_use", "Private_use"]
             }
         }
@@ -155,7 +155,7 @@ class LicenseShortResponse(BaseModel):
             "example": {
                 "name": "GNU Public License version 3",
                 "code": "GPL-3",
-                "permissions": 
+                "permissions":
                     ["Commercial_use", "Modification", "Distribution", "Patent_use", "Private_use"]
             }
         }
@@ -178,7 +178,7 @@ class LicenseResponse(BaseModel):
                 "name": "GNU Public License version 3",
                 "code": "GPL-3",
                 "license": "...actual license text here...",
-                "permissions": 
+                "permissions":
                     ["Commercial_use", "Modification", "Distribution", "Patent_use", "Private_use"]
             }
         }
@@ -207,7 +207,7 @@ class LicenseEdit (BaseModel):
                 "name": "GNU Public License version 3",
                 "code": "GPL-3",
                 "license": "...actual license text here...",
-                "permissions": 
+                "permissions":
                     ["Commercial_use", "Modification", "Distribution", "Patent_use", "Private_use"]
             }
         }
