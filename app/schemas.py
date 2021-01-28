@@ -7,15 +7,37 @@ from pydantic import BaseModel, constr, AnyUrl, validator, root_validator
 class NormalResponse(BaseModel):
     '''Response with only a message'''
     message : str
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "message": "App is up and running"
+            }
+        }
 
 class ErrorResponse(BaseModel):
     '''common error response object'''
     error: str
     details: str
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "error": "Already Exists",
+                "details":"Commentary already present"
+            }
+        }
 
 class ContentTypeCreate(BaseModel):
     '''Input object to ceate a new content type'''
     contentType : constr(regex=r"^[^0-9\s]+$")
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "contentType": "Commentary"
+            }
+        }
 
 class ContentType(BaseModel):
     '''output object for content types'''
@@ -24,11 +46,27 @@ class ContentType(BaseModel):
     class Config: # pylint: disable=too-few-public-methods
         '''For SQL Alchemy'''
         orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "contentId": 1,
+                "contentType": "Commentary"
+            }
+        }
 
 class ContentTypeUpdateResponse(BaseModel):
     '''Object usedtTo update content type'''
     message: str
     data: ContentType = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "message": "Content type created successfully",
+                "data": {}
+
+            }
+        }
 
 LangCodePattern =constr(regex=r"^[a-zA-Z][a-zA-Z][a-zA-Z]$")
 class Direction(str, Enum):
@@ -41,6 +79,14 @@ class LanguageCreate(BaseModel):
     language : str
     code : LangCodePattern
     scriptDirection : Direction = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "language": "Hindi",
+                "code": "hin"
+            }
+        }
 
 class LanguageResponse(BaseModel):
     '''Return object of languages'''
@@ -52,11 +98,27 @@ class LanguageResponse(BaseModel):
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "languageId": 1,
+                "language": "Hindi",
+                "code": "hin"
+            }
+        }
 
 class LanguageUpdateResponse(BaseModel):
     '''Return object of language update'''
     message: str
     data: LanguageResponse = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "message": "Language created successfully",
+                "data": {}
+            }
+        }
 
 class LanguageEdit (BaseModel):
     '''Input object of language update'''
@@ -64,6 +126,15 @@ class LanguageEdit (BaseModel):
     language : str = None
     code : LangCodePattern = None
     scriptDirection : Direction = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "languageId": 1,
+                "language": "Hindi",
+                "code": "hin"
+            }
+        }
 
 LicenseCodePattern =constr(regex=r"^[a-zA-Z0-9\.\_\-]+$")
 class LicensePermisssion(str, Enum):
@@ -80,6 +151,17 @@ class LicenseCreate(BaseModel):
     code : LicenseCodePattern
     license : str
     permissions : List[LicensePermisssion] = ['Private_use']
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "name": "GNU Public License version 3",
+                "code": "GPL-3",
+                "license": "...actual license text here...",
+                "permissions": 
+                    ["Commercial_use", "Modification", "Distribution", "Patent_use", "Private_use"]
+            }
+        }
 
 class LicenseShortResponse(BaseModel):
     '''Return object of licenses without the full text'''
@@ -91,6 +173,15 @@ class LicenseShortResponse(BaseModel):
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "name": "GNU Public License version 3",
+                "code": "GPL-3",
+                "permissions": 
+                    ["Commercial_use", "Modification", "Distribution", "Patent_use", "Private_use"]
+            }
+        }
 
 
 class LicenseResponse(BaseModel):
@@ -104,11 +195,29 @@ class LicenseResponse(BaseModel):
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "name": "GNU Public License version 3",
+                "code": "GPL-3",
+                "license": "...actual license text here...",
+                "permissions": 
+                    ["Commercial_use", "Modification", "Distribution", "Patent_use", "Private_use"]
+            }
+        }
 
 class LicenseUpdateResponse(BaseModel):
     '''Return object of language update'''
     message: str
     data: LicenseResponse = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "message": "License uploaded successfully",
+                "data": {}
+            }
+        }
 
 class LicenseEdit (BaseModel):
     '''Input object of language update'''
@@ -117,6 +226,17 @@ class LicenseEdit (BaseModel):
     license : str = None
     permissions : List[LicensePermisssion] = None
     active: bool = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "name": "GNU Public License version 3",
+                "code": "GPL-3",
+                "license": "...actual license text here...",
+                "permissions": 
+                    ["Commercial_use", "Modification", "Distribution", "Patent_use", "Private_use"]
+            }
+        }
 
 MetaDataPattern = constr(
     regex=r"^\{\s*[\"\'][^\"]+[\"\']\s*:\s*[\"\'][^\"]+[\"\']\s*" +
@@ -129,6 +249,16 @@ class VersionCreate(BaseModel):
     versionName : str
     revision : int = 1
     metaData : dict = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "versionAbbreviation": "KJV",
+                "versionName": "King James Version",
+                "revision": 1,
+                "metaData": {"publishedIn": 1611}
+            }
+        }
 
 class VersionResponse(BaseModel):
     '''Return object of version'''
@@ -141,11 +271,29 @@ class VersionResponse(BaseModel):
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "versionId": 1,
+                "versionAbbreviation": "KJV",
+                "versionName": "King James Version",
+                "revision": 1,
+                "metaData": {"publishedIn": 1611}
+            }
+        }
 
 class VersionUpdateResponse(BaseModel):
     '''Return object of version update'''
     message: str
     data: VersionResponse = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "message": "Version created successfully",
+                "data": {}
+            }
+        }
 
 class VersionEdit(BaseModel):
     '''input object of version update'''
@@ -154,6 +302,17 @@ class VersionEdit(BaseModel):
     versionName : str = None
     revision : int = None
     metaData : dict = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "versionId": 1,
+                "versionAbbreviation": "KJV",
+                "versionName": "King James Version",
+                "revision": 1,
+                "metaData": {"publishedIn": 1611}
+            }
+        }
 
 
 TableNamePattern = constr(regex=r"^\w\w\w_[A-Z]+_\w+_[a-z]+$")
@@ -167,6 +326,19 @@ class SourceCreate(BaseModel):
     year: int
     license: LicenseCodePattern = "CC-BY-SA"
     metaData: dict = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "contentType": "bible",
+                "language": "eng",
+                "version": "KJV",
+                "revision": 1,
+                "year": 2020,
+                "license": "ISC",
+                "metaData": {"otherName": "KJB, King James Bible"}
+            }
+        }
 
 class SourceResponse(BaseModel):
     '''Output object of sources'''
@@ -182,12 +354,33 @@ class SourceResponse(BaseModel):
     class Config: # pylint: disable=too-few-public-methods
         '''For Pydantic'''
         orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "sourceName": "eng_KJV_1_bible",
+                "contentType": "bible",
+                "language": "eng",
+                "version": "KJV",
+                "revision": 1,
+                "year": 2020,
+                "license": "ISC",
+                "metaData": {"otherName": "KJB, King James Bible"},
+                "active": True
+            }
+        }
 
 class SourceUpdateResponse(BaseModel):
     '''response object of sources update'''
     message: str
     data: SourceResponse = None
-
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "message": "Source created successfully",
+                "data": {}
+            }
+        }
 class SourceEdit(BaseModel):
     '''Input object of source update'''
     sourceName : TableNamePattern
@@ -198,6 +391,21 @@ class SourceEdit(BaseModel):
     license: LicenseCodePattern = None
     metaData: dict = None
     active: bool = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "sourceName": "eng_KJV_1_bible",
+                "contentType": "bible",
+                "language": "eng",
+                "version": "KJV",
+                "revision": 1,
+                "year": 2020,
+                "license": "ISC",
+                "metaData": {"otherName": "KJB, King James Bible"},
+                "active": True
+            }
+        }
 
 BookCodePattern = constr(regex=r"^[a-zA-Z1-9][a-zA-Z][a-zA-Z]$")
 
@@ -210,6 +418,14 @@ class BibleBook(BaseModel):
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "bookId": 41,
+                "bookName": "Matthew",
+                "bookCode": "mat"
+            }
+        }
 
 class AudioBible(BaseModel):
     '''Response object of Audio Bible'''
@@ -223,11 +439,28 @@ class AudioBible(BaseModel):
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "name": "XXX audio bible: Gospel series",
+                "url": "http://someplace.come/resoucesid",
+                "format": "mp3",
+                "active": True
+            }
+        }
 
 class AudioBibleUpdateResponse(BaseModel):
     '''Response object of auido bible update'''
     message: str
     data: List[AudioBible] = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "message": "Bible audios details uploaded successfully",
+                "data": [{}]
+            }
+        }
 
 class AudioBibleUpload(BaseModel):
     '''Input object of Audio Bible'''
@@ -236,6 +469,17 @@ class AudioBibleUpload(BaseModel):
     books:  List[BookCodePattern]
     format: str
     active: bool = True
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "name": "XXX audio bible: Gospel series",
+                "books": ["mat"],
+                "url": "http://someplace.come/resoucesid",
+                "format": "mp3",
+                "active": True
+            }
+        }
 
 class AudioBibleEdit(BaseModel):
     ''' Input object of Auido Bible'''
@@ -244,6 +488,17 @@ class AudioBibleEdit(BaseModel):
     books: List[BookCodePattern]
     format: str = None
     active: bool = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "books": ["mat", "mrk", "luk", "jhn"],
+                "name": "XXX audio bible: Gospel series",
+                "url": "http://someplace.come/resoucesid",
+                "format": "mp3",
+                "active": True
+            }
+        }
 
 class Reference(BaseModel):
     '''Response object of bible refernce'''
@@ -256,6 +511,16 @@ class Reference(BaseModel):
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "bible": "hin_IRV_5_bible",
+                "book": "mat",
+                "chapter": 1,
+                "verseNumber": 12,
+                "verseNumberEnd": 17
+            }
+        }
 
 class BibleBookContent(BaseModel):
     '''Response object of Bible book contents'''
@@ -270,16 +535,57 @@ class BibleBookContent(BaseModel):
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "book": { "bookId": 41, "bookCode": "mat", "bookName": "Matthew"},
+                "versification": [
+                    {"bible": "hin_IRV_5_bible",
+                    "book": "mat",
+                    "chapter": 1,
+                    "verseNumber": 1},
+                    {"bible": "hin_IRV_5_bible",
+                    "book": "mat",
+                    "chapter": 1,
+                    "verseNumber": 1},
+                    {},{}],
+                "USFM": "\\id MAT\n\\c 1\n\\p\n\\v 1 इब्राहीम की सन्‍तान, दाऊद की ...",
+                "JSON": {"book":{"bookCode":"MAT"},"chapters":[{},{},{}]},
+                "AudioBible": {
+                    "name": "XXX audio bible: Gospel series",
+                    "url": "http://someplace.come/resoucesid",
+                    "format": "mp3",
+                    "active": True
+                },
+                "active": True
+            }
+        }
 
 class BibleBookUpdateResponse(BaseModel):
     '''Input object of Bible book update'''
     message: str
     data: List[BibleBookContent] = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "message": "Bible books uploaded and processed successfully",
+                "data": [{}]
+            }
+        }
 
 class BibleBookUpload(BaseModel):
     '''Input object of bible book'''
     USFM: str
     JSON: dict
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "USFM": "\\id MAT\n\\c 1\n\\p\n\\v 1 इब्राहीम की सन्‍तान, दाऊद की ...",
+                "JSON": {"book":{"bookCode":"MAT"},"chapters":[{},{},{}]}
+            }
+        }
 
 class BibleBookEdit(BaseModel):
     '''Input object of bible book'''
@@ -302,6 +608,17 @@ class BibleBookEdit(BaseModel):
                 raise ValueError('"bookCode" is required to identiy the row to be updated')
         return values
 
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "bookCode": "mat",
+                "USFM": "\\id MAT\n\\c 1\n\\p\n\\v 1 इब्राहीम की सन्‍तान, दाऊद की ...",
+                "JSON": {"book":{"bookCode":"MAT"},"chapters":[{},{},{}]},
+                "active": False
+            }
+        }
+
 class BibleVerse(BaseModel):
     '''Response object of Bible Verse'''
     reference : Reference
@@ -312,6 +629,18 @@ class BibleVerse(BaseModel):
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "reference": {
+                    "bible": "hin_IRV_5_bible",
+                    "book": "mat",
+                    "chapter": 1,
+                    "verseNumber": 12
+                },
+                "verseText": "बन्‍दी होकर बाबुल पहुंचाए जाने के बाद..."
+            }
+        }
 
 class BookContentType(str, Enum):
     '''choices for bible content types'''
@@ -356,6 +685,19 @@ class CommentaryCreate(BaseModel):
         if val < -1:
             raise ValueError('chapter field should be greater than or equal to -1')
         return val
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "bookCode": "1ki",
+                "chapter": 10,
+                "verseStart": 1,
+                "verseEnd": 7,
+                "commentary": "It was customary at the time ...",
+                "active": True
+            }
+        }
+
 
 class CommentaryEdit(BaseModel):
     '''Response object for commentaries'''
@@ -393,6 +735,18 @@ class CommentaryEdit(BaseModel):
         if val < -1:
             raise ValueError('chapter field should be greater than or equal to -1')
         return val
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "bookCode": "1ki",
+                "chapter": 10,
+                "verseStart": 1,
+                "verseEnd": 7,
+                "commentary": "It was customary at the time ...",
+                "active": True
+            }
+        }
 
 class CommentaryResponse(BaseModel):
     '''Response object for commentaries'''
@@ -406,11 +760,30 @@ class CommentaryResponse(BaseModel):
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "bookCode": "1ki",
+                "chapter": 10,
+                "verseStart": 1,
+                "verseEnd": 7,
+                "commentary": "It was customary at the time ...",
+                "active": True
+            }
+        }
 
 class CommentaryUpdateResponse(BaseModel):
     '''Response object for commentary update'''
     message: str
     data: List[CommentaryResponse] = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "message": "Commentaries added successfully",
+                "data": [{}]
+            }
+        }
 
 LetterPattern = constr(regex=r'^\w$')
 class DictionaryWordCreate(BaseModel):
@@ -418,12 +791,32 @@ class DictionaryWordCreate(BaseModel):
     word: str
     details: dict = None
     active: bool = True
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "word": "Adam",
+                "details": {"type": "name",
+                    "definition": "The first man God created(also, Human in Hebrew)"},
+                "active": True
+            }
+        }
 
 class DictionaryWordEdit(BaseModel):
     '''Upload object of dictionary word'''
     word: str
     details: dict = None
     active: bool = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "word": "Adam",
+                "details": {"type": "name",
+                    "definition": "The first man God created(also, Human in Hebrew)"},
+                "active": True
+            }
+        }
 
 class DictionaryWordResponse(BaseModel):
     '''Response object of dictionary word'''
@@ -434,11 +827,28 @@ class DictionaryWordResponse(BaseModel):
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "word": "Adam",
+                "details": {"type": "name",
+                    "definition": "The first man God created(also, Human in Hebrew)"},
+                "active": True
+            }
+        }
 
 class DictionaryUpdateResponse(BaseModel):
     '''Response object of dictionary word update'''
     message: str
     data: List[DictionaryWordResponse] = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "message": "Dictionary words added successfully",
+                "data": [{}]
+            }
+        }
 
 class InfographicCreate(BaseModel):
     '''Input object of infographics'''
@@ -446,6 +856,16 @@ class InfographicCreate(BaseModel):
     title: str
     infographicLink : AnyUrl
     active: bool = True
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "bookCode": "exo",
+                "title": "Ark of Covenant",
+                "infographicLink": "http://someplace.com/resoucesid",
+                "active": True
+            }
+        }
 
 class InfographicEdit(BaseModel):
     '''Input object of infographics Update'''
@@ -453,6 +873,16 @@ class InfographicEdit(BaseModel):
     title: str
     infographicLink : AnyUrl = None
     active: bool = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "bookCode": "exo",
+                "title": "Ark of Covenant",
+                "infographicLink": "http://someplace.com/resoucesid",
+                "active": True
+            }
+        }
 
 class InfographicResponse(BaseModel):
     '''Response object of infographics'''
@@ -464,11 +894,28 @@ class InfographicResponse(BaseModel):
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "bookCode": "exo",
+                "title": "Ark of Covenant",
+                "infographicLink": "http://someplace.com/resoucesid",
+                "active": True
+            }
+        }
 
 class InfographicUpdateResponse(BaseModel):
     '''Response object of infographics update'''
     message: str
     data: List[InfographicResponse] = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "message": "Infographics added successfully",
+                "data": [{}]
+            }
+        }
 
 
 class BibleVideo(BaseModel):
@@ -483,11 +930,32 @@ class BibleVideo(BaseModel):
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "title": "Overview: song of songs",
+                "books": ["sng"],
+                "videoLink": "https://someplace.com/resoucesid",
+                "description": "Watch our overview video on the book of Song of Songs,"+\
+                    "which breaks down the literary design of the book and "+\
+                    "its flow of thought.",
+                "theme": "Old Testament, Poetic Book",
+                "active": True
+            }
+        }
 
 class BibleVideoUpdateResponse(BaseModel):
     '''Response object of Bible Video update'''
     message: str
     data: List[BibleVideo] = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "message": "Bible videos added successfully",
+                "data": [{}]
+            }
+        }
 
 class BibleVideoUpload(BaseModel):
     '''Input Object of bible Videos'''
@@ -497,6 +965,21 @@ class BibleVideoUpload(BaseModel):
     description: str
     theme: str
     active: bool = True
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": [{
+                "title": "Overview: song of songs",
+                "books": ["sng"],
+                "videoLink": "https://someplace.com/resoucesid",
+                "description": "Watch our overview video on the book of Song of Songs,"+\
+                    "which breaks down the literary design of the book and "+\
+                    "its flow of thought.",
+                "theme": "Old Testament, Poetic Book",
+                "active": True
+
+            }]
+        }
 
 
 class BibleVideoEdit(BaseModel):
@@ -507,3 +990,17 @@ class BibleVideoEdit(BaseModel):
     description: str  = None
     theme: str  = None
     active: bool  = None
+    class Config: # pylint: disable=too-few-public-methods
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": [{
+                "title": "Overview: song of songs",
+                "books": ["sng"],
+                "videoLink": "https://someplace.com/resoucesid",
+                "description": "Watch our overview video on the book of Song of Songs,"+\
+                    "which breaks down the literary design of the book and "+\
+                    "its flow of thought.",
+                "theme": "Old Testament, Poetic Book",
+                "active": True
+            }]
+        }
