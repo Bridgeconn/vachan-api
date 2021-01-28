@@ -2,18 +2,11 @@
 
 from typing import List
 from enum import Enum
-from pydantic import BaseModel, constr, AnyUrl, validator, root_validator
+from pydantic import BaseModel, constr, AnyUrl, validator, root_validator, Field
 
 class NormalResponse(BaseModel):
     '''Response with only a message'''
-    message : str
-    class Config: # pylint: disable=too-few-public-methods
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "message": "App is up and running"
-            }
-        }
+    message : str = Field(...,example="App is up and running")
 
 class ErrorResponse(BaseModel):
     '''common error response object'''
@@ -23,21 +16,14 @@ class ErrorResponse(BaseModel):
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "error": "Already Exists",
-                "details":"Commentary already present"
+                "error": "Error Name",
+                "details":"More details about the error"
             }
         }
 
 class ContentTypeCreate(BaseModel):
     '''Input object to ceate a new content type'''
-    contentType : constr(regex=r"^[^0-9\s]+$")
-    class Config: # pylint: disable=too-few-public-methods
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "contentType": "Commentary"
-            }
-        }
+    contentType : constr(regex=r"^[^0-9\s]+$") = Field(...,example="commentary")
 
 class ContentType(BaseModel):
     '''output object for content types'''
@@ -50,23 +36,14 @@ class ContentType(BaseModel):
         schema_extra = {
             "example": {
                 "contentId": 1,
-                "contentType": "Commentary"
+                "contentType": "commentary"
             }
         }
 
 class ContentTypeUpdateResponse(BaseModel):
     '''Object usedtTo update content type'''
-    message: str
+    message: str = Field(...,example="Content type created successfully")
     data: ContentType = None
-    class Config: # pylint: disable=too-few-public-methods
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "message": "Content type created successfully",
-                "data": {}
-
-            }
-        }
 
 LangCodePattern =constr(regex=r"^[a-zA-Z][a-zA-Z][a-zA-Z]$")
 class Direction(str, Enum):
@@ -84,7 +61,8 @@ class LanguageCreate(BaseModel):
         schema_extra = {
             "example": {
                 "language": "Hindi",
-                "code": "hin"
+                "code": "hin",
+                "scriptDirection": "left-to-right"
             }
         }
 
@@ -103,22 +81,20 @@ class LanguageResponse(BaseModel):
             "example": {
                 "languageId": 1,
                 "language": "Hindi",
-                "code": "hin"
+                "code": "hin",
+                "scriptDirection": "left-to-right"
             }
         }
 
+class LanguageCreateResponse(BaseModel):
+    '''Return object of language update'''
+    message: str = Field(..., example="Language created successfully")
+    data: LanguageResponse = None
+
 class LanguageUpdateResponse(BaseModel):
     '''Return object of language update'''
-    message: str
+    message: str = Field(..., example="Language edited successfully")
     data: LanguageResponse = None
-    class Config: # pylint: disable=too-few-public-methods
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "message": "Language created successfully",
-                "data": {}
-            }
-        }
 
 class LanguageEdit (BaseModel):
     '''Input object of language update'''
@@ -132,7 +108,8 @@ class LanguageEdit (BaseModel):
             "example": {
                 "languageId": 1,
                 "language": "Hindi",
-                "code": "hin"
+                "code": "hin",
+                "scriptDirection":"left-to-right"
             }
         }
 
@@ -206,18 +183,15 @@ class LicenseResponse(BaseModel):
             }
         }
 
+class LicenseCreateResponse(BaseModel):
+    '''Return object of language update'''
+    message: str = Field(..., example="License uploaded successfully")
+    data: LicenseResponse = None
+
 class LicenseUpdateResponse(BaseModel):
     '''Return object of language update'''
-    message: str
+    message: str = Field(..., example="License edited successfully")
     data: LicenseResponse = None
-    class Config: # pylint: disable=too-few-public-methods
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "message": "License uploaded successfully",
-                "data": {}
-            }
-        }
 
 class LicenseEdit (BaseModel):
     '''Input object of language update'''
@@ -282,18 +256,15 @@ class VersionResponse(BaseModel):
             }
         }
 
+class VersionCreateResponse(BaseModel):
+    '''Return object of version update'''
+    message: str = Field(..., example="Version created successfully")
+    data: VersionResponse = None
+
 class VersionUpdateResponse(BaseModel):
     '''Return object of version update'''
-    message: str
+    message: str = Field(..., example="Version edited successfully")
     data: VersionResponse = None
-    class Config: # pylint: disable=too-few-public-methods
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "message": "Version created successfully",
-                "data": {}
-            }
-        }
 
 class VersionEdit(BaseModel):
     '''input object of version update'''
@@ -369,18 +340,17 @@ class SourceResponse(BaseModel):
             }
         }
 
+class SourceCreateResponse(BaseModel):
+    '''response object of sources update'''
+    message: str = Field(..., example="Source created successfully")
+    data: SourceResponse = None
+
 class SourceUpdateResponse(BaseModel):
     '''response object of sources update'''
-    message: str
+    message: str = Field(..., example="Source edited successfully")
     data: SourceResponse = None
-    class Config: # pylint: disable=too-few-public-methods
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "message": "Source created successfully",
-                "data": {}
-            }
-        }
+
+
 class SourceEdit(BaseModel):
     '''Input object of source update'''
     sourceName : TableNamePattern
@@ -449,18 +419,15 @@ class AudioBible(BaseModel):
             }
         }
 
+class AudioBibleCreateResponse(BaseModel):
+    '''Response object of auido bible update'''
+    message: str = Field(..., example="Bible audios details uploaded successfully")
+    data: List[AudioBible] = None
+
 class AudioBibleUpdateResponse(BaseModel):
     '''Response object of auido bible update'''
-    message: str
+    message: str = Field(..., example="Bible audios details updated successfully")
     data: List[AudioBible] = None
-    class Config: # pylint: disable=too-few-public-methods
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "message": "Bible audios details uploaded successfully",
-                "data": [{}]
-            }
-        }
 
 class AudioBibleUpload(BaseModel):
     '''Input object of Audio Bible'''
@@ -561,18 +528,15 @@ class BibleBookContent(BaseModel):
             }
         }
 
+class BibleBookCreateResponse(BaseModel):
+    '''Input object of Bible book update'''
+    message: str = Field(..., example="Bible books uploaded and processed successfully")
+    data: List[BibleBookContent] = None
+
 class BibleBookUpdateResponse(BaseModel):
     '''Input object of Bible book update'''
-    message: str
+    message: str = Field(..., example="Bible books updated successfully")
     data: List[BibleBookContent] = None
-    class Config: # pylint: disable=too-few-public-methods
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "message": "Bible books uploaded and processed successfully",
-                "data": [{}]
-            }
-        }
 
 class BibleBookUpload(BaseModel):
     '''Input object of bible book'''
@@ -772,18 +736,15 @@ class CommentaryResponse(BaseModel):
             }
         }
 
+class CommentaryCreateResponse(BaseModel):
+    '''Response object for commentary update'''
+    message: str = Field(..., example="Commentaries added successfully")
+    data: List[CommentaryResponse] = None
+
 class CommentaryUpdateResponse(BaseModel):
     '''Response object for commentary update'''
-    message: str
+    message: str = Field(..., example="Commentaries updated successfully")
     data: List[CommentaryResponse] = None
-    class Config: # pylint: disable=too-few-public-methods
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "message": "Commentaries added successfully",
-                "data": [{}]
-            }
-        }
 
 LetterPattern = constr(regex=r'^\w$')
 class DictionaryWordCreate(BaseModel):
@@ -837,18 +798,15 @@ class DictionaryWordResponse(BaseModel):
             }
         }
 
+class DictionaryCreateResponse(BaseModel):
+    '''Response object of dictionary word update'''
+    message: str = Field(..., example="Dictionary words added successfully")
+    data: List[DictionaryWordResponse] = None
+
 class DictionaryUpdateResponse(BaseModel):
     '''Response object of dictionary word update'''
-    message: str
+    message: str = Field(..., example="Dictionary words updated successfully")
     data: List[DictionaryWordResponse] = None
-    class Config: # pylint: disable=too-few-public-methods
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "message": "Dictionary words added successfully",
-                "data": [{}]
-            }
-        }
 
 class InfographicCreate(BaseModel):
     '''Input object of infographics'''
@@ -904,19 +862,15 @@ class InfographicResponse(BaseModel):
             }
         }
 
+class InfographicCreateResponse(BaseModel):
+    '''Response object of infographics update'''
+    message: str = Field(..., example="Infographics added successfully")
+    data: List[InfographicResponse] = None
+
 class InfographicUpdateResponse(BaseModel):
     '''Response object of infographics update'''
-    message: str
+    message: str = Field(..., example="Infographics updated successfully")
     data: List[InfographicResponse] = None
-    class Config: # pylint: disable=too-few-public-methods
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "message": "Infographics added successfully",
-                "data": [{}]
-            }
-        }
-
 
 class BibleVideo(BaseModel):
     '''Response object of Bible Vedios'''
@@ -944,18 +898,15 @@ class BibleVideo(BaseModel):
             }
         }
 
+class BibleVideoCreateResponse(BaseModel):
+    '''Response object of Bible Video update'''
+    message: str = Field(...,example="Bible videos added successfully")
+    data: List[BibleVideo] = None
+
 class BibleVideoUpdateResponse(BaseModel):
     '''Response object of Bible Video update'''
-    message: str
+    message: str = Field(...,example="Bible videos updated successfully")
     data: List[BibleVideo] = None
-    class Config: # pylint: disable=too-few-public-methods
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "message": "Bible videos added successfully",
-                "data": [{}]
-            }
-        }
 
 class BibleVideoUpload(BaseModel):
     '''Input Object of bible Videos'''

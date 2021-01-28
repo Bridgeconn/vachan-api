@@ -205,7 +205,7 @@ def get_language(language_code : schemas.LangCodePattern = Query(None),
         language_code, language_name, skip, limit)
     return crud.get_languages(db_, language_code, language_name, skip = skip, limit = limit)
 
-@app.post('/v2/languages', response_model=schemas.LanguageUpdateResponse,
+@app.post('/v2/languages', response_model=schemas.LanguageCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Languages"])
@@ -254,7 +254,7 @@ def get_license(license_code : schemas.LicenseCodePattern=Query(None), #pylint: 
     return crud.get_licenses(db_, license_code, license_name, permission,
         active, skip = skip, limit = limit)
 
-@app.post('/v2/licenses', response_model=schemas.LicenseUpdateResponse,
+@app.post('/v2/licenses', response_model=schemas.LicenseCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Licenses"])
@@ -297,7 +297,7 @@ def get_version(version_abbreviation : schemas.VersionPattern = Query(None), #py
     return crud.get_versions(db_, version_abbreviation,
         version_name, revision, metadata, skip = skip, limit = limit)
 
-@app.post('/v2/versions', response_model=schemas.VersionUpdateResponse,
+@app.post('/v2/versions', response_model=schemas.VersionCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Versions"])
@@ -356,7 +356,7 @@ def get_source(content_type: str = None, version_abbreviation: schemas.VersionPa
         language_code, license_code, metadata, latest_revision=latest_revision, active=active,
         skip=skip, limit=limit)
 
-@app.post('/v2/sources', response_model=schemas.SourceUpdateResponse,
+@app.post('/v2/sources', response_model=schemas.SourceCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Sources"])
@@ -417,7 +417,7 @@ def get_bible_book(book_id: int = None, book_code: schemas.BookCodePattern = Non
 # #### Bible #######
 
 
-@app.post('/v2/bibles/{source_name}/books', response_model=schemas.BibleBookUpdateResponse,
+@app.post('/v2/bibles/{source_name}/books', response_model=schemas.BibleBookCreateResponse,
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
@@ -503,7 +503,7 @@ def get_bible_verse(source_name: schemas.TableNamePattern, #pylint: disable=too-
 
 # # ########### Audio bible ###################
 
-@app.post('/v2/bibles/{source_name}/audios', response_model=schemas.AudioBibleUpdateResponse,
+@app.post('/v2/bibles/{source_name}/audios', response_model=schemas.AudioBibleCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bibles"])
@@ -556,7 +556,7 @@ def get_commentary(source_name: schemas.TableNamePattern, book_code: schemas.Boo
     return crud.get_commentaries(db_, source_name, book_code, chapter, verse, last_verse,
         active=active, skip = skip, limit = limit)
 
-@app.post('/v2/commentaries/{source_name}', response_model=schemas.CommentaryUpdateResponse,
+@app.post('/v2/commentaries/{source_name}', response_model=schemas.CommentaryCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Commentaries"])
@@ -620,7 +620,7 @@ def get_dictionary_word(source_name: schemas.TableNamePattern, search_word: str 
         word_list_only=word_list_only, details=details, active=active, skip=skip, limit=limit)
 
 
-@app.post('/v2/dictionaries/{source_name}', response_model=schemas.DictionaryUpdateResponse,
+@app.post('/v2/dictionaries/{source_name}', response_model=schemas.DictionaryCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Dictionaries"])
@@ -670,7 +670,7 @@ def get_infographic(source_name: schemas.TableNamePattern, book_code: schemas.Bo
     return crud.get_infographics(db_, source_name, book_code, title,
         active=active, skip = skip, limit = limit)
 
-@app.post('/v2/infographics/{source_name}', response_model=schemas.InfographicUpdateResponse,
+@app.post('/v2/infographics/{source_name}', response_model=schemas.InfographicCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Infographics"])
@@ -720,7 +720,7 @@ def get_bible_video(source_name: schemas.TableNamePattern, book_code: schemas.Bo
         skip=skip, limit=limit)
 
 
-@app.post('/v2/biblevideos/{source_name}', response_model=schemas.BibleVideoUpdateResponse,
+@app.post('/v2/biblevideos/{source_name}', response_model=schemas.BibleVideoCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bible Videos"])
