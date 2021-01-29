@@ -159,7 +159,7 @@ def test(db_: Session = Depends(get_db)):
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}},  status_code=200,
     tags=["Contents Types"])
-def get_contents(content_type: str = Query(None), skip: int = Query(0, ge=0),
+def get_contents(content_type: str = Query(None, example="bible"), skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
     '''fetches all the contents types supported and their details
     * skip=n: skips the first n objects in return list
@@ -192,8 +192,8 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
     response_model=List[schemas.LanguageResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Languages"])
-def get_language(language_code : schemas.LangCodePattern = Query(None),
-    language_name: str = Query(None),
+def get_language(language_code : schemas.LangCodePattern = Query(None, example="hin"),
+    language_name: str = Query(None, example="hindi"),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
     '''fetches all the languages supported in the DB, their code and other details.
     if query parameter, langauge_code is provided, returns details of that language if pressent
@@ -239,9 +239,10 @@ def edit_language(lang_obj: schemas.LanguageEdit = Body(...), db_: Session = Dep
     response_model=List[schemas.LicenseResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Licenses"])
-def get_license(license_code : schemas.LicenseCodePattern=Query(None), #pylint: disable=too-many-arguments
-    license_name: str=Query(None),
-    permission: schemas.LicensePermisssion=Query(None), active: bool=Query(True),
+def get_license(license_code : schemas.LicenseCodePattern=Query(None, example="CC-BY-SA"), #pylint: disable=too-many-arguments
+    license_name: str=Query(None, example="Creative Commons License"),
+    permission: schemas.LicensePermisssion=Query(None, example="Commercial_use"),
+    active: bool=Query(True),
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
     '''fetches all the licenses supported in the DB, their code and other details.
     if query parameter, code is provided, returns details of that language if pressent
@@ -282,9 +283,9 @@ def edit_license(license_obj: schemas.LicenseEdit = Body(...), db_: Session = De
     response_model=List[schemas.VersionResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Versions"])
-def get_version(version_abbreviation : schemas.VersionPattern = Query(None), #pylint: disable=too-many-arguments
-    version_name: str = Query(None), revision : int = Query(None),
-    metadata: schemas.MetaDataPattern = Query(None),
+def get_version(version_abbreviation : schemas.VersionPattern = Query(None, example="KJV"), #pylint: disable=too-many-arguments
+    version_name: str = Query(None, example="King James Version"), revision : int = Query(None),
+    metadata: schemas.MetaDataPattern = Query(None, example='{"publishedIn":"1611"}'),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
     '''Fetches all versions and their details.
     If param versionAbbreviation is present, returns details of that version if pressent
@@ -334,11 +335,13 @@ def edit_version(ver_obj: schemas.VersionEdit = Body(...), db_: Session = Depend
     response_model=List[schemas.SourceResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Sources"])
-def get_source(content_type: str = None, version_abbreviation: schemas.VersionPattern = None, #pylint: disable=too-many-arguments
-    revision: int = None, language_code: schemas.LangCodePattern =None,
-    license_code: schemas.LicenseCodePattern=None,
-    metadata: schemas.MetaDataPattern = Query(None), active: bool = True,
-    latest_revision: bool = True,
+def get_source(content_type: str=Query(None, example="commentary"), #pylint: disable=too-many-arguments
+    version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
+    revision: int=Query(None, example=1),
+    language_code: schemas.LangCodePattern=Query(None,example="eng"),
+    license_code: schemas.LicenseCodePattern=Query(None,example="ISC"),
+    metadata: schemas.MetaDataPattern=Query(None, example='{"otherName": "KJBC, King James Bible Commentaries"}'),
+    active: bool = True, latest_revision: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
     '''Fetches all sources and their details.
     If one or more optional params are present, returns a filtered result if pressent
@@ -400,8 +403,9 @@ def edit_source(source_obj: schemas.SourceEdit = Body(...), db_: Session = Depen
     response_model=List[schemas.BibleBook],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Lookups"])
-def get_bible_book(book_id: int = None, book_code: schemas.BookCodePattern = None, #pylint: disable=too-many-arguments
-    book_name: str = None,
+def get_bible_book(book_id: int=Query(None, example=67), #pylint: disable=too-many-arguments
+    book_code: schemas.BookCodePattern=Query(None,example='rev'),
+    book_name: str=Query(None, example="Revelation"),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
     ''' returns the list of book ids, codes and names.
     If any of the query params are provided the details of corresponding book
@@ -456,7 +460,8 @@ def edit_bible_book(source_name: schemas.TableNamePattern=Path(..., example="hin
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
 def get_available_bible_book(source_name: schemas.TableNamePattern=Path(..., #pylint: disable=too-many-arguments
     example="hin_IRV_1_bible"),
-    book_code: schemas.BookCodePattern=None, content_type: schemas.BookContentType=None,
+    book_code: schemas.BookCodePattern=Query(None, example="mat"),
+    content_type: schemas.BookContentType=Query(None),
     versification: bool=False, active: bool=True,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
     '''Fetches all the books available(has been uploaded) in the specified bible
@@ -481,8 +486,10 @@ def get_available_bible_book(source_name: schemas.TableNamePattern=Path(..., #py
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
 def get_bible_verse(source_name: schemas.TableNamePattern=Path(..., example="hin_IRV_1_bible"), #pylint: disable=too-many-arguments
-    book_code: schemas.BookCodePattern=None,  chapter: int=None, verse: int=None,
-    last_verse: int=None, search_phrase: str=None, active: bool=True,
+    book_code: schemas.BookCodePattern=Query(None, example="mat"),
+    chapter: int=Query(None, example=1), verse: int=Query(None, example=1),
+    last_verse: int=Query(None, example=15), search_phrase: str=Query(None, example='सन्‍तान'),
+    active: bool=True,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
     ''' Fetches the cleaned contents of bible, within a verse range, if specified.
     This API could be used for fetching,
@@ -539,9 +546,9 @@ def edit_audio_bible(source_name: schemas.TableNamePattern=Path(..., example="hi
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Commentaries"])
 def get_commentary(source_name: schemas.TableNamePattern=Path(..., example="eng_bbc_1_commentary"),#pylint: disable=too-many-arguments
-    book_code: schemas.BookCodePattern = None,
-    chapter: int = Query(None, ge=-1), verse: int = Query(None, ge=-1),
-    last_verse: int = Query(None, ge=-1), active: bool = True,
+    book_code: schemas.BookCodePattern=Query(None, example="PSA"),
+    chapter: int = Query(None, example=23, ge=-1), verse: int = Query(None, example=1, ge=-1),
+    last_verse: int = Query(None, example=3, ge=-1), active: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
     '''Fetches commentries under the specified source.
     Using the params bookCode, chapter, and verse the result set can be filtered as per need,
@@ -601,9 +608,11 @@ def edit_commentary(source_name: schemas.TableNamePattern=Path(..., example="eng
     response_model=List[schemas.DictionaryWordResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Dictionaries"])
-def get_dictionary_word(source_name: schemas.TableNamePattern=Path(..., #pylint: disable=too-many-arguments
-    example="grk_TW_1_dictionary"), search_word: str = None,
-    exact_match: bool=False, word_list_only: bool=False, details:str=None, active: bool=True,
+def get_dictionary_word( #pylint: disable=too-many-arguments
+    source_name: schemas.TableNamePattern=Path(...,example="grk_TW_1_dictionary"),
+    search_word: str=Query(None, example="sacrifice"),
+    exact_match: bool=False, word_list_only: bool=False,
+    details: schemas.MetaDataPattern=Query(None, example='{"type":"place"}'), active: bool=True,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
     '''fetches list of dictionary words and all available details about them.
     Using the searchIndex appropriately, it is possible to get
@@ -663,9 +672,10 @@ def edit_dictionary_word(source_name: schemas.TableNamePattern=Path(...,
     response_model=List[schemas.InfographicResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Infographics"])
-def get_infographic(source_name:schemas.TableNamePattern=Path(...,example="hin_IRV_1_infographic"),#pylint: disable=too-many-arguments
-    book_code: schemas.BookCodePattern=None,
-    title: str=None, active: bool=True,
+def get_infographic(#pylint: disable=too-many-arguments
+    source_name:schemas.TableNamePattern=Path(...,example="hin_IRV_1_infographic"),
+    book_code: schemas.BookCodePattern=Query(None, example="mrk"),
+    title: str=Query(None, example="Tribes of Israel"), active: bool=True,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
     '''Fetches the infographics. Can use, bookCode and/or title to filter the results
     * skip=n: skips the first n objects in return list
@@ -714,9 +724,11 @@ def edit_infographics(source_name: schemas.TableNamePattern=Path(...,
     response_model=List[schemas.BibleVideo],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bible Videos"])
-def get_bible_video(source_name:schemas.TableNamePattern=Path(...,example="hin_TBP_1_bible_video"),#pylint: disable=too-many-arguments
-    book_code: schemas.BookCodePattern=None,
-    title: str=None, theme: str=None, active: bool=True,
+def get_bible_video(#pylint: disable=too-many-arguments
+    source_name:schemas.TableNamePattern=Path(...,example="hin_TBP_1_bible_video"),
+    book_code: schemas.BookCodePattern=Query(None, example="jud"),
+    title: str=Query(None, example="Overview: Ruth"),
+    theme: str=Query(None, example="Old Testament"), active: bool=True,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
     '''Fetches the Bible video details and URL.
     Can use the optional query params book, title and theme to filter the results
