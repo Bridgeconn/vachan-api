@@ -23,7 +23,7 @@ class ErrorResponse(BaseModel):
 
 class ContentTypeCreate(BaseModel):
     '''Input object to ceate a new content type'''
-    contentType : constr(regex=r"^[^0-9\s]+$") = Field(...,example="commentary")
+    contentType : constr(regex=r"^[a-z]+$") = Field(...,example="commentary")
 
 class ContentType(BaseModel):
     '''output object for content types'''

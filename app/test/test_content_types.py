@@ -22,7 +22,7 @@ def test_get_notavailable_content_type():
 
 def test_post_default():
     '''positive test case, checking for correct return object'''
-    data = {"contentType":"Bible"}
+    data = {"contentType":"altbible"}
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
     print(response.json())
@@ -32,7 +32,7 @@ def test_post_default():
 
 def test_post_incorrectdatatype1():
     '''the input data object should a json with "contentType" key within it'''
-    data = "Bible"
+    data = "bible"
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
