@@ -961,7 +961,7 @@ def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, ver
         ref_combined = {}
         ref_combined['verseText'] = res.verseText
         ref = { "bible": source_name,
-                "book": res.book,
+                "book": res.book.bookCode,
                 "chapter": res.chapter,
                 "verseNumber":res.verseNumber}
         ref_combined['reference'] = ref
