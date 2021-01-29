@@ -147,7 +147,7 @@ db_models.Base.metadata.create_all(bind=engine)
 
 @app.get('/', response_model=schemas.NormalResponse, status_code=200)
 def test(db_: Session = Depends(get_db)):
-    '''tests if app is running and the DB connection'''
+    '''tests if app is running and the DB connection is active'''
     db_.query(db_models.Language).first()
     return {"message": "App is up and running"}
 
@@ -174,6 +174,8 @@ def get_contents(content_type: str = Query(None, example="bible"), skip: int = Q
     status_code=201, tags=["Contents Types"])
 def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_db)):
     ''' Creates a new content type.
+    Naming conventions to be followed
+    - Use only english alphabets in lower case
     Additional operations required:
         1. Add corresponding table creation functions to Database.
         2. Define input, output resources and all required APIs to handle this content'''
@@ -727,8 +729,8 @@ def edit_infographics(source_name: schemas.TableNamePattern=Path(...,
     response_model=List[schemas.BibleVideo],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bible Videos"])
-def get_bible_video(#pylint: disable=too-many-arguments
-    source_name:schemas.TableNamePattern=Path(...,example="eng_TBP_1_bible_video"),
+def get_biblevideo(#pylint: disable=too-many-arguments
+    source_name:schemas.TableNamePattern=Path(...,example="eng_TBP_1_biblevideo"),
     book_code: schemas.BookCodePattern=Query(None, example="sng"),
     title: str=Query(None, example="Overview: song of songs"),
     theme: str=Query(None, example="Old Testament"), active: bool=True,
@@ -737,7 +739,7 @@ def get_bible_video(#pylint: disable=too-many-arguments
     Can use the optional query params book, title and theme to filter the results
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n'''
-    log.info('In get_bible_video')
+    log.info('In get_biblevideo')
     log.debug('source_name: %s, book_code: %s, title: %s, theme: %s, skip: %s, limit: %s',
         source_name, book_code, title, theme, skip, limit)
     return crud.get_bible_videos(db_, source_name, book_code, title, theme, active,
@@ -748,10 +750,10 @@ def get_bible_video(#pylint: disable=too-many-arguments
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bible Videos"])
-def add_bible_video(source_name:schemas.TableNamePattern=Path(...,example="eng_TBP_1_bible_video"),
+def add_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="eng_TBP_1_biblevideo"),
     videos: List[schemas.BibleVideoUpload] = Body(...), db_: Session = Depends(get_db)):
     '''Uploads a list of bible video links and details.'''
-    log.info('In add_bible_video')
+    log.info('In add_biblevideo')
     log.debug('source_name: %s, videos: %s',source_name, videos)
     return {'message': "Bible videos added successfully",
         "data": crud.upload_bible_videos(db_=db_, source_name=source_name,
@@ -762,11 +764,11 @@ def add_bible_video(source_name:schemas.TableNamePattern=Path(...,example="eng_T
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bible Videos"])
-def edit_bible_video(source_name:schemas.TableNamePattern=Path(...,example="eng_TBP_1_bible_video"),
+def edit_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="eng_TBP_1_biblevideo"),
     videos: List[schemas.BibleVideoEdit] = Body(...),
     db_: Session = Depends(get_db)):
     ''' Changes the selected rows of bible videos table. each row identified by '''
-    log.info('In edit_bible_video')
+    log.info('In edit_biblevideo')
     log.debug('source_name: %s, videos: %s',source_name, videos)
     return {'message': "Bible videos updated successfully",
         "data": crud.update_bible_videos(db_=db_, source_name=source_name,

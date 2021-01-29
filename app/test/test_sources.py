@@ -154,7 +154,7 @@ def test_post_wrong_content():
 
     # '''Negative test with not a valid license from license table'''
     data = {
-        "contentType": "infographics",
+        "contentType": "infographic",
         "language": "hin",
         "version": "TTT",
         "revision": 1,
@@ -302,7 +302,7 @@ def test_get_after_adding_data():
     }
     add_version(version_data)
     data = {
-        "contentType": "infographics",
+        "contentType": "infographic",
         "version": "TTT",
         "year": 2020
     }

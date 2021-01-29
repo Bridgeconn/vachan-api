@@ -130,7 +130,7 @@ class Infographic(): # pylint: disable=too-few-public-methods
 
 class BibleVideo(): # pylint: disable=too-few-public-methods
     '''Corresponds to the dynamically created bible videos tables in vachan Db(postgres)'''
-    bibleVideoId  = Column('bible_video_id', Integer, primary_key=True, autoincrement=True)
+    bibleVideoId  = Column('biblevideo_id', Integer, primary_key=True, autoincrement=True)
     title = Column('title', String, unique=True)
     theme = Column('theme', String)
     description = Column('description', String)
@@ -222,10 +222,10 @@ def create_dynamic_table(source_name, content_type):
     elif content_type == 'dictionary':
         dynamicTables[source_name] = type(
             source_name,(Dictionary, Base,),{"__tablename__": source_name})
-    elif content_type == 'infographics':
+    elif content_type == 'infographic':
         dynamicTables[source_name] = type(
             source_name,(Infographic, Base,),{"__tablename__": source_name})
-    elif content_type == 'bible_video':
+    elif content_type == 'biblevideo':
         dynamicTables[source_name] = type(
             source_name,(BibleVideo, Base,),{"__tablename__": source_name})
     else:

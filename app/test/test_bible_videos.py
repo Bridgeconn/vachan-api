@@ -24,11 +24,11 @@ def check_post(data: list):
     '''prior steps and post attempt, without checking the response'''
     version_data = {
         "versionAbbreviation": "TTT",
-        "versionName": "test version for bible_video",
+        "versionName": "test version for biblevideo",
     }
     add_version(version_data)
     source_data = {
-        "contentType": "bible_video",
+        "contentType": "biblevideo",
         "language": "mar",
         "version": "TTT",
         "year": 1999,
@@ -127,7 +127,7 @@ def test_post_incorrect_data():
     response = client.post(UNIT_URL+source_name, headers=headers, json=data)
     assert_input_validation_error(response)
 
-    source_name1 = source_name.replace('bible_video', 'video')
+    source_name1 = source_name.replace('biblevideo', 'video')
     data = []
     response = client.post(UNIT_URL+source_name1, headers=headers, json=data)
     assert response.status_code == 404
@@ -193,7 +193,7 @@ def test_get_incorrect_data():
     response = client.get(UNIT_URL+source_name)
     assert_input_validation_error(response)
 
-    source_name = 'mar_TTT_1_bible_video'
+    source_name = 'mar_TTT_1_biblevideo'
     response = client.get(UNIT_URL+source_name+'?book_code=61')
     assert_input_validation_error(response)
 
