@@ -230,7 +230,7 @@ class VersionCreate(BaseModel):
                 "versionAbbreviation": "KJV",
                 "versionName": "King James Version",
                 "revision": 1,
-                "metaData": {"publishedIn": 1611}
+                "metaData": {"publishedIn": "1611"}
             }
         }
 
@@ -252,7 +252,7 @@ class VersionResponse(BaseModel):
                 "versionAbbreviation": "KJV",
                 "versionName": "King James Version",
                 "revision": 1,
-                "metaData": {"publishedIn": 1611}
+                "metaData": {"publishedIn": "1611"}
             }
         }
 
@@ -281,7 +281,7 @@ class VersionEdit(BaseModel):
                 "versionAbbreviation": "KJV",
                 "versionName": "King James Version",
                 "revision": 1,
-                "metaData": {"publishedIn": 1611}
+                "metaData": {"publishedIn": "1611"}
             }
         }
 
@@ -301,13 +301,13 @@ class SourceCreate(BaseModel):
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "contentType": "bible",
+                "contentType": "commentary",
                 "language": "eng",
                 "version": "KJV",
                 "revision": 1,
                 "year": 2020,
                 "license": "ISC",
-                "metaData": {"otherName": "KJB, King James Bible"}
+                "metaData": {"otherName": "KJBC, King James Bible Commentaries"}
             }
         }
 
@@ -328,14 +328,14 @@ class SourceResponse(BaseModel):
         # '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "sourceName": "eng_KJV_1_bible",
-                "contentType": "bible",
-                "language": "eng",
-                "version": "KJV",
+                "sourceName": "eng_KJV_1_commentary",
+                "contentType": {},
+                "language": {},
+                "version": {},
                 "revision": 1,
                 "year": 2020,
-                "license": "ISC",
-                "metaData": {"otherName": "KJB, King James Bible"},
+                "license": {},
+                "metaData": {"otherName": "KJBC, King James Bible Commentaries"},
                 "active": True
             }
         }
@@ -365,15 +365,14 @@ class SourceEdit(BaseModel):
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "sourceName": "eng_KJV_1_bible",
-                "contentType": "bible",
+                "sourceName": "eng_KJV_1_commentary",
                 "language": "eng",
                 "version": "KJV",
                 "revision": 1,
                 "year": 2020,
                 "license": "ISC",
-                "metaData": {"otherName": "KJB, King James Bible"},
-                "active": True
+                "metaData": {"otherName": "KJBC, King James Bible Commentaries"},
+                "active": False
             }
         }
 
@@ -470,7 +469,7 @@ class AudioBibleEdit(BaseModel):
 class Reference(BaseModel):
     '''Response object of bible refernce'''
     bible : TableNamePattern = None
-    book: BibleBook
+    book: BookCodePattern = None
     chapter: int
     verseNumber: int
     verseNumberEnd: int = None
@@ -517,7 +516,14 @@ class BibleBookContent(BaseModel):
                     "verseNumber": 1},
                     {},{}],
                 "USFM": "\\id MAT\n\\c 1\n\\p\n\\v 1 इब्राहीम की सन्‍तान, दाऊद की ...",
-                "JSON": {"book":{"bookCode":"MAT"},"chapters":[{},{},{}]},
+                "JSON": { "book": { "bookCode": "MAT" },
+                      "chapters": [
+                            {"chapterNumber": "1",
+                             "contents": [ {
+                                "verseNumber": "1",
+                                "verseText": "इब्राहीम की सन्‍तान, दाऊद की ..."}]}
+                        ]
+                    },
                 "AudioBible": {
                     "name": "XXX audio bible: Gospel series",
                     "url": "http://someplace.come/resoucesid",
@@ -547,7 +553,14 @@ class BibleBookUpload(BaseModel):
         schema_extra = {
             "example": {
                 "USFM": "\\id MAT\n\\c 1\n\\p\n\\v 1 इब्राहीम की सन्‍तान, दाऊद की ...",
-                "JSON": {"book":{"bookCode":"MAT"},"chapters":[{},{},{}]}
+                "JSON": { "book": { "bookCode": "MAT" },
+                  "chapters": [
+                        {"chapterNumber": "1",
+                         "contents": [ {
+                            "verseNumber": "1",
+                            "verseText": "इब्राहीम की सन्‍तान, दाऊद की ..."}]}
+                    ]
+                }
             }
         }
 
@@ -577,9 +590,18 @@ class BibleBookEdit(BaseModel):
         schema_extra = {
             "example": {
                 "bookCode": "mat",
-                "USFM": "\\id MAT\n\\c 1\n\\p\n\\v 1 इब्राहीम की सन्‍तान, दाऊद की ...",
-                "JSON": {"book":{"bookCode":"MAT"},"chapters":[{},{},{}]},
-                "active": False
+                "USFM": "\\id MAT\n\\c 1\n\\p\n\\v 1 इब्राहीम की सन्‍तान, दाऊद की सन्‍तान,"+\
+                    "यीशु मसीह की वंशावली ।",
+                "JSON": { "book": { "bookCode": "MAT" },
+                  "chapters": [
+                        {"chapterNumber": "1",
+                         "contents": [ {
+                            "verseNumber": "1",
+                            "verseText": "इब्राहीम की सन्‍तान, दाऊद की सन्‍तान, "+\
+                                "यीशु मसीह की वंशावली ।"}]}
+                    ]
+                },
+                "active": True
             }
         }
 
@@ -707,8 +729,8 @@ class CommentaryEdit(BaseModel):
                 "chapter": 10,
                 "verseStart": 1,
                 "verseEnd": 7,
-                "commentary": "It was customary at the time ...",
-                "active": True
+                "commentary": "One of the practices of that time was ...",
+                "active": False
             }
         }
 
@@ -757,8 +779,8 @@ class DictionaryWordCreate(BaseModel):
         schema_extra = {
             "example": {
                 "word": "Adam",
-                "details": {"type": "name",
-                    "definition": "The first man God created(also, Human in Hebrew)"},
+                "details": {"type": "person",
+                    "definition": "The first man God created"},
                 "active": True
             }
         }
@@ -773,8 +795,10 @@ class DictionaryWordEdit(BaseModel):
         schema_extra = {
             "example": {
                 "word": "Adam",
-                "details": {"type": "name",
-                    "definition": "The first man God created(also, Human in Hebrew)"},
+                "details": {"type": "person name",
+                    "definition": 'The first man God created.'+\
+                    'The word adam is also used in the Bible as a pronoun, individually as '+\
+                    '"a human" and in a collective sense as "mankind".'},
                 "active": True
             }
         }
@@ -792,8 +816,8 @@ class DictionaryWordResponse(BaseModel):
         schema_extra = {
             "example": {
                 "word": "Adam",
-                "details": {"type": "name",
-                    "definition": "The first man God created(also, Human in Hebrew)"},
+                "details": {"type": "person",
+                    "definition": "The first man God created."},
                 "active": True
             }
         }
@@ -837,8 +861,8 @@ class InfographicEdit(BaseModel):
             "example": {
                 "bookCode": "exo",
                 "title": "Ark of Covenant",
-                "infographicLink": "http://someplace.com/resoucesid",
-                "active": True
+                "infographicLink": "http://someOtherPlace.com/resoucesid",
+                "active": False
             }
         }
 
@@ -855,7 +879,7 @@ class InfographicResponse(BaseModel):
         # '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "bookCode": "exo",
+                "book": {"bookId":2, "bookCode":"exo", "bookName":"exodus"},
                 "title": "Ark of Covenant",
                 "infographicLink": "http://someplace.com/resoucesid",
                 "active": True
@@ -919,17 +943,17 @@ class BibleVideoUpload(BaseModel):
     class Config: # pylint: disable=too-few-public-methods
         '''display example value in API documentation'''
         schema_extra = {
-            "example": [{
+            "example": {
                 "title": "Overview: song of songs",
                 "books": ["sng"],
                 "videoLink": "https://someplace.com/resoucesid",
                 "description": "Watch our overview video on the book of Song of Songs,"+\
                     "which breaks down the literary design of the book and "+\
                     "its flow of thought.",
-                "theme": "Old Testament, Poetic Book",
+                "theme": "Old Testament",
                 "active": True
 
-            }]
+            }
         }
 
 
@@ -944,14 +968,14 @@ class BibleVideoEdit(BaseModel):
     class Config: # pylint: disable=too-few-public-methods
         '''display example value in API documentation'''
         schema_extra = {
-            "example": [{
+            "example": {
                 "title": "Overview: song of songs",
                 "books": ["sng"],
-                "videoLink": "https://someplace.com/resoucesid",
+                "videoLink": "https://anotherplace.com/resoucesid",
                 "description": "Watch our overview video on the book of Song of Songs,"+\
                     "which breaks down the literary design of the book and "+\
                     "its flow of thought.",
                 "theme": "Old Testament, Poetic Book",
                 "active": True
-            }]
+            }
         }

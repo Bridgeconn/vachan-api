@@ -340,7 +340,8 @@ def get_source(content_type: str=Query(None, example="commentary"), #pylint: dis
     revision: int=Query(None, example=1),
     language_code: schemas.LangCodePattern=Query(None,example="eng"),
     license_code: schemas.LicenseCodePattern=Query(None,example="ISC"),
-    metadata: schemas.MetaDataPattern=Query(None, example='{"otherName": "KJBC, King James Bible Commentaries"}'),
+    metadata: schemas.MetaDataPattern=Query(None,
+        example='{"otherName": "KJBC, King James Bible Commentaries"}'),
     active: bool = True, latest_revision: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
     '''Fetches all sources and their details.
@@ -545,9 +546,10 @@ def edit_audio_bible(source_name: schemas.TableNamePattern=Path(..., example="hi
     response_model=List[schemas.CommentaryResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Commentaries"])
-def get_commentary(source_name: schemas.TableNamePattern=Path(..., example="eng_bbc_1_commentary"),#pylint: disable=too-many-arguments
-    book_code: schemas.BookCodePattern=Query(None, example="PSA"),
-    chapter: int = Query(None, example=23, ge=-1), verse: int = Query(None, example=1, ge=-1),
+def get_commentary(#pylint: disable=too-many-arguments
+    source_name: schemas.TableNamePattern=Path(..., example="eng_BBC_1_commentary"),
+    book_code: schemas.BookCodePattern=Query(None, example="1ki"),
+    chapter: int = Query(None, example=10, ge=-1), verse: int = Query(None, example=1, ge=-1),
     last_verse: int = Query(None, example=3, ge=-1), active: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
     '''Fetches commentries under the specified source.
@@ -569,7 +571,7 @@ def get_commentary(source_name: schemas.TableNamePattern=Path(..., example="eng_
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Commentaries"])
-def add_commentary(source_name : schemas.TableNamePattern=Path(..., example="eng_bbc_1_commentary"),
+def add_commentary(source_name : schemas.TableNamePattern=Path(...,example="eng_BBC_1_commentary"),
     commentaries: List[schemas.CommentaryCreate] = Body(...), db_: Session = Depends(get_db)):
     '''Uploads a list of commentaries.
     * Duplicate commentries are allowed for same verses,
@@ -592,7 +594,7 @@ def add_commentary(source_name : schemas.TableNamePattern=Path(..., example="eng
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Commentaries"])
-def edit_commentary(source_name: schemas.TableNamePattern=Path(..., example="eng_bbc_1_commentary"),
+def edit_commentary(source_name: schemas.TableNamePattern=Path(..., example="eng_BBC_1_commentary"),
     commentaries: List[schemas.CommentaryEdit] = Body(...), db_: Session = Depends(get_db)):
     ''' Changes the commentary field to the given value in the row selected using
     book, chapter, verseStart and verseEnd values'''
@@ -605,14 +607,15 @@ def edit_commentary(source_name: schemas.TableNamePattern=Path(..., example="eng
 # # ########### Dictionary ###################
 
 @app.get('/v2/dictionaries/{source_name}',
+    response_model_exclude_unset=True,
     response_model=List[schemas.DictionaryWordResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Dictionaries"])
 def get_dictionary_word( #pylint: disable=too-many-arguments
-    source_name: schemas.TableNamePattern=Path(...,example="grk_TW_1_dictionary"),
-    search_word: str=Query(None, example="sacrifice"),
+    source_name: schemas.TableNamePattern=Path(...,example="eng_TW_1_dictionary"),
+    search_word: str=Query(None, example="Adam"),
     exact_match: bool=False, word_list_only: bool=False,
-    details: schemas.MetaDataPattern=Query(None, example='{"type":"place"}'), active: bool=True,
+    details: schemas.MetaDataPattern=Query(None, example='{"type":"person"}'), active: bool=True,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
     '''fetches list of dictionary words and all available details about them.
     Using the searchIndex appropriately, it is possible to get
@@ -636,8 +639,8 @@ def get_dictionary_word( #pylint: disable=too-many-arguments
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Dictionaries"])
-def add_dictionary_word(source_name : schemas.TableNamePattern=Path(...,
-    example="grk_TW_1_dictionary"),
+def add_dictionary_word(
+    source_name : schemas.TableNamePattern=Path(..., example="eng_TW_1_dictionary"),
     dictionary_words: List[schemas.DictionaryWordCreate] = Body(...),
     db_: Session = Depends(get_db)):
     ''' uploads dictionay words and their details. 'Details' should be of JSON datatype and  have
@@ -653,8 +656,8 @@ def add_dictionary_word(source_name : schemas.TableNamePattern=Path(...,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Dictionaries"])
-def edit_dictionary_word(source_name: schemas.TableNamePattern=Path(...,
-    example="grk_TW_1_dictionary"),
+def edit_dictionary_word(
+    source_name: schemas.TableNamePattern=Path(..., example="eng_TW_1_dictionary"),
     dictionary_words: List[schemas.DictionaryWordEdit] = Body(...),
     db_: Session = Depends(get_db)):
     '''Updates the given fields mentioned in details object, of the specifed word'''
@@ -674,8 +677,8 @@ def edit_dictionary_word(source_name: schemas.TableNamePattern=Path(...,
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Infographics"])
 def get_infographic(#pylint: disable=too-many-arguments
     source_name:schemas.TableNamePattern=Path(...,example="hin_IRV_1_infographic"),
-    book_code: schemas.BookCodePattern=Query(None, example="mrk"),
-    title: str=Query(None, example="Tribes of Israel"), active: bool=True,
+    book_code: schemas.BookCodePattern=Query(None, example="exo"),
+    title: str=Query(None, example="Ark of Covenant"), active: bool=True,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
     '''Fetches the infographics. Can use, bookCode and/or title to filter the results
     * skip=n: skips the first n objects in return list
@@ -725,9 +728,9 @@ def edit_infographics(source_name: schemas.TableNamePattern=Path(...,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bible Videos"])
 def get_bible_video(#pylint: disable=too-many-arguments
-    source_name:schemas.TableNamePattern=Path(...,example="hin_TBP_1_bible_video"),
-    book_code: schemas.BookCodePattern=Query(None, example="jud"),
-    title: str=Query(None, example="Overview: Ruth"),
+    source_name:schemas.TableNamePattern=Path(...,example="eng_TBP_1_bible_video"),
+    book_code: schemas.BookCodePattern=Query(None, example="sng"),
+    title: str=Query(None, example="Overview: song of songs"),
     theme: str=Query(None, example="Old Testament"), active: bool=True,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
     '''Fetches the Bible video details and URL.
@@ -745,7 +748,7 @@ def get_bible_video(#pylint: disable=too-many-arguments
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bible Videos"])
-def add_bible_video(source_name:schemas.TableNamePattern=Path(...,example="hin_TBP_1_bible_video"),
+def add_bible_video(source_name:schemas.TableNamePattern=Path(...,example="eng_TBP_1_bible_video"),
     videos: List[schemas.BibleVideoUpload] = Body(...), db_: Session = Depends(get_db)):
     '''Uploads a list of bible video links and details.'''
     log.info('In add_bible_video')
@@ -759,7 +762,7 @@ def add_bible_video(source_name:schemas.TableNamePattern=Path(...,example="hin_T
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bible Videos"])
-def edit_bible_video(source_name:schemas.TableNamePattern=Path(...,example="hin_TBP_1_bible_video"),
+def edit_bible_video(source_name:schemas.TableNamePattern=Path(...,example="eng_TBP_1_bible_video"),
     videos: List[schemas.BibleVideoEdit] = Body(...),
     db_: Session = Depends(get_db)):
     ''' Changes the selected rows of bible videos table. each row identified by '''
