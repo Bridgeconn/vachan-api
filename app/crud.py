@@ -885,7 +885,13 @@ def get_bible_versification(db_, source_name, book_code, active=True):
     query = query.options(defer(model_cls.verseText))
     query = query.filter(model_cls.book.has(bookCode = book_code.lower()),
         model_cls.active == active )
-    return query.all()
+    res_list = []
+    for res in query.all():
+        res = res.__dict__
+        res['bible'] = source_name
+        res['book'] = book_code
+        res_list.append(res)
+    return res_list
 
 
 def get_available_bible_books(db_, source_name, book_code=None, content_type=None, #pylint: disable=too-many-arguments, disable=too-many-locals
