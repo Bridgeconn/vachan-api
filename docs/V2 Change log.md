@@ -101,8 +101,23 @@ But we can have a wide variety of lexical collections with varying informations 
 
 ### bible_video table
 
-* `bible_video` is made an entry in contentTypes table
+* `biblevideo` is made an entry in contentTypes table
 * New source to be added to sources table and new table to be created for every language, at least(if version name and revision are same)
 * removes the field language from the table
 * field `books` has datatype array of strings, instead of comma separated text. (From the python code it is ensured that it accept only valid book codes, becasue array of FKs is not possible)
 * `title` field is made unique(for one table. Repetition is possible with different language, version or revision) and is used to identify rows uniquely for updation. `title` field cannot be altered via API.
+
+
+### infographic table
+
+* `infographic` made an entry in content types table and they are now required to be entered in sources table providing the langugage, version,  and revision details. Thus the table naming will be in uniformity with other tables in lang_ver_rev_contenttype pattern
+* `title`, `book` combination is made unique.
+* `file_name` field is changed to a `url` field requiring it to a complete path(can use file://, http:// or other protocols)
+
+### bible, bible_cleaned, bible_audio tables
+
+* `footnotes` and `cross-ref` filed are removed from `bible_cleaned` tables. As they are not used anywhere now. If required, it can be added as separate tables related to same source, avoiding the sparse fileds in bible_cleaned tables
+* `active` fields are added enabling book wise de-activation in bible, bible_cleaned tables
+* `bible_audio` tables are made dynamic tables associated with each of the bible sources like `bible_cleaned` tables, instead of the single predefined table before. But POST and PUT operations are defined separatelt for this table enabling bulk updates from CSVs as before.
+
+
