@@ -608,6 +608,8 @@ def createAssignments():
 	projectId = req["projectId"]
 	books = req["books"]
 	# action = req["action"]
+	if not isinstance(books, list):
+		return '{"success":false, "message":"books expects an array of book codes"}'
 	connection = get_db()
 	cursor = connection.cursor()
 	cursor.execute("select * from autographamt_assignments where user_id=%s and project_id=%s", (
@@ -622,8 +624,12 @@ def createAssignments():
 			values (%s, %s, %s)", (books, userId, projectId))
 		connection.commit()
 		cursor.close()
-		return '{"success":true, "message":"User Role Assigned"}'
+		return '{"success":true, "message":"Books assigned"}'
 
+
+	old_books = rst[1].split('|')
+	updated_books = list(set(old_books+books))
+	books = [buk for buk in updated_books if buk != ""]
 	books = "|".join(books)
 	cursor.execute("update autographamt_assignments set books=%s where user_id=%s and \
 		project_id=%s", (books, userId, projectId))
@@ -651,7 +657,7 @@ def createAssignments():
 		print(e)
 		return '{"success":false, "message":'+str(e)+'}'
 
-	return '{"success":true, "message":"User Role Updated"}'
+	return '{"success":true, "message":"Books assigned"}'
 
 @app.route("/v1/autographamt/projects/assignments", methods=["DELETE"])
 def removeUserFromProject():
