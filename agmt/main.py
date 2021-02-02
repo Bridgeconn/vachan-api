@@ -606,10 +606,13 @@ def createAssignments():
 	req = request.get_json(True)
 	userId = req["userId"]
 	projectId = req["projectId"]
-	books = req["books"]
-	# action = req["action"]
+	input_books = req["books"]
+	action = req["action"]
+	books = input_books
 	if not isinstance(books, list):
 		return '{"success":false, "message":"books expects an array of book codes"}'
+	if action not in ['assign', 'unassign', 'add_user']:
+		return '{"success":false, "message": "action should be assign, unassign or add_user"}'
 	connection = get_db()
 	cursor = connection.cursor()
 	cursor.execute("select * from autographamt_assignments where user_id=%s and project_id=%s", (
@@ -617,20 +620,32 @@ def createAssignments():
 	))
 	rst = cursor.fetchone()
 
-	if not rst:
-
+	if action == "add_user" and rst is not None:
+		return '{"success":false, "message":"User already added to project"}'
+	if action == "add_user" and not rst:
 		books = "|".join(books)
 		cursor.execute("insert into autographamt_assignments (books, user_id, project_id) \
 			values (%s, %s, %s)", (books, userId, projectId))
 		connection.commit()
 		cursor.close()
-		return '{"success":true, "message":"Books assigned"}'
+		return_message = '{"success":true, "message":"User added"}'
 
+	if action in ["assign", "unassign"] and not rst:
+		return '{"success":false, "message":"User not added to project yet"}'
 
 	old_books = rst[1].split('|')
-	updated_books = list(set(old_books+books))
-	books = [buk for buk in updated_books if buk != ""]
-	books = "|".join(books)
+	if action == "assign":
+		updated_books = list(set(old_books+books))
+		books = [buk for buk in updated_books if buk != ""]
+		books = "|".join(books)
+		return_message = '{"success":true, "message":"Books assigned"}'
+	if action == "unassign":
+		for buk in books:
+			if buk not in old_books:
+				return '{"success":false, "message":"'+buk+' not in assigned list"}'
+			old_books.remove(buk)
+		books = "|".join(old_books)				
+		return_message = '{"success":true, "message":"Books unassigned"}'
 	cursor.execute("update autographamt_assignments set books=%s where user_id=%s and \
 		project_id=%s", (books, userId, projectId))
 	connection.commit()
@@ -643,9 +658,18 @@ def createAssignments():
 		cursor.close()
 		headers = {"api-key": sendinblue_key}
 		url = "https://api.sendinblue.com/v2.0/email"
-		body = '''Hello %s,<br/><br/>
-		Books %s has been assigned to you in project %s.<br/><br/>
-		AutographaMT'''%(name, books.replace('|', ", "), project)
+		if action == "assign":
+			body = '''Hello %s,<br/><br/>
+			Books %s, has been assigned to you in project, %s.<br/><br/>
+			AutographaMT'''%(name, ",".join(input_books), project)
+		if action == "unassign":
+			body = '''Hello %s,<br/><br/>
+			Books %s, has been removed from your assignment in project, %s.<br/><br/>
+			AutographaMT'''%(name, ",".join(input_books), project)
+		if action == "add_user":
+			body = '''Hello %s,<br/><br/>
+			You have been added to the project, %s.<br/><br/>
+			AutographaMT'''%(name, project)
 		payload = {
 			"to": {email: ""},
 			"from": ["noreply@autographamt.in", "Autographa MT"],
@@ -657,7 +681,7 @@ def createAssignments():
 		print(e)
 		return '{"success":false, "message":'+str(e)+'}'
 
-	return '{"success":true, "message":"Books assigned"}'
+	return return_message
 
 @app.route("/v1/autographamt/projects/assignments", methods=["DELETE"])
 def removeUserFromProject():
