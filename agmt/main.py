@@ -627,28 +627,27 @@ def createAssignments():
 		cursor.execute("insert into autographamt_assignments (books, user_id, project_id) \
 			values (%s, %s, %s)", (books, userId, projectId))
 		connection.commit()
-		cursor.close()
 		return_message = '{"success":true, "message":"User added"}'
 
 	if action in ["assign", "unassign"] and not rst:
 		return '{"success":false, "message":"User not added to project yet"}'
-
-	old_books = rst[1].split('|')
-	if action == "assign":
-		updated_books = list(set(old_books+books))
-		books = [buk for buk in updated_books if buk != ""]
-		books = "|".join(books)
-		return_message = '{"success":true, "message":"Books assigned"}'
-	if action == "unassign":
-		for buk in books:
-			if buk not in old_books:
-				return '{"success":false, "message":"'+buk+' not in assigned list"}'
-			old_books.remove(buk)
-		books = "|".join(old_books)				
-		return_message = '{"success":true, "message":"Books unassigned"}'
-	cursor.execute("update autographamt_assignments set books=%s where user_id=%s and \
-		project_id=%s", (books, userId, projectId))
-	connection.commit()
+	if action in ["assign", "unassign"]:
+		old_books = rst[1].split('|')
+		if action == "assign":
+			updated_books = list(set(old_books+books))
+			books = [buk for buk in updated_books if buk != ""]
+			books = "|".join(books)
+			return_message = '{"success":true, "message":"Books assigned"}'
+		if action == "unassign":
+			for buk in books:
+				if buk not in old_books:
+					return '{"success":false, "message":"'+buk+' not in assigned list"}'
+				old_books.remove(buk)
+			books = "|".join(old_books)				
+			return_message = '{"success":true, "message":"Books unassigned"}'
+		cursor.execute("update autographamt_assignments set books=%s where user_id=%s and \
+			project_id=%s", (books, userId, projectId))
+		connection.commit()
 	# send email notification
 	try:
 		cursor.execute("SELECT first_name, email_id from autographamt_users where user_id=%s",(userId,))
@@ -680,7 +679,6 @@ def createAssignments():
 	except Exception as e:
 		print(e)
 		return '{"success":false, "message":'+str(e)+'}'
-
 	return return_message
 
 @app.route("/v1/autographamt/projects/assignments", methods=["DELETE"])
