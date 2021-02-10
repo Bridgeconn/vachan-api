@@ -5,6 +5,9 @@ import json
 import sqlalchemy
 from sqlalchemy.orm import Session, defer, joinedload
 
+#pylint: disable=E0401
+#pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
+
 import db_models
 from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException
 
