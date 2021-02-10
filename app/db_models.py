@@ -1,5 +1,6 @@
 ''' Defines SQL Alchemy models for each Database Table'''
 
+from enum import Enum
 from sqlalchemy import Column, Integer, String, JSON, ARRAY
 from sqlalchemy import Boolean, ForeignKey, DateTime
 from sqlalchemy import UniqueConstraint
@@ -9,6 +10,15 @@ from sqlalchemy.ext.declarative import declared_attr
 
 from database import Base
 from custom_exceptions import GenericException
+
+class ContentTypeName(Enum):
+    '''The string literals used as value of ContentType field in ContentType
+    and also used to as the ending of respective database table names'''
+    bible = "bible"
+    commentary = "commentary"
+    infographic = "infographic"
+    biblevideo = "biblevideo"
+    dictionary = "dictionary"
 
 class ContentType(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table content_types in vachan DB(postgres)'''
@@ -206,7 +216,7 @@ class BibleContentCleaned(): # pylint: disable=too-few-public-methods
 dynamicTables = {}
 def create_dynamic_table(source_name, content_type):
     '''To map or create one dynamic table based on the content Type'''
-    if content_type == 'bible':
+    if content_type == ContentTypeName.bible.value:
         dynamicTables[source_name+'_audio'] = type(
             source_name+'_audio',(BibleAudio, Base,),
             {"__tablename__": source_name+'_audio'})
@@ -216,16 +226,16 @@ def create_dynamic_table(source_name, content_type):
         dynamicTables[source_name+'_cleaned'] = type(
             source_name+'_cleaned',(BibleContentCleaned, Base,),
             {"__tablename__": source_name+'_cleaned'})
-    elif content_type == 'commentary':
+    elif content_type == ContentTypeName.commentary.value:
         dynamicTables[source_name] = type(
             source_name,(Commentary, Base,),{"__tablename__": source_name})
-    elif content_type == 'dictionary':
+    elif content_type == ContentTypeName.dictionary.value:
         dynamicTables[source_name] = type(
             source_name,(Dictionary, Base,),{"__tablename__": source_name})
-    elif content_type == 'infographic':
+    elif content_type == ContentTypeName.infographic.value:
         dynamicTables[source_name] = type(
             source_name,(Infographic, Base,),{"__tablename__": source_name})
-    elif content_type == 'biblevideo':
+    elif content_type == ContentTypeName.biblevideo.value:
         dynamicTables[source_name] = type(
             source_name,(BibleVideo, Base,),{"__tablename__": source_name})
     else:

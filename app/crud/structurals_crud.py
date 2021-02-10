@@ -247,7 +247,7 @@ def create_source(db_: Session, source: schemas.SourceCreate, table_name, user_i
     db_.add(db_content)
     db_models.create_dynamic_table(table_name, content_type.contentType)
     db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine, checkfirst=True)
-    if content_type.contentType == 'bible':
+    if content_type.contentType == db_models.ContentTypeName.bible.value:
         db_models.dynamicTables[db_content.sourceName+'_cleaned'].__table__.create(
             bind=engine, checkfirst=True)
         log.warning("User %s, creates a new table %s", user_id, db_content.sourceName+'_cleaned')
@@ -312,7 +312,7 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None): #py
         db_.execute(sql_statement)
         log.warning("User %s, renames table %s to %s", user_id, db_content.sourceName,
             db_content.sourceName)
-        if db_content.contentType.contentType == 'bible':
+        if db_content.contentType.contentType == db_models.ContentTypeName.bible.value:
             sql_statement = sqlalchemy.text("ALTER TABLE IF EXISTS %s RENAME TO %s"%(
                 source.sourceName+"_cleaned", db_content.sourceName+"_cleaned"))
             db_.execute(sql_statement)
