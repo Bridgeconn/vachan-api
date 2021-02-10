@@ -14,6 +14,9 @@ from logger import log
 from database import SessionLocal, engine
 from custom_exceptions import GenericException
 from custom_exceptions import NotAvailableException, AlreadyExistsException, TypeException
+
+#pylint: disable=E0401
+#pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 from crud import structurals_crud, contents_crud
 
 
