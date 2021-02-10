@@ -8,13 +8,13 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
-import crud
 import db_models
 import schemas
 from logger import log
 from database import SessionLocal, engine
 from custom_exceptions import GenericException
 from custom_exceptions import NotAvailableException, AlreadyExistsException, TypeException
+from crud import structurals_crud, contents_crud
 
 
 
@@ -167,7 +167,7 @@ def get_contents(content_type: str = Query(None, example="bible"), skip: int = Q
     * limit=n: limits the no. of items to be returned to n'''
     log.info('In get_contents')
     log.debug('contentType:%s, skip: %s, limit: %s',content_type, skip, limit)
-    return crud.get_content_types(db_, content_type, skip, limit)
+    return structurals_crud.get_content_types(db_, content_type, skip, limit)
 
 @app.post('/v2/contents', response_model=schemas.ContentTypeUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -182,10 +182,10 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
         2. Define input, output resources and all required APIs to handle this content'''
     log.info('In add_contents')
     log.debug('content: %s',content)
-    if len(crud.get_content_types(db_, content.contentType)) > 0:
+    if len(structurals_crud.get_content_types(db_, content.contentType)) > 0:
         raise AlreadyExistsException("%s already present"%(content.contentType))
     return {'message': "Content type created successfully",
-    "data": crud.create_content_type(db_=db_, content=content)}
+    "data": structurals_crud.create_content_type(db_=db_, content=content)}
 
 #################
 
@@ -206,7 +206,8 @@ def get_language(language_code : schemas.LangCodePattern = Query(None, example="
     log.info('In get_language')
     log.debug('langauge_code:%s, language_name: %s, skip: %s, limit: %s',
         language_code, language_name, skip, limit)
-    return crud.get_languages(db_, language_code, language_name, skip = skip, limit = limit)
+    return structurals_crud.get_languages(db_, language_code, language_name,
+        skip = skip, limit = limit)
 
 @app.post('/v2/languages', response_model=schemas.LanguageCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -216,10 +217,10 @@ def add_language(lang_obj : schemas.LanguageCreate = Body(...), db_: Session = D
     ''' Creates a new language. Langugage code should of 3 letters which uniquely identifies it.'''
     log.info('In add_language')
     log.debug('lang_obj: %s',lang_obj)
-    if len(crud.get_languages(db_, language_code = lang_obj.code)) > 0:
+    if len(structurals_crud.get_languages(db_, language_code = lang_obj.code)) > 0:
         raise AlreadyExistsException("%s already present"%(lang_obj.code))
     return {'message': "Language created successfully",
-    "data": crud.create_language(db_=db_, lang=lang_obj)}
+    "data": structurals_crud.create_language(db_=db_, lang=lang_obj)}
 
 @app.put('/v2/languages', response_model=schemas.LanguageUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -229,10 +230,10 @@ def edit_language(lang_obj: schemas.LanguageEdit = Body(...), db_: Session = Dep
     ''' Changes one or more fields of language'''
     log.info('In edit_language')
     log.debug('lang_obj: %s',lang_obj)
-    if len(crud.get_languages(db_, language_id = lang_obj.languageId)) == 0:
+    if len(structurals_crud.get_languages(db_, language_id = lang_obj.languageId)) == 0:
         raise NotAvailableException("Language id %s not found"%(lang_obj.languageId))
     return {'message': "Language edited successfully",
-        "data": crud.update_language(db_=db_, lang=lang_obj)}
+        "data": structurals_crud.update_language(db_=db_, lang=lang_obj)}
 
 # ################################
 
@@ -255,7 +256,7 @@ def get_license(license_code : schemas.LicenseCodePattern=Query(None, example="C
     log.info('In get_license')
     log.debug('license_code:%s, license_name: %s, permission:%s, active:%s, skip: %s, limit: %s',
         license_code, license_name, permission, active, skip, limit)
-    return crud.get_licenses(db_, license_code, license_name, permission,
+    return structurals_crud.get_licenses(db_, license_code, license_name, permission,
         active, skip = skip, limit = limit)
 
 @app.post('/v2/licenses', response_model=schemas.LicenseCreateResponse,
@@ -267,7 +268,7 @@ def add_license(license_obj : schemas.LicenseCreate = Body(...), db_: Session = 
     log.info('In add_license')
     log.debug('license_obj: %s',license_obj)
     return {'message': "License uploaded successfully",
-        "data": crud.create_license(db_, license_obj, user_id=None)}
+        "data": structurals_crud.create_license(db_, license_obj, user_id=None)}
 
 @app.put('/v2/licenses', response_model=schemas.LicenseUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -281,7 +282,7 @@ def edit_license(license_obj: schemas.LicenseEdit = Body(...), db_: Session = De
     log.info('In edit_license')
     log.debug('license_obj: %s',license_obj)
     return {'message': "License edited successfully",
-        "data": crud.update_license(db_=db_, license_obj=license_obj, user_id=None)}
+        "data": structurals_crud.update_license(db_=db_, license_obj=license_obj, user_id=None)}
 
 ##### Version #####
 
@@ -301,7 +302,7 @@ def get_version(version_abbreviation : schemas.VersionPattern = Query(None, exam
     log.info('In get_version')
     log.debug('version_abbreviation:%s, skip: %s, limit: %s',
         version_abbreviation, skip, limit)
-    return crud.get_versions(db_, version_abbreviation,
+    return structurals_crud.get_versions(db_, version_abbreviation,
         version_name, revision, metadata, skip = skip, limit = limit)
 
 @app.post('/v2/versions', response_model=schemas.VersionCreateResponse,
@@ -315,12 +316,12 @@ def add_version(version_obj : schemas.VersionCreate = Body(...),
     log.debug('version_obj: %s',version_obj)
     if not version_obj.revision:
         version_obj.revision = 1
-    if len(crud.get_versions(db_, version_obj.versionAbbreviation,
+    if len(structurals_crud.get_versions(db_, version_obj.versionAbbreviation,
         revision =version_obj.revision)) > 0:
         raise AlreadyExistsException("%s, %s already present"%(
             version_obj.versionAbbreviation, version_obj.revision))
     return {'message': "Version created successfully",
-    "data": crud.create_version(db_=db_, version=version_obj)}
+    "data": structurals_crud.create_version(db_=db_, version=version_obj)}
 
 
 @app.put('/v2/versions', response_model=schemas.VersionUpdateResponse,
@@ -334,10 +335,10 @@ def edit_version(ver_obj: schemas.VersionEdit = Body(...), db_: Session = Depend
     Deactivated items are not included in normal fetch results if not specified otherwise'''
     log.info('In edit_version')
     log.debug('ver_obj: %s',ver_obj)
-    if len(crud.get_versions(db_, version_id = ver_obj.versionId)) == 0:
+    if len(structurals_crud.get_versions(db_, version_id = ver_obj.versionId)) == 0:
         raise NotAvailableException("Version id %s not found"%(ver_obj.versionId))
     return {'message': "Version edited successfully",
-    "data": crud.update_version(db_=db_, version=ver_obj)}
+    "data": structurals_crud.update_version(db_=db_, version=ver_obj)}
 
 # ##### Source #####
 @app.get('/v2/sources',
@@ -365,7 +366,7 @@ def get_source(content_type: str=Query(None, example="commentary"), #pylint: dis
         license_code:%s, metadata: %s, latest_revision: %s, active: %s, skip: %s, limit: %s',
         content_type, version_abbreviation, revision, language_code, license_code, metadata,
         latest_revision, active, skip, limit)
-    return crud.get_sources(db_, content_type, version_abbreviation, revision,
+    return structurals_crud.get_sources(db_, content_type, version_abbreviation, revision,
         language_code, license_code, metadata, latest_revision=latest_revision, active=active,
         skip=skip, limit=limit)
 
@@ -387,10 +388,10 @@ def add_source(source_obj : schemas.SourceCreate = Body(...),
         source_obj.revision = 1
     table_name = source_obj.language + "_" + source_obj.version + "_" +\
     source_obj.revision + "_" + source_obj.contentType
-    if len(crud.get_sources(db_, table_name = table_name)) > 0:
+    if len(structurals_crud.get_sources(db_, table_name = table_name)) > 0:
         raise AlreadyExistsException("%s already present"%table_name)
     return {'message': "Source created successfully",
-    "data": crud.create_source(db_=db_, source=source_obj, table_name=table_name,
+    "data": structurals_crud.create_source(db_=db_, source=source_obj, table_name=table_name,
         user_id=None)}
 
 
@@ -404,10 +405,10 @@ def edit_source(source_obj: schemas.SourceEdit = Body(...), db_: Session = Depen
     Deactivated items are not included in normal fetch results if not specified otherwise'''
     log.info('In edit_source')
     log.debug('source_obj: %s',source_obj)
-    if len(crud.get_sources(db_, table_name = source_obj.sourceName)) == 0:
+    if len(structurals_crud.get_sources(db_, table_name = source_obj.sourceName)) == 0:
         raise NotAvailableException("Source %s not found"%(source_obj.sourceName))
     return {'message': "Source edited successfully",
-    "data": crud.update_source(db_=db_, source=source_obj, user_id=None)}
+    "data": structurals_crud.update_source(db_=db_, source=source_obj, user_id=None)}
 
 # # #################
 
@@ -430,7 +431,7 @@ def get_bible_book(book_id: int=Query(None, example=67), #pylint: disable=too-ma
     log.info('In get_bible_book')
     log.debug('book_id: %s, book_code: %s, book_name: %s, skip: %s, limit: %s',
         book_id, book_code, book_name, skip, limit)
-    return crud.get_bible_books(db_, book_id, book_code, book_name,
+    return structurals_crud.get_bible_books(db_, book_id, book_code, book_name,
         skip = skip, limit = limit)
 
 # #### Bible #######
@@ -448,7 +449,7 @@ def add_bible_book(source_name : schemas.TableNamePattern=Path(..., example="hin
     log.info('In add_bible_book')
     log.debug('source_name: %s, books: %s',source_name, books)
     return {'message': "Bible books uploaded and processed successfully",
-        "data": crud.upload_bible_books(db_=db_, source_name=source_name,
+        "data": contents_crud.upload_bible_books(db_=db_, source_name=source_name,
         books=books, user_id=None)}
 
 
@@ -470,7 +471,7 @@ def edit_bible_book(source_name: schemas.TableNamePattern=Path(..., example="hin
     log.info('In edit_bible_book')
     log.debug('source_name: %s, books: %s',source_name, books)
     return {'message': "Bible books updated successfully",
-        "data": crud.update_bible_books(db_=db_, source_name=source_name,
+        "data": contents_crud.update_bible_books(db_=db_, source_name=source_name,
         books=books, user_id=None)}
 
 @app.get('/v2/bibles/{source_name}/books',
@@ -496,7 +497,7 @@ def get_available_bible_book(source_name: schemas.TableNamePattern=Path(..., #py
     log.debug('source_name: %s, book_code: %s, contentType: %s, versification:%s,\
         active:%s, skip: %s, limit: %s',
         source_name, book_code, content_type, versification, active, skip, limit)
-    return crud.get_available_bible_books(db_, source_name, book_code, content_type,
+    return contents_crud.get_available_bible_books(db_, source_name, book_code, content_type,
         versification, active=active, skip = skip, limit = limit)
 
 
@@ -526,7 +527,7 @@ def get_bible_verse(source_name: schemas.TableNamePattern=Path(..., example="hin
     log.debug('source_name: %s, book_code: %s, chapter: %s, verse:%s, last_verse:%s,\
         search_phrase:%s, active:%s, skip: %s, limit: %s',
         source_name, book_code, chapter, verse, last_verse, search_phrase, active, skip, limit)
-    return crud.get_bible_verses(db_, source_name, book_code, chapter, verse, last_verse,
+    return contents_crud.get_bible_verses(db_, source_name, book_code, chapter, verse, last_verse,
         search_phrase, active=active, skip = skip, limit = limit)
 
 
@@ -542,7 +543,7 @@ def add_audio_bible(source_name : schemas.TableNamePattern=Path(..., example="hi
     log.info('In add_audio_bible')
     log.debug('source_name: %s, audios: %s',source_name, audios)
     return {'message': "Bible audios details uploaded successfully",
-        "data": crud.upload_bible_audios(db_=db_, source_name=source_name,
+        "data": contents_crud.upload_bible_audios(db_=db_, source_name=source_name,
         audios=audios, user_id=None)}
 
 
@@ -559,7 +560,7 @@ def edit_audio_bible(source_name: schemas.TableNamePattern=Path(..., example="hi
     log.info('In edit_audio_bible')
     log.debug('source_name: %s, audios: %s',source_name, audios)
     return {'message': "Bible audios details updated successfully",
-        "data": crud.update_bible_audios(db_=db_, source_name=source_name,
+        "data": contents_crud.update_bible_audios(db_=db_, source_name=source_name,
         audios=audios, user_id=None)}
 
 # # ##### Commentary #####
@@ -588,7 +589,7 @@ def get_commentary(#pylint: disable=too-many-arguments
     log.debug('source_name: %s, book_code: %s, chapter: %s, verse:%s,\
         last_verse:%s, skip: %s, limit: %s',
         source_name, book_code, chapter, verse, last_verse, skip, limit)
-    return crud.get_commentaries(db_, source_name, book_code, chapter, verse, last_verse,
+    return contents_crud.get_commentaries(db_, source_name, book_code, chapter, verse, last_verse,
         active=active, skip = skip, limit = limit)
 
 @app.post('/v2/commentaries/{source_name}', response_model=schemas.CommentaryCreateResponse,
@@ -610,7 +611,7 @@ def add_commentary(source_name : schemas.TableNamePattern=Path(...,example="eng_
     log.info('In add_commentary')
     log.debug('source_name: %s, commentaries: %s',source_name, commentaries)
     return {'message': "Commentaries added successfully",
-    "data": crud.upload_commentaries(db_=db_, source_name=source_name,
+    "data": contents_crud.upload_commentaries(db_=db_, source_name=source_name,
         commentaries=commentaries, user_id=None)}
 
 
@@ -627,7 +628,7 @@ def edit_commentary(source_name: schemas.TableNamePattern=Path(..., example="eng
     log.info('In edit_commentary')
     log.debug('source_name: %s, commentaries: %s',source_name, commentaries)
     return {'message': "Commentaries updated successfully",
-    "data": crud.update_commentaries(db_=db_, source_name=source_name,
+    "data": contents_crud.update_commentaries(db_=db_, source_name=source_name,
         commentaries=commentaries, user_id=None)}
 
 # # ########### Dictionary ###################
@@ -658,7 +659,8 @@ def get_dictionary_word( #pylint: disable=too-many-arguments
     log.debug('source_name: %s, search_word: %s, exact_match: %s, word_list_only:%s, details:%s\
         skip: %s, limit: %s', source_name, search_word, exact_match, word_list_only, details,
         skip, limit)
-    return crud.get_dictionary_words(db_, source_name, search_word, exact_match=exact_match,
+    return contents_crud.get_dictionary_words(db_, source_name, search_word,
+        exact_match=exact_match,
         word_list_only=word_list_only, details=details, active=active, skip=skip, limit=limit)
 
 
@@ -676,7 +678,7 @@ def add_dictionary_word(
     log.info('In add_dictionary_word')
     log.debug('source_name: %s, dictionary_words: %s',source_name, dictionary_words)
     return {'message': "Dictionary words added successfully",
-        "data": crud.upload_dictionary_words(db_=db_, source_name=source_name,
+        "data": contents_crud.upload_dictionary_words(db_=db_, source_name=source_name,
         dictionary_words=dictionary_words, user_id=None)}
 
 
@@ -695,7 +697,7 @@ def edit_dictionary_word(
     log.info('In edit_dictionary_word')
     log.debug('source_name: %s, dictionary_words: %s',source_name, dictionary_words)
     return {'message': "Dictionary words updated successfully",
-        "data": crud.update_dictionary_words(db_=db_, source_name=source_name,
+        "data": contents_crud.update_dictionary_words(db_=db_, source_name=source_name,
         dictionary_words=dictionary_words, user_id=None)}
 
 # # ###########################################
@@ -719,7 +721,7 @@ def get_infographic(#pylint: disable=too-many-arguments
     log.info('In get_infographic')
     log.debug('source_name: %s, book_code: %s skip: %s, limit: %s',
         source_name, book_code, skip, limit)
-    return crud.get_infographics(db_, source_name, book_code, title,
+    return contents_crud.get_infographics(db_, source_name, book_code, title,
         active=active, skip = skip, limit = limit)
 
 @app.post('/v2/infographics/{source_name}', response_model=schemas.InfographicCreateResponse,
@@ -734,7 +736,7 @@ def add_infographics(source_name : schemas.TableNamePattern=Path(...,
     log.info('In add_infographics')
     log.debug('source_name: %s, infographics: %s',source_name, infographics)
     return {'message': "Infographics added successfully",
-        "data": crud.upload_infographics(db_=db_, source_name=source_name,
+        "data": contents_crud.upload_infographics(db_=db_, source_name=source_name,
         infographics=infographics, user_id=None)}
 
 @app.put('/v2/infographics/{source_name}', response_model=schemas.InfographicUpdateResponse,
@@ -752,7 +754,7 @@ def edit_infographics(source_name: schemas.TableNamePattern=Path(...,
     log.info('In edit_infographics')
     log.debug('source_name: %s, infographics: %s',source_name, infographics)
     return {'message': "Infographics updated successfully",
-        "data": crud.update_infographics(db_=db_, source_name=source_name,
+        "data": contents_crud.update_infographics(db_=db_, source_name=source_name,
         infographics=infographics, user_id=None)}
 # # ###########################################
 
@@ -777,7 +779,7 @@ def get_biblevideo(#pylint: disable=too-many-arguments
     log.info('In get_biblevideo')
     log.debug('source_name: %s, book_code: %s, title: %s, theme: %s, skip: %s, limit: %s',
         source_name, book_code, title, theme, skip, limit)
-    return crud.get_bible_videos(db_, source_name, book_code, title, theme, active,
+    return contents_crud.get_bible_videos(db_, source_name, book_code, title, theme, active,
         skip=skip, limit=limit)
 
 
@@ -792,7 +794,7 @@ def add_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="eng_TB
     log.info('In add_biblevideo')
     log.debug('source_name: %s, videos: %s',source_name, videos)
     return {'message': "Bible videos added successfully",
-        "data": crud.upload_bible_videos(db_=db_, source_name=source_name,
+        "data": contents_crud.upload_bible_videos(db_=db_, source_name=source_name,
         videos=videos, user_id=None)}
 
 
@@ -810,6 +812,6 @@ def edit_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="eng_T
     log.info('In edit_biblevideo')
     log.debug('source_name: %s, videos: %s',source_name, videos)
     return {'message': "Bible videos updated successfully",
-        "data": crud.update_bible_videos(db_=db_, source_name=source_name,
+        "data": contents_crud.update_bible_videos(db_=db_, source_name=source_name,
         videos=videos, user_id=None)}
 # # ###########################################
