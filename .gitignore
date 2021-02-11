@@ -66,6 +66,7 @@ env3
 agmt/__pycache__/*
 test/__pycache__/*
 app/test/__pycache__/*
+app/crud/__pycache__/*
 app/__pycache__/*
 vachan-venv/*
 vachan-ENV/*

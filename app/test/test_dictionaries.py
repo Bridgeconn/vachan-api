@@ -142,7 +142,7 @@ def test_get_after_data_upload():
     assert response.status_code == 200
     assert len(response.json()) == 5
     for item in response.json():
-        assert item['details'] is None
+        assert "details" not in item
 
     # with details
     response = client.get(UNIT_URL+source_name+'?details={"type":"odd"}')

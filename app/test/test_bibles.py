@@ -205,10 +205,7 @@ def assert_positive_get_for_verse(item):
     assert "verseText" in item
     assert "reference" in item
     assert "book" in item['reference']
-    assert  isinstance(item['reference']['book'], dict)
-    assert "bookId" in item['reference']['book']
-    assert "bookCode" in item['reference']['book']
-    assert "bookName" in item['reference']['book']
+    assert  isinstance(item['reference']['book'], str)
     assert "chapter" in item['reference']
     assert "verseNumber" in item['reference']
 

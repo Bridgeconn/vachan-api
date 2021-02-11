@@ -20,11 +20,11 @@ def check_post(data: list):
     '''prior steps and post attempt, without checking the response'''
     version_data = {
         "versionAbbreviation": "TTT",
-        "versionName": "test version for infographics",
+        "versionName": "test version for infographic",
     }
     add_version(version_data)
     source_data = {
-        "contentType": "infographics",
+        "contentType": "infographic",
         "language": "urd",
         "version": "TTT",
         "year": 2020,
@@ -132,7 +132,7 @@ def test_post_incorrect_data():
     response = client.post(UNIT_URL+source_name, headers=headers, json=data)
     assert_input_validation_error(response)
 
-    source_name1 = source_name.replace('infographics', 'info')
+    source_name1 = source_name.replace('infographic', 'info')
     data = []
     response = client.post(UNIT_URL+source_name1, headers=headers, json=data)
     assert response.status_code == 404
@@ -194,7 +194,7 @@ def test_get_incorrect_data():
     response = client.get(UNIT_URL+source_name)
     assert_input_validation_error(response)
 
-    source_name = 'urd_TTT_1_infographics'
+    source_name = 'urd_TTT_1_infographic'
     response = client.get(UNIT_URL+source_name+'?book_code=60')
     assert_input_validation_error(response)
 
@@ -203,7 +203,7 @@ def test_get_incorrect_data():
 
     resp, source_name = check_post([])
     assert resp.status_code == 201
-    source_name = source_name.replace('infographics', 'graphics')
+    source_name = source_name.replace('infographic', 'graphics')
     response = client.get(UNIT_URL+source_name)
     assert response.status_code == 404
 
@@ -297,7 +297,7 @@ def test_put_incorrect_data():
     response = client.put(UNIT_URL+source_name, headers=headers, json=data)
     assert_input_validation_error(response)
 
-    source_name1 = source_name.replace('infographics', 'graphics')
+    source_name1 = source_name.replace('infographic', 'graphics')
     response = client.put(UNIT_URL+source_name1, headers=headers, json=[])
     assert response.status_code == 404
 
