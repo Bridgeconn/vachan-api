@@ -1,7 +1,7 @@
 '''Test cases for commentaries related APIs'''
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
-from . import check_default_get
+from . import check_default_get, check_soft_delete
 from .test_versions import check_post as add_version
 from .test_sources import check_post as add_source
 
@@ -17,6 +17,7 @@ def assert_positive_get(item):
     assert "verseStart" in item
     assert "verseEnd" in item
     assert "commentary" in item
+    assert "active" in item
 
 def check_post(data: list):
     '''prior steps and post attempt, without checking the response'''
@@ -31,7 +32,7 @@ def check_post(data: list):
         "version": "TTT",
         "revision": 1,
         "year": 2000,
-        "license": "MIT",
+        "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     source = add_source(source_data)
@@ -76,8 +77,8 @@ def test_post_duplicate():
     headers = {"contentType": "application/json", "accept": "application/json"}
     data[0]['commentary'] = 'another commentary on first verse'
     response = client.post(UNIT_URL+source_name, headers=headers, json=data)
-    assert response.status_code == 502
-    assert response.json()['error'] == "Database Error"
+    assert response.status_code == 409
+    assert response.json()['error'] == "Already Exists"
 
 def test_post_incorrect_data():
     ''' tests to check input validation in post API'''
@@ -133,6 +134,12 @@ def test_post_incorrect_data():
     response = client.post(UNIT_URL+source_name, headers=headers, json=data)
     assert_input_validation_error(response)
 
+    data = [
+        {'bookCode':'gen', 'chapter':1, 'verseStart':'introduction',
+        'commentary':'first verse of Genesis', 'active': "deactive"}
+    ]
+    response = client.post(UNIT_URL+source_name, headers=headers, json=data)
+    assert_input_validation_error(response)
 
     data = [
         {'bookCode':'gen', 'chapter':1, 'verseStart':10,
@@ -265,6 +272,9 @@ def test_get_incorrect_data():
     response = client.get(UNIT_URL+source_name+'?verse=-10')
     assert_input_validation_error(response)
 
+    response = client.get(UNIT_URL+source_name+'?active=not')
+    assert_input_validation_error(response)
+
     resp, source_name = check_post([])
     assert resp.status_code == 201
     source_name = source_name.replace('commentary', 'bible')
@@ -342,12 +352,6 @@ def test_put_incorrect_data():
     response = client.put(UNIT_URL+source_name, headers=headers, json=data)
     assert_input_validation_error(response)
 
-    data = [
-        {'bookCode':'gen', 'chapter':1, 'verseStart':1, "verseEnd":1}
-    ]
-    response = client.put(UNIT_URL+source_name, headers=headers, json=data)
-    assert_input_validation_error(response)
-
     # incorrect data values in fields
 
     data = [
@@ -386,3 +390,17 @@ def test_put_incorrect_data():
     source_name2 = source_name.replace('1', '2')
     response = client.put(UNIT_URL+source_name2, headers=headers, json=[])
     assert response.status_code == 404
+
+def test_soft_delete():
+    '''check soft delete in commentaries'''
+    data = [
+        {'bookCode':'mrk', 'chapter':1, 'verseStart':1,
+        'verseEnd':10, 'commentary':"first verses of Mark"},
+        {'bookCode':'mrk','chapter':0, 'commentary':"book intro to Mark"},
+    ]
+
+    delete_data = [
+        {'bookCode':'mrk', 'chapter':1, 'verseStart':1, 'verseEnd':10}
+    ]
+    check_soft_delete(UNIT_URL, check_post, data, delete_data)
+    

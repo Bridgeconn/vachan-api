@@ -2,7 +2,7 @@
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 
-from . import check_default_get
+from . import check_default_get, check_soft_delete
 from .test_versions import check_post as add_version
 from .test_sources import check_post as add_source
 
@@ -65,8 +65,8 @@ def test_post_duplicate():
     headers = {"contentType": "application/json", "accept": "application/json"}
     data[0]['details'] = {"digit": 1, "type":"natural number"}
     response = client.post(UNIT_URL+source_name, headers=headers, json=data)
-    assert response.status_code == 502
-    assert response.json()['error'] == "Database Error"
+    assert response.status_code == 409
+    assert response.json()['error'] == "Already Exists"
 
 def test_post_incorrect_data():
     ''' tests to check input validation in post API'''
@@ -142,7 +142,7 @@ def test_get_after_data_upload():
     assert response.status_code == 200
     assert len(response.json()) == 5
     for item in response.json():
-        assert item['details'] is None
+        assert "details" not in item
 
     # with details
     response = client.get(UNIT_URL+source_name+'?details={"type":"odd"}')
@@ -245,3 +245,21 @@ def test_put_incorrect_data():
     source_name2 = source_name.replace('1', '3')
     response = client.put(UNIT_URL+source_name2, headers=headers, json=[])
     assert response.status_code == 404
+
+def test_soft_delete():
+    '''check soft delete in dictionaries'''
+    data = [
+        {'word':'Good', 'details':{'meaning':'good', 'form':'Positive'}},
+        {'word':'Better', 'details':{'meaning':'good', 'form':'Comparative'}},
+        {'word':'Best', 'details':{'meaning':'good', 'form':'Superlative'}},
+        {'word':'Nice', 'details':{'meaning':'nice', 'form':'Positive'}},
+        {'word':'Nicer', 'details':{'meaning':'good', 'form':'Comparative'}},
+        {'word':'Nicest', 'details':{'meaning':'good', 'form':'Superlative'}},
+        {'word':'Warm', 'details':{'meaning':'warm', 'form':'Positive'}}
+    ]
+
+    delete_data = [
+        {'word': "Good"}, {'word': "Nice"}, {"word":"Warm"}
+    ]
+    check_soft_delete(UNIT_URL, check_post, data, delete_data)
+    

@@ -9,8 +9,8 @@ CREATE TABLE public.content_types (
 INSERT INTO content_types(content_type) VALUES('bible');
 INSERT INTO content_types(content_type) VALUES('commentary');
 INSERT INTO content_types(content_type) VALUES('dictionary');
-INSERT INTO content_types(content_type) VALUES('infographics');
-INSERT INTO content_types(content_type) VALUES('bible_video');
+INSERT INTO content_types(content_type) VALUES('infographic');
+INSERT INTO content_types(content_type) VALUES('biblevideo');
 
 CREATE TABLE public.languages (
     language_id SERIAL PRIMARY KEY,
@@ -21,6 +21,22 @@ CREATE TABLE public.languages (
 
 
 \COPY languages (language_code,language_name) FROM 'languages.csv' DELIMITER ',' CSV HEADER;
+
+CREATE TABLE public.licenses (
+    license_id SERIAL PRIMARY KEY,
+    license_code text UNIQUE NOT NULL,
+    license_name text NOT NULL,
+    license_text text NOT NULL,
+    permissions text[],
+    created_at timestamp with time zone DEFAULT NOW(),
+    created_user int NULL,
+    last_updated_at  timestamp with time zone DEFAULT NOW(),
+    last_updated_user int NULL,
+    active boolean DEFAULT true NOT NULL,
+    metadata jsonb NULL
+);
+
+\COPY licenses (license_code, license_name, license_text, permissions) FROM 'licenses.csv' DELIMITER ',' CSV HEADER;
 
 CREATE TABLE public.versions (
     version_id SERIAL PRIMARY KEY,
@@ -36,7 +52,7 @@ CREATE TABLE public.sources (
     source_id SERIAL PRIMARY KEY,
     table_name text UNIQUE,
     year integer NOT NULL,
-    license text DEFAULT 'CC BY SA'::text,
+    license_id int REFERENCES licenses(license_id) ON DELETE CASCADE,
     content_id int NOT NULL REFERENCES content_types(content_type_id) ON DELETE CASCADE,
     language_id int NOT NULL REFERENCES languages(language_id) ON DELETE CASCADE,
     version_id int NOT NULL REFERENCES versions(version_id) ON DELETE CASCADE,

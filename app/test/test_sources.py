@@ -22,6 +22,7 @@ def assert_positive_get(item):
     assert "versionId" in item['version']
     assert "year" in item
     assert "license" in item
+    assert isinstance(item["license"], dict)
     assert "metaData" in item
     assert item['metaData'] is None or isinstance(item['metaData'], dict)
     assert "active" in item
@@ -50,12 +51,12 @@ def test_post_default():
     }
     add_version(version_data)
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "hin",
         "version": "TTT",
         "revision": 1,
         "year": 2020,
-        "license": "MIT",
+        "license": "CC-BY-SA",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     check_post(data)
@@ -68,12 +69,12 @@ def test_post_wrong_version():
     }
     add_version(version_data)
     data1 = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "hin",
         "version": "TTD",
         "revision": 1,
         "year": 2020,
-        "license": "MIT",
+        "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -83,12 +84,12 @@ def test_post_wrong_version():
     assert response.json()['details'] == "Version, TTD 1, not found in Database"
 
     data2 = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "hin",
         "version": "TTT",
         "revision": 2,
         "year": 2020,
-        "license": "MIT",
+        "license": "CC-BY-SA",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     response = client.post(UNIT_URL, headers=headers, json=data2)
@@ -97,12 +98,12 @@ def test_post_wrong_version():
     assert response.json()['details'] == "Version, TTT 2, not found in Database"
 
     data3 = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "hin",
         "version": "TTT",
         "revision": 1,
         "year": 2020,
-        "license": "MIT",
+        "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     check_post(data3)
@@ -115,12 +116,12 @@ def test_post_wrong_lang():
     }
     add_version(version_data)
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "aaj",
         "version": "TTT",
         "revision": 1,
         "year": 2020,
-        "license": "MIT",
+        "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -142,7 +143,7 @@ def test_post_wrong_content():
         "version": "TTT",
         "revision": 1,
         "year": 2020,
-        "license": "MIT",
+        "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -151,30 +152,46 @@ def test_post_wrong_content():
     assert response.json()['error'] == "Requested Content Not Available"
     assert response.json()['details'] == "ContentType, bibl, not found in Database"
 
+    # '''Negative test with not a valid license from license table'''
+    data = {
+        "contentType": "infographic",
+        "language": "hin",
+        "version": "TTT",
+        "revision": 1,
+        "year": 2020,
+        "license": "XYZ-123",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    response = client.post(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"
+    assert "License" in response.json()['details']
+
 def test_post_wrong_year():
     '''Negative test with text in year field'''
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "hin",
         "version": "TTT",
         "revision": 1,
         "year": "twenty twenty",
-        "license": "MIT",
+        "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
 
+
 def test_post_wrong_metadata():
     '''Negative test with incorrect format for metadata'''
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "hin",
         "version": "TTT",
         "revision": 1,
         "year": "twenty twenty",
-        "license": "MIT",
+        "license": "ISC",
         "metaData": '["owner"="someone", "access-key"="123xyz"]'
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -196,7 +213,7 @@ def test_post_missing_mandatory_info():
 
     # no language
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "version": "TTT",
         "revision": 1,
         "year": 2020
@@ -206,7 +223,7 @@ def test_post_missing_mandatory_info():
 
     # no version
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "hin",
         "revision": 1,
         "year": 2020
@@ -216,7 +233,7 @@ def test_post_missing_mandatory_info():
 
     # no year
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "hin",
         "version": "TTT"
     }
@@ -232,7 +249,7 @@ def test_post_missing_some_info():
     }
     add_version(version_data)
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "hin",
         "version": "TTT",
         "year": 2020
@@ -247,7 +264,7 @@ def test_post_duplicate():
     }
     add_version(version_data)
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         "language": "hin",
         "version": "TTT",
         "year": 2020
@@ -285,7 +302,7 @@ def test_get_after_adding_data():
     }
     add_version(version_data)
     data = {
-        "contentType": "bible",
+        "contentType": "infographic",
         "version": "TTT",
         "year": 2020
     }
@@ -303,7 +320,7 @@ def test_get_after_adding_data():
     data['contentType'] = 'commentary'
     data['revision'] = 1
     data['metaData'] = {'owner': 'myself'}
-    data['license'] = "not licensed"
+    data['license'] = "ISC"
     for lang in ['hin', 'mar', 'tel']:
         data['language'] = lang
         check_post(data)
@@ -338,6 +355,20 @@ def test_get_after_adding_data():
     for item in response.json():
         assert_positive_get(item)
 
+    # filter with license
+    response = client.get(UNIT_URL + "?license=CC-BY-SA")
+    assert response.status_code == 200
+    assert len(response.json()) >= 6
+    for item in response.json():
+        assert_positive_get(item)
+
+    response = client.get(UNIT_URL + "?license=ISC")
+    assert response.status_code == 200
+    assert len(response.json()) >= 3
+    for item in response.json():
+        assert_positive_get(item)
+
+
     # filter with metadata
     response = client.get(UNIT_URL + '?metadata={"owner": "myself"}&latest_revision=false')
     assert response.status_code == 200
@@ -362,7 +393,7 @@ def test_put_default():
     version_data['revision'] = 2
     add_version(version_data)
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         'language': 'mal',
         "version": "TTT",
         "year": 2020
@@ -370,7 +401,7 @@ def test_put_default():
     check_post(data)
 
     data_update = {
-        "sourceName": 'mal_TTT_1_bible',
+        "sourceName": 'mal_TTT_1_commentary',
         "revision": 2
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -379,10 +410,10 @@ def test_put_default():
     assert response.json()['message'] == "Source edited successfully"
     assert_positive_get(response.json()['data'])
     assert response.json()['data']['version']['revision'] == 2
-    assert response.json()['data']['sourceName'] == "mal_TTT_2_bible"
+    assert response.json()['data']['sourceName'] == "mal_TTT_2_commentary"
 
     data_update = {
-        'sourceName': 'mal_TTT_2_bible',
+        'sourceName': 'mal_TTT_2_commentary',
         'metaData': {'owner': 'new owner'}
     }
     response = client.put(UNIT_URL, headers=headers, json=data_update)
@@ -399,7 +430,7 @@ def test_soft_delete():
     }
     add_version(version_data)
     data = {
-        "contentType": "bible",
+        "contentType": "commentary",
         'language': 'mal',
         "version": "TTT",
         "year": 2020
@@ -408,7 +439,7 @@ def test_soft_delete():
     assert response.json()['data']['active']
 
     data_update = {
-        'sourceName': 'mal_TTT_1_bible',
+        'sourceName': 'mal_TTT_1_commentary',
         'active': False
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -424,4 +455,4 @@ def test_soft_delete():
     for item in response.json():
         assert_positive_get(item)
         assert not item['active']
-    assert 'mal_TTT_1_bible' in [item['sourceName'] for item in response.json()]
+    assert 'mal_TTT_1_commentary' in [item['sourceName'] for item in response.json()]
