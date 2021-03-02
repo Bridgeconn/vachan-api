@@ -7,6 +7,7 @@ from sqlalchemy import UniqueConstraint
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, Session
 from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.schema import Sequence
 
 from database import Base
 from custom_exceptions import GenericException
@@ -92,7 +93,8 @@ class BibleBook(Base): # pylint: disable=too-few-public-methods
 
 class Commentary(): # pylint: disable=too-few-public-methods
     '''Corresponds to the dynamically created commentary tables in vachan Db(postgres)'''
-    commentaryId = Column('commentary_id', Integer, primary_key=True, autoincrement=True)
+    commentaryId = Column('commentary_id', Integer,
+        Sequence('commentary_id_seq', start=100001, increment=1), primary_key=True)
     @declared_attr
     def book_id(cls): # pylint: disable=E0213
         '''For modelling the bookId field in derived classes'''
@@ -113,7 +115,8 @@ class Commentary(): # pylint: disable=too-few-public-methods
 
 class Dictionary(): # pylint: disable=too-few-public-methods
     '''Corresponds to the dynamically created dictionary tables in vachan Db(postgres)'''
-    wordId = Column('word_id', Integer, primary_key=True, autoincrement=True)
+    wordId = Column('word_id', Integer,
+        Sequence('word_id_seq', start=100001, increment=1), primary_key=True)
     word = Column('word', String, unique=True)
     details = Column('details', JSON)
     active = Column('active', Boolean)
@@ -121,7 +124,8 @@ class Dictionary(): # pylint: disable=too-few-public-methods
 
 class Infographic(): # pylint: disable=too-few-public-methods
     '''Corresponds to the dynamically created infographics tables in vachan Db(postgres)'''
-    infographicId = Column('infographic_id', Integer, primary_key=True, autoincrement=True)
+    infographicId = Column('infographic_id', Integer,
+        Sequence('infographic_id_seq', start=100001, increment=1), primary_key=True)
     @declared_attr
     def book_id(cls): # pylint: disable=E0213
         '''For modelling the bookId field in derived classes'''
@@ -140,7 +144,8 @@ class Infographic(): # pylint: disable=too-few-public-methods
 
 class BibleVideo(): # pylint: disable=too-few-public-methods
     '''Corresponds to the dynamically created bible videos tables in vachan Db(postgres)'''
-    bibleVideoId  = Column('biblevideo_id', Integer, primary_key=True, autoincrement=True)
+    bibleVideoId  = Column('biblevideo_id', Integer,
+        Sequence('biblevideo_id_seq', start=100001, increment=1), primary_key=True)
     title = Column('title', String, unique=True)
     theme = Column('theme', String)
     description = Column('description', String)
@@ -151,7 +156,8 @@ class BibleVideo(): # pylint: disable=too-few-public-methods
 
 class BibleAudio(): # pylint: disable=too-few-public-methods
     '''Corresponds to the dynamically created bible_audio tables in vachan Db(postgres)'''
-    audioId  = Column('bible_audio_id', Integer, primary_key=True, autoincrement=True)
+    audioId  = Column('bible_audio_id', Integer,
+        Sequence('bible_audio_id_seq', start=100001, increment=1), primary_key=True)
     name = Column('name', String)
     @declared_attr
     def book_id(self):
