@@ -333,7 +333,8 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
     for item in videos:
-        row = db_.query(model_cls).filter(model_cls.title == normalize_unicode(item.title.strip())).first()
+        row = db_.query(model_cls).filter(
+            model_cls.title == normalize_unicode(item.title.strip())).first()
         if not row:
             raise NotAvailableException("Bible Video row with title:%s, \
                 not found for %s"%(
@@ -635,7 +636,8 @@ def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, ver
             last_verse = verse
         query = query.filter(model_cls.verseNumber >= verse, model_cls.verseNumber <= last_verse)
     if search_phrase:
-        query = query.filter(model_cls.verseText.like('%'+normalize_unicode(search_phrase.strip())+"%"))
+        query = query.filter(model_cls.verseText.like(
+            '%'+normalize_unicode(search_phrase.strip())+"%"))
     results = query.filter(model_cls.active == active).offset(skip).limit(limit).all()
     ref_combined_results = []
     for res in results:
