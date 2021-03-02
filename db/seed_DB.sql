@@ -6,6 +6,8 @@ CREATE TABLE public.content_types (
     content_type text UNIQUE NOT NULL
 );
 
+ALTER SEQUENCE content_types_content_type_id_seq RESTART WITH 100000;
+
 INSERT INTO content_types(content_type) VALUES('bible');
 INSERT INTO content_types(content_type) VALUES('commentary');
 INSERT INTO content_types(content_type) VALUES('dictionary');
@@ -18,6 +20,8 @@ CREATE TABLE public.languages (
     language_name text NOT NULL,
     script_direction text DEFAULT 'left-to-right'
 );
+
+ALTER SEQUENCE languages_language_id_seq RESTART WITH 100000;
 
 
 \COPY languages (language_code,language_name) FROM 'languages.csv' DELIMITER ',' CSV HEADER;
@@ -36,6 +40,8 @@ CREATE TABLE public.licenses (
     metadata jsonb NULL
 );
 
+ALTER SEQUENCE licenses_license_id_seq RESTART WITH 100000;
+
 \COPY licenses (license_code, license_name, license_text, permissions) FROM 'licenses.csv' DELIMITER ',' CSV HEADER;
 
 CREATE TABLE public.versions (
@@ -47,6 +53,7 @@ CREATE TABLE public.versions (
     UNIQUE(version_code, revision)
 );
 
+ALTER SEQUENCE versions_version_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.sources (
     source_id SERIAL PRIMARY KEY,
@@ -63,6 +70,8 @@ CREATE TABLE public.sources (
     active boolean DEFAULT true NOT NULL,
     metadata jsonb NULL
 );
+
+ALTER SEQUENCE sources_source_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.bible_books_look_up (
     book_id int PRIMARY KEY,
