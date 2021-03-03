@@ -1409,15 +1409,15 @@ def parseDataForDBInsert(usfmData):
 	for chapter in chapterData:
 		chapterNumber = chapter["chapterNumber"]
 		verseData = chapter["contents"]
-		for verse in verseData:
+		for content in verseData:
 			crossRefs = ""
 			footNotes = ""
-			verseNumber = verse.get('verseNumber',"").strip() if isinstance(verse, dict) else ""
+			verseNumber = content.get('verseNumber',"").strip() if isinstance(content, dict) else ""
 			if not verseNumber:
 				# not a verse
 				pass
 			if normalVersePattern.match(verseNumber):
-				verseText = verse["verseText"]
+				verseText = content["verseText"]
 				dbVerseText = verseText
 				bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
 					+ str(verseNumber).zfill(3))
@@ -1430,7 +1430,7 @@ def parseDataForDBInsert(usfmData):
 				postScript = matchObj.group(2)
 				verseNumber = matchObj.group(1)
 				if postScript == 'a':
-					verseText = verse['verseText']
+					verseText = content['verseText']
 					dbVerseText = verseText
 					bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
 						+ str(verseNumber).zfill(3))
@@ -1440,13 +1440,13 @@ def parseDataForDBInsert(usfmData):
 				else:
 					prevdbInsertData = dbInsertData[-1]
 
-					verseText = prevdbInsertData[1] + ' '+ verse['verseText']
+					verseText = prevdbInsertData[1] + ' '+ content['verseText']
 					dbVerseText = verseText
 					dbInsertData[-1] = (prevdbInsertData[0], dbVerseText, prevdbInsertData[2],prevdbInsertData[3])
 					verseContent[-1] = verseText
 			elif mergedVersePattern.match(verseNumber):
 				## keep the whole text in first verseNumber of merged verses
-				verseText = verse['verseText']
+				verseText = content['verseText']
 				dbVerseText = verseText
 				matchObj = mergedVersePattern.match(verseNumber)
 				verseNumber = matchObj.group(1)
