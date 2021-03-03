@@ -1,0 +1,27 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [version-2]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: appleboy/ssh-action@master
+        name: Deploy Fast-API app
+        env:
+          HOST: ${{ secrets.HOST }}
+          USERNAME: ${{ secrets.USERNAME }}
+          # PORT: ${{ secrets.PORT }}
+          KEY: ${{ secrets.SSHKEY }}
+
+        with:
+          # Create an artifacts directory
+          setup: |
+            mkdir -p "${PWD}/artifacts"
+          # python-version: '3.7.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
+          # architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
+          # source: "."
+          # target: "/var/www/vachan-api/"
+
