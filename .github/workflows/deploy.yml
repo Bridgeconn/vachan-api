@@ -1,8 +1,6 @@
 name: Build & Deploy
 
-on:
-  push:
-    branches: [version-2]
+on: [ push, pull_request ]
 
 jobs:
   deploy:
