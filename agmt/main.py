@@ -1412,11 +1412,10 @@ def parseDataForDBInsert(usfmData):
 		for verse in verseData:
 			crossRefs = ""
 			footNotes = ""
-			if 'metadata' in verse and 'cross-ref' in verse['metadata']:
-				crossRefs = verse['metadata']['cross-ref']
-			if 'metadata' in verse and 'footnote' in verse['metadata']:
-				footNotes = verse['metadata']['footnote']
-			verseNumber = verse.get('verseNumber',"").strip()
+			verseNumber = verse.get('verseNumber',"").strip() if isinstance(verse, dict) else ""
+			if not verseNumber:
+				# not a verse
+				pass
 			if normalVersePattern.match(verseNumber):
 				verseText = verse["verseText"]
 				dbVerseText = verseText
@@ -1465,7 +1464,7 @@ def parseDataForDBInsert(usfmData):
 					dbInsertData.append((ref_id, "", "", ""))
 					verseContent.append('')
 
-			elif verseNumber:
+			else:
 				log.info("Unrecognized pattern in %s chapter %s verse %s",bookName, chapterNumber, verseNumber)
 	return dbInsertData
 
