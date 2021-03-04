@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 import db_models
 import schemas
+from crud import normalize_unicode
 from custom_exceptions import NotAvailableException
 from database import engine
 from logger import log
@@ -80,7 +81,7 @@ def create_license(db_: Session, license_obj: schemas.LicenseCreate, user_id=Non
     '''Adds a new license to Database'''
     db_content = db_models.License(code = license_obj.code.upper(),
         name = license_obj.name.strip(),
-        license = license_obj.license,
+        license = normalize_unicode(license_obj.license),
         permissions = license_obj.permissions,
         active=True,
         createdUser=user_id)
@@ -98,7 +99,7 @@ def update_license(db_: Session, license_obj: schemas.LicenseEdit, user_id=None)
     if license_obj.name:
         db_content.name = license_obj.name
     if license_obj.license:
-        db_content.license = license_obj.license
+        db_content.license = normalize_unicode(license_obj.license)
     if license_obj.permissions:
         db_content.permissions = license_obj.permissions
     if license_obj.active is not None:
@@ -130,7 +131,7 @@ def create_version(db_: Session, version: schemas.VersionCreate):
     '''Adds a row to versions table'''
     db_content = db_models.Version(
         versionAbbreviation = version.versionAbbreviation.upper().strip(),
-        versionName = version.versionName.strip(),
+        versionName = normalize_unicode(version.versionName.strip()),
         revision = version.revision,
         metaData = version.metaData)
     db_.add(db_content)
@@ -144,7 +145,7 @@ def update_version(db_: Session, version: schemas.VersionEdit):
     if version.versionAbbreviation:
         db_content.versionAbbreviation = version.versionAbbreviation
     if version.versionName:
-        db_content.versionName = version.versionName
+        db_content.versionName = normalize_unicode(version.versionName)
     if version.revision:
         db_content.revision = version.revision
     if version.metaData:
