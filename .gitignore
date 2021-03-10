@@ -68,5 +68,6 @@ test/__pycache__/*
 app/test/__pycache__/*
 app/crud/__pycache__/*
 app/__pycache__/*
+*/.ipynb_checkpoints/*
 vachan-venv/*
 vachan-ENV/*
