@@ -83,7 +83,7 @@ CREATE TABLE public.bible_books_look_up (
 
 CREATE TABLE public.translation_projects(
     project_id SERIAL PRIMARY KEY,
-    project_name TEXT unique NOT NULL,
+    project_name TEXT NOT NULL,
     source_lang_id int NOT NULL
         REFERENCES languages(language_id),
     target_lang_id int NOT NULL 
@@ -95,6 +95,7 @@ CREATE TABLE public.translation_projects(
     created_at timestamp with time zone DEFAULT NOW()
     last_updated_user int NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
+    UNIQUE(project_name, created_user)
 );
 
 CREATE TABLE public.translation_drafts(
@@ -118,5 +119,6 @@ CREATE TABLE public.translation_memory(
         REFERENCES languages(language_id),
     token text NOT NULL,
     translations text[],
+    metadata jsonb NULL,
     UNIQUE(source_lang_id, target_lang_id, token)
 );

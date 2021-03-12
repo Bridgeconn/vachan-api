@@ -21,6 +21,11 @@ class ContentTypeName(Enum):
     biblevideo = "biblevideo"
     dictionary = "dictionary"
 
+class TranslationDocumentType(Enum):
+    '''Currently supports bible USFM only. Can be extended to
+    CSV(for commentary or notes), doc(stories, other passages) etc.'''
+    USFM = 'Bible USFM'
+
 class ContentType(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table content_types in vachan DB(postgres)'''
     __tablename__ = "content_types"
@@ -256,3 +261,81 @@ def map_all_dynamic_tables(db_: Session):
     all_src = db_.query(Source).all()
     for src in all_src:
         create_dynamic_table(src.sourceName, src.contentType.contentType)
+
+
+############ Translation Tables ##########
+
+class TranslationProject(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table translation_projects in vachan DB used by Autographa MT mode'''
+    __tablename__ = 'translation_projects'
+
+    projectId = Column('project_id', Integer, primary_key=True)
+    projectName = Column('project_name', String, index=True)
+    @declared_attr
+    def source_lang_id(cls): # pylint: disable=E0213
+        '''For modelling the sourceLanguage field in this class'''
+        return Column('source_lang_id', Integer, ForeignKey('languages.language_id'))
+    @declared_attr
+    def source_language(cls): # pylint: disable=E0213
+        '''For modelling the sourceLanguage field in this class'''
+        return relationship(Language, uselist=False)
+    @declared_attr
+    def target_lang_id(cls): # pylint: disable=E0213
+        '''For modelling the targetLanguage field in this class'''
+        return Column('target_lang_id', Integer, ForeignKey('languages.language_id'))
+    @declared_attr
+    def target_language(cls): # pylint: disable=E0213
+        '''For modelling the targetLanguage field in this class'''
+        return relationship(Language, uselist=False)
+    documentFormat = Column('source_document_format', String)
+    metaData = Column('metadata', JSON)
+    active = Column('active', Boolean, default=True)
+    createdUser = Column('created_user', Integer)
+    updatedUser = Column('last_updated_user', Integer)
+    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+
+class TranslationDraft(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table translation_drafts in vachan DB used by Autographa MT mode'''
+    __tablename__ = 'translation_drafts'
+
+    draftId = Column('draft_id', Integer, primary_key=True)
+    @declared_attr
+    def project_id(cls): # pylint: disable=E0213
+        '''For modelling the targetLanguage field in this class'''
+        return Column('project_id', Integer, ForeignKey('translation_projects.project_id'))
+    @declared_attr
+    def project(cls): # pylint: disable=E0213
+        '''For modelling the project field in this class'''
+        return relationship(TranslationProject, uselist=False)
+    sentenceId = Column('sentence_id', Integer)
+    sentence = Column('sentence', String)
+    draft = Column('draft', String)
+    draftMeta = Column('draft_meta', JSON)
+    updatedUser = Column('last_updated_user', Integer)
+    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+
+class TranslationMemory(Base):  # pylint: disable=too-few-public-methods
+    '''Corresponds to table translation_memory in vachan DB used by Autographa MT mode'''
+    __tablename__ = 'translation_memory'
+
+    tokenId = Column('token_id', Integer, primary_key=True)
+    @declared_attr
+    def source_lang_id(cls): # pylint: disable=E0213
+        '''For modelling the sourceLanguage field in this class'''
+        return Column('source_lang_id', Integer, ForeignKey('languages.language_id'))
+    @declared_attr
+    def source_language(cls): # pylint: disable=E0213
+        '''For modelling the sourceLanguage field in this class'''
+        return relationship(Language, uselist=False)
+    @declared_attr
+    def target_lang_id(cls): # pylint: disable=E0213
+        '''For modelling the targetLanguage field in this class'''
+        return Column('target_lang_id', Integer, ForeignKey('languages.language_id'))
+    @declared_attr
+    def target_language(cls): # pylint: disable=E0213
+        '''For modelling the targetLanguage field in this class'''
+        return relationship(Language, uselist=False)
+    token = Column('token', String)
+    translations = Column('translations', ARRAY(String))
+    metadata = Column('metadata', JSON)
+    
