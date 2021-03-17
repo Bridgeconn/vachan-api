@@ -278,7 +278,7 @@ class TranslationProject(Base): # pylint: disable=too-few-public-methods
     @declared_attr
     def source_language(cls): # pylint: disable=E0213
         '''For modelling the sourceLanguage field in this class'''
-        return relationship(Language, uselist=False)
+        return relationship(Language, foreign_keys=cls.source_lang_id, uselist=False)
     @declared_attr
     def target_lang_id(cls): # pylint: disable=E0213
         '''For modelling the targetLanguage field in this class'''
@@ -286,7 +286,7 @@ class TranslationProject(Base): # pylint: disable=too-few-public-methods
     @declared_attr
     def target_language(cls): # pylint: disable=E0213
         '''For modelling the targetLanguage field in this class'''
-        return relationship(Language, uselist=False)
+        return relationship(Language, foreign_keys=cls.source_lang_id, uselist=False)
     documentFormat = Column('source_document_format', String)
     metaData = Column('metadata', JSON)
     active = Column('active', Boolean, default=True)
@@ -326,16 +326,15 @@ class TranslationMemory(Base):  # pylint: disable=too-few-public-methods
     @declared_attr
     def source_language(cls): # pylint: disable=E0213
         '''For modelling the sourceLanguage field in this class'''
-        return relationship(Language, uselist=False)
-    @declared_attr
+        return relationship(Language, foreign_keys=cls.source_lang_id, uselist=False)
+    @declared_attr  
     def target_lang_id(cls): # pylint: disable=E0213
         '''For modelling the targetLanguage field in this class'''
         return Column('target_lang_id', Integer, ForeignKey('languages.language_id'))
     @declared_attr
     def target_language(cls): # pylint: disable=E0213
         '''For modelling the targetLanguage field in this class'''
-        return relationship(Language, uselist=False)
+        return relationship(Language, foreign_keys=cls.target_lang_id, uselist=False)
     token = Column('token', String)
     translations = Column('translations', ARRAY(String))
-    metadata = Column('metadata', JSON)
-    
+    metaData = Column('metadata', JSON)
