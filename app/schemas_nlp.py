@@ -2,7 +2,7 @@
 
 from typing import List, Tuple
 from enum import Enum
-from pydantic import BaseModel, constr, AnyUrl, validator, root_validator, Field
+from pydantic import BaseModel, Field
 from schemas import LangCodePattern, BookCodePattern
 
 
@@ -57,7 +57,7 @@ class Token(BaseModel):
     occurences: List[TokenOccurence]
     translations: List[str] = Field(..., example=['അബ്രാഹാമിന്റെ', 'അബ്രാഹാം'])
     metaData: dict = Field(None, example={"translationWord": "Abraham",
-    					"link": "https://git.door43.org/unfoldingWord/en_tw/src/branch/master/bible/names/abraham.md"})
+    	"link": "https://git.door43.org/unfoldingWord/en_tw/src/branch/master/bible/names/abraham.md"})
     class Config: # pylint: disable=too-few-public-methods
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''

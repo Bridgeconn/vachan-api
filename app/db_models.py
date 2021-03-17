@@ -188,7 +188,7 @@ class BibleContent(): # pylint: disable=too-few-public-methods
     USFM = Column('usfm', String)
     JSON = Column('json_object', JSON)
     @declared_attr
-    def audio(self): # pylint: disable=E0213 
+    def audio(self): # pylint: disable=E0213
         '''For modelling the audio field in bible content classes'''
         refering_table = self.__tablename__+"_audio" #pylint: disable=E1101
         return relationship(dynamicTables[refering_table], uselist=False)
@@ -327,7 +327,7 @@ class TranslationMemory(Base):  # pylint: disable=too-few-public-methods
     def source_language(cls): # pylint: disable=E0213
         '''For modelling the sourceLanguage field in this class'''
         return relationship(Language, foreign_keys=cls.source_lang_id, uselist=False)
-    @declared_attr  
+    @declared_attr
     def target_lang_id(cls): # pylint: disable=E0213
         '''For modelling the targetLanguage field in this class'''
         return Column('target_lang_id', Integer, ForeignKey('languages.language_id'))
