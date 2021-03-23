@@ -276,7 +276,7 @@ class TranslationProject(Base): # pylint: disable=too-few-public-methods
         '''For modelling the sourceLanguage field in this class'''
         return Column('source_lang_id', Integer, ForeignKey('languages.language_id'))
     @declared_attr
-    def source_language(cls): # pylint: disable=E0213
+    def sourceLanguage(cls): # pylint: disable=E0213, disable=C0103
         '''For modelling the sourceLanguage field in this class'''
         return relationship(Language, foreign_keys=cls.source_lang_id, uselist=False)
     @declared_attr
@@ -284,9 +284,9 @@ class TranslationProject(Base): # pylint: disable=too-few-public-methods
         '''For modelling the targetLanguage field in this class'''
         return Column('target_lang_id', Integer, ForeignKey('languages.language_id'))
     @declared_attr
-    def target_language(cls): # pylint: disable=E0213
+    def targetLanguage(cls): # pylint: disable=E0213, disable=C0103
         '''For modelling the targetLanguage field in this class'''
-        return relationship(Language, foreign_keys=cls.source_lang_id, uselist=False)
+        return relationship(Language, foreign_keys=cls.target_lang_id, uselist=False)
     documentFormat = Column('source_document_format', String)
     metaData = Column('metadata', JSON)
     active = Column('active', Boolean, default=True)
@@ -308,6 +308,7 @@ class TranslationDraft(Base): # pylint: disable=too-few-public-methods
         '''For modelling the project field in this class'''
         return relationship(TranslationProject, uselist=False)
     sentenceId = Column('sentence_id', Integer)
+    surrogateId = Column('surrogate_id', String)
     sentence = Column('sentence', String)
     draft = Column('draft', String)
     draftMeta = Column('draft_meta', JSON)

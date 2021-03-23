@@ -91,28 +91,31 @@ CREATE TABLE public.translation_projects(
     source_document_format text DEFAULT 'Bible USFM',
     active boolean default true,
     metadata jsonb,
-    created_user int NULL,
-    created_at timestamp with time zone DEFAULT NOW()
-    last_updated_user int NULL,
+    created_user int,
+    created_at timestamp with time zone DEFAULT NOW(),
+    last_updated_user int,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
     UNIQUE(project_name, created_user)
 );
+ALTER SEQUENCE translation_projects_project_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.translation_drafts(
     draft_id SERIAL PRIMARY KEY,
     project_id int NOT NULL 
         REFERENCES translation_projects(project_id) ON DELETE CASCADE,
     sentence_id int NOT NULL,
+    surrogate_id text,
     sentence text,
     draft text,
-    draft_meta jsonb[],
+    draft_meta jsonb,
     last_updated_user int NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
     UNIQUE(project_id, sentence_id)
 );
+ALTER SEQUENCE translation_drafts_draft_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.translation_memory(
-    token_id int PRIMARY KEY,
+    token_id SERIAL PRIMARY KEY,
     source_lang_id int NOT NULL
         REFERENCES languages(language_id),
     target_lang_id int NOT NULL 
@@ -122,3 +125,4 @@ CREATE TABLE public.translation_memory(
     metadata jsonb NULL,
     UNIQUE(source_lang_id, target_lang_id, token)
 );
+ALTER SEQUENCE translation_memory_token_id_seq RESTART WITH 100000;

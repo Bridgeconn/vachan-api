@@ -1,7 +1,7 @@
 '''Defines all API endpoints for the web server app'''
 
 from typing import List, Tuple
-from fastapi import FastAPI, Query, Body, Depends, Path
+from fastapi import FastAPI, Query, Body, Depends, Path, UploadFile, File
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -17,7 +17,7 @@ from custom_exceptions import NotAvailableException, AlreadyExistsException, Typ
 
 #pylint: disable=E0401
 #pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
-from crud import structurals_crud, contents_crud
+from crud import structurals_crud, contents_crud, nlp_crud
 
 
 
@@ -826,6 +826,7 @@ def edit_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="eng_T
     status_code=200, tags=['Translation'])
 def tokenize(language:schemas.LangCodePattern=Query(...,example="hin"),
     sentence_list:List[schemas_nlp.DraftInput]=Body(...),
+    use_translation_memory:bool=True, inlcude_phrases:bool=True, inlcude_stopwords:bool=False,
     punctuations:List[str]=Body(None), stopwords:schemas_nlp.Stopwords=Body(None)):
     '''Tokenize any set of input sentences.
     Makes use of translation memory and stopwords for forming better phrase tokens'''
@@ -858,6 +859,15 @@ def get_suggestion(source_language:schemas.LangCodePattern=Query(...,example="en
     '''Finds translation suggestions for the token in the given context'''
     return []
 
+
+@app.get('/v2/translation/draft', status_code=200, tags=['Translation'])
+def generate_draft(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
+    doc_type:str=Query("Bible"),
+    format:schemas_nlp.DraftFormats=Query('plain-text')):
+    '''Obtains draft, as per current project status, in any of the formats: 
+    plain-text, usfm, or JSON'''
+    return []
+
 @app.post('/v2/translation/learn/dictionary', tags=['Translation'])
 def add_translation_dictionary(source_language, target_language, token_translations):
     '''Load a list of predefined tokens and translations to improve tokenization and suggestion'''
@@ -874,43 +884,77 @@ def add_alignments(source_language, target_language, alignments):
 def get_projects(project_name:str=Query(None,example="Hindi-Bilaspuri Gospels"),
     source_language:schemas.LangCodePattern=Query(None,example='eng'),
     target_language:schemas.LangCodePattern=Query(None,example='mal'),
-    user_id:int=Query(None) ):
+    active:bool=True, user_id:int=Query(None), db_:Session=Depends(get_db)):
     '''Fetches the list of proejct and their details'''
-    return []
+    log.info('In get_projects')
+    log.debug('project_name: %s, source_language:%s, target_language:%s,'+
+        'active:%s, user_id:%s',project_name, source_language, target_language, active, user_id)
+    return nlp_crud.get_agmt_projects(db_, project_name, source_language, target_language, active, user_id)
 
 @app.post('/v2/autographa/project', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse, tags=['Autographa'])
-def create_project(project_obj:schemas_nlp.TranslationProjectCreate):
+def create_project(project_obj:schemas_nlp.TranslationProjectCreate, db_:Session=Depends(get_db)):
     '''Creates a new autographa MT project'''
-    return {}
+    log.info('In create_project')
+    log.debug('project_obj: %s',project_obj)
+    return {'message': "Project created successfully",
+        "data": nlp_crud.create_agmt_project(db_=db_, project=project_obj, user_id=10101)}
 
 @app.put('/v2/autographa/project', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse, tags=['Autographa'])
-def update_project(project_obj:schemas_nlp.TranslationProjectEdit):
+def update_project(project_obj:schemas_nlp.TranslationProjectEdit, db_:Session=Depends(get_db)):
     '''Adds more books to a autographa MT project's source. Delete or activate project.'''
-    return {}
+    log.info('In update_project')
+    log.debug('project_obj: %s',project_obj)
+    return {'message': "Project updated successfully",
+        "data": nlp_crud.update_agmt_project(db_, project_obj, user_id=10101)}
+
 
 @app.get('/v2/autographa/project/tokens', response_model=List[schemas_nlp.Token],
     status_code=200, tags=['Autographa'])
 def get_tokens(project_id:int=Query(...,example="1022004"),
+    books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=(410010001, 41001999)),
-    sentence_id_list:List[int]=Query(None, example=[41001001,41001002,41001003])):
-    '''Tokenize the source texts'''
-    return []
+    sentence_id_list:List[int]=Query(None, example=[41001001,41001002,41001003]),
+    use_translation_memory:bool=True, inlcude_phrases:bool=True, inlcude_stopwords:bool=False,
+    db_:Session=Depends(get_db)):
+    '''Tokenize the source texts. Optional params books, sentence_id_range or sentence_id_list can be used 
+    to specify the source verses. If more than one of these filters are given, only one would be used
+    in the following order of priority: books, range, list.
+    Flags use_translation_memory, include_phrases and include_stopwords can be
+    used to alter the tokens output as per user need'''
+    log.info('In get_tokens')
+    log.debug('project_id: %s, books:%s, sentence_id_range:%s, sentence_id_list:%s'+
+        'use_translation_memory:%s, inlcude_phrases:%s, inlcude_stopwords:%s',
+        project_id, books, sentence_id_range, sentence_id_range, use_translation_memory,
+        inlcude_phrases, inlcude_stopwords)
+    return nlp_crud.get_agmt_tokens(db_, project_id, books, sentence_id_range, sentence_id_list,
+        use_translation_memory, inlcude_phrases, inlcude_stopwords)
 
-@app.put('/v2/autographa/project/tokens', response_model=List[schemas_nlp.Draft],
+@app.put('/v2/autographa/project/tokens', response_model=schemas_nlp.TranlsateResponse,
     status_code=201, tags=['Autographa'])
 def apply_token_translations(project_id:int=Query(...,example="1022004"),
-    token_translations:List[schemas_nlp.TokenUpdate]=Body(...)):
+    token_translations:List[schemas_nlp.TokenUpdate]=Body(...), return_drafts:bool=True,
+    db_:Session=Depends(get_db)):
     '''Updates drafts using the provided token translations and returns updated verses'''
-    return []
+    log.info('In apply_token_translations')
+    log.debug('project_id: %s, token_translations:%s, ',project_id, token_translations)
+    drafts = nlp_crud.save_agmt_translations(db_, project_id, token_translations, return_drafts,
+        user_id=10101)
+    return {"message": "Token translations saved", "data":drafts}
 
 @app.get('/v2/autographa/project/draft', status_code=200, tags=['Autographa'])
 def get_draft(project_id:int=Query(...,example="1022004"), 
+    books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
-    auto_translate:bool=Query(False),
-    format:schemas_nlp.DraftFormats=Query('plain-text')):
+    fill_suggestions:bool=Query(False),
+    output_format:schemas_nlp.DraftFormats=Query(schemas_nlp.DraftFormats.TEXT), db_:Session=Depends(get_db)):
     '''Obtains draft, as per current project status, in any of the formats: 
-    plain-text, usfm, or JSON'''
-    return []
+    text for UI display, usfm for downloading, or alignment-json for project export'''
+    log.info('In get_draft')
+    log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s,\
+        fill_suggestions:%s, output_format:%s',project_id, books, sentence_id_list, sentence_id_range,
+        fill_suggestions, output_format)
+    return nlp_crud.obtain_agmt_draft(db_, project_id, books, sentence_id_list, sentence_id_range,
+        fill_suggestions, output_format)

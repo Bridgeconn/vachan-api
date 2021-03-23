@@ -1,4 +1,15 @@
 '''Utility functions'''
+import subprocess
+import json
+import unicodedata
+
+#pylint: disable=E0401
+#pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
+from custom_exceptions import TypeException
+
+def normalize_unicode(text, form="NFKC"):
+    '''to normalize text contents before adding them to DB'''
+    return unicodedata.normalize(form, text)
 
 def punctuations():
     '''list of punctuations commonly seen in our source files'''
@@ -109,3 +120,18 @@ def stopwords(lang):
     if lang in known_stopwords :
         return known_stopwords[lang]
     return {"prepositions":[], "postpositions":[]}
+
+def parse_usfm(usfm_string):
+    '''parse an uploaded usfm file using usfm-grammar'''
+    file= open("temp.usfm", "w")
+    file.write(normalize_unicode(usfm_string))
+    file.close()
+    process = subprocess.Popen(['usfm-grammar', 'temp.usfm'],
+                         stdout=subprocess.PIPE, 
+                         stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    if stderr:
+        raise TypeException(stderr.decode('utf-8'))
+    usfm_json = json.loads(stdout.decode('utf-8'))
+    return usfm_json
+

@@ -8,8 +8,8 @@ from sqlalchemy.orm import Session, defer, joinedload
 #pylint: disable=E0401
 #pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
 
-from crud import normalize_unicode
 import db_models
+from crud import utils
 from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException
 
 def get_commentaries(db_:Session, source_name, book_code=None, chapter=None, #pylint: disable=too-many-arguments
@@ -57,7 +57,7 @@ def upload_commentaries(db_: Session, source_name, commentaries, user_id=None):
             chapter = item.chapter,
             verseStart = item.verseStart,
             verseEnd = item.verseEnd,
-            commentary = normalize_unicode(item.commentary),
+            commentary = utils.normalize_unicode(item.commentary),
             active=item.active)
         db_content.append(row)
     db_.add_all(db_content)
@@ -96,7 +96,7 @@ def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
                 verseStart:%s, verseEnd:%s, not found for %s"%(
                     item.bookCode, item.chapter, item.verseStart, item.verseEnd, source_name))
         if item.commentary:
-            row.commentary = normalize_unicode(item.commentary)
+            row.commentary = utils.normalize_unicode(item.commentary)
         if item.active is not None:
             row.active = item.active
         db_.flush()
@@ -120,9 +120,9 @@ def get_dictionary_words(db_:Session, source_name, search_word = None, details =
     else:
         query = db_.query(model_cls)
     if search_word and exact_match:
-        query = query.filter(model_cls.word == normalize_unicode(search_word))
+        query = query.filter(model_cls.word == utils.normalize_unicode(search_word))
     elif search_word:
-        query = query.filter(model_cls.word.like(normalize_unicode(search_word)+"%"))
+        query = query.filter(model_cls.word.like(utils.normalize_unicode(search_word)+"%"))
     if details:
         det = json.loads(details)
         for key in det:
@@ -143,7 +143,7 @@ def upload_dictionary_words(db_: Session, source_name, dictionary_words, user_id
     db_content = []
     for item in dictionary_words:
         row = model_cls(
-            word = normalize_unicode(item.word),
+            word = utils.normalize_unicode(item.word),
             details = item.details,
             active = item.active)
         db_content.append(row)
@@ -193,7 +193,7 @@ def get_infographics(db_:Session, source_name, book_code=None, title=None, #pyli
     if book_code:
         query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
     if title:
-        query = query.filter(model_cls.title == normalize_unicode(title.strip()))
+        query = query.filter(model_cls.title == utils.normalize_unicode(title.strip()))
     query = query.filter(model_cls.active == active)
     return query.offset(skip).limit(limit).all()
 
@@ -218,7 +218,7 @@ def upload_infographics(db_: Session, source_name, infographics, user_id=None):
                     %item.bookCode)
         row = model_cls(
             book_id = book.bookId,
-            title = normalize_unicode(item.title.strip()),
+            title = utils.normalize_unicode(item.title.strip()),
             infographicLink = item.infographicLink,
             active=item.active)
         db_content.append(row)
@@ -251,7 +251,7 @@ def update_infographics(db_: Session, source_name, infographics, user_id=None):
                     %item.bookCode)
         row = db_.query(model_cls).filter(
             model_cls.book_id == book.bookId,
-            model_cls.title == normalize_unicode(item.title.strip())).first()
+            model_cls.title == utils.normalize_unicode(item.title.strip())).first()
         if not row:
             raise NotAvailableException("Infographics row with bookCode:%s, title:%s, \
                 not found for %s"%(
@@ -280,9 +280,9 @@ def get_bible_videos(db_:Session, source_name, book_code=None, title=None, theme
     if book_code:
         query = query.filter(model_cls.books.any(book_code.lower()))
     if title:
-        query = query.filter(model_cls.title == normalize_unicode(title.strip()))
+        query = query.filter(model_cls.title == utils.normalize_unicode(title.strip()))
     if theme:
-        query = query.filter(model_cls.theme == normalize_unicode(theme.strip()))
+        query = query.filter(model_cls.theme == utils.normalize_unicode(theme.strip()))
     query = query.filter(model_cls.active == active)
     return query.offset(skip).limit(limit).all()
 
@@ -306,9 +306,9 @@ def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
             if not book:
                 raise NotAvailableException('Bible Book code, %s, not found in database'%book_code)
         row = model_cls(
-            title = normalize_unicode(item.title.strip()),
-            theme = normalize_unicode(item.theme.strip()),
-            description = normalize_unicode(item.description.strip()),
+            title = utils.normalize_unicode(item.title.strip()),
+            theme = utils.normalize_unicode(item.theme.strip()),
+            description = utils.normalize_unicode(item.description.strip()),
             active = item.active,
             books = item.books,
             videoLink = item.videoLink)
@@ -334,7 +334,7 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
     db_content = []
     for item in videos:
         row = db_.query(model_cls).filter(
-            model_cls.title == normalize_unicode(item.title.strip())).first()
+            model_cls.title == utils.normalize_unicode(item.title.strip())).first()
         if not row:
             raise NotAvailableException("Bible Video row with title:%s, \
                 not found for %s"%(
@@ -349,9 +349,9 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
                         %book_code )
             row.books = item.books
         if item.theme:
-            row.theme = normalize_unicode(item.theme.strip())
+            row.theme = utils.normalize_unicode(item.theme.strip())
         if item.description:
-            row.description = normalize_unicode(item.description.strip())
+            row.description = utils.normalize_unicode(item.description.strip())
         if item.active is not None:
             row.active = item.active
         if item.videoLink:
@@ -391,13 +391,13 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None): #pylint:
         if row:
             if row.USFM:
                 raise AlreadyExistsException("Bible book, %s, already present in DB"%book.bookCode)
-            row.USFM = normalize_unicode(item.USFM)
+            row.USFM = utils.normalize_unicode(item.USFM)
             row.JSON = item.JSON
             row.active = True
         else:
             row = model_cls(
                 book_id=book.bookId,
-                USFM=normalize_unicode(item.USFM),
+                USFM=utils.normalize_unicode(item.USFM),
                 JSON=item.JSON,
                 active=True)
         db_.flush()
@@ -422,7 +422,7 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None): #pylint:
                         book_id = book.bookId,
                         chapter = chapter_number,
                         verseNumber = content['verseNumber'],
-                        verseText = normalize_unicode(content['verseText'].strip()))
+                        verseText = utils.normalize_unicode(content['verseText'].strip()))
                     db_content2.append(row_other)
     db_.add_all(db_content)
     db_.add_all(db_content2)
@@ -448,7 +448,7 @@ def update_bible_books(db_: Session, source_name, books, user_id=None): #pylint:
         if not row:
             raise NotAvailableException("Bible book, %s, not found in Database"%item.bookCode)
         if item.USFM:
-            row.USFM = normalize_unicode(item.USFM)
+            row.USFM = utils.normalize_unicode(item.USFM)
             row.JSON = item.JSON
         if item.active is not None:
             row.active = item.active
@@ -471,7 +471,7 @@ def update_bible_books(db_: Session, source_name, books, user_id=None): #pylint:
                             book_id = book.bookId,
                             chapter = chapter_number,
                             verseNumber = content['verseNumber'],
-                            verseText = normalize_unicode(content['verseText'].strip()))
+                            verseText = utils.normalize_unicode(content['verseText'].strip()))
                         db_content2.append(row_other)
             db_.add_all(db_content2)
             db_.flush()
@@ -512,7 +512,7 @@ def upload_bible_audios(db_:Session, source_name, audios, user_id=None):
                     )
                 db_content2.append(bible_table_row)
             row = model_cls_audio(
-                name=normalize_unicode(item.name.strip()),
+                name=utils.normalize_unicode(item.name.strip()),
                 url=item.url.strip(),
                 book_id=book.bookId,
                 format=item.format.strip(),
@@ -545,7 +545,7 @@ def update_bible_audios(db_: Session, source_name, audios, user_id=None):
             if not row:
                 raise NotAvailableException("Bible audio for, %s, not found in database"%item.name)
             if item.name:
-                row.name = normalize_unicode(item.name.strip())
+                row.name = utils.normalize_unicode(item.name.strip())
             if item.url:
                 row.url = item.url.strip()
             if item.format:
@@ -637,7 +637,7 @@ def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, ver
         query = query.filter(model_cls.verseNumber >= verse, model_cls.verseNumber <= last_verse)
     if search_phrase:
         query = query.filter(model_cls.verseText.like(
-            '%'+normalize_unicode(search_phrase.strip())+"%"))
+            '%'+utils.normalize_unicode(search_phrase.strip())+"%"))
     results = query.filter(model_cls.active == active).offset(skip).limit(limit).all()
     ref_combined_results = []
     for res in results:
