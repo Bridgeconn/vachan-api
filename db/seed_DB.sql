@@ -118,7 +118,7 @@ CREATE TABLE public.translation_memory(
     token_id SERIAL PRIMARY KEY,
     source_lang_id int NOT NULL
         REFERENCES languages(language_id),
-    target_lang_id int NOT NULL 
+    target_lang_id int 
         REFERENCES languages(language_id),
     token text NOT NULL,
     translations text[],
@@ -126,3 +126,8 @@ CREATE TABLE public.translation_memory(
     UNIQUE(source_lang_id, target_lang_id, token)
 );
 ALTER SEQUENCE translation_memory_token_id_seq RESTART WITH 100000;
+
+CREATE TABLE public.translation_project_users(
+    project_id int REFERENCES translation_projects(project_id),
+    user_id int
+);
