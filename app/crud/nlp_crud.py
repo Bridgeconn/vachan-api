@@ -55,7 +55,7 @@ def build_memory_trie(translation_memory):
     space_pattern = re.compile(r'\s+')
     for token in translation_memory:
         key = re.sub(space_pattern,'/', token[0])
-        memory_trie[key] = token[1]
+        memory_trie[key] = 0
     return memory_trie
 
 mock_translation_memory = ["जीवन के वचन", "जीवन का", "अपनी आँखों से देखा", "पिता के साथ",
@@ -628,13 +628,24 @@ def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_
     for token in tokens:
         obj = tokens[token]
         obj['token'] = token
+        known_info = db_.query(db_models.TranslationMemory).filter(
+            db_models.TranslationMemory.source_lang_id == project_row.source_lang_id,
+            db_models.TranslationMemory.token == token,
+            or_(db_models.TranslationMemory.target_lang_id == project_row.target_lang_id,
+                db_models.TranslationMemory.metaData is not None)
+        ).all()
+        if len(known_info)>0:
+            for mem in known_info:
+                if mem.target_lang_id == project_row.target_lang_id:
+                    obj['translations'] = mem.translations
+                    obj['metaData'] = mem.metaData
+                    break
+                elif "metaData" not in obj:
+                    obj['metaData'] = mem.metaData
         result.append(obj)
     return result
 
 def save_agmt_translations(db_, project_id, token_translations, return_drafts=True, user_id=None):
-
-
-
     '''replace tokens with provided translation in the drafts and update translation memory'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     use_data = True
@@ -663,15 +674,21 @@ def save_agmt_translations(db_, project_id, token_translations, return_drafts=Tr
                 db_models.TranslationMemory.target_lang_id == project_row.target_lang_id,
                 db_models.TranslationMemory.token == token.token).first()
             if not memory_row:
-                memory_row = db_models.TranslationMemory(
-                    source_lang_id=project_row.source_lang_id,
-                    target_lang_id=project_row.target_lang_id,
-                    token=token.token,
-                    translations=[token.translation])
+                row_args = {"source_lang_id":project_row.source_lang_id,
+                    "target_lang_id":project_row.target_lang_id,
+                    "token":token.token,
+                    "translations":[token.translation]}
+                other_lang_metaData = db_.query(db_models.TranslationMemory.metaData).filter(
+                    db_models.TranslationMemory.source_lang_id == project_row.source_lang_id,
+                    db_models.TranslationMemory.token == token.token).first()
+                if other_lang_metaData:
+                    row_args['metaData'] = other_lang_metaData[0]
+                memory_row = db_models.TranslationMemory(**row_args)
                 db_content_2.append(memory_row)
             else:
                 if token.translation not in memory_row.translations:
                     memory_row.translations.append(token.translation)
+                    flag_modified(memory_row, "translations")
                     db_content_2.append(memory_row)
     project_row.updatedUser = user_id
     db_.add_all(db_content)
@@ -711,6 +728,7 @@ def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence
         sentence_query = sentence_query.filter(
             db_models.TranslationDraft.sentenceId.in_(sentence_id_list))
     draft_rows = sentence_query.all()
+    [print(row.__dict__) for row in draft_rows]
     if fill_suggestions:
         args = {"db_":db_, "sentence_list":draft_rows,
             "source_lang":project_row.sourceLanguage.code,
@@ -722,19 +740,24 @@ def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence
         updated_drafts = auto_translate(**args)
         db_.add_all(updated_drafts)
         db_.commit()
+        [db_.refresh(row) for row in draft_rows]
     else:
         for sent in draft_rows:
+            commit_required = False
             if sent.draft is None or sent.draft == "":
+                commit_required = True
                 sent.draft = sent.sentence
                 sent.draftMeta = [((0,len(sent.sentence)), (0,len(sent.sentence)), "untranslated")]
                 db_.add(sent)
                 flag_modified(sent, "draftMeta")
-        db_.commit()
+        if commit_required:
+            db_.commit()
     if output_format.value == "text":
+        [print(row.__dict__) for row in draft_rows]
         return draft_rows
     if output_format.value == "usfm":
         return create_usfm(draft_rows)
     if output_format.value == 'alignment-json':
         return export_to_json(project_row.sourceLanguage,
             project_row.targetLanguage, draft_rows, None)
-    raise TypeException("Un supported output format: %s"%output_format)
+    raise TypeException("Unsupported output format: %s"%output_format)
