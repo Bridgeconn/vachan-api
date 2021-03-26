@@ -76,7 +76,8 @@ class Token(BaseModel):
     '''Response object for token'''
     token: str = Field(..., example='इब्राहीम')
     occurrences: List[TokenOccurence]
-    translations: List[str] = Field(..., example=['അബ്രാഹാമിന്റെ', 'അബ്രാഹാം'])
+    translations: dict = Field(...,
+        example={'അബ്രാഹാമിന്റെ':{"frequency":10}, 'അബ്രാഹാം':{"frequency":24}})
     metaData: dict = Field(None, example={"translationWord": "Abraham",
     	"link": "https://git.door43.org/unfoldingWord/en_tw/src/branch/master/bible/names/abraham.md"})
     class Config: # pylint: disable=too-few-public-methods

@@ -99,7 +99,7 @@ CREATE TABLE public.translation_projects(
 );
 ALTER SEQUENCE translation_projects_project_id_seq RESTART WITH 100000;
 
-CREATE TABLE public.translation_drafts(
+CREATE TABLE public.translation_sentences(
     draft_id SERIAL PRIMARY KEY,
     project_id int NOT NULL 
         REFERENCES translation_projects(project_id) ON DELETE CASCADE,
@@ -107,12 +107,12 @@ CREATE TABLE public.translation_drafts(
     surrogate_id text,
     sentence text,
     draft text,
-    draft_meta jsonb,
+    draft_metadata jsonb,
     last_updated_user int NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
     UNIQUE(project_id, sentence_id)
 );
-ALTER SEQUENCE translation_drafts_draft_id_seq RESTART WITH 100000;
+ALTER SEQUENCE translation_sentences_draft_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.translation_memory(
     token_id SERIAL PRIMARY KEY,
@@ -120,10 +120,10 @@ CREATE TABLE public.translation_memory(
         REFERENCES languages(language_id),
     target_lang_id int 
         REFERENCES languages(language_id),
-    token text NOT NULL,
-    translations text[],
-    metadata jsonb NULL,
-    UNIQUE(source_lang_id, target_lang_id, token)
+    source_token text NOT NULL,
+    translation_details jsonb,
+    source_token_metadata jsonb NULL,
+    UNIQUE(source_lang_id, target_lang_id, source_token)
 );
 ALTER SEQUENCE translation_memory_token_id_seq RESTART WITH 100000;
 

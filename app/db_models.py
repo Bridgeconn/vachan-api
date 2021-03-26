@@ -296,7 +296,7 @@ class TranslationProject(Base): # pylint: disable=too-few-public-methods
 
 class TranslationDraft(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table translation_drafts in vachan DB used by Autographa MT mode'''
-    __tablename__ = 'translation_drafts'
+    __tablename__ = 'translation_sentences'
 
     draftId = Column('draft_id', Integer, primary_key=True)
     @declared_attr
@@ -311,7 +311,7 @@ class TranslationDraft(Base): # pylint: disable=too-few-public-methods
     surrogateId = Column('surrogate_id', String)
     sentence = Column('sentence', String)
     draft = Column('draft', String)
-    draftMeta = Column('draft_meta', JSON)
+    draftMeta = Column('draft_metadata', JSON)
     updatedUser = Column('last_updated_user', Integer)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
 
@@ -336,6 +336,6 @@ class TranslationMemory(Base):  # pylint: disable=too-few-public-methods
     def target_language(cls): # pylint: disable=E0213
         '''For modelling the targetLanguage field in this class'''
         return relationship(Language, foreign_keys=cls.target_lang_id, uselist=False)
-    token = Column('token', String)
-    translations = Column('translations', ARRAY(String))
-    metaData = Column('metadata', JSON)
+    token = Column('source_token', String)
+    translations = Column('translation_details', JSON)
+    metaData = Column('source_token_metadata', JSON)
