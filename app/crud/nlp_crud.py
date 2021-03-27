@@ -16,12 +16,15 @@ from sqlalchemy.orm.attributes import flag_modified
 from crud import utils
 import db_models
 from custom_exceptions import NotAvailableException, TypeException
+from schemas_nlp import TranslationDocumentType
 
 def find_phrases(text, stop_words, include_phrases=True):
     '''try forming phrases as <preposition stop word>* <content word> <postposition stop word>*'''
     words = text.split()
     if not include_phrases:
         return words
+    if not isinstance(stop_words, dict):
+        stop_words = stop_words.__dict__
     phrases = []
     current_phrase = ''
     state = 'pre'
@@ -62,7 +65,7 @@ mock_translation_memory = ["जीवन के वचन", "जीवन का
                           "Here is it", "hare", "no"]
 
 def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, include_phrases=True,#pylint: disable=too-many-branches, disable=too-many-locals, disable=too-many-arguments
-    inlcude_stopwords=False, punctuations=None, stop_words=None):
+    include_stopwords=False, punctuations=None, stop_words=None):
     '''Get phrase and single word tokens and their occurances from input sentence list.
     Performs tokenization using two knowledge sources: translation memory and stopwords list
     input: [(sent_id, sent_text), (sent_id, sent_text), ...]
@@ -81,6 +84,8 @@ def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, incl
             db_models.TranslationMemory.source_language.has(code=src_lang)).all()
         memory_trie = build_memory_trie(translation_memory)
     for sent in sent_list:
+        if not isinstance(sent, dict):
+            sent = sent.__dict__
         phrases = []
         text = re.sub(r'[\n\r]+', ' ', sent['sentence'])
         #first split the text into chunks based on punctuations
@@ -120,7 +125,7 @@ def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, incl
         for phrase in phrases:
             if phrase.strip() == '':
                 continue
-            if (not inlcude_stopwords) and phrase in sw_list:
+            if (not include_stopwords) and phrase in sw_list:
                 continue
             offset = sent['sentence'].find(phrase, start)
             if offset == -1:
@@ -225,7 +230,7 @@ def auto_translate(db_, sentence_list, source_lang, target_lang, punctuations=No
         suggestion_trie_in_mem['model'] = sugg_trie
     else: # if learnt model not present, return input as such
         sugg_trie = pygtrie.StringTrie()
-    args = {"db_":db_, "src_lang":source_lang.code, "inlcude_stopwords":True}
+    args = {"db_":db_, "src_lang":source_lang.code, "include_stopwords":True}
     if punctuations:
         args['punctuations'] = punctuations
     if stop_words:
@@ -264,6 +269,9 @@ def create_usfm(sent_drafts):
     book_code = ''
     sentences = sorted(sent_drafts, key=lambda x:x.sentenceId, reverse=False)
     for sent in sentences:
+        if sent.sentenceId < 1001001 or sent.sentenceId > 66999999:
+            raise TypeException("SentenceIds should be of bbbcccvvv pattern for creating USFM,"+
+                "doesn't support %s"%sent.sentenceId)
         verse_num = sent.sentenceId % 1000
         chapter_num = int((sent.sentenceId /1000) % 1000)
         book_num = int(sent.sentenceId / 1000000)
@@ -409,13 +417,13 @@ def export_to_json(source_lang, target_lang, sentence_list, last_modified):
                    "metadata":{
                       "resources":{
                           "r0": {
-                            "languageCode": source_lang.code,
-                            "name": source_lang.language,
+                            # "languageCode": source_lang.code,
+                            # "name": source_lang.language,
                             # "version": "0.1"
                           },
                           "r1": {
-                            "languageCode": target_lang.code,
-                            "name": target_lang.language,
+                            # "languageCode": target_lang.code,
+                            # "name": target_lang.language,
                             # "version": "9"
                           }
                       },
@@ -423,6 +431,12 @@ def export_to_json(source_lang, target_lang, sentence_list, last_modified):
                    },
                    "segments": []
                   }
+    if source_lang:
+        json_output['metaData']['resources']['r0'] = {"languageCode": source_lang.code,
+            "name": source_lang.language}
+    if target_lang:
+        json_output['metaData']['resources']['r1'] = {"languageCode": target_lang.code,
+            "name": target_lang.language}
     for row in sentence_list:
         row_obj = {"resources":{
                         "r0":{
@@ -660,41 +674,80 @@ def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range,
 
 
 def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_id_list, #pylint: disable=too-many-arguments disable=too-many-locals
-    use_translation_memory=True, include_phrases=True, inlcude_stopwords=False):
+    use_translation_memory=True, include_phrases=True, include_stopwords=False):
     '''Get the selected verses from drafts table and tokenize them'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException("Project with id, %s, not found"%project_id)
-    source = db_.query(db_models.Language).get(project_row.source_lang_id)
     sentences = obtain_agmt_source(db_, project_id, books, sentence_id_range,sentence_id_list)
-    args = {"db_":db_, "src_lang":source.code, "sent_list":sentences,
+    args = {"db_":db_, "src_language":project_row.source_language, "sentence_list":sentences,
+        'trg_language':project_row.target_language,
         "use_translation_memory":use_translation_memory, "include_phrases":include_phrases,
-        "inlcude_stopwords":inlcude_stopwords}
+        "include_stopwords":include_stopwords}
     if "stopwords" in project_row.metaData:
-        args['stop_words'] = project_row.metaData['stopwords']
+        args['stopwords'] = project_row.metaData['stopwords']
     if "punctuations" in project_row.metaData:
         args['punctuations'] = project_row.metaData['punctuations']
-    tokens = tokenize(**args)
-    result = []
-    for token in tokens:
-        obj = tokens[token]
-        obj['token'] = token
-        known_info = db_.query(db_models.TranslationMemory).filter(
-            db_models.TranslationMemory.source_lang_id == project_row.source_lang_id,
-            db_models.TranslationMemory.token == token,
-            or_(db_models.TranslationMemory.target_lang_id == project_row.target_lang_id,
-                db_models.TranslationMemory.metaData is not None)
-        ).all()
-        if len(known_info)>0:
-            for mem in known_info:
-                if mem.target_lang_id == project_row.target_lang_id:
-                    obj['translations'] = mem.translations
-                    obj['metaData'] = mem.metaData
-                    break
-                if "metaData" not in obj:
-                    obj['metaData'] = mem.metaData
-        result.append(obj)
+    return get_generic_tokens( **args)
+
+def replace_bulk_tokens(db_, sentence_list, token_translations, src_code, trg_code, use_data=True):
+    '''Substitute tokens with provided trabslations and return drafts and draftMetas'''
+    source = db_.query(db_models.Language).filter(
+        db_models.Language.code == src_code).first()
+    if not source:
+        raise NotAvailableException("Language code, %s, not in DB. Please create if required"%src_code)
+    target = db_.query(db_models.Language).filter(
+        db_models.Language.code == trg_code).first()
+    if not source:
+        raise NotAvailableException("Language code, %s, not in DB. Please create if required"%trg_code)
+    updated_sentences = {sent.sentenceId:sent for sent in sentence_list}
+    for token in token_translations:
+        for occur in token.occurrences:
+            draft_row = updated_sentences[occur.sentenceId]
+            if not draft_row:
+                raise NotAvailableException("Sentence id, %s, not found in the sentence_list"
+                    %occur.sentenceId)
+            draft, meta = replace_token(draft_row.sentence, occur.offset, token.translation,
+                draft_row.draft, draft_row.draftMeta)
+            draft_row.draft = draft
+            draft_row.draftMeta = meta
+            updated_sentences[occur.sentenceId]  = draft_row
+        if use_data:
+            memory_row = db_.query(db_models.TranslationMemory).filter(
+                db_models.TranslationMemory.source_lang_id == source.languageId,
+                db_models.TranslationMemory.target_lang_id == target.languageId,
+                db_models.TranslationMemory.token == token.token).first()
+            if not memory_row:
+                row_args = {"source_lang_id":source.languageId,
+                    "target_lang_id":target.languageId,
+                    "token":token.token,
+                    "translations":{token.translation:{
+                        "frequency": len(token.occurrences)}}}
+                other_lang_metadata = db_.query(db_models.TranslationMemory.metaData).filter(
+                    db_models.TranslationMemory.source_lang_id == source.languageId,
+                    db_models.TranslationMemory.token == token.token).first()
+                if other_lang_metadata:
+                    row_args['metaData'] = other_lang_metadata[0]
+                memory_row = db_models.TranslationMemory(**row_args)
+                db_.add(memory_row)
+                db_.commit()
+            else:
+                if token.translation not in memory_row.translations:
+                    memory_row.translations[token.translation] = {
+                        "frequency": len(token.occurrences)}
+                    flag_modified(memory_row, "translations")
+                    db_.add(memory_row)
+                    db_.commit()
+                else:
+                    old_freq = memory_row.translations[token.translation]['frequency']
+                    memory_row.translations[token.translation] = {
+                        "frequency": old_freq+len(token.occurrences)}
+                    flag_modified(memory_row, "translations")
+                    db_.add(memory_row)
+                    db_.commit()
+    result = [updated_sentences[key] for key in updated_sentences]
     return result
+
 
 def save_agmt_translations(db_, project_id, token_translations, return_drafts=True, user_id=None):
     '''replace tokens with provided translation in the drafts and update translation memory'''
@@ -762,6 +815,35 @@ def save_agmt_translations(db_, project_id, token_translations, return_drafts=Tr
         return sorted(result, key=lambda x: x.sentenceId)
     return None
 
+def obtain_draft(db_:Session, sentence_list, doc_type):
+    '''Convert input sentences to required format'''
+    if doc_type == TranslationDocumentType.USFM:
+        return create_usfm(sentence_list)
+    if doc_type == TranslationDocumentType.JSON:
+        return export_to_json(None,
+            None, sentence_list, None)
+    if doc_type == TranslationDocumentType.CSV:
+        result = ''
+        for sent in sentence_list:
+            result += sent.surrogateId+","+sent.sentence+","+sent.draft+"\n"
+        return result
+    if doc_type == TranslationDocumentType.TEXT:
+        punctuations=utils.punctuations()+utils.numbers()
+        punct_pattern = re.compile('['+''.join(punctuations)+']')
+        result = ''
+        prev_id = None
+        for sent in sentence_list:
+            if prev_id is not None and sent.sentenceId-prev_id > 1:
+                result += "\n"
+            result += sent.draft
+            if not re.match(punct_pattern, sent.draft[-1]):
+                result += "."
+            result += ' '
+            prev_id = sent.sentenceId
+        return result
+
+
+
 def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence_id_range,
     output_format="usfm"):
     '''generate draft for selected sentences as usfm or json'''
@@ -802,4 +884,55 @@ def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_r
     result = {"confirmed": confirmed_length/total_length,
         "suggestion": suggestions_length/total_length,
         "untranslated": untranslated_length/total_length}
+    return result
+
+def get_generic_tokens(db_:Session, src_language, sentence_list, trg_language=None,
+    punctuations=None, stopwords=None,
+    use_translation_memory=True, include_phrases=True, include_stopwords=False):
+    '''tokenize the input sentences and return token list with details'''
+    if isinstance(src_language, str):
+        language_code = src_language
+        src_language = db_.query(db_models.Language).filter(
+            db_models.Language.code == language_code).first()
+        if not src_language:
+            raise NotAvailableException("Language, %s, not present in DB"%language_code)
+    if isinstance(trg_language, str):
+        language_code = trg_language
+        trg_language = db_.query(db_models.Language).filter(
+            db_models.Language.code == language_code).first()
+        if not trg_language:
+            raise NotAvailableException("Language, %s, not present in DB"%language_code)
+    args = {"db_":db_, "src_lang":src_language.code, "sent_list":sentence_list,
+        "use_translation_memory":use_translation_memory, "include_phrases":include_phrases,
+        "include_stopwords":include_stopwords}
+    if stopwords is not None:
+        args['stop_words'] = stopwords
+    if punctuations is not None:
+        args['punctuations'] = punctuations
+    tokens = tokenize(**args)
+    result = []
+    for token in tokens:
+        obj = tokens[token]
+        obj['token'] = token
+        known_info = []
+        info_query = db_.query(db_models.TranslationMemory).filter(
+                db_models.TranslationMemory.source_lang_id == src_language.languageId,
+                db_models.TranslationMemory.token == token)
+        if trg_language:
+            info_query = info_query.filter(
+                or_(db_models.TranslationMemory.target_lang_id == trg_language.languageId,
+                    db_models.TranslationMemory.metaData is not None)
+                )
+        else:
+            info_query = info_query.filter(db_models.TranslationMemory.metaData is not None)
+        known_info = info_query.all()
+        if len(known_info)>0:
+            for mem in known_info:
+                if trg_language and mem.target_lang_id == trg_language.languageId:
+                    obj['translations'] = mem.translations
+                    obj['metaData'] = mem.metaData
+                    break
+                if "metaData" not in obj:
+                    obj['metaData'] = mem.metaData
+        result.append(obj)
     return result

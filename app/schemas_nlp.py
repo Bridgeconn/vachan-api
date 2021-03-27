@@ -2,7 +2,7 @@
 
 from typing import List, Tuple
 from enum import Enum
-from pydantic import BaseModel, Field, constr
+from pydantic import BaseModel, Field, constr, root_validator
 from schemas import LangCodePattern, BookCodePattern, TableNamePattern
 from schemas import LanguageResponse
 
@@ -10,7 +10,10 @@ from schemas import LanguageResponse
 class TranslationDocumentType(Enum):
     '''Currently supports bible USFM only. Can be extended to
     CSV(for commentary or notes), doc(stories, other passages) etc.'''
-    USFM = 'Bible USFM'
+    USFM = 'usfm'
+    TEXT = 'text'
+    CSV = 'csv'
+    JSON = 'alignment-json'
 
 class Stopwords(BaseModel):
     '''Input object for stopwords'''
@@ -89,14 +92,16 @@ class TokenUpdate(BaseModel):
     '''Input object for applying token translation'''
     token: str = Field(..., example="इब्राहीम")
     occurrences: List[TokenOccurence]
-    translation: str = Field(..., example="അബ്രാഹാമിന്റെ")
+    translation: str = Field(..., example="അബ്രാഹാം")
 
 class Sentence(BaseModel):
     '''Response object for sentences and plain-text draft'''
     sentenceId: int
     sentence: str
     draft: str = None
-    draftMeta: List[Tuple[Tuple[int, int], Tuple[int,int],'str']] = None
+    draftMeta: List[Tuple[Tuple[int, int], Tuple[int,int],'str']] = Field(None,
+        example=[[[0,8], [0,8],"confirmed"],
+            [[8,64],[8,64],"untranslated"]])
     class Config: # pylint: disable=too-few-public-methods
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
@@ -109,11 +114,38 @@ class TranlsateResponse(BaseModel):
 
 class DraftInput(BaseModel):
     '''Input sentences for translation'''
-    sentenceId: int = Field(..., example=41001001)
+    sentenceId: str = Field(..., example=41001001)
     sentence: str = Field(...,
     	example="इब्राहीम के वंशज दाऊद के पुत्र यीशु मसीह की वंशावली इस प्रकार है")
     draft: str = None
-    draftMeta: List[Tuple[Tuple[int, int], Tuple[int,int],'str']] = None
+    draftMeta: List[Tuple[Tuple[int, int], Tuple[int,int],'str']] = Field(None,
+        example=[[[0,8], [0,8],"confirmed"],
+            [[8,64],[8,64],"untranslated"]])
+    @root_validator
+    def set_surrogate_id(cls, values): # pylint: disable=R0201 disable=E0213
+        '''USFM and JSON should be updated together. If they are absent, bookCode is required'''
+        values['surrogateId'] = values['sentenceId']
+        try:
+            values['sentenceId'] = int(values['sentenceId'])
+        except Exception as e:
+            raise e
+        return values
+
+class SentenceInput(BaseModel):
+    '''Input sentences for tokenization'''
+    sentenceId: str = Field(..., example=41001001)
+    sentence: str = Field(...,
+        example="इब्राहीम के वंशज दाऊद के पुत्र यीशु मसीह की वंशावली इस प्रकार है")
+    @root_validator
+    def set_surrogate_id(cls, values): # pylint: disable=R0201 disable=E0213
+        '''USFM and JSON should be updated together. If they are absent, bookCode is required'''
+        values['surrogateId'] = values['sentenceId']
+        try:
+            values['sentenceId'] = int(values['sentenceId'])
+        except Exception as e:
+            raise e
+        return values
+
 
 class DraftFormats(Enum):
     '''Specify various export,view,download formats for project/draft'''

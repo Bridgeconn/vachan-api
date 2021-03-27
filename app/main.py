@@ -653,7 +653,7 @@ def get_dictionary_word( #pylint: disable=too-many-arguments
     * All words starting with a substring
     * An exact word search, giving the whole word and setting exactMatch to True
     * Based on any key value pair in details, which should be specified as a dict/JSON like string
-    * By setting the wordListOnly flag to True, only the words would be inlcuded
+    * By setting the wordListOnly flag to True, only the words would be included
      in the return object, without the details
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n
@@ -822,25 +822,45 @@ def edit_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="eng_T
 ########### Generic Translation ##################
 #pylint: disable=all
 
-@app.get('/v2/translation/tokens', response_model=List[schemas_nlp.Token],
+@app.put('/v2/translation/tokens', response_model=List[schemas_nlp.Token],
     status_code=200, tags=['Translation'])
-def tokenize(language:schemas.LangCodePattern=Query(...,example="hin"),
-    sentence_list:List[schemas_nlp.DraftInput]=Body(...),
-    use_translation_memory:bool=True, inlcude_phrases:bool=True, inlcude_stopwords:bool=False,
-    punctuations:List[str]=Body(None), stopwords:schemas_nlp.Stopwords=Body(None)):
+def tokenize(source_language:schemas.LangCodePattern=Query(...,example="hin"),
+    sentence_list:List[schemas_nlp.SentenceInput]=Body(...),
+    target_language:schemas.LangCodePattern=Query(None,example="mal"),
+    use_translation_memory:bool=True, include_phrases:bool=True, include_stopwords:bool=False,
+    punctuations:List[str]=Body(None), stopwords:schemas_nlp.Stopwords=Body(None),
+    db_:Session=Depends(get_db)):
     '''Tokenize any set of input sentences.
-    Makes use of translation memory and stopwords for forming better phrase tokens'''
-    return []
+    Makes use of translation memory and stopwords for forming better phrase tokens.
+    Flags use_translation_memory, include_phrases and include_stopwords can be
+    used to alter the tokens output as per user need'''
+    log.info('In tokenize')
+    log.debug('source_language: %s, sentence_list:%s, target_language:%s, punctuations:%s,'+
+        'stopwords:%s, use_translation_memory:%s, include_phrases:%s, include_stopwords:%s',
+        source_language, sentence_list, target_language, punctuations, stopwords,
+        use_translation_memory, include_phrases, include_stopwords)
+    return nlp_crud.get_generic_tokens(db_, source_language, sentence_list, target_language,
+        punctuations, stopwords, use_translation_memory, include_phrases, include_stopwords)
 
-@app.get('/v2/translation/token-translate', response_model=List[schemas_nlp.Sentence],
+
+@app.put('/v2/translation/token-translate', response_model=schemas_nlp.TranlsateResponse,
     status_code=200, tags=['Translation'])
-def token_translate(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
-    token_translations:List[schemas_nlp.TokenUpdate]=Body(...)):
+def token_replace(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
+    token_translations:List[schemas_nlp.TokenUpdate]=Body(...),
+    source_language:schemas.LangCodePattern=Query(...,example='hin'),
+    target_language:schemas.LangCodePattern=Query(...,example='mal'),
+    use_data_for_learning:bool=True, db_:Session=Depends(get_db)):
     '''Perform token replacement on provided sentences and 
     returns obtained drafts and draft_meta'''
-    return []
+    log.info('In token_replace')
+    log.debug('sentence_list:%s, token_translations:%s,'+
+        'source_lanuage:%s, target_language:%s, use_data_for_learning:%s',
+        sentence_list, token_translations, source_language, target_language, use_data_for_learning)
+    result = nlp_crud.replace_bulk_tokens(db_, sentence_list, token_translations, source_language,
+        target_language, use_data_for_learning)
+    return {"message": "Tokens replaced with translations", "data": result}
 
-@app.get('/v2/translation/auto-translate', response_model=List[schemas_nlp.TranlsateResponse],
+@app.put('/v2/translation/suggest-translation', response_model=List[schemas_nlp.TranlsateResponse],
     status_code=200, tags=['Translation'])
 def suggestion_translate(source_language:schemas.LangCodePattern=Query(...,example="hin"),
     target_language:schemas.LangCodePattern=Query(...,example="mal"),
@@ -860,13 +880,15 @@ def get_suggestion(source_language:schemas.LangCodePattern=Query(...,example="en
     return []
 
 
-@app.get('/v2/translation/draft', status_code=200, tags=['Translation'])
+@app.put('/v2/translation/draft', status_code=200, tags=['Translation'])
 def generate_draft(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
-    doc_type:str=Query("Bible"),
-    format:schemas_nlp.DraftFormats=Query('usfm')):
-    '''Obtains draft, as per current project status, in any of the formats: 
-    plain-text, usfm, or JSON'''
-    return []
+    doc_type:schemas_nlp.TranslationDocumentType=Query(schemas_nlp.TranslationDocumentType.USFM),
+    db_:Session=Depends(get_db)):
+    '''Obtains draft, currently supports only Bible doc type, in any of the formats: 
+    usfm, or JSON'''
+    log.info('In generate_draft')
+    log.debug('sentence_list:%s, doc_type:%s',sentence_list, doc_type)
+    return nlp_crud.obtain_draft(db_, sentence_list, doc_type)
 
 @app.post('/v2/translation/learn/dictionary', tags=['Translation'])
 def add_translation_dictionary(source_language, target_language, token_translations):
@@ -916,7 +938,7 @@ def get_tokens(project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=(410010001, 41001999)),
     sentence_id_list:List[int]=Query(None, example=[41001001,41001002,41001003]),
-    use_translation_memory:bool=True, inlcude_phrases:bool=True, inlcude_stopwords:bool=False,
+    use_translation_memory:bool=True, include_phrases:bool=True, include_stopwords:bool=False,
     db_:Session=Depends(get_db)):
     '''Tokenize the source texts. Optional params books, sentence_id_range or sentence_id_list can be used 
     to specify the source verses. If more than one of these filters are given, only one would be used
@@ -925,11 +947,11 @@ def get_tokens(project_id:int=Query(...,example="1022004"),
     used to alter the tokens output as per user need'''
     log.info('In get_tokens')
     log.debug('project_id: %s, books:%s, sentence_id_range:%s, sentence_id_list:%s'+
-        'use_translation_memory:%s, inlcude_phrases:%s, inlcude_stopwords:%s',
+        'use_translation_memory:%s, include_phrases:%s, include_stopwords:%s',
         project_id, books, sentence_id_range, sentence_id_range, use_translation_memory,
-        inlcude_phrases, inlcude_stopwords)
+        include_phrases, include_stopwords)
     return nlp_crud.get_agmt_tokens(db_, project_id, books, sentence_id_range, sentence_id_list,
-        use_translation_memory, inlcude_phrases, inlcude_stopwords)
+        use_translation_memory, include_phrases, include_stopwords)
 
 @app.put('/v2/autographa/project/tokens', response_model=schemas_nlp.TranlsateResponse,
     status_code=201, tags=['Autographa'])
