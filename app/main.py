@@ -832,7 +832,7 @@ def tokenize(language:schemas.LangCodePattern=Query(...,example="hin"),
     Makes use of translation memory and stopwords for forming better phrase tokens'''
     return []
 
-@app.get('/v2/translation/token-translate', response_model=List[schemas_nlp.Draft],
+@app.get('/v2/translation/token-translate', response_model=List[schemas_nlp.Sentence],
     status_code=200, tags=['Translation'])
 def token_translate(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     token_translations:List[schemas_nlp.TokenUpdate]=Body(...)):
@@ -840,7 +840,7 @@ def token_translate(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     returns obtained drafts and draft_meta'''
     return []
 
-@app.get('/v2/translation/auto-translate', response_model=List[schemas_nlp.Draft],
+@app.get('/v2/translation/auto-translate', response_model=List[schemas_nlp.TranlsateResponse],
     status_code=200, tags=['Translation'])
 def suggestion_translate(source_language:schemas.LangCodePattern=Query(...,example="hin"),
     target_language:schemas.LangCodePattern=Query(...,example="mal"),
@@ -863,7 +863,7 @@ def get_suggestion(source_language:schemas.LangCodePattern=Query(...,example="en
 @app.get('/v2/translation/draft', status_code=200, tags=['Translation'])
 def generate_draft(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     doc_type:str=Query("Bible"),
-    format:schemas_nlp.DraftFormats=Query('plain-text')):
+    format:schemas_nlp.DraftFormats=Query('usfm')):
     '''Obtains draft, as per current project status, in any of the formats: 
     plain-text, usfm, or JSON'''
     return []
@@ -948,13 +948,55 @@ def get_draft(project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
-    fill_suggestions:bool=Query(False),
-    output_format:schemas_nlp.DraftFormats=Query(schemas_nlp.DraftFormats.TEXT), db_:Session=Depends(get_db)):
+    output_format:schemas_nlp.DraftFormats=Query(schemas_nlp.DraftFormats.USFM), db_:Session=Depends(get_db)):
     '''Obtains draft, as per current project status, in any of the formats: 
     text for UI display, usfm for downloading, or alignment-json for project export'''
     log.info('In get_draft')
     log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s,\
-        fill_suggestions:%s, output_format:%s',project_id, books, sentence_id_list, sentence_id_range,
-        fill_suggestions, output_format)
+        output_format:%s',project_id, books, sentence_id_list, sentence_id_range,
+        output_format)
     return nlp_crud.obtain_agmt_draft(db_, project_id, books, sentence_id_list, sentence_id_range,
-        fill_suggestions, output_format)
+        output_format)
+
+@app.get('/v2/autographa/project/sentences', status_code=200,
+    response_model_exclude_unset=True,
+    response_model=List[schemas_nlp.Sentence], tags=['Autographa'])
+def get_source(project_id:int=Query(...,example="1022004"), 
+    books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
+    sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
+    sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
+    with_draft:bool=False, db_:Session=Depends(get_db)):
+    '''Obtains source sentences or verses, as per the filters'''
+    log.info('In get_source')
+    log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s, with_draft:%s',
+        project_id, books, sentence_id_list, sentence_id_range, with_draft)
+    return nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_list, sentence_id_range,
+        with_draft)
+
+@app.get('/v2/autographa/project/progress', status_code=200,
+    response_model=schemas_nlp.Progress, tags=['Autographa'])
+def get_progress(project_id:int=Query(...,example="1022004"), 
+    books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
+    sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
+    sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
+    db_:Session=Depends(get_db)):
+    '''Obtains source sentences or verses, as per the filters'''
+    log.info('In get_progress')
+    log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s',
+        project_id, books, sentence_id_list, sentence_id_range)
+    return nlp_crud.obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_range)
+
+@app.put('/v2/autographa/project/suggest-translation', status_code=200,
+    response_model=List[schemas_nlp.Sentence], tags=['Autographa'])
+def suggest_translation(project_id:int=Query(...,example="1022004"), 
+    books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
+    sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
+    sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
+    confirm_all:bool=False, db_:Session=Depends(get_db)):
+    '''Try to fill draft with suggestions. If confirm_all is set, will only change status of all
+    "suggestion" to "confirmed" in the selected sentences and will not fill in new suggestion'''
+    log.info('In suggest_translation')
+    log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s',
+        project_id, books, sentence_id_list, sentence_id_range)
+    return nlp_crud.agmt_suggest_translations(db_, project_id, books, sentence_id_list, sentence_id_range,
+        confirm_all)

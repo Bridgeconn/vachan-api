@@ -91,12 +91,12 @@ class TokenUpdate(BaseModel):
     occurrences: List[TokenOccurence]
     translation: str = Field(..., example="അബ്രാഹാമിന്റെ")
 
-class Draft(BaseModel):
-    '''Response object for plain-text draft'''
+class Sentence(BaseModel):
+    '''Response object for sentences and plain-text draft'''
     sentenceId: int
     sentence: str
-    draft: str
-    draftMeta: List[Tuple[Tuple[int, int], Tuple[int,int],'str']]
+    draft: str = None
+    draftMeta: List[Tuple[Tuple[int, int], Tuple[int,int],'str']] = None
     class Config: # pylint: disable=too-few-public-methods
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
@@ -105,7 +105,7 @@ class Draft(BaseModel):
 class TranlsateResponse(BaseModel):
     '''response object after applying token translations'''
     message: str = Field(..., example="Token translations saved")
-    data:List[Draft] = None
+    data:List[Sentence] = None
 
 class DraftInput(BaseModel):
     '''Input sentences for translation'''
@@ -117,7 +117,6 @@ class DraftInput(BaseModel):
 
 class DraftFormats(Enum):
     '''Specify various export,view,download formats for project/draft'''
-    TEXT = 'text'
     USFM = 'usfm'
     JSON = 'alignment-json'
 
@@ -125,3 +124,9 @@ class Suggestion(BaseModel):
     '''Response object for suggestion'''
     suggestion:str
     score: float
+
+class Progress(BaseModel):
+    '''Response object for AgMT project progress'''
+    confirmed: float
+    suggestion: float
+    untranslated: float
