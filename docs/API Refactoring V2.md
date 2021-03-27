@@ -79,3 +79,25 @@ A rough time estimate for carrying out this process would be as follows: **6 Mon
 	> * adding description for every API as comments in the required format
 	> * defining and specifying all inputs and output format for every API 
 	> Following these practices, we will have good quality API documentaion which will become very useful for our API clients, especially if we expect external clients
+
+## Re-designing Translation APIs in Vachan-api V2
+
+Following are the feature requirements that guided the remodelling of the AGMT backend server. All these features need not be included in the current Autographa's MT mode UI. The UI and back-end are kind of seperate projects, and may have different scopes and paces. We just need to make sure that needs of UI can be met by back-end and they are in the same direction.
+
+* **Context based translation**: Allowing user to use multiple translations/senses for a token. This would require him to specify which translation to be applied where.
+* **Context based suggestions**: Give translation suggestions for tokens based on their context(near by words)
+* **Translation Memory**: A means to store(learn) all user made translations to be used for suggestions in later projects.
+* **Automatic translation**:Be able to simply input a sentence and get its translated output(only token replacement, no word re-ordering). This would be done using our prior translation knowledge or translation memory and context based suggestions.
+* **Real time drafts**:Be able to show the user the draft as the user does token translation.
+* **Support multiple formats**:Be able to widen the scope from just bible translation to support other kinds of source formats
+* Being able to work with **any size data**(from a short story to entire bible translation), which has more impacts on how we do tokenization.
+* **Set language specific parameters**:Give users options to define stopwords, pucntuations and sentence delimiters, as per their languages or requirement
+* **Upload source**:Allow users to use source text available in Vachan_DB as well as their own, without compromising any access or sharing rights.
+* **Export project**: Be able to export and share a translation project in a format similar to alignment.
+
+Additional features realized by the new design
+
+* **Multiple ways of tokenization**. Tokens are not once generated and fixed for a source/project. User has freedom to tokenize and re-tokenize any set of sentences, in the required manner inlcuding or excluding phrases, including or excluding stopwords, with or without using translation memory
+* **Variable source range to work with**. The tool doesn't require the user to always work with one bible book at a time. He can use any range of source text to work with at a time, even if the project may be of wider scope. Multiple books, one book, portions of a book or chapter etc. 
+* **Import knowledge**:Adding and using external knowledges like dictionaries, lexicons and alignment data, to improve tokenization and give better suggestions and translation helps.
+* **Work without syncing to cloud**: Allow APIs to be used without syncing(creating or saving) a project to cloud. This would allow a client app to be able to work as a desktop application which would use our APIs for translation operaions, but do not store any of the user data to server.
