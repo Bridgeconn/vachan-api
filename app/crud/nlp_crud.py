@@ -291,30 +291,40 @@ def create_usfm(sent_drafts):
         usfm_files.append(file)
     return usfm_files
 
-def form_trie_keys(prefix, to_left, to_right, prev_keys):
+def form_trie_keys(prefix, to_left, to_right, prev_keys, only_longest=True):
     '''build the trie tree recursively'''    
     keys = prev_keys
-    aaa = bbb = None
+    a = b = None
     if len(to_left) > 0:
-        aaa = '/L:'+to_left.pop(0)
+        a = '/L:'+to_left.pop(0)
     if len(to_right) > 0:
-        bbb = '/R:'+to_right.pop(0)
-    if aaa:
-        key_left = prefix + aaa
+        b = '/R:'+to_right.pop(0)
+    if a:
+        key_left = prefix + a
         keys.append(key_left)
-        keys = form_trie_keys(key_left, to_left.copy(), to_right.copy(), keys)
-    if bbb:
-        key_right = prefix + bbb
+        keys = form_trie_keys(key_left, to_left.copy(), to_right.copy(), keys,only_longest)
+    if b:
+        key_right = prefix + b
         keys.append(key_right)
-        keys = form_trie_keys(key_right, to_left.copy(), to_right.copy(), keys)
-    if aaa and bbb:
-        key_both_1 = prefix + aaa + bbb
-        key_both_2 = prefix + bbb + aaa
+        keys = form_trie_keys(key_right, to_left.copy(), to_right.copy(), keys, only_longest)
+    if a and b:
+        key_both_1 = prefix + a + b
+        key_both_2 = prefix + b + a
         keys.append(key_both_1)
         keys.append(key_both_2)
-        keys = form_trie_keys(key_both_1, to_left.copy(), to_right.copy(), keys)
-        keys = form_trie_keys(key_both_2, to_left.copy(), to_right.copy(), keys)
-    return keys
+        keys = form_trie_keys(key_both_1, to_left.copy(), to_right.copy(), keys, only_longest)
+        keys = form_trie_keys(key_both_2, to_left.copy(), to_right.copy(), keys, only_longest)
+    sorted_keys = sorted(keys, key=lambda x:len(x), reverse=True)
+    if not only_longest:
+        return sorted_keys
+    result = []
+    prev_len = 0
+    for res in sorted_keys:
+        if len(res) < prev_len:
+            break
+        prev_len = len(res)
+        result.append(res)
+    return result
 
 def get_training_data_from_drafts(sentence_list, window_size=5):
     '''identify user confirmed token translations and their contexts'''
@@ -331,7 +341,7 @@ def get_training_data_from_drafts(sentence_list, window_size=5):
 def build_trie(token_context__trans_list):
     '''Build a trie tree from scratch
     input: [(token,context_list, translation), ...]'''
-    suggestion_trie = pygtrie.StringTrie()
+    t = pygtrie.StringTrie()
     for item in token_context__trans_list:
         context = item[1]
         translation = item[2]
@@ -342,73 +352,53 @@ def build_trie(token_context__trans_list):
             token_index = item[0]
             token = context[token_index]
         else:
-            raise TypeException("Expects the token, as string, or index of token, as int,"+
-                "in first field of input tuple")
+            raise TypeException("Expects the token, as string, or index of token, as int, in first field of input tuple")
         to_left = [context[i] for i in range(token_index-1, -1, -1)]
         to_right = context[token_index+1:]
         keys = form_trie_keys(token, to_left, to_right, [token])
+        no_of_keys = len(keys)
         for key in keys:
-            if suggestion_trie.has_key(key):
-                value = suggestion_trie[key]
+            if t.has_key(key):
+                value = t[key]
                 if translation in value.keys():
-                    value[translation] += 1
+                    value[translation] += 1/no_of_keys
                 else:
-                    value[translation] = 1
-                suggestion_trie[key] = value
+                    value[translation] = 1/no_of_keys
+                t[key] = value
             else:
-                suggestion_trie[key] = {translation: 1}
-    return suggestion_trie
+                t[key] = {translation: 1/no_of_keys}
+    return t
 
-def get_translation_suggestion(db_:Session, word, context, suggestion_trie, source_lang, target_lang): # pylint: disable=too-many-locals
+def get_translation_suggestion(db_:Session, index, context, tree, source_lang, target_lang): # pylint: disable=too-many-locals
     '''find the context based translation suggestions for a word.
     Makes use of the learned model, t, for the lang pair, based on translation memory
     output format: [(translation1, score1), (translation2, score2), ...]'''
-    if isinstance(word, str):
-        token_index = context.index(word)
-    elif isinstance(word, int):
-        token_index = word
-        word = context[token_index]
-    print("word:",word)
-    single_word_match = list(suggestion_trie.prefixes(word))
-    #pdb.set_trace()
-    if len(single_word_match) == 0:
-        in_mem = db_.query(db_models.TranslationMemory).filter(
-            db_models.TranslationMemory.source_lang_id==source_lang.languageId,
-            db_models.TranslationMemory.target_lang_id==target_lang.languageId,
-            db_models.TranslationMemory.token==word).first()
-        if in_mem:
-            print("in_mem:", in_mem.__dict__)
-            trans = sorted(in_mem.translations, key=lambda x:in_mem.translations[x]['frequency'],
-                reverse=True)
-            return [(ttt,0) for ttt in trans]
-        return []
-    total_count = sum(single_word_match[0].value.values())
-    to_left = [context[i] for i in range(token_index-1, -1, -1)]
-    to_right = context[token_index+1:]
-    keys = form_trie_keys(word, to_left, to_right, [word])
-    keys = sorted(keys, key = lambda x : len(x), reverse=True)
-    suggestions = {}
-    prev_path_length = 0
-    for k in keys:
-        if len(k) < prev_path_length:
-            # avoid searching with all the lower level keys
-            break
-        prev_path_length = len(k)
-        all_matches = suggestion_trie.prefixes(k)
-        for match in all_matches:
-            levels = len(match.key.split("/"))
-            #pdb.set_trace()
-            for trans in match.value:
-                score = match.value[trans]*levels*levels / total_count
-                if trans in suggestions:
-                    if suggestions[trans] < score:
-                        suggestions[trans] = score
-                else:
-                    suggestions[trans] = score
-    sorted_suggestions = {k: suggestions[k] for k in sorted(suggestions,
-        key=suggestions.get, reverse=True)}
-    result = [(key, suggestions[key]) for key in sorted_suggestions]
-    return result
+    if isinstance(index, int):
+        word = context[index]
+    elif isinstance(index, str):
+        word = index
+        index = context.index(word)
+#     pdb.set_trace()
+    to_left = [context[i] for i in range(index-1, -1, -1)]
+    to_right = context[index+1:]
+    keys = form_trie_keys(word, to_left, to_right, [word], False)
+    trans = {}
+    total = 0
+    for key in keys:
+        if t.has_subtrie(key) or t.has_key(key):
+            nodes = t.values(key)
+#             print("match:",key)
+            level = len(key.split("/"))
+            for nod in nodes:
+                for sense in nod:
+                    if sense in trans:
+                        trans[sense] += nod[sense]*level*level
+                    else:
+                        trans[sense] = nod[sense]*level*level
+                    total += nod[sense]
+    sorted_trans = sorted(trans.items(), key=lambda x:x[1], reverse=True)
+    scored_trans = [(sense[0],sense[1]/total) for sense in sorted_trans]
+    return scored_trans
 
 def export_to_json(source_lang, target_lang, sentence_list, last_modified):
     '''input sentence_list is List of (sent_id, source_sent, draft, draft_meta)
