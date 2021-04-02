@@ -1092,23 +1092,27 @@ def export_to_json(source_lang, target_lang, sentence_list, last_modified):
         row_obj = {"resources":{
                         "r0":{
                             "text":row.sentence,
-                            # "tokens":re.sub(punct_pattern,'',row[1]).split()
+                            "tokens":[],
                             "metadata": {"contextId":row.surrogateId}
                         },
                         "r1":{
                             "text": row.draft,
-                            # "tokens":re.sub(punct_pattern,'',row[1]).split()
+                            "tokens":[],
                             "metadata": {"contextId":row.surrogateId}
                         }
                     },
                    "alignments":[]
                   }
-        for meta in row.draftMeta:
+        for i,meta in enumerate(row.draftMeta):
             algmt = {
-              "r0": list(meta[0]),
-              "r1": list(meta[1]),
+              "r0": [i],
+              "r1": [i],
               "status": meta[2]
             }
+            src_token = row.sentence[meta[0][0]:meta[0][1]]
+            trg_token = row.draft[meta[1][0]:meta[1][1]]
+            row_obj['resources']['r0']['tokens'].append(src_token)
+            row_obj['resources']['r1']['tokens'].append(trg_token)
             if meta[2] == "confirmed":
                 algmt['score'] = 1
                 algmt['verfied'] = True
