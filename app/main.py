@@ -823,7 +823,7 @@ def edit_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="eng_T
 #pylint: disable=all
 
 @app.put('/v2/translation/tokens', response_model=List[schemas_nlp.Token],
-    status_code=200, tags=['Translation'])
+    status_code=200, tags=['Generic Translation'])
 def tokenize(source_language:schemas.LangCodePattern=Query(...,example="hin"),
     sentence_list:List[schemas_nlp.SentenceInput]=Body(...),
     target_language:schemas.LangCodePattern=Query(None,example="mal"),
@@ -844,7 +844,7 @@ def tokenize(source_language:schemas.LangCodePattern=Query(...,example="hin"),
 
 
 @app.put('/v2/translation/token-translate', response_model=schemas_nlp.TranlsateResponse,
-    status_code=200, tags=['Translation'])
+    status_code=200, tags=['Generic Translation'])
 def token_replace(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     token_translations:List[schemas_nlp.TokenUpdate]=Body(...),
     source_language:schemas.LangCodePattern=Query(...,example='hin'),
@@ -861,7 +861,7 @@ def token_replace(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     return {"message": "Tokens replaced with translations", "data": result}
 
 @app.put('/v2/translation/suggestions', response_model=List[schemas_nlp.TranlsateResponse],
-    status_code=200, tags=['Translation'])
+    status_code=200, tags=['Generic Translation'])
 def suggestion_translate(source_language:schemas.LangCodePattern=Query(...,example="hin"),
     target_language:schemas.LangCodePattern=Query(...,example="mal"),
     sentence_list:List[schemas_nlp.DraftInput]=Body(...),
@@ -870,7 +870,7 @@ def suggestion_translate(source_language:schemas.LangCodePattern=Query(...,examp
     return []
 
 @app.get('/v2/translation/gloss', response_model=List[schemas_nlp.Suggestion],
-    status_code=200, tags=['Translation'])
+    status_code=200, tags=['Generic Translation'])
 def get_suggestion(source_language:schemas.LangCodePattern=Query(...,example="eng"),
     target_language:schemas.LangCodePattern=Query(...,example="hin"),
     token:str=Query(...,example="duck"),
@@ -880,7 +880,7 @@ def get_suggestion(source_language:schemas.LangCodePattern=Query(...,example="en
     return []
 
 
-@app.put('/v2/translation/draft', status_code=200, tags=['Translation'])
+@app.put('/v2/translation/draft', status_code=200, tags=['Generic Translation'])
 def generate_draft(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     doc_type:schemas_nlp.TranslationDocumentType=Query(schemas_nlp.TranslationDocumentType.USFM),
     db_:Session=Depends(get_db)):
@@ -890,20 +890,20 @@ def generate_draft(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     log.debug('sentence_list:%s, doc_type:%s',sentence_list, doc_type)
     return nlp_crud.obtain_draft(db_, sentence_list, doc_type)
 
-@app.post('/v2/translation/learn/dictionary', tags=['Translation'])
+@app.post('/v2/translation/learn/gloss', tags=['Generic Translation'])
 def add_translation_dictionary(source_language, target_language, token_translations):
     '''Load a list of predefined tokens and translations to improve tokenization and suggestion'''
     return {}
 
-@app.post('/v2/translation/learn/alignment', tags=['Translation'])
+@app.post('/v2/translation/learn/alignment', tags=['Generic Translation'])
 def add_alignments(source_language:schemas.LangCodePattern, target_language:schemas.LangCodePattern,
     alignments:List[schemas_nlp.Alignment]):
     '''Prepares training data with the alignments and update translation memory and suggestion models'''
     return
-############## Autographa MT ##########################
+############## Autographa Projects ##########################
 
 @app.get('/v2/autographa/projects', response_model=List[schemas_nlp.TranslationProject],
-    status_code=200, tags=['Autographa'])
+    status_code=200, tags=['Autographa-Project management'])
 def get_projects(project_name:str=Query(None,example="Hindi-Bilaspuri Gospels"),
     source_language:schemas.LangCodePattern=Query(None,example='eng'),
     target_language:schemas.LangCodePattern=Query(None,example='mal'),
@@ -915,7 +915,7 @@ def get_projects(project_name:str=Query(None,example="Hindi-Bilaspuri Gospels"),
     return nlp_crud.get_agmt_projects(db_, project_name, source_language, target_language, active, user_id)
 
 @app.post('/v2/autographa/projects', status_code=201,
-    response_model=schemas_nlp.TranslationProjectUpdateResponse, tags=['Autographa'])
+    response_model=schemas_nlp.TranslationProjectUpdateResponse, tags=['Autographa-Project management'])
 def create_project(project_obj:schemas_nlp.TranslationProjectCreate, db_:Session=Depends(get_db)):
     '''Creates a new autographa MT project'''
     log.info('In create_project')
@@ -924,7 +924,7 @@ def create_project(project_obj:schemas_nlp.TranslationProjectCreate, db_:Session
         "data": nlp_crud.create_agmt_project(db_=db_, project=project_obj, user_id=10101)}
 
 @app.put('/v2/autographa/projects', status_code=201,
-    response_model=schemas_nlp.TranslationProjectUpdateResponse, tags=['Autographa'])
+    response_model=schemas_nlp.TranslationProjectUpdateResponse, tags=['Autographa-Project management'])
 def update_project(project_obj:schemas_nlp.TranslationProjectEdit, db_:Session=Depends(get_db)):
     '''Adds more books to a autographa MT project's source. Delete or activate project.'''
     log.info('In update_project')
@@ -932,9 +932,28 @@ def update_project(project_obj:schemas_nlp.TranslationProjectEdit, db_:Session=D
     return {'message': "Project updated successfully",
         "data": nlp_crud.update_agmt_project(db_, project_obj, user_id=10101)}
 
+@app.post('/v2/autographa/project/user', status_code=201,
+    response_model=schemas_nlp.UserUpdateResponse, tags=['Autographa-Project management'])
+def add_user(project_id:int, user_id:int, db_:Session=Depends(get_db)):
+    '''Adds new user to a project.'''
+    log.info('In add_user')
+    log.debug('project_id: %s, user_id:%s',project_id, user_id)
+    return {'message': "User added to project successfully",
+        "data": nlp_crud.add_agmt_user(db_, project_id, user_id, current_user=10101)}
+
+@app.put('/v2/autographa/project/user', status_code=201,
+    response_model=schemas_nlp.UserUpdateResponse, tags=['Autographa-Project management'])
+def update_user(user_obj:schemas_nlp.ProjectUser, db_:Session=Depends(get_db)):
+    '''Changes role, metadata or active status of user of a project.'''
+    log.info('In update_user')
+    log.debug('user_obj:%s',user_obj)
+    return {'message': "User updated in project successfully",
+        "data": nlp_crud.update_agmt_user(db_, user_obj, current_user=10101)}
+
+############## Autographa Translations ##########################
 
 @app.get('/v2/autographa/project/tokens', response_model=List[schemas_nlp.Token],
-    status_code=200, tags=['Autographa'])
+    status_code=200, tags=['Autographa-Translation'])
 def get_tokens(project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=(410010001, 41001999)),
@@ -955,7 +974,7 @@ def get_tokens(project_id:int=Query(...,example="1022004"),
         use_translation_memory, include_phrases, include_stopwords)
 
 @app.put('/v2/autographa/project/tokens', response_model=schemas_nlp.TranlsateResponse,
-    status_code=201, tags=['Autographa'])
+    status_code=201, tags=['Autographa-Translation'])
 def apply_token_translations(project_id:int=Query(...,example="1022004"),
     token_translations:List[schemas_nlp.TokenUpdate]=Body(...), return_drafts:bool=True,
     db_:Session=Depends(get_db)):
@@ -966,7 +985,7 @@ def apply_token_translations(project_id:int=Query(...,example="1022004"),
         user_id=10101)
     return {"message": "Token translations saved", "data":drafts}
 
-@app.get('/v2/autographa/project/draft', status_code=200, tags=['Autographa'])
+@app.get('/v2/autographa/project/draft', status_code=200, tags=['Autographa-Translation'])
 def get_draft(project_id:int=Query(...,example="1022004"), 
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
@@ -983,7 +1002,7 @@ def get_draft(project_id:int=Query(...,example="1022004"),
 
 @app.get('/v2/autographa/project/sentences', status_code=200,
     response_model_exclude_unset=True,
-    response_model=List[schemas_nlp.Sentence], tags=['Autographa'])
+    response_model=List[schemas_nlp.Sentence], tags=['Autographa-Translation'])
 def get_source(project_id:int=Query(...,example="1022004"), 
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
@@ -997,7 +1016,7 @@ def get_source(project_id:int=Query(...,example="1022004"),
         with_draft)
 
 @app.get('/v2/autographa/project/progress', status_code=200,
-    response_model=schemas_nlp.Progress, tags=['Autographa'])
+    response_model=schemas_nlp.Progress, tags=['Autographa-Translation'])
 def get_progress(project_id:int=Query(...,example="1022004"), 
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
@@ -1010,7 +1029,7 @@ def get_progress(project_id:int=Query(...,example="1022004"),
     return nlp_crud.obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_range)
 
 @app.put('/v2/autographa/project/suggestions', status_code=200,
-    response_model=List[schemas_nlp.Sentence], tags=['Autographa'])
+    response_model=List[schemas_nlp.Sentence], tags=['Autographa-Translation'])
 def suggest_translation(project_id:int=Query(...,example="1022004"), 
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),

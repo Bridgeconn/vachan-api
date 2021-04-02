@@ -132,7 +132,9 @@ CREATE TABLE public.translation_project_users(
     project_id int REFERENCES translation_projects(project_id),
     user_id int,
     user_role text default 'member',
-    metadata jsonb
+    metadata jsonb,
+    active boolean default true,
+    UNIQUE(project_id, user_id)
 );
 
 ALTER SEQUENCE translation_project_users_project_user_id_seq RESTART WITH 100000;

@@ -22,6 +22,24 @@ class Stopwords(BaseModel):
     postpositions: List[str] = Field(...,
         example=["के", "का", "में", "की", "है", "और", "से", "हैं", "को", "पर"])
 
+class ProjectUser(BaseModel):
+    '''Input object for AgMT user update'''
+    project_id: int
+    userId: int
+    userRole: str = Field(None, example='owner')
+    metaData: dict = Field(None, example={
+        "lastProject":100002, "lastFilter":{"book":"mat","chapter":28}})
+    active: bool =None
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
+
+class UserUpdateResponse(BaseModel):
+    '''Response for user addition and updation on AgMT project'''
+    message: str = Field(..., example='User added to/updated in project successfully')
+    data: ProjectUser
+
 class TranslationProjectCreate(BaseModel):
     '''Input object for project creation'''
     projectName: str = Field(..., example="Hindi Malayalam Gospels")
@@ -42,8 +60,9 @@ class TranslationProject(BaseModel):
     sourceLanguage : LanguageResponse = Field(...)
     targetLanguage : LanguageResponse = Field(...)
     documentFormat: TranslationDocumentType
+    users: List[ProjectUser] = None
     metaData: dict = Field(None, example={"books":['mat', 'mrk', 'luk', 'jhn'],
-        "use_data_for_learning":True})
+        "useDataForLearning":True})
     active: bool
     class Config: # pylint: disable=too-few-public-methods
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
@@ -69,6 +88,7 @@ class TranslationProjectUpdateResponse(BaseModel):
     '''Response for post and put'''
     message:str = Field(...,example="Project created/updated successfully")
     data: TranslationProject = None
+
 
 class TokenOccurence(BaseModel):
     '''Object for token occurence'''
@@ -162,3 +182,18 @@ class Progress(BaseModel):
     confirmed: float
     suggestion: float
     untranslated: float
+
+class IndexPair(BaseModel):
+    '''Index pair showing alignment of soure token and target Token'''
+    sourceTokenIndex: int
+    targetTokenIndex: int
+
+class Alignment(BaseModel):
+    '''Import object of alignment data for learning'''
+    sourceTokenList: List[str] = Field(..., example=["This", "is", "an", "apple"])
+    targetTokenList: List[str] = Field(..., example=["यह","एक","सेब","है"])
+    alignedTokens: List[IndexPair] = Field(..., example=[
+        {"sourceTokenIndex": 0, "targetTokenIndex": 0},
+        {"sourceTokenIndex": 1, "targetTokenIndex": 3},
+        {"sourceTokenIndex": 2, "targetTokenIndex": 1},
+        {"sourceTokenIndex": 3, "targetTokenIndex": 2} ])

@@ -204,8 +204,8 @@ def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_
     if not project_row:
         raise NotAvailableException("Project with id, %s, not found"%project_id)
     sentences = obtain_agmt_source(db_, project_id, books, sentence_id_range,sentence_id_list)
-    args = {"db_":db_, "src_language":project_row.source_language, "sentence_list":sentences,
-        'trg_language':project_row.target_language,
+    args = {"db_":db_, "src_language":project_row.sourceLanguage, "sentence_list":sentences,
+        'trg_language':project_row.targetLanguage,
         "use_translation_memory":use_translation_memory, "include_phrases":include_phrases,
         "include_stopwords":include_stopwords}
     if "stopwords" in project_row.metaData:
@@ -420,14 +420,14 @@ def create_agmt_project(db_:Session, project, user_id=None):
         metaData=meta
         )
     db_.add(db_content)
+    db_.flush()
+    db_content2 = db_models.TranslationProjectUser(
+        project_id=db_content.projectId,
+        userId=user_id,
+        userRole="owner",
+        active=True)
+    db_.add(db_content2)
     db_.commit()
-    # db_.refresh(db_content)
-    # db_content.sourceLanguage
-    # db_content.targetLanguage
-    # db_content = db_content.__dict__
-    # db_content['books'] = None
-    # if db_content['metaData'] is not None and "books" in db_content['metaData']:
-    #     db_content['books'] = db_content['metaData']['books']
     return db_content
 
 def update_agmt_project(db_:Session, project_obj, user_id=None): #pylint: disable=too-many-branches disable=too-many-locals disable=too-many-statements
@@ -534,8 +534,42 @@ def get_agmt_projects(db_:Session, project_name=None, source_language=None, targ
             raise NotAvailableException("Language, %s, not found"%target_language)
         query = query.filter(db_models.TranslationProject.target_lang_id == target.languageId)
     if user_id:
-        query = query.filter(db_models.TranslationProject.createdUser == user_id)
+        query = query.filter(db_models.TranslationProject.users.any(userId=user_id))
     return query.filter(db_models.TranslationProject.active == active).all()
+
+def add_agmt_user(db_:Session, project_id, user_id, current_user=None):
+    '''Add an additional user(not the created user) to a project, in translation_project_users'''
+    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    if not project_row:
+        raise NotAvailableException("Project with id, %s, not found"%project_id)
+    db_content = db_models.TranslationProjectUser(
+        project_id=project_id,
+        userId=user_id,
+        userRole='member',
+        active=True)
+    db_.add(db_content)
+    project_row.updatedUser = current_user
+    db_.commit()
+    return db_content 
+
+def update_agmt_user(db_, user_obj, current_user=10101):
+    '''Change role, active status or metadata of user in a project'''
+    user_row = db_.query(db_models.TranslationProjectUser).filter(
+        db_models.TranslationProjectUser.project_id == user_obj.project_id,
+        db_models.TranslationProjectUser.userId == user_obj.userId).first()
+    if not user_row:
+        raise NotAvailableException("User-project pair not found")
+    if user_obj.userRole:
+        user_row. userRole = user_obj.userRole
+    if user_obj.metaData:
+        user_row.metaData = user_obj.metaData
+        flag_modified(user_row,'metaData')
+    if user_obj.active is not None:
+        user_row.active = user_obj.active
+    user_row.project.updatedUser = current_user
+    db_.add(user_row)
+    db_.commit()
+    return user_row
 
 def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_list=None, sentence_id_range=None,
     with_draft=False, fill_suggestions=False):
@@ -616,6 +650,7 @@ def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_r
 suggestion_trie_in_mem = {}
 SUGGESTION_DATA_PATH = 'models/suggestion_data'
 SUGGESTION_TRIE_PATH = 'models/suggestion_tries'
+WINDOW_SIZE = 5
 
 def extract_context(token, offset, sentence, window_size=5,
     punctuations=utils.punctuations()+utils.numbers()):
@@ -647,12 +682,139 @@ def get_training_data_from_drafts(sentence_list, window_size=5):
                 training_data.append((index,context))
     return training_data
 
-def alignments_to_trainingdata(input_path, output_path,src_lang, trg_lang, append=True):
+def alignments_to_trainingdata(src_lang, trg_lang, alignment_list=None,
+    append=True, window_size=WINDOW_SIZE):
     '''Convert alignments to training data for suggestions module
     input format: [(<src sent>,<trg_sent>,[(0-0), (1-3),(2-1),..]]
     output format: <index>\t<context ayrray>\t<translation>'''
+    import pandas as pd
+    output_path = SUGGESTION_DATA_PATH+"/"+src_lang+"-"+trg_lang+".tsv"
     if append:
         output_file = open(output_path, mode="a")
+    else:
+        output_file = open(output_path, mode="w")
+    sugg_dataframe = pd.DataFrame(columns=["token/index", "context", "translation"])
+    dict_data = {}
+    for sent in alignment_list:
+        current_dict = {}
+        current_sugg = []
+        seen_src = []
+        seen_trg = []
+        src_length = len(sent.sourceTokenList)
+        src_sentence = ' '.join(sent.sourceTokenList)
+        trg_sentence = ' '.join(sent.tragetTokenList)
+        for align_pair in sent.alignedTokens:
+            new_token = sent.sourceTokenList[align_pair[0]]
+            new_translation = sent.tragetTokenList[align_pair[1]]
+            window_start = align_pair[0] - floor(window_size/2)
+            if window_start < 0:
+                window_start = 0
+            window_end = align_pair[0] + ceil(window_size/2)
+            if window_end > src_length:
+                window_end = src_length
+            context_array = sent.sourceTokenList[window_start:window_end]
+            sugg_data = {
+                "token/index": align_pair[0],
+                "context": context_array,
+                "translation": new_translation
+            }
+            if align_pair[0] not in seen_src and align_pair[1] not in seen_trg:
+                token = new_token
+                if token not in current_dict:
+                    current_dict[token] = [translation]
+                else:
+                    current_dict[token].append(translation)
+                current_sugg.append(sugg_data)
+            else: # The token of translation is a part of multi-word phrase
+                old_sugg = None
+                if align_pair[0] in seen_src: # translation is a phrase
+                    token = new_token
+                    seen_translations = current_dict[token]
+                    translation = None
+                    for seen_translation in seen_translations:
+                        post_pattern = seen_translation +" "+ new_translation
+                        pre_pattern = new_translation + " "+ seen_translation
+                        if pre_pattern in trg_sentence:
+                            translation = pre_pattern
+                            updated_trans = seen_translations.remove(seen_translation)
+                            updated_trans.append(translation)
+                            break
+                        elif post_pattern in trg_sentence:
+                            translation = post_pattern
+                            updated_trans = seen_translations.remove(seen_translation)
+                            updated_trans.append(translation)
+                            break
+                    if translation is None:
+                        raise NotAvailableException("can't find %s or %s in %s"
+                            %(pre_pattern, post_pattern, trg_sentence))
+                    current_dict[token] = updated_trans                    
+                    for sugg in current_sugg:
+                        if align_pair[0] == sugg['token/index']:
+                            old_sugg = sugg
+                            break
+                    sugg_data['translation'] = translation
+                    if not old_sugg:
+                        raise NotAvailableException("Cant find old_sugg for %s:%s"
+                            %(token, translation))
+                    current_sugg.remove(old_sugg)
+                    current_sugg.append(sugg_data)
+            if align_pair[1] in seen_trg: # token is phrase
+                seen_token = None
+                translation = sent.tragetTokenList[align_pair[1]]
+                for key in current_dict:
+                    if current_dict[key] == translation:
+                        seen_token = key
+                        break
+                if seen_token is None:
+                    raise NotAvailableException("Cant find %s in translations: %s"
+                        %(translation, current_dict))
+                pre_pattern = new_token + " " + seen_token
+                post_pattern = seen_token + " " + new_token
+                if pre_pattern in src_sentence:
+                    token = pre_pattern
+                    index = align_pair[0]
+                    if window_end+1 <= len(sent.sourceTokenList):
+                        window_end = window_end + 1
+                    first = sent.sourceTokenList[window_start: align_pair[0]]
+                    last = sent.sourceTokenList[align_pair[0]+2: window_end]
+                    context_array = first+ [token] + last
+                elif post_pattern in src_sentence:
+                    token = post_pattern
+                    index = align_pair[0] -1
+                    if window_start - 1 >= 0:
+                        window_start = window_start - 1
+                    first = sent.sourceTokenList[window_start: align_pair[0]-1]
+                    last = sent.sourceTokenList[align_pair[0]+1:window_end]
+                    context_array = first + [token] + last
+                else:
+                    raise NotAvailableException("can't find %s or %s in %s"
+                        %(pre_pattern, post_pattern, src_sentence))
+                if len(current_dict[seen_token]) == 1:
+                    del current_dict[seen_token]
+                else:
+                    current_dict[seen_token].pop(translation)
+                current_dict[token] = [translation]
+                seen_index = sent.sourceTokenList.index(seen_token,
+                    align_pair[0]-1, align_pair[0]+1)
+                if seen_index < 0:
+                    raise NotAvailableException("Cant find %s in %s, near %s"
+                        %(seen_token, sent.sourceTokenList, new_token))
+                for sugg in current_sugg:
+                    if seen_index == sugg['token/index']:
+                        old_sugg = sugg
+                        break
+                sugg_data['token/index'] = index
+                sugg_data['context'] = context_array
+                if not old_sugg:
+                    raise NotAvailableException("Cant find old_sugg for %s:%s"
+                        %(token, translation))
+                current_sugg.remove(old_sugg)
+                current_sugg.append(sugg_data)
+
+
+            seen_src.append(align_pair[0])
+            seen_src.append(align_pair[1])
+
 
 def form_trie_keys(prefix, to_left, to_right, prev_keys, only_longest=True):
     '''build the trie tree recursively'''    
@@ -749,8 +911,8 @@ def get_translation_suggestion(db_:Session, index, context, tree, source_lang, t
     trans = {}
     total = 0
     for key in keys:
-        if t.has_subtrie(key) or t.has_key(key):
-            nodes = t.values(key)
+        if tree.has_subtrie(key) or tree.has_key(key):
+            nodes = tree.values(key)
             level = len(key.split("/"))
             for nod in nodes:
                 for sense in nod:
