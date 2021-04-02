@@ -269,7 +269,7 @@ class TranslationProject(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table translation_projects in vachan DB used by Autographa MT mode'''
     __tablename__ = 'translation_projects'
 
-    projectId = Column('project_id', Integer, primary_key=True)
+    projectId = Column('project_id', Integer, primary_key=True, autoincrement=True)
     projectName = Column('project_name', String, index=True)
     @declared_attr
     def source_lang_id(cls): # pylint: disable=E0213
@@ -287,6 +287,10 @@ class TranslationProject(Base): # pylint: disable=too-few-public-methods
     def targetLanguage(cls): # pylint: disable=E0213, disable=C0103
         '''For modelling the targetLanguage field in this class'''
         return relationship(Language, foreign_keys=cls.target_lang_id, uselist=False)
+    @declared_attr
+    def users(cls):# pylint: disable=E0213
+        '''For modelling project users from translation_project_users'''
+        return relationship('TranslationProjectUser', uselist=True)
     documentFormat = Column('source_document_format', String)
     metaData = Column('metadata', JSON)
     active = Column('active', Boolean, default=True)
@@ -298,7 +302,7 @@ class TranslationDraft(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table translation_drafts in vachan DB used by Autographa MT mode'''
     __tablename__ = 'translation_sentences'
 
-    draftId = Column('draft_id', Integer, primary_key=True)
+    draftId = Column('draft_id', Integer, primary_key=True, autoincrement=True)
     @declared_attr
     def project_id(cls): # pylint: disable=E0213
         '''For modelling the targetLanguage field in this class'''
@@ -319,7 +323,7 @@ class TranslationMemory(Base):  # pylint: disable=too-few-public-methods
     '''Corresponds to table translation_memory in vachan DB used by Autographa MT mode'''
     __tablename__ = 'translation_memory'
 
-    tokenId = Column('token_id', Integer, primary_key=True)
+    tokenId = Column('token_id', Integer, primary_key=True, autoincrement=True)
     @declared_attr
     def source_lang_id(cls): # pylint: disable=E0213
         '''For modelling the sourceLanguage field in this class'''
@@ -339,3 +343,20 @@ class TranslationMemory(Base):  # pylint: disable=too-few-public-methods
     token = Column('source_token', String)
     translations = Column('translation_details', JSON)
     metaData = Column('source_token_metadata', JSON)
+
+class TranslationProjectUser(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table translation_users in vachan DB used by Autographa MT mode'''
+    __tablename__ = 'translation_project_users'
+
+    projectUserId = Column('project_user_id', Integer, primary_key=True, autoincrement=True)
+    @declared_attr
+    def project_id(cls): # pylint: disable=E0213
+        '''For modelling the targetLanguage field in this class'''
+        return Column('project_id', Integer, ForeignKey('translation_projects.project_id'))
+    @declared_attr
+    def project(cls): # pylint: disable=E0213
+        '''For modelling the targetLanguage field in this class'''
+        return relationship(TranslationProject, uselist=False)
+    userId = Column('user_id', String, index=True)
+    userRole = Column('user_role', String)
+    metaData = Column('metadata', JSON)

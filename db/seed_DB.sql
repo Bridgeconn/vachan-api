@@ -128,6 +128,11 @@ CREATE TABLE public.translation_memory(
 ALTER SEQUENCE translation_memory_token_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.translation_project_users(
+    project_user_id SERIAL PRIMARY KEY,
     project_id int REFERENCES translation_projects(project_id),
-    user_id int
+    user_id int,
+    user_role text default 'member',
+    metadata jsonb
 );
+
+ALTER SEQUENCE translation_project_users_project_user_id_seq RESTART WITH 100000;
