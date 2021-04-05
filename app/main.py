@@ -890,16 +890,28 @@ def generate_draft(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     log.debug('sentence_list:%s, doc_type:%s',sentence_list, doc_type)
     return nlp_crud.obtain_draft(db_, sentence_list, doc_type)
 
-@app.post('/v2/translation/learn/gloss', tags=['Generic Translation'])
-def add_translation_dictionary(source_language, target_language, token_translations):
+@app.post('/v2/translation/learn/gloss', response_model=schemas_nlp.GlossUpdateResponse,
+    status_code=201, tags=['Generic Translation'])
+def add_gloss(source_language:schemas.LangCodePattern, target_language:schemas.LangCodePattern,
+    token_translations:List[schemas_nlp.GlossInput], db_:Session=Depends(get_db)):
     '''Load a list of predefined tokens and translations to improve tokenization and suggestion'''
-    return {}
+    log.info('In add_gloss')
+    log.debug('source_language:%s, target_language:%s, token_translations:%s',
+        source_language, target_language, token_translations)
+    tw_data = nlp_crud.add_to_translation_memory(db_,source_language, target_language,
+        token_translations)
+    return { "message": "Added to glossary", "data":tw_data }
 
-@app.post('/v2/translation/learn/alignment', tags=['Generic Translation'])
+@app.post('/v2/translation/learn/alignment', response_model=schemas_nlp.GlossUpdateResponse,
+    status_code=201, tags=['Generic Translation'])
 def add_alignments(source_language:schemas.LangCodePattern, target_language:schemas.LangCodePattern,
-    alignments:List[schemas_nlp.Alignment]):
+    alignments:List[schemas_nlp.Alignment], db_:Session=Depends(get_db)):
     '''Prepares training data with the alignments and update translation memory and suggestion models'''
-    return
+    log.info('In add_alignments')
+    log.debug('source_language:%s, target_language:%s, alignments:%s',
+        source_language, target_language, alignments)
+    tw_data = nlp_crud.alignments_to_trainingdata(db_,source_language, target_language, alignments)
+    return { "message": "Alignments used for learning", "data":tw_data }
 ############## Autographa Projects ##########################
 
 @app.get('/v2/autographa/projects', response_model=List[schemas_nlp.TranslationProject],

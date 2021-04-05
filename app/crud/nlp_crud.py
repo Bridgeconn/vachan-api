@@ -15,6 +15,7 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from crud import utils
 import db_models
+from logger import log
 from custom_exceptions import NotAvailableException, TypeException
 from schemas_nlp import TranslationDocumentType
 
@@ -682,138 +683,98 @@ def get_training_data_from_drafts(sentence_list, window_size=5):
                 training_data.append((index,context))
     return training_data
 
-def alignments_to_trainingdata(src_lang, trg_lang, alignment_list=None,
+def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
+    '''Takes one sentence's alignments and finds aligned phrases
+    input: src-trg token alignments, a list of {"sourceTokenIndex", "targetTokenIndex"} pairs
+    output: aligned multi-token pharses, if available, based on one to many mappings in input'''
+    phrases = []
+    seen_src = []
+    seen_trg = []
+    for align in align_pairs:
+        if (align.sourceTokenIndex not in seen_src and
+            align.targetTokenIndex not in seen_trg): #New single token entry
+            new_token = src_tok_list[align.sourceTokenIndex]
+            new_translation = trg_tok_list[align.targetTokenIndex]
+            phrases.append( {"src_indices": [align.sourceTokenIndex],
+                "trg_indices":[align.targetTokenIndex],
+                "translation": new_translation, "token": new_token})
+        else:
+            if align.sourceTokenIndex in seen_src: # Some other trg word is aleady aligned to src
+                old_align = None
+                for obj in phrases:
+                    if align.sourceTokenIndex in obj['src_indices']:
+                        old_align = obj
+                        break
+                if not old_align:
+                    raise NotAvailableException("Can't find source token, %s, in %s"%(
+                        src_tok_list[align.sourceTokenIndex], phrases))
+                trg_indices = sorted(old_align['trg_indices']+ [align.targetTokenIndex])
+                translation = " ".join(trg_tok_list[trg_indices[0]:trg_indices[-1]+1])
+                phrases.remove(old_align)
+                old_align['trg_indices'] = trg_indices
+                old_align['translation'] = translation
+                phrases.append(old_align)
+            if align.targetTokenIndex in seen_trg: # some other src is already aligned to this trg
+                old_align = None
+                for obj in phrases:
+                    if align.targetTokenIndex in obj['trg_indices']:
+                        old_align = obj
+                        break
+                if not old_align:
+                    raise NotAvailableException("Cant find target token, %s, in %s"%(
+                        trg_tok_list[align.targetTokenIndex], phrases))
+                src_indices = sorted(old_align['src_indices']+ [align.sourceTokenIndex])
+                new_token = " ".join(src_tok_list[src_indices[0]:src_indices[-1]+1])
+                phrases.remove(old_align)
+                old_align['src_indices'] = src_indices
+                old_align['token'] = new_token
+                phrases.append(old_align)
+        seen_src.append(align.sourceTokenIndex)
+        seen_trg.append(align.targetTokenIndex)
+    for obj in phrases: #check and eliminate non-continuous phrase alignments
+        deleted = False
+        for i in range(len(obj['src_indices'])-1):
+            if obj['src_indices'][i] + 1 !=  obj['src_indices'][i+1]:
+                log.warning("Eliminating non-continuous src phrase:%s, in %s",
+                    obj['src_indices'], src_tok_list)
+                phrases.remove(obj)
+                deleted = True
+        if deleted:
+            continue
+        for i in range(len(obj['trg_indices'])-1):
+            if obj['trg_indices'][i] + 1 !=  obj['src_indices'][i+1]:
+                log.warning("Eliminating non-continuous trg phrase:%s, in %s",
+                    obj['trg_indices'], trg_tok_list)
+                phrases.remove(obj)
+    return phrases
+
+
+def alignments_to_trainingdata(db_:Session, src_lang, trg_lang, alignment_list=None,
     append=True, window_size=WINDOW_SIZE):
-    '''Convert alignments to training data for suggestions module
+    '''Convert alignments to training data for suggestions module and also add to translation_memory
     input format: [(<src sent>,<trg_sent>,[(0-0), (1-3),(2-1),..]]
-    output format: <index>\t<context ayrray>\t<translation>'''
-    import pandas as pd
-    output_path = SUGGESTION_DATA_PATH+"/"+src_lang+"-"+trg_lang+".tsv"
-    if append:
-        output_file = open(output_path, mode="a")
-    else:
-        output_file = open(output_path, mode="w")
-    sugg_dataframe = pd.DataFrame(columns=["token/index", "context", "translation"])
+    output: <index>\t<context ayrray>\t<translation>'''
+    # import pandas as pd
+    # output_path = SUGGESTION_DATA_PATH+"/"+src_lang+"-"+trg_lang+".tsv"
+    # if append:
+    #     output_file = open(output_path, mode="a")
+    # else:
+    #     output_file = open(output_path, mode="w")
+    # sugg_dataframe = pd.DataFrame(columns=["token/index", "context", "translation"])
     dict_data = {}
     for sent in alignment_list:
-        current_dict = {}
-        current_sugg = []
-        seen_src = []
-        seen_trg = []
-        src_length = len(sent.sourceTokenList)
-        src_sentence = ' '.join(sent.sourceTokenList)
-        trg_sentence = ' '.join(sent.tragetTokenList)
-        for align_pair in sent.alignedTokens:
-            new_token = sent.sourceTokenList[align_pair[0]]
-            new_translation = sent.tragetTokenList[align_pair[1]]
-            window_start = align_pair[0] - floor(window_size/2)
-            if window_start < 0:
-                window_start = 0
-            window_end = align_pair[0] + ceil(window_size/2)
-            if window_end > src_length:
-                window_end = src_length
-            context_array = sent.sourceTokenList[window_start:window_end]
-            sugg_data = {
-                "token/index": align_pair[0],
-                "context": context_array,
-                "translation": new_translation
-            }
-            if align_pair[0] not in seen_src and align_pair[1] not in seen_trg:
-                token = new_token
-                if token not in current_dict:
-                    current_dict[token] = [translation]
-                else:
-                    current_dict[token].append(translation)
-                current_sugg.append(sugg_data)
-            else: # The token of translation is a part of multi-word phrase
-                old_sugg = None
-                if align_pair[0] in seen_src: # translation is a phrase
-                    token = new_token
-                    seen_translations = current_dict[token]
-                    translation = None
-                    for seen_translation in seen_translations:
-                        post_pattern = seen_translation +" "+ new_translation
-                        pre_pattern = new_translation + " "+ seen_translation
-                        if pre_pattern in trg_sentence:
-                            translation = pre_pattern
-                            updated_trans = seen_translations.remove(seen_translation)
-                            updated_trans.append(translation)
-                            break
-                        elif post_pattern in trg_sentence:
-                            translation = post_pattern
-                            updated_trans = seen_translations.remove(seen_translation)
-                            updated_trans.append(translation)
-                            break
-                    if translation is None:
-                        raise NotAvailableException("can't find %s or %s in %s"
-                            %(pre_pattern, post_pattern, trg_sentence))
-                    current_dict[token] = updated_trans                    
-                    for sugg in current_sugg:
-                        if align_pair[0] == sugg['token/index']:
-                            old_sugg = sugg
-                            break
-                    sugg_data['translation'] = translation
-                    if not old_sugg:
-                        raise NotAvailableException("Cant find old_sugg for %s:%s"
-                            %(token, translation))
-                    current_sugg.remove(old_sugg)
-                    current_sugg.append(sugg_data)
-            if align_pair[1] in seen_trg: # token is phrase
-                seen_token = None
-                translation = sent.tragetTokenList[align_pair[1]]
-                for key in current_dict:
-                    if current_dict[key] == translation:
-                        seen_token = key
-                        break
-                if seen_token is None:
-                    raise NotAvailableException("Cant find %s in translations: %s"
-                        %(translation, current_dict))
-                pre_pattern = new_token + " " + seen_token
-                post_pattern = seen_token + " " + new_token
-                if pre_pattern in src_sentence:
-                    token = pre_pattern
-                    index = align_pair[0]
-                    if window_end+1 <= len(sent.sourceTokenList):
-                        window_end = window_end + 1
-                    first = sent.sourceTokenList[window_start: align_pair[0]]
-                    last = sent.sourceTokenList[align_pair[0]+2: window_end]
-                    context_array = first+ [token] + last
-                elif post_pattern in src_sentence:
-                    token = post_pattern
-                    index = align_pair[0] -1
-                    if window_start - 1 >= 0:
-                        window_start = window_start - 1
-                    first = sent.sourceTokenList[window_start: align_pair[0]-1]
-                    last = sent.sourceTokenList[align_pair[0]+1:window_end]
-                    context_array = first + [token] + last
-                else:
-                    raise NotAvailableException("can't find %s or %s in %s"
-                        %(pre_pattern, post_pattern, src_sentence))
-                if len(current_dict[seen_token]) == 1:
-                    del current_dict[seen_token]
-                else:
-                    current_dict[seen_token].pop(translation)
-                current_dict[token] = [translation]
-                seen_index = sent.sourceTokenList.index(seen_token,
-                    align_pair[0]-1, align_pair[0]+1)
-                if seen_index < 0:
-                    raise NotAvailableException("Cant find %s in %s, near %s"
-                        %(seen_token, sent.sourceTokenList, new_token))
-                for sugg in current_sugg:
-                    if seen_index == sugg['token/index']:
-                        old_sugg = sugg
-                        break
-                sugg_data['token/index'] = index
-                sugg_data['context'] = context_array
-                if not old_sugg:
-                    raise NotAvailableException("Cant find old_sugg for %s:%s"
-                        %(token, translation))
-                current_sugg.remove(old_sugg)
-                current_sugg.append(sugg_data)
+        phrases = find_pharses_from_alignments(sent.sourceTokenList, sent.targetTokenList,
+            sent.alignedTokens)
+        for obj in phrases:
+            if obj["token"] in dict_data:
+                dict_data[obj["token"]]['translations'].append(obj['translation'])
+            else:
+                dict_data[obj["token"]] = {"token": obj["token"], 
+                "translations":[obj['translation']]}
+    tw_data = add_to_translation_memory(db_, src_lang, trg_lang,
+        [dict_data[key] for key in dict_data])
+    return tw_data
 
-
-            seen_src.append(align_pair[0])
-            seen_src.append(align_pair[1])
 
 
 def form_trie_keys(prefix, to_left, to_right, prev_keys, only_longest=True):
@@ -895,6 +856,64 @@ def learn_suggestions_from_drafts(db_:Session):
         if os.path.isfile(file_name) and file_name.endswith('.tsv'):
             langs = entry[:entry.index['.']].split("-")
             df = pd.read_csv(input_path, sep="\t")
+
+def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list):
+    '''Add glossary data to translation memory'''
+    print("Input gloss_list:",gloss_list)
+    if isinstance(src_lang, str):
+        source_lang = db_.query(db_models.Language).filter(
+            db_models.Language.code == src_lang).first()
+        if not source_lang:
+            raise NotAvailableException("Language, %s, not available"%src_lang)
+    else:
+        source_lang = src_lang
+    if isinstance(trg_lang, str):
+        target_lang = db_.query(db_models.Language).filter(
+            db_models.Language.code == trg_lang).first()
+        if not target_lang:
+            raise NotAvailableException("Language, %s, not available"%trg_lang)
+    else:
+        target_lang = trg_lang
+    db_content = []
+    for gloss in gloss_list:
+        if not isinstance(gloss, dict):
+            gloss = gloss.__dict__
+        gloss['token'] = utils.normalize_unicode(gloss['token'])
+        token_row = db_.query(db_models.TranslationMemory).filter(
+            db_models.TranslationMemory.source_lang_id == source_lang.languageId,
+            db_models.TranslationMemory.target_lang_id == target_lang.languageId,
+            db_models.TranslationMemory.token == gloss['token']).first()
+        if token_row:
+            if "translations" in gloss:
+                for trans in gloss['translations']:
+                    trans = utils.normalize_unicode(trans)
+                    if trans not in token_row.translations:
+                        #using 0, as this is data loaded from outside and not observed in usage
+                        token_row.translations[trans] = {"frequency": 0} 
+            if 'tokenMetaData' in gloss:
+                if token_row.metaData is None:
+                    token_row.metaData = {}
+                for key in gloss['tokenMetaData']:
+                    token_row.metaData[key] = gloss['tokenMetaData'][key]
+                flag_modified(token_row, 'metaData')
+        else:
+            args = {"source_lang_id":source_lang.languageId,
+                "target_lang_id": target_lang.languageId,
+                "token":gloss['token'],
+                "translations":{}}
+            if "translations" in gloss:
+                #using 0, as this is data loaded from outside and not observed in usage
+                args['translations'] = {utils.normalize_unicode(val):{
+                    "frequency":0} for val in gloss['translations']}
+            if 'tokenMetaData' in gloss:
+                args['metaData'] = gloss['tokenMetaData']
+            token_row = db_models.TranslationMemory(**args)
+        db_content.append(token_row)
+    db_.add_all(db_content)
+    db_.commit()
+    for item in db_content:
+        db_.refresh(item)
+    return db_content
 
 def get_translation_suggestion(db_:Session, index, context, tree, source_lang, target_lang): # pylint: disable=too-many-locals
     '''find the context based translation suggestions for a word.

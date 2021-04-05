@@ -197,3 +197,26 @@ class Alignment(BaseModel):
         {"sourceTokenIndex": 1, "targetTokenIndex": 3},
         {"sourceTokenIndex": 2, "targetTokenIndex": 1},
         {"sourceTokenIndex": 3, "targetTokenIndex": 2} ])
+
+class GlossInput(BaseModel):
+    '''Import object for glossary(dictionary) data for learning'''
+    token: str = Field(..., example="love")
+    translations: List[str] = Field(None, example=['प्यार', "प्रेम", "प्रेम करना"])
+    tokenMetaData: dict = Field(None, example={"word-class":["noun", "verb"]})
+
+class GlossOutput(BaseModel):
+    '''Output object for translation memory or gloss'''
+    token: str = Field(..., example="love")
+    translations: dict = Field(None, example={'प्यार':{"frequency":0}, "प्रेम":{"frequency":0},
+        "प्रेम करना":{"frequency":0}})
+    metaData: dict = Field(None, example={"word-class":["noun", "verb"]})
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
+
+
+class GlossUpdateResponse(BaseModel):
+    '''Response object for learn/gloss and learn/alignments'''
+    message: str = Field(..., example="Added to glossary")
+    data: List[GlossOutput]
