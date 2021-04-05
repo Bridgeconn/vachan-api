@@ -3,11 +3,13 @@ related to NLP operations and translation apps'''
 
 import re
 import os
-import pickle
+import glob
+import json
+from datetime import datetime
 from math import floor, ceil
 import pygtrie
 from sqlalchemy import or_
-from sqlalchemy.orm import Session, defer, undefer
+from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
 #pylint: disable=E0401
@@ -653,7 +655,7 @@ SUGGESTION_DATA_PATH = 'models/suggestion_data'
 SUGGESTION_TRIE_PATH = 'models/suggestion_tries'
 WINDOW_SIZE = 5
 
-def extract_context(token, offset, sentence, window_size=5,
+def extract_context(token, offset, sentence, window_size=WINDOW_SIZE,
     punctuations=utils.punctuations()+utils.numbers()):
     '''return token index and context array'''
     punct_pattern = re.compile('['+''.join(punctuations)+']')
@@ -671,7 +673,7 @@ def extract_context(token, offset, sentence, window_size=5,
     context = front + [token] + rear
     return index, context
 
-def get_training_data_from_drafts(sentence_list, window_size=5):
+def get_training_data_from_drafts(sentence_list, window_size=WINDOW_SIZE):
     '''identify user confirmed token translations and their contexts'''
     training_data = []
     for row in sentence_list:
@@ -680,7 +682,8 @@ def get_training_data_from_drafts(sentence_list, window_size=5):
             if meta[2] == "confirmed":
                 token = source[meta[0][0]:meta[0][1]]
                 index, context = extract_context(token, meta[0], source, window_size)
-                training_data.append((index,context))
+                trans = row.draft[meta[1][0]:meta[1][1]]
+                training_data.append((index, context, trans))
     return training_data
 
 def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
@@ -749,53 +752,79 @@ def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
     return phrases
 
 
-def alignments_to_trainingdata(db_:Session, src_lang, trg_lang, alignment_list=None,
-    append=True, window_size=WINDOW_SIZE):
+def alignments_to_trainingdata(db_:Session, src_lang, trg_lang, alignment_list,
+    user_id=None, append=True, window_size=WINDOW_SIZE, output_dir=SUGGESTION_DATA_PATH):
     '''Convert alignments to training data for suggestions module and also add to translation_memory
     input format: [(<src sent>,<trg_sent>,[(0-0), (1-3),(2-1),..]]
     output: <index>\t<context ayrray>\t<translation>'''
-    # import pandas as pd
-    # output_path = SUGGESTION_DATA_PATH+"/"+src_lang+"-"+trg_lang+".tsv"
-    # if append:
-    #     output_file = open(output_path, mode="a")
-    # else:
-    #     output_file = open(output_path, mode="w")
-    # sugg_dataframe = pd.DataFrame(columns=["token/index", "context", "translation"])
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    timestamp = datetime.now().strftime("%d:%m:%Y-%H:%M:%S")
+    output_path = output_dir+"/"+src_lang+"-"+trg_lang+"-"+str(user_id)+"-"+\
+        "-"+timestamp+".json"
+    output_file = open(output_path, "w", encoding='utf8')
     dict_data = {}
+    sugg_data = []
     for sent in alignment_list:
+        src_len = len(sent.sourceTokenList)
         phrases = find_pharses_from_alignments(sent.sourceTokenList, sent.targetTokenList,
             sent.alignedTokens)
         for obj in phrases:
+            ## prepare data for translation memory/gloss
             if obj["token"] in dict_data:
                 dict_data[obj["token"]]['translations'].append(obj['translation'])
             else:
                 dict_data[obj["token"]] = {"token": obj["token"], 
                 "translations":[obj['translation']]}
+            ## prepare data for suggestions trie
+            end = obj['src_indices'][0]
+            if end == 0:
+                pre_context = []
+            elif end-ceil(window_size/2) >= 0:
+                start = end-ceil(WINDOW_SIZE/2)
+                pre_context = sent.sourceTokenList[start:end]
+            else:
+                pre_context = sent.sourceTokenList[0:end]
+            start = obj['src_indices'][-1]+1 
+            if start == src_len:
+                post_context = []
+            elif start + floor(window_size/2) <= src_len:
+                end = start + floor(window_size/2)
+                post_context = sent.sourceTokenList[start:end]
+            else:
+                post_context = sent.sourceTokenList[start:]
+            context = pre_context + [obj['token']] + post_context
+            sugg_data.append((len(pre_context), context, obj['translation']))
+    new_trie = build_trie(sugg_data, default_val=0)
+    sugg_json = {item[0]:item[1] for item in new_trie.items()}
+    json.dump(sugg_json, output_file, ensure_ascii=False)
+    output_file.close()    
+    new_trie = rebuild_trie(db_, src_lang, trg_lang)
+    suggestion_trie_in_mem[src_lang+"-"+trg_lang] = new_trie
     tw_data = add_to_translation_memory(db_, src_lang, trg_lang,
         [dict_data[key] for key in dict_data])
     return tw_data
 
 
-
 def form_trie_keys(prefix, to_left, to_right, prev_keys, only_longest=True):
     '''build the trie tree recursively'''    
     keys = prev_keys
-    a = b = None
+    node_a = node_b = None
     if len(to_left) > 0:
-        a = '/L:'+to_left.pop(0)
+        node_a = '/L:'+to_left.pop(0)
     if len(to_right) > 0:
-        b = '/R:'+to_right.pop(0)
-    if a:
-        key_left = prefix + a
+        node_b = '/R:'+to_right.pop(0)
+    if node_a:
+        key_left = prefix + node_a
         keys.append(key_left)
         keys = form_trie_keys(key_left, to_left.copy(), to_right.copy(), keys,only_longest)
-    if b:
-        key_right = prefix + b
+    if node_b:
+        key_right = prefix + node_b
         keys.append(key_right)
         keys = form_trie_keys(key_right, to_left.copy(), to_right.copy(), keys, only_longest)
-    if a and b:
-        key_both_1 = prefix + a + b
-        key_both_2 = prefix + b + a
+    if node_a and node_b:
+        key_both_1 = prefix + node_a + node_b
+        key_both_2 = prefix + node_b + node_a
         keys.append(key_both_1)
         keys.append(key_both_2)
         keys = form_trie_keys(key_both_1, to_left.copy(), to_right.copy(), keys, only_longest)
@@ -812,10 +841,10 @@ def form_trie_keys(prefix, to_left, to_right, prev_keys, only_longest=True):
         result.append(res)
     return result
 
-def build_trie(token_context__trans_list):
+def build_trie(token_context__trans_list, default_val=None):
     '''Build a trie tree from scratch
     input: [(token,context_list, translation), ...]'''
-    t = pygtrie.StringTrie()
+    ttt = pygtrie.StringTrie()
     for item in token_context__trans_list:
         context = item[1]
         translation = item[2]
@@ -826,40 +855,45 @@ def build_trie(token_context__trans_list):
             token_index = item[0]
             token = context[token_index]
         else:
-            raise TypeException("Expects the token, as string, or index of token, as int, in first field of input tuple")
+            raise TypeException("Expects the token, as string, or index of token, as int,"+
+                "in first field of input tuple")
         to_left = [context[i] for i in range(token_index-1, -1, -1)]
         to_right = context[token_index+1:]
         keys = form_trie_keys(token, to_left, to_right, [token])
-        no_of_keys = len(keys)
+        if default_val is None:
+            val_update = 1/len(keys)
+        else:
+            val_update = default_val
         for key in keys:
-            if t.has_key(key):
+            if ttt.has_key(key):
                 value = t[key]
                 if translation in value.keys():
-                    value[translation] += 1/no_of_keys
+                    value[translation] += val_update
                 else:
-                    value[translation] = 1/no_of_keys
-                t[key] = value
+                    value[translation] = val_update
+                ttt[key] = value
             else:
-                t[key] = {translation: 1/no_of_keys}
-    return t
+                ttt[key] = {translation: val_update}
+    return ttt
 
-def learn_suggestions_from_drafts(db_:Session):
-    '''A script to be run while starting server and periodically to update suggestion tries
-    It takes data from models/suggestion_data & drafts in translation_sentences table
-    and writes tries as JSON to models/suggestion_tries'''
-    import pandas as pd
-    import os
-
-    lang_pairs_covered = []
-    for file in os.listdir(input_path):
-        file_name= os.path.join(SUGGESTION_DATA_PATH, entry)
-        if os.path.isfile(file_name) and file_name.endswith('.tsv'):
-            langs = entry[:entry.index['.']].split("-")
-            df = pd.read_csv(input_path, sep="\t")
+def rebuild_trie(db_, src, trg):
+    '''Collect suggestions data from translation memory and traning data directory
+    and rebuild the trie for language pair in memory'''
+    db_sents = db_.query(db_models.TranslationDraft, db_models.TranslationProject).filter(
+        db_models.TranslationProject.sourceLanguage.has(code = src),
+        db_models.TranslationProject.targetLanguage.has(code = trg)).all()
+    training_data = get_training_data_from_drafts([item[0] for item in db_sents])
+    new_trie = build_trie(training_data)
+    files_on_disc = glob.glob(SUGGESTION_DATA_PATH+'/'+src+"-"+trg+'*.json')
+    for file in files_on_disc:
+        with open(file, 'r') as json_file:
+            json_data = json.load(json_file)
+            for key in json_data:
+                new_trie[key] = json_data[key]
+    return new_trie
 
 def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list):
     '''Add glossary data to translation memory'''
-    print("Input gloss_list:",gloss_list)
     if isinstance(src_lang, str):
         source_lang = db_.query(db_models.Language).filter(
             db_models.Language.code == src_lang).first()

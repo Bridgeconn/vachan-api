@@ -910,7 +910,8 @@ def add_alignments(source_language:schemas.LangCodePattern, target_language:sche
     log.info('In add_alignments')
     log.debug('source_language:%s, target_language:%s, alignments:%s',
         source_language, target_language, alignments)
-    tw_data = nlp_crud.alignments_to_trainingdata(db_,source_language, target_language, alignments)
+    tw_data = nlp_crud.alignments_to_trainingdata(db_,source_language, target_language,
+        alignments, user_id=20202)
     return { "message": "Alignments used for learning", "data":tw_data }
 ############## Autographa Projects ##########################
 
