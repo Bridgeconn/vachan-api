@@ -406,11 +406,12 @@ alignment_data = [
 
 resp = requests.post(BASE_URL+"translation/learn/alignment?source_language="+alignment_src+
 	";target_language="+alignment_trg, headers=headers, json=alignment_data)
-print(resp)
-print(resp.json())
-
-# resp = requests.put(BASE_URL+"autographa/project/suggest-translation?project_id="+str(project_id),
-# 	headers=headers)
+assert resp.status_code == 201
 # print(resp)
 # print(resp.json())
+
+resp = requests.put(BASE_URL+"autographa/project/suggestions?project_id="+str(project_id),
+	headers=headers)
+print(resp)
+print(resp.json())
 

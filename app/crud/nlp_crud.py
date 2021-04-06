@@ -127,6 +127,8 @@ def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, incl
             else:
                 phrases+= find_phrases(chunk,stop_words, include_phrases)
         start = 0
+        if not isinstance(stop_words, dict):
+            stop_words = stop_words.__dict__
         sw_list = stop_words['prepositions']+stop_words['postpositions']
         for phrase in phrases:
             if phrase.strip() == '':
@@ -887,6 +889,7 @@ def rebuild_trie(db_, src, trg):
     files_on_disc = glob.glob(SUGGESTION_DATA_PATH+'/'+src+"-"+trg+'*.json')
     for file in files_on_disc:
         with open(file, 'r') as json_file:
+            log.warning("Using %s, to update %s-%s trie"%(file, src, trg))
             json_data = json.load(json_file)
             for key in json_data:
                 new_trie[key] = json_data[key]
@@ -949,9 +952,9 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list):
         db_.refresh(item)
     return db_content
 
-def get_translation_suggestion(db_:Session, index, context, tree, source_lang, target_lang): # pylint: disable=too-many-locals
-    '''find the context based translation suggestions for a word.
-    Makes use of the learned model, t, for the lang pair, based on translation memory
+def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: disable=too-many-locals
+    '''find the context based translation suggestions(gloss) for a word.
+    Makes use of the learned model(trie), for the lang pair, based on translation memory
     output format: [(translation1, score1), (translation2, score2), ...]'''
     if isinstance(index, int):
         word = context[index]
@@ -961,6 +964,10 @@ def get_translation_suggestion(db_:Session, index, context, tree, source_lang, t
     to_left = [context[i] for i in range(index-1, -1, -1)]
     to_right = context[index+1:]
     keys = form_trie_keys(word, to_left, to_right, [word], False)
+    if source_lang+"-"+target_lang in suggestion_trie_in_mem: # check if aleady loaded in memory
+        tree = suggestion_trie_in_mem[source_lang+"-"+target_lang]
+    else:  # build trie loading data from disk and DB 
+        tree = rebuild_trie(db_, source_lang, target_lang)
     trans = {}
     total = 0
     for key in keys:
@@ -978,6 +985,20 @@ def get_translation_suggestion(db_:Session, index, context, tree, source_lang, t
     scored_trans = [(sense[0],sense[1]/total) for sense in sorted_trans]
     return scored_trans
 
+def glossary(db_:Session, source_language, target_language, token, context=None, token_offset=None):
+    '''finds possible translation suggestion for a token'''
+    if context is None:
+        context = token
+    if token_offset is None:
+        start = context.index(token)
+        token_offset= (start, start+len(token))
+    index, context_list = extract_context(token, token_offset, context)
+    suggs = get_gloss(db_, index, context_list, source_language, target_language)
+    res = []
+    for sug in suggs:
+        res.append({"suggestion":sug[0], "score": sug[1]})
+    return res
+
 def auto_translate(db_, sentence_list, source_lang, target_lang, punctuations=None, stop_words=None):
     '''Attempts to tokenize the input sentence and replace each token with top suggestion.
     If draft_meta is provided indicating some portion of sentence is user translated, 
@@ -985,18 +1006,8 @@ def auto_translate(db_, sentence_list, source_lang, target_lang, punctuations=No
     Output is of the format [(sent_id, translated text, metadata)]
     metadata: List of (token_offsets, translation_offset, confirmed/suggestion/untranslated)'''
     # load corresponding trie for source and target if not already in memory
-    file_name = 'models/suggestion_tries/'+source_lang.code+'-'+target_lang.code+'.json'
-    if source_lang.code in suggestion_trie_in_mem: # check if aleady loaded in memory
-        sugg_trie = suggestion_trie_in_mem['model']
-    elif os.path.exists(file_name): # load from disk and build trie
-        trie_json = json.load(open(file_name, 'r'))
-        sugg_trie = pygtrie.StringTrie()
-        for key in trie_json:
-            sugg_trie[key] = trie_json[key]
-        suggestion_trie_in_mem[source_lang.code] = sugg_trie
-    else: # if learnt model not present, return input as such
-        sugg_trie = pygtrie.StringTrie()
-    args = {"db_":db_, "src_lang":source_lang.code, "include_stopwords":True}
+
+    args = {"db_":db_, "src_lang":source_lang, "include_stopwords":True}
     if punctuations:
         args['punctuations'] = punctuations
     if stop_words:
@@ -1009,7 +1020,7 @@ def auto_translate(db_, sentence_list, source_lang, target_lang, punctuations=No
                 offset = occurence['offset']
                 index, context = extract_context(token, offset,
                     sent.sentence)
-                suggestions = get_translation_suggestion(db_, index, context, sugg_trie, source_lang, target_lang)
+                suggestions = get_gloss(db_, index, context, source_lang, target_lang)
                 if len(suggestions) > 0:
                     draft, meta = replace_token(sent.sentence, offset,
                         suggestions[0][0], sent.draft, sent.draftMeta, "suggestion")
@@ -1038,8 +1049,8 @@ def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range,
         db_.commit()
         return draft_rows
     args = {"db_":db_, "sentence_list":draft_rows,
-        "source_lang":project_row.sourceLanguage,
-        "target_lang":project_row.targetLanguage}
+        "source_lang":project_row.sourceLanguage.code,
+        "target_lang":project_row.targetLanguage.code}
     if "stopwords" in project_row.metaData:
         args['stop_words'] = project_row.metaData.stopwords
     if "punctuations" in project_row.metaData:

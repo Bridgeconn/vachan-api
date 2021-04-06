@@ -127,7 +127,7 @@ class Sentence(BaseModel):
         just get the data from object attributes'''
         orm_mode = True
 
-class TranlsateResponse(BaseModel):
+class TranslateResponse(BaseModel):
     '''response object after applying token translations'''
     message: str = Field(..., example="Token translations saved")
     data:List[Sentence] = None
@@ -137,7 +137,8 @@ class DraftInput(BaseModel):
     sentenceId: str = Field(..., example=41001001)
     sentence: str = Field(...,
     	example="इब्राहीम के वंशज दाऊद के पुत्र यीशु मसीह की वंशावली इस प्रकार है")
-    draft: str = None
+    draft: str = Field(None,
+        example="അബ്രാഹാം के वंशज दाऊद के पुत्र यीशु मसीह की वंशावली इस प्रकार है")
     draftMeta: List[Tuple[Tuple[int, int], Tuple[int,int],'str']] = Field(None,
         example=[[[0,8], [0,8],"confirmed"],
             [[8,64],[8,64],"untranslated"]])
@@ -145,10 +146,7 @@ class DraftInput(BaseModel):
     def set_surrogate_id(cls, values): # pylint: disable=R0201 disable=E0213
         '''USFM and JSON should be updated together. If they are absent, bookCode is required'''
         values['surrogateId'] = values['sentenceId']
-        try:
-            values['sentenceId'] = int(values['sentenceId'])
-        except Exception as e:
-            raise e
+        values['sentenceId'] = int(values['sentenceId'])
         return values
 
 class SentenceInput(BaseModel):
@@ -176,6 +174,10 @@ class Suggestion(BaseModel):
     '''Response object for suggestion'''
     suggestion:str
     score: float
+    class Config: # pylint: disable=too-few-public-methods
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
 
 class Progress(BaseModel):
     '''Response object for AgMT project progress'''
