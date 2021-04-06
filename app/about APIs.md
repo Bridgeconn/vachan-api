@@ -26,3 +26,20 @@
 
 - Avoid occurence list and default to apply to all: While applying a token translation, have a query parameter that says "Apply to all" then find all occurences and apply them without having to specify occurence list. But those occurences would be hard to find as per our DB strcuture as we dont store the tokens and occurences anywhere.
 
+## What are pending
+
+* Doing proper testing and adding automated tests for translation related APIs
+* Refactor code, eliminating linter warnings: too-many-arguments, too-many-local-variable, too-many-nested-blocks etc
+* Setting up usfm-grammar as a separate server with API service and allowing direct USFM upload to AGMT and Vachan DB
+* Dockerizing
+* Auto deployment via git actions
+* Language codes. See how we can use/switch-to bcp47 tags.
+* Supporting inputs of different formats(convert CSV, doc and USFM to sentence lists)
+* Export format. Finer details of alignment JSON and scripture Buritto
+* API auth and access management
+* Update vachan-admin. Re-write or update vachan-admin app used for data loading to vachan DB, as per V2 APIs
+* Use alignment data and glossary from manual alignments and vachan-data project to enrich our translation knowledge
+* Test time and space requirements of our methods for tokenization, suggestion etc with enough data
+* Have a module to identify stopwords given some corpora, and if possible classify them as pre-positions and post-positions
+* Have some translation/utils APIs for knowing(or setting) system settings like stopword list for a language, puctuations, sentence and word delimiters, default window size etc.
+
