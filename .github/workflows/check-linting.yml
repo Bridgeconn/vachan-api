@@ -33,4 +33,5 @@ jobs:
         
       - name: Run linter
         run: pylint --extension-pkg-whitelist='pydantic' app/*.py
+        run: pylint --extension-pkg-whitelist='pydantic' app/crud/*.py
 

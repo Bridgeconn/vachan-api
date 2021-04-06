@@ -127,11 +127,10 @@ def parse_usfm(usfm_string):
     file.write(normalize_unicode(usfm_string))
     file.close()
     process = subprocess.Popen(['usfm-grammar', 'temp.usfm'],
-                         stdout=subprocess.PIPE, 
+                         stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
     if stderr:
         raise TypeException(stderr.decode('utf-8'))
     usfm_json = json.loads(stdout.decode('utf-8'))
     return usfm_json
-
