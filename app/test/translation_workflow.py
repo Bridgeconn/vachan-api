@@ -1,4 +1,4 @@
-'''Executes and tests the AgMT and eneric translation workflows.
+'''Executes and tests the AgMT and generic translation workflows.
 This is not part of the automated tests, and data added to DB by running this script will persist.
 This is to be used manually during develepment testing'''
 import json
@@ -8,8 +8,8 @@ BASE_URL = "http://127.0.0.1:8000/v2/"
 headers = {"contentType": "application/json", "accept": "application/json"}
 
 # have a bible source to be used
-source_name = "hin_XYZ_1_bible"
-project_id = 100000
+source_name = "hin_XYZ_1_bible" # pylint: disable=C0103
+project_id = 100000 # pylint: disable=C0103
 
 ver_data = {
     "versionAbbreviation": "XYZ",
@@ -176,7 +176,7 @@ gospel_books_data = [
 ]
 
 project_post_data = {
-    "projectName": "Test project 1",
+    "projectName": "Test project 3",
     "sourceLanguageCode": "hin",
     "targetLanguageCode": "mal"
 }
@@ -225,17 +225,17 @@ token_update_data = [
 	}
 ]
 
-new_user_id = 20202
+NEW_USER_ID = 20202
 user_data = {
 	"project_id": project_id,
-	"userId": new_user_id,
+	"userId": NEW_USER_ID,
 	"userRole": "test role",
 	"metaData": {"somekey": "value"},
 	"active": False
 }
 
-alignment_src = "hin"
-alignment_trg = "mal"
+ALIGNMENT_SRC = "hin"
+ALIGNMENT_TRG = "mal"
 alignment_data = [
 {
     "sourceTokenList": [
@@ -366,47 +366,48 @@ alignment_data = [
 # assert resp.json()['message'] == "Source created successfully"
 # source_name = resp.json()['data']['sourceName']
 
-# resp = requests.post(BASE_URL+"bibles/"+source_name+"/books", headers=headers, json=gospel_books_data)
+# resp = requests.post(BASE_URL+"bibles/"+source_name+"/books", headers=headers,
+# json=gospel_books_data)
 # assert resp.json()['message'] == "Bible books uploaded and processed successfully"
 
-# resp = requests.post(BASE_URL+"autographa/projects", headers=headers, json=project_post_data)
+resp = requests.post(BASE_URL+"autographa/projects", headers=headers, json=project_post_data)
 # print(resp)
 # print(resp.json())
-# assert resp.json()['message'] == "Project created successfully"
-# project_update_data['projectId'] = resp.json()['data']['projectId']
-# project_id = resp.json()['data']['projectId']
+assert resp.json()['message'] == "Project created successfully"
+project_update_data['projectId'] = resp.json()['data']['projectId']
+project_id = resp.json()['data']['projectId']
 
-# resp = requests.put(BASE_URL+"autographa/projects", headers=headers, json=project_update_data)
-# assert resp.json()['message'] == "Project updated successfully"
+resp = requests.put(BASE_URL+"autographa/projects", headers=headers, json=project_update_data)
+assert resp.json()['message'] == "Project updated successfully"
 
-# # tokenize
-# resp = requests.get(BASE_URL+"autographa/project/tokens?project_id="+str(project_id))
-# # print(json.dumps(resp.json()))
+# tokenize
+resp = requests.get(BASE_URL+"autographa/project/tokens?project_id="+str(project_id))
+# print(json.dumps(resp.json()))
 
-# # translate
-# resp = requests.put(BASE_URL+"autographa/project/tokens?project_id="+str(project_id),
-# 	headers=headers, json=token_update_data)
-# assert resp.json()['message'] == "Token translations saved"
+# translate
+resp = requests.put(BASE_URL+"autographa/project/tokens?project_id="+str(project_id),
+	headers=headers, json=token_update_data)
+assert resp.json()['message'] == "Token translations saved"
 
-# # Additional user
-# resp = requests.post(BASE_URL+"autographa/project/user?project_id="+str(project_id)+
-# 	";user_id="+str(new_user_id), headers=headers)
-# assert resp.json()['message'] == "User added to project successfully"
+# Additional user
+resp = requests.post(BASE_URL+"autographa/project/user?project_id="+str(project_id)+
+	";user_id="+str(NEW_USER_ID), headers=headers)
+assert resp.json()['message'] == "User added to project successfully"
 
-# resp = requests.put(BASE_URL+"autographa/project/user", headers=headers, json=user_data)
-# assert resp.json()['message'] == "User updated in project successfully"
+resp = requests.put(BASE_URL+"autographa/project/user", headers=headers, json=user_data)
+assert resp.json()['message'] == "User updated in project successfully"
 
-# resp = requests.get(BASE_URL+"autographa/projects?user_id="+str(new_user_id))
-# assert len(resp.json()) > 0
+resp = requests.get(BASE_URL+"autographa/projects?user_id="+str(NEW_USER_ID))
+assert len(resp.json()) > 0
 # print(resp.json())
 
 
 
 # # Suggestions
 
-resp = requests.post(BASE_URL+"translation/learn/alignment?source_language="+alignment_src+
-	";target_language="+alignment_trg, headers=headers, json=alignment_data)
-assert resp.status_code == 201
+# resp = requests.post(BASE_URL+"translation/learn/alignment?source_language="+ALIGNMENT_SRC+
+# 	";target_language="+ALIGNMENT_TRG, headers=headers, json=alignment_data)
+# assert resp.status_code == 201
 # print(resp)
 # print(resp.json())
 
@@ -414,4 +415,3 @@ resp = requests.put(BASE_URL+"autographa/project/suggestions?project_id="+str(pr
 	headers=headers)
 print(resp)
 print(resp.json())
-

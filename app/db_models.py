@@ -5,7 +5,7 @@ from sqlalchemy import Column, Integer, String, JSON, ARRAY
 from sqlalchemy import Boolean, ForeignKey, DateTime
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship, Session, aliased
+from sqlalchemy.orm import relationship, Session
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.schema import Sequence
 

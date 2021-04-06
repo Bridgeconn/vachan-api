@@ -21,6 +21,9 @@ from logger import log
 from custom_exceptions import NotAvailableException, TypeException
 from schemas_nlp import TranslationDocumentType
 
+#pylint: disable=too-many-branches, disable=too-many-locals, disable=too-many-arguments
+#pylint: disable=too-many-statements, disable=W0102, disable=too-many-nested-blocks
+
 ###################### Tokenization ######################
 def build_memory_trie(translation_memory):
     '''form a trie from a list of known tokens in a source language, to be used for tokenization''' 
@@ -69,7 +72,7 @@ def find_phrases(text, stop_words, include_phrases=True):
     return phrases
 
 
-def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, include_phrases=True,#pylint: disable=too-many-branches, disable=too-many-locals, disable=too-many-arguments
+def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, include_phrases=True,
     include_stopwords=False, punctuations=None, stop_words=None):
     '''Get phrase and single word tokens and their occurances from input sentence list.
     Performs tokenization using two knowledge sources: translation memory and stopwords list
@@ -202,7 +205,7 @@ def get_generic_tokens(db_:Session, src_language, sentence_list, trg_language=No
         result.append(obj)
     return result
 
-def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_id_list, #pylint: disable=too-many-arguments disable=too-many-locals
+def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_id_list,
     use_translation_memory=True, include_phrases=True, include_stopwords=False):
     '''Get the selected verses from drafts table and tokenize them'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
@@ -221,7 +224,7 @@ def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_
 
 
 ###################### Token replacement translation ######################
-def replace_token(source, token_offset, translation, draft="", draft_meta=[], tag="confirmed"): #pylint: disable=too-many-arguments, disable=too-many-locals, disable=W0102
+def replace_token(source, token_offset, translation, draft="", draft_meta=[], tag="confirmed"):
     '''make a token replacement and return updated sentence and draft_meta'''
     trans_length = len(translation)
     updated_meta = []
@@ -435,7 +438,7 @@ def create_agmt_project(db_:Session, project, user_id=None):
     db_.commit()
     return db_content
 
-def update_agmt_project(db_:Session, project_obj, user_id=None): #pylint: disable=too-many-branches disable=too-many-locals disable=too-many-statements
+def update_agmt_project(db_:Session, project_obj, user_id=None):
     '''Either activate or deactivate a project or Add more books to a project,
     adding all new verses to the drafts table'''
     project_row = db_.query(db_models.TranslationProject).get(project_obj.projectId)
@@ -519,7 +522,7 @@ def update_agmt_project(db_:Session, project_obj, user_id=None): #pylint: disabl
     db_.refresh(project_row)
     return project_row
 
-def get_agmt_projects(db_:Session, project_name=None, source_language=None, target_language=None, #pylint: disable=too-many-arguments
+def get_agmt_projects(db_:Session, project_name=None, source_language=None, target_language=None,
     active=True, user_id=None):
     '''Fetch autographa projects as per the query options'''
     query = db_.query(db_models.TranslationProject)
@@ -576,8 +579,8 @@ def update_agmt_user(db_, user_obj, current_user=10101):
     db_.commit()
     return user_row
 
-def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_list=None, sentence_id_range=None,
-    with_draft=False, fill_suggestions=False):
+def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_list=None,
+    sentence_id_range=None, with_draft=False):
     '''fetches all or selected source sentences from translation_sentences table'''
     sentence_query = db_.query(db_models.TranslationDraft).filter(
         db_models.TranslationDraft.project_id == project_id)
@@ -868,7 +871,7 @@ def build_trie(token_context__trans_list, default_val=None):
             val_update = default_val
         for key in keys:
             if ttt.has_key(key):
-                value = t[key]
+                value = ttt[key]
                 if translation in value.keys():
                     value[translation] += val_update
                 else:
@@ -999,14 +1002,11 @@ def glossary(db_:Session, source_language, target_language, token, context=None,
         res.append({"suggestion":sug[0], "score": sug[1]})
     return res
 
-def auto_translate(db_, sentence_list, source_lang, target_lang, punctuations=None, stop_words=None):
+def auto_translate(db_, sentence_list, source_lang, target_lang, punctuations=None,
+    stop_words=None):
     '''Attempts to tokenize the input sentence and replace each token with top suggestion.
     If draft_meta is provided indicating some portion of sentence is user translated, 
-    then it is left untouched.
-    Output is of the format [(sent_id, translated text, metadata)]
-    metadata: List of (token_offsets, translation_offset, confirmed/suggestion/untranslated)'''
-    # load corresponding trie for source and target if not already in memory
-
+    then it is left untouched.'''
     args = {"db_":db_, "src_lang":source_lang, "include_stopwords":True}
     if punctuations:
         args['punctuations'] = punctuations
@@ -1062,7 +1062,7 @@ def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range,
 
 ###################### Export and download ######################
 
-def obtain_draft(db_:Session, sentence_list, doc_type):
+def obtain_draft(sentence_list, doc_type):
     '''Convert input sentences to required format'''
     if doc_type == TranslationDocumentType.USFM:
         return create_usfm(sentence_list)

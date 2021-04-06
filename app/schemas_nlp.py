@@ -158,10 +158,7 @@ class SentenceInput(BaseModel):
     def set_surrogate_id(cls, values): # pylint: disable=R0201 disable=E0213
         '''USFM and JSON should be updated together. If they are absent, bookCode is required'''
         values['surrogateId'] = values['sentenceId']
-        try:
-            values['sentenceId'] = int(values['sentenceId'])
-        except Exception as e:
-            raise e
+        values['sentenceId'] = int(values['sentenceId'])
         return values
 
 
