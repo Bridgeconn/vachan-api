@@ -32,6 +32,7 @@
 * Refactor code, eliminating linter warnings: too-many-arguments, too-many-local-variable, too-many-nested-blocks etc
 * Setting up usfm-grammar as a separate server with API service and allowing direct USFM upload to AGMT and Vachan DB
 * Dockerizing
+* Use fuzzy string matching for suggestions
 * Auto deployment via git actions
 * Language codes. See how we can use/switch-to bcp47 tags.
 * Supporting inputs of different formats(convert CSV, doc and USFM to sentence lists)
