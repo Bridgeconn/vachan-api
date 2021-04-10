@@ -80,3 +80,61 @@ CREATE TABLE public.bible_books_look_up (
 );
 
 \COPY bible_books_look_up (book_id,book_name, book_code) FROM 'bible_books.csv' DELIMITER ',' CSV HEADER;
+
+CREATE TABLE public.translation_projects(
+    project_id SERIAL PRIMARY KEY,
+    project_name TEXT NOT NULL,
+    source_lang_id int NOT NULL
+        REFERENCES languages(language_id),
+    target_lang_id int NOT NULL 
+        REFERENCES languages(language_id),
+    source_document_format text DEFAULT 'Bible USFM',
+    active boolean default true,
+    metadata jsonb,
+    created_user int,
+    created_at timestamp with time zone DEFAULT NOW(),
+    last_updated_user int,
+    last_updated_at  timestamp with time zone DEFAULT NOW(),
+    UNIQUE(project_name, created_user)
+);
+ALTER SEQUENCE translation_projects_project_id_seq RESTART WITH 100000;
+
+CREATE TABLE public.translation_sentences(
+    draft_id SERIAL PRIMARY KEY,
+    project_id int NOT NULL 
+        REFERENCES translation_projects(project_id) ON DELETE CASCADE,
+    sentence_id int NOT NULL,
+    surrogate_id text,
+    sentence text,
+    draft text,
+    draft_metadata jsonb,
+    last_updated_user int NULL,
+    last_updated_at  timestamp with time zone DEFAULT NOW(),
+    UNIQUE(project_id, sentence_id)
+);
+ALTER SEQUENCE translation_sentences_draft_id_seq RESTART WITH 100000;
+
+CREATE TABLE public.translation_memory(
+    token_id SERIAL PRIMARY KEY,
+    source_lang_id int NOT NULL
+        REFERENCES languages(language_id),
+    target_lang_id int 
+        REFERENCES languages(language_id),
+    source_token text NOT NULL,
+    translation_details jsonb,
+    source_token_metadata jsonb NULL,
+    UNIQUE(source_lang_id, target_lang_id, source_token)
+);
+ALTER SEQUENCE translation_memory_token_id_seq RESTART WITH 100000;
+
+CREATE TABLE public.translation_project_users(
+    project_user_id SERIAL PRIMARY KEY,
+    project_id int REFERENCES translation_projects(project_id),
+    user_id int,
+    user_role text default 'member',
+    metadata jsonb,
+    active boolean default true,
+    UNIQUE(project_id, user_id)
+);
+
+ALTER SEQUENCE translation_project_users_project_user_id_seq RESTART WITH 100000;
