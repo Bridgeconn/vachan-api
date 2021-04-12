@@ -176,7 +176,7 @@ gospel_books_data = [
 ]
 
 project_post_data = {
-    "projectName": "Test project 3",
+    "projectName": "Test project 4",
     "sourceLanguageCode": "hin",
     "targetLanguageCode": "mal"
 }

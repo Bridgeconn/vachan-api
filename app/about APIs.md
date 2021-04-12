@@ -43,4 +43,3 @@
 * Test time and space requirements of our methods for tokenization, suggestion etc with enough data
 * Have a module to identify stopwords given some corpora, and if possible classify them as pre-positions and post-positions
 * Have some translation/utils APIs for knowing(or setting) system settings like stopword list for a language, puctuations, sentence and word delimiters, default window size etc.
-
