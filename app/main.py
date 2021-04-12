@@ -17,7 +17,7 @@ from custom_exceptions import NotAvailableException, AlreadyExistsException, Typ
 
 #pylint: disable=E0401
 #pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
-from crud import structurals_crud, contents_crud, nlp_crud
+from crud import structurals_crud, contents_crud, nlp_crud, projects_crud
 
 
 
@@ -936,7 +936,7 @@ def get_projects(project_name:str=Query(None,example="Hindi-Bilaspuri Gospels"),
     log.info('In get_projects')
     log.debug('project_name: %s, source_language:%s, target_language:%s,'+
         'active:%s, user_id:%s',project_name, source_language, target_language, active, user_id)
-    return nlp_crud.get_agmt_projects(db_, project_name, source_language, target_language, active, user_id)
+    return projects_crud.get_agmt_projects(db_, project_name, source_language, target_language, active, user_id)
 
 @app.post('/v2/autographa/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse, tags=['Autographa-Project management'])
@@ -945,7 +945,7 @@ def create_project(project_obj:schemas_nlp.TranslationProjectCreate, db_:Session
     log.info('In create_project')
     log.debug('project_obj: %s',project_obj)
     return {'message': "Project created successfully",
-        "data": nlp_crud.create_agmt_project(db_=db_, project=project_obj, user_id=10101)}
+        "data": projects_crud.create_agmt_project(db_=db_, project=project_obj, user_id=10101)}
 
 @app.put('/v2/autographa/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse, tags=['Autographa-Project management'])
@@ -954,7 +954,7 @@ def update_project(project_obj:schemas_nlp.TranslationProjectEdit, db_:Session=D
     log.info('In update_project')
     log.debug('project_obj: %s',project_obj)
     return {'message': "Project updated successfully",
-        "data": nlp_crud.update_agmt_project(db_, project_obj, user_id=10101)}
+        "data": projects_crud.update_agmt_project(db_, project_obj, user_id=10101)}
 
 @app.post('/v2/autographa/project/user', status_code=201,
     response_model=schemas_nlp.UserUpdateResponse, tags=['Autographa-Project management'])
@@ -963,7 +963,7 @@ def add_user(project_id:int, user_id:int, db_:Session=Depends(get_db)):
     log.info('In add_user')
     log.debug('project_id: %s, user_id:%s',project_id, user_id)
     return {'message': "User added to project successfully",
-        "data": nlp_crud.add_agmt_user(db_, project_id, user_id, current_user=10101)}
+        "data": projects_crud.add_agmt_user(db_, project_id, user_id, current_user=10101)}
 
 @app.put('/v2/autographa/project/user', status_code=201,
     response_model=schemas_nlp.UserUpdateResponse, tags=['Autographa-Project management'])
@@ -972,7 +972,7 @@ def update_user(user_obj:schemas_nlp.ProjectUser, db_:Session=Depends(get_db)):
     log.info('In update_user')
     log.debug('user_obj:%s',user_obj)
     return {'message': "User updated in project successfully",
-        "data": nlp_crud.update_agmt_user(db_, user_obj, current_user=10101)}
+        "data": projects_crud.update_agmt_user(db_, user_obj, current_user=10101)}
 
 ############## Autographa Translations ##########################
 
@@ -1021,7 +1021,7 @@ def get_draft(project_id:int=Query(...,example="1022004"),
     log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s,\
         output_format:%s',project_id, books, sentence_id_list, sentence_id_range,
         output_format)
-    return nlp_crud.obtain_agmt_draft(db_, project_id, books, sentence_id_list, sentence_id_range,
+    return projects_crud.obtain_agmt_draft(db_, project_id, books, sentence_id_list, sentence_id_range,
         output_format)
 
 @app.get('/v2/autographa/project/sentences', status_code=200,
@@ -1050,7 +1050,7 @@ def get_progress(project_id:int=Query(...,example="1022004"),
     log.info('In get_progress')
     log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s',
         project_id, books, sentence_id_list, sentence_id_range)
-    return nlp_crud.obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_range)
+    return projects_crud.obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_range)
 
 @app.put('/v2/autographa/project/suggestions', status_code=200,
     response_model=List[schemas_nlp.Sentence], tags=['Autographa-Translation'])
