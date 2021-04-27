@@ -931,12 +931,14 @@ def add_alignments(source_language:schemas.LangCodePattern, target_language:sche
 def get_projects(project_name:str=Query(None,example="Hindi-Bilaspuri Gospels"),
     source_language:schemas.LangCodePattern=Query(None,example='eng'),
     target_language:schemas.LangCodePattern=Query(None,example='mal'),
-    active:bool=True, user_id:int=Query(None), db_:Session=Depends(get_db)):
+    active:bool=True, user_id:int=Query(None), 
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_:Session=Depends(get_db)):
     '''Fetches the list of proejct and their details'''
     log.info('In get_projects')
     log.debug('project_name: %s, source_language:%s, target_language:%s,'+
         'active:%s, user_id:%s',project_name, source_language, target_language, active, user_id)
-    return projects_crud.get_agmt_projects(db_, project_name, source_language, target_language, active, user_id)
+    return projects_crud.get_agmt_projects(db_, project_name, source_language, target_language, active,
+        user_id, skip=skip, limit=limit)
 
 @app.post('/v2/autographa/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse, tags=['Autographa-Project management'])
