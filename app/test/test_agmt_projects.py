@@ -1,9 +1,8 @@
 '''Test cases for Agmt projects related APIs'''
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
-from . import check_default_get, check_soft_delete
-from .test_versions import check_post as add_version
-from .test_sources import check_post as add_source
+from . import check_default_get
+from .test_bibles import check_post as add_bible, gospel_books_data
 
 UNIT_URL = '/v2/autographa/projects'
 USER_URL = '/v2/autographa/project/user'
@@ -85,6 +84,23 @@ def test_default_post_put_get():
     assert new_project['projectName'] == updated_project['projectName']
     assert updated_project['metaData']['books'] == ['mat', 'mrk']
 
+    resp, source_name = add_bible(gospel_books_data)
+    assert resp.status_code == 201
+
+    put_data = {
+        "projectId":new_project['projectId'],
+        "selectedBooks": {
+            "bible": source_name,
+            "books": ["luk", "jhn" ]
+          }
+    }
+    response2b = client.put(UNIT_URL, headers=headers, json=put_data)
+    assert response2b.status_code == 201
+    assert response2b.json()['message'] == "Project updated successfully"
+    updated_project = response2b.json()['data']
+    assert_positive_get(updated_project)
+    assert updated_project['metaData']['books'] == ['mat', 'mrk', 'luk', 'jhn']
+
     # fetch projects
     response3 = client.get(UNIT_URL)
     assert len(response3.json()) >= 1
@@ -94,7 +110,7 @@ def test_default_post_put_get():
     assert fetched_project['projectName'] == post_data['projectName']
     assert fetched_project['sourceLanguage']['code'] == post_data['sourceLanguageCode']
     assert fetched_project['targetLanguage']['code'] == post_data['targetLanguageCode']
-    assert fetched_project['metaData']['books'] == ['mat', 'mrk']
+    assert fetched_project['metaData']['books'] == ['mat', 'mrk', 'luk', 'jhn']
 
     # create with all possible options
     post_data = {

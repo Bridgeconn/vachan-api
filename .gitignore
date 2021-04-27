@@ -71,3 +71,5 @@ app/__pycache__/*
 */.ipynb_checkpoints/*
 vachan-venv/*
 vachan-ENV/*
+app/models/*
+temp.usfm
