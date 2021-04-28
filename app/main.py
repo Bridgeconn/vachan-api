@@ -979,6 +979,7 @@ def update_user(user_obj:schemas_nlp.ProjectUser, db_:Session=Depends(get_db)):
 ############## Autographa Translations ##########################
 
 @app.get('/v2/autographa/project/tokens', response_model=List[schemas_nlp.Token],
+    response_model_exclude_unset=True,
     status_code=200, tags=['Autographa-Translation'])
 def get_tokens(project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
