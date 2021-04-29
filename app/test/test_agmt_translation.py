@@ -1,7 +1,7 @@
 '''tests for the translation workflow within AgMT projects'''
 
 import re
-
+from math import ceil, floor
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from .test_agmt_projects import bible_books, check_post as add_project
@@ -422,6 +422,72 @@ def test_get_sentence():
         for wrd in words:
             assert wrd == "test"
 
+def test_progress_n_suggestion():
+    '''tests for project progress API of AgMT'''
+    resp = add_project(project_data)
+    assert resp.json()['message'] == "Project created successfully"
+    project_id = resp.json()['data']['projectId']
+    
+    # before adding books
+    response = client.get(UNIT_URL+"/progress?project_id="+str(project_id))
+    assert response.status_code ==200
+    assert response.json()['confirmed'] == 0
+    assert response.json()['untranslated'] == 0
+    assert response.json()['suggestion'] == 0
 
-# def test_suggestions():
-#     '''Positive tests for suggestions feature'''
+    put_data = {
+        "projectId": project_id,
+        "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
+    }
+    resp = client.put("/v2/autographa/projects", headers=headers, json=put_data)
+    assert resp.json()['message'] == "Project updated successfully"
+
+    # before translation
+    response = client.get(UNIT_URL+"/progress?project_id="+str(project_id))
+    assert response.status_code ==200
+    assert response.json()['confirmed'] == 0
+    assert response.json()['untranslated'] == 1
+    assert response.json()['suggestion'] == 0
+
+    # # Apply suggestions
+    # resp = client.put(UNIT_URL+"/suggestions?project_id="+str(project_id))
+    # assert resp.status_code ==201
+    # found_suggestion = False
+    # [print(sent['draft']) for sent in resp.json()]
+    # for sent in resp.json():
+    #     for meta in sent['draftMeta']:
+    #         if meta[2] == 'suggestion':
+    #             found_suggestion = True
+    #             break
+    # assert found_suggestion
+
+    # # after suggestions
+    # response = client.get(UNIT_URL+"/progress?project_id="+str(project_id))
+    # assert response.status_code ==200
+    # assert response.json()['suggestion'] > 0
+
+    # translate all tokens at once
+    resp = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
+        "&include_stopwords=true")
+    assert resp.status_code == 200
+    all_tokens = resp.json()
+    post_obj_list = []
+    for item in all_tokens:
+        obj = {
+            "token": item['token'],
+            "occurrences": item["occurrences"],
+            "translation": "test"
+        }
+        post_obj_list.append(obj)
+    resp = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
+        headers=headers, json=post_obj_list)
+    assert resp.status_code == 201
+    assert resp.json()['message'] == "Token translations saved"
+
+    # after token translation
+    response = client.get(UNIT_URL+"/progress?project_id="+str(project_id))
+    assert response.status_code ==200
+    assert ceil(response.json()['confirmed']) == 1
+    assert floor(response.json()['untranslated']) == 0
+
+

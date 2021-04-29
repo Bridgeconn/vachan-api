@@ -823,6 +823,7 @@ def edit_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="eng_T
 #pylint: disable=all
 
 @app.put('/v2/translation/tokens', response_model=List[schemas_nlp.Token],
+    response_model_exclude_unset=True,
     status_code=200, tags=['Generic Translation'])
 def tokenize(source_language:schemas.LangCodePattern=Query(...,example="hin"),
     sentence_list:List[schemas_nlp.SentenceInput]=Body(...),
@@ -860,8 +861,17 @@ def token_replace(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
         target_language, use_data_for_learning)
     return {"message": "Tokens replaced with translations", "data": result}
 
+@app.put('/v2/translation/draft', status_code=200, tags=['Generic Translation'])
+def generate_draft(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
+    doc_type:schemas_nlp.TranslationDocumentType=Query(schemas_nlp.TranslationDocumentType.USFM)):
+    '''Converts the drafts in input sentences to following output formats:
+    usfm, text, csv or alignment-json'''
+    log.info('In generate_draft')
+    log.debug('sentence_list:%s, doc_type:%s',sentence_list, doc_type)
+    return nlp_crud.obtain_draft(sentence_list, doc_type)
+
 @app.put('/v2/translation/suggestions', response_model=List[schemas_nlp.Sentence],
-    status_code=200, tags=['Generic Translation'])
+    status_code=200, tags=["Translation Suggestion"])
 def suggest_translation(source_language:schemas.LangCodePattern=Query(...,example="hin"),
     target_language:schemas.LangCodePattern=Query(...,example="mal"),
     sentence_list:List[schemas_nlp.DraftInput]=Body(...),
@@ -877,7 +887,7 @@ def suggest_translation(source_language:schemas.LangCodePattern=Query(...,exampl
         punctuations, stopwords)
 
 @app.get('/v2/translation/gloss', response_model=List[schemas_nlp.Suggestion],
-    status_code=200, tags=['Generic Translation'])
+    status_code=200, tags=["Translation Suggestion"])
 def get_glossary(source_language:schemas.LangCodePattern=Query(...,example="eng"),
     target_language:schemas.LangCodePattern=Query(...,example="hin"),
     token:str=Query(...,example="duck"),
@@ -892,17 +902,8 @@ def get_glossary(source_language:schemas.LangCodePattern=Query(...,example="eng"
     return nlp_crud.glossary(db_, source_language, target_language, token, context, token_offset)
 
 
-@app.put('/v2/translation/draft', status_code=200, tags=['Generic Translation'])
-def generate_draft(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
-    doc_type:schemas_nlp.TranslationDocumentType=Query(schemas_nlp.TranslationDocumentType.USFM)):
-    '''Converts the drafts in input sentences to following output formats:
-    usfm, text, csv or alignment-json'''
-    log.info('In generate_draft')
-    log.debug('sentence_list:%s, doc_type:%s',sentence_list, doc_type)
-    return nlp_crud.obtain_draft(sentence_list, doc_type)
-
 @app.post('/v2/translation/learn/gloss', response_model=schemas_nlp.GlossUpdateResponse,
-    status_code=201, tags=['Generic Translation'])
+    status_code=201, tags=["Translation Suggestion"])
 def add_gloss(source_language:schemas.LangCodePattern, target_language:schemas.LangCodePattern,
     token_translations:List[schemas_nlp.GlossInput], db_:Session=Depends(get_db)):
     '''Load a list of predefined tokens and translations to improve tokenization and suggestion'''
@@ -914,7 +915,7 @@ def add_gloss(source_language:schemas.LangCodePattern, target_language:schemas.L
     return { "message": "Added to glossary", "data":tw_data }
 
 @app.post('/v2/translation/learn/alignment', response_model=schemas_nlp.GlossUpdateResponse,
-    status_code=201, tags=['Generic Translation'])
+    status_code=201, tags=["Translation Suggestion"])
 def add_alignments(source_language:schemas.LangCodePattern, target_language:schemas.LangCodePattern,
     alignments:List[schemas_nlp.Alignment], db_:Session=Depends(get_db)):
     '''Prepares training data with the alignments and update translation memory and suggestion models'''
@@ -1055,8 +1056,9 @@ def get_progress(project_id:int=Query(...,example="1022004"),
         project_id, books, sentence_id_list, sentence_id_range)
     return projects_crud.obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_range)
 
-@app.put('/v2/autographa/project/suggestions', status_code=200,
-    response_model=List[schemas_nlp.Sentence], tags=['Autographa-Translation'])
+@app.put('/v2/autographa/project/suggestions', status_code=201,
+    response_model=List[schemas_nlp.Sentence],
+    tags=["Translation Suggestion"])
 def suggest_translation(project_id:int=Query(...,example="1022004"), 
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),

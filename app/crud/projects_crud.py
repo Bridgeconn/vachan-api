@@ -231,6 +231,8 @@ def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_r
             else:
                 untranslated_length += token_len
     total_length = confirmed_length + suggestions_length + untranslated_length
+    if total_length == 0:
+        total_length = 1
     result = {"confirmed": confirmed_length/total_length,
         "suggestion": suggestions_length/total_length,
         "untranslated": untranslated_length/total_length}
