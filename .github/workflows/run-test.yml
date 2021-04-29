@@ -16,6 +16,11 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 13.12.0
+      - name: install usfm-grammar
+        run: npm install -g usfm-grammar
       - uses: actions/setup-python@v2
         with:
             python-version: '3.7.5' # Version range or exact version of a Python version to use, using SemVer's version range syntax
