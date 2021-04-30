@@ -40,7 +40,7 @@ spacy==2.1.4
 srsly==0.0.7
 thinc==7.0.4
 tqdm==4.32.2
-urllib3==1.25.3
+urllib3==1.25.8
 wasabi==0.2.2
 Werkzeug==0.15.4
 pytest==3.4.2
