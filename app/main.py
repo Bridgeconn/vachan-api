@@ -7,6 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from fastapi.middleware.cors import CORSMiddleware
 
 import db_models
 import schemas, schemas_nlp
@@ -23,6 +24,13 @@ from crud import structurals_crud, contents_crud, nlp_crud, projects_crud
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 ######### Error Handling ##############
 
 @app.exception_handler(Exception)
