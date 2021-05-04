@@ -39,4 +39,4 @@ jobs:
           mkdir logs
           touch logs/API_logs.log
           cd app 
-          python -m pytest --disable-warnings
+          python -m pytest --disable-warnings -k "not agmt and not translation"

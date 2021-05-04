@@ -18,7 +18,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from crud import utils
 import db_models
 from logger import log
-from custom_exceptions import NotAvailableException, TypeException
+from custom_exceptions import NotAvailableException, TypeException, GenericException
 from schemas_nlp import TranslationDocumentType
 
 #pylint: disable=too-many-branches, disable=too-many-locals, disable=too-many-arguments
@@ -293,6 +293,9 @@ def replace_bulk_tokens(db_, sentence_list, token_translations, src_code, trg_co
             if not draft_row:
                 raise NotAvailableException("Sentence id, %s, not found in the sentence_list"
                     %occur.sentenceId)
+            if token.token != draft_row.sentence[occur.offset[0]:occur.offset[1]]:
+                raise GenericException("Token, %s, and its occurence, not matching"%(
+                    token.token))
             draft, meta = replace_token(draft_row.sentence, occur.offset, token.translation,
                 draft_row.draft, draft_row.draftMeta)
             draft_row.draft = draft
@@ -352,6 +355,9 @@ def save_agmt_translations(db_, project_id, token_translations, return_drafts=Tr
             if not draft_row:
                 raise NotAvailableException("Sentence id, %s, not found for the selected project"
                     %occur.sentenceId)
+            if token.token != draft_row.sentence[occur.offset[0]:occur.offset[1]]:
+                raise GenericException("Token, %s, and its occurence, not matching"%(
+                    token.token))
             draft, meta = replace_token(draft_row.sentence, occur.offset, token.translation,
                 draft_row.draft, draft_row.draftMeta)
             draft_row.draft = draft
@@ -718,6 +724,7 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
         tree = suggestion_trie_in_mem[source_lang+"-"+target_lang]
     else:  # build trie loading data from disk and DB
         tree = rebuild_trie(db_, source_lang, target_lang)
+        suggestion_trie_in_mem[source_lang+"-"+target_lang] = tree
     trans = {}
     total = 0
     for key in keys:
@@ -811,6 +818,12 @@ def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range,
 
 def obtain_draft(sentence_list, doc_type):
     '''Convert input sentences to required format'''
+    for sent in sentence_list:
+        if sent.draft is None:
+            sent.draft = sent.sentence
+            offset = [0, len(sent.sentence)]
+            sent.draftMeta = [offset, offset, "untranslated"]
+
     if doc_type == TranslationDocumentType.USFM:
         result = create_usfm(sentence_list)
         return result
@@ -896,10 +909,10 @@ def export_to_json(source_lang, target_lang, sentence_list, last_modified):
                    "segments": []
                   }
     if source_lang:
-        json_output['metaData']['resources']['r0'] = {"languageCode": source_lang.code,
+        json_output['metadata']['resources']['r0'] = {"languageCode": source_lang.code,
             "name": source_lang.language}
     if target_lang:
-        json_output['metaData']['resources']['r1'] = {"languageCode": target_lang.code,
+        json_output['metadata']['resources']['r1'] = {"languageCode": target_lang.code,
             "name": target_lang.language}
     for row in sentence_list:
         row_obj = {"resources":{
@@ -942,8 +955,8 @@ def export_to_json(source_lang, target_lang, sentence_list, last_modified):
 
 #########################################################
 
-def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_list=None,
-    sentence_id_range=None, with_draft=False):
+def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=None,
+    sentence_id_list=None, with_draft=False):
     '''fetches all or selected source sentences from translation_sentences table'''
     sentence_query = db_.query(db_models.TranslationDraft).filter(
         db_models.TranslationDraft.project_id == project_id)

@@ -121,6 +121,7 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
         project_row.active = project_obj.active
     if project_obj.useDataForLearning is not None:
         project_row.metaData['useDataForLearning'] = project_obj.useDataForLearning
+        flag_modified(project_row, "metaData")
     if project_obj.stopwords:
         project_row.metaData['stopwords'] = project_obj.stopwords.__dict__
     if project_obj.punctuations:
@@ -128,14 +129,14 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
     project_row.updatedUser = user_id
     if len(new_books) > 0:
         project_row.metaData['books'] += new_books
-    flag_modified(project_row, "metaData")
+        flag_modified(project_row, "metaData")
     db_.add(project_row)
     db_.commit()
     db_.refresh(project_row)
     return project_row
 
 def get_agmt_projects(db_:Session, project_name=None, source_language=None, target_language=None,
-    active=True, user_id=None):
+    active=True, user_id=None, skip=0, limit=100):
     '''Fetch autographa projects as per the query options'''
     query = db_.query(db_models.TranslationProject)
     if project_name:
@@ -155,7 +156,8 @@ def get_agmt_projects(db_:Session, project_name=None, source_language=None, targ
         query = query.filter(db_models.TranslationProject.target_lang_id == target.languageId)
     if user_id:
         query = query.filter(db_models.TranslationProject.users.any(userId=user_id))
-    return query.filter(db_models.TranslationProject.active == active).all()
+    query = query.filter(db_models.TranslationProject.active == active)
+    return query.offset(skip).limit(limit).all()
 
 def add_agmt_user(db_:Session, project_id, user_id, current_user=None):
     '''Add an additional user(not the created user) to a project, in translation_project_users'''
@@ -229,6 +231,8 @@ def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_r
             else:
                 untranslated_length += token_len
     total_length = confirmed_length + suggestions_length + untranslated_length
+    if total_length == 0:
+        total_length = 1
     result = {"confirmed": confirmed_length/total_length,
         "suggestion": suggestions_length/total_length,
         "untranslated": untranslated_length/total_length}
