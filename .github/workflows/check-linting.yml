@@ -36,3 +36,6 @@ jobs:
 
       - name: Run linter in crud module
         run: pylint --extension-pkg-whitelist='pydantic' app/crud/*.py
+
+      - name: Run linter in routers module
+        run: pylint --extension-pkg-whitelist='pydantic' app/routers/*.py

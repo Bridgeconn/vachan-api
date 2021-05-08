@@ -7,13 +7,12 @@ from sqlalchemy.orm import Session
 
 #pylint: disable=E0401, disable=E0611
 #pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
-
 import db_models
 import schemas
 from crud import utils
 from custom_exceptions import NotAvailableException
 from database import engine
-from logger import log
+from dependencies import log
 
 def get_content_types(db_: Session, content_type: str =None, skip: int = 0, limit: int = 100):
     '''Fetches all content types, with pagination'''

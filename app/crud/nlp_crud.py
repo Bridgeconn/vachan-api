@@ -1,5 +1,7 @@
 ''' Place to define all data processing and Database CRUD operations
 related to NLP operations and translation apps'''
+#pylint: disable=too-many-lines
+
 
 import re
 import os
@@ -14,10 +16,9 @@ from sqlalchemy.orm.attributes import flag_modified
 
 #pylint: disable=E0401, disable=E0611
 #pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
-
 from crud import utils
 import db_models
-from logger import log
+from dependencies import log
 from custom_exceptions import NotAvailableException, TypeException, GenericException
 from schemas_nlp import TranslationDocumentType
 
@@ -70,7 +71,6 @@ def find_phrases(text, stop_words, include_phrases=True):
         i += 1
     phrases.append(current_phrase.strip())
     return phrases
-
 
 def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, include_phrases=True,
     include_stopwords=False, punctuations=None, stop_words=None):
@@ -153,7 +153,6 @@ def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, incl
                     {"sentenceId":sent['sentenceId'], "offset":[offset, offset+len(phrase)]})
     return unique_tokens
 
-
 def get_generic_tokens(db_:Session, src_language, sentence_list, trg_language=None,
     punctuations=None, stopwords=None,
     use_translation_memory=True, include_phrases=True, include_stopwords=False):
@@ -221,7 +220,6 @@ def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_
     if "punctuations" in project_row.metaData:
         args['punctuations'] = project_row.metaData['punctuations']
     return get_generic_tokens( **args)
-
 
 ###################### Token replacement translation ######################
 def replace_token(source, token_offset, translation, draft="", draft_meta=[], tag="confirmed"):
@@ -337,7 +335,6 @@ def replace_bulk_tokens(db_, sentence_list, token_translations, src_code, trg_co
     result = [updated_sentences[key] for key in updated_sentences]
     return result
 
-
 def save_agmt_translations(db_, project_id, token_translations, return_drafts=True, user_id=None):
     '''replace tokens with provided translation in the drafts and update translation memory'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
@@ -451,6 +448,8 @@ def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
     phrases = []
     seen_src = []
     seen_trg = []
+    src_tok_list = [tok.lower() for tok in src_tok_list]
+    trg_tok_list = [tok.lower() for tok in trg_tok_list]
     for align in align_pairs:
         if (align.sourceTokenIndex not in seen_src and
             align.targetTokenIndex not in seen_trg): #New single token entry
@@ -509,7 +508,6 @@ def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
                 phrases.remove(obj)
     return phrases
 
-
 def alignments_to_trainingdata(db_:Session, src_lang, trg_lang, alignment_list,
     user_id=None, window_size=WINDOW_SIZE, output_dir=SUGGESTION_DATA_PATH):
     '''Convert alignments to training data for suggestions module and also add to translation_memory
@@ -551,18 +549,23 @@ def alignments_to_trainingdata(db_:Session, src_lang, trg_lang, alignment_list,
                 post_context = sent.sourceTokenList[start:end]
             else:
                 post_context = sent.sourceTokenList[start:]
+            # split multiword tokens in context
+            pre_context = ' '.join(pre_context).split(' ')
+            post_context = ' '.join(post_context).split(' ')
+
             context = pre_context + [obj['token']] + post_context
             sugg_data.append((len(pre_context), context, obj['translation']))
-    new_trie = build_trie(sugg_data, default_val=0)
+    new_trie = build_trie(sugg_data)
     sugg_json = {item[0]:item[1] for item in new_trie.items()}
     json.dump(sugg_json, output_file, ensure_ascii=False)
     output_file.close()
     new_trie = rebuild_trie(db_, src_lang, trg_lang)
     suggestion_trie_in_mem[src_lang+"-"+trg_lang] = new_trie
-    tw_data = add_to_translation_memory(db_, src_lang, trg_lang,
-        [dict_data[key] for key in dict_data])
-    return tw_data
 
+    # increments frequency by 1, as the gloss was observed in usage in alignment
+    tw_data = add_to_translation_memory(db_, src_lang, trg_lang,
+        [dict_data[key] for key in dict_data], default_val=1)
+    return tw_data
 
 def form_trie_keys(prefix, to_left, to_right, prev_keys, only_longest=True):
     '''build the trie tree recursively'''
@@ -622,6 +625,7 @@ def build_trie(token_context__trans_list, default_val=None):
             val_update = 1/len(keys)
         else:
             val_update = default_val
+        print(val_update)
         for key in keys:
             if ttt.has_key(key):
                 value = ttt[key]
@@ -633,6 +637,14 @@ def build_trie(token_context__trans_list, default_val=None):
             else:
                 ttt[key] = {translation: val_update}
     return ttt
+
+def display_tree(tree):
+    '''pretty prints a trie'''
+    for path in tree.items():
+        nodes = path[0].split('/')
+        for nod in nodes:
+            print('\t-',nod,end='')
+        print(' => ',path[1])
 
 def rebuild_trie(db_, src, trg):
     '''Collect suggestions data from translation memory and traning data directory
@@ -649,9 +661,10 @@ def rebuild_trie(db_, src, trg):
             json_data = json.load(json_file)
             for key in json_data:
                 new_trie[key] = json_data[key]
+    display_tree(new_trie)
     return new_trie
 
-def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list):
+def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0):
     '''Add glossary data to translation memory'''
     if isinstance(src_lang, str):
         source_lang = db_.query(db_models.Language).filter(
@@ -671,7 +684,7 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list):
     for gloss in gloss_list:
         if not isinstance(gloss, dict):
             gloss = gloss.__dict__
-        gloss['token'] = utils.normalize_unicode(gloss['token'])
+        gloss['token'] = utils.normalize_unicode(gloss['token']).lower()
         token_row = db_.query(db_models.TranslationMemory).filter(
             db_models.TranslationMemory.source_lang_id == source_lang.languageId,
             db_models.TranslationMemory.target_lang_id == target_lang.languageId,
@@ -679,10 +692,13 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list):
         if token_row:
             if "translations" in gloss:
                 for trans in gloss['translations']:
-                    trans = utils.normalize_unicode(trans)
+                    trans = utils.normalize_unicode(trans).lower()
                     if trans not in token_row.translations:
                         #using 0, as this is data loaded from outside and not observed in usage
-                        token_row.translations[trans] = {"frequency": 0}
+                        token_row.translations[trans] = {"frequency": default_val}
+                    else:
+                        token_row.translations[trans]['frequency'] += default_val
+                        flag_modified(token_row, "translations")
             if 'tokenMetaData' in gloss:
                 if token_row.metaData is None:
                     token_row.metaData = {}
@@ -692,12 +708,12 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list):
         else:
             args = {"source_lang_id":source_lang.languageId,
                 "target_lang_id": target_lang.languageId,
-                "token":gloss['token'],
+                "token":utils.normalize_unicode(gloss['token']).lower(),
                 "translations":{}}
             if "translations" in gloss:
                 #using 0, as this is data loaded from outside and not observed in usage
-                args['translations'] = {utils.normalize_unicode(val):{
-                    "frequency":0} for val in gloss['translations']}
+                args['translations'] = {utils.normalize_unicode(val).lower():{
+                    "frequency":default_val} for val in gloss['translations']}
             if 'tokenMetaData' in gloss:
                 args['metaData'] = gloss['tokenMetaData']
             token_row = db_models.TranslationMemory(**args)
@@ -729,6 +745,7 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
     total = 0
     for key in keys:
         if tree.has_subtrie(key) or tree.has_key(key):
+            print("found:",key)
             nodes = tree.values(key)
             level = len(key.split("/"))
             for nod in nodes:
@@ -738,6 +755,23 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
                     else:
                         trans[sense] = nod[sense]*level*level
                     total += nod[sense]
+        else:
+            print("not found:",key)
+    # check in trans memory for any more available senses
+    forward_query = db_.query(db_models.TranslationMemory).filter(
+            db_models.TranslationMemory.source_language.has(code=source_lang),
+            db_models.TranslationMemory.target_language.has(code=target_lang),
+            db_models.TranslationMemory.token == utils.normalize_unicode(word).lower())
+    forward_dict_entires =  forward_query.all()
+    for row in forward_dict_entires:
+        for sense in row.translations:
+            if sense not in trans:
+                freq = row.translations[sense]['frequency']
+                total = total + freq
+                trans[sense] = freq
+    if total == 0:
+        total = 1
+    print(trans)
     sorted_trans = sorted(trans.items(), key=lambda x:x[1], reverse=True)
     scored_trans = [(sense[0],sense[1]/total) for sense in sorted_trans]
     return scored_trans
@@ -815,7 +849,6 @@ def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range,
     return updated_drafts
 
 ###################### Export and download ######################
-
 def obtain_draft(sentence_list, doc_type):
     '''Convert input sentences to required format'''
     for sent in sentence_list:
@@ -902,12 +935,9 @@ def export_to_json(source_lang, target_lang, sentence_list, last_modified):
                             # "languageCode": target_lang.code,
                             # "name": target_lang.language,
                             # "version": "9"
-                          }
-                      },
-                      "modified": last_modified
-                   },
-                   "segments": []
-                  }
+                           }},
+                      "modified": last_modified},
+                   "segments": []}
     if source_lang:
         json_output['metadata']['resources']['r0'] = {"languageCode": source_lang.code,
             "name": source_lang.language}
@@ -919,22 +949,17 @@ def export_to_json(source_lang, target_lang, sentence_list, last_modified):
                         "r0":{
                             "text":row.sentence,
                             "tokens":[],
-                            "metadata": {"contextId":row.surrogateId}
-                        },
+                            "metadata": {"contextId":row.surrogateId}},
                         "r1":{
                             "text": row.draft,
                             "tokens":[],
-                            "metadata": {"contextId":row.surrogateId}
-                        }
-                    },
-                   "alignments":[]
-                  }
+                            "metadata": {"contextId":row.surrogateId}}},
+                   "alignments":[]}
         for i,meta in enumerate(row.draftMeta):
             algmt = {
               "r0": [i],
               "r1": [i],
-              "status": meta[2]
-            }
+              "status": meta[2]}
             src_token = row.sentence[meta[0][0]:meta[0][1]]
             trg_token = row.draft[meta[1][0]:meta[1][1]]
             row_obj['resources']['r0']['tokens'].append(src_token)
@@ -952,9 +977,7 @@ def export_to_json(source_lang, target_lang, sentence_list, last_modified):
         json_output['segments'].append(row_obj)
     return json_output
 
-
 #########################################################
-
 def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=None,
     sentence_id_list=None, with_draft=False):
     '''fetches all or selected source sentences from translation_sentences table'''

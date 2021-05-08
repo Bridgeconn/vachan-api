@@ -217,5 +217,5 @@ class GlossOutput(BaseModel):
 
 class GlossUpdateResponse(BaseModel):
     '''Response object for learn/gloss and learn/alignments'''
-    message: str = Field(..., example="Added to glossary")
+    message: str = Field(..., example="Added to glossary/Alignments used for learning")
     data: List[GlossOutput]
