@@ -1,6 +1,5 @@
 ''' Place to define all data processing and Database CRUD operations
 related to NLP operations and translation apps'''
-
 import re
 import os
 import glob
@@ -14,10 +13,9 @@ from sqlalchemy.orm.attributes import flag_modified
 
 #pylint: disable=E0401, disable=E0611
 #pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
-
 from crud import utils
 import db_models
-from logger import log
+from dependencies import log
 from custom_exceptions import NotAvailableException, TypeException, GenericException
 from schemas_nlp import TranslationDocumentType
 
@@ -70,7 +68,6 @@ def find_phrases(text, stop_words, include_phrases=True):
         i += 1
     phrases.append(current_phrase.strip())
     return phrases
-
 
 def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, include_phrases=True,
     include_stopwords=False, punctuations=None, stop_words=None):
@@ -153,7 +150,6 @@ def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, incl
                     {"sentenceId":sent['sentenceId'], "offset":[offset, offset+len(phrase)]})
     return unique_tokens
 
-
 def get_generic_tokens(db_:Session, src_language, sentence_list, trg_language=None,
     punctuations=None, stopwords=None,
     use_translation_memory=True, include_phrases=True, include_stopwords=False):
@@ -221,7 +217,6 @@ def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_
     if "punctuations" in project_row.metaData:
         args['punctuations'] = project_row.metaData['punctuations']
     return get_generic_tokens( **args)
-
 
 ###################### Token replacement translation ######################
 def replace_token(source, token_offset, translation, draft="", draft_meta=[], tag="confirmed"):
@@ -336,7 +331,6 @@ def replace_bulk_tokens(db_, sentence_list, token_translations, src_code, trg_co
                     db_.commit()
     result = [updated_sentences[key] for key in updated_sentences]
     return result
-
 
 def save_agmt_translations(db_, project_id, token_translations, return_drafts=True, user_id=None):
     '''replace tokens with provided translation in the drafts and update translation memory'''
@@ -511,7 +505,6 @@ def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
                 phrases.remove(obj)
     return phrases
 
-
 def alignments_to_trainingdata(db_:Session, src_lang, trg_lang, alignment_list,
     user_id=None, window_size=WINDOW_SIZE, output_dir=SUGGESTION_DATA_PATH):
     '''Convert alignments to training data for suggestions module and also add to translation_memory
@@ -570,7 +563,6 @@ def alignments_to_trainingdata(db_:Session, src_lang, trg_lang, alignment_list,
     tw_data = add_to_translation_memory(db_, src_lang, trg_lang,
         [dict_data[key] for key in dict_data], default_val=1)
     return tw_data
-
 
 def form_trie_keys(prefix, to_left, to_right, prev_keys, only_longest=True):
     '''build the trie tree recursively'''
@@ -644,6 +636,7 @@ def build_trie(token_context__trans_list, default_val=None):
     return ttt
 
 def display_tree(tree):
+    '''pretty prints a trie'''
     for path in tree.items():
         nodes = path[0].split('/')
         for nod in nodes:
@@ -853,7 +846,6 @@ def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range,
     return updated_drafts
 
 ###################### Export and download ######################
-
 def obtain_draft(sentence_list, doc_type):
     '''Convert input sentences to required format'''
     for sent in sentence_list:
@@ -940,12 +932,9 @@ def export_to_json(source_lang, target_lang, sentence_list, last_modified):
                             # "languageCode": target_lang.code,
                             # "name": target_lang.language,
                             # "version": "9"
-                          }
-                      },
-                      "modified": last_modified
-                   },
-                   "segments": []
-                  }
+                           }},
+                      "modified": last_modified},
+                   "segments": []}
     if source_lang:
         json_output['metadata']['resources']['r0'] = {"languageCode": source_lang.code,
             "name": source_lang.language}
@@ -957,22 +946,17 @@ def export_to_json(source_lang, target_lang, sentence_list, last_modified):
                         "r0":{
                             "text":row.sentence,
                             "tokens":[],
-                            "metadata": {"contextId":row.surrogateId}
-                        },
+                            "metadata": {"contextId":row.surrogateId}},
                         "r1":{
                             "text": row.draft,
                             "tokens":[],
-                            "metadata": {"contextId":row.surrogateId}
-                        }
-                    },
-                   "alignments":[]
-                  }
+                            "metadata": {"contextId":row.surrogateId}}},
+                   "alignments":[]}
         for i,meta in enumerate(row.draftMeta):
             algmt = {
               "r0": [i],
               "r1": [i],
-              "status": meta[2]
-            }
+              "status": meta[2]}
             src_token = row.sentence[meta[0][0]:meta[0][1]]
             trg_token = row.draft[meta[1][0]:meta[1][1]]
             row_obj['resources']['r0']['tokens'].append(src_token)
@@ -990,9 +974,7 @@ def export_to_json(source_lang, target_lang, sentence_list, last_modified):
         json_output['segments'].append(row_obj)
     return json_output
 
-
 #########################################################
-
 def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=None,
     sentence_id_list=None, with_draft=False):
     '''fetches all or selected source sentences from translation_sentences table'''

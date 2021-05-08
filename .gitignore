@@ -63,8 +63,8 @@ env3
 # next.js build output
 .next
 
-agmt/__pycache__/*
 test/__pycache__/*
+app/routers/__pycache__/*
 app/test/__pycache__/*
 app/crud/__pycache__/*
 app/__pycache__/*

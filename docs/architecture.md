@@ -27,12 +27,9 @@ This section talks briefly about various important directories and files. It wou
 ### app/main
 
 * Creates the fast api app, which can be started with `uvicorn main:app` from app folder
-* Defines all API endpoints
-* Specifies the types of path, query and body parameters of each API endpoint, which are used for input validations
-* Specifies the output objects, messages and error objects returned by each endpoint, which are used for response validations
-* Invokes the methods in CRUD module to perform fucntions required by each endpoint
 * Defines exception handlers, that make log entries and reformats the error responses to a uniform structure
 * Make log entries
+* Includes all API endpoints, defined in routers, to `app`.
 
 
 ### app/crud/
@@ -51,6 +48,13 @@ Contains all input output objects schema definitions, used by pydantic for input
 - default values if any
 - if the field is mandatory or optional
 - example values to be displayed in API documentations
+
+### app/routers
+
+* Defines all API endpoints
+* Specifies the types of path, query and body parameters of each API endpoint, which are used for input validations
+* Specifies the output objects, messages and error objects returned by each endpoint, which are used for response validations
+* Invokes the methods in CRUD module to perform functions required by each endpoint
 
 ![component diagram](./images/Vachan-apiv2components.png)
 *Component diagram*
@@ -72,24 +76,28 @@ These mappings are done refering the schema definitions in `app/schemas` to make
 
 ### app/database
 
-Establishes database connections. Make use of environment variables to connect to correct database using credentials
+Establishes database connections. Make use of environment variables to connect to correct database using credentials.
 
-### logs/ and app/logger
+### app/dependencies
+
+Defines the `get_db()` function and `log` object used by other moudles like main, crud, routers etc
+
+### logs/
 
 * `logs` folder contains the API log files
-* `app/logger` file has all the setting related to logging, such are file path, maximum size and number of log file etc
-* Most of the logging is done in the main module while entering each API function and in exception handlers
+* `app/dependencies` file has all the setting related to logging, such are file path, maximum size and number of log file etc.
+* Most of the logging is done in the routers module while entering each API function and in exception handlers in main.
 
 ### app/custom_exceptions
 
-Defines some of the exceptions like TypeException, NotAvailableException that are raised explicitly in code
+Defines some of the exceptions like TypeException, NotAvailableException that are raised explicitly in code.
 
 ### app/tests
 
-Contains all test cases defined. Uses pytest
+Contains all test cases defined. Uses pytest.
 They are grouped based on API groups you see on swagger/redoc documentations.
-The test files are names as test_groupname.py pattern. Each test function is independant of each other. So tests can run in any desired manner as below
+The test files are named as test_groupname.py pattern. Each test function is independant of each other. So tests can be run in any desired manner as below
 
 - All together (`python -m pytest` from app folder)
 - One file at a time
-- One of more test fuctions in a file using patterns(functions names)
+- One or more test functions in a file using patterns(functions names)
