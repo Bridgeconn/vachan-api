@@ -1,5 +1,8 @@
 ''' Place to define all data processing and Database CRUD operations
 related to NLP operations and translation apps'''
+#pylint: disable=too-many-lines
+
+
 import re
 import os
 import glob
