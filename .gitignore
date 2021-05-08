@@ -63,7 +63,7 @@ env3
 # next.js build output
 .next
 
-*/__pycache__/*
+**/__pycache__/*
 */.ipynb_checkpoints/*
 vachan-venv/*
 vachan-ENV/*
