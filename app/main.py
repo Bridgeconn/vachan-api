@@ -1,16 +1,17 @@
 '''Defines all API endpoints for the web server app'''
 
-from typing import List, Tuple
-from fastapi import FastAPI, Query, Body, Depends, Path, UploadFile, File
+from typing import List
+from fastapi import FastAPI, Query, Body, Depends, Path
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from fastapi.middleware.cors import CORSMiddleware
 
 import db_models
-import schemas, schemas_nlp
+import schemas
+import schemas_nlp
 from logger import log
 from database import SessionLocal, engine
 from custom_exceptions import GenericException
@@ -20,10 +21,7 @@ from custom_exceptions import NotAvailableException, AlreadyExistsException, Typ
 #pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 from crud import structurals_crud, contents_crud, nlp_crud, projects_crud
 
-
-
 app = FastAPI()
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -31,8 +29,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-######### Error Handling ##############
 
+######### Error Handling ##############
 @app.exception_handler(Exception)
 async def any_exception_handler(request, exc: Exception):
     '''logs and returns error details'''
@@ -74,7 +72,6 @@ async def db_exception_handler(request, exc: SQLAlchemyError):
         content={"error": "Database Error", "details" : detail},
     )
 
-
 @app.exception_handler(NotAvailableException)
 async def na_exception_handler(request, exc: NotAvailableException):
     '''logs and returns error details'''
@@ -85,7 +82,6 @@ async def na_exception_handler(request, exc: NotAvailableException):
         status_code=exc.status_code,
         content={"error": exc.name, "details" : exc.detail},
     )
-
 
 @app.exception_handler(AlreadyExistsException)
 async def exists_exception_handler(request, exc: AlreadyExistsException):
@@ -142,7 +138,6 @@ async def unique_violation_exception_handler(request, exc: IntegrityError):
         content={"error": "Already Exists", "details" : str(exc.orig).replace("DETAIL","")},
     )
 ######################################################
-
 def get_db():
     '''To start a DB connection(session)'''
     db_ = SessionLocal()
@@ -155,17 +150,13 @@ def get_db():
 db_models.map_all_dynamic_tables(db_= next(get_db()))
 db_models.Base.metadata.create_all(bind=engine)
 
-
 @app.get('/', response_model=schemas.NormalResponse, status_code=200)
 def test(db_: Session = Depends(get_db)):
     '''tests if app is running and the DB connection is active'''
     db_.query(db_models.Language).first()
     return {"message": "App is up and running"}
 
-
-
 ##### Content types #####
-
 @app.get('/v2/contents', response_model=List[schemas.ContentType],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}},  status_code=200,
@@ -198,10 +189,7 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
     return {'message': "Content type created successfully",
     "data": structurals_crud.create_content_type(db_=db_, content=content)}
 
-#################
-
 ##### languages #####
-
 @app.get('/v2/languages',
     response_model=List[schemas.LanguageResponse],
     responses={502: {"model": schemas.ErrorResponse},
@@ -245,9 +233,6 @@ def edit_language(lang_obj: schemas.LanguageEdit = Body(...), db_: Session = Dep
         raise NotAvailableException("Language id %s not found"%(lang_obj.languageId))
     return {'message': "Language edited successfully",
         "data": structurals_crud.update_language(db_=db_, lang=lang_obj)}
-
-# ################################
-
 
 ########### Licenses ######################
 @app.get('/v2/licenses',
@@ -296,7 +281,6 @@ def edit_license(license_obj: schemas.LicenseEdit = Body(...), db_: Session = De
         "data": structurals_crud.update_license(db_=db_, license_obj=license_obj, user_id=None)}
 
 ##### Version #####
-
 @app.get('/v2/versions',
     response_model=List[schemas.VersionResponse],
     responses={502: {"model": schemas.ErrorResponse},
@@ -333,7 +317,6 @@ def add_version(version_obj : schemas.VersionCreate = Body(...),
             version_obj.versionAbbreviation, version_obj.revision))
     return {'message': "Version created successfully",
     "data": structurals_crud.create_version(db_=db_, version=version_obj)}
-
 
 @app.put('/v2/versions', response_model=schemas.VersionUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -405,7 +388,6 @@ def add_source(source_obj : schemas.SourceCreate = Body(...),
     "data": structurals_crud.create_source(db_=db_, source=source_obj, table_name=table_name,
         user_id=None)}
 
-
 @app.put('/v2/sources', response_model=schemas.SourceUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
@@ -421,11 +403,7 @@ def edit_source(source_obj: schemas.SourceEdit = Body(...), db_: Session = Depen
     return {'message': "Source edited successfully",
     "data": structurals_crud.update_source(db_=db_, source=source_obj, user_id=None)}
 
-# # #################
-
 # ############ Bible Books ##########
-
-
 @app.get('/v2/lookup/bible/books',
     response_model=List[schemas.BibleBook],
     responses={502: {"model": schemas.ErrorResponse},
@@ -446,8 +424,6 @@ def get_bible_book(book_id: int=Query(None, example=67), #pylint: disable=too-ma
         skip = skip, limit = limit)
 
 # #### Bible #######
-
-
 @app.post('/v2/bibles/{source_name}/books', response_model=schemas.BibleBookCreateResponse,
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -462,7 +438,6 @@ def add_bible_book(source_name : schemas.TableNamePattern=Path(..., example="hin
     return {'message': "Bible books uploaded and processed successfully",
         "data": contents_crud.upload_bible_books(db_=db_, source_name=source_name,
         books=books, user_id=None)}
-
 
 @app.put('/v2/bibles/{source_name}/books', response_model=schemas.BibleBookUpdateResponse,
     response_model_exclude_unset=True,
@@ -511,7 +486,6 @@ def get_available_bible_book(source_name: schemas.TableNamePattern=Path(..., #py
     return contents_crud.get_available_bible_books(db_, source_name, book_code, content_type,
         versification, active=active, skip = skip, limit = limit)
 
-
 @app.get('/v2/bibles/{source_name}/verses',
     response_model=List[schemas.BibleVerse],
     response_model_exclude_unset=True,
@@ -541,9 +515,7 @@ def get_bible_verse(source_name: schemas.TableNamePattern=Path(..., example="hin
     return contents_crud.get_bible_verses(db_, source_name, book_code, chapter, verse, last_verse,
         search_phrase, active=active, skip = skip, limit = limit)
 
-
 # # ########### Audio bible ###################
-
 @app.post('/v2/bibles/{source_name}/audios', response_model=schemas.AudioBibleCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
@@ -556,7 +528,6 @@ def add_audio_bible(source_name : schemas.TableNamePattern=Path(..., example="hi
     return {'message': "Bible audios details uploaded successfully",
         "data": contents_crud.upload_bible_audios(db_=db_, source_name=source_name,
         audios=audios, user_id=None)}
-
 
 @app.put('/v2/bibles/{source_name}/audios', response_model=schemas.AudioBibleUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -575,7 +546,6 @@ def edit_audio_bible(source_name: schemas.TableNamePattern=Path(..., example="hi
         audios=audios, user_id=None)}
 
 # # ##### Commentary #####
-
 @app.get('/v2/commentaries/{source_name}',
     response_model=List[schemas.CommentaryResponse],
     responses={502: {"model": schemas.ErrorResponse},
@@ -625,7 +595,6 @@ def add_commentary(source_name : schemas.TableNamePattern=Path(...,example="eng_
     "data": contents_crud.upload_commentaries(db_=db_, source_name=source_name,
         commentaries=commentaries, user_id=None)}
 
-
 @app.put('/v2/commentaries/{source_name}', response_model=schemas.CommentaryUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
@@ -643,7 +612,6 @@ def edit_commentary(source_name: schemas.TableNamePattern=Path(..., example="eng
         commentaries=commentaries, user_id=None)}
 
 # # ########### Dictionary ###################
-
 @app.get('/v2/dictionaries/{source_name}',
     response_model_exclude_unset=True,
     response_model=List[schemas.DictionaryWordResponse],
@@ -674,7 +642,6 @@ def get_dictionary_word( #pylint: disable=too-many-arguments
         exact_match=exact_match,
         word_list_only=word_list_only, details=details, active=active, skip=skip, limit=limit)
 
-
 @app.post('/v2/dictionaries/{source_name}', response_model=schemas.DictionaryCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
@@ -691,7 +658,6 @@ def add_dictionary_word(
     return {'message': "Dictionary words added successfully",
         "data": contents_crud.upload_dictionary_words(db_=db_, source_name=source_name,
         dictionary_words=dictionary_words, user_id=None)}
-
 
 @app.put('/v2/dictionaries/{source_name}', response_model=schemas.DictionaryUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -711,10 +677,7 @@ def edit_dictionary_word(
         "data": contents_crud.update_dictionary_words(db_=db_, source_name=source_name,
         dictionary_words=dictionary_words, user_id=None)}
 
-# # ###########################################
-
 # # ########### Infographic ###################
-
 @app.get('/v2/infographics/{source_name}',
     response_model=List[schemas.InfographicResponse],
     responses={502: {"model": schemas.ErrorResponse},
@@ -767,11 +730,8 @@ def edit_infographics(source_name: schemas.TableNamePattern=Path(...,
     return {'message': "Infographics updated successfully",
         "data": contents_crud.update_infographics(db_=db_, source_name=source_name,
         infographics=infographics, user_id=None)}
-# # ###########################################
-
 
 # # ########### bible videos ###################
-
 @app.get('/v2/biblevideos/{source_name}',
     response_model=List[schemas.BibleVideo],
     responses={502: {"model": schemas.ErrorResponse},
@@ -793,7 +753,6 @@ def get_biblevideo(#pylint: disable=too-many-arguments
     return contents_crud.get_bible_videos(db_, source_name, book_code, title, theme, active,
         skip=skip, limit=limit)
 
-
 @app.post('/v2/biblevideos/{source_name}', response_model=schemas.BibleVideoCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
@@ -807,7 +766,6 @@ def add_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="eng_TB
     return {'message': "Bible videos added successfully",
         "data": contents_crud.upload_bible_videos(db_=db_, source_name=source_name,
         videos=videos, user_id=None)}
-
 
 @app.put('/v2/biblevideos/{source_name}', response_model=schemas.BibleVideoUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -825,11 +783,9 @@ def edit_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="eng_T
     return {'message': "Bible videos updated successfully",
         "data": contents_crud.update_bible_videos(db_=db_, source_name=source_name,
         videos=videos, user_id=None)}
-# # ###########################################
 
 ########### Generic Translation ##################
-#pylint: disable=all
-
+#pylint: disable=too-many-arguments
 @app.put('/v2/translation/tokens', response_model=List[schemas_nlp.Token],
     response_model_exclude_unset=True,
     status_code=200, tags=['Generic Translation'])
@@ -844,13 +800,12 @@ def tokenize(source_language:schemas.LangCodePattern=Query(...,example="hin"),
     Flags use_translation_memory, include_phrases and include_stopwords can be
     used to alter the tokens output as per user need'''
     log.info('In tokenize')
-    log.debug('source_language: %s, sentence_list:%s, target_language:%s, punctuations:%s,'+
-        'stopwords:%s, use_translation_memory:%s, include_phrases:%s, include_stopwords:%s',
+    log.debug('source_language: %s, sentence_list:%s, target_language:%s, punctuations:%s,\
+        stopwords:%s, use_translation_memory:%s, include_phrases:%s, include_stopwords:%s',
         source_language, sentence_list, target_language, punctuations, stopwords,
         use_translation_memory, include_phrases, include_stopwords)
     return nlp_crud.get_generic_tokens(db_, source_language, sentence_list, target_language,
         punctuations, stopwords, use_translation_memory, include_phrases, include_stopwords)
-
 
 @app.put('/v2/translation/token-translate', response_model=schemas_nlp.TranslateResponse,
     status_code=200, tags=['Generic Translation'])
@@ -859,11 +814,11 @@ def token_replace(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     source_language:schemas.LangCodePattern=Query(...,example='hin'),
     target_language:schemas.LangCodePattern=Query(...,example='mal'),
     use_data_for_learning:bool=True, db_:Session=Depends(get_db)):
-    '''Perform token replacement on provided sentences and 
+    '''Perform token replacement on provided sentences and
     returns obtained drafts and draft_meta'''
     log.info('In token_replace')
-    log.debug('sentence_list:%s, token_translations:%s,'+
-        'source_lanuage:%s, target_language:%s, use_data_for_learning:%s',
+    log.debug('sentence_list:%s, token_translations:%s,\
+        source_lanuage:%s, target_language:%s, use_data_for_learning:%s',
         sentence_list, token_translations, source_language, target_language, use_data_for_learning)
     result = nlp_crud.replace_bulk_tokens(db_, sentence_list, token_translations, source_language,
         target_language, use_data_for_learning)
@@ -886,11 +841,11 @@ def suggest_translation(source_language:schemas.LangCodePattern=Query(...,exampl
     punctuations:List[str]=Body(None), stopwords:schemas_nlp.Stopwords=Body(None),
     db_:Session=Depends(get_db)):
     '''Attempts to tokenize sentences and prepare draft with autogenerated suggestions
-    If draft and draft_meta are provided indicating some portion of sentence is user translated, 
+    If draft and draft_meta are provided indicating some portion of sentence is user translated,
     then it is left untouched.'''
     log.info("In suggest_translation")
-    log.debug('source_language:%s, target_language:%s, sentence_list:%s,punctuations:%s'+
-        'stopwords:%s', source_language, target_language, sentence_list, punctuations, stopwords)
+    log.debug('source_language:%s, target_language:%s, sentence_list:%s,punctuations:%s\
+        stopwords:%s', source_language, target_language, sentence_list, punctuations, stopwords)
     return nlp_crud.auto_translate(db_, sentence_list, source_language, target_language,
         punctuations, stopwords)
 
@@ -904,16 +859,16 @@ def get_glossary(source_language:schemas.LangCodePattern=Query(...,example="eng"
     db_:Session=Depends(get_db)):
     '''Finds translation suggestions or gloss for one token in the given context'''
     log.info('In get_glossary')
-    log.debug('source_language:%s, target_language:%s, token:%s, context:%s,'+
-        'token_offset:%s',source_language, target_language, token,
+    log.debug('source_language:%s, target_language:%s, token:%s, context:%s,\
+        token_offset:%s',source_language, target_language, token,
             context, token_offset)
     return nlp_crud.glossary(db_, source_language, target_language, token, context, token_offset)
 
-
 @app.post('/v2/translation/learn/gloss', response_model=schemas_nlp.GlossUpdateResponse,
     status_code=201, tags=["Translation Suggestion"])
-def add_gloss(source_language:schemas.LangCodePattern, target_language:schemas.LangCodePattern,
-    token_translations:List[schemas_nlp.GlossInput], db_:Session=Depends(get_db)):
+def add_gloss(source_language:schemas.LangCodePattern=Query(...,example='eng'),
+    target_language:schemas.LangCodePattern=Query(..., example="hin"),
+    token_translations:List[schemas_nlp.GlossInput]=Body(...), db_:Session=Depends(get_db)):
     '''Load a list of predefined tokens and translations to improve tokenization and suggestion'''
     log.info('In add_gloss')
     log.debug('source_language:%s, target_language:%s, token_translations:%s',
@@ -926,31 +881,32 @@ def add_gloss(source_language:schemas.LangCodePattern, target_language:schemas.L
     status_code=201, tags=["Translation Suggestion"])
 def add_alignments(source_language:schemas.LangCodePattern, target_language:schemas.LangCodePattern,
     alignments:List[schemas_nlp.Alignment], db_:Session=Depends(get_db)):
-    '''Prepares training data with the alignments and update translation memory and suggestion models'''
+    '''Prepares training data with alignments and update translation memory & suggestion models'''
     log.info('In add_alignments')
     log.debug('source_language:%s, target_language:%s, alignments:%s',
         source_language, target_language, alignments)
     tw_data = nlp_crud.alignments_to_trainingdata(db_,source_language, target_language,
         alignments, user_id=20202)
     return { "message": "Alignments used for learning", "data":tw_data }
-############## Autographa Projects ##########################
 
+############## Autographa Projects ##########################
 @app.get('/v2/autographa/projects', response_model=List[schemas_nlp.TranslationProject],
     status_code=200, tags=['Autographa-Project management'])
 def get_projects(project_name:str=Query(None,example="Hindi-Bilaspuri Gospels"),
     source_language:schemas.LangCodePattern=Query(None,example='eng'),
     target_language:schemas.LangCodePattern=Query(None,example='mal'),
-    active:bool=True, user_id:int=Query(None), 
+    active:bool=True, user_id:int=Query(None),
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_:Session=Depends(get_db)):
     '''Fetches the list of proejct and their details'''
     log.info('In get_projects')
-    log.debug('project_name: %s, source_language:%s, target_language:%s,'+
-        'active:%s, user_id:%s',project_name, source_language, target_language, active, user_id)
-    return projects_crud.get_agmt_projects(db_, project_name, source_language, target_language, active,
-        user_id, skip=skip, limit=limit)
+    log.debug('project_name: %s, source_language:%s, target_language:%s,\
+        active:%s, user_id:%s',project_name, source_language, target_language, active, user_id)
+    return projects_crud.get_agmt_projects(db_, project_name, source_language, target_language,
+        active, user_id, skip=skip, limit=limit)
 
 @app.post('/v2/autographa/projects', status_code=201,
-    response_model=schemas_nlp.TranslationProjectUpdateResponse, tags=['Autographa-Project management'])
+    response_model=schemas_nlp.TranslationProjectUpdateResponse,
+    tags=['Autographa-Project management'])
 def create_project(project_obj:schemas_nlp.TranslationProjectCreate, db_:Session=Depends(get_db)):
     '''Creates a new autographa MT project'''
     log.info('In create_project')
@@ -959,7 +915,8 @@ def create_project(project_obj:schemas_nlp.TranslationProjectCreate, db_:Session
         "data": projects_crud.create_agmt_project(db_=db_, project=project_obj, user_id=10101)}
 
 @app.put('/v2/autographa/projects', status_code=201,
-    response_model=schemas_nlp.TranslationProjectUpdateResponse, tags=['Autographa-Project management'])
+    response_model=schemas_nlp.TranslationProjectUpdateResponse,
+    tags=['Autographa-Project management'])
 def update_project(project_obj:schemas_nlp.TranslationProjectEdit, db_:Session=Depends(get_db)):
     '''Adds more books to a autographa MT project's source. Delete or activate project.'''
     log.info('In update_project')
@@ -986,7 +943,6 @@ def update_user(user_obj:schemas_nlp.ProjectUser, db_:Session=Depends(get_db)):
         "data": projects_crud.update_agmt_user(db_, user_obj, current_user=10101)}
 
 ############## Autographa Translations ##########################
-
 @app.get('/v2/autographa/project/tokens', response_model=List[schemas_nlp.Token],
     response_model_exclude_unset=True,
     status_code=200, tags=['Autographa-Translation'])
@@ -996,15 +952,16 @@ def get_tokens(project_id:int=Query(...,example="1022004"),
     sentence_id_list:List[int]=Query(None, example=[41001001,41001002,41001003]),
     use_translation_memory:bool=True, include_phrases:bool=True, include_stopwords:bool=False,
     db_:Session=Depends(get_db)):
-    '''Tokenize the source texts. Optional params books, sentence_id_range or sentence_id_list can be used 
-    to specify the source verses. If more than one of these filters are given, only one would be used
+    '''Tokenize the source texts. Optional params books,
+    sentence_id_range or sentence_id_list can be used to specify the source verses.
+    If more than one of these filters are given, only one would be used
     in the following order of priority: books, range, list.
     Flags use_translation_memory, include_phrases and include_stopwords can be
     used to alter the tokens output as per user need'''
     log.info('In get_tokens')
-    log.debug('project_id: %s, books:%s, sentence_id_range:%s, sentence_id_list:%s'+
-        'use_translation_memory:%s, include_phrases:%s, include_stopwords:%s',
-        project_id, books, sentence_id_range, sentence_id_range, use_translation_memory,
+    log.debug('project_id: %s, books:%s, sentence_id_range:%s, sentence_id_list:%s, \
+        use_translation_memory:%s, include_phrases:%s, include_stopwords:%s', project_id,
+        books, sentence_id_range, sentence_id_range, use_translation_memory,
         include_phrases, include_stopwords)
     return nlp_crud.get_agmt_tokens(db_, project_id, books, sentence_id_range, sentence_id_list,
         use_translation_memory, include_phrases, include_stopwords)
@@ -1022,24 +979,25 @@ def apply_token_translations(project_id:int=Query(...,example="1022004"),
     return {"message": "Token translations saved", "data":drafts}
 
 @app.get('/v2/autographa/project/draft', status_code=200, tags=['Autographa-Translation'])
-def get_draft(project_id:int=Query(...,example="1022004"), 
+def get_draft(project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
-    output_format:schemas_nlp.DraftFormats=Query(schemas_nlp.DraftFormats.USFM), db_:Session=Depends(get_db)):
-    '''Obtains draft, as per current project status, in any of the formats: 
+    output_format:schemas_nlp.DraftFormats=Query(schemas_nlp.DraftFormats.USFM),
+    db_:Session=Depends(get_db)):
+    '''Obtains draft, as per current project status, in any of the formats:
     text for UI display, usfm for downloading, or alignment-json for project export'''
     log.info('In get_draft')
     log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s,\
         output_format:%s',project_id, books, sentence_id_list, sentence_id_range,
         output_format)
-    return projects_crud.obtain_agmt_draft(db_, project_id, books, sentence_id_list, sentence_id_range,
-        output_format)
+    return projects_crud.obtain_agmt_draft(db_, project_id, books,
+        sentence_id_list, sentence_id_range, output_format)
 
 @app.get('/v2/autographa/project/sentences', status_code=200,
     response_model_exclude_unset=True,
     response_model=List[schemas_nlp.Sentence], tags=['Autographa-Translation'])
-def get_source(project_id:int=Query(...,example="1022004"), 
+def get_project_source(project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
@@ -1053,7 +1011,7 @@ def get_source(project_id:int=Query(...,example="1022004"),
 
 @app.get('/v2/autographa/project/progress', status_code=200,
     response_model=schemas_nlp.Progress, tags=['Autographa-Translation'])
-def get_progress(project_id:int=Query(...,example="1022004"), 
+def get_progress(project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
@@ -1062,12 +1020,13 @@ def get_progress(project_id:int=Query(...,example="1022004"),
     log.info('In get_progress')
     log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s',
         project_id, books, sentence_id_list, sentence_id_range)
-    return projects_crud.obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_range)
+    return projects_crud.obtain_agmt_progress(db_, project_id, books,
+        sentence_id_list, sentence_id_range)
 
 @app.put('/v2/autographa/project/suggestions', status_code=201,
     response_model=List[schemas_nlp.Sentence],
     tags=["Translation Suggestion"])
-def suggest_translation(project_id:int=Query(...,example="1022004"), 
+def suggest_auto_translation(project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
@@ -1077,5 +1036,5 @@ def suggest_translation(project_id:int=Query(...,example="1022004"),
     log.info('In suggest_translation')
     log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s',
         project_id, books, sentence_id_list, sentence_id_range)
-    return nlp_crud.agmt_suggest_translations(db_, project_id, books, sentence_id_list, sentence_id_range,
-        confirm_all)
+    return nlp_crud.agmt_suggest_translations(db_, project_id, books,
+        sentence_id_list, sentence_id_range, confirm_all)

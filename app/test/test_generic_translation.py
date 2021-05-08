@@ -1,3 +1,4 @@
+'''Tests the translation APIs that do need projects available in DB'''
 import re
 import csv
 

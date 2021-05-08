@@ -451,6 +451,8 @@ def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
     phrases = []
     seen_src = []
     seen_trg = []
+    src_tok_list = [tok.lower() for tok in src_tok_list]
+    trg_tok_list = [tok.lower() for tok in trg_tok_list]
     for align in align_pairs:
         if (align.sourceTokenIndex not in seen_src and
             align.targetTokenIndex not in seen_trg): #New single token entry
@@ -551,16 +553,22 @@ def alignments_to_trainingdata(db_:Session, src_lang, trg_lang, alignment_list,
                 post_context = sent.sourceTokenList[start:end]
             else:
                 post_context = sent.sourceTokenList[start:]
+            # split multiword tokens in context
+            pre_context = ' '.join(pre_context).split(' ')
+            post_context = ' '.join(post_context).split(' ')
+
             context = pre_context + [obj['token']] + post_context
             sugg_data.append((len(pre_context), context, obj['translation']))
-    new_trie = build_trie(sugg_data, default_val=0)
+    new_trie = build_trie(sugg_data)
     sugg_json = {item[0]:item[1] for item in new_trie.items()}
     json.dump(sugg_json, output_file, ensure_ascii=False)
     output_file.close()
     new_trie = rebuild_trie(db_, src_lang, trg_lang)
     suggestion_trie_in_mem[src_lang+"-"+trg_lang] = new_trie
+
+    # increments frequency by 1, as the gloss was observed in usage in alignment
     tw_data = add_to_translation_memory(db_, src_lang, trg_lang,
-        [dict_data[key] for key in dict_data])
+        [dict_data[key] for key in dict_data], default_val=1)
     return tw_data
 
 
@@ -622,6 +630,7 @@ def build_trie(token_context__trans_list, default_val=None):
             val_update = 1/len(keys)
         else:
             val_update = default_val
+        print(val_update)
         for key in keys:
             if ttt.has_key(key):
                 value = ttt[key]
@@ -633,6 +642,13 @@ def build_trie(token_context__trans_list, default_val=None):
             else:
                 ttt[key] = {translation: val_update}
     return ttt
+
+def display_tree(tree):
+    for path in tree.items():
+        nodes = path[0].split('/')
+        for nod in nodes:
+            print('\t-',nod,end='')
+        print(' => ',path[1])
 
 def rebuild_trie(db_, src, trg):
     '''Collect suggestions data from translation memory and traning data directory
@@ -649,9 +665,10 @@ def rebuild_trie(db_, src, trg):
             json_data = json.load(json_file)
             for key in json_data:
                 new_trie[key] = json_data[key]
+    display_tree(new_trie)
     return new_trie
 
-def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list):
+def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0):
     '''Add glossary data to translation memory'''
     if isinstance(src_lang, str):
         source_lang = db_.query(db_models.Language).filter(
@@ -671,7 +688,7 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list):
     for gloss in gloss_list:
         if not isinstance(gloss, dict):
             gloss = gloss.__dict__
-        gloss['token'] = utils.normalize_unicode(gloss['token'])
+        gloss['token'] = utils.normalize_unicode(gloss['token']).lower()
         token_row = db_.query(db_models.TranslationMemory).filter(
             db_models.TranslationMemory.source_lang_id == source_lang.languageId,
             db_models.TranslationMemory.target_lang_id == target_lang.languageId,
@@ -679,10 +696,13 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list):
         if token_row:
             if "translations" in gloss:
                 for trans in gloss['translations']:
-                    trans = utils.normalize_unicode(trans)
+                    trans = utils.normalize_unicode(trans).lower()
                     if trans not in token_row.translations:
                         #using 0, as this is data loaded from outside and not observed in usage
-                        token_row.translations[trans] = {"frequency": 0}
+                        token_row.translations[trans] = {"frequency": default_val}
+                    else:
+                        token_row.translations[trans]['frequency'] += default_val
+                        flag_modified(token_row, "translations")
             if 'tokenMetaData' in gloss:
                 if token_row.metaData is None:
                     token_row.metaData = {}
@@ -692,12 +712,12 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list):
         else:
             args = {"source_lang_id":source_lang.languageId,
                 "target_lang_id": target_lang.languageId,
-                "token":gloss['token'],
+                "token":utils.normalize_unicode(gloss['token']).lower(),
                 "translations":{}}
             if "translations" in gloss:
                 #using 0, as this is data loaded from outside and not observed in usage
-                args['translations'] = {utils.normalize_unicode(val):{
-                    "frequency":0} for val in gloss['translations']}
+                args['translations'] = {utils.normalize_unicode(val).lower():{
+                    "frequency":default_val} for val in gloss['translations']}
             if 'tokenMetaData' in gloss:
                 args['metaData'] = gloss['tokenMetaData']
             token_row = db_models.TranslationMemory(**args)
@@ -729,6 +749,7 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
     total = 0
     for key in keys:
         if tree.has_subtrie(key) or tree.has_key(key):
+            print("found:",key)
             nodes = tree.values(key)
             level = len(key.split("/"))
             for nod in nodes:
@@ -738,6 +759,23 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
                     else:
                         trans[sense] = nod[sense]*level*level
                     total += nod[sense]
+        else:
+            print("not found:",key)
+    # check in trans memory for any more available senses
+    forward_query = db_.query(db_models.TranslationMemory).filter(
+            db_models.TranslationMemory.source_language.has(code=source_lang),
+            db_models.TranslationMemory.target_language.has(code=target_lang),
+            db_models.TranslationMemory.token == utils.normalize_unicode(word).lower())
+    forward_dict_entires =  forward_query.all()
+    for row in forward_dict_entires:
+        for sense in row.translations:
+            if sense not in trans:
+                freq = row.translations[sense]['frequency']
+                total = total + freq
+                trans[sense] = freq
+    if total == 0:
+        total = 1
+    print(trans)
     sorted_trans = sorted(trans.items(), key=lambda x:x[1], reverse=True)
     scored_trans = [(sense[0],sense[1]/total) for sense in sorted_trans]
     return scored_trans
