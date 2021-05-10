@@ -1401,24 +1401,23 @@ def parseDataForDBInsert(usfmData):
 	cursor = connection.cursor()
 	cursor.execute("select book_id, book_code from bible_books_look_up")
 	bookIdDict = {v.lower():k for k,v in cursor.fetchall()}
-	bookName = usfmData["metadata"]["id"]["book"].lower()
+	bookName = usfmData["book"]["bookCode"].lower()
 	chapterData = usfmData["chapters"]
 	dbInsertData = []
 	verseContent = []
 	bookId = bookIdDict[bookName]
 	for chapter in chapterData:
-		chapterNumber = chapter["header"]["title"]
-		verseData = chapter["verses"]
-		for verse in verseData:
+		chapterNumber = chapter["chapterNumber"]
+		verseData = chapter["contents"]
+		for content in verseData:
 			crossRefs = ""
 			footNotes = ""
-			if 'metadata' in verse and 'cross-ref' in verse['metadata']:
-				crossRefs = verse['metadata']['cross-ref']
-			if 'metadata' in verse and 'footnote' in verse['metadata']:
-				footNotes = verse['metadata']['footnote']
-			verseNumber = verse['number'].strip()
+			verseNumber = content.get('verseNumber',"").strip() if isinstance(content, dict) else ""
+			if not verseNumber:
+				# not a verse
+				pass
 			if normalVersePattern.match(verseNumber):
-				verseText = verse["text"]
+				verseText = content["verseText"]
 				dbVerseText = verseText
 				bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
 					+ str(verseNumber).zfill(3))
@@ -1431,7 +1430,7 @@ def parseDataForDBInsert(usfmData):
 				postScript = matchObj.group(2)
 				verseNumber = matchObj.group(1)
 				if postScript == 'a':
-					verseText = verse['text']
+					verseText = content['verseText']
 					dbVerseText = verseText
 					bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
 						+ str(verseNumber).zfill(3))
@@ -1441,13 +1440,13 @@ def parseDataForDBInsert(usfmData):
 				else:
 					prevdbInsertData = dbInsertData[-1]
 
-					verseText = prevdbInsertData[1] + ' '+ verse['text']
+					verseText = prevdbInsertData[1] + ' '+ content['verseText']
 					dbVerseText = verseText
 					dbInsertData[-1] = (prevdbInsertData[0], dbVerseText, prevdbInsertData[2],prevdbInsertData[3])
 					verseContent[-1] = verseText
 			elif mergedVersePattern.match(verseNumber):
 				## keep the whole text in first verseNumber of merged verses
-				verseText = verse['text']
+				verseText = content['verseText']
 				dbVerseText = verseText
 				matchObj = mergedVersePattern.match(verseNumber)
 				verseNumber = matchObj.group(1)
@@ -1466,8 +1465,7 @@ def parseDataForDBInsert(usfmData):
 					verseContent.append('')
 
 			else:
-				print("!!!Unrecognized pattern in verse number!!!")
-				print("verseNumber:",verse['number'])
+				log.info("Unrecognized pattern in %s chapter %s verse %s",bookName, chapterNumber, verseNumber)
 	return dbInsertData
 
 def createTableCommand(fields, tablename):
@@ -1556,7 +1554,7 @@ def uploadSource():
 			log.warning("Exiting uploadSource: No source created: %s",sourceId)
 			return '{"success":false, "message":"No source created"}'
 		bibleTable = rst[0]
-		bookCode = parsedUsfmText["metadata"]["id"]["book"].lower()
+		bookCode = parsedUsfmText["book"]["bookCode"].lower()
 		cursor.execute("select book_id from bible_books_look_up where book_code=%s",(bookCode,))
 		bookId = cursor.fetchone()[0]
 		cursor.execute(sql.SQL("select * from {} where book_id=%s").format(sql.Identifier(bibleTable)),(bookId,))
