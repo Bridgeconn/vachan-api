@@ -341,7 +341,10 @@ class TranslationMemory(Base):  # pylint: disable=too-few-public-methods
         '''For modelling the targetLanguage field in this class'''
         return relationship(Language, foreign_keys=cls.target_lang_id, uselist=False)
     token = Column('source_token', String)
-    translations = Column('translation_details', JSON)
+    tokenRom = Column('source_token_romanized', String)
+    translation = Column('translation', String)
+    translationRom = Column('translation_romanized', String)
+    frequency = Column('frequency', Integer)
     metaData = Column('source_token_metadata', JSON)
 
 class TranslationProjectUser(Base): # pylint: disable=too-few-public-methods

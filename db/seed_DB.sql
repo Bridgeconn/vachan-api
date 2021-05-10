@@ -121,10 +121,16 @@ CREATE TABLE public.translation_memory(
     target_lang_id int 
         REFERENCES languages(language_id),
     source_token text NOT NULL,
-    translation_details jsonb,
+    source_token_romanized text,
     source_token_metadata jsonb NULL,
-    UNIQUE(source_lang_id, target_lang_id, source_token)
+    translation text,
+    translation_romanized text,
+    frequency int,
+    UNIQUE(source_lang_id, target_lang_id, source_token, translation)
 );
+CREATE EXTENSION fuzzystrmatch;
+CREATE INDEX token_soundex ON translation_memory (SOUNDEX(source_token_romanized));
+CREATE INDEX translation_soundex ON translation_memory (SOUNDEX(translation_romanized));
 ALTER SEQUENCE translation_memory_token_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.translation_project_users(
