@@ -40,9 +40,9 @@ mock_translation_memory = ["जीवन के वचन", "जीवन का
                           "यीशु मसीह", "परमेश्‍वर ज्योति", "झूठा ठहराते",
                           "Here is it", "hare", "no"]
 
-def find_phrases(text, stop_words, include_phrases=True):
+def find_phrases(src_text, stop_words, include_phrases=True):
     '''try forming phrases as <preposition stop word>* <content word> <postposition stop word>*'''
-    words = text.split()
+    words = src_text.split()
     if not include_phrases:
         return words
     if not isinstance(stop_words, dict):
@@ -99,9 +99,9 @@ def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, incl
         if not isinstance(sent, dict):
             sent = sent.__dict__
         phrases = []
-        text = re.sub(r'[\n\r]+', ' ', sent['sentence'])
+        src_text = re.sub(r'[\n\r]+', ' ', sent['sentence'])
         #first split the text into chunks based on punctuations
-        chunks = [chunk.strip() for chunk in re.split(r'['+"".join(punctuations)+']+', text)]
+        chunks = [chunk.strip() for chunk in re.split(r'['+"".join(punctuations)+']+', src_text)]
         updated_chunks = []
         if use_translation_memory:
             for chunk in chunks:
@@ -265,7 +265,7 @@ def replace_token(source, token_offset, translation, draft="", draft_meta=[], ta
     return updated_draft, updated_meta
 
 def replace_bulk_tokens(db_, sentence_list, token_translations, src_code, trg_code, use_data=True):
-    '''Substitute tokens with provided trabslations and get updated drafts, draftMetas 
+    '''Substitute tokens with provided trabslations and get updated drafts, draftMetas
     and add knowledge to translation memory'''
     source = db_.query(db_models.Language).filter(
         db_models.Language.code == src_code).first()
@@ -564,7 +564,6 @@ def build_trie(token_context__trans_list, default_val=None):
             val_update = 1/len(keys)
         else:
             val_update = default_val
-        print(val_update)
         for key in keys:
             if ttt.has_key(key):
                 value = ttt[key]
@@ -751,7 +750,7 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
     if total == 0:
         total = 1
     sorted_trans = sorted(trans.items(), key=lambda x:x[1], reverse=True)
-    scored_trans = {} 
+    scored_trans = {}
     for sense in sorted_trans:
         scored_trans[sense[0]]=sense[1]/total
     result = {}
@@ -760,10 +759,11 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
     # check for metadata
     metadata_query = db_.query(db_models.TranslationMemory.metaData).filter(
         db_models.TranslationMemory.token == word,
-        db_models.TranslationMemory.metaData != None).order_by(db_models.TranslationMemory.tokenId)
+        db_models.TranslationMemory.metaData is not None).order_by(
+        db_models.TranslationMemory.tokenId)
     mdt = metadata_query.first()
     if mdt:
-        result['metaData'] = mdt[0] 
+        result['metaData'] = mdt[0]
     return result
 
 def glossary(db_:Session, source_language, target_language, token, context=None, token_offset=None):

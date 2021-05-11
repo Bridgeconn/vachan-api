@@ -3,6 +3,9 @@
 from typing import List, Tuple
 from enum import Enum
 from pydantic import BaseModel, Field, constr, root_validator
+
+#pylint: disable=E0401
+#pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 from schemas import LangCodePattern, BookCodePattern, TableNamePattern
 from schemas import LanguageResponse
 
