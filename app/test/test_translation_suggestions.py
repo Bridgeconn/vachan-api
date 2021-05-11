@@ -45,9 +45,12 @@ align_data = [
 
 def assert_positive_get_suggetion(item):
     '''check for properties in a suggestion response'''
-    assert "suggestion" in item
-    assert 'score' in item
-    assert isinstance(item['score'], (int, float))
+    assert "translations" in item
+    assert isinstance(item['translations'], dict)
+    for sense in item['translations']:
+        assert isinstance(item['translations'][sense], (int, float))
+    if "metaData" in item and item['metaData'] is not None:
+        assert isinstance(item['metaData'], dict)
 
 
 def test_learn_n_suggest():
@@ -75,7 +78,7 @@ def test_learn_n_suggest():
         assert_positive_get_tokens(item)
         if item['token'] == "test case":
             assert "ടെസ്റ്റ് കേസ്" in item['translations']
-            assert item['translations']["ടെസ്റ്റ് കേസ്"]['frequency'] == 0
+            assert item['translations']["ടെസ്റ്റ് കേസ്"] == 0
             found_testcase = True
     assert found_tested
     assert found_testcase
@@ -103,7 +106,7 @@ def test_learn_n_suggest():
             assert "ഒരു ടെസ്റ്റ് കേസ്" in item['translations']
             found_atestcase = True
         if item['token'] == 'developer':
-            assert item['translations']['ടെവെലപ്പര്‍']['frequency'] == 1
+            assert item['translations']['ടെവെലപ്പര്‍'] == 1
             found_lower_developer = True
     assert found_atestcase
     assert found_lower_developer
@@ -113,12 +116,12 @@ def test_learn_n_suggest():
     # only a dict entry not in draft or alignment
     response = client.get(UNIT_URL+'/gloss?source_language=eng&target_language=mal&token=test')
     assert response.status_code ==200
-    assert isinstance(response.json(), list)
-    assert len(response.json()) > 0
+    assert isinstance(response.json(), dict)
+    assert len(response.json()['translations']) > 0
+    assert_positive_get_suggetion(response.json())
     found_test = False
-    for item in response.json():
-        assert_positive_get_suggetion(item)
-        if item['suggestion'] == "ടെസ്റ്റ്":
+    for item in response.json()['translations']:
+        if item == "ടെസ്റ്റ്":
             found_test = True
     assert found_test
 
@@ -126,10 +129,10 @@ def test_learn_n_suggest():
     response = client.get(UNIT_URL+
         '/gloss?source_language=eng&target_language=mal&token=a%20test%20case')
     assert response.status_code ==200
+    assert_positive_get_suggetion(response.json())
     found_atestcase = False
-    for item in response.json():
-        assert_positive_get_suggetion(item)
-        if item['suggestion'] == "ഒരു ടെസ്റ്റ് കേസ്":
+    for item in response.json()['translations']:
+        if item == "ഒരു ടെസ്റ്റ് കേസ്":
             found_atestcase = True
     assert found_atestcase
 
@@ -140,16 +143,16 @@ def test_learn_n_suggest():
     #no context
     response = client.get(UNIT_URL+'/gloss?source_language=eng&target_language=mal&token=happy')
     assert response.status_code ==200
+    assert_positive_get_suggetion(response.json())
     found_sense1 = False
     found_sense2 = False
-    for item in response.json():
-        assert_positive_get_suggetion(item)
-        if item['suggestion'] == sense1:
+    for item in response.json()['translations']:
+        if item == sense1:
             found_sense1 = True
-            score1 = item['score']
-        if item['suggestion'] == sense2:
+            score1 = response.json()['translations'][item]
+        if item == sense2:
             found_sense2 = True
-            score2 = item['score']
+            score2 = response.json()['translations'][item]
     assert found_sense1
     assert found_sense2
     assert score1 == score2
@@ -159,16 +162,17 @@ def test_learn_n_suggest():
     response = client.get(UNIT_URL+'/gloss?source_language=eng&target_language=mal&token=happy'+
         '&context=the%20happy%20user%20went%20home')
     assert response.status_code ==200
+    assert_positive_get_suggetion(response.json())
     found_sense1 = False
     found_sense2 = False
-    for item in response.json():
-        assert_positive_get_suggetion(item)
-        if item['suggestion'] == sense1:
+    print(response.json())
+    for item in response.json()['translations']:
+        if item == sense1:
             found_sense1 = True
-            score1 = item['score']
-        if item['suggestion'] == sense2:
+            score1 = response.json()['translations'][item]
+        if item == sense2:
             found_sense2 = True
-            score2 = item['score']
+            score2 = response.json()['translations'][item]
     assert found_sense1
     assert found_sense2
     assert score1 < score2
@@ -177,16 +181,16 @@ def test_learn_n_suggest():
     response = client.get(UNIT_URL+'/gloss?source_language=eng&target_language=mal&token=happy'+
         '&context=now%20user%20is%20not%20happy')
     assert response.status_code ==200
+    assert_positive_get_suggetion(response.json())
     found_sense1 = False
     found_sense2 = False
-    for item in response.json():
-        assert_positive_get_suggetion(item)
-        if item['suggestion'] == sense1:
+    for item in response.json()['translations']:
+        if item == sense1:
             found_sense1 = True
-            score1 = item['score']
-        if item['suggestion'] == sense2:
+            score1 = response.json()['translations'][item]
+        if item == sense2:
             found_sense2 = True
-            score2 = item['score']
+            score2 = response.json()['translations'][item]
     assert found_sense1
     assert found_sense2
     assert score1 > score2
@@ -197,8 +201,9 @@ def test_learn_n_suggest():
         headers=headers, json={"sentence_list":sentence_list})
     draft = client.put(UNIT_URL+'/draft?doc_type=text', headers=headers, json=response.json())
     draft = draft.json()
+    print(draft)
     assert "ഒരു ടെസ്റ്റ് കേസ്." in draft
-    assert "ടെസ്റ്റ് കേസ് ടെസ്റ്റഡ്" in draft
+    assert "ടെസ്റ്റ് കേസ് ടെസ്റ്റ് ചെയ്തു" in draft
     assert "ടെവെലപ്പര്‍" in draft
     assert "This ആണ് the sad story of a poor ടെസ്റ്റ് " in draft
     

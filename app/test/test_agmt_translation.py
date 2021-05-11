@@ -25,7 +25,7 @@ def assert_positive_get_tokens(item):
     assert len(item['occurrences']) > 0
     assert "translations" in item
     for trans in item['translations']:
-        assert "frequency" in item['translations'][trans]
+        assert isinstance(item['translations'][trans], (int, float))
     if "metaData" in item and item['metaData'] is not None:
         assert isinstance(item['metaData'], dict)
 

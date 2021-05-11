@@ -184,7 +184,10 @@ def get_generic_tokens(db_:Session, src_language, sentence_list, trg_language=No
     for token in tokens:
         obj = tokens[token]
         obj['token'] = token
-        known_info = glossary(db_, src_language.code, trg_language.code, token)
+        trg = None
+        if trg_language is not None:
+            trg = trg_language.code
+        known_info = glossary(db_, src_language.code, trg, token)
         obj['translations'] = known_info['translations']
         if "metaData" in known_info:
             obj['metaData'] = known_info['metaData']
@@ -706,7 +709,7 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
             suggestion_trie_in_mem[source_lang+"-"+target_lang] = tree
         for key in keys:
             if tree.has_subtrie(key) or tree.has_key(key):
-                print("found:",key)
+                # print("found:",key)
                 nodes = tree.values(key)
                 level = len(key.split("/"))
                 for nod in nodes:
@@ -717,7 +720,8 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
                             trans[sense] = nod[sense]*level*level
                         total += nod[sense]
             else:
-                print("not found:",key)
+                pass
+                # print("not found:",key)
     forward_query = db_.query(db_models.TranslationMemory).with_entities(
         db_models.TranslationMemory.token,
         db_models.TranslationMemory.translation,
@@ -741,8 +745,9 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
     forward_dict_entires =  forward_query.all()
     reverse_dict_entires = reverse_query.all()
     for row in forward_dict_entires+ reverse_dict_entires:
-        trans[row[1]] = row[2]/(row[3]+1)
-        total += 1
+        if row[1] not in trans:
+            trans[row[1]] = row[2]/(row[3]+1)
+            total += 1
     if total == 0:
         total = 1
     sorted_trans = sorted(trans.items(), key=lambda x:x[1], reverse=True)
