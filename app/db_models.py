@@ -9,6 +9,8 @@ from sqlalchemy.orm import relationship, Session
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.schema import Sequence
 
+#pylint: disable=E0401
+#pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 from database import Base
 from custom_exceptions import GenericException
 
