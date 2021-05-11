@@ -13,6 +13,7 @@ import pygtrie
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.sql import text
 
 #pylint: disable=E0401, disable=E0611
 #pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
@@ -223,7 +224,7 @@ def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_
 
 ###################### Token replacement translation ######################
 def replace_token(source, token_offset, translation, draft="", draft_meta=[], tag="confirmed"):
-    '''make a token replacement and return updated sentence and draft_meta'''
+    '''make a token replacement in draft and return updated sentence and draft_meta'''
     trans_length = len(translation)
     updated_meta = []
     updated_draft = ""
@@ -275,7 +276,8 @@ def replace_token(source, token_offset, translation, draft="", draft_meta=[], ta
     return updated_draft, updated_meta
 
 def replace_bulk_tokens(db_, sentence_list, token_translations, src_code, trg_code, use_data=True):
-    '''Substitute tokens with provided trabslations and return drafts and draftMetas'''
+    '''Substitute tokens with provided trabslations and get updated drafts, draftMetas 
+    and add knowledge to translation memory'''
     source = db_.query(db_models.Language).filter(
         db_models.Language.code == src_code).first()
     if not source:
@@ -705,43 +707,56 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
         index = context.index(word)
     to_left = [context[i] for i in range(index-1, -1, -1)]
     to_right = context[index+1:]
-    keys = form_trie_keys(word, to_left, to_right, [word], False)
-    if source_lang+"-"+target_lang in suggestion_trie_in_mem: # check if aleady loaded in memory
-        tree = suggestion_trie_in_mem[source_lang+"-"+target_lang]
-    else:  # build trie loading data from disk and DB
-        tree = rebuild_trie(db_, source_lang, target_lang)
-        suggestion_trie_in_mem[source_lang+"-"+target_lang] = tree
-    trans = {}
-    total = 0
-    for key in keys:
-        if tree.has_subtrie(key) or tree.has_key(key):
-            print("found:",key)
-            nodes = tree.values(key)
-            level = len(key.split("/"))
-            for nod in nodes:
-                for sense in nod:
-                    if sense in trans:
-                        trans[sense] += nod[sense]*level*level
-                    else:
-                        trans[sense] = nod[sense]*level*level
-                    total += nod[sense]
-        else:
-            print("not found:",key)
-    # check in trans memory for any more available senses
-    forward_query = db_.query(db_models.TranslationMemory).filter(
+    if len(to_right)+len(to_left) > 0:
+        keys = form_trie_keys(word, to_left, to_right, [word], False)
+        if source_lang+"-"+target_lang in suggestion_trie_in_mem: # check if aleady loaded in memory
+            tree = suggestion_trie_in_mem[source_lang+"-"+target_lang]
+        else:  # build trie loading data from disk and DB
+            tree = rebuild_trie(db_, source_lang, target_lang)
+            suggestion_trie_in_mem[source_lang+"-"+target_lang] = tree
+        trans = {}
+        total = 0
+        for key in keys:
+            if tree.has_subtrie(key) or tree.has_key(key):
+                print("found:",key)
+                nodes = tree.values(key)
+                level = len(key.split("/"))
+                for nod in nodes:
+                    for sense in nod:
+                        if sense in trans:
+                            trans[sense] += nod[sense]*level*level
+                        else:
+                            trans[sense] = nod[sense]*level*level
+                        total += nod[sense]
+            else:
+                print("not found:",key)
+    forward_query = db_.query(db_models.TranslationMemory).with_entities(
+        db_models.TranslationMemory.token,
+        db_models.TranslationMemory.translation,
+        db_models.TranslationMemory.frequency,
+        text("levenshtein(source_token,'%s') as lev_score"%utils.normalize_unicode(word).lower())
+        ).filter(
             db_models.TranslationMemory.source_language.has(code=source_lang),
             db_models.TranslationMemory.target_language.has(code=target_lang),
-            db_models.TranslationMemory.token == utils.normalize_unicode(word).lower())
+            text("soundex(source_token_romanized) = soundex('%s')"%utils.to_eng(word)),
+            text("levenshtein(source_token,'%s') < 4"%utils.normalize_unicode(word).lower()))
+    reverse_query = db_.query(db_models.TranslationMemory).with_entities(
+        db_models.TranslationMemory.translation,
+        db_models.TranslationMemory.token,
+        db_models.TranslationMemory.frequency,
+        text("levenshtein(translation,'%s') as lev_score"%utils.normalize_unicode(word).lower())
+        ).filter(
+            db_models.TranslationMemory.source_language.has(code=target_lang),
+            db_models.TranslationMemory.target_language.has(code=source_lang),
+            text("soundex(translation_romanized) = soundex('%s')"%utils.to_eng(word)),
+            text("levenshtein(translation,'%s') < 4"%utils.normalize_unicode(word).lower()))
     forward_dict_entires =  forward_query.all()
-    for row in forward_dict_entires:
-        for sense in row.translations:
-            if sense not in trans:
-                freq = row.translations[sense]['frequency']
-                total = total + freq
-                trans[sense] = freq
+    reverse_dict_entires = reverse_query.all()
+    for row in forward_dict_entires+ reverse_dict_entires:
+        trans[row[1]] = row[2]/(row[3]+1)
+        total += 1
     if total == 0:
         total = 1
-    print(trans)
     sorted_trans = sorted(trans.items(), key=lambda x:x[1], reverse=True)
     scored_trans = [(sense[0],sense[1]/total) for sense in sorted_trans]
     return scored_trans
