@@ -285,6 +285,7 @@ def replace_bulk_tokens(db_, sentence_list, token_translations, src_code, trg_co
     if not source:
         raise NotAvailableException("Language, %s, not in DB. Please create if required"%trg_code)
     updated_sentences = {sent.sentenceId:sent for sent in sentence_list}
+    gloss_list = []
     for token in token_translations:
         for occur in token.occurrences:
             draft_row = updated_sentences[occur.sentenceId]
@@ -299,39 +300,12 @@ def replace_bulk_tokens(db_, sentence_list, token_translations, src_code, trg_co
             draft_row.draft = draft
             draft_row.draftMeta = meta
             updated_sentences[occur.sentenceId]  = draft_row
-        if use_data:
-            memory_row = db_.query(db_models.TranslationMemory).filter(
-                db_models.TranslationMemory.source_lang_id == source.languageId,
-                db_models.TranslationMemory.target_lang_id == target.languageId,
-                db_models.TranslationMemory.token == token.token).first()
-            if not memory_row:
-                row_args = {"source_lang_id":source.languageId,
-                    "target_lang_id":target.languageId,
-                    "token":token.token,
-                    "translations":{token.translation:{
+            gloss = {"token": token.token, "translations":{token.translation:{
                         "frequency": len(token.occurrences)}}}
-                other_lang_metadata = db_.query(db_models.TranslationMemory.metaData).filter(
-                    db_models.TranslationMemory.source_lang_id == source.languageId,
-                    db_models.TranslationMemory.token == token.token).first()
-                if other_lang_metadata:
-                    row_args['metaData'] = other_lang_metadata[0]
-                memory_row = db_models.TranslationMemory(**row_args)
-                db_.add(memory_row)
-                db_.commit()
-            else:
-                if token.translation not in memory_row.translations:
-                    memory_row.translations[token.translation] = {
-                        "frequency": len(token.occurrences)}
-                    flag_modified(memory_row, "translations")
-                    db_.add(memory_row)
-                    db_.commit()
-                else:
-                    old_freq = memory_row.translations[token.translation]['frequency']
-                    memory_row.translations[token.translation] = {
-                        "frequency": old_freq+len(token.occurrences)}
-                    flag_modified(memory_row, "translations")
-                    db_.add(memory_row)
-                    db_.commit()
+            gloss_list.append(gloss)
+    if use_data:
+        add_to_translation_memory(db_, source, target, gloss_list)
+
     result = [updated_sentences[key] for key in updated_sentences]
     return result
 
@@ -344,6 +318,7 @@ def save_agmt_translations(db_, project_id, token_translations, return_drafts=Tr
     if project_row.metaData is not None and "useDataForLearning" in project_row.metaData:
         use_data = project_row.metaData['useDataForLearning']
     db_content = []
+    gloss_list = []
     for token in token_translations:
         for occur in token.occurrences:
             draft_row = db_.query(db_models.TranslationDraft).filter(
@@ -362,43 +337,16 @@ def save_agmt_translations(db_, project_id, token_translations, return_drafts=Tr
             flag_modified(draft_row, "draftMeta")
             draft_row.updatedUser = user_id
             db_content.append(draft_row)
-        if use_data:
-            memory_row = db_.query(db_models.TranslationMemory).filter(
-                db_models.TranslationMemory.source_lang_id == project_row.source_lang_id,
-                db_models.TranslationMemory.target_lang_id == project_row.target_lang_id,
-                db_models.TranslationMemory.token == token.token).first()
-            if not memory_row:
-                row_args = {"source_lang_id":project_row.source_lang_id,
-                    "target_lang_id":project_row.target_lang_id,
-                    "token":token.token,
-                    "translations":{token.translation:{
-                        "frequency": len(token.occurrences)}}}
-                other_lang_metadata = db_.query(db_models.TranslationMemory.metaData).filter(
-                    db_models.TranslationMemory.source_lang_id == project_row.source_lang_id,
-                    db_models.TranslationMemory.token == token.token).first()
-                if other_lang_metadata:
-                    row_args['metaData'] = other_lang_metadata[0]
-                memory_row = db_models.TranslationMemory(**row_args)
-                db_.add(memory_row)
-                db_.commit()
-            else:
-                if token.translation not in memory_row.translations:
-                    memory_row.translations[token.translation] = {
-                        "frequency": len(token.occurrences)}
-                    flag_modified(memory_row, "translations")
-                    db_.add(memory_row)
-                    db_.commit()
-                else:
-                    old_freq = memory_row.translations[token.translation]['frequency']
-                    memory_row.translations[token.translation] = {
-                        "frequency": old_freq+len(token.occurrences)}
-                    flag_modified(memory_row, "translations")
-                    db_.add(memory_row)
-                    db_.commit()
+        gloss = {"token": token.token, "translations":{token.translation:{
+            "frequency": len(token.occurrences)}}}
+        gloss_list.append(gloss)
     project_row.updatedUser = user_id
     db_.add_all(db_content)
     db_.add(project_row)
     db_.commit()
+    if use_data:
+        add_to_translation_memory(db_, project_row.sourceLanguage, project_row.targetLanguage,
+            gloss_list)
     if return_drafts:
         result = set(db_content)
         return sorted(result, key=lambda x: x.sentenceId)
@@ -691,6 +639,11 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0
                 "tokenRom":utils.to_eng(gloss['token'])}
         if "translations" in gloss and gloss['translations'] is not None:
             for trans in gloss['translations']:
+                if (isinstance(gloss['translations'], dict) and
+                    'frequency' in gloss['translations'][trans]):
+                    freq_val = gloss['translations'][trans]['frequency']
+                else:
+                    freq_val = default_val
                 trans = utils.normalize_unicode(trans).lower()
                 token_row = db_.query(db_models.TranslationMemory).filter(
                     db_models.TranslationMemory.source_lang_id == source_lang.languageId,
@@ -698,12 +651,12 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0
                     db_models.TranslationMemory.token == gloss['token'],
                     db_models.TranslationMemory.translation == trans).first()
                 if token_row:
-                    token_row.frequency += default_val
+                    token_row.frequency += freq_val
                 else:
                     updated_args = args
                     updated_args["translation"] = trans
                     updated_args["translationRom"]=utils.to_eng(trans)
-                    updated_args["frequency"]=default_val
+                    updated_args["frequency"]=freq_val
                     updated_args["metaData"]=None
                     token_row = db_models.TranslationMemory(**updated_args)
                 db_.add(token_row)
