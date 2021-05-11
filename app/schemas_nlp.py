@@ -206,8 +206,8 @@ class GlossInput(BaseModel):
 class GlossOutput(BaseModel):
     '''Output object for translation memory or gloss'''
     token: str = Field(..., example="love")
-    translations: dict = Field(None, example={'प्यार':{"frequency":0}, "प्रेम":{"frequency":0},
-        "प्रेम करना":{"frequency":0}})
+    translations: dict = Field(None, example={'प्यार':3, "प्रेम":1.2,
+        "प्रेम करना":0})
     metaData: dict = Field(None, example={"word-class":["noun", "verb"]})
     class Config: # pylint: disable=too-few-public-methods
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
