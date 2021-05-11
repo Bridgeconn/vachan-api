@@ -685,44 +685,61 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0
         if not isinstance(gloss, dict):
             gloss = gloss.__dict__
         gloss['token'] = utils.normalize_unicode(gloss['token']).lower()
-        token_row = db_.query(db_models.TranslationMemory).filter(
-            db_models.TranslationMemory.source_lang_id == source_lang.languageId,
-            db_models.TranslationMemory.target_lang_id == target_lang.languageId,
-            db_models.TranslationMemory.token == gloss['token']).first()
-        if token_row:
-            if "translations" in gloss:
-                for trans in gloss['translations']:
-                    trans = utils.normalize_unicode(trans).lower()
-                    if trans not in token_row.translations:
-                        #using 0, as this is data loaded from outside and not observed in usage
-                        token_row.translations[trans] = {"frequency": default_val}
-                    else:
-                        token_row.translations[trans]['frequency'] += default_val
-                        flag_modified(token_row, "translations")
-            if 'tokenMetaData' in gloss:
-                if token_row.metaData is None:
+        args = {"source_lang_id":source_lang.languageId,
+                "target_lang_id": target_lang.languageId,
+                "token":gloss['token'],
+                "tokenRom":utils.to_eng(gloss['token'])}
+        if "translations" in gloss and gloss['translations'] is not None:
+            for trans in gloss['translations']:
+                trans = utils.normalize_unicode(trans).lower()
+                token_row = db_.query(db_models.TranslationMemory).filter(
+                    db_models.TranslationMemory.source_lang_id == source_lang.languageId,
+                    db_models.TranslationMemory.target_lang_id == target_lang.languageId,
+                    db_models.TranslationMemory.token == gloss['token'],
+                    db_models.TranslationMemory.translation == trans).first()
+                if token_row:
+                    token_row.frequency += default_val
+                else:
+                    updated_args = args
+                    updated_args["translation"] = trans
+                    updated_args["translationRom"]=utils.to_eng(trans)
+                    updated_args["frequency"]=default_val
+                    updated_args["metaData"]=None
+                    token_row = db_models.TranslationMemory(**updated_args)
+                db_.add(token_row)
+                db_content.append(token_row)
+        db_.flush()
+        if 'tokenMetaData' in gloss and gloss['tokenMetaData'] is not None:
+            # Always add meta data to the first occurance of a source token only'''
+            token_row = db_.query(db_models.TranslationMemory).filter(
+                db_models.TranslationMemory.source_lang_id == source_lang.languageId,
+                db_models.TranslationMemory.target_lang_id == target_lang.languageId,
+                db_models.TranslationMemory.token == gloss['token']).order_by(
+                db_models.TranslationMemory.tokenId.asc()).first()
+            if token_row:
+                if not token_row.metaData:
                     token_row.metaData = {}
                 for key in gloss['tokenMetaData']:
                     token_row.metaData[key] = gloss['tokenMetaData'][key]
                 flag_modified(token_row, 'metaData')
-        else:
-            args = {"source_lang_id":source_lang.languageId,
-                "target_lang_id": target_lang.languageId,
-                "token":utils.normalize_unicode(gloss['token']).lower(),
-                "translations":{}}
-            if "translations" in gloss:
-                #using 0, as this is data loaded from outside and not observed in usage
-                args['translations'] = {utils.normalize_unicode(val).lower():{
-                    "frequency":default_val} for val in gloss['translations']}
-            if 'tokenMetaData' in gloss:
-                args['metaData'] = gloss['tokenMetaData']
-            token_row = db_models.TranslationMemory(**args)
-        db_content.append(token_row)
-    db_.add_all(db_content)
+            else:
+                updated_args = args
+                updated_args['metaData'] = gloss['tokenMetaData']
+                token_row = db_models.TranslationMemory(**updated_args)
+            db_.add(token_row)
+            db_content.append(token_row)
     db_.commit()
+    result_dict = {}
     for item in db_content:
         db_.refresh(item)
-    return db_content
+        if item.token not in result_dict:
+            result_dict[item.token] = {"token":item.token, "translations":{}}
+        if item.translation is not None:
+            result_dict[item.token]["translations"][item.translation] = {"frequency":item.frequency}
+        if item.metaData is not None:
+            result_dict[item.token]["metaData"] = item.metaData
+    result_list = [result_dict[entry] for entry in result_dict]
+    return result_list
 
 def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: disable=too-many-locals
     '''find the context based translation suggestions(gloss) for a word.
