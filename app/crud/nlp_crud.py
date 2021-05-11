@@ -92,7 +92,9 @@ def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, incl
     if use_translation_memory:
         translation_memory = db_.query(db_models.TranslationMemory.token).filter(
             db_models.TranslationMemory.source_language.has(code=src_lang)).all()
-        memory_trie = build_memory_trie(translation_memory)
+        reverse_memory = db_.query(db_models.TranslationMemory.translation).filter(
+            db_models.TranslationMemory.target_language.has(code=src_lang)).all()
+        memory_trie = build_memory_trie(translation_memory+reverse_memory)
     for sent in sent_list:
         if not isinstance(sent, dict):
             sent = sent.__dict__
@@ -182,26 +184,10 @@ def get_generic_tokens(db_:Session, src_language, sentence_list, trg_language=No
     for token in tokens:
         obj = tokens[token]
         obj['token'] = token
-        known_info = []
-        info_query = db_.query(db_models.TranslationMemory).filter(
-                db_models.TranslationMemory.source_lang_id == src_language.languageId,
-                db_models.TranslationMemory.token == token)
-        if trg_language:
-            info_query = info_query.filter(
-                or_(db_models.TranslationMemory.target_lang_id == trg_language.languageId,
-                    db_models.TranslationMemory.metaData is not None)
-                )
-        else:
-            info_query = info_query.filter(db_models.TranslationMemory.metaData is not None)
-        known_info = info_query.all()
-        if len(known_info)>0:
-            for mem in known_info:
-                if trg_language and mem.target_lang_id == trg_language.languageId:
-                    obj['translations'] = mem.translations
-                    obj['metaData'] = mem.metaData
-                    break
-                if "metaData" not in obj:
-                    obj['metaData'] = mem.metaData
+        known_info = glossary(db_, src_language.code, trg_language.code, token)
+        obj['translations'] = known_info['translations']
+        if "metaData" in known_info:
+            obj['metaData'] = known_info['metaData']
         result.append(obj)
     return result
 
@@ -705,8 +691,12 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
     elif isinstance(index, str):
         word = index
         index = context.index(word)
+    word = utils.normalize_unicode(word).lower()
+    context = [utils.normalize_unicode(con).lower() for con in context]
     to_left = [context[i] for i in range(index-1, -1, -1)]
     to_right = context[index+1:]
+    trans = {}
+    total = 0
     if len(to_right)+len(to_left) > 0:
         keys = form_trie_keys(word, to_left, to_right, [word], False)
         if source_lang+"-"+target_lang in suggestion_trie_in_mem: # check if aleady loaded in memory
@@ -714,8 +704,6 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
         else:  # build trie loading data from disk and DB
             tree = rebuild_trie(db_, source_lang, target_lang)
             suggestion_trie_in_mem[source_lang+"-"+target_lang] = tree
-        trans = {}
-        total = 0
         for key in keys:
             if tree.has_subtrie(key) or tree.has_key(key):
                 print("found:",key)
@@ -734,22 +722,22 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
         db_models.TranslationMemory.token,
         db_models.TranslationMemory.translation,
         db_models.TranslationMemory.frequency,
-        text("levenshtein(source_token,'%s') as lev_score"%utils.normalize_unicode(word).lower())
+        text("levenshtein(source_token,'%s') as lev_score"%word)
         ).filter(
             db_models.TranslationMemory.source_language.has(code=source_lang),
             db_models.TranslationMemory.target_language.has(code=target_lang),
             text("soundex(source_token_romanized) = soundex('%s')"%utils.to_eng(word)),
-            text("levenshtein(source_token,'%s') < 4"%utils.normalize_unicode(word).lower()))
+            text("levenshtein(source_token,'%s') < 4"%word))
     reverse_query = db_.query(db_models.TranslationMemory).with_entities(
         db_models.TranslationMemory.translation,
         db_models.TranslationMemory.token,
         db_models.TranslationMemory.frequency,
-        text("levenshtein(translation,'%s') as lev_score"%utils.normalize_unicode(word).lower())
+        text("levenshtein(translation,'%s') as lev_score"%word)
         ).filter(
             db_models.TranslationMemory.source_language.has(code=target_lang),
             db_models.TranslationMemory.target_language.has(code=source_lang),
             text("soundex(translation_romanized) = soundex('%s')"%utils.to_eng(word)),
-            text("levenshtein(translation,'%s') < 4"%utils.normalize_unicode(word).lower()))
+            text("levenshtein(translation,'%s') < 4"%word))
     forward_dict_entires =  forward_query.all()
     reverse_dict_entires = reverse_query.all()
     for row in forward_dict_entires+ reverse_dict_entires:
@@ -758,8 +746,20 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
     if total == 0:
         total = 1
     sorted_trans = sorted(trans.items(), key=lambda x:x[1], reverse=True)
-    scored_trans = [(sense[0],sense[1]/total) for sense in sorted_trans]
-    return scored_trans
+    scored_trans = {} 
+    for sense in sorted_trans:
+        scored_trans[sense[0]]=sense[1]/total
+    result = {}
+    result['token'] = word
+    result['translations'] = scored_trans
+    # check for metadata
+    metadata_query = db_.query(db_models.TranslationMemory.metaData).filter(
+        db_models.TranslationMemory.token == word,
+        db_models.TranslationMemory.metaData != None).order_by(db_models.TranslationMemory.tokenId)
+    mdt = metadata_query.first()
+    if mdt:
+        result['metaData'] = mdt[0] 
+    return result
 
 def glossary(db_:Session, source_language, target_language, token, context=None, token_offset=None):
     '''finds possible translation suggestion for a token'''
@@ -770,10 +770,7 @@ def glossary(db_:Session, source_language, target_language, token, context=None,
         token_offset= (start, start+len(token))
     index, context_list = extract_context(token, token_offset, context)
     suggs = get_gloss(db_, index, context_list, source_language, target_language)
-    res = []
-    for sug in suggs:
-        res.append({"suggestion":sug[0], "score": sug[1]})
-    return res
+    return suggs
 
 def auto_translate(db_, sentence_list, source_lang, target_lang, punctuations=None,
     stop_words=None):
@@ -793,10 +790,11 @@ def auto_translate(db_, sentence_list, source_lang, target_lang, punctuations=No
                 offset = occurence['offset']
                 index, context = extract_context(token, offset,
                     sent.sentence)
-                suggestions = get_gloss(db_, index, context, source_lang, target_lang)
+                gloss = get_gloss(db_, index, context, source_lang, target_lang)
+                suggestions = list(gloss['translations'].keys())
                 if len(suggestions) > 0:
                     draft, meta = replace_token(sent.sentence, offset,
-                        suggestions[0][0], sent.draft, sent.draftMeta, "suggestion")
+                        suggestions[0], sent.draft, sent.draftMeta, "suggestion")
                     sent.draft = draft
                     sent.draftMeta = meta
                 elif (sent.draft is None or sent.draft == ''):
