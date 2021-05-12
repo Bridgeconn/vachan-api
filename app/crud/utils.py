@@ -126,7 +126,7 @@ def parse_usfm(usfm_string):
     file= open("temp.usfm", "w")
     file.write(normalize_unicode(usfm_string))
     file.close()
-    process = subprocess.Popen(['/usr/bin/usfm-grammar temp.usfm'],
+    process = subprocess.Popen(['usfm-grammar temp.usfm'],
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          shell=True)
