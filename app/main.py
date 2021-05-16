@@ -8,15 +8,15 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
+#pylint: disable=E0401
+#pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 from custom_exceptions import GenericException
 from custom_exceptions import NotAvailableException, AlreadyExistsException, TypeException
 import db_models
 from database import engine
 from dependencies import get_db, log
-from schemas import NormalResponse
 
-#pylint: disable=E0401
-#pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
+from schemas import NormalResponse
 from routers import content_apis, translation_apis
 
 app = FastAPI()

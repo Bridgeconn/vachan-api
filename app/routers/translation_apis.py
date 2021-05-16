@@ -229,7 +229,7 @@ def suggest_translation(source_language:schemas.LangCodePattern=Query(...,exampl
     return nlp_crud.auto_translate(db_, sentence_list, source_language, target_language,
         punctuations, stopwords)
 
-@router.get('/v2/translation/gloss', response_model=List[schemas_nlp.Suggestion],
+@router.get('/v2/translation/gloss', response_model=schemas_nlp.GlossOutput,
     status_code=200, tags=["Translation Suggestion"])
 def get_glossary(source_language:schemas.LangCodePattern=Query(...,example="eng"),
     target_language:schemas.LangCodePattern=Query(...,example="hin"),

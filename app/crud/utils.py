@@ -2,6 +2,7 @@
 import subprocess
 import json
 import unicodedata
+from unidecode import unidecode
 
 #pylint: disable=E0401
 #pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
@@ -135,3 +136,10 @@ def parse_usfm(usfm_string):
         raise TypeException(stderr.decode('utf-8'))
     usfm_json = json.loads(stdout.decode('utf-8'))
     return usfm_json
+
+
+def to_eng(data):
+    '''Convert to roman/english script.
+    Not an acurate transliteration. But good enough for doing soundex'''
+    data = normalize_unicode(data)
+    return unidecode(data)
