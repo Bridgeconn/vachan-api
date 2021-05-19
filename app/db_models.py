@@ -43,6 +43,11 @@ class Language(Base): # pylint: disable=too-few-public-methods
     code = Column('language_code', String, unique=True, index=True)
     language = Column('language_name', String)
     scriptDirection = Column('script_direction', String)
+    metaData = Column('metadata', JSON)
+    createdUser = Column('created_user', Integer)
+    updatedUser = Column('last_updated_user', Integer)
+    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    
 
 class License(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table licenses in vachan DB(postgres)'''

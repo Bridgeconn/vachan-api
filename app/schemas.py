@@ -45,7 +45,7 @@ class ContentTypeUpdateResponse(BaseModel):
     message: str = Field(...,example="Content type created successfully")
     data: ContentType = None
 
-LangCodePattern =constr(regex=r"^[a-zA-Z][a-zA-Z][a-zA-Z]$")
+LangCodePattern =constr(regex=r"^[a-zA-Z]+(-[a-zA-Z0-9])*$")
 class Direction(str, Enum):
     '''To specify direction of script'''
     left_to_right = 'left-to-right'
@@ -56,13 +56,17 @@ class LanguageCreate(BaseModel):
     language : str
     code : LangCodePattern
     scriptDirection : Direction = None
+    metaData: dict = None
     class Config: # pylint: disable=too-few-public-methods
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
                 "language": "Hindi",
-                "code": "hin",
-                "scriptDirection": "left-to-right"
+                "code": "hi",
+                "scriptDirection": "left-to-right",
+                "metaData": {"region": "India, Asia",
+                    "alternate-names": ["Khadi Boli", "Khari Boli", "Dakhini", "Khariboli"],
+                    "suppress-script": "Deva", "is-gateway-language": True}
             }
         }
 
@@ -72,6 +76,7 @@ class LanguageResponse(BaseModel):
     language : str
     code : LangCodePattern
     scriptDirection : Direction = None
+    metaData: dict = None
     class Config: # pylint: disable=too-few-public-methods
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
@@ -79,10 +84,14 @@ class LanguageResponse(BaseModel):
         # '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "languageId": 1,
+                "languageId": 100057,
                 "language": "Hindi",
-                "code": "hin",
-                "scriptDirection": "left-to-right"
+                "code": "hi",
+                "scriptDirection": "left-to-right",
+                "metaData": {"region": "India, Asia",
+                    "alternate-names": ["Khadi Boli", "Khari Boli", "Dakhini", "Khariboli"],
+                    "suppress-script": "Deva", "is-gateway-language": True}
+
             }
         }
 
@@ -102,14 +111,19 @@ class LanguageEdit (BaseModel):
     language : str = None
     code : LangCodePattern = None
     scriptDirection : Direction = None
+    metaData: dict = None
     class Config: # pylint: disable=too-few-public-methods
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "languageId": 1,
+                "languageId": 100057,
                 "language": "Hindi",
-                "code": "hin",
-                "scriptDirection":"left-to-right"
+                "code": "hi",
+                "scriptDirection":"left-to-right",
+                "metaData": {"region": "India, Asia",
+                    "alternate-names": ["Khadi Boli", "Khari Boli", "Dakhini", "Khariboli"],
+                    "suppress-script": "Deva", "is-gateway-language": True}
+
             }
         }
 
@@ -302,7 +316,7 @@ class SourceCreate(BaseModel):
         schema_extra = {
             "example": {
                 "contentType": "commentary",
-                "language": "eng",
+                "language": "en",
                 "version": "KJV",
                 "revision": 1,
                 "year": 2020,
@@ -328,7 +342,7 @@ class SourceResponse(BaseModel):
         # '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "sourceName": "eng_KJV_1_commentary",
+                "sourceName": "en_KJV_1_commentary",
                 "contentType": {},
                 "language": {},
                 "version": {},
@@ -365,8 +379,8 @@ class SourceEdit(BaseModel):
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "sourceName": "eng_KJV_1_commentary",
-                "language": "eng",
+                "sourceName": "en_KJV_1_commentary",
+                "language": "en",
                 "version": "KJV",
                 "revision": 1,
                 "year": 2020,
@@ -480,7 +494,7 @@ class Reference(BaseModel):
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "bible": "hin_IRV_5_bible",
+                "bible": "hi_IRV_5_bible",
                 "book": "mat",
                 "chapter": 1,
                 "verseNumber": 12,
@@ -506,11 +520,11 @@ class BibleBookContent(BaseModel):
             "example": {
                 "book": { "bookId": 41, "bookCode": "mat", "bookName": "Matthew"},
                 "versification": [
-                    {"bible": "hin_IRV_5_bible",
+                    {"bible": "hi_IRV_5_bible",
                     "book": "mat",
                     "chapter": 1,
                     "verseNumber": 1},
-                    {"bible": "hin_IRV_5_bible",
+                    {"bible": "hi_IRV_5_bible",
                     "book": "mat",
                     "chapter": 1,
                     "verseNumber": 1},
@@ -619,7 +633,7 @@ class BibleVerse(BaseModel):
         schema_extra = {
             "example": {
                 "reference": {
-                    "bible": "hin_IRV_5_bible",
+                    "bible": "hi_IRV_5_bible",
                     "book": "mat",
                     "chapter": 1,
                     "verseNumber": 12
