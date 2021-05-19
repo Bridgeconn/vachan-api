@@ -16,15 +16,20 @@ INSERT INTO content_types(content_type) VALUES('biblevideo');
 
 CREATE TABLE public.languages (
     language_id SERIAL PRIMARY KEY,
-    language_code char(3) UNIQUE NOT NULL,
+    language_code text UNIQUE NOT NULL,
     language_name text NOT NULL,
-    script_direction text DEFAULT 'left-to-right'
+    script_direction text,
+    metadata jsonb,
+    created_at timestamp with time zone DEFAULT NOW(),
+    created_user int NULL,
+    last_updated_at  timestamp with time zone DEFAULT NOW(),
+    last_updated_user int NULL
 );
 
 ALTER SEQUENCE languages_language_id_seq RESTART WITH 100000;
 
 
-\COPY languages (language_code,language_name) FROM 'languages.csv' DELIMITER ',' CSV HEADER;
+\COPY languages (language_code,language_name, script_direction, metadata) FROM 'consolidated_languages.csv' DELIMITER ',' CSV;
 
 CREATE TABLE public.licenses (
     license_id SERIAL PRIMARY KEY,
