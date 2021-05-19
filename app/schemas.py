@@ -45,7 +45,7 @@ class ContentTypeUpdateResponse(BaseModel):
     message: str = Field(...,example="Content type created successfully")
     data: ContentType = None
 
-LangCodePattern =constr(regex=r"^[a-zA-Z]+(-[a-zA-Z0-9])*$")
+LangCodePattern =constr(regex=r"^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
 class Direction(str, Enum):
     '''To specify direction of script'''
     left_to_right = 'left-to-right'

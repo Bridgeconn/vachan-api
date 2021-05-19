@@ -48,6 +48,7 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
 ##### languages #####
 @router.get('/v2/languages',
     response_model=List[schemas.LanguageResponse],
+    response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Languages"])
 def get_language(language_code : schemas.LangCodePattern = Query(None, example="hin"),

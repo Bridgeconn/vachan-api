@@ -3,7 +3,9 @@ Content_types, Languages, Licenses, versions, sources and bible_book_loopup'''
 
 import json
 import sqlalchemy
+from sqlalchemy import func
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 
 #pylint: disable=E0401, disable=E0611
 #pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
@@ -34,24 +36,27 @@ def get_languages(db_: Session, language_code = None, language_name = None, #pyl
     '''Fetches rows of language, with pagination and various filters'''
     query = db_.query(db_models.Language)
     if language_code:
-        query = query.filter(db_models.Language.code == language_code.lower())
+        query = query.filter(func.lower(db_models.Language.code) == language_code.lower())
     if language_name:
-        query = query.filter(db_models.Language.language == language_name.lower())
+        query = query.filter(func.lower(db_models.Language.language) == language_name.lower())
     if language_id is not None:
         query = query.filter(db_models.Language.languageId == language_id)
     return query.offset(skip).limit(limit).all()
 
-def create_language(db_: Session, lang: schemas.LanguageCreate):
+def create_language(db_: Session, lang: schemas.LanguageCreate, user_id=None):
     '''Adds a row to languages table'''
-    db_content = db_models.Language(code = lang.code.lower(),
+    db_content = db_models.Language(code = lang.code,
         language = lang.language.lower(),
-        scriptDirection = lang.scriptDirection)
+        scriptDirection = lang.scriptDirection,
+        metaData = lang.metaData,
+        createdUser= user_id,
+        updatedUser=user_id)
     db_.add(db_content)
     db_.commit()
     db_.refresh(db_content)
     return db_content
 
-def update_language(db_: Session, lang: schemas.LanguageEdit):
+def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
     '''changes one or more fields of language, selected via language id'''
     db_content = db_.query(db_models.Language).get(lang.languageId)
     if lang.code:
@@ -60,6 +65,10 @@ def update_language(db_: Session, lang: schemas.LanguageEdit):
         db_content.language = lang.language
     if lang.scriptDirection:
         db_content.scriptDirection = lang.scriptDirection
+    if lang.metaData:
+        db_content.metaData = lang.metaData
+        flag_modified(db_content, "metaData")
+    db_content.updatedUser = user_id
     db_.commit()
     db_.refresh(db_content)
     return db_content
