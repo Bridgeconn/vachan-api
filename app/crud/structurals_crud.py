@@ -325,20 +325,6 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None): #py
         db_content.updatedUser = user_id
     db_.commit()
     db_.refresh(db_content)
-    # if source.sourceName != db_content.sourceName:
-    #     sql_statement = sqlalchemy.text("ALTER TABLE IF EXISTS %s RENAME TO %s"%(
-    #         source.sourceName, db_content.sourceName))
-    #     db_.execute(sql_statement)
-    #     log.warning("User %s, renames table %s to %s", user_id, db_content.sourceName,
-    #         db_content.sourceName)
-    #     if db_content.contentType.contentType == db_models.ContentTypeName.bible.value:
-    #         sql_statement = sqlalchemy.text("ALTER TABLE IF EXISTS %s RENAME TO %s"%(
-    #             source.sourceName+"_cleaned", db_content.sourceName+"_cleaned"))
-    #         db_.execute(sql_statement)
-    #         log.warning("User %s, renames table %s to %s", user_id, source.sourceName+"_cleaned",
-    #             db_content.sourceName+"_cleaned")
-    # db_models.create_dynamic_table(db_content.sourceName, db_content.tableName,
-    #     db_content.contentType.contentType)
     db_models.dynamicTables[db_content.sourceName] = db_models.dynamicTables[source.sourceName]
     return db_content
 
