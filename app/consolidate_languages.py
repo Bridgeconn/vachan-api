@@ -210,9 +210,13 @@ def add_from_trans_database_to_languages(languages_list, registry_data,
                 else:
                     country = reg['Description']
                 break
+        if lang['ang'] != "":
+            name = lang['ang']
+        else:
+            name = lang['ln']
         new_info = {
             "code":lang['lc'],
-            "name":lang['ang'],
+            "name":name,
             "script-direction": lang['ld'],
             "metadata":{}
         }
@@ -274,7 +278,8 @@ def write_to_csv(languages_list):
             else:
                 row.append(None)
             if "metadata" in lang:
-                row.append(str(lang['metadata']))
+                meta_str = json.dumps(lang['metadata'])
+                row.append(meta_str)
             else:
                 row.append(None)
 
