@@ -54,8 +54,8 @@ def test_default_post_put_get():
     # create with minimum data
     post_data = {
     "projectName": "Test project 1",
-    "sourceLanguageCode": "hin",
-    "targetLanguageCode": "mal"
+    "sourceLanguageCode": "hi",
+    "targetLanguageCode": "ml"
     }
     response = client.post(UNIT_URL, headers=headers, json=post_data)
     assert response.status_code == 201
@@ -115,8 +115,8 @@ def test_default_post_put_get():
     # create with all possible options
     post_data = {
       "projectName": "Test Project 2",
-      "sourceLanguageCode": "hin",
-      "targetLanguageCode": "mal",
+      "sourceLanguageCode": "hi",
+      "targetLanguageCode": "ml",
       "useDataForLearning": True,
       "stopwords": {
         "prepositions": [ "कोई", "यह", "इस", "इसे", "उस", "कई", "इसी", "अभी", "जैसे" ],
@@ -135,15 +135,15 @@ def test_default_post_put_get():
     # add a few more projects
     post_data = {
       "projectName": "Test Project 3",
-      "sourceLanguageCode": "hin",
-      "targetLanguageCode": "mal"
+      "sourceLanguageCode": "hi",
+      "targetLanguageCode": "ml"
     }
     resp = client.post(UNIT_URL, headers=headers, json=post_data)
     assert resp.status_code == 201
     post_data = {
       "projectName": "Test Project 4",
-      "sourceLanguageCode": "hin",
-      "targetLanguageCode": "mal"
+      "sourceLanguageCode": "hi",
+      "targetLanguageCode": "ml"
     }
     resp = client.post(UNIT_URL, headers=headers, json=post_data)
     assert resp.status_code == 201
@@ -155,21 +155,21 @@ def test_post_invalid():
     # Missing mandatory content
     data1 = {
     "projectName": "Test project 1",
-    "targetLanguageCode": "mal"
+    "targetLanguageCode": "ml"
     }
     res1 = client.post(UNIT_URL, headers=headers, json=data1)
     assert_input_validation_error(res1)
 
     data2 = {
     "projectName": "Test project 1",
-    "sourceLanguageCode": "hin",
+    "sourceLanguageCode": "hi",
     }
     res2 = client.post(UNIT_URL, headers=headers, json=data2)
     assert_input_validation_error(res2)
 
     data3 = {
-    "sourceLanguageCode": "hin",
-    "targetLanguageCode": "mal"
+    "sourceLanguageCode": "hi",
+    "targetLanguageCode": "ml"
     }
     res3 = client.post(UNIT_URL, headers=headers, json=data3)
     assert_input_validation_error(res3)
@@ -177,16 +177,16 @@ def test_post_invalid():
     # incorrect data in fields
     data1 = {
     "projectName": "Test project 1",
-    "sourceLanguageCode": "hindi",
-    "targetLanguageCode": "mal"
+    "sourceLanguageCode": "2hindi",
+    "targetLanguageCode": "ml"
     }
     res1 = client.post(UNIT_URL, headers=headers, json=data1)
     assert_input_validation_error(res1)
 
     data2 = {
     "projectName": "Test project 1",
-    "sourceLanguageCode": "hin",
-    "targetLanguageCode": "mal",
+    "sourceLanguageCode": "hi",
+    "targetLanguageCode": "ml",
     "useDataForLearning": "use"
     }
     res2 = client.post(UNIT_URL, headers=headers, json=data2)
@@ -194,8 +194,8 @@ def test_post_invalid():
 
     data3 = {
     "projectName": "Test project 1",
-    "sourceLanguageCode": "hin",
-    "targetLanguageCode": "mal",
+    "sourceLanguageCode": "hi",
+    "targetLanguageCode": "ml",
     "stopwords": ["a", "mromal", "list"]
     }
     res3 = client.post(UNIT_URL, headers=headers, json=data3)
@@ -203,8 +203,8 @@ def test_post_invalid():
 
     data4 = {
     "projectName": "Test project 1",
-    "sourceLanguageCode": "hin",
-    "targetLanguageCode": "mal",
+    "sourceLanguageCode": "hi",
+    "targetLanguageCode": "ml",
     "punctuations": "+_*())^%$#<>?:'"
     }
     res4 = client.post(UNIT_URL, headers=headers, json=data4)
@@ -213,8 +213,8 @@ def test_post_invalid():
 def test_put_invalid():
     '''Give incorrect data for project update'''
     post_data = {"projectName": "Test project 1",
-    "sourceLanguageCode": "hin",
-    "targetLanguageCode": "mal"}
+    "sourceLanguageCode": "hi",
+    "targetLanguageCode": "ml"}
     resp = check_post(post_data)
     assert resp.json()['message'] == "Project created successfully"
     new_project = resp.json()['data']
@@ -264,8 +264,8 @@ def test_add_user():
     '''Positive test to add a user to a project'''
     project_data = {
         "projectName": "Test project 1",
-        "sourceLanguageCode": "hin",
-        "targetLanguageCode": "mal"
+        "sourceLanguageCode": "hi",
+        "targetLanguageCode": "ml"
     }
     resp = check_post(project_data)
     assert resp.status_code == 201
@@ -290,8 +290,8 @@ def test_add_user_invalid():
     '''Negative tests to add a user to a project'''
     project_data = {
         "projectName": "Test project 10",
-        "sourceLanguageCode": "hin",
-        "targetLanguageCode": "mal"
+        "sourceLanguageCode": "hi",
+        "targetLanguageCode": "ml"
     }
     resp = check_post(project_data)
     assert resp.status_code == 201
@@ -320,8 +320,8 @@ def test_update_user():
     '''Positive tests to change role, status & metadata of a user'''
     project_data = {
         "projectName": "Test project 1",
-        "sourceLanguageCode": "hin",
-        "targetLanguageCode": "mal"
+        "sourceLanguageCode": "hi",
+        "targetLanguageCode": "ml"
     }
     resp = check_post(project_data)
     assert resp.json()['message'] == "Project created successfully"
@@ -367,8 +367,8 @@ def test_update_user_invlaid():
     '''Negative test for update user'''
     project_data = {
         "projectName": "Test project 101",
-        "sourceLanguageCode": "hin",
-        "targetLanguageCode": "mal"
+        "sourceLanguageCode": "hi",
+        "targetLanguageCode": "ml"
     }
     resp = check_post(project_data)
     assert resp.json()['message'] == "Project created successfully"
@@ -424,28 +424,28 @@ def test_soft_delete():
     data = [
         {
           "projectName": "Test Project 1",
-          "sourceLanguageCode": "hin",
-          "targetLanguageCode": "mal"
+          "sourceLanguageCode": "hi",
+          "targetLanguageCode": "ml"
         },
         {
           "projectName": "Test Project 2",
-          "sourceLanguageCode": "hin",
-          "targetLanguageCode": "mal"
+          "sourceLanguageCode": "hi",
+          "targetLanguageCode": "ml"
         },
         {
           "projectName": "Test Project 3",
-          "sourceLanguageCode": "hin",
-          "targetLanguageCode": "mal"
+          "sourceLanguageCode": "hi",
+          "targetLanguageCode": "ml"
         },
         {
           "projectName": "Test Project 4",
-          "sourceLanguageCode": "hin",
-          "targetLanguageCode": "mal"
+          "sourceLanguageCode": "hi",
+          "targetLanguageCode": "ml"
         },
         {
           "projectName": "Test Project 5",
-          "sourceLanguageCode": "hin",
-          "targetLanguageCode": "mal"
+          "sourceLanguageCode": "hi",
+          "targetLanguageCode": "ml"
         }
     ]
 

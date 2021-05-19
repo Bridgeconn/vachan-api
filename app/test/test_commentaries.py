@@ -28,7 +28,7 @@ def check_post(data: list):
     add_version(version_data)
     source_data = {
         "contentType": "commentary",
-        "language": "hin",
+        "language": "hi",
         "version": "TTT",
         "revision": 1,
         "year": 2000,
@@ -252,11 +252,11 @@ def test_get_after_data_upload():
 
 def test_get_incorrect_data():
     '''Check for input validations in get'''
-    source_name = 'hin_TTT'
+    source_name = 'hi_TTT'
     response = client.get(UNIT_URL+source_name)
     assert_input_validation_error(response)
 
-    source_name = 'hin_TTT_1_commentary'
+    source_name = 'hi_TTT_1_commentary'
     response = client.get(UNIT_URL+source_name+'?book_code=10')
     assert_input_validation_error(response)
 

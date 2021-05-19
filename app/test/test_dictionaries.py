@@ -25,7 +25,7 @@ def check_post(data: list):
     add_version(version_data)
     source_data = {
         "contentType": "dictionary",
-        "language": "eng",
+        "language": "en",
         "version": "TTT",
         "revision": 1,
         "year": 2000
@@ -160,7 +160,7 @@ def test_get_after_data_upload():
 def test_get_incorrect_data():
     '''Check for input validations in get'''
 
-    source_name = 'eng_TTT'
+    source_name = 'en_TTT'
     response = client.get(UNIT_URL+source_name)
     assert_input_validation_error(response)
 

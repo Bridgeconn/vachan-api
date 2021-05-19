@@ -29,7 +29,7 @@ def check_post(data: list):
     add_version(version_data)
     source_data = {
         "contentType": "biblevideo",
-        "language": "mar",
+        "language": "mr",
         "version": "TTT",
         "year": 1999,
         "revision": 1
@@ -189,11 +189,11 @@ def test_get_after_data_upload():
 
 def test_get_incorrect_data():
     '''Check for input validations in get'''
-    source_name = 'mar_TTT'
+    source_name = 'mr_TTT'
     response = client.get(UNIT_URL+source_name)
     assert_input_validation_error(response)
 
-    source_name = 'mar_TTT_1_biblevideo'
+    source_name = 'mr_TTT_1_biblevideo'
     response = client.get(UNIT_URL+source_name+'?book_code=61')
     assert_input_validation_error(response)
 

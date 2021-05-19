@@ -8,7 +8,7 @@ BASE_URL = "http://127.0.0.1:8000/v2/"
 headers = {"contentType": "application/json", "accept": "application/json"}
 
 # have a bible source to be used
-source_name = "hin_XYZ_1_bible" # pylint: disable=C0103
+source_name = "hi_XYZ_1_bible" # pylint: disable=C0103
 project_id = 100000 # pylint: disable=C0103
 
 ver_data = {
@@ -20,7 +20,7 @@ ver_data = {
 
 src_data = {
     "contentType": "bible",
-    "language": "hin",
+    "language": "hi",
     "version": "XYZ",
     "revision": 1,
     "year": 2020,
@@ -177,8 +177,8 @@ gospel_books_data = [
 
 project_post_data = {
     "projectName": "Test project 4",
-    "sourceLanguageCode": "hin",
-    "targetLanguageCode": "mal"
+    "sourceLanguageCode": "hi",
+    "targetLanguageCode": "ml"
 }
 
 bible_books = {
@@ -234,8 +234,8 @@ user_data = {
 	"active": False
 }
 
-ALIGNMENT_SRC = "hin"
-ALIGNMENT_TRG = "mal"
+ALIGNMENT_SRC = "hi"
+ALIGNMENT_TRG = "ml"
 alignment_data = [
 {
     "sourceTokenList": [
