@@ -13,6 +13,8 @@ def assert_positive_get(item):
     assert "language" in item
     assert "code" in item
     assert "scriptDirection" in item
+    if "metaData" in item and item['metaData'] is not None:
+        assert isinstance(item['metaData'], dict)
 
 def test_get_default():
     '''positive test case, without optional params'''
@@ -20,21 +22,21 @@ def test_get_default():
 
 def test_get_language_code():
     '''positive test case, with one optional params, code'''
-    response = client.get(UNIT_URL+'?language_code=hin')
+    response = client.get(UNIT_URL+'?language_code=hi')
     assert response.status_code == 200
     assert isinstance( response.json(), list)
     assert len(response.json()) == 1
     assert_positive_get(response.json()[0])
-    assert response.json()[0]['code'] == 'hin'
+    assert response.json()[0]['code'] == 'hi'
 
 def test_get_language_code_upper_case():
     '''positive test case, with one optional params, code in upper case'''
-    response = client.get(UNIT_URL+'?language_code=HIN')
+    response = client.get(UNIT_URL+'?language_code=HI')
     assert response.status_code == 200
     assert isinstance( response.json(), list)
     assert len(response.json()) == 1
     assert_positive_get(response.json()[0])
-    assert response.json()[0]['code'] == 'hin'
+    assert response.json()[0]['code'] == 'hi'
 
 def test_get_language_name():
     '''positive test case, with one optional params, name'''
@@ -43,7 +45,7 @@ def test_get_language_name():
     assert isinstance( response.json(), list)
     assert len(response.json()) == 1
     assert_positive_get(response.json()[0])
-    assert response.json()[0]['language'] == 'hindi'
+    assert response.json()[0]['language'].lower() == 'hindi'
 
 def test_get_language_name_mixed_case():
     '''positive test case, with one optional params, name, with first letter capital'''
@@ -52,17 +54,17 @@ def test_get_language_name_mixed_case():
     assert isinstance( response.json(), list)
     assert len(response.json()) == 1
     assert_positive_get(response.json()[0])
-    assert response.json()[0]['language'] == 'hindi'
+    assert response.json()[0]['language'].lower() == 'hindi'
 
 def test_get_multiple_params():
     '''positive test case, with two optional params'''
-    response = client.get(UNIT_URL+'?language_name=hindi;language_code=hin')
+    response = client.get(UNIT_URL+'?language_name=hindi;language_code=hi')
     assert response.status_code == 200
     assert isinstance( response.json(), list)
     assert len(response.json()) == 1
     assert_positive_get(response.json()[0])
-    assert response.json()[0]['language'] == 'hindi'
-    assert response.json()[0]['code'] == 'hin'
+    assert response.json()[0]['language'].lower() == 'hindi'
+    assert response.json()[0]['code'] == 'hi'
 
 def test_get_notavailable_language():
     ''' request a not available language, with code'''
@@ -81,7 +83,7 @@ def test_get_incorrectvalue_language_code():
 
 def test_get_incorrectvalue_language_code2():
     '''language code should have exactly 3 letters'''
-    response = client.get(UNIT_URL+"?language_code='abcd'")
+    response = client.get(UNIT_URL+"?language_code='abcd.10'")
     assert_input_validation_error(response)
 
 def test_post_default():
@@ -111,7 +113,7 @@ def test_post_upper_case_code():
     assert response.status_code == 201
     assert response.json()['message'] == "Language created successfully"
     assert_positive_get(response.json()['data'])
-    assert response.json()["data"]["code"] == "aaj"
+    assert response.json()["data"]["code"] == "AAJ"
 
 def test_post_optional_script_direction():
     '''positive test case, checking for correct return object'''
