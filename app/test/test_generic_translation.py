@@ -31,19 +31,19 @@ post_obj = {"sentence_list":[{
 
 def test_tokenize():
     '''Positve tests for generic tokenization API'''
-    default_response = client.put(UNIT_URL+'/tokens?source_language=eng', headers=headers,
+    default_response = client.put(UNIT_URL+'/tokens?source_language=en', headers=headers,
         json={"sentence_list":sentence_list}) 
     assert default_response.status_code == 200
     assert len(default_response.json()) >10 
     for item in default_response.json():
         assert_positive_get_tokens(item)
 
-    response = client.put(UNIT_URL+'/tokens?source_language=eng&include_phrases=True',
+    response = client.put(UNIT_URL+'/tokens?source_language=en&include_phrases=True',
         headers=headers, json={"sentence_list":sentence_list}) 
     assert response.status_code == 200
     assert default_response.json() == response.json()  
 
-    response = client.put(UNIT_URL+'/tokens?source_language=eng',
+    response = client.put(UNIT_URL+'/tokens?source_language=en',
         headers=headers, json={"sentence_list":sentence_list[:3]}) 
     assert response.status_code == 200
     for item in response.json():
@@ -51,12 +51,12 @@ def test_tokenize():
     assert len(default_response.json()) > len(response.json())  
 
     # include_phrases flag
-    response = client.put(UNIT_URL+"/tokens?source_language=eng"+
+    response = client.put(UNIT_URL+"/tokens?source_language=en"+
         "&include_phrases=true", headers=headers,
         json={"sentence_list":sentence_list})
     assert response.json() == default_response.json()
 
-    response = client.put(UNIT_URL+"/tokens?source_language=eng"+
+    response = client.put(UNIT_URL+"/tokens?source_language=en"+
         "&include_phrases=false", headers=headers,
         json={"sentence_list":sentence_list})
     assert response.status_code == 200
@@ -67,7 +67,7 @@ def test_tokenize():
 
     # include stopwords flag
     sample_stopwords = ["the", "is", "a"]
-    response = client.put(UNIT_URL+"/tokens?source_language=eng"+
+    response = client.put(UNIT_URL+"/tokens?source_language=en"+
         "&include_stopwords=false", headers=headers,
         json={"sentence_list":sentence_list})
     assert response.json() == default_response.json()
@@ -75,14 +75,14 @@ def test_tokenize():
         assert_positive_get_tokens(item)
         assert item['token'] not in sample_stopwords
 
-    response = client.put(UNIT_URL+"/tokens?source_language=eng"+
+    response = client.put(UNIT_URL+"/tokens?source_language=en"+
         "&include_stopwords=true", headers=headers,
         json={"sentence_list":sentence_list})
     assert response.status_code == 200
     for item in response.json():
         assert_positive_get_tokens(item)
 
-    response = client.put(UNIT_URL+"/tokens?source_language=eng"+
+    response = client.put(UNIT_URL+"/tokens?source_language=en"+
         "&include_stopwords=true&include_phrases=false", headers=headers,
         json={"sentence_list":sentence_list})
     assert response.status_code == 200
@@ -94,7 +94,7 @@ def test_tokenize():
 
 def test_tokenize_with_diff_flags():
     '''Postive tests for tokenizing a single input sentence with varying parameters'''
-    response = client.put(UNIT_URL+"/tokens?source_language=hin"+
+    response = client.put(UNIT_URL+"/tokens?source_language=hi"+
         "&include_stopwords=true&include_phrases=false&use_translation_memory=false",
         headers=headers, json=post_obj)
     assert response.status_code == 200
@@ -105,7 +105,7 @@ def test_tokenize_with_diff_flags():
     for word in all_words: # no phrases
         assert " " not in word
 
-    response = client.put(UNIT_URL+"/tokens?source_language=hin"+
+    response = client.put(UNIT_URL+"/tokens?source_language=hi"+
         "&include_stopwords=true&include_phrases=true&use_translation_memory=false",
         headers=headers, json=post_obj)
     assert response.status_code == 200
@@ -113,7 +113,7 @@ def test_tokenize_with_diff_flags():
     assert "इस प्रकार है" in all_tokens
     assert "इब्राहीम के" in all_tokens
 
-    response = client.put(UNIT_URL+"/tokens?source_language=hin"+
+    response = client.put(UNIT_URL+"/tokens?source_language=hi"+
         "&include_stopwords=false&include_phrases=true&use_translation_memory=false",
         headers=headers, json=post_obj)
     assert response.status_code == 200
@@ -135,13 +135,13 @@ def test_tokenize_with_diff_flags():
           "translation": "Jesus Christ"}
       ]
 
-    response = client.put(UNIT_URL+"/token-translate?source_language=hin"+
-        "&target_language=eng&use_data_for_learning=true",
+    response = client.put(UNIT_URL+"/token-translate?source_language=hi"+
+        "&target_language=en&use_data_for_learning=true",
         headers=headers, json=trans_obj)
     assert response.status_code ==200
 
     # after a translation testing for use_translation_memory flag
-    response = client.put(UNIT_URL+"/tokens?source_language=hin"+
+    response = client.put(UNIT_URL+"/tokens?source_language=hi"+
         "&include_stopwords=true&include_phrases=true&use_translation_memory=true",
         headers=headers, json=post_obj)
     assert response.status_code == 200
@@ -149,7 +149,7 @@ def test_tokenize_with_diff_flags():
     assert "यीशु मसीह" in all_tokens
     assert "की" in all_tokens
 
-    response = client.put(UNIT_URL+"/tokens?source_language=hin"+
+    response = client.put(UNIT_URL+"/tokens?source_language=hi"+
         "&use_translation_memory=true",
         headers=headers, json=post_obj)
     assert response.status_code == 200
@@ -157,7 +157,7 @@ def test_tokenize_with_diff_flags():
     assert "यीशु मसीह" in all_tokens
     assert "की" not in all_tokens
 
-    response = client.put(UNIT_URL+"/tokens?source_language=hin"+
+    response = client.put(UNIT_URL+"/tokens?source_language=hi"+
         "&use_translation_memory=false",
         headers=headers, json=post_obj)
     assert response.status_code == 200
@@ -169,7 +169,7 @@ def test_token_translate():
     '''Positive tests to apply token translationa nd obtain drafts'''
 
     #tokenize
-    resp = client.put(UNIT_URL+"/tokens?source_language=hin&use_translation_memory=false"+
+    resp = client.put(UNIT_URL+"/tokens?source_language=hi&use_translation_memory=false"+
         "&include_stopwords=true",
         headers=headers, json=post_obj)
     assert resp.status_code ==200
@@ -186,8 +186,8 @@ def test_token_translate():
           "translation": "test"}
       ]
 
-    response = client.put(UNIT_URL+"/token-translate?source_language=hin"+
-        "&target_language=eng&use_data_for_learning=false",
+    response = client.put(UNIT_URL+"/token-translate?source_language=hi"+
+        "&target_language=en&use_data_for_learning=false",
         headers=headers, json=trans_obj)
     assert response.status_code ==200
     return_sent = response.json()['data'][0]
@@ -202,8 +202,8 @@ def test_token_translate():
     for tok in all_tokens:
         obj = {"token": tok['token'], "occurrences":tok["occurrences"], "translation":"test"}
         trans_obj['token_translations'].append(obj)
-    response = client.put(UNIT_URL+"/token-translate?source_language=hin"+
-        "&target_language=eng&use_data_for_learning=false",
+    response = client.put(UNIT_URL+"/token-translate?source_language=hi"+
+        "&target_language=en&use_data_for_learning=false",
         headers=headers, json=trans_obj)
     assert response.status_code ==200
     return_sent = response.json()['data'][0]
@@ -227,8 +227,8 @@ def test_token_translate():
           ],
           "translation": "Jesus Christ"}
       ]
-    response = client.put(UNIT_URL+"/token-translate?source_language=hin"+
-        "&target_language=eng",
+    response = client.put(UNIT_URL+"/token-translate?source_language=hi"+
+        "&target_language=en",
         headers=headers, json=trans_obj)
     assert response.status_code ==200
     new_return_sent = response.json()['data'][0]

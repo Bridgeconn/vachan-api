@@ -25,7 +25,7 @@ def check_post(data: list):
     add_version(version_data)
     source_data = {
         "contentType": "infographic",
-        "language": "urd",
+        "language": "ur",
         "version": "TTT",
         "year": 2020,
         "revision": 1
@@ -190,11 +190,11 @@ def test_get_after_data_upload():
 
 def test_get_incorrect_data():
     '''Check for input validations in get'''
-    source_name = 'urd_TTT'
+    source_name = 'ur_TTT'
     response = client.get(UNIT_URL+source_name)
     assert_input_validation_error(response)
 
-    source_name = 'urd_TTT_1_infographic'
+    source_name = 'ur_TTT_1_infographic'
     response = client.get(UNIT_URL+source_name+'?book_code=60')
     assert_input_validation_error(response)
 

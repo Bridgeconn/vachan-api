@@ -43,6 +43,11 @@ class Language(Base): # pylint: disable=too-few-public-methods
     code = Column('language_code', String, unique=True, index=True)
     language = Column('language_name', String)
     scriptDirection = Column('script_direction', String)
+    metaData = Column('metadata', JSON)
+    createdUser = Column('created_user', Integer)
+    updatedUser = Column('last_updated_user', Integer)
+    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+
 
 class License(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table licenses in vachan DB(postgres)'''
@@ -74,7 +79,8 @@ class Source(Base): # pylint: disable=too-few-public-methods
     __tablename__ = 'sources'
 
     sourceId = Column('source_id', Integer, primary_key=True)
-    sourceName = Column('table_name', String, unique=True)
+    sourceName = Column('source_name', String, unique=True)
+    tableName = Column('source_table', String, unique=True)
     year = Column('year', Integer)
     licenseId = Column('license_id', Integer, ForeignKey('licenses.license_id'))
     license = relationship(License)
@@ -193,7 +199,8 @@ class BibleContent(): # pylint: disable=too-few-public-methods
     def audio(self): # pylint: disable=E0213
         '''For modelling the audio field in bible content classes'''
         refering_table = self.__tablename__+"_audio" #pylint: disable=E1101
-        return relationship(dynamicTables[refering_table], uselist=False)
+        # return relationship(dynamicTables[refering_table], uselist=False)
+        return relationship(refering_table, uselist=False)
     active = Column('active', Boolean, default=True)
     __table_args__ = {'extend_existing': True}
 
@@ -227,30 +234,30 @@ class BibleContentCleaned(): # pylint: disable=too-few-public-methods
                      )
 
 dynamicTables = {}
-def create_dynamic_table(source_name, content_type):
+def create_dynamic_table(source_name, table_name, content_type):
     '''To map or create one dynamic table based on the content Type'''
     if content_type == ContentTypeName.bible.value:
         dynamicTables[source_name+'_audio'] = type(
-            source_name+'_audio',(BibleAudio, Base,),
-            {"__tablename__": source_name+'_audio'})
+            table_name+'_audio',(BibleAudio, Base,),
+            {"__tablename__": table_name+'_audio'})
         dynamicTables[source_name] = type(
-            source_name,(BibleContent, Base,),
-            {"__tablename__": source_name})
+            table_name,(BibleContent, Base,),
+            {"__tablename__": table_name})
         dynamicTables[source_name+'_cleaned'] = type(
-            source_name+'_cleaned',(BibleContentCleaned, Base,),
-            {"__tablename__": source_name+'_cleaned'})
+            table_name+'_cleaned',(BibleContentCleaned, Base,),
+            {"__tablename__": table_name+'_cleaned'})
     elif content_type == ContentTypeName.commentary.value:
         dynamicTables[source_name] = type(
-            source_name,(Commentary, Base,),{"__tablename__": source_name})
+            table_name,(Commentary, Base,),{"__tablename__": table_name})
     elif content_type == ContentTypeName.dictionary.value:
         dynamicTables[source_name] = type(
-            source_name,(Dictionary, Base,),{"__tablename__": source_name})
+            table_name,(Dictionary, Base,),{"__tablename__": table_name})
     elif content_type == ContentTypeName.infographic.value:
         dynamicTables[source_name] = type(
-            source_name,(Infographic, Base,),{"__tablename__": source_name})
+            table_name,(Infographic, Base,),{"__tablename__": table_name})
     elif content_type == ContentTypeName.biblevideo.value:
         dynamicTables[source_name] = type(
-            source_name,(BibleVideo, Base,),{"__tablename__": source_name})
+            table_name,(BibleVideo, Base,),{"__tablename__": table_name})
     else:
         raise GenericException("Table structure not defined for this content type:%s"
             %content_type)
@@ -262,7 +269,7 @@ def map_all_dynamic_tables(db_: Session):
 
     all_src = db_.query(Source).all()
     for src in all_src:
-        create_dynamic_table(src.sourceName, src.contentType.contentType)
+        create_dynamic_table(src.sourceName, src.tableName, src.contentType.contentType)
 
 
 ############ Translation Tables ##########

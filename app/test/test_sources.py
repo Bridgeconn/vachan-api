@@ -52,7 +52,7 @@ def test_post_default():
     add_version(version_data)
     data = {
         "contentType": "commentary",
-        "language": "hin",
+        "language": "hi",
         "version": "TTT",
         "revision": 1,
         "year": 2020,
@@ -70,7 +70,7 @@ def test_post_wrong_version():
     add_version(version_data)
     data1 = {
         "contentType": "commentary",
-        "language": "hin",
+        "language": "hi",
         "version": "TTD",
         "revision": 1,
         "year": 2020,
@@ -85,7 +85,7 @@ def test_post_wrong_version():
 
     data2 = {
         "contentType": "commentary",
-        "language": "hin",
+        "language": "hi",
         "version": "TTT",
         "revision": 2,
         "year": 2020,
@@ -99,7 +99,7 @@ def test_post_wrong_version():
 
     data3 = {
         "contentType": "commentary",
-        "language": "hin",
+        "language": "hi",
         "version": "TTT",
         "revision": 1,
         "year": 2020,
@@ -139,7 +139,7 @@ def test_post_wrong_content():
     add_version(version_data)
     data = {
         "contentType": "bibl",
-        "language": "hin",
+        "language": "hi",
         "version": "TTT",
         "revision": 1,
         "year": 2020,
@@ -155,7 +155,7 @@ def test_post_wrong_content():
     # '''Negative test with not a valid license from license table'''
     data = {
         "contentType": "infographic",
-        "language": "hin",
+        "language": "hi",
         "version": "TTT",
         "revision": 1,
         "year": 2020,
@@ -171,7 +171,7 @@ def test_post_wrong_year():
     '''Negative test with text in year field'''
     data = {
         "contentType": "commentary",
-        "language": "hin",
+        "language": "hi",
         "version": "TTT",
         "revision": 1,
         "year": "twenty twenty",
@@ -187,7 +187,7 @@ def test_post_wrong_metadata():
     '''Negative test with incorrect format for metadata'''
     data = {
         "contentType": "commentary",
-        "language": "hin",
+        "language": "hi",
         "version": "TTT",
         "revision": 1,
         "year": "twenty twenty",
@@ -202,7 +202,7 @@ def test_post_missing_mandatory_info():
     '''Negative tests with mandatory contents missing'''
     # no contentType
     data = {
-        "language": "hin",
+        "language": "hi",
         "version": "TTT",
         "revision": 1,
         "year": 2020
@@ -224,7 +224,7 @@ def test_post_missing_mandatory_info():
     # no version
     data = {
         "contentType": "commentary",
-        "language": "hin",
+        "language": "hi",
         "revision": 1,
         "year": 2020
     }
@@ -234,7 +234,7 @@ def test_post_missing_mandatory_info():
     # no year
     data = {
         "contentType": "commentary",
-        "language": "hin",
+        "language": "hi",
         "version": "TTT"
     }
     response = client.post(UNIT_URL, headers=headers, json=data)
@@ -250,7 +250,7 @@ def test_post_missing_some_info():
     add_version(version_data)
     data = {
         "contentType": "commentary",
-        "language": "hin",
+        "language": "hi",
         "version": "TTT",
         "year": 2020
     }
@@ -265,7 +265,7 @@ def test_post_duplicate():
     add_version(version_data)
     data = {
         "contentType": "commentary",
-        "language": "hin",
+        "language": "hi",
         "version": "TTT",
         "year": 2020
     }
@@ -291,7 +291,7 @@ def test_get_wrong_values():
     response = client.get(UNIT_URL + '?revision=X')
     assert_input_validation_error(response)
 
-    response = client.get(UNIT_URL + '?language_code=hindi')
+    response = client.get(UNIT_URL + '?language_code=hin6i')
     assert_input_validation_error(response)
 
 def test_get_after_adding_data():
@@ -306,14 +306,14 @@ def test_get_after_adding_data():
         "version": "TTT",
         "year": 2020
     }
-    for lang in ['hin', 'mar', 'tel']:
+    for lang in ['hi', 'mr', 'te']:
         data['language'] = lang
         check_post(data)
 
     version_data['revision'] = 2
     add_version(version_data)
     data['revision'] = 2
-    for lang in ['hin', 'mar', 'tel']:
+    for lang in ['hi', 'mr', 'te']:
         data['language'] = lang
         check_post(data)
 
@@ -321,7 +321,7 @@ def test_get_after_adding_data():
     data['revision'] = 1
     data['metaData'] = {'owner': 'myself'}
     data['license'] = "ISC"
-    for lang in ['hin', 'mar', 'tel']:
+    for lang in ['hi', 'mr', 'te']:
         data['language'] = lang
         check_post(data)
 
@@ -335,7 +335,7 @@ def test_get_after_adding_data():
         assert_positive_get(item)
 
     # filter with language
-    response = client.get(UNIT_URL + "?language_code=hin&latest_revision=false")
+    response = client.get(UNIT_URL + "?language_code=hi&latest_revision=false")
     assert response.status_code == 200
     assert len(response.json()) >= 3
     for item in response.json():
@@ -394,14 +394,14 @@ def test_put_default():
     add_version(version_data)
     data = {
         "contentType": "commentary",
-        'language': 'mal',
+        'language': 'ml',
         "version": "TTT",
         "year": 2020
     }
     check_post(data)
 
     data_update = {
-        "sourceName": 'mal_TTT_1_commentary',
+        "sourceName": 'ml_TTT_1_commentary',
         "revision": 2
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -410,10 +410,10 @@ def test_put_default():
     assert response.json()['message'] == "Source edited successfully"
     assert_positive_get(response.json()['data'])
     assert response.json()['data']['version']['revision'] == 2
-    assert response.json()['data']['sourceName'] == "mal_TTT_2_commentary"
+    assert response.json()['data']['sourceName'] == "ml_TTT_2_commentary"
 
     data_update = {
-        'sourceName': 'mal_TTT_2_commentary',
+        'sourceName': 'ml_TTT_2_commentary',
         'metaData': {'owner': 'new owner'}
     }
     response = client.put(UNIT_URL, headers=headers, json=data_update)
@@ -431,7 +431,7 @@ def test_soft_delete():
     add_version(version_data)
     data = {
         "contentType": "commentary",
-        'language': 'mal',
+        'language': 'ml',
         "version": "TTT",
         "year": 2020
     }
@@ -439,7 +439,7 @@ def test_soft_delete():
     assert response.json()['data']['active']
 
     data_update = {
-        'sourceName': 'mal_TTT_1_commentary',
+        'sourceName': 'ml_TTT_1_commentary',
         'active': False
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -455,4 +455,4 @@ def test_soft_delete():
     for item in response.json():
         assert_positive_get(item)
         assert not item['active']
-    assert 'mal_TTT_1_commentary' in [item['sourceName'] for item in response.json()]
+    assert 'ml_TTT_1_commentary' in [item['sourceName'] for item in response.json()]

@@ -57,13 +57,13 @@ def test_learn_n_suggest():
     '''Positive tests for adding knowledge and getting suggestions'''
 
     # add dictionary
-    response = client.post(UNIT_URL+'/learn/gloss?source_language=eng&target_language=mal',
+    response = client.post(UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
         headers=headers, json=tokens_trans)
     assert response.status_code == 201
     assert response.json()['message'] == "Added to glossary"
 
     # check if suggestions are given in token list
-    token_response = client.put(UNIT_URL+'/tokens?source_language=eng&target_language=mal',
+    token_response = client.put(UNIT_URL+'/tokens?source_language=en&target_language=ml',
         headers=headers, json={"sentence_list":sentence_list}) 
     assert token_response.status_code == 200
     assert len(token_response.json()) >10
@@ -84,7 +84,7 @@ def test_learn_n_suggest():
     assert found_testcase
 
     # add alignmnet
-    response = client.post(UNIT_URL+'/learn/alignment?source_language=eng&target_language=mal',
+    response = client.post(UNIT_URL+'/learn/alignment?source_language=en&target_language=ml',
         headers=headers, json=align_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Alignments used for learning"
@@ -95,7 +95,7 @@ def test_learn_n_suggest():
     assert found_lower_developer
 
     # try tokenizing again
-    token_response = client.put(UNIT_URL+'/tokens?source_language=eng&target_language=mal',
+    token_response = client.put(UNIT_URL+'/tokens?source_language=en&target_language=ml',
         headers=headers, json={"sentence_list":sentence_list}) 
     assert token_response.status_code == 200
     found_atestcase  = False
@@ -114,7 +114,7 @@ def test_learn_n_suggest():
     # get gloss
 
     # only a dict entry not in draft or alignment
-    response = client.get(UNIT_URL+'/gloss?source_language=eng&target_language=mal&token=test')
+    response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test')
     assert response.status_code ==200
     assert isinstance(response.json(), dict)
     assert len(response.json()['translations']) > 0
@@ -127,7 +127,7 @@ def test_learn_n_suggest():
 
     # learnt from alignment
     response = client.get(UNIT_URL+
-        '/gloss?source_language=eng&target_language=mal&token=a%20test%20case')
+        '/gloss?source_language=en&target_language=ml&token=a%20test%20case')
     assert response.status_code ==200
     assert_positive_get_suggetion(response.json())
     found_atestcase = False
@@ -141,7 +141,7 @@ def test_learn_n_suggest():
     sense2 = "സന്തോഷവാന്‍ ആയ"
 
     #no context
-    response = client.get(UNIT_URL+'/gloss?source_language=eng&target_language=mal&token=happy')
+    response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy')
     assert response.status_code ==200
     assert_positive_get_suggetion(response.json())
     found_sense1 = False
@@ -159,7 +159,7 @@ def test_learn_n_suggest():
 
 
     # context 1
-    response = client.get(UNIT_URL+'/gloss?source_language=eng&target_language=mal&token=happy'+
+    response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy'+
         '&context=the%20happy%20user%20went%20home')
     assert response.status_code ==200
     assert_positive_get_suggetion(response.json())
@@ -178,7 +178,7 @@ def test_learn_n_suggest():
     assert score1 < score2
 
     # context 2
-    response = client.get(UNIT_URL+'/gloss?source_language=eng&target_language=mal&token=happy'+
+    response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy'+
         '&context=now%20user%20is%20not%20happy')
     assert response.status_code ==200
     assert_positive_get_suggetion(response.json())
@@ -197,7 +197,7 @@ def test_learn_n_suggest():
 
     # auto translate
     sentence_list[0]['sentence'] = "This his wish "+sentence_list[0]['sentence']
-    response = client.put(UNIT_URL+'/suggestions?source_language=eng&target_language=mal',
+    response = client.put(UNIT_URL+'/suggestions?source_language=en&target_language=ml',
         headers=headers, json={"sentence_list":sentence_list})
     draft = client.put(UNIT_URL+'/draft?doc_type=text', headers=headers, json=response.json())
     draft = draft.json()

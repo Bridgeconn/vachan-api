@@ -225,7 +225,7 @@ def check_post(data: list, datatype='books'):
     add_version(version_data)
     source_data = {
         "contentType": "bible",
-        "language": "guj",
+        "language": "gu",
         "version": "TTT",
         "year": 3030,
         "revision": 1

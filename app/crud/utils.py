@@ -97,7 +97,7 @@ def book_code(book_num):
     return None
 
 known_stopwords = {
-    "eng": { "postpositions" : ["t", "s"],
+    "en": { "postpositions" : ["t", "s"],
              "prepositions": ["am", "is", "are", "was", "were", "be", "been", "being", "have",
                 "has", "had", "having", "do", "does", "did", "doing", "a", "an", "the", "and",
                 "but", "if", "or", "because", "as", "until", "while", "of", "at", "by", "for",
@@ -107,7 +107,7 @@ known_stopwords = {
                 "where", "why", "how", "all", "any", "both", "each", "few", "more", "most",
                 "other", "some", "such", "no", "nor", "not", "only", "same", "so", "than",
                 "too", "very", "can", "will", "just", "don", "should"]},
-    "hin": { "postpositions" : ["के", "का", "में", "की", "है", "और", "से", "हैं", "को", "पर",
+    "hi": { "postpositions" : ["के", "का", "में", "की", "है", "और", "से", "हैं", "को", "पर",
                 "होता", "कि","जो", "कर", "मे", "गया", "करने", "किया", "लिये", "ने", "बनी", "नहीं",
                 "तो", "ही", "या", "दिया", "हो", "था", "हुआ", "तक", "साथ", "करना", "वाले",
                 "बाद", "लिए", "सकते", "ये", "थे", "दो", "होने", "वे", "करते", "करें", "होती", "थी",

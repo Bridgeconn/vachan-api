@@ -12,8 +12,8 @@ headers = {"contentType": "application/json", "accept": "application/json"}
 
 project_data = {
     "projectName": "Test agmt workflow",
-    "sourceLanguageCode": "hin",
-    "targetLanguageCode": "mal"
+    "sourceLanguageCode": "hi",
+    "targetLanguageCode": "ml"
 }
 
 sample_stopwords = ["के", "की"]

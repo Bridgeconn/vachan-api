@@ -48,6 +48,7 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
 ##### languages #####
 @router.get('/v2/languages',
     response_model=List[schemas.LanguageResponse],
+    response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Languages"])
 def get_language(language_code : schemas.LangCodePattern = Query(None, example="hin"),
@@ -236,12 +237,12 @@ def add_source(source_obj : schemas.SourceCreate = Body(...),
     log.debug('source_obj: %s',source_obj)
     if not source_obj.revision:
         source_obj.revision = 1
-    table_name = source_obj.language + "_" + source_obj.version + "_" +\
+    source_name = source_obj.language + "_" + source_obj.version + "_" +\
     source_obj.revision + "_" + source_obj.contentType
-    if len(structurals_crud.get_sources(db_, table_name = table_name)) > 0:
-        raise AlreadyExistsException("%s already present"%table_name)
+    if len(structurals_crud.get_sources(db_, source_name = source_name)) > 0:
+        raise AlreadyExistsException("%s already present"%source_name)
     return {'message': "Source created successfully",
-    "data": structurals_crud.create_source(db_=db_, source=source_obj, table_name=table_name,
+    "data": structurals_crud.create_source(db_=db_, source=source_obj, source_name=source_name,
         user_id=None)}
 
 @router.put('/v2/sources', response_model=schemas.SourceUpdateResponse,
@@ -254,7 +255,7 @@ def edit_source(source_obj: schemas.SourceEdit = Body(...), db_: Session = Depen
     Deactivated items are not included in normal fetch results if not specified otherwise'''
     log.info('In edit_source')
     log.debug('source_obj: %s',source_obj)
-    if len(structurals_crud.get_sources(db_, table_name = source_obj.sourceName)) == 0:
+    if len(structurals_crud.get_sources(db_, source_name = source_obj.sourceName)) == 0:
         raise NotAvailableException("Source %s not found"%(source_obj.sourceName))
     return {'message': "Source edited successfully",
     "data": structurals_crud.update_source(db_=db_, source=source_obj, user_id=None)}

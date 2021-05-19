@@ -2,8 +2,10 @@
 Content_types, Languages, Licenses, versions, sources and bible_book_loopup'''
 
 import json
-import sqlalchemy
+import re
+from sqlalchemy import func
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 
 #pylint: disable=E0401, disable=E0611
 #pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
@@ -34,24 +36,27 @@ def get_languages(db_: Session, language_code = None, language_name = None, #pyl
     '''Fetches rows of language, with pagination and various filters'''
     query = db_.query(db_models.Language)
     if language_code:
-        query = query.filter(db_models.Language.code == language_code.lower())
+        query = query.filter(func.lower(db_models.Language.code) == language_code.lower())
     if language_name:
-        query = query.filter(db_models.Language.language == language_name.lower())
+        query = query.filter(func.lower(db_models.Language.language) == language_name.lower())
     if language_id is not None:
         query = query.filter(db_models.Language.languageId == language_id)
     return query.offset(skip).limit(limit).all()
 
-def create_language(db_: Session, lang: schemas.LanguageCreate):
+def create_language(db_: Session, lang: schemas.LanguageCreate, user_id=None):
     '''Adds a row to languages table'''
-    db_content = db_models.Language(code = lang.code.lower(),
+    db_content = db_models.Language(code = lang.code,
         language = lang.language.lower(),
-        scriptDirection = lang.scriptDirection)
+        scriptDirection = lang.scriptDirection,
+        metaData = lang.metaData,
+        createdUser= user_id,
+        updatedUser=user_id)
     db_.add(db_content)
     db_.commit()
     db_.refresh(db_content)
     return db_content
 
-def update_language(db_: Session, lang: schemas.LanguageEdit):
+def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
     '''changes one or more fields of language, selected via language id'''
     db_content = db_.query(db_models.Language).get(lang.languageId)
     if lang.code:
@@ -60,6 +65,10 @@ def update_language(db_: Session, lang: schemas.LanguageEdit):
         db_content.language = lang.language
     if lang.scriptDirection:
         db_content.scriptDirection = lang.scriptDirection
+    if lang.metaData:
+        db_content.metaData = lang.metaData
+        flag_modified(db_content, "metaData")
+    db_content.updatedUser = user_id
     db_.commit()
     db_.refresh(db_content)
     return db_content
@@ -155,7 +164,7 @@ def update_version(db_: Session, version: schemas.VersionEdit):
 
 def get_sources(db_: Session, #pylint: disable=too-many-arguments, disable-msg=too-many-locals, disable=too-many-branches
     content_type=None, version_abbreviation=None, revision=None, language_code=None,
-    license_abbreviation=None, metadata=None, latest_revision=True, active=True, table_name=None,
+    license_abbreviation=None, metadata=None, latest_revision=True, active=True, source_name=None,
     skip: int = 0, limit: int = 100):
     '''Fetches the rows of sources table'''
     query = db_.query(db_models.Source)
@@ -179,8 +188,8 @@ def get_sources(db_: Session, #pylint: disable=too-many-arguments, disable-msg=t
         query = query.filter(db_models.Source.active)
     else:
         query = query.filter(db_models.Source.active == False) #pylint: disable=singleton-comparison
-    if table_name:
-        query = query.filter(db_models.Source.sourceName == table_name)
+    if source_name:
+        query = query.filter(db_models.Source.sourceName == source_name)
 
     res = query.join(db_models.Version).order_by(db_models.Version.revision.desc()
         ).offset(skip).limit(limit).all()
@@ -214,7 +223,7 @@ def get_sources(db_: Session, #pylint: disable=too-many-arguments, disable-msg=t
             latest_res.append(res_item)
     return latest_res
 
-def create_source(db_: Session, source: schemas.SourceCreate, table_name, user_id = None):
+def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_id = None):
     '''Adds a row to sources table'''
     content_type = db_.query(db_models.ContentType).filter(
         db_models.ContentType.contentType == source.contentType.strip()).first()
@@ -235,10 +244,17 @@ def create_source(db_: Session, source: schemas.SourceCreate, table_name, user_i
         db_models.License.code == source.license).first()
     if not license_obj:
         raise NotAvailableException("License code, %s, not found in Database"%source.license)
-
+    table_name_count = 0
+    dynamic_tablename_pattern = re.compile(r"table_\d+$")
+    for table_name in engine.table_names():
+        if (re.match(dynamic_tablename_pattern, table_name) and
+            int(table_name.split("_")[-1]) > table_name_count):
+            table_name_count = int(table_name.split("_")[-1])
+    table_name = "table_"+str(table_name_count+1)
     db_content = db_models.Source(
         year = source.year,
-        sourceName = table_name,
+        sourceName = source_name,
+        tableName = table_name,
         contentId = content_type.contentId,
         versionId = version.versionId,
         languageId = language.languageId,
@@ -248,7 +264,7 @@ def create_source(db_: Session, source: schemas.SourceCreate, table_name, user_i
     if user_id:
         db_content.created_user = user_id
     db_.add(db_content)
-    db_models.create_dynamic_table(table_name, content_type.contentType)
+    db_models.create_dynamic_table(source_name, table_name, content_type.contentType)
     db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine, checkfirst=True)
     if content_type.contentType == db_models.ContentTypeName.bible.value:
         db_models.dynamicTables[db_content.sourceName+'_cleaned'].__table__.create(
@@ -291,8 +307,8 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None): #py
         if not language:
             raise NotAvailableException("Language code, %s, not found in Database"%source.language)
         db_content.languageId = language.languageId
-        table_name_parts = db_content.sourceName.split("_")
-        db_content.sourceName = "_".join([source.language]+table_name_parts[1:])
+        source_name_parts = db_content.sourceName.split("_")
+        db_content.sourceName = "_".join([source.language]+source_name_parts[1:])
     if source.license:
         license_obj = db_.query(db_models.License).filter(
             db_models.License.code == source.license).first()
@@ -309,19 +325,7 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None): #py
         db_content.updatedUser = user_id
     db_.commit()
     db_.refresh(db_content)
-    if source.sourceName != db_content.sourceName:
-        sql_statement = sqlalchemy.text("ALTER TABLE IF EXISTS %s RENAME TO %s"%(
-            source.sourceName, db_content.sourceName))
-        db_.execute(sql_statement)
-        log.warning("User %s, renames table %s to %s", user_id, db_content.sourceName,
-            db_content.sourceName)
-        if db_content.contentType.contentType == db_models.ContentTypeName.bible.value:
-            sql_statement = sqlalchemy.text("ALTER TABLE IF EXISTS %s RENAME TO %s"%(
-                source.sourceName+"_cleaned", db_content.sourceName+"_cleaned"))
-            db_.execute(sql_statement)
-            log.warning("User %s, renames table %s to %s", user_id, source.sourceName+"_cleaned",
-                db_content.sourceName+"_cleaned")
-    db_models.create_dynamic_table(db_content.sourceName, db_content.contentType.contentType)
+    db_models.dynamicTables[db_content.sourceName] = db_models.dynamicTables[source.sourceName]
     return db_content
 
 def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None, #pylint: disable=too-many-arguments

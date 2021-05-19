@@ -22,5 +22,5 @@ def get_db():
     try:
         yield db_
     finally:
-        pass
-        # db_.close()
+        # pass
+        db_.close()
