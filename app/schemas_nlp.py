@@ -46,8 +46,8 @@ class UserUpdateResponse(BaseModel):
 class TranslationProjectCreate(BaseModel):
     '''Input object for project creation'''
     projectName: str = Field(..., example="Hindi Malayalam Gospels")
-    sourceLanguageCode : LangCodePattern =Field(...,example='hin')
-    targetLanguageCode : LangCodePattern =Field(...,example='mal')
+    sourceLanguageCode : LangCodePattern =Field(...,example='hi')
+    targetLanguageCode : LangCodePattern =Field(...,example='ml')
     documentFormat: TranslationDocumentType = TranslationDocumentType.USFM
     useDataForLearning: bool = True
     stopwords: Stopwords = None
@@ -74,7 +74,7 @@ class TranslationProject(BaseModel):
 
 class SelectedBooks(BaseModel):
     '''List of selected books from an existing bible in the server'''
-    bible: TableNamePattern = Field(..., example='hin_IRV_1_bible')
+    bible: TableNamePattern = Field(..., example='hi_IRV_1_bible')
     books: List[BookCodePattern]= Field(..., example=['luk', 'jhn'])
 
 class TranslationProjectEdit(BaseModel):
