@@ -62,7 +62,8 @@ ALTER SEQUENCE versions_version_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.sources (
     source_id SERIAL PRIMARY KEY,
-    table_name text UNIQUE,
+    source_name text UNIQUE,
+    source_table text UNIQUE,
     year integer NOT NULL,
     license_id int REFERENCES licenses(license_id) ON DELETE CASCADE,
     content_id int NOT NULL REFERENCES content_types(content_type_id) ON DELETE CASCADE,
