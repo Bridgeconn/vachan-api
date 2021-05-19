@@ -214,10 +214,16 @@ def add_from_trans_database_to_languages(languages_list, registry_data,
             name = lang['ang']
         else:
             name = lang['ln']
+        if lang['ld'] == "ltr":
+            direction = "left-to-right"
+        elif lang['ld'] == "rtl":
+            direction = 'left-to-right'
+        else:
+            direction = lang['ld']
         new_info = {
             "code":lang['lc'],
             "name":name,
-            "script-direction": lang['ld'],
+            "script-direction": direction,
             "metadata":{}
         }
         region = []
