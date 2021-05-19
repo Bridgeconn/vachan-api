@@ -3,7 +3,6 @@ Content_types, Languages, Licenses, versions, sources and bible_book_loopup'''
 
 import json
 import re
-import sqlalchemy
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
@@ -248,7 +247,7 @@ def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_
     table_name_count = 0
     dynamic_tablename_pattern = re.compile(r"table_\d+$")
     for table_name in engine.table_names():
-        if (re.match(dynamic_tablename_pattern, table_name) and 
+        if (re.match(dynamic_tablename_pattern, table_name) and
             int(table_name.split("_")[-1]) > table_name_count):
             table_name_count = int(table_name.split("_")[-1])
     table_name = "table_"+str(table_name_count+1)
