@@ -97,7 +97,7 @@ def find_valid_codes(data):
         'redundants': valid_reduntants
     }
     return valid_codes
-    
+
 
 def validate_language_code(lang_code, valid_codes):
     '''Validate input code against subtags in IANA subtag registry'''
@@ -124,15 +124,13 @@ def validate_language_code(lang_code, valid_codes):
     if len(parts) > 0 and not full_matched:
         raise Exception("Unrecognized subtags:"+str(parts)+" in "+ lang_code)
     return True
-    
+
 def process_language_subtag_registry(data):
     '''convert the data into table format importable to database and available in APIs'''
-    # language fields: code, name, script_direction, similar_to, 
+    # language fields: code, name, script_direction, similar_to,
     # metadata(region, description, use_instead, suppres-script)
     languages = []
 
-    scripts = []
-    regions = []
     valid_codes = find_valid_codes(data)
     all_langs = data['language']+data['grandfathered']+data['redundant']+\
         data['extlang']+ data['variant']
@@ -188,7 +186,7 @@ def process_language_subtag_registry(data):
                 metadata['description'] = desc
             for code in codes:
                 if validate_language_code(code, valid_codes):
-                    languages.append({"code":code, "name":name, "script-direction":None, 
+                    languages.append({"code":code, "name":name, "script-direction":None,
                         "similar_to":similar_to, "metadata": metadata})
         except Exception as exe:
             print("Error at:", item)
@@ -283,7 +281,7 @@ def write_to_csv(languages_list):
             lang_writer.writerow(row)
 
 if __name__ == '__main__':
-    content = read_language_subtag_registry()    
+    content = read_language_subtag_registry()
     langs = process_language_subtag_registry(content)
     print("languages from IANA:", len(langs))
     updated_langs = add_from_trans_database_to_languages(langs, content)
