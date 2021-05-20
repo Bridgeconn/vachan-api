@@ -6,6 +6,7 @@ import re
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.sql import text
 
 #pylint: disable=E0401, disable=E0611
 #pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
@@ -31,7 +32,7 @@ def create_content_type(db_: Session, content: schemas.ContentTypeCreate):
     db_.refresh(db_content)
     return db_content
 
-def get_languages(db_: Session, language_code = None, language_name = None, #pylint: disable=too-many-arguments
+def get_languages(db_: Session, language_code = None, language_name = None, search_word=None,#pylint: disable=too-many-arguments
     language_id = None, skip: int = 0, limit: int = 100):
     '''Fetches rows of language, with pagination and various filters'''
     query = db_.query(db_models.Language)
@@ -39,6 +40,11 @@ def get_languages(db_: Session, language_code = None, language_name = None, #pyl
         query = query.filter(func.lower(db_models.Language.code) == language_code.lower())
     if language_name:
         query = query.filter(func.lower(db_models.Language.language) == language_name.lower())
+    if search_word:
+        search_pattern = re.sub(r'\s+', " & ", search_word)
+        query = query.filter(text("to_tsvector(language_code || language_name || jsonb_to_tsvector"+\
+            "('simple', metadata, '[\"string\", \"numeric\"]') || ' ')"+\
+            " @@ to_tsquery('simple', '%s:*')"%search_pattern))
     if language_id is not None:
         query = query.filter(db_models.Language.languageId == language_id)
     return query.offset(skip).limit(limit).all()

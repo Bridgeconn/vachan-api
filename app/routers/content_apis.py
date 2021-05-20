@@ -51,8 +51,9 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Languages"])
-def get_language(language_code : schemas.LangCodePattern = Query(None, example="hin"),
+def get_language(language_code : schemas.LangCodePattern = Query(None, example="hi"),
     language_name: str = Query(None, example="hindi"),
+    search_word: str = Query(None, example="Sri Lanka"),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
     '''fetches all the languages supported in the DB, their code and other details.
     * if any of the optional query parameters are provided, returns details of that language
@@ -60,9 +61,9 @@ def get_language(language_code : schemas.LangCodePattern = Query(None, example="
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
     log.info('In get_language')
-    log.debug('langauge_code:%s, language_name: %s, skip: %s, limit: %s',
-        language_code, language_name, skip, limit)
-    return structurals_crud.get_languages(db_, language_code, language_name,
+    log.debug('langauge_code:%s, language_name: %s, search_word:%s, skip: %s, limit: %s',
+        language_code, language_name, search_word, skip, limit)
+    return structurals_crud.get_languages(db_, language_code, language_name, search_word,
         skip = skip, limit = limit)
 
 @router.post('/v2/languages', response_model=schemas.LanguageCreateResponse,
