@@ -3,6 +3,7 @@ import subprocess
 import json
 import unicodedata
 from unidecode import unidecode
+import requests
 
 #pylint: disable=E0401
 #pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
@@ -143,3 +144,11 @@ def to_eng(data):
     Not an acurate transliteration. But good enough for doing soundex'''
     data = normalize_unicode(data)
     return unidecode(data)
+
+def validate_language_tag(tag):
+    '''uses an external service to validate newly added language sub tags'''
+    url = "https://schneegans.de/lv/?tags=%s&format=json"
+    resp = requests.get(url%(tag))
+    if resp.status_code != 200:
+        resp.raise_for_status()
+    return resp.json()[0]['Valid'], ' '.join(resp.json()[0]['Messages'])

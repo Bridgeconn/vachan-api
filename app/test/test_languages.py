@@ -90,7 +90,7 @@ def test_post_default():
     '''positive test case, checking for correct return object'''
     data = {
       "language": "new-lang",
-      "code": "aaj",
+      "code": "x-aaj",
       "scriptDirection": "left-to-right"
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -98,13 +98,13 @@ def test_post_default():
     assert response.status_code == 201
     assert response.json()['message'] == "Language created successfully"
     assert_positive_get(response.json()['data'])
-    assert response.json()["data"]["code"] == "aaj"
+    assert response.json()["data"]["code"] == "x-aaj"
 
 def test_post_upper_case_code():
     '''positive test case, checking for case conversion of code'''
     data = {
       "language": "new-lang",
-      "code": "AAJ",
+      "code": "X-AAJ",
       "scriptDirection": "left-to-right"
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -113,13 +113,13 @@ def test_post_upper_case_code():
     assert response.status_code == 201
     assert response.json()['message'] == "Language created successfully"
     assert_positive_get(response.json()['data'])
-    assert response.json()["data"]["code"] == "AAJ"
+    assert response.json()["data"]["code"] == "X-AAJ"
 
 def test_post_optional_script_direction():
     '''positive test case, checking for correct return object'''
     data = {
       "language": "new-lang",
-      "code": "aaj"
+      "code": "x-aaj"
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
@@ -127,7 +127,7 @@ def test_post_optional_script_direction():
     assert response.status_code == 201
     assert response.json()['message'] == "Language created successfully"
     assert_positive_get(response.json()['data'])
-    assert response.json()["data"]["code"] == "aaj"
+    assert response.json()["data"]["code"] == "x-aaj"
 
 def test_post_incorrectdatatype1():
     '''code should have letters only'''

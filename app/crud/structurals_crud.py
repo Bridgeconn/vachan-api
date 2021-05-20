@@ -12,7 +12,7 @@ from sqlalchemy.orm.attributes import flag_modified
 import db_models
 import schemas
 from crud import utils
-from custom_exceptions import NotAvailableException
+from custom_exceptions import NotAvailableException, TypeException
 from database import engine
 from dependencies import log
 
@@ -45,6 +45,10 @@ def get_languages(db_: Session, language_code = None, language_name = None, #pyl
 
 def create_language(db_: Session, lang: schemas.LanguageCreate, user_id=None):
     '''Adds a row to languages table'''
+    valid, message = utils.validate_language_tag(lang.code)
+    if not valid:
+        raise TypeException("%s is not a valid BCP 47 tag. %s."%(lang.code, message) +\
+            "Refer https://tools.ietf.org/html/bcp47.")
     db_content = db_models.Language(code = lang.code,
         language = lang.language.lower(),
         scriptDirection = lang.scriptDirection,
@@ -60,6 +64,10 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
     '''changes one or more fields of language, selected via language id'''
     db_content = db_.query(db_models.Language).get(lang.languageId)
     if lang.code:
+        valid, message = utils.validate_language_tag(lang.code)
+        if not valid:
+            raise TypeException("%s is not a valid BCP 47 tag. %s."%(lang.code, message) +\
+                "Refer https://tools.ietf.org/html/bcp47.")
         db_content.code = lang.code
     if lang.language:
         db_content.language = lang.language
