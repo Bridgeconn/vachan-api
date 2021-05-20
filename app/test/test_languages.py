@@ -160,3 +160,33 @@ def test_post_missingvalue_language():
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
+
+def test_searching():
+    '''Being able to query languages with code, name, country of even other info'''
+
+    response = client.get(UNIT_URL+"?search_word=ml")
+    assert len(response.json()) > 0
+    found = False
+    for lang in response.json():
+        assert_positive_get(lang)
+        if lang['code'] == "ml":
+            found = True
+    assert found
+
+    response = client.get(UNIT_URL+"?search_word=india")
+    assert len(response.json()) > 0
+    found = False
+    for lang in response.json():
+        assert_positive_get(lang)
+        if lang['code'] == "hi":
+            found = True
+    assert found    
+
+    response = client.get(UNIT_URL+"?search_word=sri%20lanka")
+    assert len(response.json()) > 0
+    found = False
+    for lang in response.json():
+        assert_positive_get(lang)
+        if lang['language'] == "Sinhala":
+            found = True
+    assert found    
