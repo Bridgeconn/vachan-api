@@ -51,7 +51,7 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Languages"])
-def get_language(language_code : schemas.LangCodePattern = Query(None, example="hi"),
+def get_language(language_code : schemas.LangCodePattern = Query(None, example="hi"), #pylint: disable=too-many-arguments
     language_name: str = Query(None, example="hindi"),
     search_word: str = Query(None, example="Sri Lanka"),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
