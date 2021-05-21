@@ -1,5 +1,6 @@
 '''Test cases for bible videos related APIs'''
 import json
+import re
 from . import client
 from . import check_default_get
 from . import assert_input_validation_error, assert_not_available_content
@@ -10,150 +11,10 @@ UNIT_URL = '/v2/bibles/'
 headers = {"contentType": "application/json", "accept": "application/json"}
 
 gospel_books_data = [
-        {"USFM":"\\id mat\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two",
-         "JSON":json.loads('''{
-    "book": {
-        "bookCode": "MAT"
-    },
-    "chapters": [
-        {
-            "chapterNumber": "1",
-            "contents": [
-                {
-                    "p": null
-                },
-                {
-                    "verseNumber": "1",
-                    "verseText": "test verse one",
-                    "contents": [
-                        "test verse one"
-                    ]
-                },
-                {
-                    "verseNumber": "2",
-                    "verseText": "test verse two",
-                    "contents": [
-                        "test verse two"
-                    ]
-                }
-            ]
-        }
-    ],
-    "_messages": {
-        "_warnings": [
-            "Empty lines present. ",
-            "Book code is in lowercase. "
-        ]
-    }
-    }''')},
-        {"USFM":"\\id mrk\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two",
-         "JSON":json.loads('''{
-    "book": {
-        "bookCode": "MRK"
-    },
-    "chapters": [
-        {
-            "chapterNumber": "1",
-            "contents": [
-                {
-                    "p": null
-                },
-                {
-                    "verseNumber": "1",
-                    "verseText": "test verse one",
-                    "contents": [
-                        "test verse one"
-                    ]
-                },
-                {
-                    "verseNumber": "2",
-                    "verseText": "test verse two",
-                    "contents": [
-                        "test verse two"
-                    ]
-                }
-            ]
-        }
-    ],
-    "_messages": {
-        "_warnings": [
-            "Empty lines present. ",
-            "Book code is in lowercase. "
-        ]
-    }
-    }''')},
-        {"USFM":"\\id luk\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two",
-         "JSON":json.loads('''{
-    "book": {
-        "bookCode": "LUK"
-    },
-    "chapters": [
-        {
-            "chapterNumber": "1",
-            "contents": [
-                {
-                    "p": null
-                },
-                {
-                    "verseNumber": "1",
-                    "verseText": "test verse one",
-                    "contents": [
-                        "test verse one"
-                    ]
-                },
-                {
-                    "verseNumber": "2",
-                    "verseText": "test verse two",
-                    "contents": [
-                        "test verse two"
-                    ]
-                }
-            ]
-        }
-    ],
-    "_messages": {
-        "_warnings": [
-            "Empty lines present. ",
-            "Book code is in lowercase. "
-        ]
-    }
-    }''')},
-        {"USFM":"\\id jhn\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two",
-         "JSON":json.loads('''{
-    "book": {
-        "bookCode": "JHN"
-    },
-    "chapters": [
-        {
-            "chapterNumber": "1",
-            "contents": [
-                {
-                    "p": null
-                },
-                {
-                    "verseNumber": "1",
-                    "verseText": "test verse one",
-                    "contents": [
-                        "test verse one"
-                    ]
-                },
-                {
-                    "verseNumber": "2",
-                    "verseText": "test verse two",
-                    "contents": [
-                        "test verse two"
-                    ]
-                }
-            ]
-        }
-    ],
-    "_messages": {
-        "_warnings": [
-            "Empty lines present. ",
-            "Book code is in lowercase. "
-        ]
-    }
-    }''')},
+        {"USFM":"\\id mat\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"},
+        {"USFM":"\\id mrk\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"},
+        {"USFM":"\\id luk\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"},
+        {"USFM":"\\id jhn\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"}
 ]
 
 audio_data = [
@@ -246,7 +107,8 @@ def test_post_default():
     assert resp.json()['message'] == "Bible books uploaded and processed successfully"
     for i,item in enumerate(resp.json()['data']):
         assert_positive_get_for_books(item)
-        assert item['book']['bookCode'] == gospel_books_data[i]['JSON']['book']['bookCode'].lower()
+        book_code = re.match(r'\\id (\w\w\w)', gospel_books_data[i]['USFM']).group(1)
+        assert item['book']['bookCode'] == book_code.lower()
     assert len(gospel_books_data) == len(resp.json()['data'])
 
 def test_post_duplicate():
@@ -277,23 +139,22 @@ def test_post_incorrect_data():
 
     # data object with missing mandatory fields
     data = [
-        {'USFM': '\\id gen\\c 1\\p\\v 1 test content'}
+        {'usfm': '\\id gen\\c 1\\p\\v 1 test content'}
     ]
     response = client.post(UNIT_URL+source_name+"/books", headers=headers, json=data)
     assert_input_validation_error(response)
 
-    data = [{'JSON':gospel_books_data[0]['JSON']}]
+    data = [{'JSON':gospel_books_data[0]['USFM']}]
     response = client.post(UNIT_URL+source_name+"/books", headers=headers, json=data)
     assert_input_validation_error(response)
 
     # incorrect data values in fields
     data = [
-            {'USFM': '\\id gen\\c 1\\p\\v 1 test content',
-             'JSON':{"book":"GEN"}}
+            {'USFM': '<id gen><c 1><p><v 1 test content>'}
     ]
     response = client.post(UNIT_URL+source_name+"/books", headers=headers, json=data)
     assert response.status_code ==415
-    assert "JSON is not of the required format" in response.json()['details']
+    assert "USFM is not of the required format" in response.json()['details']
 
     source_name1 = source_name.replace('bible', 'video')
     data = []
@@ -345,43 +206,13 @@ def test_put_books():
 
     #update without specifying the book code
     update_data = [{
-        "USFM": "\\id mat\n\\c 1\n\\p\n\\v 1 new content for matthew",
-        "JSON": json.loads('''{
-    "book": {
-        "bookCode": "MAT"
-    },
-    "chapters": [
-        {
-            "chapterNumber": "1",
-            "contents": [
-                {
-                    "p": null
-                },
-                {
-                    "verseNumber": "1",
-                    "verseText": "new content for matthew",
-                    "contents": [
-                        "new content for matthew"
-                    ]
-                }
-            ]
-        }
-    ],
-    "_messages": {
-        "_warnings": [
-            "Empty lines present. ",
-            "Book code is in lowercase. "
-        ]
-    }
-    }''')
-    }]
+        "USFM": "\\id mat\n\\c 1\n\\p\n\\v 1 new content for matthew"}]
     response1 = client.put(UNIT_URL+src+"/books", json=update_data, headers=headers)
     assert response1.status_code == 201
     assert response1.json()['message'] == "Bible books updated successfully"
     assert len(response1.json()['data']) == 1
     assert_positive_get_for_books(response1.json()['data'][0])
     assert response1.json()['data'][0]["USFM"] == update_data[0]["USFM"]
-    assert response1.json()['data'][0]["JSON"] == update_data[0]["JSON"]
     assert response1.json()['data'][0]["book"]["bookCode"] == "mat"
 
     #only with JSON
@@ -389,12 +220,6 @@ def test_put_books():
     response2 = client.put(UNIT_URL+src+"/books", json=update_data, headers=headers)
     assert_input_validation_error(response2)
 
-    #only with usfm
-    update_data = [
-        {"USFM": "\\id mrk\n\\c 1\n\\p\n\\v 1 new content for mark"}
-    ]
-    response3 = client.put(UNIT_URL+src+"/books", json=update_data, headers=headers)
-    assert_input_validation_error(response3)
 
     #to change status
     update_data = [

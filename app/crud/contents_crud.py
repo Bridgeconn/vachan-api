@@ -378,10 +378,10 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None): #pylint:
     db_content2 = []
     for item in books:
         try:
-            book_code = item.JSON['book']['bookCode']
+            usfm_json = utils.parse_usfm(item.USFM)
+            book_code = usfm_json['book']['bookCode']
         except Exception as exe:
-            raise TypeException("JSON is not of the required format."+\
-                " book.bookCode should be present") from exe
+            raise TypeException("USFM is not of the required format.") from exe
         book = db_.query(db_models.BibleBook).filter(
                 db_models.BibleBook.bookCode == book_code.lower() ).first()
         if not book:
@@ -392,19 +392,19 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None): #pylint:
             if row.USFM:
                 raise AlreadyExistsException("Bible book, %s, already present in DB"%book.bookCode)
             row.USFM = utils.normalize_unicode(item.USFM)
-            row.JSON = item.JSON
+            row.JSON = usfm_json
             row.active = True
         else:
             row = model_cls(
                 book_id=book.bookId,
                 USFM=utils.normalize_unicode(item.USFM),
-                JSON=item.JSON,
+                JSON=usfm_json,
                 active=True)
         db_.flush()
         db_content.append(row)
-        if "chapters" not in item.JSON:
+        if "chapters" not in usfm_json:
             raise TypeException("JSON is not of the required format")
-        for chapter in item.JSON["chapters"]:
+        for chapter in usfm_json["chapters"]:
             if "chapterNumber" not in chapter or "contents" not in chapter:
                 raise TypeException("JSON is not of the required format."+\
                     " Chapters should have chapterNumber and contents")
@@ -448,8 +448,9 @@ def update_bible_books(db_: Session, source_name, books, user_id=None): #pylint:
         if not row:
             raise NotAvailableException("Bible book, %s, not found in Database"%item.bookCode)
         if item.USFM:
+            usfm_json = utils.parse_usfm(item.USFM)
             row.USFM = utils.normalize_unicode(item.USFM)
-            row.JSON = item.JSON
+            row.JSON = usfm_json
         if item.active is not None:
             row.active = item.active
         db_.flush()
@@ -463,7 +464,7 @@ def update_bible_books(db_: Session, source_name, books, user_id=None): #pylint:
         if item.USFM: # delete all verses and add them again
             db_.query(model_cls_2).filter(
                 model_cls_2.book_id == book.bookId).delete()
-            for chapter in item.JSON["chapters"]:
+            for chapter in usfm_json['chapters']:
                 chapter_number = int(chapter['chapterNumber'])
                 for content in chapter['contents']:
                     if 'verseNumber' in content:
