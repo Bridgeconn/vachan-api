@@ -6,13 +6,14 @@ import re
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.sql import text
 
 #pylint: disable=E0401, disable=E0611
 #pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
 import db_models
 import schemas
 from crud import utils
-from custom_exceptions import NotAvailableException
+from custom_exceptions import NotAvailableException, TypeException
 from database import engine
 from dependencies import log
 
@@ -31,7 +32,7 @@ def create_content_type(db_: Session, content: schemas.ContentTypeCreate):
     db_.refresh(db_content)
     return db_content
 
-def get_languages(db_: Session, language_code = None, language_name = None, #pylint: disable=too-many-arguments
+def get_languages(db_: Session, language_code = None, language_name = None, search_word=None,#pylint: disable=too-many-arguments
     language_id = None, skip: int = 0, limit: int = 100):
     '''Fetches rows of language, with pagination and various filters'''
     query = db_.query(db_models.Language)
@@ -39,12 +40,21 @@ def get_languages(db_: Session, language_code = None, language_name = None, #pyl
         query = query.filter(func.lower(db_models.Language.code) == language_code.lower())
     if language_name:
         query = query.filter(func.lower(db_models.Language.language) == language_name.lower())
+    if search_word:
+        search_pattern = re.sub(r'\s+', " & ", search_word)
+        query = query.filter(text("to_tsvector(language_code || language_name || "+\
+            "jsonb_to_tsvector('simple', metadata, '[\"string\", \"numeric\"]') || ' ')"+\
+            " @@ to_tsquery('simple', '%s:*')"%search_pattern))
     if language_id is not None:
         query = query.filter(db_models.Language.languageId == language_id)
     return query.offset(skip).limit(limit).all()
 
 def create_language(db_: Session, lang: schemas.LanguageCreate, user_id=None):
     '''Adds a row to languages table'''
+    valid, message = utils.validate_language_tag(lang.code)
+    if not valid:
+        raise TypeException("%s is not a valid BCP 47 tag. %s."%(lang.code, message) +\
+            "Refer https://tools.ietf.org/html/bcp47.")
     db_content = db_models.Language(code = lang.code,
         language = lang.language.lower(),
         scriptDirection = lang.scriptDirection,
@@ -60,6 +70,10 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
     '''changes one or more fields of language, selected via language id'''
     db_content = db_.query(db_models.Language).get(lang.languageId)
     if lang.code:
+        valid, message = utils.validate_language_tag(lang.code)
+        if not valid:
+            raise TypeException("%s is not a valid BCP 47 tag. %s."%(lang.code, message) +\
+                "Refer https://tools.ietf.org/html/bcp47.")
         db_content.code = lang.code
     if lang.language:
         db_content.language = lang.language

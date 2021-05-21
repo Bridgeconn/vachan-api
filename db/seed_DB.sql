@@ -28,6 +28,12 @@ CREATE TABLE public.languages (
 
 ALTER SEQUENCE languages_language_id_seq RESTART WITH 100000;
 
+CREATE INDEX languages_search_idx ON languages USING gin (
+    language_code gin_trgm_ops, 
+    language_name gin_trgm_ops, 
+    (jsonb_to_tsvector('simple', metadata, '["string", "numeric"]'))
+);
+
 
 \COPY languages (language_code,language_name, script_direction, metadata) FROM 'consolidated_languages.csv' DELIMITER ',' CSV;
 

@@ -19,8 +19,8 @@ router = APIRouter()
 @router.get('/v2/autographa/projects', response_model=List[schemas_nlp.TranslationProject],
     status_code=200, tags=['Autographa-Project management'])
 def get_projects(project_name:str=Query(None,example="Hindi-Bilaspuri Gospels"),
-    source_language:schemas.LangCodePattern=Query(None,example='eng'),
-    target_language:schemas.LangCodePattern=Query(None,example='mal'),
+    source_language:schemas.LangCodePattern=Query(None,example='en'),
+    target_language:schemas.LangCodePattern=Query(None,example='ml'),
     active:bool=True, user_id:int=Query(None),
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_:Session=Depends(get_db)):
     '''Fetches the list of proejct and their details'''
@@ -169,9 +169,9 @@ def suggest_auto_translation(project_id:int=Query(...,example="1022004"),
 @router.put('/v2/translation/tokens', response_model=List[schemas_nlp.Token],
     response_model_exclude_unset=True,
     status_code=200, tags=['Generic Translation'])
-def tokenize(source_language:schemas.LangCodePattern=Query(...,example="hin"),
+def tokenize(source_language:schemas.LangCodePattern=Query(...,example="hi"),
     sentence_list:List[schemas_nlp.SentenceInput]=Body(...),
-    target_language:schemas.LangCodePattern=Query(None,example="mal"),
+    target_language:schemas.LangCodePattern=Query(None,example="ml"),
     use_translation_memory:bool=True, include_phrases:bool=True, include_stopwords:bool=False,
     punctuations:List[str]=Body(None), stopwords:schemas_nlp.Stopwords=Body(None),
     db_:Session=Depends(get_db)):
@@ -191,8 +191,8 @@ def tokenize(source_language:schemas.LangCodePattern=Query(...,example="hin"),
     status_code=200, tags=['Generic Translation'])
 def token_replace(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     token_translations:List[schemas_nlp.TokenUpdate]=Body(...),
-    source_language:schemas.LangCodePattern=Query(...,example='hin'),
-    target_language:schemas.LangCodePattern=Query(...,example='mal'),
+    source_language:schemas.LangCodePattern=Query(...,example='hi'),
+    target_language:schemas.LangCodePattern=Query(...,example='ml'),
     use_data_for_learning:bool=True, db_:Session=Depends(get_db)):
     '''Perform token replacement on provided sentences and
     returns obtained drafts and draft_meta'''
@@ -215,8 +215,8 @@ def generate_draft(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
 
 @router.put('/v2/translation/suggestions', response_model=List[schemas_nlp.Sentence],
     status_code=200, tags=["Translation Suggestion"])
-def suggest_translation(source_language:schemas.LangCodePattern=Query(...,example="hin"),
-    target_language:schemas.LangCodePattern=Query(...,example="mal"),
+def suggest_translation(source_language:schemas.LangCodePattern=Query(...,example="hi"),
+    target_language:schemas.LangCodePattern=Query(...,example="ml"),
     sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     punctuations:List[str]=Body(None), stopwords:schemas_nlp.Stopwords=Body(None),
     db_:Session=Depends(get_db)):
@@ -231,8 +231,8 @@ def suggest_translation(source_language:schemas.LangCodePattern=Query(...,exampl
 
 @router.get('/v2/translation/gloss', response_model=schemas_nlp.GlossOutput,
     status_code=200, tags=["Translation Suggestion"])
-def get_glossary(source_language:schemas.LangCodePattern=Query(...,example="eng"),
-    target_language:schemas.LangCodePattern=Query(...,example="hin"),
+def get_glossary(source_language:schemas.LangCodePattern=Query(...,example="en"),
+    target_language:schemas.LangCodePattern=Query(...,example="hi"),
     token:str=Query(...,example="duck"),
     context:str=Query(None,example="The duck swam in the lake"),
     token_offset:List[int]=Query(None,max_items=2,min_items=2,example=(4,8)),
@@ -246,8 +246,8 @@ def get_glossary(source_language:schemas.LangCodePattern=Query(...,example="eng"
 
 @router.post('/v2/translation/learn/gloss', response_model=schemas_nlp.GlossUpdateResponse,
     status_code=201, tags=["Translation Suggestion"])
-def add_gloss(source_language:schemas.LangCodePattern=Query(...,example='eng'),
-    target_language:schemas.LangCodePattern=Query(..., example="hin"),
+def add_gloss(source_language:schemas.LangCodePattern=Query(...,example='en'),
+    target_language:schemas.LangCodePattern=Query(..., example="hi"),
     token_translations:List[schemas_nlp.GlossInput]=Body(...), db_:Session=Depends(get_db)):
     '''Load a list of predefined tokens and translations to improve tokenization and suggestion'''
     log.info('In add_gloss')

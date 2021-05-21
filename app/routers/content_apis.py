@@ -51,8 +51,9 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Languages"])
-def get_language(language_code : schemas.LangCodePattern = Query(None, example="hin"),
+def get_language(language_code : schemas.LangCodePattern = Query(None, example="hi"), #pylint: disable=too-many-arguments
     language_name: str = Query(None, example="hindi"),
+    search_word: str = Query(None, example="Sri Lanka"),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
     '''fetches all the languages supported in the DB, their code and other details.
     * if any of the optional query parameters are provided, returns details of that language
@@ -60,9 +61,9 @@ def get_language(language_code : schemas.LangCodePattern = Query(None, example="
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
     log.info('In get_language')
-    log.debug('langauge_code:%s, language_name: %s, skip: %s, limit: %s',
-        language_code, language_name, skip, limit)
-    return structurals_crud.get_languages(db_, language_code, language_name,
+    log.debug('langauge_code:%s, language_name: %s, search_word:%s, skip: %s, limit: %s',
+        language_code, language_name, search_word, skip, limit)
+    return structurals_crud.get_languages(db_, language_code, language_name, search_word,
         skip = skip, limit = limit)
 
 @router.post('/v2/languages', response_model=schemas.LanguageCreateResponse,
@@ -199,7 +200,7 @@ def edit_version(ver_obj: schemas.VersionEdit = Body(...), db_: Session = Depend
 def get_source(content_type: str=Query(None, example="commentary"), #pylint: disable=too-many-arguments
     version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
     revision: int=Query(None, example=1),
-    language_code: schemas.LangCodePattern=Query(None,example="eng"),
+    language_code: schemas.LangCodePattern=Query(None,example="en"),
     license_code: schemas.LicenseCodePattern=Query(None,example="ISC"),
     metadata: schemas.MetaDataPattern=Query(None,
         example='{"otherName": "KJBC, King James Bible Commentaries"}'),
@@ -286,7 +287,7 @@ def get_bible_book(book_id: int=Query(None, example=67), #pylint: disable=too-ma
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bibles"])
-def add_bible_book(source_name : schemas.TableNamePattern=Path(..., example="hin_IRV_1_bible"),
+def add_bible_book(source_name : schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
     books: List[schemas.BibleBookUpload] = Body(...), db_: Session = Depends(get_db)):
     '''Uploads a bible book. It update 2 tables: ..._bible, .._bible_cleaned.
     The JSON provided should be generated from the USFM, using usfm-grammar 2.0.0-beta.8 or above'''
@@ -301,7 +302,7 @@ def add_bible_book(source_name : schemas.TableNamePattern=Path(..., example="hin
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bibles"])
-def edit_bible_book(source_name: schemas.TableNamePattern=Path(..., example="hin_IRV_1_bible"),
+def edit_bible_book(source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
     books: List[schemas.BibleBookEdit] = Body(...), db_: Session = Depends(get_db)):
     '''Either changes the active status or the bible contents.
     * Active field can be used to activate or deactivate a content. For which,
@@ -323,7 +324,7 @@ def edit_bible_book(source_name: schemas.TableNamePattern=Path(..., example="hin
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
 def get_available_bible_book(source_name: schemas.TableNamePattern=Path(..., #pylint: disable=too-many-arguments
-    example="hin_IRV_1_bible"),
+    example="hi_IRV_1_bible"),
     book_code: schemas.BookCodePattern=Query(None, example="mat"),
     content_type: schemas.BookContentType=Query(None),
     versification: bool=False, active: bool=True,
@@ -348,7 +349,7 @@ def get_available_bible_book(source_name: schemas.TableNamePattern=Path(..., #py
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
-def get_bible_verse(source_name: schemas.TableNamePattern=Path(..., example="hin_IRV_1_bible"), #pylint: disable=too-many-arguments
+def get_bible_verse(source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"), #pylint: disable=too-many-arguments
     book_code: schemas.BookCodePattern=Query(None, example="mat"),
     chapter: int=Query(None, example=1), verse: int=Query(None, example=1),
     last_verse: int=Query(None, example=15), search_phrase: str=Query(None, example='सन्‍तान'),
@@ -377,7 +378,7 @@ def get_bible_verse(source_name: schemas.TableNamePattern=Path(..., example="hin
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bibles"])
-def add_audio_bible(source_name : schemas.TableNamePattern=Path(..., example="hin_IRV_1_bible"),
+def add_audio_bible(source_name : schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
     audios: List[schemas.AudioBibleUpload] = Body(...), db_: Session = Depends(get_db)):
     '''uploads audio(links and related info, not files) for a bible'''
     log.info('In add_audio_bible')
@@ -390,7 +391,7 @@ def add_audio_bible(source_name : schemas.TableNamePattern=Path(..., example="hi
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bibles"])
-def edit_audio_bible(source_name: schemas.TableNamePattern=Path(..., example="hin_IRV_1_bible"),
+def edit_audio_bible(source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
     audios: List[schemas.AudioBibleEdit] = Body(...), db_: Session = Depends(get_db)):
     ''' Changes the mentioned fields of audio bible row.
     book codes are used to identify items and at least one is mandatory.
@@ -408,7 +409,7 @@ def edit_audio_bible(source_name: schemas.TableNamePattern=Path(..., example="hi
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Commentaries"])
 def get_commentary(#pylint: disable=too-many-arguments
-    source_name: schemas.TableNamePattern=Path(..., example="eng_BBC_1_commentary"),
+    source_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
     book_code: schemas.BookCodePattern=Query(None, example="1ki"),
     chapter: int = Query(None, example=10, ge=-1), verse: int = Query(None, example=1, ge=-1),
     last_verse: int = Query(None, example=3, ge=-1), active: bool = True,
@@ -434,7 +435,7 @@ def get_commentary(#pylint: disable=too-many-arguments
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Commentaries"])
-def add_commentary(source_name : schemas.TableNamePattern=Path(...,example="eng_BBC_1_commentary"),
+def add_commentary(source_name : schemas.TableNamePattern=Path(...,example="en_BBC_1_commentary"),
     commentaries: List[schemas.CommentaryCreate] = Body(...), db_: Session = Depends(get_db)):
     '''Uploads a list of commentaries.
     * Duplicate commentries are allowed for same verses,
@@ -456,7 +457,7 @@ def add_commentary(source_name : schemas.TableNamePattern=Path(...,example="eng_
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Commentaries"])
-def edit_commentary(source_name: schemas.TableNamePattern=Path(..., example="eng_BBC_1_commentary"),
+def edit_commentary(source_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
     commentaries: List[schemas.CommentaryEdit] = Body(...), db_: Session = Depends(get_db)):
     ''' Changes the commentary field to the given value in the row selected using
     book, chapter, verseStart and verseEnd values.
@@ -475,7 +476,7 @@ def edit_commentary(source_name: schemas.TableNamePattern=Path(..., example="eng
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Dictionaries"])
 def get_dictionary_word( #pylint: disable=too-many-arguments
-    source_name: schemas.TableNamePattern=Path(...,example="eng_TW_1_dictionary"),
+    source_name: schemas.TableNamePattern=Path(...,example="en_TW_1_dictionary"),
     search_word: str=Query(None, example="Adam"),
     exact_match: bool=False, word_list_only: bool=False,
     details: schemas.MetaDataPattern=Query(None, example='{"type":"person"}'), active: bool=True,
@@ -504,7 +505,7 @@ def get_dictionary_word( #pylint: disable=too-many-arguments
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Dictionaries"])
 def add_dictionary_word(
-    source_name : schemas.TableNamePattern=Path(..., example="eng_TW_1_dictionary"),
+    source_name : schemas.TableNamePattern=Path(..., example="en_TW_1_dictionary"),
     dictionary_words: List[schemas.DictionaryWordCreate] = Body(...),
     db_: Session = Depends(get_db)):
     ''' uploads dictionay words and their details. 'Details' should be of JSON datatype and  have
@@ -521,7 +522,7 @@ def add_dictionary_word(
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Dictionaries"])
 def edit_dictionary_word(
-    source_name: schemas.TableNamePattern=Path(..., example="eng_TW_1_dictionary"),
+    source_name: schemas.TableNamePattern=Path(..., example="en_TW_1_dictionary"),
     dictionary_words: List[schemas.DictionaryWordEdit] = Body(...),
     db_: Session = Depends(get_db)):
     ''' Updates a dictionary word. Item identifier is word, which cannot be altered.
@@ -540,7 +541,7 @@ def edit_dictionary_word(
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Infographics"])
 def get_infographic(#pylint: disable=too-many-arguments
-    source_name:schemas.TableNamePattern=Path(...,example="hin_IRV_1_infographic"),
+    source_name:schemas.TableNamePattern=Path(...,example="hi_IRV_1_infographic"),
     book_code: schemas.BookCodePattern=Query(None, example="exo"),
     title: str=Query(None, example="Ark of Covenant"), active: bool=True,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
@@ -560,7 +561,7 @@ def get_infographic(#pylint: disable=too-many-arguments
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Infographics"])
 def add_infographics(source_name : schemas.TableNamePattern=Path(...,
-    example="hin_IRV_1_infographic"),
+    example="hi_IRV_1_infographic"),
     infographics: List[schemas.InfographicCreate] = Body(...), db_: Session = Depends(get_db)):
     '''Uploads a list of infograhics. BookCode and title provided, serves as the unique idetifier
     Only the  link to infographic is stored, not the actual file'''
@@ -575,7 +576,7 @@ def add_infographics(source_name : schemas.TableNamePattern=Path(...,
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Infographics"])
 def edit_infographics(source_name: schemas.TableNamePattern=Path(...,
-    example="hin_IRV_1_infographic"),
+    example="hi_IRV_1_infographic"),
     infographics: List[schemas.InfographicEdit] = Body(...),
     db_: Session = Depends(get_db)):
     ''' Changes either the infographic link or active status.
@@ -594,7 +595,7 @@ def edit_infographics(source_name: schemas.TableNamePattern=Path(...,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bible Videos"])
 def get_biblevideo(#pylint: disable=too-many-arguments
-    source_name:schemas.TableNamePattern=Path(...,example="eng_TBP_1_biblevideo"),
+    source_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
     book_code: schemas.BookCodePattern=Query(None, example="sng"),
     title: str=Query(None, example="Overview: song of songs"),
     theme: str=Query(None, example="Old Testament"), active: bool=True,
@@ -614,7 +615,7 @@ def get_biblevideo(#pylint: disable=too-many-arguments
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bible Videos"])
-def add_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="eng_TBP_1_biblevideo"),
+def add_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
     videos: List[schemas.BibleVideoUpload] = Body(...), db_: Session = Depends(get_db)):
     '''Uploads a list of bible video links and details.
     Provided title will serve as the unique identifier'''
@@ -628,7 +629,7 @@ def add_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="eng_TB
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bible Videos"])
-def edit_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="eng_TBP_1_biblevideo"),
+def edit_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
     videos: List[schemas.BibleVideoEdit] = Body(...),
     db_: Session = Depends(get_db)):
     ''' Changes the selected rows of bible videos table.

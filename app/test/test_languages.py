@@ -90,7 +90,7 @@ def test_post_default():
     '''positive test case, checking for correct return object'''
     data = {
       "language": "new-lang",
-      "code": "aaj",
+      "code": "x-aaj",
       "scriptDirection": "left-to-right"
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -98,13 +98,13 @@ def test_post_default():
     assert response.status_code == 201
     assert response.json()['message'] == "Language created successfully"
     assert_positive_get(response.json()['data'])
-    assert response.json()["data"]["code"] == "aaj"
+    assert response.json()["data"]["code"] == "x-aaj"
 
 def test_post_upper_case_code():
     '''positive test case, checking for case conversion of code'''
     data = {
       "language": "new-lang",
-      "code": "AAJ",
+      "code": "X-AAJ",
       "scriptDirection": "left-to-right"
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -113,13 +113,13 @@ def test_post_upper_case_code():
     assert response.status_code == 201
     assert response.json()['message'] == "Language created successfully"
     assert_positive_get(response.json()['data'])
-    assert response.json()["data"]["code"] == "AAJ"
+    assert response.json()["data"]["code"] == "X-AAJ"
 
 def test_post_optional_script_direction():
     '''positive test case, checking for correct return object'''
     data = {
       "language": "new-lang",
-      "code": "aaj"
+      "code": "x-aaj"
     }
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
@@ -127,7 +127,7 @@ def test_post_optional_script_direction():
     assert response.status_code == 201
     assert response.json()['message'] == "Language created successfully"
     assert_positive_get(response.json()['data'])
-    assert response.json()["data"]["code"] == "aaj"
+    assert response.json()["data"]["code"] == "x-aaj"
 
 def test_post_incorrectdatatype1():
     '''code should have letters only'''
@@ -160,3 +160,33 @@ def test_post_missingvalue_language():
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
+
+def test_searching():
+    '''Being able to query languages with code, name, country of even other info'''
+
+    response = client.get(UNIT_URL+"?search_word=ml")
+    assert len(response.json()) > 0
+    found = False
+    for lang in response.json():
+        assert_positive_get(lang)
+        if lang['code'] == "ml":
+            found = True
+    assert found
+
+    response = client.get(UNIT_URL+"?search_word=india")
+    assert len(response.json()) > 0
+    found = False
+    for lang in response.json():
+        assert_positive_get(lang)
+        if lang['code'] == "hi":
+            found = True
+    assert found    
+
+    response = client.get(UNIT_URL+"?search_word=sri%20lanka")
+    assert len(response.json()) > 0
+    found = False
+    for lang in response.json():
+        assert_positive_get(lang)
+        if lang['language'] == "Sinhala":
+            found = True
+    assert found    

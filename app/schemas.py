@@ -4,6 +4,11 @@ from typing import List
 from enum import Enum
 from pydantic import BaseModel, constr, AnyUrl, validator, root_validator, Field
 
+#pylint: disable=E0401
+#pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
+from crud import utils
+
+
 class NormalResponse(BaseModel):
     '''Response with only a message'''
     message : str = Field(...,example="App is up and running")
@@ -561,20 +566,11 @@ class BibleBookUpdateResponse(BaseModel):
 class BibleBookUpload(BaseModel):
     '''Input object of bible book'''
     USFM: str
-    JSON: dict
     class Config: # pylint: disable=too-few-public-methods
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
                 "USFM": "\\id MAT\n\\c 1\n\\p\n\\v 1 इब्राहीम की सन्‍तान, दाऊद की ...",
-                "JSON": { "book": { "bookCode": "MAT" },
-                  "chapters": [
-                        {"chapterNumber": "1",
-                         "contents": [ {
-                            "verseNumber": "1",
-                            "verseText": "इब्राहीम की सन्‍तान, दाऊद की ..."}]}
-                    ]
-                }
             }
         }
 
@@ -582,19 +578,15 @@ class BibleBookEdit(BaseModel):
     '''Input object of bible book'''
     bookCode: BookCodePattern = None
     USFM: str = None
-    JSON: dict = None
     active: bool = None
 
     @root_validator
     def check_for_usfm_json(cls, values): # pylint: disable=R0201 disable=E0213
         '''USFM and JSON should be updated together. If they are absent, bookCode is required'''
-        if (values['USFM'] is not None and values['JSON'] is None) or (
-            values['JSON'] is not None and values['USFM'] is None):
-            raise ValueError(
-                'USFM and JSON are inter-dependant. So both should be updated together.')
         if "bookCode" not in values or values['bookCode'] is None:
-            if "JSON" in values:
-                values["bookCode"] = values['JSON']['book']['bookCode'].lower()
+            if "USFM" in values:
+                usfm_json = utils.parse_usfm(values['USFM'])
+                values["bookCode"] = usfm_json['book']['bookCode'].lower()
             else:
                 raise ValueError('"bookCode" is required to identiy the row to be updated')
         return values
@@ -606,15 +598,6 @@ class BibleBookEdit(BaseModel):
                 "bookCode": "mat",
                 "USFM": "\\id MAT\n\\c 1\n\\p\n\\v 1 इब्राहीम की सन्‍तान, दाऊद की सन्‍तान,"+\
                     "यीशु मसीह की वंशावली ।",
-                "JSON": { "book": { "bookCode": "MAT" },
-                  "chapters": [
-                        {"chapterNumber": "1",
-                         "contents": [ {
-                            "verseNumber": "1",
-                            "verseText": "इब्राहीम की सन्‍तान, दाऊद की सन्‍तान, "+\
-                                "यीशु मसीह की वंशावली ।"}]}
-                    ]
-                },
                 "active": True
             }
         }
