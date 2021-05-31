@@ -3,6 +3,7 @@
 import re
 import json
 import csv
+import requests
 
 key_val_pattern = re.compile(r'([\w-]+): (.+)\n')
 leading_space_pattern = re.compile(r'^\s+')
@@ -269,8 +270,19 @@ def add_from_venea_list(languages_list, venea_filepath='../db/languages-venea.ts
     new_list = [ languages_dict[key] for key in languages_dict]
     return new_list
 
+def validate_language_tag(tag):
+    '''uses an external service to validate newly added language sub tags'''
+    url = "https://schneegans.de/lv/?tags=%s&format=json"
+    resp = requests.get(url%(tag))
+    if resp.status_code != 200:
+        resp.raise_for_status()
+    return resp.json()[0]['Valid'], ' '.join(resp.json()[0]['Messages'])
+
+
 def write_to_csv(languages_list):
     '''Save the consolidated list to a csv file to be imported to DB later'''
+    known_invalid_tags = ["qaa..qtz", "alalc97", "hni-x-Bu4Du1 Hani", "iba-x-", "iba-x-kancing'k",
+        "mdj-x-", "sgn-x-aurangabad 1", "-x-", "-x-antambahoaka"]
     with open('../db/consolidated_languages.csv', 'w', newline='') as csvfile:
         lang_writer = csv.writer(csvfile, delimiter=',',
                             quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -278,6 +290,12 @@ def write_to_csv(languages_list):
             if lang['code'] is None or lang['code'] == "":
                 # print("No code:",lang)
                 continue
+            if lang['code'] in known_invalid_tags: # because validation takes a lot of time
+                # valid, message = validate_language_tag(lang['code'])
+                # if not valid:
+                print("Excluding invalid tag: ", lang['code'])
+                continue
+                # print(i,lang['code'], " okay")
             row = [lang['code'], lang['name']]
             if "script-direction" in lang:
                 row.append(lang['script-direction'])
