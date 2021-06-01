@@ -6,7 +6,7 @@ CREATE TABLE public.content_types (
     content_type text UNIQUE NOT NULL
 );
 
-ALTER SEQUENCE content_types_content_type_id_seq RESTART WITH 100000;
+ALTER SEQUENCE public.content_types_content_type_id_seq RESTART WITH 100000;
 
 INSERT INTO content_types(content_type) VALUES('bible');
 INSERT INTO content_types(content_type) VALUES('commentary');
@@ -26,7 +26,7 @@ CREATE TABLE public.languages (
     last_updated_user int NULL
 );
 
-ALTER SEQUENCE languages_language_id_seq RESTART WITH 100000;
+ALTER SEQUENCE public.languages_language_id_seq RESTART WITH 100000;
 
 CREATE INDEX languages_search_idx ON languages USING gin (
     language_code gin_trgm_ops, 
@@ -51,7 +51,7 @@ CREATE TABLE public.licenses (
     metadata jsonb NULL
 );
 
-ALTER SEQUENCE licenses_license_id_seq RESTART WITH 100000;
+ALTER SEQUENCE public.licenses_license_id_seq RESTART WITH 100000;
 
 \COPY licenses (license_code, license_name, license_text, permissions) FROM 'licenses.csv' DELIMITER ',' CSV HEADER;
 
@@ -64,7 +64,7 @@ CREATE TABLE public.versions (
     UNIQUE(version_code, revision)
 );
 
-ALTER SEQUENCE versions_version_id_seq RESTART WITH 100000;
+ALTER SEQUENCE public.versions_version_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.sources (
     source_id SERIAL PRIMARY KEY,
@@ -83,7 +83,7 @@ CREATE TABLE public.sources (
     metadata jsonb NULL
 );
 
-ALTER SEQUENCE sources_source_id_seq RESTART WITH 100000;
+ALTER SEQUENCE public.sources_source_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.bible_books_look_up (
     book_id int PRIMARY KEY,
@@ -109,7 +109,7 @@ CREATE TABLE public.translation_projects(
     last_updated_at  timestamp with time zone DEFAULT NOW(),
     UNIQUE(project_name, created_user)
 );
-ALTER SEQUENCE translation_projects_project_id_seq RESTART WITH 100000;
+ALTER SEQUENCE public.translation_projects_project_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.translation_sentences(
     draft_id SERIAL PRIMARY KEY,
@@ -124,7 +124,7 @@ CREATE TABLE public.translation_sentences(
     last_updated_at  timestamp with time zone DEFAULT NOW(),
     UNIQUE(project_id, sentence_id)
 );
-ALTER SEQUENCE translation_sentences_draft_id_seq RESTART WITH 100000;
+ALTER SEQUENCE public.translation_sentences_draft_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.translation_memory(
     token_id SERIAL PRIMARY KEY,
@@ -143,7 +143,7 @@ CREATE TABLE public.translation_memory(
 CREATE EXTENSION fuzzystrmatch;
 CREATE INDEX token_soundex ON translation_memory (SOUNDEX(source_token_romanized));
 CREATE INDEX translation_soundex ON translation_memory (SOUNDEX(translation_romanized));
-ALTER SEQUENCE translation_memory_token_id_seq RESTART WITH 100000;
+ALTER SEQUENCE public.translation_memory_token_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.translation_project_users(
     project_user_id SERIAL PRIMARY KEY,
@@ -155,4 +155,4 @@ CREATE TABLE public.translation_project_users(
     UNIQUE(project_id, user_id)
 );
 
-ALTER SEQUENCE translation_project_users_project_user_id_seq RESTART WITH 100000;
+ALTER SEQUENCE public.translation_project_users_project_user_id_seq RESTART WITH 100000;
