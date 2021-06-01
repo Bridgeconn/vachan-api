@@ -565,7 +565,15 @@ class BibleBookUpdateResponse(BaseModel):
 
 class BibleBookUpload(BaseModel):
     '''Input object of bible book'''
-    USFM: str
+    USFM: str = None
+    JSON: dict = None
+    @root_validator
+    def check_for_usfm_json(cls, values): # pylint: disable=R0201 disable=E0213
+        '''Either USFM and JSON should be present'''
+        if "USFM" not in values and "JSON" not in values:
+            raise ValueError("Either USFM and JSON should be provided")
+        return values
+
     class Config: # pylint: disable=too-few-public-methods
         '''display example value in API documentation'''
         schema_extra = {
@@ -578,15 +586,19 @@ class BibleBookEdit(BaseModel):
     '''Input object of bible book'''
     bookCode: BookCodePattern = None
     USFM: str = None
+    JSON: dict = None
     active: bool = None
 
     @root_validator
     def check_for_usfm_json(cls, values): # pylint: disable=R0201 disable=E0213
         '''USFM and JSON should be updated together. If they are absent, bookCode is required'''
         if "bookCode" not in values or values['bookCode'] is None:
-            if "USFM" in values:
+            if "JSON" in values and values['JSON'] is not None:
+                values["bookCode"] = values["JSON"]['book']['bookCode'].lower()
+            elif "USFM" in values:
                 usfm_json = utils.parse_usfm(values['USFM'])
                 values["bookCode"] = usfm_json['book']['bookCode'].lower()
+                values["JSON"] = usfm_json
             else:
                 raise ValueError('"bookCode" is required to identiy the row to be updated')
         return values
