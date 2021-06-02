@@ -364,7 +364,7 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
     db_.refresh(source_db_content)
     return db_content
 
-def upload_bible_books(db_: Session, source_name, books, user_id=None): #pylint: disable=too-many-branches, disable=too-many-locals
+def upload_bible_books(db_: Session, source_name, books, user_id=None): #pylint: disable=too-many-branches, disable=too-many-locals, disable=too-many-statements
     '''Adds rows to the bible table and corresponding bible_cleaned specified by source_name'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
@@ -377,11 +377,22 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None): #pylint:
     db_content = []
     db_content2 = []
     for item in books:
+        book_code = None
+        if item.JSON is None:
+            try:
+                item.JSON = utils.parse_usfm(item.USFM)
+            except Exception as exe:
+                raise TypeException("USFM is not of the required format.") from exe
+        elif item.USFM is None:
+            try:
+                item.USFM = utils.form_usfm(item.JSON)
+            except Exception as exe:
+                raise TypeException("Input JSON is not of the required format.") from exe
         try:
-            usfm_json = utils.parse_usfm(item.USFM)
-            book_code = usfm_json['book']['bookCode']
+            book_code = item.JSON['book']['bookCode']
         except Exception as exe:
-            raise TypeException("USFM is not of the required format.") from exe
+            raise TypeException("Input JSON is not of the required format.") from exe
+
         book = db_.query(db_models.BibleBook).filter(
                 db_models.BibleBook.bookCode == book_code.lower() ).first()
         if not book:
@@ -392,19 +403,19 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None): #pylint:
             if row.USFM:
                 raise AlreadyExistsException("Bible book, %s, already present in DB"%book.bookCode)
             row.USFM = utils.normalize_unicode(item.USFM)
-            row.JSON = usfm_json
+            row.JSON = item.JSON
             row.active = True
         else:
             row = model_cls(
                 book_id=book.bookId,
                 USFM=utils.normalize_unicode(item.USFM),
-                JSON=usfm_json,
+                JSON=item.JSON,
                 active=True)
         db_.flush()
         db_content.append(row)
-        if "chapters" not in usfm_json:
+        if "chapters" not in item.JSON:
             raise TypeException("JSON is not of the required format")
-        for chapter in usfm_json["chapters"]:
+        for chapter in item.JSON["chapters"]:
             if "chapterNumber" not in chapter or "contents" not in chapter:
                 raise TypeException("JSON is not of the required format."+\
                     " Chapters should have chapterNumber and contents")
@@ -448,9 +459,13 @@ def update_bible_books(db_: Session, source_name, books, user_id=None): #pylint:
         if not row:
             raise NotAvailableException("Bible book, %s, not found in Database"%item.bookCode)
         if item.USFM:
-            usfm_json = utils.parse_usfm(item.USFM)
+            item.JSON = utils.parse_usfm(item.USFM)
             row.USFM = utils.normalize_unicode(item.USFM)
-            row.JSON = usfm_json
+            row.JSON = item.JSON
+        if item.JSON:
+            item.USFM = utils.form_usfm(item.JSON)
+            row.USFM = utils.normalize_unicode(item.USFM)
+            row.JSON = item.JSON
         if item.active is not None:
             row.active = item.active
         db_.flush()
@@ -464,7 +479,7 @@ def update_bible_books(db_: Session, source_name, books, user_id=None): #pylint:
         if item.USFM: # delete all verses and add them again
             db_.query(model_cls_2).filter(
                 model_cls_2.book_id == book.bookId).delete()
-            for chapter in usfm_json['chapters']:
+            for chapter in item.JSON['chapters']:
                 chapter_number = int(chapter['chapterNumber'])
                 for content in chapter['contents']:
                     if 'verseNumber' in content:

@@ -138,6 +138,22 @@ def parse_usfm(usfm_string):
     usfm_json = json.loads(stdout.decode('utf-8'))
     return usfm_json
 
+def form_usfm(json_obj):
+    '''convert a usfm-grammar format JSON into usfm'''
+    file = open("temp.json", "w")
+    json.dump(json_obj, file)
+    # file.write(json_obj)
+    file.close()
+    process = subprocess.Popen(['usfm-grammar --output=usfm temp.json'],
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,
+                         shell=True)
+    stdout, stderr = process.communicate()
+    if stderr:
+        raise TypeException(stderr.decode('utf-8'))
+    usfm_string = stdout.decode('utf-8')
+    return usfm_string
+
 
 def to_eng(data):
     '''Convert to roman/english script.

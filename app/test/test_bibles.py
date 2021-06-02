@@ -111,6 +111,42 @@ def test_post_default():
         assert item['book']['bookCode'] == book_code.lower()
     assert len(gospel_books_data) == len(resp.json()['data'])
 
+def test_post_optional():
+    '''Positive test fr post with optional JSON upload'''
+    # only json
+    post_data = [{"JSON":
+        {"book": {"bookCode": "ACT"},
+     "chapters": [
+            {
+                "chapterNumber": "1",
+                "contents": [
+                    {   "verseNumber": "1",
+                        "verseText": "First verse of acts"},
+                    {   "verseNumber": "2",
+                        "verseText": "Second verse of acts"},
+                    {   "verseNumber": "3",
+                        "verseText": "Thrid verse of acts"}
+                ]
+            }
+        ]
+    }
+    }]
+
+    # both json and usfm
+    post_data.append({ "USFM":"\\id rev\n\\c 1\n\\p\n\\v 1 one verse of revelations",
+                    "JSON":{'book':{'bookCode':"REV"},"chapters":[
+                    {"chapterNumber":1, "contents":[
+                        {"verseNumber":1, "verseText":"one verse of revelations"}
+                    ]}
+                ]}})
+
+    resp = check_post(post_data)[0]
+    assert resp.status_code == 201
+    assert resp.json()['message'] == "Bible books uploaded and processed successfully"
+    print(resp.json()['data'])
+    assert len(resp.json()['data']) == 2
+
+
 def test_post_duplicate():
     '''test posting the same book twice'''
     data = gospel_books_data[:1]
@@ -137,16 +173,8 @@ def test_post_incorrect_data():
     resp, source_name = check_post(one_row)
     assert_input_validation_error(resp)
 
-    # data object with missing mandatory fields
-    data = [
-        {'usfm': '\\id gen\\c 1\\p\\v 1 test content'}
-    ]
-    response = client.post(UNIT_URL+source_name+"/books", headers=headers, json=data)
-    assert_input_validation_error(response)
-
-    data = [{'JSON':gospel_books_data[0]['USFM']}]
-    response = client.post(UNIT_URL+source_name+"/books", headers=headers, json=data)
-    assert_input_validation_error(response)
+    # data object with missing both optional fields
+    data = [{}]
 
     # incorrect data values in fields
     data = [
@@ -212,7 +240,8 @@ def test_put_books():
     assert response1.json()['message'] == "Bible books updated successfully"
     assert len(response1.json()['data']) == 1
     assert_positive_get_for_books(response1.json()['data'][0])
-    assert response1.json()['data'][0]["USFM"] == update_data[0]["USFM"]
+    resp_usfm = response1.json()['data'][0]["USFM"].lower().strip().replace("\n", "")
+    assert  resp_usfm == update_data[0]["USFM"].replace("\n", "")
     assert response1.json()['data'][0]["book"]["bookCode"] == "mat"
 
     #only with JSON

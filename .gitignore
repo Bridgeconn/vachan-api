@@ -69,3 +69,4 @@ vachan-venv/*
 vachan-ENV/*
 app/models/*
 temp.usfm
+temp.json
