@@ -28,6 +28,8 @@ CREATE TABLE public.languages (
 
 ALTER SEQUENCE public.languages_language_id_seq RESTART WITH 100000;
 
+CREATE EXTENSION pg_trgm;
+
 CREATE INDEX languages_search_idx ON languages USING gin (
     language_code gin_trgm_ops, 
     language_name gin_trgm_ops, 
