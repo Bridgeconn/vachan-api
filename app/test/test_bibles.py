@@ -424,55 +424,23 @@ def test_get_books_versification():
     res, source_name = check_post(gospel_books_data)
     assert res.status_code == 201
 
-    response = client.get(UNIT_URL+source_name+'/books?versification=True')
+    response = client.get(UNIT_URL+source_name+'/versification')
     assert response.status_code == 200
-    assert len(response.json()) == 4
-    for res in response.json():
-        assert_positive_get_for_books(res)
-        assert "USFM" not in res
-        assert "JSON" not in res
-        assert "audio" not in res
-        assert res['versification'] is not None
+    assert "maxVerses" in response.json()
+    assert len(response.json()['maxVerses']) == 4
+    assert response.json()['maxVerses']['mat'][0] == 2
+    assert response.json()['maxVerses']['mrk'][0] == 2
+    assert response.json()['maxVerses']['luk'][0] == 2
+    assert response.json()['maxVerses']['jhn'][0] == 2
 
     resp = client.post(UNIT_URL+source_name+'/audios', json=audio_data, headers=headers)
     assert resp.status_code == 201
     assert resp.json()['message'] == "Bible audios details uploaded successfully"
 
     #versification for books after adding audio
-    only_audio_books = ['1jn', '2jn', '3jn', 'rev']
-    response = client.get(UNIT_URL+source_name+'/books?versification=True')
-    assert response.status_code == 200
-    assert len(response.json()) == 8
-    for res in response.json():
-        assert_positive_get_for_books(res)
-        assert "USFM" not in res
-        assert "JSON" not in res
-        assert "audio" not in res
-        assert res["versification"] is not None
-        if res['book']['bookCode'] in only_audio_books:
-            assert res['versification'] == []
-
-    #versification for books with only audio
-    response = client.get(UNIT_URL+source_name+'/books?versification=True&book_code=rev')
-    assert response.status_code == 200
-    assert response.json()[0]['versification'] == []
-
-    #versification along with other filters
-    response = client.get(UNIT_URL+source_name+'/books?versification=True&content_type=usfm')
-    assert response.status_code == 200
-    for res in response.json():
-        assert 'versification' in res
-        assert 'USFM' in res
-        if res['book']['bookCode'] in only_audio_books:
-            assert res['USFM'] is None
-
-    response = client.get(UNIT_URL+source_name+'/books?versification=True&content_type=json')
-    assert response.status_code == 200
-    for res in response.json():
-        assert 'versification' in res
-        assert 'JSON' in res
-        if res['book']['bookCode'] in only_audio_books:
-            assert res["JSON"] is None
+    response2 = client.get(UNIT_URL+source_name+'/versification')
+    assert response2.status_code == 200
+    assert response.json() == response2.json()
 
 def test_get_verses():
     '''Upload some bibles and fetch verses'''

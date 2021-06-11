@@ -104,6 +104,19 @@ def apply_token_translations(project_id:int=Query(...,example="1022004"),
         user_id=10101)
     return {"message": "Token translations saved", "data":drafts}
 
+@router.get('/v2/autographa/project/token-translations', status_code=200,
+    tags=['Autographa-Translation'])
+def get_token_translation(project_id:int=Query(...,example="1022004"),
+    token:str=Query(...,example="duck"),
+    sentence_id:int=Query(..., example="41001001"),
+    offset:List[int]=Query(..., max_items=2,min_items=2,example=[0,4]),
+    db_:Session=Depends(get_db)):
+    '''Get the current translation for specific tokens providing their occurence in source'''
+    log.info('In get_token_translation')
+    occurrences = [{"sentenceId":sentence_id, "offset":offset}]
+    log.debug('project_id: %s, token:%s, occurrences:%s'%(project_id, token, occurrences))
+    return projects_crud.obtain_agmt_token_translation(db_, project_id, token, occurrences)[0]
+
 @router.get('/v2/autographa/project/draft', status_code=200, tags=['Autographa-Translation'])
 def get_draft(project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),

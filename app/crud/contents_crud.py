@@ -575,25 +575,37 @@ def update_bible_audios(db_: Session, source_name, audios, user_id=None):
 
 
 
-def get_bible_versification(db_, source_name, book_code, active=True):
+def get_bible_versification(db_, source_name):
     '''select the reference list from bible_cleaned table'''
     model_cls = db_models.dynamicTables[source_name+"_cleaned"]
     query = db_.query(model_cls).prefix_with(
         "'"+source_name+"' as bible, ")
     query = query.options(defer(model_cls.verseText))
-    query = query.filter(model_cls.book.has(bookCode = book_code.lower()),
-        model_cls.active == active )
-    res_list = []
-    for res in query.all():
-        res = res.__dict__
-        res['bible'] = source_name
-        res['book'] = book_code
-        res_list.append(res)
-    return res_list
+    query = query.order_by(model_cls.refId)
+    versification = {"maxVerses":{}, "mappedVerses":{}, "excludedVerses":[], "partialVerses":{}}
+    prev_book_code = None
+    prev_chapter = None
+    prev_verse = 0
+    for row in query.all():
+        if row.book.bookCode != prev_book_code:
+            if prev_book_code is not None:
+                versification['maxVerses'][prev_book_code].append(prev_verse)
+            versification['maxVerses'][row.book.bookCode] = []
+            prev_book_code = row.book.bookCode
+            prev_chapter = row.chapter
+        elif row.chapter != prev_chapter:
+            versification['maxVerses'][row.book.bookCode].append(prev_verse)
+            prev_chapter = row.chapter
+        elif row.verseNumber != prev_verse + 1:
+            for i in range(prev_verse+1, row.verseNumber):
+                versification['excludedVerses'].append('%s %s:%s'%(prev_book_code, row.chapter, i))
+        prev_verse = row.verseNumber
+    versification['maxVerses'][prev_book_code].append(prev_verse)
+    return versification
 
 
 def get_available_bible_books(db_, source_name, book_code=None, content_type=None, #pylint: disable=too-many-arguments, disable=too-many-locals
-    versification=False, active=True, skip=0, limit=100):
+    active=True, skip=0, limit=100):
     '''fetches the contents of .._bible table based of provided source_name and other options'''
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
@@ -623,14 +635,6 @@ def get_available_bible_books(db_, source_name, book_code=None, content_type=Non
     if not fetched:
         fetched = query.filter(model_cls.active == active).offset(skip).limit(limit).all()
     results = [res.__dict__ for res in fetched]
-    if versification:
-        added_results = []
-        for res in results:
-            ref_list = get_bible_versification(db_, source_name, res["book"].bookCode, active)
-            added_res = res
-            added_res['versification'] = ref_list
-            added_results.append(added_res)
-        return added_results
     return results
 
 

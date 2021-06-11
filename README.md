@@ -18,12 +18,12 @@ Implemented Using
 
 ```git clone https://github.com/Bridgeconn/vachan-api.git```
 
+```cd vachan-api```
+
 ```git checkout version-2```
 
 
 ### Set up virtual Environment
-
-```cd vachan-api```
 
 ```python3 -m venv vachan-ENV```
 
@@ -79,8 +79,10 @@ to refresh the bashrc file or logout and login to refresh it
 ### Run the app
 
 From the vachan-api folder
-1. `cd app`
-2. `uvicorn main:app`
+1. `mkdir logs`
+2. `touch logs/API_logs.log`
+3. `cd app`
+4. `uvicorn main:app`
 
 If all goes well, you will get a message like this in terminal
 ```

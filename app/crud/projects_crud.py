@@ -237,3 +237,67 @@ def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_r
         "suggestion": suggestions_length/total_length,
         "untranslated": untranslated_length/total_length}
     return result
+
+def obtain_agmt_token_translation(db_, project_id, token, occurrences): # pylint: disable=unused-argument
+    '''Get the current translation for specific tokens providing their occurence in source'''
+    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    if not project_row:
+        raise NotAvailableException("Project with id, %s, not found"%project_id)
+    new_occurences = []
+    for occur in occurrences:
+        if not isinstance(occur, dict):
+            new_occurences.append(occur.__dict__ )
+        else:
+            new_occurences.append(occur)
+    occurrences = new_occurences
+    sentence_list = [occur["sentenceId"] for occur in occurrences]
+    draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, sentence_id_list=sentence_list,
+        with_draft=True)
+    translations = []
+    for occur, row in zip(occurrences, draft_rows):
+        trans_offset = [None, None]
+        new_token_offset = [None, None]
+        status = None
+        for meta in row.draftMeta:
+            token_offset = occur["offset"]
+            segment_offset = meta[0]
+            intersection = set(range(token_offset[0],token_offset[1])).intersection(
+            range(segment_offset[0],segment_offset[1]))
+            if len(intersection) > 0: # our area of interest overlaps with this segment
+                if meta[2] != "untranslated":
+                    if token_offset[0] >= segment_offset[0]: #begining is this segment
+                        trans_offset[0] = meta[1][0]
+                        new_token_offset[0] = meta[0][0]
+                    else: # begins before this segment
+                        pass
+                    if token_offset[1] <= segment_offset[1]: # ends in the segment
+                        trans_offset[1] = meta[1][1]
+                        new_token_offset[1] = meta[0][1]
+                    else: # ends after this segment
+                        pass
+                    status = meta[2]
+                else:
+                    offset_diff = meta[1][0] - meta[0][0]
+                    if token_offset[0] >= segment_offset[0]: #begining is this segment
+                        trans_offset[0] = token_offset[0] + offset_diff
+                        new_token_offset[0] = token_offset[0]
+                    else: # begins before this segment
+                        pass
+                    if token_offset[1] <= segment_offset[1]: # ends in the segment
+                        trans_offset[1] = token_offset[1] + offset_diff
+                        new_token_offset[1] = token_offset[1]
+                    else: # ends after this segment
+                        pass
+                    if status is None:
+                        status = meta[2]
+        res = {
+                "token": row.sentence[new_token_offset[0]: new_token_offset[1]],
+                "translation": row.draft[trans_offset[0]: trans_offset[1]],
+                "occurrence": {
+                    "sentenceId": occur["sentenceId"],
+                    "offset": new_token_offset
+                },
+                "status": status
+        }
+        translations.append(res)
+    return translations
