@@ -587,8 +587,6 @@ def get_bible_versification(db_, source_name):
     prev_chapter = None
     prev_verse = 0
     for row in query.all():
-        print(row.__dict__)
-        print(row.book.__dict__)
         if row.book.bookCode != prev_book_code:
             if prev_book_code is not None:
                 versification['maxVerses'][prev_book_code].append(prev_verse)
