@@ -326,23 +326,33 @@ def edit_bible_book(source_name: schemas.TableNamePattern=Path(..., example="hi_
 def get_available_bible_book(source_name: schemas.TableNamePattern=Path(..., #pylint: disable=too-many-arguments
     example="hi_IRV_1_bible"),
     book_code: schemas.BookCodePattern=Query(None, example="mat"),
-    content_type: schemas.BookContentType=Query(None),
-    versification: bool=False, active: bool=True,
+    content_type: schemas.BookContentType=Query(None), active: bool=True,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
     '''Fetches all the books available(has been uploaded) in the specified bible
     * by default returns list of available(uploaded) books, without their contents
     * optional query parameters can be used to filter the result set
-    * versification can be set to true if the book structure is required(list of chapters & verses)
     * returns the JSON, USFM and/or Audio contents also: if contentType is given
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
     log.info('In get_available_bible_book')
-    log.debug('source_name: %s, book_code: %s, contentType: %s, versification:%s,\
-        active:%s, skip: %s, limit: %s',
-        source_name, book_code, content_type, versification, active, skip, limit)
+    log.debug('source_name: %s, book_code: %s, contentType: %s, active:%s, skip: %s, limit: %s',
+        source_name, book_code, content_type, active, skip, limit)
     return contents_crud.get_available_bible_books(db_, source_name, book_code, content_type,
-        versification, active=active, skip = skip, limit = limit)
+        active=active, skip = skip, limit = limit)
+
+@router.get('/v2/bibles/{source_name}/versification',
+    response_model=schemas.Versification,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
+def get_bible_versification(
+    source_name:schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
+    db_: Session=Depends(get_db)):
+    '''Fetches the versification structure of the specified bible,
+    with details of number of chapters, max verses in each chapter etc'''
+    log.info('In get_bible_versification')
+    log.debug('source_name: %s',source_name)
+    return contents_crud.get_bible_versification(db_, source_name)
 
 @router.get('/v2/bibles/{source_name}/verses',
     response_model=List[schemas.BibleVerse],

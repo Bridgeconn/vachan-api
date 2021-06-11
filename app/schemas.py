@@ -9,6 +9,8 @@ from pydantic import BaseModel, constr, AnyUrl, validator, root_validator, Field
 from crud import utils
 
 
+# pylint: disable=too-few-public-methods
+
 class NormalResponse(BaseModel):
     '''Response with only a message'''
     message : str = Field(...,example="App is up and running")
@@ -511,7 +513,6 @@ class BibleBookContent(BaseModel):
     '''Response object of Bible book contents'''
     book : BibleBook
     bookName: str = None
-    versification : List[Reference] = None
     USFM: str = None
     JSON: dict = None
     audio: AudioBible = None
@@ -524,16 +525,6 @@ class BibleBookContent(BaseModel):
         schema_extra = {
             "example": {
                 "book": { "bookId": 41, "bookCode": "mat", "bookName": "Matthew"},
-                "versification": [
-                    {"bible": "hi_IRV_5_bible",
-                    "book": "mat",
-                    "chapter": 1,
-                    "verseNumber": 1},
-                    {"bible": "hi_IRV_5_bible",
-                    "book": "mat",
-                    "chapter": 1,
-                    "verseNumber": 1},
-                    {},{}],
                 "USFM": "\\id MAT\n\\c 1\n\\p\n\\v 1 इब्राहीम की सन्‍तान, दाऊद की ...",
                 "JSON": { "book": { "bookCode": "MAT" },
                       "chapters": [
@@ -611,6 +602,29 @@ class BibleBookEdit(BaseModel):
                 "USFM": "\\id MAT\n\\c 1\n\\p\n\\v 1 इब्राहीम की सन्‍तान, दाऊद की सन्‍तान,"+\
                     "यीशु मसीह की वंशावली ।",
                 "active": True
+            }
+        }
+
+class Versification(BaseModel):
+    '''Response object for bible versification'''
+    maxVerses: dict
+    mappedVerses: dict
+    excludedVerses: list
+    partialVerses: dict
+    class Config: 
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "maxVerses": {
+                    "GEN":["31", "25", "24", "26", "32", "22"],
+                    "EXO": ["22", "25", "22", "31", "23", "30", "29", "28", "35", "29", "10", "51"]
+                },
+                "mappedVerses":{},
+                "excludedVerses": ['MAT 17:21'],
+                "partialVerses": {}
             }
         }
 
