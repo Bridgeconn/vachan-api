@@ -238,7 +238,7 @@ def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_r
         "untranslated": untranslated_length/total_length}
     return result
 
-def obtain_agmt_token_translation(db_, project_id, token, occurrences):
+def obtain_agmt_token_translation(db_, project_id, token, occurrences): # pylint: disable=unused-argument
     '''Get the current translation for specific tokens providing their occurence in source'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
