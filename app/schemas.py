@@ -263,8 +263,7 @@ class VersionResponse(BaseModel):
     revision : int
     metaData : dict = None
     class Config: # pylint: disable=too-few-public-methods
-        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
-        just get the data from object attributes'''
+        ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         # '''display example value in API documentation'''
         schema_extra = {
@@ -405,8 +404,7 @@ class BibleBook(BaseModel):
     bookName : str
     bookCode : BookCodePattern
     class Config: # pylint: disable=too-few-public-methods
-        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
-        just get the data from object attributes'''
+        ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         # '''display example value in API documentation'''
         schema_extra = {
@@ -426,8 +424,7 @@ class AudioBible(BaseModel):
     format: str = None
     active: bool = None
     class Config: # pylint: disable=too-few-public-methods
-        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
-        just get the data from object attributes'''
+        ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         # '''display example value in API documentation'''
         schema_extra = {
@@ -495,8 +492,7 @@ class Reference(BaseModel):
     verseNumber: int
     verseNumberEnd: int = None
     class Config: # pylint: disable=too-few-public-methods
-        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
-        just get the data from object attributes'''
+        ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         '''display example value in API documentation'''
         schema_extra = {
@@ -518,8 +514,7 @@ class BibleBookContent(BaseModel):
     audio: AudioBible = None
     active: bool
     class Config: # pylint: disable=too-few-public-methods
-        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
-        just get the data from object attributes'''
+        ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         '''display example value in API documentation'''
         schema_extra = {
@@ -611,9 +606,8 @@ class Versification(BaseModel):
     mappedVerses: dict
     excludedVerses: list
     partialVerses: dict
-    class Config: 
-        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
-        just get the data from object attributes'''
+    class Config:
+        ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         # '''display example value in API documentation'''
         schema_extra = {
@@ -635,8 +629,7 @@ class BibleVerse(BaseModel):
     # footNote : str = None
     # crossReference : str = None
     class Config: # pylint: disable=too-few-public-methods
-        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
-        just get the data from object attributes'''
+        ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         # '''display example value in API documentation'''
         schema_extra = {
@@ -766,8 +759,7 @@ class CommentaryResponse(BaseModel):
     commentary: str
     active: bool
     class Config: # pylint: disable=too-few-public-methods
-        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
-        just get the data from object attributes'''
+        ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         # '''display example value in API documentation'''
         schema_extra = {
@@ -832,8 +824,7 @@ class DictionaryWordResponse(BaseModel):
     details: dict = None
     active: bool = None
     class Config: # pylint: disable=too-few-public-methods
-        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
-        just get the data from object attributes'''
+        ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         '''display example value in API documentation'''
         schema_extra = {
@@ -896,8 +887,7 @@ class InfographicResponse(BaseModel):
     infographicLink : AnyUrl
     active: bool
     class Config: # pylint: disable=too-few-public-methods
-        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
-        just get the data from object attributes'''
+        ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         # '''display example value in API documentation'''
         schema_extra = {
@@ -928,8 +918,7 @@ class BibleVideo(BaseModel):
     theme: str
     active: bool
     class Config: # pylint: disable=too-few-public-methods
-        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
-        just get the data from object attributes'''
+        ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         '''display example value in API documentation'''
         schema_extra = {
