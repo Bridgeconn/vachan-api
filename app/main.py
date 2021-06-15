@@ -8,6 +8,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
+from starlette.graphql import GraphQLApp
+
 #pylint: disable=E0401
 #pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 from custom_exceptions import GenericException
@@ -18,6 +20,7 @@ from dependencies import get_db, log
 
 from schemas import NormalResponse
 from routers import content_apis, translation_apis
+from graphql_api import queries
 
 app = FastAPI()
 app.add_middleware(
@@ -148,3 +151,4 @@ def test(db_: Session = Depends(get_db)):
 
 app.include_router(content_apis.router)
 app.include_router(translation_apis.router)
+app.add_route("/graphql", GraphQLApp(schema=queries.schema))
