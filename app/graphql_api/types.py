@@ -1,6 +1,9 @@
 import graphene
 from graphene.types import Scalar
 
+from crud import structurals_crud
+from dependencies import get_db, log
+
 class Metadata(Scalar):
     '''metadata representing JSON'''
     @staticmethod
@@ -34,3 +37,26 @@ class License(graphene.ObjectType):
     license = graphene.String()
     permissions = graphene.List(LicensePermission)
     active = graphene.Boolean()
+
+class Version(graphene.ObjectType):
+    '''Return object of version'''
+    versionId = graphene.ID()
+    versionAbbreviation = graphene.String()
+    versionName = graphene.String()
+    revision = graphene.Int()
+    metaData = Metadata()
+
+class Source(graphene.ObjectType):
+    '''Return object of source'''
+    sourceName = graphene.String()
+    contentType = ContentType()
+    language = Language()
+    version = Version()
+    year = graphene.Int()
+    license = License()
+    metaData = Metadata()
+    active = graphene.Boolean()
+
+    def resolve_version(parent, info, db_=next(get_db())):
+        return structurals_crud.get_versions(db_, parent.version_id, limit = 1)[0]
+
