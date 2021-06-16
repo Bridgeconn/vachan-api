@@ -94,8 +94,27 @@ class Query(graphene.ObjectType):
     def resolve_bible_videos(self, info, source_name, book_code=None, title=None, theme=None,
         active=True, skip=0, limit=100, db_=next(get_db())):
         return contents_crud.get_bible_videos(db_, source_name, book_code, title, theme, active,
-            skip=skip, limit=limit)        
+            skip=skip, limit=limit)   
 
+    bible_contents = graphene.List(types.BibleContent, source_name=graphene.String(required=True),
+        book_code=graphene.String(), active=graphene.Boolean(),
+        skip=graphene.Int(), limit=graphene.Int())
+    def resolve_bible_contents(self, info, source_name, book_code=None, active=True,
+        skip=0, limit=100, db_=next(get_db())):
+        return contents_crud.get_available_bible_books(db_, source_name, book_code, 
+            content_type="all", active=active, skip = skip, limit = limit)
 
+    versification = graphene.Field(types.Versification, source_name=graphene.String(required=True))
+    def resolve_versification(self, info, source_name, db_=next(get_db())):
+        return contents_crud.get_bible_versification(db_, source_name)
+
+    bible_verse = graphene.List(types.BibleVerse, source_name=graphene.String(required=True),
+        book_code=graphene.String(), chapter=graphene.Int(), verse=graphene.Int(),
+        last_verse=graphene.Int(), search_phrase=graphene.String(), active=graphene.Boolean(),
+        skip=graphene.Int(), limit=graphene.Int())
+    def resolve_bible_verse(self, info, source_name, book_code=None, chapter=None, verse=None,
+        last_verse=None, search_phrase=None, active=True, skip=0, limit=100, db_=next(get_db())):
+        return contents_crud.get_bible_verses(db_, source_name, book_code, chapter, verse,
+            last_verse, search_phrase, active=active, skip = skip, limit = limit)
 
 schema=graphene.Schema(query=Query)

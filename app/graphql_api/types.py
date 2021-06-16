@@ -72,8 +72,7 @@ class AudioBible(graphene.ObjectType):
     active = graphene.Boolean()
 
 class BibleContent(graphene.ObjectType):
-    book = BibleBook()
-    bookName = graphene.String()
+    book = graphene.Field(BibleBook)
     USFM = graphene.String()
     JSON = Metadata()
     audio = graphene.Field(AudioBible)
@@ -93,7 +92,6 @@ class Reference(graphene.ObjectType):
     verseNumber = graphene.Int()
     verseNumberEnd = graphene.Int()
 
-
 class BibleVerse(graphene.ObjectType):
     refId = graphene.ID()
     refString = graphene.String()
@@ -102,12 +100,15 @@ class BibleVerse(graphene.ObjectType):
     # footNotes = graphene.List(graphene.String)
     # crossReferences  = graphene.List(graphene.String)
 
+    def resolve_refObject(parent, info):
+        return parent['reference']
+
     def resolve_refString(parent, info):
-        if parent.refObject.verseNumberEnd is not None:
-            return '%s %s:%s-%s'%(parent.refObject.book, parent.refObject.chapter,
-                parent.refObject.verseNumber, parent.refObject.verseNumberEnd)
-        return '%s %s:%s'%(parent.refObject.book, parent.refObject.chapter,
-            parent.refObject.verseNumber)
+        if 'verseNumberEnd' in parent['reference'] and parent['reference']['verseNumberEnd'] is not None:
+            return '%s %s:%s-%s'%(parent['reference']['book'], parent['reference']['chapter'],
+                parent['reference']['verseNumber'], parent['reference']['verseNumberEnd'])
+        return '%s %s:%s'%(parent['reference']['book'], parent['reference']['chapter'],
+            parent['reference']['verseNumber'])
 
 class Commentary(graphene.ObjectType):
     refString =  graphene.String()
