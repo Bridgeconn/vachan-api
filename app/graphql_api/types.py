@@ -49,14 +49,107 @@ class Version(graphene.ObjectType):
 class Source(graphene.ObjectType):
     '''Return object of source'''
     sourceName = graphene.String()
-    contentType = ContentType()
-    language = Language()
-    version = Version()
+    contentType = graphene.Field(ContentType)
+    language = graphene.Field(Language)
+    version = graphene.Field(Version)
     year = graphene.Int()
-    license = License()
+    license = graphene.Field(License)
     metaData = Metadata()
     active = graphene.Boolean()
 
-    def resolve_version(parent, info, db_=next(get_db())):
-        return structurals_crud.get_versions(db_, parent.version_id, limit = 1)[0]
 
+class BibleBook(graphene.ObjectType):
+    '''response object of Bible book'''
+    bookId = graphene.ID()
+    bookName = graphene.String()
+    bookCode = graphene.String()
+
+class AudioBible(graphene.ObjectType):
+    name = graphene.String()
+    url = graphene.String()
+    book = graphene.Field(BibleBook)
+    format = graphene.String()
+    active = graphene.Boolean()
+
+class BibleContent(graphene.ObjectType):
+    book = BibleBook()
+    bookName = graphene.String()
+    USFM = graphene.String()
+    JSON = Metadata()
+    audio = graphene.Field(AudioBible)
+    active = graphene.Boolean()
+
+class Versification(graphene.ObjectType):
+    maxVerses = Metadata()
+    mappedVerses = Metadata()
+    excludedVerses = Metadata()
+    partialVerses = Metadata()
+
+class Reference(graphene.ObjectType):
+    '''Response object of bible refernce'''
+    bible = graphene.String()
+    book = graphene.String()
+    chapter = graphene.Int()
+    verseNumber = graphene.Int()
+    verseNumberEnd = graphene.Int()
+
+
+class BibleVerse(graphene.ObjectType):
+    refId = graphene.ID()
+    refString = graphene.String()
+    refObject = graphene.Field(Reference)
+    verseText = graphene.String()
+    # footNotes = graphene.List(graphene.String)
+    # crossReferences  = graphene.List(graphene.String)
+
+    def resolve_refString(parent, info):
+        if parent.refObject.verseNumberEnd is not None:
+            return '%s %s:%s-%s'%(parent.refObject.book, parent.refObject.chapter,
+                parent.refObject.verseNumber, parent.refObject.verseNumberEnd)
+        return '%s %s:%s'%(parent.refObject.book, parent.refObject.chapter,
+            parent.refObject.verseNumber)
+
+class Commentary(graphene.ObjectType):
+    refString =  graphene.String()
+    book = graphene.Field(BibleBook)
+    chapter = graphene.Int()
+    verseStart = graphene.Int()
+    verseEnd = graphene.Int()
+    commentary = graphene.String()
+    active = graphene.Boolean()
+
+    def resolve_refString(parent, info):
+        if parent.chapter == 0:
+            return '%s introduction'%(parent.book.bookCode)
+        if parent.chapter == -1:
+            return '%s epilogue'%(parent.book.bookCode)
+        if parent.verseStart == 0:
+            return '%s %s introduction'%(parent.book.bookCode, parent.chapter)
+        if parent.verseStart == -1:
+            return '%s %s epilogue'%(parent.book.bookCode, parent.chapter)
+        if parent.verseEnd is None or parent.verseEnd == 0:
+            return '%s %s:%s'%(parent.book.bookCode, parent.chapter, parent.verseStart)
+        return '%s %s:%s-%s'%(parent.book.bookCode, parent.chapter, parent.verseStart,
+            parent.verseEnd)
+    def resolve_book(parent, info):
+        return parent.book
+
+class DictionaryWord(graphene.ObjectType):
+    word = graphene.String()
+    details = Metadata()
+    active = graphene.Boolean()
+
+class Infographic(graphene.ObjectType):
+    book = graphene.Field(BibleBook)
+    title = graphene.String()
+    infographicLink = graphene.String()
+    active = graphene.Boolean()
+
+class BibleVideo(graphene.ObjectType):
+    title = graphene.String()
+    books = graphene.List(graphene.String)
+    videoLink = graphene.String()
+    description = graphene.String()
+    theme = graphene.String()
+    active = graphene.Boolean()
+ 

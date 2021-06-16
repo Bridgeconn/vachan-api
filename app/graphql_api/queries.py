@@ -1,6 +1,6 @@
 import graphene
 
-from crud import structurals_crud
+from crud import structurals_crud, contents_crud
 from dependencies import get_db, log
 from graphql_api import types
 
@@ -16,9 +16,9 @@ class Query(graphene.ObjectType):
             language_name=language_name, search_word=search_word,
             skip=skp, limit=limit)
 
-    contents = graphene.List(types.ContentType, content_type=graphene.String(),
+    contents_types = graphene.List(types.ContentType, content_type=graphene.String(),
         skip=graphene.Int(), limit=graphene.Int())
-    def resolve_contents(self, info, content_type=None,
+    def resolve_content_types(self, info, content_type=None,
         skip=0, limit=100, db_=next(get_db())):
         return structurals_crud.get_content_types(db_, content_type, skip, limit)
 
@@ -39,19 +39,63 @@ class Query(graphene.ObjectType):
         return structurals_crud.get_versions(db_, version_abbreviation,
         version_name, revision, skip = skip, limit = limit)
 
-    sources = graphene.List(types.Source, content_type=graphene.String(),
+    contents = graphene.List(types.Source, content_type=graphene.String(),
         version_abbreviation=graphene.String(), revision=graphene.Int(),
         language_code=graphene.String(), license_code=graphene.String(),
         active=graphene.Boolean(), latest_revision=graphene.Boolean(),
         skip=graphene.Int(), limit=graphene.Int())
-    def resolve_sources(self, info, content_type=None, version_abbreviation=None,
+    def resolve_contents(self, info, content_type=None, version_abbreviation=None,
         revision=None, language_code=None, license_code=None, active=True,
         latest_revision=True, skip=0, limit=100, db_=next(get_db())):
         results =  structurals_crud.get_sources(db_, content_type, version_abbreviation, revision,
             language_code, license_code, latest_revision=latest_revision, active=active,
             skip=skip, limit=limit)
-        final_result = [types.Source(res) for res in results]
-        return final_result
+        # final_result = [types.Source(res) for res in results]
+        return results
+
+    bible_books = graphene.List(types.BibleBook, book_id=graphene.Int(),
+        book_code=graphene.String(), book_name=graphene.String(),
+        skip=graphene.Int(), limit=graphene.Int())
+    def resolve_bible_books(self, info, book_id=None, book_name=None,
+        book_code=None, skip=0, limit=100, db_=next(get_db())):
+        return structurals_crud.get_bible_books(db_, book_id=book_id,
+            book_code=book_code, book_name=book_name, skip=skip, limit=limit)
+
+    commentaries = graphene.List(types.Commentary,
+        source_name=graphene.String(required=True),
+        book_code=graphene.String(), chapter=graphene.Int(), verse=graphene.Int(),
+        last_verse=graphene.Int(), active=graphene.Boolean(),
+        skip=graphene.Int(), limit=graphene.Int())
+    def resolve_commentaries(self, info, source_name, book_code=None, chapter=None,
+        verse=None, last_verse=None, active=True, skip=0, limit=100, db_=next(get_db())):
+        return contents_crud.get_commentaries(db_, source_name, book_code, chapter, verse,
+            last_verse, active=active, skip = skip, limit = limit)
+
+    dictionary_words = graphene.List(types.DictionaryWord,
+        source_name=graphene.String(required=True),
+        search_word=graphene.String(), exact_match=graphene.Boolean(), active=graphene.Boolean(),
+        skip=graphene.Int(), limit=graphene.Int())
+    def resolve_dictonary_words(self, info, source_name, search_word=None, exact_match=False,
+        active=True, skip=0, limit=100, db_=next(get_db())):
+        return contents_crud.get_dictionary_words(db_, source_name, search_word,
+            exact_match=exact_match, active=active, skip=skip, limit=limit)
+
+    infographics = graphene.List(types.Infographic, source_name=graphene.String(required=True),
+        book_code=graphene.String(),title=graphene.String(), active=graphene.Boolean(),
+        skip=graphene.Int(), limit=graphene.Int())
+    def resolve_infographics(self, info, source_name, book_code=None, title=None, active=True,
+        skip=0, limit=100, db_=next(get_db())):
+        return contents_crud.get_infographics(db_, source_name, book_code, title,
+         active=active, skip = skip, limit = limit)
+
+    bible_videos = graphene.List(types.BibleVideo, source_name=graphene.String(required=True),
+        book_code=graphene.String(), title=graphene.String(), theme=graphene.String(),
+        active=graphene.Boolean(), skip=graphene.Int(), limit=graphene.Int())
+    def resolve_bible_videos(self, info, source_name, book_code=None, title=None, theme=None,
+        active=True, skip=0, limit=100, db_=next(get_db())):
+        return contents_crud.get_bible_videos(db_, source_name, book_code, title, theme, active,
+            skip=skip, limit=limit)        
+
 
 
 schema=graphene.Schema(query=Query)
