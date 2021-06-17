@@ -1,6 +1,6 @@
 import graphene
 
-from crud import structurals_crud, contents_crud
+from crud import structurals_crud, contents_crud, projects_crud, nlp_crud
 from dependencies import get_db, log
 from graphql_api import types
 
@@ -116,5 +116,36 @@ class Query(graphene.ObjectType):
         last_verse=None, search_phrase=None, active=True, skip=0, limit=100, db_=next(get_db())):
         return contents_crud.get_bible_verses(db_, source_name, book_code, chapter, verse,
             last_verse, search_phrase, active=active, skip = skip, limit = limit)
+
+    agmt_projects = graphene.List(types.TranslationProject, project_name=graphene.String(),
+        source_language=graphene.String(), target_language=graphene.String(),
+        user_id=graphene.Int(), active=graphene.Boolean(),
+        skip=graphene.Int(), limit=graphene.Int())
+    def resolve_agmt_projects(self, info, project_name=None,
+        source_language=None, target_language=None, user_id=None, active=True,
+        skip=0, limit=100, db_=next(get_db())):
+        return projects_crud.get_agmt_projects(db_, project_name, source_language, target_language,
+            active, user_id, skip=skip, limit=limit)
+
+    agmt_project_tokens = graphene.List(types.Token, project_id=graphene.ID(required=True),
+        books=graphene.List(graphene.String), sentence_id_range=graphene.List(graphene.Int,
+        description="Requires exactly two numbers indicating a range"),
+        sentence_id_list=graphene.List(graphene.Int), use_translation_memory=graphene.Boolean(),
+        include_phrases=graphene.Boolean(), include_stopwords=graphene.Boolean())
+    def resolve_agmt_project_tokens(self, info, project_id, books=None, sentence_id_range=None,
+        sentence_id_list=None, use_translation_memory=True, include_phrases=True,
+        include_stopwords=False, db_=next(get_db())):
+        return nlp_crud.get_agmt_tokens(db_, project_id, books, sentence_id_range, sentence_id_list,
+            use_translation_memory, include_phrases, include_stopwords)
+
+    agmt_project_token_translation = graphene.Field(types.TokenTranslation,
+        project_id=graphene.ID(required=True), sentence_id=graphene.Int(required=True),
+        offset=graphene.List(graphene.Int, required=True,
+        description="Requires exactly two numbers"))
+    def resolve_agmt_project_token_translation(self, info, project_id, sentence_id, offset,
+        db_=next(get_db())):
+        occurrences = [{"sentenceId":sentence_id, "offset":offset}]
+        return projects_crud.obtain_agmt_token_translation(db_, project_id, token=None,
+            occurrences=occurrences)[0]
 
 schema=graphene.Schema(query=Query)

@@ -153,4 +153,50 @@ class BibleVideo(graphene.ObjectType):
     description = graphene.String()
     theme = graphene.String()
     active = graphene.Boolean()
+
+class TranslationDocumentType(graphene.Enum):
+    '''Currently supports bible USFM only. Can be extended to
+    CSV(for commentary or notes), doc(stories, other passages) etc.'''
+    USFM = 'usfm'
+    TEXT = 'text'
+    CSV = 'csv'
+    JSON = 'alignment-json'
+
+class ProjectUser(graphene.ObjectType):
+    '''Input object for AgMT user update'''
+    project_id = graphene.ID()
+    userId = graphene.Int()
+    userRole = graphene.String()
+    metaData = Metadata()
+    active = graphene.Boolean()
  
+class TranslationProject(graphene.ObjectType):
+    '''Output object for project creation'''
+    projectId = graphene.ID()
+    projectName = graphene.String()
+    sourceLanguage = graphene.Field(Language)
+    targetLanguage = graphene.Field(Language)
+    documentFormat = TranslationDocumentType()
+    users = graphene.List(ProjectUser)
+    metaData = Metadata()
+    active = graphene.Boolean()
+
+class TokenOccurence(graphene.ObjectType):
+    '''Object for token occurence'''
+    sentenceId = graphene.ID()
+    offset = graphene.List(graphene.Int)
+
+class Token(graphene.ObjectType):
+    '''Response object for token'''
+    token = graphene.String()
+    occurrences = graphene.List(TokenOccurence)
+    translations = Metadata()
+    metaData = Metadata()
+
+class TokenTranslation(graphene.ObjectType):
+    '''For translation/draft of a specific token'''
+    token = graphene.String()
+    translation = graphene.String()
+    occurrence = graphene.Field(TokenOccurence)
+    status = graphene.String()
+    
