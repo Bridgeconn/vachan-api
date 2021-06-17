@@ -14,9 +14,9 @@ class Query(graphene.ObjectType):
         skip=0, limit=100, db_=next(get_db())):
         return structurals_crud.get_languages(db_, language_code=language_code,
             language_name=language_name, search_word=search_word,
-            skip=skp, limit=limit)
+            skip=skip, limit=limit)
 
-    contents_types = graphene.List(types.ContentType, content_type=graphene.String(),
+    content_types = graphene.List(types.ContentType, content_type=graphene.String(),
         skip=graphene.Int(), limit=graphene.Int())
     def resolve_content_types(self, info, content_type=None,
         skip=0, limit=100, db_=next(get_db())):
