@@ -117,6 +117,8 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
                         db_.add(draft_row)
     db_.commit()
     db_.expire_all()
+    if project_obj.projectName:
+        project_row.projectName = project_obj.projectName
     if project_obj.active is not None:
         project_row.active = project_obj.active
     if project_obj.useDataForLearning is not None:

@@ -80,6 +80,7 @@ class SelectedBooks(BaseModel):
 class TranslationProjectEdit(BaseModel):
     '''New books to be added or active flag change'''
     projectId: int
+    projectName: str = None
     active: bool = None
     selectedBooks: SelectedBooks = None
     uploadedBooks: List[str] = None
