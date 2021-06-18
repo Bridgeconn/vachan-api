@@ -3,6 +3,7 @@ import graphene
 from crud import structurals_crud, contents_crud, projects_crud, nlp_crud
 from dependencies import get_db, log
 from graphql_api import types
+import schemas_nlp
 
 
 class Query(graphene.ObjectType):
@@ -147,5 +148,50 @@ class Query(graphene.ObjectType):
         occurrences = [{"sentenceId":sentence_id, "offset":offset}]
         return projects_crud.obtain_agmt_token_translation(db_, project_id, token=None,
             occurrences=occurrences)[0]
+    
+    agmt_draft_usfm = graphene.List(graphene.String, project_id=graphene.ID(required=True),
+        books=graphene.List(graphene.String), sentence_id_list=graphene.List(graphene.Int),
+        sentence_id_range=graphene.List(graphene.Int,
+            description='Requires exactly two numbers indicating a range'))
+    def resolve_agmt_draft_usfm(self, info, project_id, books=None, sentence_id_list=None,
+        sentence_id_range=None, db_=next(get_db())):
+        return projects_crud.obtain_agmt_draft(db_, project_id, books,
+            sentence_id_list, sentence_id_range, output_format=schemas_nlp.DraftFormats.USFM)
+
+    agmt_export_alignment = graphene.Field(types.Metadata, project_id=graphene.ID(required=True),
+        books=graphene.List(graphene.String), sentence_id_list=graphene.List(graphene.Int),
+        sentence_id_range=graphene.List(graphene.Int,
+            description='Requires exactly two numbers indicating a range'))
+    def resolve_agmt_export_alignment(self, info, project_id, books=None, sentence_id_list=None,
+        sentence_id_range=None, db_=next(get_db())):
+        return projects_crud.obtain_agmt_draft(db_, project_id, books,
+            sentence_id_list, sentence_id_range, output_format=schemas_nlp.DraftFormats.JSON)
+
+    agmt_project_source = graphene.List(types.Sentence, project_id=graphene.ID(required=True),
+        books=graphene.List(graphene.String), sentence_id_list=graphene.List(graphene.Int),
+        sentence_id_range=graphene.List(graphene.Int,
+            description='Requires exactly two numbers indicating a range'))
+    def resolve_agmt_project_source(self, info, project_id, books=None, sentence_id_list=None,
+        sentence_id_range=None, db_=next(get_db())):
+        return nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_list, sentence_id_range,
+            with_draft=True)
+
+    agmt_project_progress = graphene.Field(types.Progress, project_id=graphene.ID(required=True),
+        books=graphene.List(graphene.String), sentence_id_list=graphene.List(graphene.Int),
+        sentence_id_range=graphene.List(graphene.Int,
+            description='Requires exactly two numbers indicating a range'))
+    def resolve_agmt_project_progress(self, info, project_id, books=None, sentence_id_list=None,
+        sentence_id_range=None, db_=next(get_db())):
+        print("comes in resolver")
+        return projects_crud.obtain_agmt_progress(db_, project_id, books,
+            sentence_id_list, sentence_id_range)
+
+    gloss = graphene.Field(types.Gloss, source_language=graphene.String(required=True),
+        target_language=graphene.String(required=True), token=graphene.String(required=True),
+        context=graphene.String(description="sentence or phrase including the token"), 
+        token_offset=graphene.List(graphene.Int, description="Requires exactly two numbers"))
+    def resolve_gloss(self, info, source_language, target_language, token, context=None,
+        token_offset=None, db_=next(get_db())):
+        return nlp_crud.glossary(db_, source_language, target_language, token,context,token_offset)
 
 schema=graphene.Schema(query=Query)

@@ -200,3 +200,21 @@ class TokenTranslation(graphene.ObjectType):
     occurrence = graphene.Field(TokenOccurence)
     status = graphene.String()
     
+class Sentence(graphene.ObjectType):
+    '''Response object for sentences and plain-text draft'''
+    sentenceId = graphene.ID()
+    sentence = graphene.String()
+    draft = graphene.String()
+    draftMeta = Metadata()
+
+class Progress(graphene.ObjectType):
+    '''Response object for AgMT project progress'''
+    confirmed = graphene.Float()
+    suggestion = graphene.Float()
+    untranslated = graphene.Float()
+
+class Gloss(graphene.ObjectType):
+    '''Output object for translation memory or gloss'''
+    token = graphene.String()
+    translations = Metadata()
+    metaData = Metadata()
