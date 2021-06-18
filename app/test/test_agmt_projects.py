@@ -104,13 +104,30 @@ def test_default_post_put_get():
     # fetch projects
     response3 = client.get(UNIT_URL)
     assert len(response3.json()) >= 1
-    fetched_project = response3.json()[-1]
+    found_project = False
+    for proj in response3.json():
+        if proj['projectName'] == post_data['projectName']:
+            found_project = True
+            fetched_project = proj
+    assert found_project
     assert_positive_get(fetched_project)
 
     assert fetched_project['projectName'] == post_data['projectName']
     assert fetched_project['sourceLanguage']['code'] == post_data['sourceLanguageCode']
     assert fetched_project['targetLanguage']['code'] == post_data['targetLanguageCode']
     assert fetched_project['metaData']['books'] == ['mat', 'mrk', 'luk', 'jhn']
+
+    # change name
+    put_data = {
+        "projectId":new_project['projectId'],
+        "projectName":"New name for old project"}
+    response4 = client.put(UNIT_URL, headers=headers, json=put_data)
+    assert response4.status_code == 201
+    assert response4.json()['message'] == "Project updated successfully"
+    updated_project = response4.json()['data']
+    assert_positive_get(updated_project)
+    assert updated_project['projectName']== "New name for old project"
+
 
     # create with all possible options
     post_data = {
