@@ -13,6 +13,13 @@ import schemas_nlp
 
 #pylint: disable=R0201, too-many-arguments, too-many-public-methods
 
+def convert_graphene_obj_to_pydantic(input_obj, target_class=schemas_nlp.DraftInput):
+    '''convert a graphene input object into specified pydantic model'''
+    kwargs = {}
+    for key in input_obj:
+        kwargs[key] = input_obj[key]
+    new_obj = target_class(**kwargs)
+    return new_obj
 
 class Query(graphene.ObjectType):
     '''All defined queries'''
@@ -274,7 +281,7 @@ class Query(graphene.ObjectType):
         '''resolver'''
         return nlp_crud.glossary(db_, source_language, target_language, token,context,token_offset)
 
-    tokens = graphene.List(types.Token,
+    tokenize = graphene.List(types.Token,
         description='Tokenize a set of sentences',
         source_language=graphene.String(required=True,
         description="language code as per bcp47(usually 2 letter code)"),
@@ -284,7 +291,7 @@ class Query(graphene.ObjectType):
         use_translation_memory=graphene.Boolean(), include_phrases=graphene.Boolean(),
         include_stopwords=graphene.Boolean(), punctuations=graphene.List(graphene.String),
         stopwords=graphene.Argument(types.Stopwords))
-    def resolve_tokens(self, _, source_language, sentence_list, target_language=None,
+    def resolve_tokenize(self, _, source_language, sentence_list, target_language=None,
             use_translation_memory=True, include_phrases=True,
             include_stopwords=False, punctuations=None, stopwords=None,
             db_=next(get_db())):
@@ -292,8 +299,64 @@ class Query(graphene.ObjectType):
         return nlp_crud.get_generic_tokens(db_, source_language, sentence_list, target_language,
             punctuations, stopwords, use_translation_memory, include_phrases, include_stopwords)
 
-    # token_translate = graphen
+    translate_token = graphene.List(types.Sentence,
+        description='replace provided tokens with translation in the input sentences',
+        source_language=graphene.String(required=True,
+            description="language code as per bcp47(usually 2 letter code)"),
+        target_language=graphene.String(required=True,
+            description="language code as per bcp47(usually 2 letter code)"),
+        sentence_list=graphene.List(types.SentenceInput, required=True),
+        token_translations=graphene.List(types.TokenUpdate, required=True),
+        use_data_for_learning=graphene.Boolean())
+    def resolve_translate_token(self, _, source_language, target_language, sentence_list,
+        token_translations, use_data_for_learning=True, db_=next(get_db())):
+        '''resolver'''
+        new_sent_list = [ convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
+                for item in sentence_list]
+        new_token_list =[ convert_graphene_obj_to_pydantic(item, schemas_nlp.TokenUpdate)
+                for item in token_translations]
+        return nlp_crud.replace_bulk_tokens(db_, new_sent_list, new_token_list, source_language,
+            target_language, use_data_for_learning)
 
 
+    convert_to_usfm = graphene.List(graphene.String,
+        description="Converts drafts to usfm",
+        sentence_list=graphene.List(types.SentenceInput, required=True))
+    def resolve_convert_to_usfm(self, _, sentence_list):
+        '''resolver'''
+        new_list = [ convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
+                for item in sentence_list]
+        return nlp_crud.obtain_draft(new_list,
+            doc_type=schemas_nlp.TranslationDocumentType.USFM)
+
+    convert_to_alignment = graphene.Field(types.Metadata,
+        description="Converts sentences and drafts to alignment-json",
+        sentence_list=graphene.List(types.SentenceInput, required=True))
+    def resolve_convert_to_alignment(self, _, sentence_list):
+        '''resolver'''
+        new_list = [ convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
+                for item in sentence_list]
+        return nlp_crud.obtain_draft(new_list,
+            doc_type=schemas_nlp.TranslationDocumentType.JSON)
+
+    convert_to_csv = graphene.String(
+        description="Converts sentences and drafts to CSV format",
+        sentence_list=graphene.List(types.SentenceInput, required=True))
+    def resolve_convert_to_csv(self, _, sentence_list):
+        '''resolver'''
+        new_list = [ convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
+                for item in sentence_list]
+        return nlp_crud.obtain_draft(new_list,
+            doc_type=schemas_nlp.TranslationDocumentType.CSV)
+
+    convert_to_text = graphene.String(
+        description="Converts drafts to alignment-json",
+        sentence_list=graphene.List(types.SentenceInput, required=True))
+    def resolve_convert_to_text(self, _, sentence_list):
+        '''resolver'''
+        new_list = [ convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
+                for item in sentence_list]
+        return nlp_crud.obtain_draft(new_list,
+            doc_type=schemas_nlp.TranslationDocumentType.TEXT)
 
 schema=graphene.Schema(query=Query)

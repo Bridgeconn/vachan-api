@@ -1,7 +1,8 @@
 '''Input and Ourput object definitions for graphQL'''
-
+import json
 import graphene
 from graphene.types import Scalar
+from graphql.language import ast
 
 
 #pylint: disable=too-few-public-methods
@@ -211,8 +212,8 @@ class Token(graphene.ObjectType):
     '''Response object for token'''
     token = graphene.String()
     occurrences = graphene.List(TokenOccurence)
-    translations = Metadata()
-    metaData = Metadata()
+    translations = Metadata(name="translationSuggestions")
+    metaData = Metadata()   
 
 class TokenTranslation(graphene.ObjectType):
     '''For translation/draft of a specific token'''
@@ -240,13 +241,21 @@ class Gloss(graphene.ObjectType):
     translations = Metadata()
     metaData = Metadata()
 
+class Suggestion(graphene.ObjectType):
+    '''Response object for suggestion'''
+    suggestion = graphene.String()
+    score = graphene.Float()
+
 ###################### Input Types ###############################
 
 class SentenceInput(graphene.InputObjectType):
     '''Input sentences for tokenization'''
-    sentenceId = graphene.ID()
-    sentence = graphene.String()
-
+    sentenceId = graphene.ID(required=True)
+    sentence = graphene.String(required=True)
+    draft = graphene.String(default_value="")
+    draftMeta = graphene.JSONString(default_value=None,
+        description="The draftMeta JSON in response object(Sentence)"+\
+        " should be provided here as a JSON-String")
 
 class Stopwords(graphene.InputObjectType):
     '''Input object for stopwords'''
@@ -257,17 +266,16 @@ class Stopwords(graphene.InputObjectType):
 
 class IndexPair(graphene.InputObjectType):
     '''Index pair showing alignment of soure token and target Token'''
-    sourceTokenIndex = graphene.Int()
-    targetTokenIndex = graphene.Int()
-
+    sourceTokenIndex = graphene.Int(required=True)
+    targetTokenIndex = graphene.Int(required=True)
 
 class Alignment(graphene.InputObjectType):
     '''Import object of alignment data for learning'''
-    sourceTokenList = graphene.List(graphene.String,
+    sourceTokenList = graphene.List(graphene.String, required=True,
         description='example=["This", "is", "an", "apple"]')
-    targetTokenList = graphene.List(graphene.String,
+    targetTokenList = graphene.List(graphene.String, required=True,
         description='example=["यह","एक","सेब","है"]')
-    alignedTokens = graphene.List(IndexPair, description=''' example=[
+    alignedTokens = graphene.List(IndexPair, required=True, description=''' example=[
         {"sourceTokenIndex": 0, "targetTokenIndex": 0},
         {"sourceTokenIndex": 1, "targetTokenIndex": 3},
         {"sourceTokenIndex": 2, "targetTokenIndex": 1},
@@ -275,7 +283,27 @@ class Alignment(graphene.InputObjectType):
 
 class GlossInput(graphene.InputObjectType):
     '''Import object for glossary(dictionary) data for learning'''
-    token = graphene.String(description='example="love"')
+    token = graphene.String(description='example="love"', required=True)
     translations = graphene.List(graphene.String,
         description="example=['प्यार', 'प्रेम', 'प्रेम करना']")
     tokenMetaData = Metadata(description='example={"word-class":["noun", "verb"]}')
+
+class TokenOccurenceInput(graphene.InputObjectType):
+    '''Object for token occurence'''
+    sentenceId = graphene.ID()
+    offset = graphene.List(graphene.Int)
+
+class TokenUpdate(graphene.InputObjectType):
+    '''Input object for applying token translation'''
+    token = graphene.String(required=True)
+    occurrences = graphene.List(TokenOccurenceInput, required=True)
+    translation = graphene.String(required=True)
+
+class DraftInput(graphene.InputObjectType):
+    '''Input sentences for translation'''
+    sentenceId = graphene.ID()
+    sentence = graphene.String(required=True,
+        description='example="इब्राहीम के वंशज दाऊद के पुत्र यीशु मसीह की वंशावली इस प्रकार है"')
+    draft = graphene.String(required=True,
+        description='example="അബ്രാഹാം के वंशज दाऊद के पुत्र यीशु मसीह की वंशावली इस प्रकार है"')
+    draftMeta = graphene.JSONString()
