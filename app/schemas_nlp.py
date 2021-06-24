@@ -170,6 +170,7 @@ class DraftFormats(Enum):
     '''Specify various export,view,download formats for project/draft'''
     USFM = 'usfm'
     JSON = 'alignment-json'
+    PRINT = 'print-json'
 
 class Suggestion(BaseModel):
     '''Response object for suggestion'''
