@@ -7,19 +7,11 @@ import graphene
 
 from crud import structurals_crud, contents_crud, projects_crud, nlp_crud
 from dependencies import get_db
-from graphql_api import types
+from graphql_api import types, utils
 import schemas_nlp
 
 
 #pylint: disable=R0201, too-many-arguments, too-many-public-methods
-
-def convert_graphene_obj_to_pydantic(input_obj, target_class=schemas_nlp.DraftInput):
-    '''convert a graphene input object into specified pydantic model'''
-    kwargs = {}
-    for key in input_obj:
-        kwargs[key] = input_obj[key]
-    new_obj = target_class(**kwargs)
-    return new_obj
 
 class Query(graphene.ObjectType):
     '''All defined queries'''
@@ -311,9 +303,9 @@ class Query(graphene.ObjectType):
     def resolve_translate_token(self, _, source_language, target_language, sentence_list,
         token_translations, use_data_for_learning=True, db_=next(get_db())):
         '''resolver'''
-        new_sent_list = [ convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
+        new_sent_list = [ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
                 for item in sentence_list]
-        new_token_list =[ convert_graphene_obj_to_pydantic(item, schemas_nlp.TokenUpdate)
+        new_token_list =[ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.TokenUpdate)
                 for item in token_translations]
         return nlp_crud.replace_bulk_tokens(db_, new_sent_list, new_token_list, source_language,
             target_language, use_data_for_learning)
@@ -324,7 +316,7 @@ class Query(graphene.ObjectType):
         sentence_list=graphene.List(types.SentenceInput, required=True))
     def resolve_convert_to_usfm(self, _, sentence_list):
         '''resolver'''
-        new_list = [ convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
+        new_list = [ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
                 for item in sentence_list]
         return nlp_crud.obtain_draft(new_list,
             doc_type=schemas_nlp.TranslationDocumentType.USFM)
@@ -334,7 +326,7 @@ class Query(graphene.ObjectType):
         sentence_list=graphene.List(types.SentenceInput, required=True))
     def resolve_convert_to_alignment(self, _, sentence_list):
         '''resolver'''
-        new_list = [ convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
+        new_list = [ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
                 for item in sentence_list]
         return nlp_crud.obtain_draft(new_list,
             doc_type=schemas_nlp.TranslationDocumentType.JSON)
@@ -344,7 +336,7 @@ class Query(graphene.ObjectType):
         sentence_list=graphene.List(types.SentenceInput, required=True))
     def resolve_convert_to_csv(self, _, sentence_list):
         '''resolver'''
-        new_list = [ convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
+        new_list = [ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
                 for item in sentence_list]
         return nlp_crud.obtain_draft(new_list,
             doc_type=schemas_nlp.TranslationDocumentType.CSV)
@@ -354,9 +346,7 @@ class Query(graphene.ObjectType):
         sentence_list=graphene.List(types.SentenceInput, required=True))
     def resolve_convert_to_text(self, _, sentence_list):
         '''resolver'''
-        new_list = [ convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
+        new_list = [ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
                 for item in sentence_list]
         return nlp_crud.obtain_draft(new_list,
             doc_type=schemas_nlp.TranslationDocumentType.TEXT)
-
-schema=graphene.Schema(query=Query)

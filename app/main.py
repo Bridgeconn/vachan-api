@@ -5,10 +5,11 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.graphql import GraphQLApp
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+import graphene
 
-from starlette.graphql import GraphQLApp
 
 #pylint: disable=E0401
 #pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
@@ -151,4 +152,6 @@ def test(db_: Session = Depends(get_db)):
 
 app.include_router(content_apis.router)
 app.include_router(translation_apis.router)
-app.add_route("/graphql", GraphQLApp(schema=queries.schema))
+
+schema=graphene.Schema(query=queries.Query)
+app.add_route("/graphql", GraphQLApp(schema=schema))
