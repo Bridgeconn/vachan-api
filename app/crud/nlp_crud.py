@@ -908,6 +908,13 @@ def create_usfm(sent_drafts):
         usfm_files.append(file)
     return usfm_files
 
+def export_to_print(sentence_list):
+    '''get a response with just id and draft to print'''
+    output_json = {}
+    for row in sentence_list:
+        output_json[row.surrogateId] = row.draft
+    return output_json
+
 def export_to_json(source_lang, target_lang, sentence_list, last_modified):
     '''input sentence_list is List of (sent_id, source_sent, draft, draft_meta)
     output:json in alignment format'''
@@ -989,11 +996,11 @@ def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=No
     elif sentence_id_list:
         sentence_query = sentence_query.filter(
             db_models.TranslationDraft.sentenceId.in_(sentence_id_list))
-    draft_rows = sentence_query.all()
+    draft_rows = sentence_query.order_by(db_models.TranslationDraft.sentenceId).all()
     if with_draft:
         return draft_rows
     result = []
     for row in draft_rows:
-        obj = {"sentenceId": row.sentenceId, "sentence":row.sentence}
+        obj = {"sentenceId": row.sentenceId, "surrogateId":row.surrogateId,"sentence":row.sentence}
         result.append(obj)
     return result

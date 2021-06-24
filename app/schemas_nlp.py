@@ -121,6 +121,7 @@ class TokenUpdate(BaseModel):
 class Sentence(BaseModel):
     '''Response object for sentences and plain-text draft'''
     sentenceId: int
+    surrogateId: str
     sentence: str
     draft: str = None
     draftMeta: List[Tuple[Tuple[int, int], Tuple[int,int],'str']] = Field(None,
@@ -170,6 +171,7 @@ class DraftFormats(Enum):
     '''Specify various export,view,download formats for project/draft'''
     USFM = 'usfm'
     JSON = 'alignment-json'
+    PRINT = 'print-json'
 
 class Suggestion(BaseModel):
     '''Response object for suggestion'''
