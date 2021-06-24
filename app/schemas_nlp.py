@@ -121,6 +121,7 @@ class TokenUpdate(BaseModel):
 class Sentence(BaseModel):
     '''Response object for sentences and plain-text draft'''
     sentenceId: int
+    surrogateId: str
     sentence: str
     draft: str = None
     draftMeta: List[Tuple[Tuple[int, int], Tuple[int,int],'str']] = Field(None,

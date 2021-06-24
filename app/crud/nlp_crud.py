@@ -912,7 +912,7 @@ def export_to_print(sentence_list):
     '''get a response with just id and draft to print'''
     output_json = {}
     for row in sentence_list:
-        output_json[row.surrogateId] = row.draft 
+        output_json[row.surrogateId] = row.draft
     return output_json
 
 def export_to_json(source_lang, target_lang, sentence_list, last_modified):
@@ -1001,6 +1001,6 @@ def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=No
         return draft_rows
     result = []
     for row in draft_rows:
-        obj = {"sentenceId": row.sentenceId, "sentence":row.sentence}
+        obj = {"sentenceId": row.sentenceId, "surrogateId":row.surrogateId,"sentence":row.sentence}
         result.append(obj)
     return result
