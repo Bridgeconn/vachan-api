@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  app-db:
+    image: postgres:12.7
+    environment:
+      - POSTGRES_PASSWORD=password
+      - PGDATA=/var/lib/postgresql/12/main
+      - POSTGRES_DB=vachan_dev
+    expose:
+      - 5432
+    volumes:
+      - /custom/mount:/var/lib/postgresql/12/main
+
+  api-server:
+    build: .
+    ports:
+      - "8000:80"
+    environment:
+      - VACHAN_POSTGRES_HOST=app-db
+      - VACHAN_POSTGRES_PORT=5432
+      - VACHAN_POSTGRES_USER=postgres
+      - VACHAN_POSTGRES_PASSWORD=password
+      - VACHAN_POSTGRES_DATABASE=vachan_dev
+      - VACHAN_LOGGING_LEVEL=WARNING
