@@ -345,4 +345,3 @@ def get_agmt_source_versification(db_, project_id):
     if prev_book_code is not None:
         versification['maxVerses'][prev_book_code].append(prev_verse)
     return versification
-
