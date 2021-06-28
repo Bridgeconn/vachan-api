@@ -320,7 +320,7 @@ def get_agmt_source_versification(db_, project_id):
     prev_chapter = 0
     prev_verse = 0
     for row in verse_rows:
-        if row.sentenceId not in range(1000000,63000000):
+        if row.sentenceId not in range(1000000,68000000):
             raise TypeException("For versification, sentenceIds need to be refids(bbcccvvv)")
         book_id = int(row.sentenceId/1000000)
         chapter = int(row.sentenceId/1000)%1000
