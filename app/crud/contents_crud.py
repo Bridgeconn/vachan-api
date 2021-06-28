@@ -573,8 +573,6 @@ def update_bible_audios(db_: Session, source_name, audios, user_id=None):
     db_.commit()
     return db_content
 
-
-
 def get_bible_versification(db_, source_name):
     '''select the reference list from bible_cleaned table'''
     model_cls = db_models.dynamicTables[source_name+"_cleaned"]
@@ -584,7 +582,7 @@ def get_bible_versification(db_, source_name):
     query = query.order_by(model_cls.refId)
     versification = {"maxVerses":{}, "mappedVerses":{}, "excludedVerses":[], "partialVerses":{}}
     prev_book_code = None
-    prev_chapter = None
+    prev_chapter = 0
     prev_verse = 0
     for row in query.all():
         if row.book.bookCode != prev_book_code:
@@ -595,12 +593,16 @@ def get_bible_versification(db_, source_name):
             prev_chapter = row.chapter
         elif row.chapter != prev_chapter:
             versification['maxVerses'][row.book.bookCode].append(prev_verse)
+            if prev_chapter+1 != row.chapter:
+                for chap in range(prev_chapter+1, row.chapter): #pylint: disable=unused-variable
+                    versification['maxVerses'][row.book.bookCode].append(0)
             prev_chapter = row.chapter
         elif row.verseNumber != prev_verse + 1:
             for i in range(prev_verse+1, row.verseNumber):
                 versification['excludedVerses'].append('%s %s:%s'%(prev_book_code, row.chapter, i))
         prev_verse = row.verseNumber
-    versification['maxVerses'][prev_book_code].append(prev_verse)
+    if prev_book_code is not None:
+        versification['maxVerses'][prev_book_code].append(prev_verse)
     return versification
 
 

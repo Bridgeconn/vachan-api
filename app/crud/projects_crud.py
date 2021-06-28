@@ -306,3 +306,42 @@ def obtain_agmt_token_translation(db_, project_id, token, occurrences): # pylint
         }
         translations.append(res)
     return translations
+
+def get_agmt_source_versification(db_, project_id):
+    '''considering the AgMT source is always bible verses, get their versification structure'''
+    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    if not project_row:
+        raise NotAvailableException("Project with id, %s, not found"%project_id)
+    query = db_.query(db_models.TranslationDraft).filter(
+        db_models.TranslationDraft.project_id==project_id)
+    verse_rows = query.order_by(db_models.TranslationDraft.sentenceId).all()
+    versification = {"maxVerses":{}, "mappedVerses":{}, "excludedVerses":[], "partialVerses":{}}
+    prev_book_code = None
+    prev_chapter = 0
+    prev_verse = 0
+    for row in verse_rows:
+        if row.sentenceId not in range(1000000,63000000):
+            raise TypeException("For versification, sentenceIds need to be refids(bbcccvvv)")
+        book_id = int(row.sentenceId/1000000)
+        chapter = int(row.sentenceId/1000)%1000
+        verse = row.sentenceId%1000
+        book_code = utils.books[book_id]['book_code']
+        if book_code != prev_book_code:
+            if prev_book_code is not None:
+                versification['maxVerses'][prev_book_code].append(prev_verse)
+            versification['maxVerses'][book_code] = []
+            prev_book_code = book_code
+            prev_chapter = chapter
+        elif chapter != prev_chapter:
+            versification['maxVerses'][book_code].append(prev_verse)
+            if prev_chapter+1 != chapter:
+                for chap in range(prev_chapter+1, chapter): #pylint: disable=unused-variable
+                    versification['maxVerses'][book_code].append(0)
+            prev_chapter = chapter
+        elif verse != prev_verse + 1:
+            for i in range(prev_verse+1, verse):
+                versification['excludedVerses'].append('%s %s:%s'%(prev_book_code, chapter, i))
+        prev_verse = verse
+    if prev_book_code is not None:
+        versification['maxVerses'][prev_book_code].append(prev_verse)
+    return versification
