@@ -335,13 +335,14 @@ def get_agmt_source_versification(db_, project_id):
         elif chapter != prev_chapter:
             versification['maxVerses'][book_code].append(prev_verse)
             if prev_chapter+1 != chapter:
-                for chap in range(prev_chapter+1, chapter):
+                for chap in range(prev_chapter+1, chapter): #pylint: disable=unused-variable
                     versification['maxVerses'][book_code].append(0)
             prev_chapter = chapter
         elif verse != prev_verse + 1:
             for i in range(prev_verse+1, verse):
                 versification['excludedVerses'].append('%s %s:%s'%(prev_book_code, chapter, i))
         prev_verse = verse
-    versification['maxVerses'][prev_book_code].append(prev_verse)
+    if prev_book_code is not None:
+        versification['maxVerses'][prev_book_code].append(prev_verse)
     return versification
 
