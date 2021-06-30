@@ -145,7 +145,7 @@ def get_project_source(project_id:int=Query(...,example="1022004"),
     log.info('In get_source')
     log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s, with_draft:%s',
         project_id, books, sentence_id_list, sentence_id_range, with_draft)
-    return nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_list, sentence_id_range,
+    return nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_range, sentence_id_list,
         with_draft)
 
 @router.get('/v2/autographa/project/progress', status_code=200,
