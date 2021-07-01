@@ -145,7 +145,7 @@ def get_project_source(project_id:int=Query(...,example="1022004"),
     log.info('In get_source')
     log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s, with_draft:%s',
         project_id, books, sentence_id_list, sentence_id_range, with_draft)
-    return nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_list, sentence_id_range,
+    return nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_range, sentence_id_list,
         with_draft)
 
 @router.get('/v2/autographa/project/progress', status_code=200,
@@ -161,6 +161,15 @@ def get_progress(project_id:int=Query(...,example="1022004"),
         project_id, books, sentence_id_list, sentence_id_range)
     return projects_crud.obtain_agmt_progress(db_, project_id, books,
         sentence_id_list, sentence_id_range)
+
+@router.get('/v2/autographa/project/versification', status_code=200,
+    response_model=schemas.Versification, tags=['Autographa-Translation'])
+def get_project_versification(project_id:int=Query(...,example="1022004"),
+    db_:Session=Depends(get_db)):
+    '''Obtains versification structure for source sentences or verses'''
+    log.info('In get_project_versification')
+    log.debug('project_id: %s', project_id)
+    return projects_crud.get_agmt_source_versification(db_, project_id)
 
 @router.put('/v2/autographa/project/suggestions', status_code=201,
     response_model=List[schemas_nlp.Sentence],

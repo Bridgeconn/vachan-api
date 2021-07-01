@@ -490,4 +490,30 @@ def test_progress_n_suggestion():
     assert ceil(response.json()['confirmed']) == 1
     assert floor(response.json()['untranslated']) == 0
 
+def test_get_versification():
+    '''Positive test for agmt sentence/draft fetch API'''
+    resp = add_project(project_data)
+    assert resp.json()['message'] == "Project created successfully"
+    project_id = resp.json()['data']['projectId']
+    
+    # before adding books
+    response = client.get(UNIT_URL+"/versification?project_id="+str(project_id))
+    for key in response.json():
+        assert len(response.json()[key]) == 0
 
+    put_data = {
+        "projectId": project_id,
+        "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
+    }
+    resp = client.put("/v2/autographa/projects", headers=headers, json=put_data)
+    assert resp.json()['message'] == "Project updated successfully"
+
+    response = client.get(UNIT_URL+"/versification?project_id="+str(project_id))
+    found_mat = False
+    found_mrk = False
+    for book in response.json()['maxVerses']:
+        if book == "mat":
+            found_mat = True
+        if book == "mrk":
+            found_mrk = True
+    assert found_mat and found_mrk

@@ -9,6 +9,7 @@ from sqlalchemy.orm.attributes import flag_modified
 #pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
 
 import db_models
+import schemas_nlp
 from crud import utils, nlp_crud
 from custom_exceptions import NotAvailableException, TypeException
 
@@ -83,7 +84,7 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
                 draft_row = db_models.TranslationDraft(
                     project_id=project_obj.projectId,
                     sentenceId=verse.refId,
-                    surrogateId=buk+","+str(verse.chapter)+","+str(verse.verseNumber),
+                    surrogateId=buk+" "+str(verse.chapter)+":"+str(verse.verseNumber),
                     sentence=sent,
                     draft=sent,
                     draftMeta=[[offsets,offsets,"untranslated"]],
@@ -109,7 +110,7 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
                             project_id=project_obj.projectId,
                             sentenceId=book.bookId*1000000+
                                 int(chapter_number)*1000+int(verse_number),
-                            surrogateId=book_code+","+str(chapter_number)+","+str(verse_number),
+                            surrogateId=book_code+" "+str(chapter_number)+":"+str(verse_number),
                             sentence=verse_text,
                             draft=verse_text,
                             draftMeta=[[offsets,offsets,'untranslated']],
@@ -204,11 +205,13 @@ def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence
         raise NotAvailableException("Project with id, %s, not found"%project_id)
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_list,
     	sentence_id_range, with_draft=True)
-    if output_format.value == "usfm":
+    if output_format == schemas_nlp.DraftFormats.USFM :
         return nlp_crud.create_usfm(draft_rows)
-    if output_format.value == 'alignment-json':
+    if output_format == schemas_nlp.DraftFormats.JSON:
         return nlp_crud.export_to_json(project_row.sourceLanguage,
             project_row.targetLanguage, draft_rows, None)
+    if output_format == schemas_nlp.DraftFormats.PRINT:
+        return nlp_crud.export_to_print(draft_rows)
     raise TypeException("Unsupported output format: %s"%output_format)
 
 def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_range):
@@ -303,3 +306,42 @@ def obtain_agmt_token_translation(db_, project_id, token, occurrences): # pylint
         }
         translations.append(res)
     return translations
+
+def get_agmt_source_versification(db_, project_id):
+    '''considering the AgMT source is always bible verses, get their versification structure'''
+    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    if not project_row:
+        raise NotAvailableException("Project with id, %s, not found"%project_id)
+    query = db_.query(db_models.TranslationDraft).filter(
+        db_models.TranslationDraft.project_id==project_id)
+    verse_rows = query.order_by(db_models.TranslationDraft.sentenceId).all()
+    versification = {"maxVerses":{}, "mappedVerses":{}, "excludedVerses":[], "partialVerses":{}}
+    prev_book_code = None
+    prev_chapter = 0
+    prev_verse = 0
+    for row in verse_rows:
+        if row.sentenceId not in range(1000000,68000000):
+            raise TypeException("For versification, sentenceIds need to be refids(bbcccvvv)")
+        book_id = int(row.sentenceId/1000000)
+        chapter = int(row.sentenceId/1000)%1000
+        verse = row.sentenceId%1000
+        book_code = utils.books[book_id]['book_code']
+        if book_code != prev_book_code:
+            if prev_book_code is not None:
+                versification['maxVerses'][prev_book_code].append(prev_verse)
+            versification['maxVerses'][book_code] = []
+            prev_book_code = book_code
+            prev_chapter = chapter
+        elif chapter != prev_chapter:
+            versification['maxVerses'][book_code].append(prev_verse)
+            if prev_chapter+1 != chapter:
+                for chap in range(prev_chapter+1, chapter): #pylint: disable=unused-variable
+                    versification['maxVerses'][book_code].append(0)
+            prev_chapter = chapter
+        elif verse != prev_verse + 1:
+            for i in range(prev_verse+1, verse):
+                versification['excludedVerses'].append('%s %s:%s'%(prev_book_code, chapter, i))
+        prev_verse = verse
+    if prev_book_code is not None:
+        versification['maxVerses'][prev_book_code].append(prev_verse)
+    return versification
