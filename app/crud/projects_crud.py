@@ -300,13 +300,15 @@ def get_agmt_source_versification(db_, project_id):
         versification['maxVerses'][prev_book_code].append(prev_verse)
     return versification
 
-def get_agmt_source_per_token(db_:Session, project_id, token, occurrences):
+def get_agmt_source_per_token(db_:Session, project_id, token, occurrences): #pylint: disable=unused-argument
     '''get sentences and drafts for the token, which splits the token & translation in metadraft
     allowing it to be easily identifiable and highlightable at UI'''
     sent_ids = [occur.sentenceId for occur in occurrences]
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id,
         sentence_id_list=sent_ids, with_draft=True)
-    occur_list = [occur.__dict__ for occur in occurrences]
+    occur_list = []
+    for occur in occurrences:
+        occur_list.append(occur.__dict__)
     translations = pin_point_token_in_draft(occur_list, draft_rows)
     for draft, trans in zip(draft_rows, translations):
         for mta in trans['meta_to_be_replaced']:
@@ -316,7 +318,7 @@ def get_agmt_source_per_token(db_:Session, project_id, token, occurrences):
     return draft_rows
 
 def pin_point_token_in_draft(occurrences, draft_rows):
-    ''''''
+    '''find out token's aligned portion in draft'''
     translations = []
     for occur, row in zip(occurrences, draft_rows):
         trans_offset = [None, None]
