@@ -130,7 +130,7 @@ def get_token_sentences(project_id:int=Query(...,example="1022004"),
     that allows easy highlight of token and translation'''
     log.info('In get_token_sentences')
     log.debug('project_id: %s, token:%s, occurrences:%s'%(project_id, token, occurrences))
-    return nlp_crud.get_agmt_source_per_token(db_, project_id, token, occurrences)
+    return projects_crud.get_agmt_source_per_token(db_, project_id, token, occurrences)
 
 @router.get('/v2/autographa/project/draft', status_code=200, tags=['Autographa-Translation'])
 def get_draft(project_id:int=Query(...,example="1022004"),

@@ -258,7 +258,7 @@ def obtain_agmt_token_translation(db_, project_id, token, occurrences): # pylint
     sentence_list = [occur["sentenceId"] for occur in occurrences]
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, sentence_id_list=sentence_list,
         with_draft=True)
-    translations = nlp_crud.pin_point_token_in_draft(occurrences, draft_rows)
+    translations = pin_point_token_in_draft(occurrences, draft_rows)
     return translations
 
 def get_agmt_source_versification(db_, project_id):
@@ -299,3 +299,86 @@ def get_agmt_source_versification(db_, project_id):
     if prev_book_code is not None:
         versification['maxVerses'][prev_book_code].append(prev_verse)
     return versification
+
+def get_agmt_source_per_token(db_:Session, project_id, token, occurrences):
+    '''get sentences and drafts for the token, which splits the token & translation in metadraft
+    allowing it to be easily identifiable and highlightable at UI'''
+    sent_ids = [occur.sentenceId for occur in occurrences]
+    draft_rows = nlp_crud.obtain_agmt_source(db_, project_id,
+        sentence_id_list=sent_ids, with_draft=True)
+    occur_list = [occur.__dict__ for occur in occurrences]
+    translations = pin_point_token_in_draft(occur_list, draft_rows)
+    for draft, trans in zip(draft_rows, translations):
+        for mta in trans['meta_to_be_replaced']:
+            draft.draftMeta.remove(mta)
+        for mta in trans['replacement_meta']:
+            draft.draftMeta.append(mta)
+    return draft_rows
+
+def pin_point_token_in_draft(occurrences, draft_rows):
+    ''''''
+    translations = []
+    for occur, row in zip(occurrences, draft_rows):
+        trans_offset = [None, None]
+        new_token_offset = [None, None]
+        status = None
+        segments_of_interest = []
+        for meta in row.draftMeta:
+            token_offset = occur["offset"]
+            segment_offset = meta[0]
+            intersection = set(range(token_offset[0],token_offset[1])).intersection(
+            range(segment_offset[0],segment_offset[1]))
+            if len(intersection) > 0: # our area of interest overlaps with this segment
+                segments_of_interest.append(meta)
+                if meta[2] != "untranslated":
+                    if token_offset[0] >= segment_offset[0]: #begining is this segment
+                        trans_offset[0] = meta[1][0]
+                        new_token_offset[0] = meta[0][0]
+                    else: # begins before this segment
+                        pass
+                    if token_offset[1] <= segment_offset[1]: # ends in the segment
+                        trans_offset[1] = meta[1][1]
+                        new_token_offset[1] = meta[0][1]
+                    else: # ends after this segment
+                        pass
+                    status = meta[2]
+                else:
+                    offset_diff = meta[1][0] - meta[0][0]
+                    if token_offset[0] >= segment_offset[0]: #begining is this segment
+                        trans_offset[0] = token_offset[0] + offset_diff
+                        new_token_offset[0] = token_offset[0]
+                    else: # begins before this segment
+                        pass
+                    if token_offset[1] <= segment_offset[1]: # ends in the segment
+                        trans_offset[1] = token_offset[1] + offset_diff
+                        new_token_offset[1] = token_offset[1]
+                    else: # ends after this segment
+                        pass
+                    if status is None:
+                        status = meta[2]
+        new_metas = [
+                    [[segments_of_interest[0][0][0],new_token_offset[0]],
+                     [segments_of_interest[0][1][0], trans_offset[0]],
+                     segments_of_interest[0][2]],
+                    [new_token_offset, trans_offset, status],
+                    [[new_token_offset[1], segments_of_interest[-1][0][1]],
+                     [trans_offset[1], segments_of_interest[-1][1][1]],
+                     segments_of_interest[-1][2]]
+                    ]
+        replacements = []
+        for mta in new_metas:
+            if mta[0][1] - mta[0][0] > 0:
+                replacements.append(mta)
+        res = {
+                "token": row.sentence[new_token_offset[0]: new_token_offset[1]],
+                "translation": row.draft[trans_offset[0]: trans_offset[1]],
+                "occurrence": {
+                    "sentenceId": occur["sentenceId"],
+                    "offset": new_token_offset
+                },
+                "status": status,
+                "meta_to_be_replaced":segments_of_interest,
+                "replacement_meta":replacements
+        }
+        translations.append(res)
+    return translations

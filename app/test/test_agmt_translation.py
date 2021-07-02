@@ -36,7 +36,7 @@ def assert_positive_get_sentence(item):
     if "draft" in item:
         assert isinstance(item['draft'], str)
         assert "draftMeta" in item
-        assert isinstance(item['draftMeta'], list) 
+        assert isinstance(item['draftMeta'], list)
 
 def test_get_tokens():
     '''Positive tests for tokenization process'''
@@ -144,7 +144,7 @@ def test_tokenization_invalid():
     assert response.status_code == 404
     assert response.json()['details'] == 'Book, mmm, not in database'
 
-    # only one value for range 
+    # only one value for range
     response = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
         ";sentence_id_range=41000000")
     assert_input_validation_error(response)
@@ -177,7 +177,7 @@ def test_save_translation():
     resp = add_project(project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
-    
+   
     put_data = {
         "projectId": project_id,
         "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
@@ -221,7 +221,7 @@ def test_save_translation():
     assert response.json()['message'] == 'Token translations saved'
     for sent in response.json()['data']:
         assert "test translation" in sent['draft']
-    
+   
     # all tokens at once
     post_obj_list = []
     for item in all_tokens:
@@ -244,7 +244,7 @@ def test_save_translation_invalid():
     resp = add_project(project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
-    
+   
     put_data = {
         "projectId": project_id,
         "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
@@ -324,7 +324,7 @@ def test_drafts():
     resp = add_project(project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
-    
+   
     put_data = {
         "projectId": project_id,
         "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
@@ -367,12 +367,70 @@ def test_drafts():
     assert response.status_code == 200
     assert isinstance(response.json(), dict)
 
+def test_get_token_sentences():
+    '''Check if draft-meta is properly segemneted according to specifed token occurence'''
+    resp = add_project(project_data)
+    assert resp.json()['message'] == "Project created successfully"
+    project_id = resp.json()['data']['projectId']
+
+    put_data = {
+        "projectId": project_id,
+        "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
+    }
+    resp = client.put("/v2/autographa/projects", headers=headers, json=put_data)
+    assert resp.json()['message'] == "Project updated successfully"
+
+    resp = client.get("/v2/autographa/project/tokens?project_id="+str(project_id))
+    tokens = resp.json()
+    our_token = tokens[0]['token']
+    occurrences = tokens[0]['occurrences']
+
+    #before translating
+    response = client.put('/v2/autographa/project/token-sentences?project_id='+
+        str(project_id)+'&token='+our_token, headers=headers,
+        json=occurrences)
+    assert response.status_code == 200
+    for sent, occur in zip(response.json(), occurrences):
+        assert_positive_get_sentence(sent)
+        found_slice = False
+        if sent['sentenceId'] == occur["sentenceId"]:
+            for meta in sent['draftMeta']:
+                if meta[0] == occur['offset']:
+                    found_slice = True
+        assert found_slice
+
+    post_obj_list = [
+      {
+        "token": our_token,
+        "occurrences": occurrences,
+        "translation": "sample"
+      }
+    ]
+    response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
+        headers=headers, json=post_obj_list)
+    assert response.status_code == 201
+    assert response.json()['message'] == 'Token translations saved'
+
+    # after translation
+    response2 = client.put('/v2/autographa/project/token-sentences?project_id='+
+        str(project_id)+'&token='+our_token, headers=headers,
+        json=occurrences)
+    assert response2.status_code == 200
+    for sent, occur in zip(response2.json(), occurrences):
+        found_slice = False
+        if sent['sentenceId'] == occur["sentenceId"]:
+            for meta in sent['draftMeta']:
+                if meta[0] == occur['offset']:
+                    found_slice = True
+                    assert meta[2] == "confirmed"
+        assert found_slice
+
 def test_get_sentence():
     '''Positive test for agmt sentence/draft fetch API'''
     resp = add_project(project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
-    
+   
     # before adding books
     response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id))
     assert_not_available_content(response)
@@ -427,7 +485,7 @@ def test_progress_n_suggestion():
     resp = add_project(project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
-    
+   
     # before adding books
     response = client.get(UNIT_URL+"/progress?project_id="+str(project_id))
     assert response.status_code ==200
@@ -495,7 +553,7 @@ def test_get_versification():
     resp = add_project(project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
-    
+   
     # before adding books
     response = client.get(UNIT_URL+"/versification?project_id="+str(project_id))
     for key in response.json():
