@@ -105,6 +105,7 @@ def apply_token_translations(project_id:int=Query(...,example="1022004"),
     return {"message": "Token translations saved", "data":drafts}
 
 @router.get('/v2/autographa/project/token-translations', status_code=200,
+    response_model=schemas_nlp.Translation,
     tags=['Autographa-Translation'])
 def get_token_translation(project_id:int=Query(...,example="1022004"),
     token:str=Query(...,example="duck"),
