@@ -1004,4 +1004,3 @@ def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=No
         obj = {"sentenceId": row.sentenceId, "surrogateId":row.surrogateId,"sentence":row.sentence}
         result.append(obj)
     return result
-
