@@ -454,7 +454,7 @@ def alignments_to_trainingdata(db_:Session, src_lang, trg_lang, alignment_list,
     output: <index>\t<context ayrray>\t<translation>'''
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    timestamp = datetime.now().strftime("%d:%m:%Y-%H:%M:%S")
+    timestamp = datetime.now().strftime("%d_%m_%Y-%H_%M_%S")
     output_path = output_dir / (src_lang+"-"+trg_lang+"-"+str(user_id)+"-"+\
         "-"+timestamp+".json")
     output_file = open(output_path, "w", encoding='utf-8')
