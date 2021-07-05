@@ -63,33 +63,33 @@ def test_get_tokens():
         assert_positive_get_tokens(item)
 
     # with book filter
-    get_response3 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+";books=mat")
+    get_response3 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+"&books=mat")
     assert get_response3.status_code == 200
     assert len(get_response3.json()) < len(get_response2.json())
 
-    get_response4 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+";books=mrk")
+    get_response4 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+"&books=mrk")
     assert get_response4.status_code == 200
     all_tokens = [item['token'] for item in get_response3.json() + get_response4.json()]
     assert len(get_response2.json()) == len(set(all_tokens))
 
     # with range filter
     get_response5 = client.get(UNIT_URL+'/tokens?project_id='+str(project_id)+
-        ";sentence_id_range=0;sentence_id_range=10")
+        "&sentence_id_range=0&sentence_id_range=10")
     print(get_response5.json())
     assert_not_available_content(get_response5)
 
     get_response6 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        ";sentence_id_range=41000000;sentence_id_range=41999999")
+        "&sentence_id_range=41000000&sentence_id_range=41999999")
     assert get_response6.status_code ==200
     assert get_response6.json() == get_response3.json()
 
     # with list filter
     get_response7 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        ";sentence_id_list=41000000")
+        "&sentence_id_list=41000000")
     assert_not_available_content(get_response7)
 
     get_response7 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        ";sentence_id_list=41001001")
+        "&sentence_id_list=41001001")
     assert get_response7.status_code == 200
     assert 0 < len(get_response7.json()) < 25
 
@@ -140,23 +140,23 @@ def test_tokenization_invalid():
     assert response.json()['details'] == "Project with id, %s, not found"%(project_id+1)
 
     #invalid book
-    response = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+";books=mmm")
+    response = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+"&books=mmm")
     assert response.status_code == 404
     assert response.json()['details'] == 'Book, mmm, not in database'
 
     # only one value for range 
     response = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        ";sentence_id_range=41000000")
+        "&sentence_id_range=41000000")
     assert_input_validation_error(response)
 
     # incorrect value for range
     response = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        ";sentence_id_range=gen;sentence_id_range=num")
+        "&sentence_id_range=gen&sentence_id_range=num")
     assert_input_validation_error(response)
 
     # incorrect value for id
     response = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        ";sentence_id_list=first")
+        "&sentence_id_list=first")
     assert_input_validation_error(response)
 
     # incorrect value for flags

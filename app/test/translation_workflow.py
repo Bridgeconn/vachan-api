@@ -391,7 +391,7 @@ assert resp.json()['message'] == "Token translations saved"
 
 # Additional user
 resp = requests.post(BASE_URL+"autographa/project/user?project_id="+str(project_id)+
-	";user_id="+str(NEW_USER_ID), headers=headers)
+	"&user_id="+str(NEW_USER_ID), headers=headers)
 assert resp.json()['message'] == "User added to project successfully"
 
 resp = requests.put(BASE_URL+"autographa/project/user", headers=headers, json=user_data)
@@ -406,7 +406,7 @@ assert len(resp.json()) > 0
 # # Suggestions
 
 # resp = requests.post(BASE_URL+"translation/learn/alignment?source_language="+ALIGNMENT_SRC+
-# 	";target_language="+ALIGNMENT_TRG, headers=headers, json=alignment_data)
+# 	"&target_language="+ALIGNMENT_TRG, headers=headers, json=alignment_data)
 # assert resp.status_code == 201
 # print(resp)
 # print(resp.json())
