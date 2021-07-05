@@ -345,8 +345,8 @@ def save_agmt_translations(db_, project_id, token_translations, return_drafts=Tr
 
 ###################### Suggestions ######################
 suggestion_trie_in_mem = {}
-SUGGESTION_DATA_PATH = 'models/suggestion_data'
-SUGGESTION_TRIE_PATH = 'models/suggestion_tries'
+SUGGESTION_DATA_PATH = r'models/suggestion_data' 
+SUGGESTION_TRIE_PATH = r'models/suggestion_tries'
 WINDOW_SIZE = 5
 
 def extract_context(token, offset, sentence, window_size=WINDOW_SIZE,
@@ -455,7 +455,7 @@ def alignments_to_trainingdata(db_:Session, src_lang, trg_lang, alignment_list,
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     timestamp = datetime.now().strftime("%d:%m:%Y-%H:%M:%S")
-    output_path = output_dir+"/"+src_lang+"-"+trg_lang+"-"+str(user_id)+"-"+\
+    output_path =output_dir+"/"+src_lang+"-"+trg_lang+"-"+str(user_id)+"-"+\
         "-"+timestamp+".json"
     output_file = open(output_path, "w", encoding='utf8')
     dict_data = {}
