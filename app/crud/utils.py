@@ -125,7 +125,7 @@ def stopwords(lang):
 
 def parse_usfm(usfm_string):
     '''parse an uploaded usfm file using usfm-grammar'''
-    file= open("temp.usfm", "w")
+    file= open("temp.usfm", "w", encoding='utf-8')
     file.write(normalize_unicode(usfm_string))
     file.close()
     process = subprocess.Popen(['usfm-grammar temp.usfm'],
@@ -140,7 +140,7 @@ def parse_usfm(usfm_string):
 
 def form_usfm(json_obj):
     '''convert a usfm-grammar format JSON into usfm'''
-    file = open("temp.json", "w")
+    file = open("temp.json", "w", encoding='utf-8')
     json.dump(json_obj, file)
     # file.write(json_obj)
     file.close()
