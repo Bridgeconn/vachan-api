@@ -5,7 +5,6 @@ related to NLP operations and translation apps'''
 
 import re
 import os
-import glob
 import json
 from datetime import datetime
 from math import floor, ceil
