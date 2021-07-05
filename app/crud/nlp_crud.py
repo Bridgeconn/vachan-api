@@ -5,10 +5,10 @@ related to NLP operations and translation apps'''
 
 import re
 import os
-import glob
 import json
 from datetime import datetime
 from math import floor, ceil
+from pathlib import Path
 import pygtrie
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
@@ -345,8 +345,8 @@ def save_agmt_translations(db_, project_id, token_translations, return_drafts=Tr
 
 ###################### Suggestions ######################
 suggestion_trie_in_mem = {}
-SUGGESTION_DATA_PATH = 'models/suggestion_data'
-SUGGESTION_TRIE_PATH = 'models/suggestion_tries'
+SUGGESTION_DATA_PATH = Path('models/suggestion_data')
+SUGGESTION_TRIE_PATH = Path('models/suggestion_tries')
 WINDOW_SIZE = 5
 
 def extract_context(token, offset, sentence, window_size=WINDOW_SIZE,
@@ -454,10 +454,10 @@ def alignments_to_trainingdata(db_:Session, src_lang, trg_lang, alignment_list,
     output: <index>\t<context ayrray>\t<translation>'''
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    timestamp = datetime.now().strftime("%d:%m:%Y-%H:%M:%S")
-    output_path = output_dir+"/"+src_lang+"-"+trg_lang+"-"+str(user_id)+"-"+\
-        "-"+timestamp+".json"
-    output_file = open(output_path, "w", encoding='utf8')
+    timestamp = datetime.now().strftime("%d_%m_%Y-%H_%M_%S")
+    output_path = output_dir / (src_lang+"-"+trg_lang+"-"+str(user_id)+"-"+\
+        "-"+timestamp+".json")
+    output_file = open(output_path, "w", encoding='utf-8')
     dict_data = {}
     sugg_data = []
     for sent in alignment_list:
@@ -592,9 +592,9 @@ def rebuild_trie(db_, src, trg):
         db_models.TranslationProject.targetLanguage.has(code = trg)).all()
     training_data = get_training_data_from_drafts([item[0] for item in db_sents])
     new_trie = build_trie(training_data)
-    files_on_disc = glob.glob(SUGGESTION_DATA_PATH+'/'+src+"-"+trg+'*.json')
+    files_on_disc = SUGGESTION_DATA_PATH.glob(src+"-"+trg+'*.json')
     for file in files_on_disc:
-        with open(file, 'r') as json_file:
+        with open(file, 'r', encoding='utf-8') as json_file:
             log.warning("Using %s, to update %s-%s trie"%(file, src, trg))
             json_data = json.load(json_file)
             for key in json_data:

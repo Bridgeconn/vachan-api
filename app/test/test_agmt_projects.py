@@ -290,7 +290,7 @@ def test_add_user():
 
     new_user_id = 5555
     response = client.post(USER_URL+'?project_id='+str(new_project['projectId'])+
-        ';user_id='+str(new_user_id))
+        '&user_id='+str(new_user_id))
     assert response.status_code == 201
     assert response.json()['message'] == "User added to project successfully"
     data = response.json()['data']
@@ -324,12 +324,12 @@ def test_add_user_invalid():
 
     # Invalid project
     resp = client.post(USER_URL+'?project_id='+str(new_project['projectName'])+
-        ';user_id=111111')
+        '&user_id=111111')
     assert_input_validation_error(resp)
 
     # Invalid user
     resp = client.post(USER_URL+'?project_id='+str(new_project['projectId'])+
-        ';user_id=some_name')
+        '&user_id=some_name')
     assert_input_validation_error(resp)
 
 
@@ -346,7 +346,7 @@ def test_update_user():
     new_user_id = 7777
 
     resp = client.post(USER_URL+'?project_id='+str(new_project['projectId'])+
-        ';user_id='+str(new_user_id))
+        '&user_id='+str(new_user_id))
     assert resp.json()['message'] == "User added to project successfully"
 
     update_data = {
@@ -393,7 +393,7 @@ def test_update_user_invlaid():
     new_user_id = 8888
 
     resp = client.post(USER_URL+'?project_id='+str(new_project['projectId'])+
-        ';user_id='+str(new_user_id))
+        '&user_id='+str(new_user_id))
     assert resp.json()['message'] == "User added to project successfully"
 
 

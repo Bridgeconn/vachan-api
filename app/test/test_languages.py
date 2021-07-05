@@ -58,7 +58,7 @@ def test_get_language_name_mixed_case():
 
 def test_get_multiple_params():
     '''positive test case, with two optional params'''
-    response = client.get(UNIT_URL+'?language_name=hindi;language_code=hi')
+    response = client.get(UNIT_URL+'?language_name=hindi&language_code=hi')
     assert response.status_code == 200
     assert isinstance( response.json(), list)
     assert len(response.json()) == 1

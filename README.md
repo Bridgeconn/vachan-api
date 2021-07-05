@@ -46,9 +46,10 @@ Prerequisite: Postgresql (refer [postgresql website](https://www.postgresql.org/
   `>>> cd DB`
   
   `>>> psql db_name < seed_DB.sql`
-  (use your username and password if required)
 
-
+  (use your username and password if required
+  `>>> psql -U username db_name < seed_DB.sql` )
+  
 ### Set up Environmental Variables
 
 go to the home directory and open `.bashrc` file

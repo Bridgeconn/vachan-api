@@ -43,7 +43,7 @@ def test_get():
     assert response.json()[0]['code'] == 'CC-BY-SA'
 
     # '''positive test case, with two optional params'''
-    response = client.get(UNIT_URL+'?license_code=ISC;active=true')
+    response = client.get(UNIT_URL+'?license_code=ISC&active=true')
     assert response.status_code == 200
     assert isinstance( response.json(), list)
     assert len(response.json()) == 1
