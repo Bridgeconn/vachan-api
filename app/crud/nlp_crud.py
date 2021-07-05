@@ -457,7 +457,7 @@ def alignments_to_trainingdata(db_:Session, src_lang, trg_lang, alignment_list,
     timestamp = datetime.now().strftime("%d:%m:%Y-%H:%M:%S")
     output_path = output_dir / (src_lang+"-"+trg_lang+"-"+str(user_id)+"-"+\
         "-"+timestamp+".json")
-    output_file = open(output_path, "w", encoding='utf8')
+    output_file = open(output_path, "w", encoding='utf-8')
     dict_data = {}
     sugg_data = []
     for sent in alignment_list:
