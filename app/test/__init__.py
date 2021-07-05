@@ -33,8 +33,8 @@ def check_skip(unit_url):
         assert response1.json()[1] == response2.json()[0]
 
     # fetch a non existant page, with skip and limit values
-    response = client.get(unit_url+"?skip=50000;limit=10")
-    assert_not_available_content(response)
+    #response = client.get(unit_url+"?skip=50000;limit=10")
+    #assert_not_available_content(response)
 
     # skip should be an integer
     response = client.get(unit_url+"?skip=abc")
@@ -53,8 +53,8 @@ def check_limit(unit_url):
     assert len(response.json()) <= 3
 
     # fetch a non existant page, with skip and limit values
-    response = client.get(unit_url+"?skip=50000;limit=10")
-    assert_not_available_content(response)
+    #response = client.get(unit_url+"?skip=50000;limit=10") ------- commented
+    #assert_not_available_content(response)
 
     # limit should be an integer
     response = client.get(unit_url+"?limit=abc")
