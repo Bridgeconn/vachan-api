@@ -594,7 +594,7 @@ def rebuild_trie(db_, src, trg):
     new_trie = build_trie(training_data)
     files_on_disc = SUGGESTION_DATA_PATH.glob(src+"-"+trg+'*.json')
     for file in files_on_disc:
-        with open(file, 'r') as json_file:
+        with open(file, 'r', encoding='UTF-8') as json_file:
             log.warning("Using %s, to update %s-%s trie"%(file, src, trg))
             json_data = json.load(json_file)
             for key in json_data:
