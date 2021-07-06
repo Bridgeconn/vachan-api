@@ -18,6 +18,7 @@ from datetime import timedelta
 import re
 import json
 import logging
+import traceback
 import flask
 from flask import Flask, request, session, redirect, jsonify, make_response
 from flask import g
@@ -1744,9 +1745,12 @@ def getTranslatedBooks(sourceId, targetId):
 @app.route("/v1/downloaddraft", methods=["POST"])
 @check_token
 def downloadDraft():
+	print("comes in here")
 	req = request.get_json(True)
 	projectId = req["projectId"]
 	bookList = req["bookList"]
+	print("comes in here with projectId:", projectId)
+	# print("bookList:", bookList)
 	try:
 		connection = get_db()
 		cursor = connection.cursor()
@@ -1806,12 +1810,16 @@ def downloadDraft():
 						print('translated_seq:',translated_seq)
 						print(nonLangComps,nonLangCompsFrontSpace,nonLangCompsTrailingSpace,nonLangCompsTwoSpaces)
 					for comp in nonLangCompsTwoSpaces:
+						comp = comp.replace("\\", '\\\\')
 						outputLine = re.sub(r' uuuQQQuuu '," "+comp+" ",outputLine,1)
 					for comp in nonLangCompsTrailingSpace:
+						comp = comp.replace("\\", '\\\\')
 						outputLine = re.sub(r' QQQuuu ',comp+" ",outputLine,1)
 					for comp in nonLangCompsFrontSpace:
+						comp = comp.replace("\\", '\\\\')
 						outputLine = re.sub(r' uuuQQQ '," "+comp,outputLine,1)
 					for comp in nonLangComps:
+						comp = comp.replace("\\", '\\\\')
 						outputLine = re.sub(r' QQQ ',comp,outputLine,1)
 					outputLine = re.sub(r'\s+',' ',outputLine)
 					# print(outputLine)
@@ -1825,7 +1833,7 @@ def downloadDraft():
 		else:
 			return '{"success": false, "message":"No translation available"}'
 	except Exception as e:
-		print(e)
+		traceback.print_exc()
 		print("line:",line)
 		print(marker,'of',markers_in_line)
 		print('usfmWordsList:',usfmWordsList)
