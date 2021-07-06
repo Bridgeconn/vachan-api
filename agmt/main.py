@@ -1745,12 +1745,9 @@ def getTranslatedBooks(sourceId, targetId):
 @app.route("/v1/downloaddraft", methods=["POST"])
 @check_token
 def downloadDraft():
-	print("comes in here")
 	req = request.get_json(True)
 	projectId = req["projectId"]
 	bookList = req["bookList"]
-	print("comes in here with projectId:", projectId)
-	# print("bookList:", bookList)
 	try:
 		connection = get_db()
 		cursor = connection.cursor()
