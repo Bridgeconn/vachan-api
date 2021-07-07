@@ -105,6 +105,7 @@ def apply_token_translations(project_id:int=Query(...,example="1022004"),
     return {"message": "Token translations saved", "data":drafts}
 
 @router.get('/v2/autographa/project/token-translations', status_code=200,
+    response_model=schemas_nlp.Translation,
     tags=['Autographa-Translation'])
 def get_token_translation(project_id:int=Query(...,example="1022004"),
     token:str=Query(...,example="duck"),
@@ -116,6 +117,20 @@ def get_token_translation(project_id:int=Query(...,example="1022004"),
     occurrences = [{"sentenceId":sentence_id, "offset":offset}]
     log.debug('project_id: %s, token:%s, occurrences:%s'%(project_id, token, occurrences))
     return projects_crud.obtain_agmt_token_translation(db_, project_id, token, occurrences)[0]
+
+@router.put('/v2/autographa/project/token-sentences', status_code=200,
+    response_model = List[schemas_nlp.Sentence],
+    tags=['Autographa-Translation'])
+def get_token_sentences(project_id:int=Query(...,example="1022004"),
+    token:str=Query(...,example="duck"),
+    occurrences:List[schemas_nlp.TokenOccurence]=Body(..., example=[
+        {"sentenceId":41001001, "offset":[0,4]}]),
+    db_:Session=Depends(get_db)):
+    '''Pass in the occurence list of a token and get all sentences it is present in with draftMeta
+    that allows easy highlight of token and translation'''
+    log.info('In get_token_sentences')
+    log.debug('project_id: %s, token:%s, occurrences:%s'%(project_id, token, occurrences))
+    return projects_crud.get_agmt_source_per_token(db_, project_id, token, occurrences)
 
 @router.get('/v2/autographa/project/draft', status_code=200, tags=['Autographa-Translation'])
 def get_draft(project_id:int=Query(...,example="1022004"),

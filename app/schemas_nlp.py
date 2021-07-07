@@ -220,8 +220,15 @@ class GlossOutput(BaseModel):
         just get the data from object attributes'''
         orm_mode = True
 
-
 class GlossUpdateResponse(BaseModel):
     '''Response object for learn/gloss and learn/alignments'''
     message: str = Field(..., example="Added to glossary/Alignments used for learning")
     data: List[GlossOutput]
+
+class Translation(BaseModel):
+    '''Response of what is the current translation of a specific token in agmt'''
+    token: str = Field(..., example="duck")
+    translation: str = Field(..., example="താറാവ്")
+    occurrence: TokenOccurence
+    status: str = Field(..., example="confirmed")
+    
