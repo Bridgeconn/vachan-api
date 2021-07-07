@@ -21,7 +21,7 @@ class ContentType(graphene.ObjectType):
 
 class Language(graphene.ObjectType):
     '''output object for Language'''
-    # language_id = graphene.String()
+    #language_id = graphene.Int()
     language = graphene.String()
     code = graphene.String(description="language code as per bcp47(usually 2 letter code)")
     scriptDirection = graphene.String()

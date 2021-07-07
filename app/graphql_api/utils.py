@@ -10,3 +10,7 @@ def convert_graphene_obj_to_pydantic(input_obj, target_class):
         kwargs[key] = input_obj[key]
     new_obj = target_class(**kwargs)
     return new_obj
+
+
+
+

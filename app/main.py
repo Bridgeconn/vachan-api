@@ -21,7 +21,7 @@ from dependencies import get_db, log
 
 from schemas import NormalResponse
 from routers import content_apis, translation_apis
-from graphql_api import queries
+from graphql_api import queries, mutations
 
 app = FastAPI()
 app.add_middleware(
@@ -153,5 +153,5 @@ def test(db_: Session = Depends(get_db)):
 app.include_router(content_apis.router)
 app.include_router(translation_apis.router)
 
-schema=graphene.Schema(query=queries.Query)
+schema=graphene.Schema(query=queries.Query,mutation=mutations.VachanMutations)
 app.add_route("/graphql", GraphQLApp(schema=schema))
