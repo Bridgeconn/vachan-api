@@ -203,7 +203,7 @@ def test_learn_n_suggest():
     draft = draft.json()
     print(draft)
     assert "ഒരു ടെസ്റ്റ് കേസ്." in draft
-    assert "ടെസ്റ്റ് കേസ് ടെസ്റ്റ് ചെയ്തു" in draft
+    assert "ടെസ്റ്റ് കേസ് ടെസ്റ്റ് ചെയ്തു" in draft or "ടെസ്റ്റ് കേസ് ടെസ്റ്റഡ്" in draft
     assert "ടെവെലപ്പര്‍" in draft
-    assert "This ആണ് the sad story of a poor ടെസ്റ്റ് " in draft
+    assert "ഇത് ആണ് the sad story of a poor ടെസ്റ്റ് " in draft
     
