@@ -133,8 +133,6 @@ def parse_usfm(usfm_string):
                          stderr=subprocess.PIPE,
                          shell=True)
     stdout, stderr = process.communicate()
-    print("--STDOUT----=",stdout)
-    print("--STDERR----=",stderr)
     if stderr:
         raise TypeException(stderr.decode('utf-8'))
     usfm_json = json.loads(stdout.decode('utf-8'))

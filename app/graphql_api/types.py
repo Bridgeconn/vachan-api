@@ -1,8 +1,6 @@
 '''Input and Ourput object definitions for graphQL'''
-import json
 import graphene
 from graphene.types import Scalar
-from graphql.language import ast
 
 
 #pylint: disable=too-few-public-methods
@@ -213,7 +211,7 @@ class Token(graphene.ObjectType):
     token = graphene.String()
     occurrences = graphene.List(TokenOccurence)
     translations = Metadata(name="translationSuggestions")
-    metaData = Metadata()   
+    metaData = Metadata()
 
 class TokenTranslation(graphene.ObjectType):
     '''For translation/draft of a specific token'''

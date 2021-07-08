@@ -71,7 +71,7 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
     db_content = db_.query(db_models.Language).get(lang.languageId)
     if lang.code:
         valid, message = utils.validate_language_tag(lang.code)
-        if not valid:  
+        if not valid:
             raise TypeException("%s is not a valid BCP 47 tag. %s."%(lang.code, message) +\
                 "Refer https://tools.ietf.org/html/bcp47.")
         db_content.code = lang.code

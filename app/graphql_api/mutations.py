@@ -5,6 +5,7 @@ import graphene
 
 #pylint: disable=E0401
 #pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
+#pylint: disable=E0611
 
 from crud import structurals_crud
 from dependencies import get_db
@@ -28,6 +29,7 @@ class AddLanguage(graphene.Mutation):
         language_addargs = InputAddLang(required=True)
 
 #pylint: disable=R0201,no-self-use
+#pylint: disable=W0613
     language = graphene.Field(types.Language)
     def mutate(self,info,language_addargs):
         '''resolve'''
@@ -61,6 +63,7 @@ class UpdateLanguage(graphene.Mutation):
     language = graphene.Field(types.Language)
 
 #pylint: disable=R0201,no-self-use
+#pylint: disable=W0613
     def mutate(self,info,language_updateargs):
         """resolver"""
         schema_model = utils.convert_graphene_obj_to_pydantic\

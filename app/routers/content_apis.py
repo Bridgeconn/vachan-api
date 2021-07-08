@@ -21,7 +21,7 @@ def get_contents(content_type: str = Query(None, example="bible"), skip: int = Q
     limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
     '''fetches all the contents types supported and their details
     * the optional query parameter can be used to filter the result set
-    * skip=n: skips the first n objects in return list  
+    * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n'''
     log.info('In get_contents')
     log.debug('contentType:%s, skip: %s, limit: %s',content_type, skip, limit)
