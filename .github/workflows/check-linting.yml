@@ -39,3 +39,6 @@ jobs:
 
       - name: Run linter in routers module
         run: pylint --extension-pkg-whitelist='pydantic' app/routers/*.py
+
+      - name: Run linter in graphql module
+        run: pylint --extension-pkg-whitelist='pydantic' app/graphql_api/*.py
