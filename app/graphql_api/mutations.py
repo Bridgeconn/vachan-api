@@ -12,7 +12,7 @@ from graphql_api import types, utils
 import schemas
 
 #pylint: disable=R0901,too-few-public-methods
-class Output(graphene.ObjectType):
+class LanguageOutput(graphene.ObjectType):
     """Language output type"""
     msg = graphene.String()
     language_type = graphene.Field(types.Language)
@@ -22,8 +22,8 @@ class InputAddLang(graphene.InputObjectType):
     """ADD Language Input"""
     language = graphene.String(required=True)
     code = graphene.String(required=True,\
-        description="language code as per bcp47(usually 2 letter code)")
-    scriptDirection = graphene.String(required=True)
+    description="language code as per bcp47(usually 2 letter code)")
+    scriptDirection = graphene.String()
     metaData = graphene.JSONString(description="Expecting a dictionary Type")
 
 #pylint: disable=R0901,too-few-public-methods
@@ -33,7 +33,7 @@ class AddLanguage(graphene.Mutation):
         """Arguments declaration for the mutation"""
         language_addargs = InputAddLang(required=True)
 
-    finalout = graphene.Field(Output)
+    finalout = graphene.Field(LanguageOutput)
 
 #pylint: disable=R0201,no-self-use
 #pylint: disable=W0613
@@ -42,10 +42,10 @@ class AddLanguage(graphene.Mutation):
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (language_addargs,schemas.LanguageCreate)
         result =structurals_crud.create_language(db_=next(get_db()),lang=schema_model)
-        language = Output(
+        language = LanguageOutput(
             msg = "Language Added successfully",
             language_type = types.Language(
-                language_id = result.languageId,
+                languageId = result.languageId,
                 language = result.language,
                 code = result.code,
                 scriptDirection = result.scriptDirection,
@@ -58,10 +58,9 @@ class AddLanguage(graphene.Mutation):
 class InputUpdateLang(graphene.InputObjectType):
     """ update Language Input """
     languageId = graphene.Int(required=True)
-    language = graphene.String(required=True)
-    code = graphene.String(required=True,\
-        description="language code as per bcp47(usually 2 letter code)")
-    scriptDirection = graphene.String(required=True)
+    language = graphene.String()
+    code = graphene.String(description="language code as per bcp47(usually 2 letter code)")
+    scriptDirection = graphene.String()
     metaData = graphene.JSONString(description="Expecting a dictionary Type")
 
 class UpdateLanguage(graphene.Mutation):
@@ -70,7 +69,7 @@ class UpdateLanguage(graphene.Mutation):
         """ Argumnets declare for mutations"""
         language_updateargs = InputUpdateLang(required=True)
 
-    finalout = graphene.Field(Output)
+    finalout = graphene.Field(LanguageOutput)
 
 #pylint: disable=R0201,no-self-use
 #pylint: disable=W0613
@@ -79,10 +78,10 @@ class UpdateLanguage(graphene.Mutation):
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (language_updateargs,schemas.LanguageEdit)
         result = structurals_crud.update_language(db_=next(get_db()),lang=schema_model)
-        language = Output(
+        language = LanguageOutput(
             msg = "Language edited successfully",
             language_type = types.Language(
-                language_id = result.languageId,
+                languageId = result.languageId,
                 language = result.language,
                 code = result.code,
                 scriptDirection = result.scriptDirection,
