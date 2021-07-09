@@ -113,7 +113,7 @@ def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, incl
                     lngst = memory_trie.longest_prefix(key)
                     if lngst.key is not None:
                         new_chunks.append("###"+lngst.key.replace('/',' '))
-                        temp = temp[len(lngst.key):]
+                        temp = temp[len(lngst.key)+1:]
                         new_chunks.append('')
                     else:
                         if " " in temp:
@@ -145,7 +145,7 @@ def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, incl
             if offset == -1:
                 raise NotAvailableException("Tokenization: token, %s, not found in sentence: %s" %(
                     phrase, sent['sentence']))
-            start = offset+1
+            start = offset+len(phrase)
             if phrase not in unique_tokens:
                 unique_tokens[phrase] = {
                 "occurrences":[{"sentenceId":sent['sentenceId'],
@@ -599,7 +599,7 @@ def rebuild_trie(db_, src, trg):
             json_data = json.load(json_file)
             for key in json_data:
                 new_trie[key] = json_data[key]
-    display_tree(new_trie)
+    # display_tree(new_trie)
     return new_trie
 
 def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0):
