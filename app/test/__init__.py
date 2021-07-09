@@ -100,3 +100,4 @@ def check_soft_delete(unit_url, check_post, data, delete_data):
 
     get_response3 = client.get(unit_url+source_name+'?active=false')
     assert len(get_response3.json()) == len(delete_data)
+    
