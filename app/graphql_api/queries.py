@@ -333,7 +333,7 @@ class Query(graphene.ObjectType):
     convert_to_usfm = graphene.List(graphene.String,
         description="Converts drafts to usfm",
         sentence_list=graphene.List(types.SentenceInput, required=True))
-    def resolve_convert_to_usfm(self, info, sentence_list):
+    def resolve_convert_to_usfm(self, _, sentence_list):
         '''resolver'''
         new_list = [ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
                 for item in sentence_list]
@@ -343,7 +343,7 @@ class Query(graphene.ObjectType):
     convert_to_alignment = graphene.Field(types.Metadata,
         description="Converts sentences and drafts to alignment-json",
         sentence_list=graphene.List(types.SentenceInput, required=True))
-    def resolve_convert_to_alignment(self, info, sentence_list):
+    def resolve_convert_to_alignment(self, _, sentence_list):
         '''resolver'''
         new_list = [ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
                 for item in sentence_list]
@@ -353,7 +353,7 @@ class Query(graphene.ObjectType):
     convert_to_csv = graphene.String(
         description="Converts sentences and drafts to CSV format",
         sentence_list=graphene.List(types.SentenceInput, required=True))
-    def resolve_convert_to_csv(self, info, sentence_list):
+    def resolve_convert_to_csv(self, _, sentence_list):
         '''resolver'''
         new_list = [ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
                 for item in sentence_list]
@@ -363,7 +363,7 @@ class Query(graphene.ObjectType):
     convert_to_text = graphene.String(
         description="Converts drafts to alignment-json",
         sentence_list=graphene.List(types.SentenceInput, required=True))
-    def resolve_convert_to_text(self, info, sentence_list):
+    def resolve_convert_to_text(self, _, sentence_list):
         '''resolver'''
         new_list = [ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
                 for item in sentence_list]
