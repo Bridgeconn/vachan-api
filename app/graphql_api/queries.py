@@ -335,7 +335,6 @@ class Query(graphene.ObjectType):
         sentence_list=graphene.List(types.SentenceInput, required=True))
     def resolve_convert_to_usfm(self, info, sentence_list):
         '''resolver'''
-        db_ = info.context["request"].db_session
         new_list = [ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
                 for item in sentence_list]
         return nlp_crud.obtain_draft(new_list,
@@ -346,7 +345,6 @@ class Query(graphene.ObjectType):
         sentence_list=graphene.List(types.SentenceInput, required=True))
     def resolve_convert_to_alignment(self, info, sentence_list):
         '''resolver'''
-        db_ = info.context["request"].db_session
         new_list = [ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
                 for item in sentence_list]
         return nlp_crud.obtain_draft(new_list,
@@ -357,7 +355,6 @@ class Query(graphene.ObjectType):
         sentence_list=graphene.List(types.SentenceInput, required=True))
     def resolve_convert_to_csv(self, info, sentence_list):
         '''resolver'''
-        db_ = info.context["request"].db_session
         new_list = [ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
                 for item in sentence_list]
         return nlp_crud.obtain_draft(new_list,
@@ -368,7 +365,6 @@ class Query(graphene.ObjectType):
         sentence_list=graphene.List(types.SentenceInput, required=True))
     def resolve_convert_to_text(self, info, sentence_list):
         '''resolver'''
-        db_ = info.context["request"].db_session
         new_list = [ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
                 for item in sentence_list]
         return nlp_crud.obtain_draft(new_list,
