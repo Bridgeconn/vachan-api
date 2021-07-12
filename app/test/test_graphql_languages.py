@@ -179,6 +179,52 @@ def test_check_gql_limit():
     assert isinstance(executed, Dict)
     assert len(executed["data"]["languages"]) <= 3
 
+
+def test_get_notavailable_language_code():
+    ''' request a not available language, with code'''
+    query = """
+    {
+    languages(languageCode:"aaj"){
+        languageId
+        language
+        code
+        }
+    }
+    """
+    executed = client.execute(query)
+    assert isinstance(executed, Dict)
+    assert len(executed["data"]["languages"]) == 0
+
+def test_get_notavailable_language_name():
+    ''' request a not available language, with name'''
+    query = """
+    {
+    languages(languageName:"not-a-language"){
+        languageId
+        language
+        code
+        }
+    }
+    """
+    executed = client.execute(query)
+    assert isinstance(executed, Dict)
+    assert len(executed["data"]["languages"]) == 0
+
+def test_get_incorrectvalue_language_code():
+    '''language code should be letters'''
+    query = """
+    {
+    languages(languageCode:110){
+        languageId
+        language
+        code
+        }
+    }
+    """
+    executed = client.execute(query)
+    assert isinstance(executed, Dict)
+    assert "errors" in executed.keys()
+
 ##### Mutation Tests ####
 
 def test_post_default():
