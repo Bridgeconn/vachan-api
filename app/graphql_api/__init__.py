@@ -3,6 +3,9 @@ from fastapi import APIRouter, Depends
 import graphene
 from starlette.requests import Request
 from starlette.graphql import GraphQLApp
+
+#pylint: disable=E0401
+#pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 from graphql_api import queries, mutations
 from dependencies import get_db
 
