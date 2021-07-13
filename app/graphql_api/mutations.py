@@ -40,7 +40,7 @@ class AddLanguage(graphene.Mutation):
                 language = result.language,
                 code = result.code,
                 scriptDirection = result.scriptDirection,
-                metaData = result.metaData        
+                metaData = result.metaData   
         )
         message = "Language created successfully"
         return UpdateLanguage(message=message,data=language)
@@ -53,8 +53,8 @@ class InputUpdateLang(graphene.InputObjectType):
     language = graphene.String()
     code = graphene.String(description="language code as per bcp47(usually 2 letter code)")
     scriptDirection = graphene.String()
-    metaData = graphene.JSONString(description="Expecting a dictionary Type")    
-    
+    metaData = graphene.JSONString(description="Expecting a dictionary Type")
+
 class UpdateLanguage(graphene.Mutation):
     """ Mutation for update language"""
     class Arguments:
@@ -77,7 +77,7 @@ class UpdateLanguage(graphene.Mutation):
                 language = result.language,
                 code = result.code,
                 scriptDirection = result.scriptDirection,
-                metaData = result.metaData        
+                metaData = result.metaData      
         )
         message = "Language edited successfully"
         return UpdateLanguage(message=message,data=language)

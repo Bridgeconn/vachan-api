@@ -1,7 +1,9 @@
 '''Test cases for language related GraphQL'''
 from typing import Dict
 
+#pylint: disable=E0611
 from . import gql_request
+#pylint: disable=E0401
 from .test_languages import assert_positive_get
 
 def test_get_all_data():
@@ -323,7 +325,7 @@ def test_post_incorrectdatatype1():
         }
         """
     operation="mutation"
-    executed = gql_request(query=query, operation=operation, variables=variables)    
+    executed = gql_request(query=query, operation=operation, variables=variables)
     assert "errors" in executed.keys()
 
 def test_post_incorrectdatatype2():
@@ -349,7 +351,7 @@ def test_post_incorrectdatatype2():
         }
         """
     operation="mutation"
-    executed = gql_request(query=query, operation=operation, variables=variables)    
+    executed = gql_request(query=query, operation=operation, variables=variables)
     assert "errors" in executed.keys()
 
 def test_post_missingvalue_language():
@@ -374,7 +376,7 @@ def test_post_missingvalue_language():
         }
         """
     operation="mutation"
-    executed = gql_request(query=query, operation=operation, variables=variables) 
+    executed = gql_request(query=query, operation=operation, variables=variables)
     assert "errors" in executed.keys()
 
 #### text search test #####
