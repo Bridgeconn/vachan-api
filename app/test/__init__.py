@@ -1,13 +1,20 @@
 '''Set testing environment and define common tests'''
-
-import os
-import sys
-import pytest
 from fastapi.testclient import TestClient
-
-from app.main import app, get_db, log
+from app.main import app
 
 client = TestClient(app)
+
+def gql_request(query, operation="query", variables=None):
+    '''common format for gql reqests with test db session in context'''
+    url = '/graphql'
+    post_body = {
+        "query": query,
+        "operation": operation,
+        "variables": variables
+    }
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    response = client.post(url, headers=headers, json=post_body)
+    return response.json()
 
 def assert_input_validation_error(response):
     '''Check for input validation error in response'''
