@@ -40,7 +40,7 @@ class AddLanguage(graphene.Mutation):
                 language = result.language,
                 code = result.code,
                 scriptDirection = result.scriptDirection,
-                metaData = result.metaData   
+                metaData = result.metaData
         )
         message = "Language created successfully"
         return UpdateLanguage(message=message,data=language)
@@ -77,7 +77,7 @@ class UpdateLanguage(graphene.Mutation):
                 language = result.language,
                 code = result.code,
                 scriptDirection = result.scriptDirection,
-                metaData = result.metaData      
+                metaData = result.metaData
         )
         message = "Language edited successfully"
         return UpdateLanguage(message=message,data=language)
