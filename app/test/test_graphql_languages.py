@@ -1,7 +1,7 @@
 '''Test cases for language related GraphQL'''
+from typing import Dict
 import os
 import sys
-from typing import Dict
 
 #pylint: disable=E0611
 #pylint: disable=E0401
@@ -20,6 +20,9 @@ client = Client(schema)
 
 ##### Query Tests ####
 
+from . import gql_request
+from .test_languages import assert_positive_get
+
 def test_get_all_data():
     """test for get all data as per the following query"""
     default_get_query = """
@@ -33,7 +36,7 @@ def test_get_all_data():
     }
     }
     """
-    executed = client.execute(default_get_query)
+    executed = gql_request(default_get_query)
     assert isinstance(executed, Dict)
     assert len(executed["data"]["languages"])>0
     assert isinstance(executed["data"]["languages"], list)
@@ -50,7 +53,7 @@ def test_get_one_language_with_argument():
     }
     }
     """
-    executed = client.execute(default_get_query)
+    executed = gql_request(default_get_query)
     assert executed == {"data": {"languages": [{"language": "Afar"}]}}
 
 def test_get_by_code():
@@ -155,10 +158,10 @@ def test_check_gql_skip():
     }
     }
     """
-    executed = client.execute(query_skip0)
+    executed = gql_request(query_skip0)
     assert isinstance(executed, Dict)
     if len(executed["data"]["languages"]) > 1:
-        executed2 = client.execute(query_skip1)
+        executed2 = gql_request(query_skip1)
         assert isinstance(executed2, Dict)
         assert executed["data"]["languages"][1] == executed2["data"]["languages"][0]
 
