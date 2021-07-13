@@ -1,4 +1,5 @@
 '''Set testing environment and define common tests'''
+from typing import Dict
 from fastapi.testclient import TestClient
 from app.main import app
 
@@ -107,4 +108,18 @@ def check_soft_delete(unit_url, check_post, data, delete_data):
 
     get_response3 = client.get(unit_url+source_name+'?active=false')
     assert len(get_response3.json()) == len(delete_data)
-    
+
+def check_skip_gql(query1,query2):
+    '''All tests for the skip parameter of an API endpoint graphql'''
+    executed = gql_request(query1)
+    assert isinstance(executed, Dict)
+    if len(executed["data"]["languages"]) > 1:
+        executed2 = gql_request(query2)
+        assert isinstance(executed2, Dict)
+        assert executed["data"]["languages"][1] == executed2["data"]["languages"][0]
+
+def check_limit_gql(query,limit):
+    '''All tests for the limit parameter of an API endpoint graphql'''
+    executed = gql_request(query)
+    assert isinstance(executed, Dict)
+    assert len(executed["data"]["languages"]) <= limit

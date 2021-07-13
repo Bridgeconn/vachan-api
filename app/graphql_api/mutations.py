@@ -1,5 +1,7 @@
 '''GraphQL queries and mutations'''
+from logging import error
 import graphene
+from pydantic import errors
 
 #pylint: disable=E0401
 #pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
@@ -82,8 +84,37 @@ class UpdateLanguage(graphene.Mutation):
         message = "Language edited successfully"
         return UpdateLanguage(message=message,data=language)
 
+########## Add Contents Type ########
+class InputContentType(graphene.InputObjectType):
+    """ update Language Input """
+    contentType = graphene.String(required=True,\
+        description="Input object to ceate a new content type : pattern: ^[a-z]+$ :\
+        example: commentary")
+
+class createContentTypes(graphene.Mutation):
+    """Mutation for Content types Creation"""
+    class Arguments:
+        contentType = InputContentType(required=True)
+        
+    data = graphene.Field(types.ContentType)
+    message = graphene.String()
+
+    def mutate(self,info,contentType):
+        """resolver"""
+        db_ = info.context["request"].db_session
+        schema_model = utils.convert_graphene_obj_to_pydantic\
+            (contentType,schemas.ContentTypeCreate)
+        result = structurals_crud.create_content_type(db_,content=schema_model)
+        contentType = types.ContentType(
+            contentId = result.contentId,
+            contentType = result.contentType
+        )
+        return createContentTypes(message = "Content type created successfully" ,data = contentType )
+        
+
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
     '''All defined mutations'''
     add_language = AddLanguage.Field()
     update_language = UpdateLanguage.Field()
+    add_content_type = createContentTypes.Field()

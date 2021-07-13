@@ -2,9 +2,10 @@
 from typing import Dict
 
 #pylint: disable=E0611
-from . import gql_request
+from . import gql_request,check_skip_gql,check_limit_gql
 #pylint: disable=E0401
 from .test_languages import assert_positive_get
+
 
 def test_get_all_data():
     """test for get all data as per the following query"""
@@ -141,12 +142,7 @@ def test_check_gql_skip():
     }
     }
     """
-    executed = gql_request(query_skip0)
-    assert isinstance(executed, Dict)
-    if len(executed["data"]["languages"]) > 1:
-        executed2 = gql_request(query_skip1)
-        assert isinstance(executed2, Dict)
-        assert executed["data"]["languages"][1] == executed2["data"]["languages"][0]
+    check_skip_gql(query_skip0,query_skip1)
 
 def test_check_gql_limit():
     '''limit Test for languages'''
@@ -161,9 +157,7 @@ def test_check_gql_limit():
     }
     }
     """
-    executed = gql_request(query_limit)
-    assert isinstance(executed, Dict)
-    assert len(executed["data"]["languages"]) <= 3
+    check_limit_gql(query_limit, limit=3)
 
 
 def test_get_notavailable_language_code():
