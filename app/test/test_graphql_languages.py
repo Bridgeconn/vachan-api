@@ -221,25 +221,23 @@ def test_post_default():
         }
     }
     create_query = """
-            mutation create($object:InputAddLang!){
-    addLanguage(languageAddargs:$object){
-        finalout{
-        msg
-        languageType{
+        mutation create($object:InputAddLang!){
+        addLanguage(languageAddargs:$object){
+                message
+            data{
             languageId
             language
             code
             scriptDirection
             metaData
+            }
         }
         }
-    }
-    }
     """
     operation="mutation"
     executed = gql_request(query=create_query, operation=operation, variables=variables)
-    assert executed["data"]["addLanguage"]["finalout"]["msg"] == "Language Added successfully"
-    item =executed["data"]["addLanguage"]["finalout"]["languageType"]
+    assert executed["data"]["addLanguage"]["message"] == "Language created successfully"
+    item =executed["data"]["addLanguage"]["data"]
     assert_positive_get(item)
     assert item["code"] == "x-aaj"
 
@@ -253,25 +251,23 @@ def test_post_upper_case_code():
         }
     }
     create_query = """
-            mutation create($object:InputAddLang!){
+         mutation create($object:InputAddLang!){
         addLanguage(languageAddargs:$object){
-            finalout{
-                msg
-                languageType{
-                    languageId
-                    language
-                    code
-                    scriptDirection
-                    metaData
-                }
-                }
+                message
+            data{
+            languageId
+            language
+            code
+            scriptDirection
+            metaData
             }
-    }
+        }
+        }
     """
     operation="mutation"
     executed = gql_request(query=create_query, operation=operation, variables=variables)
-    assert executed["data"]["addLanguage"]["finalout"]["msg"] == "Language Added successfully"
-    item =executed["data"]["addLanguage"]["finalout"]["languageType"]
+    assert executed["data"]["addLanguage"]["message"] == "Language created successfully"
+    item =executed["data"]["addLanguage"]["data"]
     assert_positive_get(item)
     assert item["code"] == "X-AAJ"
 
@@ -284,25 +280,23 @@ def test_post_optional_script_direction():
         }
     }
     query = """
-            mutation create($object:InputAddLang!){
+         mutation create($object:InputAddLang!){
         addLanguage(languageAddargs:$object){
-            finalout{
-                msg
-                languageType{
-                    languageId
-                    language
-                    code
-                    scriptDirection
-                    metaData
-                }
-                }
+                message
+            data{
+            languageId
+            language
+            code
+            scriptDirection
+            metaData
             }
-    }
+        }
+        }
     """
     operation="mutation"
     executed = gql_request(query=query, operation=operation, variables=variables)
-    assert executed["data"]["addLanguage"]["finalout"]["msg"] == "Language Added successfully"
-    item =executed["data"]["addLanguage"]["finalout"]["languageType"]
+    assert executed["data"]["addLanguage"]["message"] == "Language created successfully"
+    item =executed["data"]["addLanguage"]["data"]
     assert_positive_get(item)
     assert item["code"] == "x-aaj"
 
