@@ -39,9 +39,10 @@ class AddLanguage(graphene.Mutation):
 #pylint: disable=W0613
     def mutate(self,info,language_addargs):
         '''resolve'''
+        db_ = info.context["request"].db_session
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (language_addargs,schemas.LanguageCreate)
-        result =structurals_crud.create_language(db_=next(get_db()),lang=schema_model)
+        result =structurals_crud.create_language(db_,lang=schema_model)
         language = LanguageOutput(
             msg = "Language Added successfully",
             language_type = types.Language(
@@ -75,9 +76,10 @@ class UpdateLanguage(graphene.Mutation):
 #pylint: disable=W0613
     def mutate(self,info,language_updateargs):
         """resolver"""
+        db_ = info.context["request"].db_session
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (language_updateargs,schemas.LanguageEdit)
-        result = structurals_crud.update_language(db_=next(get_db()),lang=schema_model)
+        result = structurals_crud.update_language(db_,lang=schema_model)
         language = LanguageOutput(
             msg = "Language edited successfully",
             language_type = types.Language(
