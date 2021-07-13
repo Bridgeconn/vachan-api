@@ -50,7 +50,7 @@ def test_get_by_code():
     }
     }
     """
-    executed = client.execute(query)
+    executed = gql_request(query)
     assert isinstance(executed, Dict)
     assert len(executed["data"]["languages"])>0
     assert isinstance(executed["data"]["languages"], list)
@@ -71,7 +71,7 @@ def test_get_language_code_upper_case():
     }
     }
     """
-    executed = client.execute(query)
+    executed = gql_request(query)
     assert isinstance(executed, Dict)
     assert len(executed["data"]["languages"])>0
     assert isinstance(executed["data"]["languages"], list)
@@ -92,7 +92,7 @@ def test_get_language_name_mixed_case():
     }
     }
     """
-    executed = client.execute(query)
+    executed = gql_request(query)
     assert isinstance(executed, Dict)
     assert len(executed["data"]["languages"]) == 1
     assert isinstance(executed["data"]["languages"], list)
@@ -113,7 +113,7 @@ def test_get_multiple_params():
     }
     }
     """
-    executed = client.execute(query)
+    executed = gql_request(query)
     assert isinstance(executed, Dict)
     assert len(executed["data"]["languages"]) == 1
     assert isinstance(executed["data"]["languages"], list)
@@ -159,9 +159,55 @@ def test_check_gql_limit():
     }
     }
     """
-    executed = client.execute(query_limit)
+    executed = gql_request(query_limit)
     assert isinstance(executed, Dict)
     assert len(executed["data"]["languages"]) <= 3
+
+
+def test_get_notavailable_language_code():
+    ''' request a not available language, with code'''
+    query = """
+    {
+    languages(languageCode:"aaj"){
+        languageId
+        language
+        code
+        }
+    }
+    """
+    executed = gql_request(query)
+    assert isinstance(executed, Dict)
+    assert len(executed["data"]["languages"]) == 0
+
+def test_get_notavailable_language_name():
+    ''' request a not available language, with name'''
+    query = """
+    {
+    languages(languageName:"not-a-language"){
+        languageId
+        language
+        code
+        }
+    }
+    """
+    executed = gql_request(query)
+    assert isinstance(executed, Dict)
+    assert len(executed["data"]["languages"]) == 0
+
+def test_get_incorrectvalue_language_code():
+    '''language code should be letters'''
+    query = """
+    {
+    languages(languageCode:110){
+        languageId
+        language
+        code
+        }
+    }
+    """
+    executed = gql_request(query)
+    assert isinstance(executed, Dict)
+    assert "errors" in executed.keys()
 
 ##### Mutation Tests ####
 
@@ -174,24 +220,24 @@ def test_post_default():
         "scriptDirection": "left-to-right"
         }
     }
-    executed = client.execute("""
-            mutation create($object:InputAddLang!){
-    addLanguage(languageAddargs:$object){
-        finalout{
-        msg
-        languageType{
+    create_query = """
+        mutation create($object:InputAddLang!){
+        addLanguage(languageAddargs:$object){
+                message
+            data{
             languageId
             language
             code
             scriptDirection
             metaData
+            }
         }
         }
-    }
-    }
-    """,None,None,variables)
-    assert executed["data"]["addLanguage"]["finalout"]["msg"] == "Language Added successfully"
-    item =executed["data"]["addLanguage"]["finalout"]["languageType"]
+    """
+    operation="mutation"
+    executed = gql_request(query=create_query, operation=operation, variables=variables)
+    assert executed["data"]["addLanguage"]["message"] == "Language created successfully"
+    item =executed["data"]["addLanguage"]["data"]
     assert_positive_get(item)
     assert item["code"] == "x-aaj"
 
@@ -204,24 +250,24 @@ def test_post_upper_case_code():
         "scriptDirection": "left-to-right"
         }
     }
-    executed = client.execute("""
-            mutation create($object:InputAddLang!){
+    create_query = """
+         mutation create($object:InputAddLang!){
         addLanguage(languageAddargs:$object){
-            finalout{
-                msg
-                languageType{
-                    languageId
-                    language
-                    code
-                    scriptDirection
-                    metaData
-                }
-                }
+                message
+            data{
+            languageId
+            language
+            code
+            scriptDirection
+            metaData
             }
-    }
-    """,None,None,variables)
-    assert executed["data"]["addLanguage"]["finalout"]["msg"] == "Language Added successfully"
-    item =executed["data"]["addLanguage"]["finalout"]["languageType"]
+        }
+        }
+    """
+    operation="mutation"
+    executed = gql_request(query=create_query, operation=operation, variables=variables)
+    assert executed["data"]["addLanguage"]["message"] == "Language created successfully"
+    item =executed["data"]["addLanguage"]["data"]
     assert_positive_get(item)
     assert item["code"] == "X-AAJ"
 
@@ -233,24 +279,24 @@ def test_post_optional_script_direction():
         "code": "x-aaj"
         }
     }
-    executed = client.execute("""
-            mutation create($object:InputAddLang!){
+    query = """
+         mutation create($object:InputAddLang!){
         addLanguage(languageAddargs:$object){
-            finalout{
-                msg
-                languageType{
-                    languageId
-                    language
-                    code
-                    scriptDirection
-                    metaData
-                }
-                }
+                message
+            data{
+            languageId
+            language
+            code
+            scriptDirection
+            metaData
             }
-    }
-    """,None,None,variables)
-    assert executed["data"]["addLanguage"]["finalout"]["msg"] == "Language Added successfully"
-    item =executed["data"]["addLanguage"]["finalout"]["languageType"]
+        }
+        }
+    """
+    operation="mutation"
+    executed = gql_request(query=query, operation=operation, variables=variables)
+    assert executed["data"]["addLanguage"]["message"] == "Language created successfully"
+    item =executed["data"]["addLanguage"]["data"]
     assert_positive_get(item)
     assert item["code"] == "x-aaj"
 
@@ -263,7 +309,7 @@ def test_post_incorrectdatatype1():
       "scriptDirection": "left-to-right"
      }
     }
-    executed = client.execute("""
+    query = """
                 mutation create($object:InputAddLang!){
             addLanguage(languageAddargs:$object){
                 finalout{
@@ -275,7 +321,9 @@ def test_post_incorrectdatatype1():
                     }
                 }
         }
-        """,None,None,variables)
+        """
+    operation="mutation"
+    executed = gql_request(query=query, operation=operation, variables=variables)    
     assert "errors" in executed.keys()
 
 def test_post_incorrectdatatype2():
@@ -287,7 +335,7 @@ def test_post_incorrectdatatype2():
       "scriptDirection": "regular"
      }
     }
-    executed = client.execute("""
+    query = """
                 mutation create($object:InputAddLang!){
             addLanguage(languageAddargs:$object){
                 finalout{
@@ -299,7 +347,9 @@ def test_post_incorrectdatatype2():
                     }
                 }
         }
-        """,None,None,variables)
+        """
+    operation="mutation"
+    executed = gql_request(query=query, operation=operation, variables=variables)    
     assert "errors" in executed.keys()
 
 def test_post_missingvalue_language():
@@ -310,7 +360,7 @@ def test_post_missingvalue_language():
       "scriptDirection": "left-to-right"
      }
     }
-    executed = client.execute("""
+    query = """
                 mutation create($object:InputAddLang!){
             addLanguage(languageAddargs:$object){
                 finalout{
@@ -322,7 +372,9 @@ def test_post_missingvalue_language():
                     }
                 }
         }
-        """,None,None,variables)
+        """
+    operation="mutation"
+    executed = gql_request(query=query, operation=operation, variables=variables) 
     assert "errors" in executed.keys()
 
 #### text search test #####
@@ -339,7 +391,7 @@ def test_searching():
     }
     }
     """
-    executed = client.execute(query)
+    executed = gql_request(query)
     found = False
     assert isinstance(executed, Dict)
     assert len(executed["data"]["languages"]) > 0
@@ -361,7 +413,7 @@ def test_searching():
     }
     }
     """
-    executed = client.execute(query2)
+    executed = gql_request(query2)
     found = False
     assert isinstance(executed, Dict)
     assert len(executed["data"]["languages"]) > 0
@@ -383,7 +435,7 @@ def test_searching():
     }
     }
     """
-    executed = client.execute(query3)
+    executed = gql_request(query3)
     found = False
     assert isinstance(executed, Dict)
     assert len(executed["data"]["languages"]) > 0
