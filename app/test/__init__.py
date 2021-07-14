@@ -123,3 +123,7 @@ def check_limit_gql(query,limit):
     executed = gql_request(query)
     assert isinstance(executed, Dict)
     assert len(executed["data"]["languages"]) <= limit
+
+def assert_not_available_content_gql(item):
+    '''Checks for empty array returned when requetsed content not available'''
+    assert len(item) == 0
