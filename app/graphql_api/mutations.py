@@ -105,12 +105,12 @@ class CreateContentTypes(graphene.Mutation):
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (content_type,schemas.ContentTypeCreate)
         result = structurals_crud.create_content_type(db_,content=schema_model)
-        contentType = types.ContentType(
+        content_type = types.ContentType(
             contentId = result.contentId,
             contentType = result.contentType
         )
         return CreateContentTypes(message = "Content type created successfully"\
-            ,data = contentType )
+            ,data = content_type)
 
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
