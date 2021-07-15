@@ -251,7 +251,7 @@ class EditVersion(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.Field(types.Version)
-    
+
 #pylint: disable=R0201,no-self-use
     def mutate(self,info,version_arg):
         """resolve"""
