@@ -197,6 +197,78 @@ class EditLicense(graphene.Mutation):
         message = "License edited successfully"
         return AddLicense(message=message,data=license_var)
 
+########## Add Version ########
+class InputAddVersion(graphene.InputObjectType):
+    """Input for Edit versions"""
+    versionAbbreviation = graphene.String(required=True,\
+        description="pattern: ^[A-Z]+$")
+    versionName = graphene.String(required=True)
+    revision = graphene.Int(default_value = 1)
+    metaData = graphene.JSONString(default_value = None,\
+    description="Expecting a dictionary Type JSON String")
+
+class AddVersion(graphene.Mutation):
+    "Mutations for Add Version"
+    class Arguments:
+        """Arguments for Add Version"""
+        version_arg = InputAddVersion()
+
+    message = graphene.String()
+    data = graphene.Field(types.Version)
+
+#pylint: disable=R0201,no-self-use
+    def mutate(self,info,version_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        schema_model = utils.convert_graphene_obj_to_pydantic\
+            (version_arg,schemas.VersionCreate)
+        result =structurals_crud.create_version(db_,schema_model)
+        version_var = types.Version(
+            versionId = result.versionId,
+            versionAbbreviation = result.versionAbbreviation,
+            versionName = result.versionName,
+            revision = result.revision,
+            metaData = result.metaData
+        )
+        message = "Version created successfully"
+        return AddVersion(message=message,data=version_var)
+
+########## Edit Version ########
+class InputEditVersion(graphene.InputObjectType):
+    """Input for Edit versions"""
+    versionId = graphene.ID(required=True)
+    versionAbbreviation = graphene.String(\
+        description="pattern: ^[A-Z]+$")
+    versionName = graphene.String()
+    revision = graphene.Int()
+    metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String")
+
+class EditVersion(graphene.Mutation):
+    "Mutations for Edit Version"
+    class Arguments:
+        """Arguments for Edit Version"""
+        version_arg = InputEditVersion()
+
+    message = graphene.String()
+    data = graphene.Field(types.Version)
+    
+#pylint: disable=R0201,no-self-use
+    def mutate(self,info,version_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        schema_model = utils.convert_graphene_obj_to_pydantic\
+            (version_arg,schemas.VersionEdit)
+        result =structurals_crud.update_version(db_,schema_model)
+        version_var = types.Version(
+            versionId = result.versionId,
+            versionAbbreviation = result.versionAbbreviation,
+            versionName = result.versionName,
+            revision = result.revision,
+            metaData = result.metaData
+        )
+        message = "Version edited successfully"
+        return EditVersion(message=message,data=version_var)
+
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
     '''All defined mutations'''
@@ -205,3 +277,5 @@ class VachanMutations(graphene.ObjectType):
     add_content_type = CreateContentTypes.Field()
     add_license = AddLicense.Field()
     edit_license = EditLicense.Field()
+    add_version = AddVersion.Field()
+    edit_version = EditVersion.Field()
