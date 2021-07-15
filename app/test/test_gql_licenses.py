@@ -1,5 +1,10 @@
+"""Test cases for licenses in GQL"""
 from typing import Dict
+#pylint: disable=E0401
 from .test_licenses import assert_positive_get
+#pylint: disable=E0611
+#pylint: disable=R0914
+#pylint: disable=R0915
 from . import gql_request,assert_not_available_content_gql
 
 def test_get():
@@ -297,7 +302,7 @@ def test_post_mandatory():
     executed3 = gql_request(query=query, operation=operation, variables=variables3)
     assert isinstance(executed3, Dict)
     assert "errors" in executed3.keys()
-    
+
     # '''code should have letters numbers  . _ or - only validation check'''
     variables4 = {
     "object": {
@@ -367,13 +372,13 @@ def test_put():
     assert executed["data"]["addLicense"]["data"]["code"] == "LIC-1"
 
     #update section
-    variables1 = {
+    up_variable = {
     "object": {
         "code": "LIC-1",
-        "permissions":["Private", "Patent"]
+        "name":"New name for test license"
+        }
     }
-    }
-    query_update = """
+    up_query = """
         mutation editlicense($object:InputEditLicense){
         editLicense(licenseArgs:$object){
             message
@@ -386,9 +391,93 @@ def test_put():
             }
         }
         }
-    """ 
-    executed1 = gql_request(query=query_update, operation=operation, variables=variables1)
-    assert isinstance(executed1, Dict)
-    assert executed1["data"]["editLicense"]["message"] == "License edited successfully"
-    assert executed1["data"]["editLicense"]["data"]["permissions"] == ["Private", "Patent"]
-    
+    """
+    up_executed = gql_request(query=up_query, operation=operation, variables=up_variable)
+    assert isinstance(up_executed, Dict)
+    assert up_executed["data"]["editLicense"]["message"] == "License edited successfully"
+    assert up_executed["data"]["editLicense"]["data"]["name"] == "New name for test license"
+
+    up_variable2 = {
+    "object": {
+        "code": "LIC-1",
+        "license":"A different text"
+        }
+    }
+    up_executed2 = gql_request(query=up_query, operation=operation, variables=up_variable2)
+    assert isinstance(up_executed2, Dict)
+    assert up_executed2["data"]["editLicense"]["message"] == "License edited successfully"
+    assert up_executed2["data"]["editLicense"]["data"]["license"] == "A different text"
+
+    up_variable3 = {
+    "object": {
+        "code": "LIC-1",
+        "permissions":["patent","private"]
+        }
+    }
+    up_executed3 = gql_request(query=up_query, operation=operation, variables=up_variable3)
+    assert isinstance(up_executed3, Dict)
+    assert up_executed3["data"]["editLicense"]["message"] == "License edited successfully"
+    assert up_executed3["data"]["editLicense"]["data"]["permissions"] == ["patent","private"]
+
+    # unavailable code
+    up_variable4 = {
+    "object": {
+        "code": "LIC-12"
+        }
+    }
+    up_executed4 = gql_request(query=up_query, operation=operation, variables=up_variable4)
+    assert isinstance(up_executed4, Dict)
+    assert "errors" in up_executed4.keys()
+
+    # without code
+    up_variable5 = {
+    "object": {
+        "name": "some name",
+        "active":False
+        }
+    }
+    up_executed5 = gql_request(query=up_query, operation=operation, variables=up_variable5)
+    assert isinstance(up_executed5, Dict)
+    assert "errors" in up_executed5.keys()
+
+    #deactivate or soft-delete
+    query_read = """
+        {
+    licenses{
+        name
+        code
+        license
+        permissions
+        active
+    }
+    }
+    """
+    rd_executed = gql_request(query_read)
+    assert isinstance(rd_executed, Dict)
+    assert len(rd_executed["data"]["licenses"])<=3
+    assert isinstance(rd_executed["data"]["licenses"], list)
+
+    up_variable6 = {
+    "object": {
+        "code": "LIC-1",
+        "active":False
+        }
+    }
+    up_executed6 = gql_request(query=up_query, operation=operation, variables=up_variable6)
+    assert isinstance(up_executed6, Dict)
+    assert "errors" not in up_executed6.keys()
+
+    query_read2 = """
+        {
+    licenses{
+        name
+        code
+        license
+        permissions
+        active
+    }
+    }
+    """
+    rd_executed2 = gql_request(query_read2)
+    assert isinstance(rd_executed2, Dict)
+    assert len(rd_executed["data"]["licenses"]) - len(rd_executed2["data"]["licenses"]) == 1

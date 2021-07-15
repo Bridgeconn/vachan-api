@@ -1,6 +1,4 @@
 '''GraphQL queries and mutations'''
-from enum import Enum
-from typing import Optional
 import graphene
 
 #pylint: disable=E0401
@@ -107,12 +105,12 @@ class CreateContentTypes(graphene.Mutation):
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (content_type,schemas.ContentTypeCreate)
         result = structurals_crud.create_content_type(db_,content=schema_model)
-        contentType = types.ContentType(
+        content_type = types.ContentType(
             contentId = result.contentId,
             contentType = result.contentType
         )
         return CreateContentTypes(message = "Content type created successfully"\
-            ,data = contentType )
+            ,data = content_type)
 
 ########## Add License ########
 enum_val = types.LicensePermission
@@ -120,13 +118,14 @@ enum_val = types.LicensePermission
 class InputAddLicense(graphene.InputObjectType):
     """Add license Input"""
     name = graphene.String(required=True)
-    code = graphene.String(required=True,description=\
-        "pattern: ^[a-zA-Z0-9\.\_\-]+$")
+    code = graphene.String(required=True,\
+        description="pattern: '^[a-zA-Z0-9\\.\\_\\-]+$'")
     license = graphene.String(required=True)
-    permissions = graphene.List(enum_val, default_value =\
-        ["Private_use"],description="Expecting a list\
+    permissions = graphene.List(enum_val, \
+        default_value =["Private_use"],\
+        description="Expecting a list \
         [ Commercial_use, Modification, Distribution, Patent_use, Private_use ]")
-        
+
 #pylint: disable=R0901,too-few-public-methods
 class AddLicense(graphene.Mutation):
     """Mutation class for Add Licenses"""
@@ -145,7 +144,7 @@ class AddLicense(graphene.Mutation):
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (license_args,schemas.LicenseCreate)
         result =structurals_crud.create_license(db_,schema_model,user_id=None)
-        license = types.License(
+        license_var = types.License(
             name = result.name,
             code = result.code,
             license = result.license,
@@ -153,7 +152,7 @@ class AddLicense(graphene.Mutation):
             active = result.active
         )
         message = "License uploaded successfully"
-        return AddLicense(message=message,data=license)    
+        return AddLicense(message=message,data=license_var)
 
 ########## Edit License ########
 enum_val = types.LicensePermission
@@ -162,13 +161,14 @@ class InputEditLicense(graphene.InputObjectType):
     """Edit license Input"""
     name = graphene.String()
     code = graphene.String(required=True,description=\
-        "pattern: ^[a-zA-Z0-9\.\_\-]+$")
+        "pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
     license = graphene.String()
     permissions = graphene.List(enum_val, default_value =\
-        ["Private_use"],description="Expecting a list\
+        ["Private_use"],\
+        description="Expecting a list\
         [ Commercial_use, Modification, Distribution, Patent_use, Private_use ]")
     active = graphene.Boolean()
-        
+
 #pylint: disable=R0901,too-few-public-methods
 class EditLicense(graphene.Mutation):
     """Mutation class for Edit Licenses"""
@@ -187,7 +187,7 @@ class EditLicense(graphene.Mutation):
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (license_args,schemas.LicenseEdit)
         result =structurals_crud.update_license(db_,schema_model,user_id=None)
-        license = types.License(
+        license_var = types.License(
             name = result.name,
             code = result.code,
             license = result.license,
@@ -195,7 +195,7 @@ class EditLicense(graphene.Mutation):
             active = result.active
         )
         message = "License edited successfully"
-        return AddLicense(message=message,data=license)           
+        return AddLicense(message=message,data=license_var)
 
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
