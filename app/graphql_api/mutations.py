@@ -269,6 +269,58 @@ class EditVersion(graphene.Mutation):
         message = "Version edited successfully"
         return EditVersion(message=message,data=version_var)
 
+########## Add Source ########
+class InputAddSource(graphene.InputObjectType):
+    """Add Source Input"""
+    contentType  = graphene.String(required=True)
+    language = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
+    version = graphene.String(required=True,\
+        description="pattern:^[A-Z]+$")
+    revision = graphene.String(default_value = 1,\
+        description="default: 1")
+    year = graphene.Int(required=True)
+    license = graphene.String(default_value = "CC-BY-SA",\
+        description="pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
+    metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String")
+
+class AddSource(graphene.Mutation):
+    "Mutations for Add Source"
+    class Arguments:
+        """Arguments for Add Source"""
+        source_arg = InputAddSource()
+        lang = (source_arg.language).decode('base64','strict')
+        ver = (source_arg.version).decode('base64','strict')
+        riv = (source_arg.revision).decode('base64','strict')
+        cont = (source_arg.contentType).decode('base64','strict')
+
+        source_name = lang + "_" + ver + "_" +\
+        riv + "_" + cont
+
+    message = graphene.String()
+    data = graphene.Field(types.Source)
+
+#pylint: disable=R0201,no-self-use
+    def mutate(self,info,source_arg,source_name):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        schema_model = utils.convert_graphene_obj_to_pydantic\
+            (source_arg,schemas.SourceCreate)
+        result =structurals_crud.create_source(db_,schema_model,source_name,user_id = None)
+        source_var = types.Source(
+            sourceName = result.sourceName,
+            contentType = result.contentType,
+            language = result.language,
+            version = result.version,
+            year = result.year,
+            license = result.license,
+            metaData = result.metaData,
+            active = result.active
+        )
+        message = "Source created successfully"
+        return AddSource(message=message,data=source_var)
+      
+
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
     '''All defined mutations'''
@@ -279,3 +331,4 @@ class VachanMutations(graphene.ObjectType):
     edit_license = EditLicense.Field()
     add_version = AddVersion.Field()
     edit_version = EditVersion.Field()
+    add_source = AddSource.Field()
