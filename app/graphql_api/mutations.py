@@ -269,6 +269,95 @@ class EditVersion(graphene.Mutation):
         message = "Version edited successfully"
         return EditVersion(message=message,data=version_var)
 
+########## Add Source ########
+class InputAddSource(graphene.InputObjectType):
+    """Add Source Input"""
+    contentType  = graphene.String(required=True)
+    language = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
+    version = graphene.String(required=True,\
+        description="pattern:^[A-Z]+$")
+    revision = graphene.String(default_value = 1,\
+        description="default: 1")
+    year = graphene.Int(required=True)
+    license = graphene.String(default_value = "CC-BY-SA",\
+        description="pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
+    metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String")
+
+class AddSource(graphene.Mutation):
+    "Mutations for Add Source"
+    class Arguments:
+        """Arguments for Add Source"""
+        source_arg = InputAddSource()
+
+    message = graphene.String()
+    data = graphene.Field(types.Source)
+
+#pylint: disable=R0201,no-self-use
+    def mutate(self,info,source_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        schema_model = utils.convert_graphene_obj_to_pydantic\
+            (source_arg,schemas.SourceCreate)
+        source_name = schema_model.language + "_" + schema_model.version + "_" +\
+            schema_model.revision + "_" + schema_model.contentType
+        result =structurals_crud.create_source(db_,schema_model,source_name,user_id = None)
+        source_var = types.Source(
+            sourceName = result.sourceName,
+            contentType = result.contentType,
+            language = result.language,
+            version = result.version,
+            year = result.year,
+            license = result.license,
+            metaData = result.metaData,
+            active = result.active
+        )
+        message = "Source created successfully"
+        return AddSource(message=message,data=source_var)
+
+########## Edit Sources ########
+class InputEditSource(graphene.InputObjectType):
+    """Edit Source Input"""
+    sourceName = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    contentType  = graphene.String()
+    language = graphene.String(description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
+    version = graphene.String(description="pattern:^[A-Z]+$")
+    revision = graphene.String(description="default: 1")
+    year = graphene.Int()
+    license = graphene.String(description="pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
+    metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String")
+    active = graphene.Boolean()
+
+class EditSource(graphene.Mutation):
+    "Mutations for Edit Source"
+    class Arguments:
+        """Arguments for Edit Source"""
+        source_arg = InputEditSource()
+
+    message = graphene.String()
+    data = graphene.Field(types.Source)
+
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,source_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        schema_model = utils.convert_graphene_obj_to_pydantic\
+            (source_arg,schemas.SourceEdit)
+        result =structurals_crud.update_source(db_,schema_model,user_id = None)
+        source_var = types.Source(
+            sourceName = result.sourceName,
+            contentType = result.contentType,
+            language = result.language,
+            version = result.version,
+            year = result.year,
+            license = result.license,
+            metaData = result.metaData,
+            active = result.active
+        )
+        message = "Source edited successfully"
+        return AddSource(message=message,data=source_var)
+
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
     '''All defined mutations'''
@@ -279,3 +368,5 @@ class VachanMutations(graphene.ObjectType):
     edit_license = EditLicense.Field()
     add_version = AddVersion.Field()
     edit_version = EditVersion.Field()
+    add_source = AddSource.Field()
+    edit_source = EditSource.Field()
