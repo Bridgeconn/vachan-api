@@ -498,6 +498,7 @@ def alignments_to_trainingdata(db_:Session, src_lang, trg_lang, alignment_list,
     sugg_json = {item[0]:item[1] for item in new_trie.items()}
     json.dump(sugg_json, output_file, ensure_ascii=False)
     output_file.close()
+    log.warning("trie model saved on server: %s", output_path)
     new_trie = rebuild_trie(db_, src_lang, trg_lang)
     suggestion_trie_in_mem[src_lang+"-"+trg_lang] = new_trie
 
