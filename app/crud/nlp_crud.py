@@ -782,7 +782,7 @@ def auto_translate(db_, sentence_list, source_lang, target_lang, punctuations=No
     '''Attempts to tokenize the input sentence and replace each token with top suggestion.
     If draft_meta is provided indicating some portion of sentence is user translated,
     then it is left untouched.'''
-    args = {"db_":db_, "src_lang":source_lang, "include_stopwords":True}
+    args = {"db_":db_, "src_lang":source_lang, "include_stopwords":True, "include_phrases":False}
     if punctuations:
         args['punctuations'] = punctuations
     if stop_words:
@@ -828,9 +828,9 @@ def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range,
         "source_lang":project_row.sourceLanguage.code,
         "target_lang":project_row.targetLanguage.code}
     if "stopwords" in project_row.metaData:
-        args['stop_words'] = project_row.metaData.stopwords
+        args['stop_words'] = project_row.metaData['stopwords']
     if "punctuations" in project_row.metaData:
-        args['punctuations'] = project_row.metaData.punctuations
+        args['punctuations'] = project_row.metaData['punctuations']
     updated_drafts = auto_translate(**args)
     db_.add_all(updated_drafts)
     db_.commit()
