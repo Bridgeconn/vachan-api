@@ -1,0 +1,30 @@
+version: '3.9'
+services:
+ postgres:
+  image: postgres:12.7
+  healthcheck:
+   test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "uday" ]
+   timeout: 45s
+   interval: 10s
+   retries: 10
+  restart: always
+  environment: 
+   - POSTGRES_USER=postgres
+   - POSTGRES_PASSWORD=password
+   - POSTGRES_DB=postgres
+   - APP_DB_USER=uday
+   - APP_DB_PASS=uday123
+   - APP_DB_NAME=vachanapi
+  logging:
+   options:
+    max-size: 10m
+    max-file: "3"
+  ports:
+   - '5438:5432'
+  networks:
+   - default
+  volumes: 
+   - ./postgres-data:/var/lib/postgresql/data
+   # copy the sql script to create tables
+   - ./DB/:/docker-entrypoint-initdb.d/
+   - ./DB/seed_DB.sql:/docker-entrypoint-initdb.d/seed_DB.sql
