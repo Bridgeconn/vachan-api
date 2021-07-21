@@ -1,9 +1,6 @@
 """Test cases for Bibles in GQL"""
 import re
 from typing import Dict
-
-from sqlalchemy.orm import query
-from sqlalchemy.sql.expression import table
 #pylint: disable=E0401
 #pylint: disable=C0301
 from .test_bibles import assert_positive_get_for_books,assert_positive_get_for_audio,assert_positive_get_for_verse

@@ -545,6 +545,108 @@ class EditAudioBible(graphene.Mutation):
         message = "Bible audios details updated successfully"
         return EditAudioBible(message=message,data=audio_content_list)
 
+########## Add Commentaries ########
+class CommentaryDict(graphene.InputObjectType):
+    """commentary input"""
+    bookCode = graphene.String(required=True)
+    chapter = graphene.Int(required=True)
+    verseStart = graphene.Int()
+    verseEnd = graphene.Int()
+    commentary = graphene.String(required=True)
+    active = graphene.Boolean(default_value = True)
+
+class InputAddCommentary(graphene.InputObjectType):
+    """Add commentary Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    commentary_data = graphene.List(CommentaryDict)
+
+class AddCommentary(graphene.Mutation):
+    "Mutations for Add Commentary"
+    class Arguments:
+        """Arguments for Add Commentary"""
+        comm_arg = InputAddCommentary()
+
+    message = graphene.String()
+    data = graphene.List(types.Commentary)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,comm_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =comm_arg.source_name
+        comm_data = comm_arg.commentary_data
+        schema_list = []
+        for item in comm_data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.CommentaryCreate)
+            schema_list.append(schema_model)
+        result =contents_crud.upload_commentaries(db_=db_, source_name=source,
+        commentaries=schema_list, user_id=None)
+        comm_content_list = []
+        for item in result:
+            comm_var = types.Commentary(
+                book = item.book,
+                chapter = item.chapter,
+                verseStart = item.verseStart,
+                verseEnd = item.verseEnd,
+                commentary = item.commentary,
+                active = item.active
+            )
+            comm_content_list.append(comm_var)
+        message = "Commentaries added successfully"
+        return AddCommentary(message=message,data=comm_content_list)
+
+########## Edit Commentaries ########
+class CommentaryEditDict(graphene.InputObjectType):
+    """commentary Edit input"""
+    bookCode = graphene.String(required=True)
+    chapter = graphene.Int(required=True)
+    verseStart = graphene.Int()
+    verseEnd = graphene.Int()
+    commentary = graphene.String()
+    active = graphene.Boolean(default_value = True)
+
+class InputEditCommentary(graphene.InputObjectType):
+    """Edit commentary Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    commentary_data = graphene.List(CommentaryEditDict)
+
+class EditCommentary(graphene.Mutation):
+    "Mutations for Edit Commentary"
+    class Arguments:
+        """Arguments for Edit Commentary"""
+        comm_arg = InputEditCommentary()
+
+    message = graphene.String()
+    data = graphene.List(types.Commentary)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,comm_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =comm_arg.source_name
+        comm_data = comm_arg.commentary_data
+        schema_list = []
+        for item in comm_data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.CommentaryEdit)
+            schema_list.append(schema_model)
+        result =contents_crud.update_commentaries(db_=db_, source_name=source,
+        commentaries=schema_list, user_id=None)
+        comm_content_list = []
+        for item in result:
+            comm_var = types.Commentary(
+                book = item.book,
+                chapter = item.chapter,
+                verseStart = item.verseStart,
+                verseEnd = item.verseEnd,
+                commentary = item.commentary,
+                active = item.active
+            )
+            comm_content_list.append(comm_var)
+        message = "Commentaries updated successfully"
+        return AddCommentary(message=message,data=comm_content_list)
+
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
     '''All defined mutations'''
@@ -561,3 +663,5 @@ class VachanMutations(graphene.ObjectType):
     edit_bible_book = EditBible.Field()
     add_audio_bible = AddAudioBible.Field()
     edit_audio_bible = EditAudioBible.Field()
+    add_commentary = AddCommentary.Field()
+    edit_commentary = EditCommentary.Field()
