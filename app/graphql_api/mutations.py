@@ -3,7 +3,7 @@ import graphene
 
 #pylint: disable=E0401
 #pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
-from crud import structurals_crud
+from crud import structurals_crud,contents_crud
 #pylint: disable=E0611
 from graphql_api import types, utils
 import schemas
@@ -358,6 +358,193 @@ class EditSource(graphene.Mutation):
         message = "Source edited successfully"
         return AddSource(message=message,data=source_var)
 
+########## Add Bible books ########
+class InputAddBible(graphene.InputObjectType):
+    """Add Bible Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    books = graphene.List(graphene.JSONString,required=True,\
+        description="Must a list of JSON string")
+
+class AddBible(graphene.Mutation):
+    "Mutations for Add Bible"
+    class Arguments:
+        """Arguments for Add Bible"""
+        bible_arg = InputAddBible()
+
+    message = graphene.String()
+    data = graphene.List(types.BibleContent)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,bible_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =bible_arg.source_name
+        books = bible_arg.books
+        schema_list = []
+        for item in books:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.BibleBookUpload)
+            schema_list.append(schema_model)
+        result =contents_crud.upload_bible_books(db_=db_, source_name=source,
+        books=schema_list, user_id=None)
+        bible_content_list = []
+        for item in result:
+            bible_var = types.BibleContent(
+            book = item.book,
+            USFM = item.USFM,
+            JSON = item.JSON,
+            audio = item.audio,
+            active = item.active
+            )
+            bible_content_list.append(bible_var)
+        message = "Bible books uploaded and processed successfully"
+        return AddBible(message=message,data=bible_content_list)
+
+########## Edit Bible books ########
+class BibleEditDict(graphene.InputObjectType):
+    """bible books inputs"""
+    book_code = graphene.String(
+        description="pattern:^[a-zA-Z1-9][a-zA-Z][a-zA-Z]$")
+    USFM = graphene.String(description="USFM Data")
+    JSON = graphene.JSONString(description="JSON Data")
+    active = graphene.Boolean(default_value = True)
+
+class InputEditBible(graphene.InputObjectType):
+    """Edit Bible Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    books = graphene.List(BibleEditDict,\
+        description="Either JSON or USFM should provide")
+class EditBible(graphene.Mutation):
+    "Mutations for Edit Bible"
+    class Arguments:
+        """Arguments for Edit Bible"""
+        bible_arg = InputEditBible()
+
+    message = graphene.String()
+    data = graphene.List(types.BibleContent)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,bible_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =bible_arg.source_name
+        books = bible_arg.books
+        schema_list = []
+        for item in books:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.BibleBookEdit)
+            schema_list.append(schema_model)
+        result =contents_crud.update_bible_books(db_=db_, source_name=source,
+        books=schema_list, user_id=None)
+        bible_content_list = []
+        for item in result:
+            bible_var = types.BibleContent(
+            book = item.book,
+            USFM = item.USFM,
+            JSON = item.JSON,
+            audio = item.audio,
+            active = item.active
+            )
+            bible_content_list.append(bible_var)
+        message = "Bible books updated successfully"
+        return AddBible(message=message,data=bible_content_list)
+
+########## Add Audio bible ########
+class AudioAdddict(graphene.InputObjectType):
+    """audio input"""
+    name = graphene.String(required=True)
+    url = graphene.String(required=True)
+    books = graphene.List(graphene.String,required=True)
+    format = graphene.String(required=True)
+    active = graphene.Boolean(default_value = True)
+
+class InputAddAudioBible(graphene.InputObjectType):
+    """Add Audio Bible Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    audio_data = graphene.List(AudioAdddict)
+
+class AddAudioBible(graphene.Mutation):
+    "Mutations for Add Audio Bible"
+    class Arguments:
+        """Arguments for Add Audio Bible"""
+        bible_arg = InputAddAudioBible()
+
+    message = graphene.String()
+    data = graphene.List(types.AudioBible)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,bible_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =bible_arg.source_name
+        audio_data = bible_arg.audio_data
+        schema_list = []
+        for item in audio_data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.AudioBibleUpload)
+            schema_list.append(schema_model)
+        result =contents_crud.upload_bible_audios(db_=db_, source_name=source,
+        audios=schema_list, user_id=None)
+        audio_content_list = []
+        for item in result:
+            audio_var = types.AudioBible(
+            name = item.name,
+            url = item.url,
+            format = item.format,
+            active = item.active
+            )
+            audio_content_list.append(audio_var)
+        message = "Bible audios details uploaded successfully"
+        return AddAudioBible(message=message,data=audio_content_list)
+
+########## Edit Audio bible ########
+class AudioEditdict(graphene.InputObjectType):
+    """audio input"""
+    name = graphene.String()
+    url = graphene.String()
+    books = graphene.List(graphene.String,required=True)
+    format = graphene.String()
+    active = graphene.Boolean(default_value = True)
+
+class InputEditAudioBible(graphene.InputObjectType):
+    """Edit Audio Bible Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    audio_data = graphene.List(AudioEditdict)
+
+class EditAudioBible(graphene.Mutation):
+    "Mutations for Edit Audio Bible"
+    class Arguments:
+        """Arguments for Edit Audio Bible"""
+        bible_arg = InputEditAudioBible()
+
+    message = graphene.String()
+    data = graphene.List(types.AudioBible)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,bible_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =bible_arg.source_name
+        audio_data = bible_arg.audio_data
+        schema_list = []
+        for item in audio_data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.AudioBibleEdit)
+            schema_list.append(schema_model)
+        result =contents_crud.update_bible_audios(db_=db_, source_name=source,
+        audios=schema_list, user_id=None)
+        audio_content_list = []
+        for item in result:
+            audio_var = types.AudioBible(
+            name = item.name,
+            url = item.url,
+            format = item.format,
+            active = item.active
+            )
+            audio_content_list.append(audio_var)
+        message = "Bible audios details updated successfully"
+        return EditAudioBible(message=message,data=audio_content_list)
+
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
     '''All defined mutations'''
@@ -370,3 +557,7 @@ class VachanMutations(graphene.ObjectType):
     edit_version = EditVersion.Field()
     add_source = AddSource.Field()
     edit_source = EditSource.Field()
+    add_bible_book = AddBible.Field()
+    edit_bible_book = EditBible.Field()
+    add_audio_bible = AddAudioBible.Field()
+    edit_audio_bible = EditAudioBible.Field()
