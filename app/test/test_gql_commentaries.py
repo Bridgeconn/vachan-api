@@ -602,6 +602,7 @@ def test_get_incorrect_data():
     executed2 = gql_request(query=query2)
     assert "errors" in executed2.keys()
 
+    
 
     query4 = """
         {
@@ -622,26 +623,6 @@ def test_get_incorrect_data():
     """
     executed4 = gql_request(query=query4)
     assert "errors" in executed4.keys()
-
-    query5 = """
-        {
-  commentaries(sourceName:"hi_TTT_1_commentary",chapter:-10){
-    refString
-    book{
-      bookId
-      bookName
-      bookCode
-    }
-    chapter
-    verseStart
-    verseEnd
-    commentary
-    active
-  }
-}
-    """
-    executed5 = gql_request(query=query5)
-    assert "errors" in executed5.keys()
 
     query6 = """
          {
