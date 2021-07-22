@@ -362,7 +362,8 @@ class EditSource(graphene.Mutation):
 class InputBibleDict(graphene.InputObjectType):
     """Add Bible Dict"""
     USFM = graphene.String()
-    JSON = graphene.JSONString()
+    JSON = graphene.JSONString(description="Provide JSON structure\
+         obtained from USFM-Grammar or one like that")
 
 class InputAddBible(graphene.InputObjectType):
     """Add Bible Input"""

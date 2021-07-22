@@ -534,6 +534,16 @@ def test_get_books_contenttype():
   '''Add some books data into the table and do content type related get tests'''
   add_bible()
 
+  #skip and limit
+  query_check = """
+    bibleContents(sourceName:"gu_TTT_1_bible",arg_text){
+      book {
+        bookCode
+      }
+    }
+  }
+  """
+
   #content type all
   query1 = """
         {
@@ -603,19 +613,10 @@ def test_get_books_contenttype():
       {
   bibleContents(sourceName:"gu_TTT_1_bible",bookCode:"kkk"){
     book {
-      bookId
-      bookName
       bookCode
     }
     USFM
     JSON
-    audio {
-      name
-      url
-      format
-      active
-    }
-    active
   }
 }
   """
@@ -646,19 +647,10 @@ def test_get_books_filter():
     {
   bibleContents(sourceName:"gu_TTT_1_bible",active:true){
     book {
-      bookId
-      bookName
       bookCode
     }
     USFM
     JSON
-    audio {
-      name
-      url
-      format
-      active
-    }
-    active
   }
 }
   """
@@ -666,19 +658,8 @@ def test_get_books_filter():
     {
   bibleContents(sourceName:"gu_TTT_1_bible"){
     book {
-      bookId
-      bookName
       bookCode
     }
-    USFM
-    JSON
-    audio {
-      name
-      url
-      format
-      active
-    }
-    active
   }
 }
   """  
@@ -687,18 +668,9 @@ def test_get_books_filter():
   bibleContents(sourceName:"gu_TTT_1_bible",active:false){
     book {
       bookId
-      bookName
-      bookCode
     }
     USFM
     JSON
-    audio {
-      name
-      url
-      format
-      active
-    }
-    active
   }
 }
   """  
@@ -765,14 +737,6 @@ def test_get_verses():
   bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"mat"){
     refId
     refString
-    reference{
-      bible
-      book
-      chapter
-      verseNumber
-      verseNumberEnd
-    }
-    verseText
   }
 }
   """
@@ -784,14 +748,6 @@ def test_get_verses():
 bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"mat",chapter:1){
   refId
   refString
-  reference{
-    bible
-    book
-    chapter
-    verseNumber
-    verseNumberEnd
-  }
-  verseText
 }
 }
   """
@@ -803,14 +759,6 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"mat",chapter:1){
 bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"mat",chapter:1,verse:1){
   refId
   refString
-  reference{
-    bible
-    book
-    chapter
-    verseNumber
-    verseNumberEnd
-  }
-  verseText
 }
 }
   """
@@ -822,14 +770,6 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"mat",chapter:1,verse:1){
 bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"mat",chapter:1,verse:1,lastVerse:10){
   refId
   refString
-  reference{
-    bible
-    book
-    chapter
-    verseNumber
-    verseNumberEnd
-  }
-  verseText
 }
 }
   """
@@ -841,14 +781,6 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"mat",chapter:1,verse:1,lastVers
 bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"mat",chapter:1,verse:10){
   refId
   refString
-  reference{
-    bible
-    book
-    chapter
-    verseNumber
-    verseNumberEnd
-  }
-  verseText
 }
 }
   """
@@ -860,14 +792,6 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"mat",chapter:1,verse:10){
 bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"act",chapter:2){
   refId
   refString
-  reference{
-    bible
-    book
-    chapter
-    verseNumber
-    verseNumberEnd
-  }
-  verseText
 }
 }
   """
@@ -882,14 +806,6 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"act",chapter:2){
 bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"rev",chapter:1,verse:10){
   refId
   refString
-  reference{
-    bible
-    book
-    chapter
-    verseNumber
-    verseNumberEnd
-  }
-  verseText
 }
 }
   """
@@ -907,13 +823,6 @@ bibleContents(sourceName:"gu_TTT_1_bible"){
   book{
   bookName
 }
-  USFM
-  JSON
-  audio{
-    name
-    active
-  }
-  active
 }
 }
   """
