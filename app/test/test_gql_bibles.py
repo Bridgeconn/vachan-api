@@ -146,11 +146,11 @@ def add_bible():
     "object": {
         "sourceName": "gu_TTT_1_bible",
         "books": [
-        "{\"USFM\":\"\\\\id mat\\n\\\\c 1\\n\\\\p\\n\\\\v 1 test verse one\\n\\\\v 2 test verse two\"}",
-        "{\"USFM\":\"\\\\id mrk\\n\\\\c 1\\n\\\\p\\n\\\\v 1 test verse one\\n\\\\v 2 test verse two\"}",
-        "{\"USFM\":\"\\\\id luk\\n\\\\c 1\\n\\\\p\\n\\\\v 1 test verse one\\n\\\\v 2 test verse two\"}",
-        "{\"USFM\":\"\\\\id jhn\\n\\\\c 1\\n\\\\p\\n\\\\v 1 test verse one\\n\\\\v 2 test verse two\"}"
-        ]
+        {"USFM":"\\id mat\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"},
+        {"USFM":"\\id mrk\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"},
+        {"USFM":"\\id luk\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"},
+        {"USFM":"\\id jhn\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"}
+]
     }
     }
   executed,table = check_post(BOOK_ADD_QUERY,variable)
@@ -217,14 +217,18 @@ def test_post_optional():
   '''Positive test fr post with optional JSON upload'''
   #json data , json and usf data
   post_data = {
-"object":{
-  "sourceName": "gu_TTT_1_bible",
-  "books": [
-      
-      "{\"JSON\":{\"book\":{\"bookCode\":\"ACT\"},\"chapters\":[{\"chapterNumber\":\"1\",\"contents\":[{\"verseNumber\":\"1\",\"verseText\":\"First verse of acts\"},{\"verseNumber\":\"2\",\"verseText\":\"Second verse of acts\"},{\"verseNumber\":\"3\",\"verseText\":\"Thrid verse of acts\"}]}]}}",
-    "{\"USFM\":\"\\\\id rev\\n\\\\c 1\\n\\\\p\\n\\\\v 1 one verse of revelations\",\"JSON\":{\"book\":{\"bookCode\":\"REV\"},\"chapters\":[{\"chapterNumber\":1,\"contents\":[{\"verseNumber\":1,\"verseText\":\"one verse of revelations\"}]}]}}"
-  ]
-}
+  "object": {
+    "sourceName": "gu_TTT_1_bible",
+    "books":[
+      {
+        "JSON": "{\"book\":{\"bookCode\":\"ACT\"},\"chapters\":[{\"chapterNumber\":\"1\",\"contents\":[{\"verseNumber\":\"1\",\"verseText\":\"First verse of acts\"},{\"verseNumber\":\"2\",\"verseText\":\"Second verse of acts\"},{\"verseNumber\":\"3\",\"verseText\":\"Thrid verse of acts\"}]}]}"
+      },
+      {
+        "USFM":"\\id rev\n\\c 1\n\\p\n\\v 1 test verse one revelations\n\\v 2 test verse two" ,
+        "JSON":"{\"book\":{\"bookCode\":\"REV\"},\"chapters\":[{\"chapterNumber\":1,\"contents\":[{\"verseNumber\":1,\"verseText\":\"one verse of revelations\"}]}]}"
+      }
+    ]
+  }
 }
 
   executed , table= check_post(BOOK_ADD_QUERY,post_data)
@@ -236,7 +240,7 @@ def test_post_duplicate():
   "object": {
       "sourceName": "gu_TTT_1_bible",
       "books": [
-      "{\"USFM\":\"\\\\id mat\\n\\\\c 1\\n\\\\p\\n\\\\v 1 test verse one\\n\\\\v 2 test verse two\"}"
+      {"USFM":"\\id mat\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"}
       ]
   }
   }
@@ -252,7 +256,7 @@ def test_post_incorrect_data():
   "object": {
       "sourceName": "gu_TTT_1_bible",
       "books": 
-      "\"USFM\":\"\\\\id mat\\n\\\\c 1\\n\\\\p\\n\\\\v 1 test verse one\\n\\\\v 2 test verse two\""
+      {"USFM":"\\id mat\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"}
       
   }
   }
@@ -264,7 +268,7 @@ def test_post_incorrect_data():
     "object": {
         "sourceName": "gu_TTT_1_bible",
         "books": 
-        "{\"USFM\":\"<id gen><c 1><p><v 1 test content>\"}"
+        {'USFM': '<id gen><c 1><p><v 1 test content>'}
         
     }
 }
