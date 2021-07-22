@@ -359,12 +359,17 @@ class EditSource(graphene.Mutation):
         return AddSource(message=message,data=source_var)
 
 ########## Add Bible books ########
+class InputBibleDict(graphene.InputObjectType):
+    """Add Bible Dict"""
+    USFM = graphene.String()
+    JSON = graphene.JSONString()
+
 class InputAddBible(graphene.InputObjectType):
     """Add Bible Input"""
     source_name = graphene.String(required=True,\
         description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
-    books = graphene.List(graphene.JSONString,required=True,\
-        description="Must a list of JSON string")
+    books = graphene.List(InputBibleDict,required=True,\
+        description="Must Provide One of the Two USFM or JSON")
 
 class AddBible(graphene.Mutation):
     "Mutations for Add Bible"
@@ -406,7 +411,8 @@ class BibleEditDict(graphene.InputObjectType):
     book_code = graphene.String(
         description="pattern:^[a-zA-Z1-9][a-zA-Z][a-zA-Z]$")
     USFM = graphene.String(description="USFM Data")
-    JSON = graphene.JSONString(description="JSON Data")
+    JSON = graphene.JSONString(description="Provide JSON structure obtained \
+        from USFM-Grammar or one like that")
     active = graphene.Boolean(default_value = True)
 
 class InputEditBible(graphene.InputObjectType):
