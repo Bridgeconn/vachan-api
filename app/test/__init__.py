@@ -1,6 +1,7 @@
 '''Set testing environment and define common tests'''
 from typing import Dict
 from fastapi.testclient import TestClient
+from graphene.types.structures import List
 from app.main import app
 
 client = TestClient(app)
