@@ -1,6 +1,7 @@
 '''Set testing environment and define common tests'''
 from typing import Dict
 from fastapi.testclient import TestClient
+from graphene.types.structures import List
 from app.main import app
 
 client = TestClient(app)
@@ -109,8 +110,10 @@ def check_soft_delete(unit_url, check_post, data, delete_data):
     get_response3 = client.get(unit_url+source_name+'?active=false')
     assert len(get_response3.json()) == len(delete_data)
 
-def check_skip_gql(query1,query2,api_name):
+def check_skip_gql(query,api_name):
     '''All tests for the skip parameter of an API endpoint graphql'''
+    query1 = query.replace("arg_text","skip:0")
+    query2 = query.replace("arg_text","skip:1")
     executed = gql_request(query1)
     assert isinstance(executed, Dict)
     if len(executed["data"][api_name]) > 1:
@@ -118,11 +121,38 @@ def check_skip_gql(query1,query2,api_name):
         assert isinstance(executed2, Dict)
         assert executed["data"][api_name][1] == executed2["data"][api_name][0]
 
-def check_limit_gql(query,limit,api_name):
+    # fetch a non existant page, with skip and limit values
+    query3 = query.replace("arg_text","skip:50000,limit:10")
+    executed3 = gql_request(query3)
+    assert_not_available_content_gql(executed3["data"][api_name])
+
+    # skip should be an integer
+    query4 = query.replace("arg_text","skip:abc")
+    executed4 = gql_request(query4)
+    assert "errors" in executed4.keys()
+
+    # skip should be a positive integer
+    query5 = query.replace("arg_text","skip:-10")
+    executed5 = gql_request(query5)
+    assert "errors" in executed5.keys()
+
+def check_limit_gql(query,api_name):
     '''All tests for the limit parameter of an API endpoint graphql'''
-    executed = gql_request(query)
-    assert isinstance(executed, Dict)
-    assert len(executed["data"][api_name]) <= limit
+    """
+    query0 = query.replace("arg_text","limit:3")
+    executed0 = gql_request(query0)
+    assert isinstance(executed0,Dict)
+    assert len(executed0["data"][api_name]) <= 3 """
+
+    # limit should be an integer
+    query1 = query.replace("arg_text","limit:abc")
+    executed1 = gql_request(query1)
+    assert "errors" in executed1.keys()
+
+    # limit should be a positive integer
+    query2 = query.replace("arg_text","limit:-1")
+    executed2 = gql_request(query2)
+    assert "errors" in executed2.keys()
 
 def assert_not_available_content_gql(item):
     '''Checks for empty array returned when requetsed content not available'''
