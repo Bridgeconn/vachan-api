@@ -139,10 +139,10 @@ def check_skip_gql(query,api_name):
 def check_limit_gql(query,api_name):
     '''All tests for the limit parameter of an API endpoint graphql'''
     """
-    query0 = query.replace("arg_text","limit:3")
+    query0 = query.replace("arg_text","limit:2")
     executed0 = gql_request(query0)
     assert isinstance(executed0,Dict)
-    assert len(executed0["data"][api_name]) <= 3 """
+    assert len(executed0["data"][api_name]) <= 2 """
 
     # limit should be an integer
     query1 = query.replace("arg_text","limit:abc")

@@ -87,6 +87,18 @@ def test_post_default():
 }    
     post_dictionary(variable)
 
+    #skip and limit
+    query = """
+    {
+  dictionaryWords(sourceName:"gu_TTT_1_dictionary",arg_text){
+    word
+  }
+}
+    """
+
+    check_skip_gql(query,"dictionaryWords")
+    check_limit_gql(query,api_name="dictionaryWords")
+
     #test_post_duplicate
 
     executed = gql_request(ADD_DICTIONARY,operation="mutation",variables=variable)
@@ -163,18 +175,6 @@ def test_get_after_data_upload():
 }    
     post_dictionary(variable)
 
-    #skip and limit
-    query = """
-    {
-  dictionaryWords(sourceName:"gu_TTT_1_dictionary",arg_text){
-    word
-  }
-}
-    """
-
-    check_skip_gql(query,"dictionaryWords")
-    check_limit_gql(query,api_name="dictionaryWords")
-
     # search with first letter
     query1 = """
       {
@@ -185,7 +185,7 @@ def test_get_after_data_upload():
     """
     executed1 = gql_request(query1)
     assert isinstance(executed1,Dict)
-    assert isinstance(executed1["data"]["dictionaryWords"],Dict)
+    assert isinstance(executed1["data"]["dictionaryWords"],list)
     assert len(executed1["data"]["dictionaryWords"]) == 2
 
     # search with starting two letters
@@ -199,16 +199,6 @@ def test_get_after_data_upload():
     executed2 = gql_request(query2)
     assert len(executed2["data"]["dictionaryWords"]) == 1
 
-    # search for not available
-    query3 = """
-      {
-  dictionaryWords(sourceName:"gu_TTT_1_dictionary",searchWord:"ten"){
-    word
-  }
-}
-    """
-    executed3 = gql_request(query3)
-    assert_not_available_content_gql(executed3["data"]["dictionaryWords"])
 
     # full word match
     query4 = """
@@ -221,6 +211,17 @@ def test_get_after_data_upload():
     executed4 = gql_request(query4)
     assert len(executed4["data"]["dictionaryWords"]) == 1
     assert executed4["data"]["dictionaryWords"][0]["word"] == "two"
+
+  # search for not available
+    query3 = """
+      {
+  dictionaryWords(sourceName:"gu_TTT_1_dictionary",searchWord:"ten"){
+    word
+  }
+}
+    """
+    executed3 = gql_request(query3)
+    assert_not_available_content_gql(executed3["data"]["dictionaryWords"])    
 
 def test_get_incorrect_data():
     '''Check for input validations in get'''
