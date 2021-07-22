@@ -7,7 +7,7 @@ from .test_gql_versions import check_post as version_add
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
-from . import gql_request,assert_not_available_content_gql
+from . import check_limit_gql, check_skip_gql, gql_request,assert_not_available_content_gql
 
 SOURCE_GLOBAL_VARIABLES = {
   "object": {
@@ -81,6 +81,16 @@ def test_post_default():
     version_add(version_query,version_variable)
     #create source
     check_post(SOURCE_GLOBAL_QUERY,SOURCE_GLOBAL_VARIABLES)
+
+    query_check = """
+      {
+  contents(arg_text){
+    sourceName
+  }
+}
+    """
+    check_skip_gql(query_check,"contents")
+    check_limit_gql(query_check,"contents")
 
 def test_post_wrong_version():
     '''Negative test with not available version or revision'''
@@ -380,6 +390,7 @@ def test_get_empty():
     if len(executed["data"]["contents"]) == 0:
         assert_not_available_content_gql(executed["data"]["contents"])
 
+
 def test_get_wrong_values():
     '''Checks input validation for query params'''
     get_query = """
@@ -390,30 +401,6 @@ def test_get_wrong_values():
         contentId
         contentType
         }
-        language{
-        languageId
-        language
-        code
-        scriptDirection
-        metaData
-        }
-        version{
-        versionId
-        versionAbbreviation
-        versionName
-        revision
-        metaData
-        }
-        year
-        license{
-        name
-        code
-        licensess
-        permissions
-        active
-        }
-        metaData
-        active
     }
     }
     """
@@ -429,30 +416,6 @@ def test_get_wrong_values():
         contentId
         contentType
         }
-        language{
-        languageId
-        language
-        code
-        scriptDirection
-        metaData
-        }
-        version{
-        versionId
-        versionAbbreviation
-        versionName
-        revision
-        metaData
-        }
-        year
-        license{
-        name
-        code
-        licensess
-        permissions
-        active
-        }
-        metaData
-        active
     }
     }
     """
@@ -468,30 +431,6 @@ def test_get_wrong_values():
       contentId
       contentType
     }
-    language{
-      languageId
-      language
-      code
-      scriptDirection
-      metaData
-    }
-    version{
-      versionId
-      versionAbbreviation
-      versionName
-      revision
-      metaData
-    }
-    year
-    license{
-      name
-      code
-      license
-      permissions
-      active
-    }
-    metaData
-    active
   }
 }
     """
@@ -842,6 +781,7 @@ def test_get_after_adding_data():
     items = executed7["data"]["contents"]
     for item in items:
         assert_positive_get(item)
+    
 
 def test_put_default():
     '''Add some data and test updating them'''

@@ -110,6 +110,16 @@ def test_post_default():
     }
     post_comentary(variable)
 
+    #skip and limit 
+    query_check = """
+      {
+  commentaries(sourceName:"gu_TTT_1_commentary",arg_text){
+    refString
+  }
+}
+    """
+    check_skip_gql(query_check,"commentaries")
+    check_limit_gql(query_check,"commentaries")
 
 def test_post_duplicate():
     '''Negative test to add two commentaries with same reference range'''
@@ -271,48 +281,15 @@ def test_get_after_data_upload():
     }
     executed,source_name =  post_comentary(variable)
 
-    #skip
-    query_skip0 = """
-    {
-  commentaries(sourceName:"gu_TTT_1_commentary",skip:0){
-    refString
-  }
-}
-    """
-    query_skip1 = """
-    {
-  commentaries(sourceName:"gu_TTT_1_commentary",skip:1){
-    refString
-  }
-}
-    """
-    check_skip_gql(query_skip0,query_skip1,"commentaries")
-
-    #limit
-    query_limit ="""
-      {
-  commentaries(sourceName:"gu_TTT_1_commentary",limit:3){
-    refString
-  }
-}
-    """
-    check_limit_gql(query_limit,3,"commentaries")
-
     #filter by book
     query1 = """
         {
   commentaries(sourceName:"gu_TTT_1_commentary",bookCode:"gen"){
     refString
     book{
-      bookId
-      bookName
       bookCode
     }
     chapter
-    verseStart
-    verseEnd
-    commentary
-    active
   }
 }
     """

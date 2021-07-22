@@ -12,7 +12,7 @@ from .test_gql_sources import check_post as source_add
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
-from . import gql_request,assert_not_available_content_gql
+from . import check_limit_gql, check_skip_gql, gql_request,assert_not_available_content_gql
 
 VERSION_VAR  = {
         "object": {
@@ -212,6 +212,25 @@ def add_audio():
 def test_post_default():
   '''Positive test to upload bible books'''
   add_bible()
+
+  #skip and limit
+  query_check = """
+    {
+  bibleContents(sourceName:"gu_TTT_1_bible",arg_text){
+   	 book{
+      bookCode
+    }
+    USFM
+    JSON
+    audio{
+      name
+    }
+    active
+  }
+}
+  """
+  check_skip_gql(query_check,"bibleContents")
+  check_limit_gql(query_check,"bibleContents")
 
 def test_post_optional():
   '''Positive test fr post with optional JSON upload'''
@@ -534,16 +553,6 @@ def test_get_books_contenttype():
   '''Add some books data into the table and do content type related get tests'''
   add_bible()
 
-  #skip and limit
-  query_check = """
-    bibleContents(sourceName:"gu_TTT_1_bible",arg_text){
-      book {
-        bookCode
-      }
-    }
-  }
-  """
-
   #content type all
   query1 = """
         {
@@ -823,6 +832,11 @@ bibleContents(sourceName:"gu_TTT_1_bible"){
   book{
   bookName
 }
+  audio{
+    name
+    active
+  }
+  active
 }
 }
   """
