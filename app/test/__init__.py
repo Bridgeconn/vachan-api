@@ -109,20 +109,20 @@ def check_soft_delete(unit_url, check_post, data, delete_data):
     get_response3 = client.get(unit_url+source_name+'?active=false')
     assert len(get_response3.json()) == len(delete_data)
 
-def check_skip_gql(query1,query2):
+def check_skip_gql(query1,query2,api_name):
     '''All tests for the skip parameter of an API endpoint graphql'''
     executed = gql_request(query1)
     assert isinstance(executed, Dict)
-    if len(executed["data"]["languages"]) > 1:
+    if len(executed["data"][api_name]) > 1:
         executed2 = gql_request(query2)
         assert isinstance(executed2, Dict)
-        assert executed["data"]["languages"][1] == executed2["data"]["languages"][0]
+        assert executed["data"][api_name][1] == executed2["data"][api_name][0]
 
-def check_limit_gql(query,limit):
+def check_limit_gql(query,limit,api_name):
     '''All tests for the limit parameter of an API endpoint graphql'''
     executed = gql_request(query)
     assert isinstance(executed, Dict)
-    assert len(executed["data"]["languages"]) <= limit
+    assert len(executed["data"][api_name]) <= limit
 
 def assert_not_available_content_gql(item):
     '''Checks for empty array returned when requetsed content not available'''

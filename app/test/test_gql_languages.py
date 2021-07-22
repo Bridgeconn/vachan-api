@@ -142,7 +142,7 @@ def test_check_gql_skip():
     }
     }
     """
-    check_skip_gql(query_skip0,query_skip1)
+    check_skip_gql(query_skip0,query_skip1,"languages")
 
 def test_check_gql_limit():
     '''limit Test for languages'''
@@ -157,7 +157,7 @@ def test_check_gql_limit():
     }
     }
     """
-    check_limit_gql(query_limit, limit=3)
+    check_limit_gql(query_limit, limit=3,api_name="languages")
 
 
 def test_get_notavailable_language_code():

@@ -9,7 +9,7 @@ from .test_commentaries import assert_positive_get
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
-from . import gql_request,assert_not_available_content_gql
+from . import gql_request,assert_not_available_content_gql,check_skip_gql,check_limit_gql
 
 VERSION_VAR  = {
         "object": {
@@ -270,6 +270,33 @@ def test_get_after_data_upload():
     }
     }
     executed,source_name =  post_comentary(variable)
+
+    #skip
+    query_skip0 = """
+    {
+  commentaries(sourceName:"gu_TTT_1_commentary",skip:0){
+    refString
+  }
+}
+    """
+    query_skip1 = """
+    {
+  commentaries(sourceName:"gu_TTT_1_commentary",skip:1){
+    refString
+  }
+}
+    """
+    check_skip_gql(query_skip0,query_skip1,"commentaries")
+
+    #limit
+    query_limit ="""
+      {
+  commentaries(sourceName:"gu_TTT_1_commentary",limit:3){
+    refString
+  }
+}
+    """
+    check_limit_gql(query_limit,3,"commentaries")
 
     #filter by book
     query1 = """
