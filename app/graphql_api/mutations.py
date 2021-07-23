@@ -744,6 +744,103 @@ class EditDictionary(graphene.Mutation):
         message = "Dictionary words updated successfully"
         return EditDictionary(message=message,data=dict_content_list)
 
+########## Add Infographics ########
+class InfographicDict(graphene.InputObjectType):
+    """Infographic input"""
+    bookCode = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z1-9][a-zA-Z][a-zA-Z]$")
+    title = graphene.String(required=True)
+    infographicLink = graphene.String(required=True,\
+        description="Provide valid URL")
+    active = graphene.Boolean(default_value = True)
+
+class InputAddInfographic(graphene.InputObjectType):
+    """Add Infographic Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    data = graphene.List(InfographicDict)
+
+class AddInfographic(graphene.Mutation):
+    "Mutations for Add Infographic"
+    class Arguments:
+        """Arguments for Add Infographic"""
+        info_arg = InputAddInfographic()
+
+    message = graphene.String()
+    data = graphene.List(types.Infographic)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,info_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =info_arg.source_name
+        dict_data = info_arg.data
+        schema_list = []
+        for item in dict_data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.InfographicCreate)
+            schema_list.append(schema_model)
+        result =contents_crud.upload_infographics(db_=db_, source_name=source,
+        infographics=schema_list, user_id=None)
+        dict_content_list = []
+        for item in result:
+            dict_var = types.Infographic(
+                book = item.book,
+                title = item.title,
+                infographicLink = item.infographicLink,
+                active = item.active
+            )
+            dict_content_list.append(dict_var)
+        message = "Infographics added successfully"
+        return AddInfographic(message=message,data=dict_content_list)
+
+########## Edit Infographics ########
+class InfographicEditDict(graphene.InputObjectType):
+    """Infographic Edit input"""
+    bookCode = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z1-9][a-zA-Z][a-zA-Z]$")
+    title = graphene.String(required=True)
+    infographicLink = graphene.String(\
+        description="Provide valid URL")
+    active = graphene.Boolean(default_value = True)
+
+class InputEditInfographic(graphene.InputObjectType):
+    """Edit Infographic Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    data = graphene.List(InfographicEditDict)
+
+class EditInfographic(graphene.Mutation):
+    "Mutations for Edit Infographic"
+    class Arguments:
+        """Arguments for Edit Infographic"""
+        info_arg = InputEditInfographic()
+
+    message = graphene.String()
+    data = graphene.List(types.Infographic)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,info_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =info_arg.source_name
+        dict_data = info_arg.data
+        schema_list = []
+        for item in dict_data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.InfographicEdit)
+            schema_list.append(schema_model)
+        result =contents_crud.update_infographics(db_=db_, source_name=source,
+        infographics=schema_list, user_id=None)
+        dict_content_list = []
+        for item in result:
+            dict_var = types.Infographic(
+                book = item.book,
+                title = item.title,
+                infographicLink = item.infographicLink,
+                active = item.active
+            )
+            dict_content_list.append(dict_var)
+        message = "Infographics updated successfully"
+        return EditInfographic(message=message,data=dict_content_list)
 
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
@@ -765,3 +862,5 @@ class VachanMutations(graphene.ObjectType):
     edit_commentary = EditCommentary.Field()
     add_dictionary = AddDictionary.Field()
     edit_dictionary = EditDictionary.Field()
+    add_infographic = AddInfographic.Field()
+    edit_infographic = EditInfographic.Field()
