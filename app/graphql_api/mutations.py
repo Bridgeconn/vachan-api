@@ -755,7 +755,7 @@ class EditBibleVideo(graphene.Mutation):
             )
             video_content_list.append(comm_var)
         message = "Bible videos updated successfully"
-        return AddBibleVideo(message=message,data=video_content_list)        
+        return AddBibleVideo(message=message,data=video_content_list)
 
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
