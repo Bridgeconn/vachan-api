@@ -412,7 +412,7 @@ class BibleEditDict(graphene.InputObjectType):
     book_code = graphene.String(
         description="pattern:^[a-zA-Z1-9][a-zA-Z][a-zA-Z]$")
     USFM = graphene.String(description="USFM Data")
-    JSON = graphene.JSONString(description="Provide JSON structure obtained \
+    JSON = graphene.JSONString(description="Provide JSON structure obtained\
         from USFM-Grammar or one like that")
     active = graphene.Boolean(default_value = True)
 
