@@ -654,6 +654,109 @@ class EditCommentary(graphene.Mutation):
         message = "Commentaries updated successfully"
         return AddCommentary(message=message,data=comm_content_list)
 
+########## Add BibleVideo ########
+class BibleVideoDict(graphene.InputObjectType):
+    """BibleVideo input"""
+    title = graphene.String(required=True)
+    books = graphene.List(graphene.String,required=True,\
+        description="provide book codes")
+    videoLink = graphene.String(required=True)
+    description = graphene.String(required=True)
+    theme = graphene.String(required=True)
+    active = graphene.Boolean(default_value = True)
+
+class InputAddBibleVideo(graphene.InputObjectType):
+    """Add BibleVideo Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    video_data = graphene.List(BibleVideoDict)
+
+class AddBibleVideo(graphene.Mutation):
+    "Mutations for Add BibleVideo"
+    class Arguments:
+        """Arguments for Add BibleVideo"""
+        video_arg = InputAddBibleVideo()
+
+    message = graphene.String()
+    data = graphene.List(types.BibleVideo)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,video_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =video_arg.source_name
+        video_data = video_arg.video_data
+        schema_list = []
+        for item in video_data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.BibleVideoUpload)
+            schema_list.append(schema_model)
+        result =contents_crud.upload_bible_videos(db_=db_, source_name=source,
+        videos=schema_list, user_id=None)
+        video_content_list = []
+        for item in result:
+            comm_var = types.BibleVideo(
+                title = item.title,
+                books = item.books,
+                videoLink = item.videoLink,
+                description = item.description,
+                theme = item.theme,
+                active = item.active
+            )
+            video_content_list.append(comm_var)
+        message = "Bible videos added successfully"
+        return AddBibleVideo(message=message,data=video_content_list)
+
+########## Edit BibleVideo ########
+class BibleVideoEditDict(graphene.InputObjectType):
+    """BibleVideo Edit input"""
+    title = graphene.String(required=True)
+    books = graphene.List(graphene.String)
+    videoLink = graphene.String()
+    description = graphene.String()
+    theme = graphene.String()
+    active = graphene.Boolean(default_value = True)
+
+class InputEditBibleVideo(graphene.InputObjectType):
+    """Edit BibleVideo Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    video_data = graphene.List(BibleVideoEditDict)
+
+class EditBibleVideo(graphene.Mutation):
+    "Mutations for Edit BibleVideo"
+    class Arguments:
+        """Arguments for Edit BibleVideo"""
+        video_arg = InputEditBibleVideo()
+
+    message = graphene.String()
+    data = graphene.List(types.BibleVideo)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,video_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =video_arg.source_name
+        video_data = video_arg.video_data
+        schema_list = []
+        for item in video_data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.BibleVideoEdit)
+            schema_list.append(schema_model)
+        result =contents_crud.update_bible_videos(db_=db_, source_name=source,
+        videos=schema_list, user_id=None)
+        video_content_list = []
+        for item in result:
+            comm_var = types.BibleVideo(
+                title = item.title,
+                books = item.books,
+                videoLink = item.videoLink,
+                description = item.description,
+                theme = item.theme,
+                active = item.active
+            )
+            video_content_list.append(comm_var)
+        message = "Bible videos updated successfully"
+        return AddBibleVideo(message=message,data=video_content_list)        
+
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
     '''All defined mutations'''
@@ -672,3 +775,5 @@ class VachanMutations(graphene.ObjectType):
     edit_audio_bible = EditAudioBible.Field()
     add_commentary = AddCommentary.Field()
     edit_commentary = EditCommentary.Field()
+    add_bible_video = AddBibleVideo.Field()
+    edit_bible_video = EditBibleVideo.Field()
