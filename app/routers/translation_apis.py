@@ -200,7 +200,8 @@ def suggest_auto_translation(project_id:int=Query(...,example="1022004"),
     log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s',
         project_id, books, sentence_id_list, sentence_id_range)
     return nlp_crud.agmt_suggest_translations(db_, project_id, books,
-        sentence_id_list, sentence_id_range, confirm_all)
+        sentence_id_list=sentence_id_list, sentence_id_range=sentence_id_range,
+        confirm_all=confirm_all)
 
 ########### Generic Translation ##################
 @router.put('/v2/translation/tokens', response_model=List[schemas_nlp.Token],

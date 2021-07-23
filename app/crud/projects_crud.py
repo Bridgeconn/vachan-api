@@ -127,8 +127,10 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
         flag_modified(project_row, "metaData")
     if project_obj.stopwords:
         project_row.metaData['stopwords'] = project_obj.stopwords.__dict__
+        flag_modified(project_row, "metaData")
     if project_obj.punctuations:
         project_row.metaData['punctuations'] = project_obj.punctuations
+        flag_modified(project_row, "metaData")
     project_row.updatedUser = user_id
     if len(new_books) > 0:
         project_row.metaData['books'] += new_books

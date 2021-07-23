@@ -3,13 +3,14 @@ This is not part of the automated tests, and data added to DB by running this sc
 This is to be used manually during develepment testing'''
 import json
 import requests
+from . import client
 
-BASE_URL = "http://127.0.0.1:8000/v2/"
+BASE_URL = "v2/"
 headers = {"contentType": "application/json", "accept": "application/json"}
 
 # have a bible source to be used
 source_name = "hi_XYZ_1_bible" # pylint: disable=C0103
-project_id = 100000 # pylint: disable=C0103
+project_id = None # pylint: disable=C0103
 
 ver_data = {
     "versionAbbreviation": "XYZ",
@@ -359,59 +360,63 @@ alignment_data = [
 	]
 }
 ]
-# resp = requests.post(BASE_URL+"versions", headers=headers, json=ver_data)
-# assert resp.json()['message'] == "Version created successfully"
 
-# resp = requests.post(BASE_URL+"sources", headers=headers, json=src_data)
-# assert resp.json()['message'] == "Source created successfully"
-# source_name = resp.json()['data']['sourceName']
+def test_end_to_end_translation():
+    '''happy path test for AGMT translation workflow'''
+    resp = client.post(BASE_URL+"versions", headers=headers, json=ver_data)
+    assert resp.json()['message'] == "Version created successfully"
 
-# resp = requests.post(BASE_URL+"bibles/"+source_name+"/books", headers=headers,
-# json=gospel_books_data)
-# assert resp.json()['message'] == "Bible books uploaded and processed successfully"
+    resp = client.post(BASE_URL+"sources", headers=headers, json=src_data)
+    assert resp.json()['message'] == "Source created successfully"
+    source_name = resp.json()['data']['sourceName']
 
-resp = requests.post(BASE_URL+"autographa/projects", headers=headers, json=project_post_data)
-# print(resp)
-# print(resp.json())
-assert resp.json()['message'] == "Project created successfully"
-project_update_data['projectId'] = resp.json()['data']['projectId']
-project_id = resp.json()['data']['projectId']
+    resp = client.post(BASE_URL+"bibles/"+source_name+"/books", headers=headers,
+    json=gospel_books_data)
+    assert resp.json()['message'] == "Bible books uploaded and processed successfully"
 
-resp = requests.put(BASE_URL+"autographa/projects", headers=headers, json=project_update_data)
-assert resp.json()['message'] == "Project updated successfully"
+    resp = client.post(BASE_URL+"autographa/projects", headers=headers, json=project_post_data)
+    assert resp.json()['message'] == "Project created successfully"
+    project_update_data['projectId'] = resp.json()['data']['projectId']
+    project_id = resp.json()['data']['projectId']
 
-# tokenize
-resp = requests.get(BASE_URL+"autographa/project/tokens?project_id="+str(project_id))
-# print(json.dumps(resp.json()))
+    resp = client.put(BASE_URL+"autographa/projects", headers=headers, json=project_update_data)
+    assert resp.json()['message'] == "Project updated successfully"
 
-# translate
-resp = requests.put(BASE_URL+"autographa/project/tokens?project_id="+str(project_id),
-	headers=headers, json=token_update_data)
-assert resp.json()['message'] == "Token translations saved"
+    # tokenize
+    resp = client.get(BASE_URL+"autographa/project/tokens?project_id="+str(project_id))
+    assert resp.status_code == 200
 
-# Additional user
-resp = requests.post(BASE_URL+"autographa/project/user?project_id="+str(project_id)+
-	"&user_id="+str(NEW_USER_ID), headers=headers)
-assert resp.json()['message'] == "User added to project successfully"
+    # translate
+    resp = client.put(BASE_URL+"autographa/project/tokens?project_id="+str(project_id),
+    	headers=headers, json=token_update_data)
+    assert resp.json()['message'] == "Token translations saved"
 
-resp = requests.put(BASE_URL+"autographa/project/user", headers=headers, json=user_data)
-assert resp.json()['message'] == "User updated in project successfully"
+    # Additional user
+    resp = client.post(BASE_URL+"autographa/project/user?project_id="+str(project_id)+
+    	"&user_id="+str(NEW_USER_ID), headers=headers)
+    assert resp.json()['message'] == "User added to project successfully"
 
-resp = requests.get(BASE_URL+"autographa/projects?user_id="+str(NEW_USER_ID))
-assert len(resp.json()) > 0
-# print(resp.json())
+    user_data['project_id'] = project_id
+    resp = client.put(BASE_URL+"autographa/project/user", headers=headers, json=user_data)
+    assert resp.json()['message'] == "User updated in project successfully"
 
+    resp = client.get(BASE_URL+"autographa/projects?user_id="+str(NEW_USER_ID))
+    assert len(resp.json()) > 0
+    # print(resp.json())
 
+    # # Suggestions
 
-# # Suggestions
+    resp = client.post(BASE_URL+"translation/learn/alignment?source_language="+ALIGNMENT_SRC+
+    	"&target_language="+ALIGNMENT_TRG, headers=headers, json=alignment_data)
+    assert resp.status_code == 201
+    # print(resp)
+    # print(resp.json())
 
-# resp = requests.post(BASE_URL+"translation/learn/alignment?source_language="+ALIGNMENT_SRC+
-# 	"&target_language="+ALIGNMENT_TRG, headers=headers, json=alignment_data)
-# assert resp.status_code == 201
-# print(resp)
-# print(resp.json())
-
-resp = requests.put(BASE_URL+"autographa/project/suggestions?project_id="+str(project_id),
-	headers=headers)
-print(resp)
-print(resp.json())
+    # tokenize after adding token "परमेश्वर" via alignment
+    resp = client.put(BASE_URL+"autographa/project/suggestions?project_id="+str(project_id)+
+        "&sentence_id_list=42001001",
+    	headers=headers)
+    draft = resp.json()[0]['draft']
+    assert "ദൈവം" in draft
+    assert "പുത്രന്‍" in draft
+    assert "യേശു ക്രിസ്തു" in draft
