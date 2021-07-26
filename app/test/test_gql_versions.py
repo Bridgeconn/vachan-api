@@ -6,7 +6,7 @@ from .test_versions import assert_positive_get
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
-from . import check_limit_gql, check_skip_gql, gql_request,assert_not_available_content_gql
+from . import  check_skip_limit_gql, gql_request,assert_not_available_content_gql
 
 GLOBAL_VARIABLES = {
     "object": {
@@ -52,15 +52,37 @@ def test_post_default():
     '''Positive test to add a new version'''
     check_post(GLOBAL_QUERY,GLOBAL_VARIABLES)
 
+def check_skip_limit():
+    """chekc skip and limit add multiple versions"""
+
+    check_post(GLOBAL_QUERY,GLOBAL_VARIABLES)
+
+    var1 = {
+    "object": {
+        "versionAbbreviation": "ABC",
+        "versionName": "ABC version to test",
+    }
+    }
+
+    var2 = {
+    "object": {
+        "versionAbbreviation": "EFG",
+        "versionName": "EFG version to test",
+    }
+    }
+
+    check_post(GLOBAL_QUERY,var1)
+    check_post(GLOBAL_QUERY,var2)
+    
     query_check = """
         {
-  versions(arg_text){
+         query versions($skip:Int, $limit:Int){
+  versions(skip:$skip,limit:$limit){
     versionAbbreviation
   }
 }
     """
-    check_skip_gql(query_check,"versions")
-    check_limit_gql(query_check,"versions")
+    check_skip_limit_gql(query_check,"versions")
 
 def test_post_multiple_with_same_abbr():
     '''Positive test to add two version, with same abbr and diff revision'''

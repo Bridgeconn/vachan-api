@@ -109,49 +109,77 @@ def check_soft_delete(unit_url, check_post, data, delete_data):
     get_response3 = client.get(unit_url+source_name+'?active=false')
     assert len(get_response3.json()) == len(delete_data)
 
-def check_skip_gql(query,api_name):
-    '''All tests for the skip parameter of an API endpoint graphql'''
-    query1 = query.replace("arg_text","skip:0")
-    query2 = query.replace("arg_text","skip:1")
-    executed = gql_request(query1)
+def check_skip_limit_gql(query,api_name):
+    '''All tests for the skip and limit parameter of an API endpoint graphql'''
+   
+   #checking skip and limit 
+    var1 = {
+  "skip": 0,
+  "limit": 3
+}
+    var2 = {
+  "skip": 1,
+  "limit": 3
+}
+    executed = gql_request(query=query, operation="query", variables=var1)
     assert isinstance(executed, Dict)
-    if len(executed["data"][api_name]) > 1:
-        executed2 = gql_request(query2)
+    if len(executed["data"][api_name]) >1:
+        executed2 = gql_request(query=query, operation="query", variables=var2)
         assert isinstance(executed2, Dict)
         assert executed["data"][api_name][1] == executed2["data"][api_name][0]
+        assert len(executed["data"][api_name]) <= 3
+        assert len(executed2["data"][api_name]) <= 3
 
     # fetch a non existant page, with skip and limit values
-    query3 = query.replace("arg_text","skip:50000,limit:10")
-    executed3 = gql_request(query3)
+    var3 = {
+  "skip": 50000,
+  "limit": 10
+}
+
+    executed3 = gql_request(query=query, operation="query", variables=var3)
     assert_not_available_content_gql(executed3["data"][api_name])
 
     # skip should be an integer
-    query4 = query.replace("arg_text","skip:abc")
+    var4 = {
+  "skip": "abc",
+  "limit": 10
+}
+    query4 = gql_request(query=query, operation="query", variables=var4)
     executed4 = gql_request(query4)
     assert "errors" in executed4.keys()
 
     # skip should be a positive integer
-    query5 = query.replace("arg_text","skip:-10")
+    var5 = {
+  "skip": -5,
+  "limit": 10
+}
+    query5 = gql_request(query=query, operation="query", variables=var5)
     executed5 = gql_request(query5)
     assert "errors" in executed5.keys()
 
-def check_limit_gql(query,api_name):
-    '''All tests for the limit parameter of an API endpoint graphql'''
-    """
-    query0 = query.replace("arg_text","limit:2")
-    executed0 = gql_request(query0)
-    assert isinstance(executed0,Dict)
-    assert len(executed0["data"][api_name]) <= 2 """
+    var6 = {
+  "skip": 0,
+  "limit":0
+}
+    executed6 = gql_request(query=query, operation="query", variables=var6)
+    assert isinstance(executed6, Dict)
+    assert executed6["data"][api_name] == None
 
     # limit should be an integer
-    query1 = query.replace("arg_text","limit:'abcde'")
-    executed1 = gql_request(query1)
-    assert "errors" in executed1.keys()
+    var7 = {
+  "skip": "abc",
+  "limit": 10
+}
+    executed7 = gql_request(query=query, operation="query", variables=var7)
+    assert "errors" in executed7.keys()
 
     # limit should be a positive integer
-    query2 = query.replace("arg_text","limit:-1")
-    executed2 = gql_request(query2)
-    assert "errors" in executed2.keys()
+    var8 = {
+  "skip": 0,
+  "limit": -1
+}
+    executed8 = gql_request(query=query, operation="query", variables=var8)
+    assert "errors" in executed8.keys()
 
 def assert_not_available_content_gql(item):
     '''Checks for empty array returned when requetsed content not available'''

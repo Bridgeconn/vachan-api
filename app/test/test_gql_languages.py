@@ -2,7 +2,7 @@
 from typing import Dict
 
 #pylint: disable=E0611
-from . import gql_request,check_skip_gql,check_limit_gql
+from . import gql_request,check_skip_limit_gql
 #pylint: disable=E0401
 from .test_languages import assert_positive_get
 
@@ -28,15 +28,13 @@ def test_get_all_data():
         assert_positive_get(item)
 
     query_check = """
-            {
-    languages(arg_text){
-        languageId
-        language
-    }
-    }
+           query languages($skip:Int, $limit:Int){
+  languages(skip:$skip,limit:$limit){
+    languageId
+  }
+}
     """    
-    check_skip_gql(query_check,"languages")
-    check_limit_gql(query_check,"languages")
+    check_skip_limit_gql(query_check,"languages")
 
 def test_get_one_language_with_argument():
     """test for get only 1 field data with  name"""

@@ -9,7 +9,7 @@ from .test_commentaries import assert_positive_get
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
-from . import gql_request,assert_not_available_content_gql,check_skip_gql,check_limit_gql
+from . import gql_request,assert_not_available_content_gql,check_skip_limit_gql
 
 VERSION_VAR  = {
         "object": {
@@ -112,14 +112,14 @@ def test_post_default():
 
     #skip and limit 
     query_check = """
-      {
-  commentaries(sourceName:"gu_TTT_1_commentary",arg_text){
+      query commentaries($skip:Int, $limit:Int){
+  commentaries(sourceName:"gu_TTT_1_commentary",skip:$skip,limit:$limit){
     refString
   }
 }
+
     """
-    check_skip_gql(query_check,"commentaries")
-    check_limit_gql(query_check,"commentaries")
+    check_skip_limit_gql(query_check,"commentaries")
 
 def test_post_duplicate():
     '''Negative test to add two commentaries with same reference range'''
