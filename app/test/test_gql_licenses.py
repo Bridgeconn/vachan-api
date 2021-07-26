@@ -5,7 +5,7 @@ from .test_licenses import assert_positive_get
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
-from . import gql_request,assert_not_available_content_gql
+from . import check_skip_limit_gql, gql_request,assert_not_available_content_gql
 
 def test_get():
     '''positive test case, without optional params'''
@@ -46,6 +46,7 @@ def test_get():
     for item in executed2["data"]["licenses"]:
         assert_positive_get(item)
     assert executed2["data"]["licenses"][0]["code"] == "ISC"
+
 
     # '''positive test case, with one optional params, code in lower case'''
     query3 = """
@@ -190,6 +191,18 @@ def test_get():
     executed10 = gql_request(query10)
     assert isinstance(executed10, Dict)
     assert "errors" in executed10.keys()
+
+    
+
+    query_check = """
+        query licenses($skip:Int, $limit:Int){
+  licenses(skip:$skip,limit:$limit){
+    name
+  }
+}
+    """
+    check_skip_limit_gql(query_check,"licenses")
+
 
 def test_post():
     '''positive test case, checking for correct return object'''
