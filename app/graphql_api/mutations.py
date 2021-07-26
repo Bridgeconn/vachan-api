@@ -1,12 +1,12 @@
 '''GraphQL queries and mutations'''
 import graphene
-from sqlalchemy.sql.functions import user
 
 #pylint: disable=E0401
 #pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 from crud import structurals_crud,contents_crud,projects_crud
 #pylint: disable=E0611
 from graphql_api import types, utils
+#pylint: disable=C0410
 import schemas,schemas_nlp
 
 ############ ADD NEW Language #################
@@ -115,7 +115,6 @@ class CreateContentTypes(graphene.Mutation):
 
 ########## Add License ########
 enum_val = types.LicensePermission
-
 
 class InputAddLicense(graphene.InputObjectType):
     """Add license Input"""
@@ -656,10 +655,11 @@ class EditCommentary(graphene.Mutation):
         message = "Commentaries updated successfully"
         return AddCommentary(message=message,data=comm_content_list)
 
-########## Create AGMT project ########
+##### AGMT PROJECT MANAGEMENT Create #######
 enum_doc = types.TranslationDocumentType
 
 class InputStopWords(graphene.InputObjectType):
+    """stopword input for create and update"""
     prepositions = graphene.List(graphene.String,required=True)
     postpositions = graphene.List(graphene.String,required=True)
 
@@ -685,72 +685,148 @@ class CreateAGMTProject(graphene.Mutation):
         agmt_arg = InputCreateAGMTProject()
 
     message = graphene.String()
-    data = graphene.List(types.TranslationProject)
+    data = graphene.Field(types.TranslationProject)
     #pylint: disable=R0201,no-self-use
     def mutate(self,info,agmt_arg):
         """resolve"""
         db_ = info.context["request"].db_session
         schema_model = utils.convert_graphene_obj_to_pydantic\
-        (agmt_arg,schemas_nlp.TranslationProjectCreate)
+            (agmt_arg,schemas_nlp.TranslationProjectCreate)
 
-        result =projects_crud.create_agmt_project(db_=db_,project=schema_model, user_id=10101)
+        result = projects_crud.create_agmt_project(db_=db_,project=schema_model,user_id=10101)
+        comm = types.TranslationProject(
+            projectId = result.projectId,
+            projectName = result.projectName,
+            sourceLanguage = result.sourceLanguage,
+            targetLanguage = result.targetLanguage,
+            documentFormat = result.documentFormat,
+            users = result.users,
+            metaData = result.metaData,
+            active = result.active
+        )
+        message = "Project created successfully"
+        return CreateAGMTProject(message = message, data = comm)
 
-        print("=============================================")
-        user_data = []
-        for item in result.users:
-            user = {
-                "project_id": item.project_id,
-                "userId": item.userId,
-                "userRole": item.userRole,
-                "metaData": item.metaData,
-                "active": item.active
-                }
-            user_data.append(user)
-        print(user_data)         
-        print("=============================================")
-        comm_var = types.TranslationProject(
-                projectId = result.projectId,
-                projectName = result.projectName,
-                sourceLanguage = result.sourceLanguage,
-                targetLanguage = result.targetLanguage,
-                documentFormat = result.documentFormat,
-                users = user_data,
-                metaData = result.metaData,
-                active = result.active
-            )
-        message = "Project created/updated successfully"
-        return CreateAGMTProject(message=message,data=comm_var)
 
-########## Create AGMT User ########
-class InputCreateAGMTUser(graphene.InputObjectType):
-    """CreateAGMTProjectuser Input"""
-    project_id  = graphene.Int(required=True)
-    user_id   = graphene.Int(required=True)
-    
-class CreateAGMTProjectUser(graphene.Mutation):
-    "Mutations for CreateAGMTProjectUser"
+##### AGMT PROJECT MANAGEMENT EDIT #######
+
+class InputSeclectedBooks(graphene.InputObjectType):
+    """List of selected books from an existing bible in the server"""
+    bible = graphene.String(required=True,\
+        description = "pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$\
+        example: hi_IRV_1_bible")
+    books = graphene.List(graphene.String,required=True,\
+        description = "pattern: ^[a-zA-Z1-9][a-zA-Z][a-zA-Z]$\
+        example: [ 'luk', 'jhn' ]")
+
+class InputEditAGMTProject(graphene.InputObjectType):
+    """CreateAGMTProject Input"""
+    projectId = graphene.Int(required=True)
+    projectName = graphene.String(\
+        description="example: Hindi Malayalam Gospels")
+    selectedBooks = graphene.Field(InputSeclectedBooks)
+    uploadedBooks = graphene.List(graphene.String)
+    useDataForLearning = graphene.Boolean()
+    stopwords = graphene.Field(InputStopWords)
+    punctuations = graphene.List(graphene.String,\
+        description="""List [ ",", "\"", "!", ".", ":", ";", "\n""]""")
+    active = graphene.Boolean(default_value=True)
+
+class EditAGMTProject(graphene.Mutation):
+    "Mutations for EditAGMTProject"
     class Arguments:
-        """Arguments for CreateAGMTProjectUser"""
-        agmt_arg = InputCreateAGMTUser()
+        """Arguments for EditAGMTProject"""
+        agmt_arg = InputEditAGMTProject()
 
     message = graphene.String()
-    data = graphene.List(types.ProjectUser)
+    data = graphene.Field(types.TranslationProject)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,agmt_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        schema_model = utils.convert_graphene_obj_to_pydantic\
+            (agmt_arg,schemas_nlp.TranslationProjectEdit)
+
+        result = projects_crud.update_agmt_project(db_=db_,project_obj=schema_model,user_id=10101)
+        comm = types.TranslationProject(
+            projectId = result.projectId,
+            projectName = result.projectName,
+            sourceLanguage = result.sourceLanguage,
+            targetLanguage = result.targetLanguage,
+            documentFormat = result.documentFormat,
+            users = result.users,
+            metaData = result.metaData,
+            active = result.active
+        )
+        message = "Project updated successfully"
+        return EditAGMTProject(message = message, data = comm)
+
+
+##### AGMT project user #######
+class AGMTUserCreateInput(graphene.InputObjectType):
+    """input of AGMT user create"""
+    project_id = graphene.Int(required=True)
+    user_id = graphene.Int(required=True)
+
+class AGMTUserCreate(graphene.Mutation):
+    """mutation for AGMT user create"""
+    class Arguments:
+        """args"""
+        agmt_arg = AGMTUserCreateInput()
+
+    message = graphene.String()
+    data = graphene.Field(types.ProjectUser)
     #pylint: disable=R0201,no-self-use
     def mutate(self,info,agmt_arg):
         """resolve"""
         db_ = info.context["request"].db_session
         project_id = agmt_arg.project_id
         user_id = agmt_arg.user_id
-        result =projects_crud.add_agmt_user(db_=db_,project_id=project_id, user_id=user_id,current_user=None)
-        comm_var = types.ProjectUser(
-                project_id = result.project_id,
-                userId = result.userId,
-                userRole = result.userRole,
-                metaData = result.metaData,
-                active = result.active
-            )
-        message = "User added to/updated in project successfully"
-        return CreateAGMTProjectUser(message=message,data=comm_var)           
+        result = projects_crud.add_agmt_user(db_=db_,project_id=\
+            project_id,user_id=user_id,current_user=None)
+        comm = types.ProjectUser(
+            project_id = result.project_id,
+            userId = result.userId,
+            userRole = result.userRole,
+            metaData = result.metaData,
+            active = result.active
+        )
+        message = "User added in project successfully"
+        return AGMTUserCreate(message = message, data = comm)
+
+##### AGMT project user Edit#######
+class AGMTUserEditInput(graphene.InputObjectType):
+    """input of AGMT user Edit"""
+    project_id = graphene.Int(required=True)
+    userId = graphene.Int(required=True)
+    userRole = graphene.String()
+    metaData = graphene.JSONString()
+    active = graphene.Boolean()
+
+class AGMTUserEdit(graphene.Mutation):
+    """mutation for AGMT user Edit"""
+    class Arguments:
+        """args"""
+        agmt_arg = AGMTUserEditInput()
+
+    message = graphene.String()
+    data = graphene.Field(types.ProjectUser)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,agmt_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        schema_model = utils.convert_graphene_obj_to_pydantic\
+            (agmt_arg,schemas_nlp.ProjectUser)
+        result = projects_crud.update_agmt_user(db_=db_,user_obj = schema_model ,current_user=10101)
+        comm = types.ProjectUser(
+            project_id = result.project_id,
+            userId = result.userId,
+            userRole = result.userRole,
+            metaData = result.metaData,
+            active = result.active
+        )
+        message = "User updated in project successfully"
+        return AGMTUserEdit(message = message, data = comm)
 
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
@@ -771,4 +847,6 @@ class VachanMutations(graphene.ObjectType):
     add_commentary = AddCommentary.Field()
     edit_commentary = EditCommentary.Field()
     create_agmt_project = CreateAGMTProject.Field()
-    create_agmt_project_user = CreateAGMTProjectUser.Field()
+    edit_agmt_project = EditAGMTProject.Field()
+    create_agmt_project_user = AGMTUserCreate.Field()
+    edit_agmt_project_user = AGMTUserEdit.Field()
