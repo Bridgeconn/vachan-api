@@ -7,7 +7,7 @@ from .test_gql_versions import check_post as version_add
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
-from . import check_limit_gql, check_skip_gql, gql_request,assert_not_available_content_gql
+from . import check_skip_limit_gql, gql_request,assert_not_available_content_gql
 
 SOURCE_GLOBAL_VARIABLES = {
   "object": {
@@ -89,8 +89,7 @@ def test_post_default():
   }
 }
     """
-    check_skip_gql(query_check,"contents")
-    check_limit_gql(query_check,"contents")
+    check_skip_limit_gql(query_check,"contents")
 
 def test_post_wrong_version():
     '''Negative test with not available version or revision'''

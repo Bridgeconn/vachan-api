@@ -6,7 +6,7 @@ from .test_versions import assert_positive_get
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
-from . import check_limit_gql, check_skip_gql, gql_request,assert_not_available_content_gql
+from . import check_skip_limit_gql, gql_request,assert_not_available_content_gql
 
 GLOBAL_VARIABLES = {
     "object": {
@@ -59,8 +59,7 @@ def test_post_default():
   }
 }
     """
-    check_skip_gql(query_check,"versions")
-    check_limit_gql(query_check,"versions")
+    check_skip_limit_gql(query_check,"versions")
 
 def test_post_multiple_with_same_abbr():
     '''Positive test to add two version, with same abbr and diff revision'''
