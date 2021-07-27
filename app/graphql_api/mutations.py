@@ -654,6 +654,97 @@ class EditCommentary(graphene.Mutation):
         message = "Commentaries updated successfully"
         return AddCommentary(message=message,data=comm_content_list)
 
+########## Add Dictionary ########
+class DictionaryDict(graphene.InputObjectType):
+    """Dictionary input"""
+    word = graphene.String(required=True)
+    details = graphene.JSONString(description="Expecting a dictionary Type")
+    active = graphene.Boolean(default_value = True)
+
+class InputAddDictionary(graphene.InputObjectType):
+    """Add Dictionary Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    word_list = graphene.List(DictionaryDict)
+
+class AddDictionary(graphene.Mutation):
+    "Mutations for Add Dictionary"
+    class Arguments:
+        """Arguments for Add Dictionary"""
+        dict_arg = InputAddDictionary()
+
+    message = graphene.String()
+    data = graphene.List(types.DictionaryWord)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,dict_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =dict_arg.source_name
+        dict_data = dict_arg.word_list
+        schema_list = []
+        for item in dict_data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.DictionaryWordCreate)
+            schema_list.append(schema_model)
+        result =contents_crud.upload_dictionary_words(db_=db_, source_name=source,
+        dictionary_words=schema_list, user_id=None)
+        dict_content_list = []
+        for item in result:
+            dict_var = types.DictionaryWord(
+                word = item.word,
+                details = item.details,
+                active = item.active
+            )
+            dict_content_list.append(dict_var)
+        message = "Dictionary words added successfully"
+        return AddDictionary(message=message,data=dict_content_list)
+
+########## Edit Dictionary ########
+class DictionaryEditDict(graphene.InputObjectType):
+    """Dictionary input"""
+    word = graphene.String(required=True)
+    details = graphene.JSONString(description="Expecting a dictionary Type")
+    active = graphene.Boolean(default_value = True)
+
+class InputEditDictionary(graphene.InputObjectType):
+    """Add Dictionary Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    word_list = graphene.List(DictionaryEditDict)
+
+class EditDictionary(graphene.Mutation):
+    "Mutations for Edit Dictionary"
+    class Arguments:
+        """Arguments for Add Dictionary"""
+        dict_arg = InputEditDictionary()
+
+    message = graphene.String()
+    data = graphene.List(types.DictionaryWord)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,dict_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =dict_arg.source_name
+        dict_data = dict_arg.word_list
+        schema_list = []
+        for item in dict_data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.DictionaryWordEdit)
+            schema_list.append(schema_model)
+        result =contents_crud.update_dictionary_words(db_=db_, source_name=source,
+        dictionary_words=schema_list, user_id=None)
+        dict_content_list = []
+        for item in result:
+            dict_var = types.DictionaryWord(
+                word = item.word,
+                details = item.details,
+                active = item.active
+            )
+            dict_content_list.append(dict_var)
+        message = "Dictionary words updated successfully"
+        return EditDictionary(message=message,data=dict_content_list)
+
+
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
     '''All defined mutations'''
@@ -672,3 +763,5 @@ class VachanMutations(graphene.ObjectType):
     edit_audio_bible = EditAudioBible.Field()
     add_commentary = AddCommentary.Field()
     edit_commentary = EditCommentary.Field()
+    add_dictionary = AddDictionary.Field()
+    edit_dictionary = EditDictionary.Field()
