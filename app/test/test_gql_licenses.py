@@ -5,7 +5,7 @@ from .test_licenses import assert_positive_get
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
-from . import check_limit_gql, check_skip_gql, gql_request,assert_not_available_content_gql
+from . import check_skip_limit_gql, gql_request,assert_not_available_content_gql
 
 def test_get():
     '''positive test case, without optional params'''
@@ -192,16 +192,16 @@ def test_get():
     assert isinstance(executed10, Dict)
     assert "errors" in executed10.keys()
 
+    
+
     query_check = """
-        {
-    licenses(arg_text){
-        name
-        code
-    }
-    }
+        query licenses($skip:Int, $limit:Int){
+  licenses(skip:$skip,limit:$limit){
+    name
+  }
+}
     """
-    check_skip_gql(query_check,"licenses")
-    check_limit_gql(query_check,"licenses")
+    check_skip_limit_gql(query_check,"licenses")
 
 
 def test_post():
