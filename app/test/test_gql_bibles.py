@@ -226,10 +226,6 @@ def test_post_default():
   }
 }
   """
-<<<<<<< HEAD
-=======
-  
->>>>>>> df5b78d88e76986c3e3c634944be4354229f3e2e
   check_skip_limit_gql(query_check,"bibleContents")
 
 def test_post_optional():
