@@ -6,7 +6,11 @@ from .test_versions import assert_positive_get
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
+<<<<<<< HEAD
 from . import check_skip_limit_gql, gql_request,assert_not_available_content_gql
+=======
+from . import  check_skip_limit_gql, gql_request,assert_not_available_content_gql
+>>>>>>> df5b78d88e76986c3e3c634944be4354229f3e2e
 
 GLOBAL_VARIABLES = {
     "object": {
@@ -52,9 +56,32 @@ def test_post_default():
     '''Positive test to add a new version'''
     check_post(GLOBAL_QUERY,GLOBAL_VARIABLES)
 
+def check_skip_limit():
+    """chekc skip and limit add multiple versions"""
+
+    check_post(GLOBAL_QUERY,GLOBAL_VARIABLES)
+
+    var1 = {
+    "object": {
+        "versionAbbreviation": "ABC",
+        "versionName": "ABC version to test",
+    }
+    }
+
+    var2 = {
+    "object": {
+        "versionAbbreviation": "EFG",
+        "versionName": "EFG version to test",
+    }
+    }
+
+    check_post(GLOBAL_QUERY,var1)
+    check_post(GLOBAL_QUERY,var2)
+    
     query_check = """
         {
-  versions(arg_text){
+         query versions($skip:Int, $limit:Int){
+  versions(skip:$skip,limit:$limit){
     versionAbbreviation
   }
 }

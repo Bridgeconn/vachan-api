@@ -82,9 +82,11 @@ def test_post_default():
     #create source
     check_post(SOURCE_GLOBAL_QUERY,SOURCE_GLOBAL_VARIABLES)
 
+    
+
     query_check = """
-      {
-  contents(arg_text){
+      query contents($skip:Int, $limit:Int){
+  contents(skip:$skip,limit:$limit){
     sourceName
   }
 }

@@ -12,7 +12,11 @@ from .test_gql_sources import check_post as source_add
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
+<<<<<<< HEAD
 from . import check_skip_limit_gql, gql_request,assert_not_available_content_gql
+=======
+from . import  check_skip_limit_gql, gql_request,assert_not_available_content_gql
+>>>>>>> df5b78d88e76986c3e3c634944be4354229f3e2e
 
 VERSION_VAR  = {
         "object": {
@@ -215,21 +219,17 @@ def test_post_default():
   add_bible()
 
   #skip and limit
-  query_check = """
-    {
-  bibleContents(sourceName:"gu_TTT_1_bible",arg_text){
-   	 book{
-      bookCode
-    }
+  query_check ="""
+      query bible($skip:Int, $limit:Int){
+  bibleContents(sourceName:"gu_TTT_1_bible",skip:$skip,limit:$limit){
     USFM
-    JSON
-    audio{
-      name
-    }
-    active
   }
 }
   """
+<<<<<<< HEAD
+=======
+  
+>>>>>>> df5b78d88e76986c3e3c634944be4354229f3e2e
   check_skip_limit_gql(query_check,"bibleContents")
 
 def test_post_optional():
