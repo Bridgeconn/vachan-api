@@ -1,7 +1,7 @@
 '''Test cases for contentType related GraphQL APIs'''
 from typing import Dict
 #pylint: disable=E0611
-from . import check_skip_gql, gql_request,assert_not_available_content_gql
+from . import  gql_request,assert_not_available_content_gql,check_skip_limit_gql
 #pylint: disable=E0401
 from .test_content_types import assert_positive_get
 
@@ -26,14 +26,13 @@ def test_get_default():
         assert_positive_get(item)
 
     query_check = """
-            {
-    contentTypes(arg_text){
-        contentId
-        contentType
-    }
-    }
+          query contentTypes($skip:Int, $limit:Int){
+  contentTypes(skip:$skip,limit:$limit){
+    contentId
+  }
+}
     """
-    check_skip_gql(query_check,"contentTypes")    
+    check_skip_limit_gql(query_check,"contentTypes")    
 
 def test_get_notavailable_content_type():
     ''' request a not available content, Ensure there is not partial matching'''

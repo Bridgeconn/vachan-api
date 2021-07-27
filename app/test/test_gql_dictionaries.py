@@ -9,7 +9,7 @@ from .test_dictionaries import assert_positive_get
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
-from . import gql_request,assert_not_available_content_gql,check_skip_gql,check_limit_gql
+from . import gql_request,assert_not_available_content_gql,check_skip_limit_gql
 
 VERSION_VAR  = {
         "object": {
@@ -77,7 +77,7 @@ def test_post_default():
   "object": {
     "sourceName": "gu_TTT_1_dictionary",
     "wordList": [
-        {"word": "one", "details":"{\"digit\":1,\"type\":\"odd\"}"},
+      {"word": "one", "details":"{\"digit\":1,\"type\":\"odd\"}"},
     	{"word": "two", "details":"{\"digit\":2,\"type\":\"even\"}"},
     	{"word": "three", "details":"{\"digit\":3,\"type\":\"even\"}"},
     	{"word": "four", "details":"{\"digit\":4,\"type\":\"even\"}"},
@@ -87,17 +87,17 @@ def test_post_default():
 }    
     post_dictionary(variable)
 
+
     #skip and limit
-    query = """
-    {
-  dictionaryWords(sourceName:"gu_TTT_1_dictionary",arg_text){
-    word
+    query_check ="""
+      query dictionaryWords($skip:Int, $limit:Int){
+      dictionaryWords(sourceName:"gu_TTT_1_dictionary",skip:$skip,limit:$limit){
+        word
   }
 }
-    """
+  """
 
-    check_skip_gql(query,"dictionaryWords")
-    check_limit_gql(query,api_name="dictionaryWords")
+    check_skip_limit_gql(query_check,"dictionaryWords")
 
     #test_post_duplicate
 
