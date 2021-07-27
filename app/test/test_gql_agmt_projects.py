@@ -672,7 +672,25 @@ def test_soft_delete():
   }
 }
     for i in range(5):
-      project_data["object"]["projectName"] = 
+      project_data["object"]["projectName"] = "Test project" + str(i)
+      executed = check_post(PROJECT_CREATE_GLOBAL_QUERY,project_data)
 
-    executed = check_post(PROJECT_CREATE_GLOBAL_QUERY,project_data)
-    new_project = executed["data"]["createAgmtProject"]["data"]
+    executed_get  = gql_request(PROJECT_GET_GLOBAL_QUERY)
+    assert len(executed_get["data"]["agmtProjects"]) == 5
+
+    get_project = executed_get["data"]["agmtProjects"][0]
+    put_data = {
+     "object": {
+        "projectId":int(get_project['projectId']),
+        "projectName":get_project['projectName'],
+        "active": False
+  }
+}
+    executed3 = gql_request(query=PROJECT_EDIT_GLOBAL_QUERY,operation="mutation", variables=put_data)
+    assert isinstance(executed3, Dict)
+    assert executed3["data"]["editAgmtProject"]["message"] == "Project updated successfully"
+    assert not executed3["data"]["editAgmtProject"]["data"]["active"]
+
+    executed_get  = gql_request(PROJECT_GET_GLOBAL_QUERY)
+    assert len(executed_get["data"]["agmtProjects"]) == 4
+
