@@ -9,7 +9,7 @@ from .test_bible_videos import assert_positive_get
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
-from . import gql_request,assert_not_available_content_gql,check_skip_gql,check_limit_gql
+from . import gql_request,assert_not_available_content_gql,check_skip_limit_gql
 
 VERSION_VAR  = {
         "object": {
@@ -108,14 +108,13 @@ def test_post_default():
     post_biblevideo(variable)
     
     check_query = """
-        {
-  bibleVideos(sourceName:"mr_TTT_1_biblevideo",arg_text){
-    title
+        query bibleVideos($skip:Int, $limit:Int){
+      bibleVideos(sourceName:"mr_TTT_1_biblevideo",skip:$skip,limit:$limit){
+        title
   }
 }
     """
-    check_skip_gql(check_query,"bibleVideos")
-    check_limit_gql(check_query,"bibleVideos")
+    check_skip_limit_gql(check_query,"bibleVideos")
 
     #duplicate 
     executed = gql_request(ADD_BIBLEVIDEO,operation="mutation",variables=variable)
