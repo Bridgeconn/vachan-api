@@ -12,11 +12,7 @@ from .test_gql_sources import check_post as source_add
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
-<<<<<<< HEAD
 from . import check_skip_limit_gql, gql_request,assert_not_available_content_gql
-=======
-from . import  check_skip_limit_gql, gql_request,assert_not_available_content_gql
->>>>>>> df5b78d88e76986c3e3c634944be4354229f3e2e
 
 VERSION_VAR  = {
         "object": {
