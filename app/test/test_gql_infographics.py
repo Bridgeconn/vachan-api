@@ -9,7 +9,7 @@ from .test_infographics import assert_positive_get
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
-from . import gql_request,assert_not_available_content_gql,check_skip_gql,check_limit_gql
+from . import gql_request,assert_not_available_content_gql,check_skip_limit_gql
 
 VERSION_VAR  = {
         "object": {
@@ -118,17 +118,13 @@ def test_post_default():
 
     #skip and limit check
     query_check = """
-        {
-  infographics(sourceName:"ur_TTT_1_infographic",arg_text){
-    book{
-      bookCode
-    }
-    title
+       query infographic($skip:Int, $limit:Int){
+  infographics(sourceName:"ur_TTT_1_infographic",skip:$skip,limit:$limit){
+  	title
   }
 }
     """
-    check_skip_gql(query_check,"infographics")
-    check_limit_gql(query_check,"infographics")
+    check_skip_limit_gql(query_check,"infographics")
 
     #duplicate test
     executed = gql_request(ADD_INFOGRAPHIC,operation="mutation",variables=variable)
