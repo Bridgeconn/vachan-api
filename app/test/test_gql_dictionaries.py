@@ -1,4 +1,4 @@
-"""Test cases for commentaries in GQL"""
+"""Test cases for dictionaries in GQL"""
 from typing import Dict
 #pylint: disable=E0401
 from .test_gql_versions import GLOBAL_QUERY as version_query
