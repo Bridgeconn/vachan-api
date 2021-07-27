@@ -1,9 +1,10 @@
 '''GraphQL queries and mutations'''
+from os import set_inheritable
 import graphene
 
 #pylint: disable=E0401
 #pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
-from crud import structurals_crud,contents_crud,projects_crud
+from crud import structurals_crud,contents_crud,projects_crud,nlp_crud
 #pylint: disable=E0611
 from graphql_api import types, utils
 #pylint: disable=C0410
@@ -1015,6 +1016,100 @@ class EditInfographic(graphene.Mutation):
         message = "Infographics updated successfully"
         return EditInfographic(message=message,data=dict_content_list)
 
+########## Autographa - Translation ########
+# Apply token translation
+class InputOccurance(graphene.InputObjectType):
+    """Input object for applying token translation"""
+    sentenceId = graphene.Int(required=True)
+    offset = graphene.List(graphene.Int,required=True,\
+        description="Max-Min Item 2")
+
+class InputToken(graphene.InputObjectType):
+    """Input object for applying token translation"""
+    token = graphene.String(required=True)
+    occurrences = graphene.List(InputOccurance,required=True)
+    translation = graphene.String(required=True)
+class InputApplyToken(graphene.InputObjectType):
+    """Inputs for Aplly Token"""
+    project_id = graphene.Int(required=True)
+    return_drafts = graphene.Boolean(default_value = True)
+    token = graphene.List(InputToken)
+
+class TokenApply(graphene.Mutation):
+    "Mutations for  Token apply"
+    class Arguments:
+        """Arguments for Token apply"""
+        token_arg = InputApplyToken()
+
+    message = graphene.String()
+    data = graphene.List(types.Sentence)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,token_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        project_id = token_arg.project_id
+        return_drafts = token_arg.return_drafts
+        token = token_arg.token
+
+        schema_list = []
+        for item in token:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas_nlp.TokenUpdate)
+            schema_list.append(schema_model)
+        result = nlp_crud.save_agmt_translations(db_=db_,project_id=project_id,\
+            token_translations = schema_list,return_drafts = return_drafts,user_id=None)
+        dict_content_list = []
+        for item in result:
+            comm = types.Sentence(
+            sentenceId = item.sentenceId,
+            sentence = item.sentence,
+            draft = item.draft,
+            draftMeta = item.draftMeta
+            )
+            dict_content_list.append(comm)
+        message = "Token translations saved"
+        return TokenApply(message=message,data=dict_content_list)
+
+# Get Token Sentances
+class InputGetSentance(graphene.InputObjectType):
+    """Inputs for Aplly Token"""
+    project_id = graphene.Int(required=True)
+    token = graphene.String(required=True)
+    occurance = graphene.List(InputOccurance,required=True)
+
+class GetTokenSentance(graphene.Mutation):
+    "Mutations for  Get Token Sentance "
+    class Arguments:
+        """Arguments for Get token sentance"""
+        token_arg = InputGetSentance()
+
+    data = graphene.List(types.Sentence)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,token_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        project_id = token_arg.project_id
+        token = token_arg.token
+        occurance = token_arg.occurance
+
+        schema_list = []
+        for item in occurance:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas_nlp.TokenOccurence)
+            schema_list.append(schema_model)
+        result = projects_crud.get_agmt_source_per_token(db_=db_,project_id=project_id,\
+            token = token, occurrences = schema_list)
+        dict_content_list = []
+        for item in result:
+            comm = types.Sentence(
+            sentenceId = item.sentenceId,
+            sentence = item.sentence,
+            draft = item.draft,
+            draftMeta = item.draftMeta
+            )
+            dict_content_list.append(comm)
+        return GetTokenSentance(data=dict_content_list)     
+
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
     '''All defined mutations'''
@@ -1041,4 +1136,5 @@ class VachanMutations(graphene.ObjectType):
     edit_agmt_project = EditAGMTProject.Field()
     create_agmt_project_user = AGMTUserCreate.Field()
     edit_agmt_project_user = AGMTUserEdit.Field()
-    
+    apply_token_translation = TokenApply.Field()
+    get_token_sentances = GetTokenSentance.Field()
