@@ -110,7 +110,7 @@ class Query(graphene.ObjectType):
         source_name=graphene.String(required=True),
         search_word=graphene.String(), exact_match=graphene.Boolean(), active=graphene.Boolean(),
         skip=graphene.Int(), limit=graphene.Int())
-    def resolve_dictonary_words(self, info, source_name, search_word=None, exact_match=False,
+    def resolve_dictionary_words(self, info, source_name, search_word=None, exact_match=False,
         active=True, skip=0, limit=100):
         '''resolver'''
         db_ = info.context["request"].db_session

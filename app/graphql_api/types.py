@@ -103,7 +103,7 @@ class BibleVerse(graphene.ObjectType):
     '''output object for a verse'''
     refId = graphene.ID()
     refString = graphene.String()
-    refObject = graphene.Field(Reference)
+    reference = graphene.Field(Reference)
     verseText = graphene.String()
     # footNotes = graphene.List(graphene.String)
     # crossReferences  = graphene.List(graphene.String)

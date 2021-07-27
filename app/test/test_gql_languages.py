@@ -2,7 +2,7 @@
 from typing import Dict
 
 #pylint: disable=E0611
-from . import gql_request,check_skip_gql,check_limit_gql
+from . import gql_request,check_skip_limit_gql
 #pylint: disable=E0401
 from .test_languages import assert_positive_get
 
@@ -27,6 +27,14 @@ def test_get_all_data():
     for item in executed["data"]["languages"]:
         assert_positive_get(item)
 
+    query_check = """
+           query languages($skip:Int, $limit:Int){
+  languages(skip:$skip,limit:$limit){
+    languageId
+  }
+}
+    """    
+    check_skip_limit_gql(query_check,"languages")
 
 def test_get_one_language_with_argument():
     """test for get only 1 field data with  name"""
@@ -123,41 +131,6 @@ def test_get_multiple_params():
     for item in executed["data"]["languages"]:
         assert_positive_get(item)
         assert item["language"].lower() == "malayalam"
-
-def test_check_gql_skip():
-    '''Skip Test for languages'''
-    query_skip0 = """
-            {
-    languages(skip:0){
-        languageId
-        language
-    }
-    }
-    """
-    query_skip1 = """
-            {
-    languages(skip:1){
-        languageId
-        language
-    }
-    }
-    """
-    check_skip_gql(query_skip0,query_skip1)
-
-def test_check_gql_limit():
-    '''limit Test for languages'''
-    query_limit = """
-            {
-    languages(limit:3){
-       languageId
-        language
-        code
-        scriptDirection
-        metaData
-    }
-    }
-    """
-    check_limit_gql(query_limit, limit=3)
 
 
 def test_get_notavailable_language_code():

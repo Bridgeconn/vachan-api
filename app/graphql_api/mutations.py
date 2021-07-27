@@ -3,7 +3,7 @@ import graphene
 
 #pylint: disable=E0401
 #pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
-from crud import structurals_crud
+from crud import structurals_crud,contents_crud
 #pylint: disable=E0611
 from graphql_api import types, utils
 import schemas
@@ -358,6 +358,592 @@ class EditSource(graphene.Mutation):
         message = "Source edited successfully"
         return AddSource(message=message,data=source_var)
 
+########## Add Bible books ########
+class InputBibleDict(graphene.InputObjectType):
+    """Add Bible Dict"""
+    USFM = graphene.String()
+    JSON = graphene.JSONString(description="Provide JSON structure\
+         obtained from USFM-Grammar or one like that")
+
+class InputAddBible(graphene.InputObjectType):
+    """Add Bible Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    books = graphene.List(InputBibleDict,required=True,\
+        description="Must Provide One of the Two USFM or JSON")
+
+class AddBible(graphene.Mutation):
+    "Mutations for Add Bible"
+    class Arguments:
+        """Arguments for Add Bible"""
+        bible_arg = InputAddBible()
+
+    message = graphene.String()
+    data = graphene.List(types.BibleContent)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,bible_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =bible_arg.source_name
+        books = bible_arg.books
+        schema_list = []
+        for item in books:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.BibleBookUpload)
+            schema_list.append(schema_model)
+        result =contents_crud.upload_bible_books(db_=db_, source_name=source,
+        books=schema_list, user_id=None)
+        bible_content_list = []
+        for item in result:
+            bible_var = types.BibleContent(
+            book = item.book,
+            USFM = item.USFM,
+            JSON = item.JSON,
+            audio = item.audio,
+            active = item.active
+            )
+            bible_content_list.append(bible_var)
+        message = "Bible books uploaded and processed successfully"
+        return AddBible(message=message,data=bible_content_list)
+
+########## Edit Bible books ########
+class BibleEditDict(graphene.InputObjectType):
+    """bible books inputs"""
+    book_code = graphene.String(
+        description="pattern:^[a-zA-Z1-9][a-zA-Z][a-zA-Z]$")
+    USFM = graphene.String(description="USFM Data")
+    JSON = graphene.JSONString(description="Provide JSON structure obtained\
+        from USFM-Grammar or one like that")
+    active = graphene.Boolean(default_value = True)
+
+class InputEditBible(graphene.InputObjectType):
+    """Edit Bible Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    books = graphene.List(BibleEditDict,\
+        description="Either JSON or USFM should provide")
+class EditBible(graphene.Mutation):
+    "Mutations for Edit Bible"
+    class Arguments:
+        """Arguments for Edit Bible"""
+        bible_arg = InputEditBible()
+
+    message = graphene.String()
+    data = graphene.List(types.BibleContent)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,bible_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =bible_arg.source_name
+        books = bible_arg.books
+        schema_list = []
+        for item in books:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.BibleBookEdit)
+            schema_list.append(schema_model)
+        result =contents_crud.update_bible_books(db_=db_, source_name=source,
+        books=schema_list, user_id=None)
+        bible_content_list = []
+        for item in result:
+            bible_var = types.BibleContent(
+            book = item.book,
+            USFM = item.USFM,
+            JSON = item.JSON,
+            audio = item.audio,
+            active = item.active
+            )
+            bible_content_list.append(bible_var)
+        message = "Bible books updated successfully"
+        return AddBible(message=message,data=bible_content_list)
+
+########## Add Audio bible ########
+class AudioAdddict(graphene.InputObjectType):
+    """audio input"""
+    name = graphene.String(required=True)
+    url = graphene.String(required=True)
+    books = graphene.List(graphene.String,required=True)
+    format = graphene.String(required=True)
+    active = graphene.Boolean(default_value = True)
+
+class InputAddAudioBible(graphene.InputObjectType):
+    """Add Audio Bible Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    audio_data = graphene.List(AudioAdddict)
+
+class AddAudioBible(graphene.Mutation):
+    "Mutations for Add Audio Bible"
+    class Arguments:
+        """Arguments for Add Audio Bible"""
+        bible_arg = InputAddAudioBible()
+
+    message = graphene.String()
+    data = graphene.List(types.AudioBible)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,bible_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =bible_arg.source_name
+        audio_data = bible_arg.audio_data
+        schema_list = []
+        for item in audio_data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.AudioBibleUpload)
+            schema_list.append(schema_model)
+        result =contents_crud.upload_bible_audios(db_=db_, source_name=source,
+        audios=schema_list, user_id=None)
+        audio_content_list = []
+        for item in result:
+            audio_var = types.AudioBible(
+            name = item.name,
+            url = item.url,
+            format = item.format,
+            active = item.active
+            )
+            audio_content_list.append(audio_var)
+        message = "Bible audios details uploaded successfully"
+        return AddAudioBible(message=message,data=audio_content_list)
+
+########## Edit Audio bible ########
+class AudioEditdict(graphene.InputObjectType):
+    """audio input"""
+    name = graphene.String()
+    url = graphene.String()
+    books = graphene.List(graphene.String,required=True)
+    format = graphene.String()
+    active = graphene.Boolean(default_value = True)
+
+class InputEditAudioBible(graphene.InputObjectType):
+    """Edit Audio Bible Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    audio_data = graphene.List(AudioEditdict)
+
+class EditAudioBible(graphene.Mutation):
+    "Mutations for Edit Audio Bible"
+    class Arguments:
+        """Arguments for Edit Audio Bible"""
+        bible_arg = InputEditAudioBible()
+
+    message = graphene.String()
+    data = graphene.List(types.AudioBible)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,bible_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =bible_arg.source_name
+        audio_data = bible_arg.audio_data
+        schema_list = []
+        for item in audio_data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.AudioBibleEdit)
+            schema_list.append(schema_model)
+        result =contents_crud.update_bible_audios(db_=db_, source_name=source,
+        audios=schema_list, user_id=None)
+        audio_content_list = []
+        for item in result:
+            audio_var = types.AudioBible(
+            name = item.name,
+            url = item.url,
+            format = item.format,
+            active = item.active
+            )
+            audio_content_list.append(audio_var)
+        message = "Bible audios details updated successfully"
+        return EditAudioBible(message=message,data=audio_content_list)
+
+########## Add Commentaries ########
+class CommentaryDict(graphene.InputObjectType):
+    """commentary input"""
+    bookCode = graphene.String(required=True)
+    chapter = graphene.Int(required=True)
+    verseStart = graphene.Int()
+    verseEnd = graphene.Int()
+    commentary = graphene.String(required=True)
+    active = graphene.Boolean(default_value = True)
+
+class InputAddCommentary(graphene.InputObjectType):
+    """Add commentary Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    commentary_data = graphene.List(CommentaryDict)
+
+class AddCommentary(graphene.Mutation):
+    "Mutations for Add Commentary"
+    class Arguments:
+        """Arguments for Add Commentary"""
+        comm_arg = InputAddCommentary()
+
+    message = graphene.String()
+    data = graphene.List(types.Commentary)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,comm_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =comm_arg.source_name
+        comm_data = comm_arg.commentary_data
+        schema_list = []
+        for item in comm_data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.CommentaryCreate)
+            schema_list.append(schema_model)
+        result =contents_crud.upload_commentaries(db_=db_, source_name=source,
+        commentaries=schema_list, user_id=None)
+        comm_content_list = []
+        for item in result:
+            comm_var = types.Commentary(
+                book = item.book,
+                chapter = item.chapter,
+                verseStart = item.verseStart,
+                verseEnd = item.verseEnd,
+                commentary = item.commentary,
+                active = item.active
+            )
+            comm_content_list.append(comm_var)
+        message = "Commentaries added successfully"
+        return AddCommentary(message=message,data=comm_content_list)
+
+########## Edit Commentaries ########
+class CommentaryEditDict(graphene.InputObjectType):
+    """commentary Edit input"""
+    bookCode = graphene.String(required=True)
+    chapter = graphene.Int(required=True)
+    verseStart = graphene.Int()
+    verseEnd = graphene.Int()
+    commentary = graphene.String()
+    active = graphene.Boolean(default_value = True)
+
+class InputEditCommentary(graphene.InputObjectType):
+    """Edit commentary Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    commentary_data = graphene.List(CommentaryEditDict)
+
+class EditCommentary(graphene.Mutation):
+    "Mutations for Edit Commentary"
+    class Arguments:
+        """Arguments for Edit Commentary"""
+        comm_arg = InputEditCommentary()
+
+    message = graphene.String()
+    data = graphene.List(types.Commentary)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,comm_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =comm_arg.source_name
+        comm_data = comm_arg.commentary_data
+        schema_list = []
+        for item in comm_data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.CommentaryEdit)
+            schema_list.append(schema_model)
+        result =contents_crud.update_commentaries(db_=db_, source_name=source,
+        commentaries=schema_list, user_id=None)
+        comm_content_list = []
+        for item in result:
+            comm_var = types.Commentary(
+                book = item.book,
+                chapter = item.chapter,
+                verseStart = item.verseStart,
+                verseEnd = item.verseEnd,
+                commentary = item.commentary,
+                active = item.active
+            )
+            comm_content_list.append(comm_var)
+        message = "Commentaries updated successfully"
+        return AddCommentary(message=message,data=comm_content_list)
+
+########## Add BibleVideo ########
+class BibleVideoDict(graphene.InputObjectType):
+    """BibleVideo input"""
+    title = graphene.String(required=True)
+    books = graphene.List(graphene.String,required=True,\
+        description="provide book codes")
+    videoLink = graphene.String(required=True)
+    description = graphene.String(required=True)
+    theme = graphene.String(required=True)
+    active = graphene.Boolean(default_value = True)
+
+class InputAddBibleVideo(graphene.InputObjectType):
+    """Add BibleVideo Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    video_data = graphene.List(BibleVideoDict)
+
+class AddBibleVideo(graphene.Mutation):
+    "Mutations for Add BibleVideo"
+    class Arguments:
+        """Arguments for Add BibleVideo"""
+        video_arg = InputAddBibleVideo()
+
+    message = graphene.String()
+    data = graphene.List(types.BibleVideo)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,video_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =video_arg.source_name
+        video_data = video_arg.video_data
+        schema_list = []
+        for item in video_data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.BibleVideoUpload)
+            schema_list.append(schema_model)
+        result =contents_crud.upload_bible_videos(db_=db_, source_name=source,
+        videos=schema_list, user_id=None)
+        video_content_list = []
+        for item in result:
+            comm_var = types.BibleVideo(
+                title = item.title,
+                books = item.books,
+                videoLink = item.videoLink,
+                description = item.description,
+                theme = item.theme,
+                active = item.active
+            )
+            video_content_list.append(comm_var)
+        message = "Bible videos added successfully"
+        return AddBibleVideo(message=message,data=video_content_list)
+
+########## Edit BibleVideo ########
+class BibleVideoEditDict(graphene.InputObjectType):
+    """BibleVideo Edit input"""
+    title = graphene.String(required=True)
+    books = graphene.List(graphene.String)
+    videoLink = graphene.String()
+    description = graphene.String()
+    theme = graphene.String()
+    active = graphene.Boolean(default_value = True)
+
+class InputEditBibleVideo(graphene.InputObjectType):
+    """Edit BibleVideo Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    video_data = graphene.List(BibleVideoEditDict)
+
+class EditBibleVideo(graphene.Mutation):
+    "Mutations for Edit BibleVideo"
+    class Arguments:
+        """Arguments for Edit BibleVideo"""
+        video_arg = InputEditBibleVideo()
+
+    message = graphene.String()
+    data = graphene.List(types.BibleVideo)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,video_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =video_arg.source_name
+        video_data = video_arg.video_data
+        schema_list = []
+        for item in video_data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.BibleVideoEdit)
+            schema_list.append(schema_model)
+        result =contents_crud.update_bible_videos(db_=db_, source_name=source,
+        videos=schema_list, user_id=None)
+        video_content_list = []
+        for item in result:
+            comm_var = types.BibleVideo(
+                title = item.title,
+                books = item.books,
+                videoLink = item.videoLink,
+                description = item.description,
+                theme = item.theme,
+                active = item.active
+            )
+            video_content_list.append(comm_var)
+        message = "Bible videos updated successfully"
+        return AddBibleVideo(message=message,data=video_content_list)
+########## Add Dictionary ########
+class DictionaryDict(graphene.InputObjectType):
+    """Dictionary input"""
+    word = graphene.String(required=True)
+    details = graphene.JSONString(description="Expecting a dictionary Type")
+    active = graphene.Boolean(default_value = True)
+
+class InputAddDictionary(graphene.InputObjectType):
+    """Add Dictionary Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    word_list = graphene.List(DictionaryDict)
+
+class AddDictionary(graphene.Mutation):
+    "Mutations for Add Dictionary"
+    class Arguments:
+        """Arguments for Add Dictionary"""
+        dict_arg = InputAddDictionary()
+
+    message = graphene.String()
+    data = graphene.List(types.DictionaryWord)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,dict_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =dict_arg.source_name
+        dict_data = dict_arg.word_list
+        schema_list = []
+        for item in dict_data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.DictionaryWordCreate)
+            schema_list.append(schema_model)
+        result =contents_crud.upload_dictionary_words(db_=db_, source_name=source,
+        dictionary_words=schema_list, user_id=None)
+        dict_content_list = []
+        for item in result:
+            dict_var = types.DictionaryWord(
+                word = item.word,
+                details = item.details,
+                active = item.active
+            )
+            dict_content_list.append(dict_var)
+        message = "Dictionary words added successfully"
+        return AddDictionary(message=message,data=dict_content_list)
+
+########## Edit Dictionary ########
+class DictionaryEditDict(graphene.InputObjectType):
+    """Dictionary input"""
+    word = graphene.String(required=True)
+    details = graphene.JSONString(description="Expecting a dictionary Type")
+    active = graphene.Boolean(default_value = True)
+
+class InputEditDictionary(graphene.InputObjectType):
+    """Add Dictionary Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    word_list = graphene.List(DictionaryEditDict)
+
+class EditDictionary(graphene.Mutation):
+    "Mutations for Edit Dictionary"
+    class Arguments:
+        """Arguments for Add Dictionary"""
+        dict_arg = InputEditDictionary()
+
+    message = graphene.String()
+    data = graphene.List(types.DictionaryWord)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,dict_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =dict_arg.source_name
+        dict_data = dict_arg.word_list
+        schema_list = []
+        for item in dict_data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.DictionaryWordEdit)
+            schema_list.append(schema_model)
+        result =contents_crud.update_dictionary_words(db_=db_, source_name=source,
+        dictionary_words=schema_list, user_id=None)
+        dict_content_list = []
+        for item in result:
+            dict_var = types.DictionaryWord(
+                word = item.word,
+                details = item.details,
+                active = item.active
+            )
+            dict_content_list.append(dict_var)
+        message = "Dictionary words updated successfully"
+        return EditDictionary(message=message,data=dict_content_list)
+
+########## Add Infographics ########
+class InfographicDict(graphene.InputObjectType):
+    """Infographic input"""
+    bookCode = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z1-9][a-zA-Z][a-zA-Z]$")
+    title = graphene.String(required=True)
+    infographicLink = graphene.String(required=True,\
+        description="Provide valid URL")
+    active = graphene.Boolean(default_value = True)
+
+class InputAddInfographic(graphene.InputObjectType):
+    """Add Infographic Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    data = graphene.List(InfographicDict)
+
+class AddInfographic(graphene.Mutation):
+    "Mutations for Add Infographic"
+    class Arguments:
+        """Arguments for Add Infographic"""
+        info_arg = InputAddInfographic()
+
+    message = graphene.String()
+    data = graphene.List(types.Infographic)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,info_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =info_arg.source_name
+        dict_data = info_arg.data
+        schema_list = []
+        for item in dict_data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.InfographicCreate)
+            schema_list.append(schema_model)
+        result =contents_crud.upload_infographics(db_=db_, source_name=source,
+        infographics=schema_list, user_id=None)
+        dict_content_list = []
+        for item in result:
+            dict_var = types.Infographic(
+                book = item.book,
+                title = item.title,
+                infographicLink = item.infographicLink,
+                active = item.active
+            )
+            dict_content_list.append(dict_var)
+        message = "Infographics added successfully"
+        return AddInfographic(message=message,data=dict_content_list)
+
+########## Edit Infographics ########
+class InfographicEditDict(graphene.InputObjectType):
+    """Infographic Edit input"""
+    bookCode = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z1-9][a-zA-Z][a-zA-Z]$")
+    title = graphene.String(required=True)
+    infographicLink = graphene.String(\
+        description="Provide valid URL")
+    active = graphene.Boolean(default_value = True)
+
+class InputEditInfographic(graphene.InputObjectType):
+    """Edit Infographic Input"""
+    source_name = graphene.String(required=True,\
+        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+    data = graphene.List(InfographicEditDict)
+
+class EditInfographic(graphene.Mutation):
+    "Mutations for Edit Infographic"
+    class Arguments:
+        """Arguments for Edit Infographic"""
+        info_arg = InputEditInfographic()
+
+    message = graphene.String()
+    data = graphene.List(types.Infographic)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,info_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source =info_arg.source_name
+        dict_data = info_arg.data
+        schema_list = []
+        for item in dict_data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas.InfographicEdit)
+            schema_list.append(schema_model)
+        result =contents_crud.update_infographics(db_=db_, source_name=source,
+        infographics=schema_list, user_id=None)
+        dict_content_list = []
+        for item in result:
+            dict_var = types.Infographic(
+                book = item.book,
+                title = item.title,
+                infographicLink = item.infographicLink,
+                active = item.active
+            )
+            dict_content_list.append(dict_var)
+        message = "Infographics updated successfully"
+        return EditInfographic(message=message,data=dict_content_list)
+
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
     '''All defined mutations'''
@@ -370,3 +956,15 @@ class VachanMutations(graphene.ObjectType):
     edit_version = EditVersion.Field()
     add_source = AddSource.Field()
     edit_source = EditSource.Field()
+    add_bible_book = AddBible.Field()
+    edit_bible_book = EditBible.Field()
+    add_audio_bible = AddAudioBible.Field()
+    edit_audio_bible = EditAudioBible.Field()
+    add_commentary = AddCommentary.Field()
+    edit_commentary = EditCommentary.Field()
+    add_bible_video = AddBibleVideo.Field()
+    edit_bible_video = EditBibleVideo.Field()
+    add_dictionary = AddDictionary.Field()
+    edit_dictionary = EditDictionary.Field()
+    add_infographic = AddInfographic.Field()
+    edit_infographic = EditInfographic.Field()
