@@ -490,3 +490,189 @@ def test_add_user():
 }
 
     check_project_user (variable,role='member',user_id=new_user_id)
+
+def test_add_user_invalid():
+    '''Negative tests to add a user to a project'''
+    project_data = {
+     "object": {
+    "projectName": "Test project 10",
+        "sourceLanguageCode": "hi",
+        "targetLanguageCode": "ml"
+  }
+}
+    executed = check_post(PROJECT_CREATE_GLOBAL_QUERY,project_data)
+    new_project = executed["data"]["createAgmtProject"]["data"]
+
+    # No projectId
+    user_data = {
+  "object": {
+    "userId": 11111
+  }
+}
+    executed1 = gql_request(USER_CREATE_GLOBAL_QUERY,operation="mutation",variables=user_data)
+    assert "errors" in executed1.keys()
+
+    # No User
+    user_data = {
+  "object": {
+    "projectId": int(new_project["projectId"])
+  }
+}
+    executed1 = gql_request(USER_CREATE_GLOBAL_QUERY,operation="mutation",variables=user_data)
+    assert "errors" in executed1.keys()
+
+  # Invalid project
+    user_data = {
+  "object": {
+    "projectId": new_project["projectName"],
+    "userId": 5555
+  }
+}
+    executed1 = gql_request(USER_CREATE_GLOBAL_QUERY,operation="mutation",variables=user_data)
+    assert "errors" in executed1.keys()
+
+    # Invalid user
+    user_data = {
+  "object": {
+    "projectId": int(new_project["projectId"]),
+    "userId": "some_user"
+  }
+}
+    executed1 = gql_request(USER_CREATE_GLOBAL_QUERY,operation="mutation",variables=user_data)
+    assert "errors" in executed1.keys()
+
+def test_update_user():
+    '''Positive tests to change role, status & metadata of a user'''
+    project_data = {
+     "object": {
+    "projectName": "Test project 1",
+        "sourceLanguageCode": "hi",
+        "targetLanguageCode": "ml"
+  }
+}
+    executed = check_post(PROJECT_CREATE_GLOBAL_QUERY,project_data)
+    new_project = executed["data"]["createAgmtProject"]["data"]
+    new_user_id = 7777
+
+    user_data = {
+  "object": {
+    "projectId": new_project["projectId"],
+    "userId": new_user_id
+  }
+}
+    executed1 = gql_request(USER_CREATE_GLOBAL_QUERY,operation="mutation",variables=user_data)
+    data = executed1["data"]["createAgmtProjectUser"]["data"]
+    assert executed1["data"]["createAgmtProjectUser"]["message"] == "User added in project successfully"
+    assert int(data["projectId"]) == int(new_project['projectId']) 
+    assert int(data["userId"]) == int(user_data["object"]["userId"])
+
+    update_data = {
+  "object": {
+    "projectId": int(new_project["projectId"]),
+    "userId": new_user_id
+  }
+}
+
+    variable = {
+    "projectname": project_data["object"]['projectName'],   
+    "skip": 0,
+  "limit": 10
+}
+
+    # change role
+    update1 = update_data
+    update1["object"]['userRole'] = 'owner'
+    executed1 = gql_request(USER_EDIT_GLOBAL_QUERY,operation="mutation",variables=update1)
+    data = executed1["data"]["editAgmtProjectUser"]["data"]
+    assert executed1["data"]["editAgmtProjectUser"]["message"] == "User updated in project successfully"
+    check_project_user(variable,new_user_id, role="owner")
+
+    # change status
+    update2 = update_data
+    update2["object"]['active'] = False
+    executed2 = gql_request(USER_EDIT_GLOBAL_QUERY,operation="mutation",variables=update2)
+    data = executed2["data"]["editAgmtProjectUser"]["data"]
+    assert executed2["data"]["editAgmtProjectUser"]["message"] == "User updated in project successfully"
+    check_project_user(variable,new_user_id, status=False)
+
+    # add metadata
+    meta = "{\"last_filter\":\"mat\"}"
+    update3 = update_data
+    update3["object"]['metaData'] = meta
+    executed3 = gql_request(USER_EDIT_GLOBAL_QUERY,operation="mutation",variables=update3)
+    data = executed3["data"]["editAgmtProjectUser"]["data"]
+    assert executed3["data"]["editAgmtProjectUser"]["message"] == "User updated in project successfully"
+    check_project_user(variable,new_user_id,metadata={"last_filter":"mat"})
+
+def test_update_user_invlaid():
+    '''Negative test for update user'''
+    project_data = {
+     "object": {
+    "projectName": "Test project 101",
+        "sourceLanguageCode": "hi",
+        "targetLanguageCode": "ml"
+  }
+}
+    executed = check_post(PROJECT_CREATE_GLOBAL_QUERY,project_data)
+    new_project = executed["data"]["createAgmtProject"]["data"]
+    new_user_id = 8888
+
+    user_data = {
+  "object": {
+    "projectId": new_project["projectId"],
+    "userId": new_user_id
+  }
+}
+    executed1 = gql_request(USER_CREATE_GLOBAL_QUERY,operation="mutation",variables=user_data)
+    data = executed1["data"]["createAgmtProjectUser"]["data"]
+    assert executed1["data"]["createAgmtProjectUser"]["message"] == "User added in project successfully"
+    assert int(data["projectId"]) == int(new_project['projectId']) 
+    assert int(data["userId"]) == int(user_data["object"]["userId"])
+
+    # not the added user
+    update_data = {
+  "object": {
+    "projectId": new_project["projectId"],
+    "userId": new_user_id+1,
+    "active": False
+  }
+}
+    executed1 = gql_request(USER_CREATE_GLOBAL_QUERY,operation="mutation",variables=update_data)
+    assert "errors" in executed1.keys()
+
+    #non existant project
+    update_data = {
+  "object": {
+    "projectId": new_project["projectId"] +1,
+    "userId": new_user_id,
+    "active": False
+  }
+}
+    executed1 = gql_request(USER_CREATE_GLOBAL_QUERY,operation="mutation",variables=update_data)
+    assert "errors" in executed1.keys()
+
+    # invalid metadata
+    update_data = {
+  "object": {
+    "projectId": new_project["projectId"],
+    "userId": new_user_id,
+    "metaData": "A normal string intead of json"
+  }
+}
+    executed1 = gql_request(USER_CREATE_GLOBAL_QUERY,operation="mutation",variables=update_data)
+    assert "errors" in executed1.keys()
+
+def test_soft_delete():
+    '''Check if unsetting active status works the desired way'''
+    project_data = {
+     "object": {
+    "projectName": "Test project 1",
+        "sourceLanguageCode": "hi",
+        "targetLanguageCode": "ml"
+  }
+}
+    for i in range(5):
+      project_data["object"]["projectName"] = 
+
+    executed = check_post(PROJECT_CREATE_GLOBAL_QUERY,project_data)
+    new_project = executed["data"]["createAgmtProject"]["data"]
