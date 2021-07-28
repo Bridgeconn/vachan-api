@@ -1,5 +1,5 @@
 '''GraphQL queries and mutations'''
-from os import set_inheritable
+#pylint: disable=C0302
 import graphene
 
 #pylint: disable=E0401
@@ -1108,7 +1108,7 @@ class GetTokenSentance(graphene.Mutation):
             draftMeta = item.draftMeta
             )
             dict_content_list.append(comm)
-        return GetTokenSentance(data=dict_content_list)     
+        return GetTokenSentance(data=dict_content_list)
 
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
