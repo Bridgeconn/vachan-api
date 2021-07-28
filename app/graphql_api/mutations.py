@@ -1162,7 +1162,7 @@ class AutoTranslationSuggetion(graphene.Mutation):
 class InputSentance(graphene.InputObjectType):
     "Sentance Input of translation"
     sentenceId = graphene.String(required=True)
-    sentence = graphene.String(required=True)  
+    sentence = graphene.String(required=True)
     draft = graphene.String()
     draftMeta = types.Sentence.draftMeta
     #draftMeta = graphene.List(\
@@ -1235,13 +1235,13 @@ class AddGloss(graphene.Mutation):
         """resolve"""
         db_ = info.context["request"].db_session
         source_language = info_arg.source_language
-        target_language =info_arg.target_language  
+        target_language =info_arg.target_language
         schema_list = []
         for item in info_arg.data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schemas_nlp.GlossInput)
             schema_list.append(schema_model)
-        
+
         result =nlp_crud.add_to_translation_memory(db_=db_,src_lang=source_language,\
            trg_lang=target_language,gloss_list=schema_list)
 
@@ -1254,7 +1254,7 @@ class AddGloss(graphene.Mutation):
             )
             dict_content_list.append(dict_var)
         message = "Added to glossary/Alignments used for learning"
-        return AddGloss(message=message,data=dict_content_list) 
+        return AddGloss(message=message,data=dict_content_list)
 
 ############### Add Alignment
 class InputAddAlignement(graphene.InputObjectType):
@@ -1272,7 +1272,7 @@ class AddAlignement(graphene.Mutation):
         info_arg = InputAddAlignement()
 
     message = graphene.String()
-    data = graphene.List(types.Alignement)
+    data = graphene.List(types.Gloss)
     #pylint: disable=R0201,no-self-use
     def mutate(self,info,info_arg):
         """resolve"""
@@ -1284,7 +1284,7 @@ class AddAlignement(graphene.Mutation):
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schemas_nlp.Alignment)
             schema_list.append(schema_model)
-        
+
         result =nlp_crud.alignments_to_trainingdata(db_=db_,src_lang=source_language,\
             trg_lang=target_language,alignment_list=schema_list,user_id=20202)
 
@@ -1297,7 +1297,7 @@ class AddAlignement(graphene.Mutation):
             )
             dict_content_list.append(dict_var)
         message = "Added to glossary/Alignments used for learning"
-        return AddGloss(message=message,data=dict_content_list)     
+        return AddGloss(message=message,data=dict_content_list)
 
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
@@ -1330,3 +1330,4 @@ class VachanMutations(graphene.ObjectType):
     suggest_auto_translation = AutoTranslationSuggetion.Field()
     suggest_translation = TranslationSuggetion.Field()
     add_gloss = AddGloss.Field()
+    
