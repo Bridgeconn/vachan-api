@@ -9,7 +9,7 @@ from .test_agmt_translation import assert_positive_get_sentence
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
-from . import gql_request,assert_not_available_content_gql,check_skip_limit_gql
+from . import gql_request,assert_not_available_content_gql
 
 def assert_positive_get_tokens_gql(item):
     '''common tests for a token response object'''
@@ -98,6 +98,7 @@ def test_get_tokens():
   assert isinstance(get_resp, Dict)
   for item in get_resp["data"]["agmtProjectTokens"]:
       assert_positive_get_tokens_gql(item)
+    
 
   # with book filter
   query_with_book = """
@@ -238,7 +239,7 @@ def test_get_tokens():
 }
   executed12 = gql_request(query_swords,operation="query",variables=var)
   all_tokens = [item['token'] for item in executed12["data"]["agmtProjectTokens"]]
-  assert sample_stopwords[0] in all_tokens   
+  assert sample_stopwords[0] in all_tokens
 
 def test_tokenization_invalid():
   '''Negative tests for tokenization'''
