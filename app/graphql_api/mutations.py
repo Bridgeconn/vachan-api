@@ -1253,7 +1253,7 @@ class AddGloss(graphene.Mutation):
                metaData = item.metaData
             )
             dict_content_list.append(dict_var)
-        message = "Added to glossary/Alignments used for learning"
+        message = "Added to glossary used for learning"
         return AddGloss(message=message,data=dict_content_list)
 
 ############### Add Alignment
@@ -1296,8 +1296,8 @@ class AddAlignement(graphene.Mutation):
                metaData = item.metaData
             )
             dict_content_list.append(dict_var)
-        message = "Added to glossary/Alignments used for learning"
-        return AddGloss(message=message,data=dict_content_list)
+        message = "Added to Alignments used for learning"
+        return AddAlignement(message=message,data=dict_content_list)
 
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
@@ -1330,4 +1330,5 @@ class VachanMutations(graphene.ObjectType):
     suggest_auto_translation = AutoTranslationSuggetion.Field()
     suggest_translation = TranslationSuggetion.Field()
     add_gloss = AddGloss.Field()
+    add_alignment = AddAlignement.Field()
     
