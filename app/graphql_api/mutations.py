@@ -1247,13 +1247,25 @@ class AddGloss(graphene.Mutation):
 
         dict_content_list = []
         for item in result:
-            dict_var = types.Gloss(
-               token = item.token,
-               translations = item.translations,
-               metaData = item.metaData
+            if "translations" and  "metaData" in item:
+                dict_var = types.Gloss(
+               token = item["token"],
+               translations = item["translations"],
+               metaData = item["metaData"]
             )
+            elif "translations" in item:
+                dict_var = types.Gloss(
+               token = item["token"],
+               translations = item["translations"]
+            )
+            elif "metaData" in item:    
+                dict_var = types.Gloss(
+               token = item["token"],
+               metaData = item["metaData"]
+            )
+    
             dict_content_list.append(dict_var)
-        message = "Added to glossary used for learning"
+        message = "Added to glossary"
         return AddGloss(message=message,data=dict_content_list)
 
 ############### Add Alignment
@@ -1296,7 +1308,7 @@ class AddAlignement(graphene.Mutation):
                metaData = item.metaData
             )
             dict_content_list.append(dict_var)
-        message = "Added to Alignments used for learning"
+        message = "Added to Alignments"
         return AddAlignement(message=message,data=dict_content_list)
 
 ########## ALL MUTATIONS FOR API ########
