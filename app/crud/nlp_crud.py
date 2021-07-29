@@ -841,6 +841,7 @@ def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range,
 def obtain_draft(sentence_list, doc_type):
     '''Convert input sentences to required format'''
     for sent in sentence_list:
+        #pylint: disable=R0123
         if sent.draft is None or sent.draft is '':
             sent.draft = sent.sentence
             offset = [0, len(sent.sentence)]
