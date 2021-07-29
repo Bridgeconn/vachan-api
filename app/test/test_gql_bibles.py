@@ -12,7 +12,7 @@ from .test_gql_sources import check_post as source_add
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
-from . import  check_skip_limit_gql, gql_request,assert_not_available_content_gql
+from . import check_skip_limit_gql, gql_request,assert_not_available_content_gql
 
 VERSION_VAR  = {
         "object": {
@@ -160,6 +160,7 @@ def add_bible():
         book_code = re.match(r'\\id (\w\w\w)', gospel_books_data[i]['USFM']).group(1)
         assert item['book']['bookCode'] == book_code.lower()
   assert len(gospel_books_data) == len(executed["data"]["addBibleBook"]['data'])
+  return executed,table
 
 def add_audio():
   '''Test the API for audio bible info upload'''
@@ -221,7 +222,6 @@ def test_post_default():
   }
 }
   """
-  
   check_skip_limit_gql(query_check,"bibleContents")
 
 def test_post_optional():
