@@ -1,4 +1,5 @@
 """Test cases for translation suggetions in GQL"""
+import copy
 import json
 from re import T
 from typing import Dict
@@ -293,19 +294,22 @@ def test_learn_n_suggest():
   convertToText(sentenceList:$sentence)
 }
     """
-    var_text = {
-        "sentence": sentence_list 
-    }
 
     executed_sug = gql_request(suggest_translation_query,operation="mutation",variables=var_suggest)
     input = executed_sug["data"]["suggestTranslation"]["data"]
-    
+
     for item in input:
-        item["draftMeta"] = json.dumps(item["draftMeta"])
-    draft = gql_request(query_text,operation="query",variables=input)
-    print(input)
-    #print(draft)
-    assert "ഒരു ടെസ്റ്റ് കേസ്." in draft
-    assert "ടെസ്റ്റ് കേസ് ടെസ്റ്റ് ചെയ്തു" in draft or "ടെസ്റ്റ് കേസ് ടെസ്റ്റഡ്" in draft
-    assert "ടെവെലപ്പര്‍" in draft
-    assert "ഇത് ആണ് the sad story of a poor ടെസ്റ്റ് " in draft
+      item["draftMeta"] = json.dumps(item["draftMeta"])
+
+    var_text = {
+  "sentence": input
+}
+    
+    draft = gql_request(query_text,operation="query",variables=var_text)
+    assert "ഒരു ടെസ്റ്റ് കേസ്." in draft["data"]["convertToText"]
+    assert "ടെസ്റ്റ് കേസ് ടെസ്റ്റ് ചെയ്തു" in draft or "ടെസ്റ്റ് കേസ് ടെസ്റ്റഡ്" in draft["data"]["convertToText"]
+    assert "ടെവെലപ്പര്‍" in draft["data"]["convertToText"]
+    assert "ഇത് ആണ് the sad story of a poor ടെസ്റ്റ് " in draft["data"]["convertToText"]
+
+    
+    
