@@ -220,6 +220,17 @@ class Query(graphene.ObjectType):
         return projects_crud.obtain_agmt_token_translation(db_, project_id, token=None,
             occurrences=occurrences)[0]
 
+    #Agmt get token Sentance
+    agmt_get_token_sentence = graphene.List(types.Sentence,
+        description="Query the translation done for sentance in an AgMT project",
+        project_id=graphene.ID(required=True),token=graphene.String(required=True),
+        occurrences = graphene.List(types.TokenOccurenceInput,required=True))
+    def resolve_agmt_get_token_sentence(self, info, project_id, token, occurrences):
+        '''resolver'''
+        db_ = info.context["request"].db_session
+        return projects_crud.get_agmt_source_per_token(db_,project_id,token,occurrences)
+
+
     agmt_draft_usfm = graphene.List(graphene.String,
         description='Obtain the current draft as USFM from an AgMT project',
         project_id=graphene.ID(required=True),
@@ -369,3 +380,4 @@ class Query(graphene.ObjectType):
                 for item in sentence_list]
         return nlp_crud.obtain_draft(new_list,
             doc_type=schemas_nlp.TranslationDocumentType.TEXT)
+

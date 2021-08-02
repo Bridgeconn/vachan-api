@@ -35,14 +35,12 @@ APPLY_TOKEN = """
 """
 
 GET_TOKEN_SENTANCE = """
-    mutation gettokensentance($object:InputGetSentance){
-  agmtGetTokenSentances(tokenArg:$object){
- 		data{
-      sentenceId
-      sentence
-      draft
-      draftMeta
-    }
+  query gettokensentance($project_id:ID!,$token:String!,$occurences:[TokenOccurenceInput]!){
+  agmtGetTokenSentence(projectId:$project_id,token:$token,occurrences:$occurences){
+    sentenceId
+    sentence
+    draft
+    draftMeta
   }
 }
 """
@@ -586,14 +584,13 @@ def test_get_token_sentences():
 
   #before translating
   var_sentance = {
-  "object": {
-    "projectId": project_id,
+    "project_id": project_id,
     "token": our_token,
-    "occurance": occurrences
+    "occurences": occurrences
   }
-}
-  executed = gql_request(GET_TOKEN_SENTANCE,operation="mutation",variables=var_sentance)
-  for sent, occur in zip(executed["data"]["agmtGetTokenSentances"]["data"], occurrences):
+
+  executed = gql_request(GET_TOKEN_SENTANCE,operation="query",variables=var_sentance)
+  for sent, occur in zip(executed["data"]["agmtGetTokenSentence"], occurrences):
     assert_positive_get_sentence(sent)
     found_slice = False
     if sent['sentenceId'] == occur["sentenceId"]:
@@ -621,8 +618,8 @@ def test_get_token_sentences():
   assert executed2["data"]["agmtApplyTokenTranslation"]["message"] == "Token translations saved"
 
   # after translation
-  executed3 = gql_request(GET_TOKEN_SENTANCE,operation="mutation",variables=var_sentance)
-  for sent, occur in zip(executed3["data"]["agmtGetTokenSentances"]["data"], occurrences):
+  executed3 = gql_request(GET_TOKEN_SENTANCE,operation="query",variables=var_sentance)
+  for sent, occur in zip(executed3["data"]["agmtGetTokenSentence"], occurrences):
         found_slice = False
         if sent['sentenceId'] == occur["sentenceId"]:
             for meta in sent['draftMeta']:

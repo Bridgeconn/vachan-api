@@ -1171,46 +1171,6 @@ class agmt_TokenApply(graphene.Mutation):
         message = "Token translations saved"
         return agmt_TokenApply(message=message,data=dict_content_list)
 
-# Get Token Sentances
-class InputGetSentance(graphene.InputObjectType):
-    """Inputs for Aplly Token"""
-    project_id = graphene.Int(required=True)
-    token = graphene.String(required=True)
-    occurance = graphene.List(InputOccurance,required=True)
-
-class agmt_GetTokenSentance(graphene.Mutation):
-    "Mutations for  Get Token Sentance "
-    class Arguments:
-        """Arguments for Get token sentance"""
-        token_arg = InputGetSentance()
-
-    data = graphene.List(types.Sentence)
-    #pylint: disable=R0201,no-self-use
-    def mutate(self,info,token_arg):
-        """resolve"""
-        db_ = info.context["request"].db_session
-        project_id = token_arg.project_id
-        token = token_arg.token
-        occurance = token_arg.occurance
-
-        schema_list = []
-        for item in occurance:
-            schema_model = utils.convert_graphene_obj_to_pydantic\
-            (item,schemas_nlp.TokenOccurence)
-            schema_list.append(schema_model)
-        result = projects_crud.get_agmt_source_per_token(db_=db_,project_id=project_id,\
-            token = token, occurrences = schema_list)
-        dict_content_list = []
-        for item in result:
-            comm = types.Sentence(
-            sentenceId = item.sentenceId,
-            sentence = item.sentence,
-            draft = item.draft,
-            draftMeta = item.draftMeta
-            )
-            dict_content_list.append(comm)
-        return agmt_GetTokenSentance(data=dict_content_list)
-
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
     '''All defined mutations'''
@@ -1240,4 +1200,4 @@ class VachanMutations(graphene.ObjectType):
     create_agmt_project_user = AGMTUserCreate.Field()
     edit_agmt_project_user = AGMTUserEdit.Field()
     agmt_apply_token_translation = agmt_TokenApply.Field()
-    agmt_get_token_sentances = agmt_GetTokenSentance.Field()
+
