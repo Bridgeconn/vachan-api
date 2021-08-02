@@ -1136,7 +1136,7 @@ class InputApplyToken(graphene.InputObjectType):
     return_drafts = graphene.Boolean(default_value = True)
     token = graphene.List(InputToken)
 
-class TokenApply(graphene.Mutation):
+class agmt_TokenApply(graphene.Mutation):
     "Mutations for  Token apply"
     class Arguments:
         """Arguments for Token apply"""
@@ -1169,7 +1169,7 @@ class TokenApply(graphene.Mutation):
             )
             dict_content_list.append(comm)
         message = "Token translations saved"
-        return TokenApply(message=message,data=dict_content_list)
+        return agmt_TokenApply(message=message,data=dict_content_list)
 
 # Get Token Sentances
 class InputGetSentance(graphene.InputObjectType):
@@ -1178,7 +1178,7 @@ class InputGetSentance(graphene.InputObjectType):
     token = graphene.String(required=True)
     occurance = graphene.List(InputOccurance,required=True)
 
-class GetTokenSentance(graphene.Mutation):
+class agmt_GetTokenSentance(graphene.Mutation):
     "Mutations for  Get Token Sentance "
     class Arguments:
         """Arguments for Get token sentance"""
@@ -1209,7 +1209,7 @@ class GetTokenSentance(graphene.Mutation):
             draftMeta = item.draftMeta
             )
             dict_content_list.append(comm)
-        return GetTokenSentance(data=dict_content_list)
+        return agmt_GetTokenSentance(data=dict_content_list)
 
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
@@ -1239,5 +1239,5 @@ class VachanMutations(graphene.ObjectType):
     edit_agmt_project = EditAGMTProject.Field()
     create_agmt_project_user = AGMTUserCreate.Field()
     edit_agmt_project_user = AGMTUserEdit.Field()
-    apply_token_translation = TokenApply.Field()
-    get_token_sentances = GetTokenSentance.Field()
+    agmt_apply_token_translation = agmt_TokenApply.Field()
+    agmt_get_token_sentances = agmt_GetTokenSentance.Field()
