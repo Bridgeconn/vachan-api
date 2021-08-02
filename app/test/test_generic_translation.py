@@ -234,7 +234,7 @@ def test_token_translate():
     new_return_sent = response.json()['data'][0]
     assert "Jesus Christ" in new_return_sent['draft']
     # combined two segments to one
-    assert len(new_return_sent['draftMeta']) == len(return_sent['draftMeta']) -1 
+    assert len(new_return_sent['draftMeta']) == len(return_sent['draftMeta']) -1
 
 def test_draft_generation():
     '''tests conversion of sentence list to differnt draft formats'''
