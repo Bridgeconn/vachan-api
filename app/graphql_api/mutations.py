@@ -658,11 +658,6 @@ class EditCommentary(graphene.Mutation):
 ##### AGMT PROJECT MANAGEMENT Create #######
 enum_doc = types.TranslationDocumentType
 
-class InputStopWords(graphene.InputObjectType):
-    """stopword input for create and update"""
-    prepositions = graphene.List(graphene.String,required=True)
-    postpositions = graphene.List(graphene.String,required=True)
-
 class InputCreateAGMTProject(graphene.InputObjectType):
     """CreateAGMTProject Input"""
     projectName = graphene.String(required=True,\
@@ -673,7 +668,7 @@ class InputCreateAGMTProject(graphene.InputObjectType):
         description="pattern:^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
     documentFormat = graphene.Field(enum_doc)
     useDataForLearning = graphene.Boolean()
-    stopwords = graphene.Field(InputStopWords)
+    stopwords = graphene.Field(types.Stopwords)
     punctuations = graphene.List(graphene.String,\
         description="""List [ ",", "\"", "!", ".", ":", ";", "\n""]""")
     active = graphene.Boolean(default_value=True)
@@ -727,7 +722,7 @@ class InputEditAGMTProject(graphene.InputObjectType):
     selectedBooks = graphene.Field(InputSeclectedBooks)
     uploadedBooks = graphene.List(graphene.String)
     useDataForLearning = graphene.Boolean()
-    stopwords = graphene.Field(InputStopWords)
+    stopwords = graphene.Field(types.Stopwords)
     punctuations = graphene.List(graphene.String,\
         description="""List [ ",", "\"", "!", ".", ":", ";", "\n""]""")
     active = graphene.Boolean(default_value=True)
@@ -1119,24 +1114,14 @@ class EditInfographic(graphene.Mutation):
 
 ########## Autographa - Translation ########
 # Apply token translation
-class InputOccurance(graphene.InputObjectType):
-    """Input object for applying token translation"""
-    sentenceId = graphene.Int(required=True)
-    offset = graphene.List(graphene.Int,required=True,\
-        description="Max-Min Item 2")
 
-class InputToken(graphene.InputObjectType):
-    """Input object for applying token translation"""
-    token = graphene.String(required=True)
-    occurrences = graphene.List(InputOccurance,required=True)
-    translation = graphene.String(required=True)
 class InputApplyToken(graphene.InputObjectType):
     """Inputs for Aplly Token"""
     project_id = graphene.Int(required=True)
     return_drafts = graphene.Boolean(default_value = True)
-    token = graphene.List(InputToken)
+    token = graphene.List(types.TokenUpdate)
 
-class TokenApply(graphene.Mutation):
+class AgmtTokenApply(graphene.Mutation):
     "Mutations for  Token apply"
     class Arguments:
         """Arguments for Token apply"""
@@ -1169,47 +1154,9 @@ class TokenApply(graphene.Mutation):
             )
             dict_content_list.append(comm)
         message = "Token translations saved"
-        return TokenApply(message=message,data=dict_content_list)
+        return AgmtTokenApply(message=message,data=dict_content_list)
 
-# Get Token Sentances
-class InputGetSentance(graphene.InputObjectType):
-    """Inputs for Aplly Token"""
-    project_id = graphene.Int(required=True)
-    token = graphene.String(required=True)
-    occurance = graphene.List(InputOccurance,required=True)
 
-class GetTokenSentance(graphene.Mutation):
-    "Mutations for  Get Token Sentance "
-    class Arguments:
-        """Arguments for Get token sentance"""
-        token_arg = InputGetSentance()
-
-    data = graphene.List(types.Sentence)
-    #pylint: disable=R0201,no-self-use
-    def mutate(self,info,token_arg):
-        """resolve"""
-        db_ = info.context["request"].db_session
-        project_id = token_arg.project_id
-        token = token_arg.token
-        occurance = token_arg.occurance
-
-        schema_list = []
-        for item in occurance:
-            schema_model = utils.convert_graphene_obj_to_pydantic\
-            (item,schemas_nlp.TokenOccurence)
-            schema_list.append(schema_model)
-        result = projects_crud.get_agmt_source_per_token(db_=db_,project_id=project_id,\
-            token = token, occurrences = schema_list)
-        dict_content_list = []
-        for item in result:
-            comm = types.Sentence(
-            sentenceId = item.sentenceId,
-            sentence = item.sentence,
-            draft = item.draft,
-            draftMeta = item.draftMeta
-            )
-            dict_content_list.append(comm)
-        return GetTokenSentance(data=dict_content_list)
 #### Translation Suggetions ##########
 #Suggeest Auto Translation
 class InputAutoTranslation(graphene.InputObjectType):
@@ -1255,6 +1202,7 @@ class AutoTranslationSuggetion(graphene.Mutation):
         return AutoTranslationSuggetion(data=dict_content_list)
 
 #Suggeest  Translation
+"""
 class InputSentance(graphene.InputObjectType):
     "Sentance Input of translation"
     sentenceId = graphene.String(required=True)
@@ -1264,11 +1212,12 @@ class InputSentance(graphene.InputObjectType):
     #draftMeta = graphene.List(\
      #   description = "example: List [ List [ List [ 0, 8 ], List [ 0, 8 ], 'confirmed' ],\
       #       List [ List [ 8, 64 ], List [ 8, 64 ], 'untranslated' ] ]")
-
+"""
 class InputTranslationData(graphene.InputObjectType):
     """Body content for transaltion"""
-    sentacne_list = graphene.List(InputSentance,required=True)
-    stopwords = graphene.Field(InputStopWords)
+    sentacne_list = graphene.List(types.SentenceInput,\
+        required=True)
+    stopwords = graphene.Field(types.Stopwords)
     punctuations = graphene.List(graphene.String,\
         description="""List [ ",", "\"", "!", ".", ":", ";", "\n""]""")
 
@@ -1452,9 +1401,9 @@ class VachanMutations(graphene.ObjectType):
     edit_agmt_project = EditAGMTProject.Field()
     create_agmt_project_user = AGMTUserCreate.Field()
     edit_agmt_project_user = AGMTUserEdit.Field()
-    apply_token_translation = TokenApply.Field()
-    get_token_sentances = GetTokenSentance.Field()
+    agmt_apply_token_translation = AgmtTokenApply.Field()
     suggest_auto_translation = AutoTranslationSuggetion.Field()
     suggest_translation = TranslationSuggetion.Field()
     add_gloss = AddGloss.Field()
     add_alignment = AddAlignment.Field()
+    
