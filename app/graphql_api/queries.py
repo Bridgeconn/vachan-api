@@ -380,4 +380,3 @@ class Query(graphene.ObjectType):
                 for item in sentence_list]
         return nlp_crud.obtain_draft(new_list,
             doc_type=schemas_nlp.TranslationDocumentType.TEXT)
-

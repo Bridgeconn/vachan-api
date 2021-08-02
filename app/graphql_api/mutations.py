@@ -1136,7 +1136,7 @@ class InputApplyToken(graphene.InputObjectType):
     return_drafts = graphene.Boolean(default_value = True)
     token = graphene.List(InputToken)
 
-class agmt_TokenApply(graphene.Mutation):
+class AgmtTokenApply(graphene.Mutation):
     "Mutations for  Token apply"
     class Arguments:
         """Arguments for Token apply"""
@@ -1169,7 +1169,7 @@ class agmt_TokenApply(graphene.Mutation):
             )
             dict_content_list.append(comm)
         message = "Token translations saved"
-        return agmt_TokenApply(message=message,data=dict_content_list)
+        return AgmtTokenApply(message=message,data=dict_content_list)
 
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
@@ -1199,5 +1199,4 @@ class VachanMutations(graphene.ObjectType):
     edit_agmt_project = EditAGMTProject.Field()
     create_agmt_project_user = AGMTUserCreate.Field()
     edit_agmt_project_user = AGMTUserEdit.Field()
-    agmt_apply_token_translation = agmt_TokenApply.Field()
-
+    agmt_apply_token_translation = AgmtTokenApply.Field()
