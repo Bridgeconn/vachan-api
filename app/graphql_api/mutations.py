@@ -1284,9 +1284,7 @@ class AddGloss(graphene.Mutation):
 
         dict_content_list = []
         for item in result:
-            #pylint: disable=R1726
-            #pylint: disable=E0012
-            if "translations" and  "metaData" in item:
+            if 'translations' and  'metaData' in item:
                 dict_var = types.Gloss(
                token = item["token"],
                translations = item["translations"],
@@ -1341,8 +1339,6 @@ class AddAlignment(graphene.Mutation):
 
         dict_content_list = []
         for item in result:
-            #pylint: disable=R1726
-            #pylint: disable=E0012
             if "translations" and  "metaData" in item:
                 dict_var = types.Gloss(
                token = item["token"],
