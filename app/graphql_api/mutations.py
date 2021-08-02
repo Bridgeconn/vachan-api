@@ -1212,7 +1212,7 @@ class GetTokenSentance(graphene.Mutation):
         return GetTokenSentance(data=dict_content_list)
 #### Translation Suggetions ##########
 #Suggeest Auto Translation
-class InputAutoTrnaslation(graphene.InputObjectType):
+class InputAutoTranslation(graphene.InputObjectType):
     """Auto Translation Suggestion input"""
     project_id  = graphene.Int(required=True)
     books = graphene.List(graphene.String)
@@ -1226,7 +1226,7 @@ class AutoTranslationSuggetion(graphene.Mutation):
     "Mutations for AutoTranslationSuggetion"
     class Arguments:
         """Arguments for AutoTranslationSuggetion"""
-        info_arg = InputAutoTrnaslation()
+        info_arg = InputAutoTranslation()
 
     data = graphene.List(types.Sentence)
     #pylint: disable=R0201,no-self-use
@@ -1346,6 +1346,7 @@ class AddGloss(graphene.Mutation):
 
         dict_content_list = []
         for item in result:
+            #pylint: disable=R1726
             if "translations" and  "metaData" in item:
                 dict_var = types.Gloss(
                token = item["token"],
@@ -1357,12 +1358,12 @@ class AddGloss(graphene.Mutation):
                token = item["token"],
                translations = item["translations"]
             )
-            elif "metaData" in item:    
+            elif "metaData" in item:
                 dict_var = types.Gloss(
                token = item["token"],
                metaData = item["metaData"]
             )
-    
+
             dict_content_list.append(dict_var)
         message = "Added to glossary"
         return AddGloss(message=message,data=dict_content_list)
@@ -1401,6 +1402,7 @@ class AddAlignment(graphene.Mutation):
 
         dict_content_list = []
         for item in result:
+            #pylint: disable=R1726
             if "translations" and  "metaData" in item:
                 dict_var = types.Gloss(
                token = item["token"],
@@ -1412,12 +1414,12 @@ class AddAlignment(graphene.Mutation):
                token = item["token"],
                translations = item["translations"]
             )
-            elif "metaData" in item:    
+            elif "metaData" in item:
                 dict_var = types.Gloss(
                token = item["token"],
                metaData = item["metaData"]
             )
-    
+
             dict_content_list.append(dict_var)
         message = "Added to Alignments"
         return AddAlignment(message=message,data=dict_content_list)
@@ -1456,4 +1458,3 @@ class VachanMutations(graphene.ObjectType):
     suggest_translation = TranslationSuggetion.Field()
     add_gloss = AddGloss.Field()
     add_alignment = AddAlignment.Field()
-    
