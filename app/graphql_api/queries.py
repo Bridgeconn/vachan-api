@@ -221,11 +221,11 @@ class Query(graphene.ObjectType):
             occurrences=occurrences)[0]
 
     #Agmt get token Sentance
-    agmt_get_token_sentence = graphene.List(types.Sentence,
+    agmt_project_token_sentences = graphene.List(types.Sentence,
         description="Query the translation done for sentance in an AgMT project",
         project_id=graphene.ID(required=True),token=graphene.String(required=True),
         occurrences = graphene.List(types.TokenOccurenceInput,required=True))
-    def resolve_agmt_get_token_sentence(self, info, project_id, token, occurrences):
+    def resolve_agmt_project_token_sentences(self, info, project_id, token, occurrences):
         '''resolver'''
         db_ = info.context["request"].db_session
         return projects_crud.get_agmt_source_per_token(db_,project_id,token,occurrences)

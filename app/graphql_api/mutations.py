@@ -1119,22 +1119,12 @@ class EditInfographic(graphene.Mutation):
 
 ########## Autographa - Translation ########
 # Apply token translation
-class InputOccurance(graphene.InputObjectType):
-    """Input object for applying token translation"""
-    sentenceId = graphene.Int(required=True)
-    offset = graphene.List(graphene.Int,required=True,\
-        description="Max-Min Item 2")
 
-class InputToken(graphene.InputObjectType):
-    """Input object for applying token translation"""
-    token = graphene.String(required=True)
-    occurrences = graphene.List(InputOccurance,required=True)
-    translation = graphene.String(required=True)
 class InputApplyToken(graphene.InputObjectType):
     """Inputs for Aplly Token"""
     project_id = graphene.Int(required=True)
     return_drafts = graphene.Boolean(default_value = True)
-    token = graphene.List(InputToken)
+    token = graphene.List(types.TokenUpdate)
 
 class AgmtTokenApply(graphene.Mutation):
     "Mutations for  Token apply"

@@ -36,7 +36,7 @@ APPLY_TOKEN = """
 
 GET_TOKEN_SENTANCE = """
   query gettokensentance($project_id:ID!,$token:String!,$occurences:[TokenOccurenceInput]!){
-  agmtGetTokenSentence(projectId:$project_id,token:$token,occurrences:$occurences){
+  agmtProjectTokenSentences(projectId:$project_id,token:$token,occurrences:$occurences){
     sentenceId
     sentence
     draft
@@ -590,7 +590,7 @@ def test_get_token_sentences():
   }
 
   executed = gql_request(GET_TOKEN_SENTANCE,operation="query",variables=var_sentance)
-  for sent, occur in zip(executed["data"]["agmtGetTokenSentence"], occurrences):
+  for sent, occur in zip(executed["data"]["agmtProjectTokenSentences"], occurrences):
     assert_positive_get_sentence(sent)
     found_slice = False
     if sent['sentenceId'] == occur["sentenceId"]:
@@ -619,7 +619,7 @@ def test_get_token_sentences():
 
   # after translation
   executed3 = gql_request(GET_TOKEN_SENTANCE,operation="query",variables=var_sentance)
-  for sent, occur in zip(executed3["data"]["agmtGetTokenSentence"], occurrences):
+  for sent, occur in zip(executed3["data"]["agmtProjectTokenSentences"], occurrences):
         found_slice = False
         if sent['sentenceId'] == occur["sentenceId"]:
             for meta in sent['draftMeta']:
