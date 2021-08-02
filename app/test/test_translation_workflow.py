@@ -16,7 +16,7 @@ ver_data = {
     "versionAbbreviation": "XYZ",
     "versionName": "Xyz version to test",
     "revision": "1",
-    "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
+    "metaData": {"owner": "someone", "access-key": "123xyz"}
 }
 
 src_data = {

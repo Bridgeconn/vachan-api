@@ -159,7 +159,7 @@ def test_end_to_end_translation():
 }
 
     executed_tokenize = gql_request(APPLY_TOKEN,operation="mutation",variables=post_token_list)
-    assert executed_tokenize["data"]["applyTokenTranslation"]["message"] == "Token translations saved"
+    assert executed_tokenize["data"]["agmtApplyTokenTranslation"]["message"] == "Token translations saved"
 
     # Additional user add and update
     user_data = {
