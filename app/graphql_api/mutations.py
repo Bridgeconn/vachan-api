@@ -1202,17 +1202,6 @@ class AutoTranslationSuggetion(graphene.Mutation):
         return AutoTranslationSuggetion(data=dict_content_list)
 
 #Suggeest  Translation
-"""
-class InputSentance(graphene.InputObjectType):
-    "Sentance Input of translation"
-    sentenceId = graphene.String(required=True)
-    sentence = graphene.String(required=True)
-    draft = graphene.String()
-    draftMeta = types.Sentence.draftMeta
-    #draftMeta = graphene.List(\
-     #   description = "example: List [ List [ List [ 0, 8 ], List [ 0, 8 ], 'confirmed' ],\
-      #       List [ List [ 8, 64 ], List [ 8, 64 ], 'untranslated' ] ]")
-"""
 class InputTranslationData(graphene.InputObjectType):
     """Body content for transaltion"""
     sentacne_list = graphene.List(types.SentenceInput,\
@@ -1406,4 +1395,3 @@ class VachanMutations(graphene.ObjectType):
     suggest_translation = TranslationSuggetion.Field()
     add_gloss = AddGloss.Field()
     add_alignment = AddAlignment.Field()
-    
