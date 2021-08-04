@@ -1,5 +1,6 @@
 """Test cases for Bibles in GQL"""
 import re
+import json
 from typing import Dict
 #pylint: disable=E0401
 #pylint: disable=C0301

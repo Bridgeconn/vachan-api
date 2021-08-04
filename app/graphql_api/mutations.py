@@ -658,11 +658,6 @@ class EditCommentary(graphene.Mutation):
 ##### AGMT PROJECT MANAGEMENT Create #######
 enum_doc = types.TranslationDocumentType
 
-class InputStopWords(graphene.InputObjectType):
-    """stopword input for create and update"""
-    prepositions = graphene.List(graphene.String,required=True)
-    postpositions = graphene.List(graphene.String,required=True)
-
 class InputCreateAGMTProject(graphene.InputObjectType):
     """CreateAGMTProject Input"""
     projectName = graphene.String(required=True,\
@@ -673,7 +668,7 @@ class InputCreateAGMTProject(graphene.InputObjectType):
         description="pattern:^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
     documentFormat = graphene.Field(enum_doc)
     useDataForLearning = graphene.Boolean()
-    stopwords = graphene.Field(InputStopWords)
+    stopwords = graphene.Field(types.Stopwords)
     punctuations = graphene.List(graphene.String,\
         description="""List [ ",", "\"", "!", ".", ":", ";", "\n""]""")
     active = graphene.Boolean(default_value=True)
@@ -727,7 +722,7 @@ class InputEditAGMTProject(graphene.InputObjectType):
     selectedBooks = graphene.Field(InputSeclectedBooks)
     uploadedBooks = graphene.List(graphene.String)
     useDataForLearning = graphene.Boolean()
-    stopwords = graphene.Field(InputStopWords)
+    stopwords = graphene.Field(types.Stopwords)
     punctuations = graphene.List(graphene.String,\
         description="""List [ ",", "\"", "!", ".", ":", ";", "\n""]""")
     active = graphene.Boolean(default_value=True)
@@ -1161,6 +1156,210 @@ class AgmtTokenApply(graphene.Mutation):
         message = "Token translations saved"
         return AgmtTokenApply(message=message,data=dict_content_list)
 
+
+#### Translation Suggetions ##########
+#Suggeest Auto Translation
+class InputAutoTranslation(graphene.InputObjectType):
+    """Auto Translation Suggestion input"""
+    project_id  = graphene.Int(required=True)
+    books = graphene.List(graphene.String)
+    sentence_id_list = graphene.List(graphene.Int,\
+        description="List of sentance id BCV")
+    sentence_id_range = graphene.List(graphene.Int,\
+        description="List of sentance range BCV , 2 values in list")
+    confirm_all = graphene.Boolean(default_value = False)
+
+class AutoTranslationSuggetion(graphene.Mutation):
+    "Mutations for AutoTranslationSuggetion"
+    class Arguments:
+        """Arguments for AutoTranslationSuggetion"""
+        info_arg = InputAutoTranslation()
+
+    data = graphene.List(types.Sentence)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,info_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        project_id  = info_arg.project_id
+        books = info_arg.books
+        sentence_id_list = info_arg.sentence_id_list
+        sentence_id_range = info_arg.sentence_id_range
+        confirm_all = info_arg.confirm_all
+
+        result =nlp_crud.agmt_suggest_translations(db_=db_,project_id=project_id,books=books,\
+            sentence_id_list=sentence_id_list,sentence_id_range=sentence_id_range,\
+            confirm_all=confirm_all)
+
+        dict_content_list = []
+        for item in result:
+            comm = types.Sentence(
+            sentenceId = item.sentenceId,
+            sentence = item.sentence,
+            draft = item.draft,
+            draftMeta = item.draftMeta
+            )
+            dict_content_list.append(comm)
+        return AutoTranslationSuggetion(data=dict_content_list)
+
+#Suggeest  Translation
+class InputTranslationData(graphene.InputObjectType):
+    """Body content for transaltion"""
+    sentacne_list = graphene.List(types.SentenceInput,\
+        required=True)
+    stopwords = graphene.Field(types.Stopwords)
+    punctuations = graphene.List(graphene.String,\
+        description="""List [ ",", "\"", "!", ".", ":", ";", "\n""]""")
+
+class InputTranslation(graphene.InputObjectType):
+    """Translation Suggestion input"""
+    source_language = graphene.String(required=True,\
+        description="patten:^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
+    target_language  = graphene.String(required=True,\
+        description="patten:^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
+    data = graphene.Field(InputTranslationData,required=True)
+
+class TranslationSuggetion(graphene.Mutation):
+    "Mutations for TranslationSuggetion"
+    class Arguments:
+        """Arguments for TranslationSuggetion"""
+        info_arg = InputTranslation()
+
+    data = graphene.List(types.Sentence)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,info_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        sentence_list = info_arg.data.sentacne_list
+        source_language = info_arg.source_language
+        target_language = info_arg.target_language
+        punctuations = info_arg.data.punctuations
+        stopwords = info_arg.data.stopwords
+
+        result =nlp_crud.auto_translate(db_=db_,sentence_list=sentence_list,source_lang=\
+            source_language,target_lang=target_language,punctuations=punctuations,\
+                stop_words=stopwords)
+
+        dict_content_list = []
+        for item in result:
+            comm = types.Sentence(
+            sentenceId = item.sentenceId,
+            sentence = item.sentence,
+            draft = item.draft,
+            draftMeta = item.draftMeta
+            )
+            dict_content_list.append(comm)
+        return TranslationSuggetion(data=dict_content_list)
+
+############### Add Gloss
+class InputAddGloss(graphene.InputObjectType):
+    """Add Gloss input"""
+    source_language = graphene.String(required=True,\
+        description="patten:^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
+    target_language  = graphene.String(required=True,\
+        description="patten:^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
+    data = graphene.List(types.GlossInput,required=True)
+
+class AddGloss(graphene.Mutation):
+    "Mutations for AddGloss"
+    class Arguments:
+        """Arguments for AddGloss"""
+        info_arg = InputAddGloss()
+
+    message = graphene.String()
+    data = graphene.List(types.Gloss)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,info_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source_language = info_arg.source_language
+        target_language =info_arg.target_language
+        schema_list = []
+        for item in info_arg.data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas_nlp.GlossInput)
+            schema_list.append(schema_model)
+
+        result =nlp_crud.add_to_translation_memory(db_=db_,src_lang=source_language,\
+           trg_lang=target_language,gloss_list=schema_list)
+
+        dict_content_list = []
+        for item in result:
+            if 'translations' and  'metaData' in item:
+                dict_var = types.Gloss(
+               token = item["token"],
+               translations = item["translations"],
+               metaData = item["metaData"]
+            )
+            elif "translations" in item:
+                dict_var = types.Gloss(
+               token = item["token"],
+               translations = item["translations"]
+            )
+            elif "metaData" in item:
+                dict_var = types.Gloss(
+               token = item["token"],
+               metaData = item["metaData"]
+            )
+
+            dict_content_list.append(dict_var)
+        message = "Added to glossary"
+        return AddGloss(message=message,data=dict_content_list)
+
+############### Add Alignment
+class InputAddAlignment(graphene.InputObjectType):
+    """Add Alignement input"""
+    source_language = graphene.String(required=True,\
+        description="patten:^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
+    target_language  = graphene.String(required=True,\
+        description="patten:^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
+    data = graphene.List(types.Alignment,required=True)
+
+class AddAlignment(graphene.Mutation):
+    "Mutations for AddAlignment"
+    class Arguments:
+        """Arguments for AddAlignment"""
+        info_arg = InputAddAlignment()
+
+    message = graphene.String()
+    data = graphene.List(types.Gloss)
+    #pylint: disable=R0201,no-self-use
+    def mutate(self,info,info_arg):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        source_language = info_arg.source_language
+        target_language =info_arg.target_language
+        schema_list = []
+        for item in info_arg.data:
+            schema_model = utils.convert_graphene_obj_to_pydantic\
+            (item,schemas_nlp.Alignment)
+            schema_list.append(schema_model)
+
+        result =nlp_crud.alignments_to_trainingdata(db_=db_,src_lang=source_language,\
+            trg_lang=target_language,alignment_list=schema_list,user_id=20202)
+
+        dict_content_list = []
+        for item in result:
+            if "translations" and  "metaData" in item:
+                dict_var = types.Gloss(
+               token = item["token"],
+               translations = item["translations"],
+               metaData = item["metaData"]
+            )
+            elif "translations" in item:
+                dict_var = types.Gloss(
+               token = item["token"],
+               translations = item["translations"]
+            )
+            elif "metaData" in item:
+                dict_var = types.Gloss(
+               token = item["token"],
+               metaData = item["metaData"]
+            )
+
+            dict_content_list.append(dict_var)
+        message = "Added to Alignments"
+        return AddAlignment(message=message,data=dict_content_list)
+
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
     '''All defined mutations'''
@@ -1189,4 +1388,8 @@ class VachanMutations(graphene.ObjectType):
     edit_agmt_project = EditAGMTProject.Field()
     create_agmt_project_user = AGMTUserCreate.Field()
     edit_agmt_project_user = AGMTUserEdit.Field()
-    agmt_apply_token_translation = AgmtTokenApply.Field()
+    apply_agmt_token_translation = AgmtTokenApply.Field()
+    suggest_auto_translation = AutoTranslationSuggetion.Field()
+    suggest_translation = TranslationSuggetion.Field()
+    add_gloss = AddGloss.Field()
+    add_alignment = AddAlignment.Field()

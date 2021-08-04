@@ -22,7 +22,7 @@ def assert_positive_get_tokens_gql(item):
 
 APPLY_TOKEN = """
     mutation applytoken($object:InputApplyToken){
-  agmtApplyTokenTranslation(tokenArg:$object){
+  applyAgmtTokenTranslation(tokenArg:$object){
     message
     data{
       sentenceId
@@ -357,10 +357,10 @@ def test_save_translation():
 
   executed3 = gql_request(APPLY_TOKEN,operation="mutation",variables=post_obj_list)
   assert isinstance(executed3, Dict)
-  assert executed3["data"]["agmtApplyTokenTranslation"]["message"] == "Token translations saved"
-  assert executed3["data"]["agmtApplyTokenTranslation"]['data'][0]['draft'].startswith("test translation")  
-  assert executed3["data"]["agmtApplyTokenTranslation"]['data'][0]['draftMeta'][0][2] == "confirmed"
-  for segment in executed3["data"]["agmtApplyTokenTranslation"]['data'][0]['draftMeta'][1:]:
+  assert executed3["data"]["applyAgmtTokenTranslation"]["message"] == "Token translations saved"
+  assert executed3["data"]["applyAgmtTokenTranslation"]['data'][0]['draft'].startswith("test translation")  
+  assert executed3["data"]["applyAgmtTokenTranslation"]['data'][0]['draftMeta'][0][2] == "confirmed"
+  for segment in executed3["data"]["applyAgmtTokenTranslation"]['data'][0]['draftMeta'][1:]:
     assert segment[2] != "confirmed"
 
   # multiple occurances
@@ -379,8 +379,8 @@ def test_save_translation():
 }
   executed4 = gql_request(APPLY_TOKEN,operation="mutation",variables=post_obj_list2)
   assert isinstance(executed4, Dict)
-  assert executed4["data"]["agmtApplyTokenTranslation"]["message"] == "Token translations saved"
-  for sent in executed4["data"]["agmtApplyTokenTranslation"]['data']:
+  assert executed4["data"]["applyAgmtTokenTranslation"]["message"] == "Token translations saved"
+  for sent in executed4["data"]["applyAgmtTokenTranslation"]['data']:
     assert "test translation" in sent['draft']
 
   # all tokens at once
@@ -403,8 +403,8 @@ def test_save_translation():
 
   executed5 = gql_request(APPLY_TOKEN,operation="mutation",variables=post_list3)
   assert isinstance(executed5, Dict)
-  assert executed5["data"]["agmtApplyTokenTranslation"]["message"] == "Token translations saved"
-  for sent in executed5["data"]["agmtApplyTokenTranslation"]['data']:
+  assert executed5["data"]["applyAgmtTokenTranslation"]["message"] == "Token translations saved"
+  for sent in executed5["data"]["applyAgmtTokenTranslation"]['data']:
         words = re.findall(r'\w+', sent['draft'])
         for wrd in words:
             assert wrd == 'test'
@@ -538,7 +538,7 @@ def test_drafts():
 
   executed = gql_request(APPLY_TOKEN,operation="mutation",variables=post_list)
   assert isinstance(executed, Dict)
-  assert executed["data"]["agmtApplyTokenTranslation"]["message"] == "Token translations saved"
+  assert executed["data"]["applyAgmtTokenTranslation"]["message"] == "Token translations saved"
 
   query_draftusfm = """
       query draft($projectid:ID!){
@@ -615,7 +615,7 @@ def test_get_token_sentences():
 
   executed2 = gql_request(APPLY_TOKEN,operation="mutation",variables=post_obj_list)
   assert isinstance(executed2, Dict)
-  assert executed2["data"]["agmtApplyTokenTranslation"]["message"] == "Token translations saved"
+  assert executed2["data"]["applyAgmtTokenTranslation"]["message"] == "Token translations saved"
 
   # after translation
   executed3 = gql_request(GET_TOKEN_SENTANCE,operation="query",variables=var_sentance)
@@ -671,7 +671,7 @@ def test_get_sentence():
 }
   executed1 = gql_request(APPLY_TOKEN,operation="mutation",variables=post_list)
   assert isinstance(executed1, Dict)
-  assert executed1["data"]["agmtApplyTokenTranslation"]["message"] == "Token translations saved"
+  assert executed1["data"]["applyAgmtTokenTranslation"]["message"] == "Token translations saved"
   # after token translation
   executed2 = gql_request(query_projectsource,operation="query",variables=var)
   assert len(executed2["data"]["agmtProjectSource"]) > 0
@@ -761,7 +761,7 @@ def test_progress_n_suggestion():
 
   executed = gql_request(APPLY_TOKEN,operation="mutation",variables=post_list)
   assert isinstance(executed, Dict)
-  assert executed["data"]["agmtApplyTokenTranslation"]["message"] == "Token translations saved"
+  assert executed["data"]["applyAgmtTokenTranslation"]["message"] == "Token translations saved"
 
   # after token translation
   executed_prog2 = gql_request(query_progress,operation="query",variables=var_prog)
