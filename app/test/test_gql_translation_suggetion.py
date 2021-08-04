@@ -1,7 +1,6 @@
 """Test cases for translation suggetions in GQL"""
 import copy
 import json
-from re import T
 from typing import Dict
 #pylint: disable=E0401
 #pylint: disable=E0611

@@ -1388,7 +1388,7 @@ class VachanMutations(graphene.ObjectType):
     edit_agmt_project = EditAGMTProject.Field()
     create_agmt_project_user = AGMTUserCreate.Field()
     edit_agmt_project_user = AGMTUserEdit.Field()
-    agmt_apply_token_translation = AgmtTokenApply.Field()
+    apply_agmt_token_translation = AgmtTokenApply.Field()
     suggest_auto_translation = AutoTranslationSuggetion.Field()
     suggest_translation = TranslationSuggetion.Field()
     add_gloss = AddGloss.Field()
