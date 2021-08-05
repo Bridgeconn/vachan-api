@@ -476,16 +476,16 @@ class AddAudioBible(graphene.Mutation):
     "Mutations for Add Audio Bible"
     class Arguments:
         """Arguments for Add Audio Bible"""
-        bible_arg = InputAddAudioBible()
+        audio_bible_arg = InputAddAudioBible()
 
     message = graphene.String()
     data = graphene.List(types.AudioBible)
     #pylint: disable=R0201,no-self-use
-    def mutate(self,info,bible_arg):
+    def mutate(self,info,audio_bible_arg):
         """resolve"""
         db_ = info.context["request"].db_session
-        source =bible_arg.source_name
-        audio_data = bible_arg.audio_data
+        source =audio_bible_arg.source_name
+        audio_data = audio_bible_arg.audio_data
         schema_list = []
         for item in audio_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
@@ -524,16 +524,16 @@ class EditAudioBible(graphene.Mutation):
     "Mutations for Edit Audio Bible"
     class Arguments:
         """Arguments for Edit Audio Bible"""
-        bible_arg = InputEditAudioBible()
+        audio_bible_arg = InputEditAudioBible()
 
     message = graphene.String()
     data = graphene.List(types.AudioBible)
     #pylint: disable=R0201,no-self-use
-    def mutate(self,info,bible_arg):
+    def mutate(self,info,audio_bible_arg):
         """resolve"""
         db_ = info.context["request"].db_session
-        source =bible_arg.source_name
-        audio_data = bible_arg.audio_data
+        source =audio_bible_arg.source_name
+        audio_data = audio_bible_arg.audio_data
         schema_list = []
         for item in audio_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
@@ -677,16 +677,16 @@ class CreateAGMTProject(graphene.Mutation):
     "Mutations for CreateAGMTProject"
     class Arguments:
         """Arguments for CreateAGMTProject"""
-        agmt_arg = InputCreateAGMTProject()
+        project_arg = InputCreateAGMTProject()
 
     message = graphene.String()
     data = graphene.Field(types.TranslationProject)
     #pylint: disable=R0201,no-self-use
-    def mutate(self,info,agmt_arg):
+    def mutate(self,info,project_arg):
         """resolve"""
         db_ = info.context["request"].db_session
         schema_model = utils.convert_graphene_obj_to_pydantic\
-            (agmt_arg,schemas_nlp.TranslationProjectCreate)
+            (project_arg,schemas_nlp.TranslationProjectCreate)
 
         result = projects_crud.create_agmt_project(db_=db_,project=schema_model,user_id=10101)
         comm = types.TranslationProject(
@@ -731,16 +731,16 @@ class EditAGMTProject(graphene.Mutation):
     "Mutations for EditAGMTProject"
     class Arguments:
         """Arguments for EditAGMTProject"""
-        agmt_arg = InputEditAGMTProject()
+        project_arg = InputEditAGMTProject()
 
     message = graphene.String()
     data = graphene.Field(types.TranslationProject)
     #pylint: disable=R0201,no-self-use
-    def mutate(self,info,agmt_arg):
+    def mutate(self,info,project_arg):
         """resolve"""
         db_ = info.context["request"].db_session
         schema_model = utils.convert_graphene_obj_to_pydantic\
-            (agmt_arg,schemas_nlp.TranslationProjectEdit)
+            (project_arg,schemas_nlp.TranslationProjectEdit)
 
         result = projects_crud.update_agmt_project(db_=db_,project_obj=schema_model,user_id=10101)
         comm = types.TranslationProject(
@@ -767,16 +767,16 @@ class AGMTUserCreate(graphene.Mutation):
     """mutation for AGMT user create"""
     class Arguments:
         """args"""
-        agmt_arg = AGMTUserCreateInput()
+        user_arg = AGMTUserCreateInput()
 
     message = graphene.String()
     data = graphene.Field(types.ProjectUser)
     #pylint: disable=R0201,no-self-use
-    def mutate(self,info,agmt_arg):
+    def mutate(self,info,user_arg):
         """resolve"""
         db_ = info.context["request"].db_session
-        project_id = agmt_arg.project_id
-        user_id = agmt_arg.user_id
+        project_id = user_arg.project_id
+        user_id = user_arg.user_id
         result = projects_crud.add_agmt_user(db_=db_,project_id=\
             project_id,user_id=user_id,current_user=None)
         comm = types.ProjectUser(
@@ -802,16 +802,16 @@ class AGMTUserEdit(graphene.Mutation):
     """mutation for AGMT user Edit"""
     class Arguments:
         """args"""
-        agmt_arg = AGMTUserEditInput()
+        user_arg = AGMTUserEditInput()
 
     message = graphene.String()
     data = graphene.Field(types.ProjectUser)
     #pylint: disable=R0201,no-self-use
-    def mutate(self,info,agmt_arg):
+    def mutate(self,info,user_arg):
         """resolve"""
         db_ = info.context["request"].db_session
         schema_model = utils.convert_graphene_obj_to_pydantic\
-            (agmt_arg,schemas_nlp.ProjectUser)
+            (user_arg,schemas_nlp.ProjectUser)
         result = projects_crud.update_agmt_user(db_=db_,user_obj = schema_model ,current_user=10101)
         comm = types.ProjectUser(
             project_id = result.project_id,
@@ -1156,7 +1156,6 @@ class AgmtTokenApply(graphene.Mutation):
         message = "Token translations saved"
         return AgmtTokenApply(message=message,data=dict_content_list)
 
-
 #### Translation Suggetions ##########
 #Suggeest Auto Translation
 class InputAutoTranslation(graphene.InputObjectType):
@@ -1173,18 +1172,18 @@ class AutoTranslationSuggetion(graphene.Mutation):
     "Mutations for AutoTranslationSuggetion"
     class Arguments:
         """Arguments for AutoTranslationSuggetion"""
-        info_arg = InputAutoTranslation()
+        translation_arg = InputAutoTranslation()
 
-    data = graphene.List(types.Sentence)
+    Output = graphene.List(types.Sentence)
     #pylint: disable=R0201,no-self-use
-    def mutate(self,info,info_arg):
+    def mutate(self,info,translation_arg):
         """resolve"""
         db_ = info.context["request"].db_session
-        project_id  = info_arg.project_id
-        books = info_arg.books
-        sentence_id_list = info_arg.sentence_id_list
-        sentence_id_range = info_arg.sentence_id_range
-        confirm_all = info_arg.confirm_all
+        project_id  = translation_arg.project_id
+        books = translation_arg.books
+        sentence_id_list = translation_arg.sentence_id_list
+        sentence_id_range = translation_arg.sentence_id_range
+        confirm_all = translation_arg.confirm_all
 
         result =nlp_crud.agmt_suggest_translations(db_=db_,project_id=project_id,books=books,\
             sentence_id_list=sentence_id_list,sentence_id_range=sentence_id_range,\
@@ -1199,58 +1198,9 @@ class AutoTranslationSuggetion(graphene.Mutation):
             draftMeta = item.draftMeta
             )
             dict_content_list.append(comm)
-        return AutoTranslationSuggetion(data=dict_content_list)
+        return dict_content_list
 
-#Suggeest  Translation
-class InputTranslationData(graphene.InputObjectType):
-    """Body content for transaltion"""
-    sentacne_list = graphene.List(types.SentenceInput,\
-        required=True)
-    stopwords = graphene.Field(types.Stopwords)
-    punctuations = graphene.List(graphene.String,\
-        description="""List [ ",", "\"", "!", ".", ":", ";", "\n""]""")
-
-class InputTranslation(graphene.InputObjectType):
-    """Translation Suggestion input"""
-    source_language = graphene.String(required=True,\
-        description="patten:^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
-    target_language  = graphene.String(required=True,\
-        description="patten:^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
-    data = graphene.Field(InputTranslationData,required=True)
-
-class TranslationSuggetion(graphene.Mutation):
-    "Mutations for TranslationSuggetion"
-    class Arguments:
-        """Arguments for TranslationSuggetion"""
-        info_arg = InputTranslation()
-
-    data = graphene.List(types.Sentence)
-    #pylint: disable=R0201,no-self-use
-    def mutate(self,info,info_arg):
-        """resolve"""
-        db_ = info.context["request"].db_session
-        sentence_list = info_arg.data.sentacne_list
-        source_language = info_arg.source_language
-        target_language = info_arg.target_language
-        punctuations = info_arg.data.punctuations
-        stopwords = info_arg.data.stopwords
-
-        result =nlp_crud.auto_translate(db_=db_,sentence_list=sentence_list,source_lang=\
-            source_language,target_lang=target_language,punctuations=punctuations,\
-                stop_words=stopwords)
-
-        dict_content_list = []
-        for item in result:
-            comm = types.Sentence(
-            sentenceId = item.sentenceId,
-            sentence = item.sentence,
-            draft = item.draft,
-            draftMeta = item.draftMeta
-            )
-            dict_content_list.append(comm)
-        return TranslationSuggetion(data=dict_content_list)
-
-############### Add Gloss
+############### Add Gloss ##############
 class InputAddGloss(graphene.InputObjectType):
     """Add Gloss input"""
     source_language = graphene.String(required=True,\
@@ -1263,18 +1213,18 @@ class AddGloss(graphene.Mutation):
     "Mutations for AddGloss"
     class Arguments:
         """Arguments for AddGloss"""
-        info_arg = InputAddGloss()
+        gloss_arg = InputAddGloss()
 
     message = graphene.String()
     data = graphene.List(types.Gloss)
     #pylint: disable=R0201,no-self-use
-    def mutate(self,info,info_arg):
+    def mutate(self,info,gloss_arg):
         """resolve"""
         db_ = info.context["request"].db_session
-        source_language = info_arg.source_language
-        target_language =info_arg.target_language
+        source_language = gloss_arg.source_language
+        target_language =gloss_arg.target_language
         schema_list = []
-        for item in info_arg.data:
+        for item in gloss_arg.data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schemas_nlp.GlossInput)
             schema_list.append(schema_model)
@@ -1318,18 +1268,18 @@ class AddAlignment(graphene.Mutation):
     "Mutations for AddAlignment"
     class Arguments:
         """Arguments for AddAlignment"""
-        info_arg = InputAddAlignment()
+        alignment_arg = InputAddAlignment()
 
     message = graphene.String()
     data = graphene.List(types.Gloss)
     #pylint: disable=R0201,no-self-use
-    def mutate(self,info,info_arg):
+    def mutate(self,info,alignment_arg):
         """resolve"""
         db_ = info.context["request"].db_session
-        source_language = info_arg.source_language
-        target_language =info_arg.target_language
+        source_language = alignment_arg.source_language
+        target_language =alignment_arg.target_language
         schema_list = []
-        for item in info_arg.data:
+        for item in alignment_arg.data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schemas_nlp.Alignment)
             schema_list.append(schema_model)
@@ -1389,7 +1339,7 @@ class VachanMutations(graphene.ObjectType):
     create_agmt_project_user = AGMTUserCreate.Field()
     edit_agmt_project_user = AGMTUserEdit.Field()
     apply_agmt_token_translation = AgmtTokenApply.Field()
-    suggest_auto_translation = AutoTranslationSuggetion.Field()
-    suggest_translation = TranslationSuggetion.Field()
+    suggest_agmt_auto_translation = AutoTranslationSuggetion.Field()
+    #suggest_translation = TranslationSuggetion.Field()
     add_gloss = AddGloss.Field()
     add_alignment = AddAlignment.Field()

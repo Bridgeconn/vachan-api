@@ -305,3 +305,11 @@ class DraftInput(graphene.InputObjectType):
     draft = graphene.String(required=True,
         description='example="അബ്രാഹാം के वंशज दाऊद के पुत्र यीशु मसीह की वंशावली इस प्रकार है"')
     draftMeta = graphene.JSONString()
+
+class SugggestTranslationInput(graphene.InputObjectType):
+    """Body content for transaltion"""
+    sentence_list = graphene.List(SentenceInput,\
+        required=True)
+    stopwords = graphene.Field(Stopwords)
+    punctuations = graphene.List(graphene.String,\
+        description="""List [ ",", "\"", "!", ".", ":", ";", "\n""]""")

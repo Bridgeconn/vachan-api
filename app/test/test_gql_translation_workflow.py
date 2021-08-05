@@ -14,7 +14,7 @@ from .test_gql_agmt_projects import check_post as create_agmt_project
 from .test_gql_agmt_projects import PROJECT_CREATE_GLOBAL_QUERY,USER_CREATE_GLOBAL_QUERY,PROJECT_EDIT_GLOBAL_QUERY,\
     USER_EDIT_GLOBAL_QUERY,PROJECT_GET_GLOBAL_QUERY
 from .test_gql_agmt_translation import APPLY_TOKEN
-from .test_gql_translation_suggetion import Add_Alignment
+from .test_gql_translation_suggestion import Add_Alignment
 
 # have a bible source to be used
 source_name = "hi_XYZ_1_bible" # pylint: disable=C0103
@@ -202,15 +202,13 @@ def test_end_to_end_translation():
     # tokenize after adding token "परमेश्वर" via alignment
     query_auto_suggest = """
         mutation autosuggest($object:InputAutoTranslation){
-  suggestAutoTranslation(infoArg:$object){
-    data{
+  suggestAgmtAutoTranslation(translationArg:$object){
       sentenceId
       sentence
       draft
       draftMeta
     }
   }
-}
     """
     var_auto_sugg = {
   "object": {
@@ -219,7 +217,7 @@ def test_end_to_end_translation():
   }
 }
     executed_auto_sugg = gql_request(query_auto_suggest,operation="mutation",variables=var_auto_sugg)
-    draft = executed_auto_sugg["data"]["suggestAutoTranslation"]["data"][0]['draft']
+    draft = executed_auto_sugg["data"]["suggestAgmtAutoTranslation"][0]['draft']
     assert "ദൈവം" in draft
     assert "പുത്രന്‍" in draft
     assert "യേശു ക്രിസ്തു" in draft
