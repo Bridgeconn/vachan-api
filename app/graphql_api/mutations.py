@@ -1156,7 +1156,6 @@ class AgmtTokenApply(graphene.Mutation):
         message = "Token translations saved"
         return AgmtTokenApply(message=message,data=dict_content_list)
 
-
 #### Translation Suggetions ##########
 #Suggeest Auto Translation
 class InputAutoTranslation(graphene.InputObjectType):
@@ -1175,7 +1174,7 @@ class AutoTranslationSuggetion(graphene.Mutation):
         """Arguments for AutoTranslationSuggetion"""
         translation_arg = InputAutoTranslation()
 
-    data = graphene.List(types.Sentence)
+    Output = graphene.List(types.Sentence)
     #pylint: disable=R0201,no-self-use
     def mutate(self,info,translation_arg):
         """resolve"""
@@ -1199,9 +1198,9 @@ class AutoTranslationSuggetion(graphene.Mutation):
             draftMeta = item.draftMeta
             )
             dict_content_list.append(comm)
-        return AutoTranslationSuggetion(data=dict_content_list)
+        return dict_content_list
 
-############### Add Gloss
+############### Add Gloss ##############
 class InputAddGloss(graphene.InputObjectType):
     """Add Gloss input"""
     source_language = graphene.String(required=True,\

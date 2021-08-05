@@ -203,14 +203,12 @@ def test_end_to_end_translation():
     query_auto_suggest = """
         mutation autosuggest($object:InputAutoTranslation){
   suggestAgmtAutoTranslation(translationArg:$object){
-    data{
       sentenceId
       sentence
       draft
       draftMeta
     }
   }
-}
     """
     var_auto_sugg = {
   "object": {
@@ -219,7 +217,7 @@ def test_end_to_end_translation():
   }
 }
     executed_auto_sugg = gql_request(query_auto_suggest,operation="mutation",variables=var_auto_sugg)
-    draft = executed_auto_sugg["data"]["suggestAgmtAutoTranslation"]["data"][0]['draft']
+    draft = executed_auto_sugg["data"]["suggestAgmtAutoTranslation"][0]['draft']
     assert "ദൈവം" in draft
     assert "പുത്രന്‍" in draft
     assert "യേശു ക്രിസ്തു" in draft
