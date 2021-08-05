@@ -627,7 +627,7 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0
         args = {"source_lang_id":source_lang.languageId,
                 "target_lang_id": target_lang.languageId,
                 "token":gloss['token'],
-                "tokenRom":utils.to_eng(gloss['token'])}
+                "tokenRom":utils.to_eng(gloss['token'])}       
         if "translations" in gloss and gloss['translations'] is not None:
             for trans in gloss['translations']:
                 if (isinstance(gloss['translations'], dict) and
@@ -764,7 +764,7 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
         db_models.TranslationMemory.tokenId)
     mdt = metadata_query.first()
     if mdt:
-        result['metaData'] = mdt[0]
+        result['metaData'] = mdt[0]   
     return result
 
 def glossary(db_:Session, source_language, target_language, token, context=None, token_offset=None):
@@ -795,14 +795,14 @@ def auto_translate(db_, sentence_list, source_lang, target_lang, punctuations=No
             for occurence in tokens[token]['occurrences']:
                 offset = occurence['offset']
                 index, context = extract_context(token, offset,
-                    sent.sentence)
-                gloss = get_gloss(db_, index, context, source_lang, target_lang)
+                    sent.sentence) 
+                gloss = get_gloss(db_, index, context, source_lang, target_lang) 
                 suggestions = list(gloss['translations'].keys())
                 if len(suggestions) > 0:
                     draft, meta = replace_token(sent.sentence, offset,
                         suggestions[0], sent.draft, sent.draftMeta, "suggestion")
                     sent.draft = draft
-                    sent.draftMeta = meta
+                    sent.draftMeta = meta        
                 elif (sent.draft is None or sent.draft == ''):
                     sent.draft = sent.sentence
                     offset = [0,len(sent.sentence)]

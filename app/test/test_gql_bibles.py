@@ -91,7 +91,7 @@ BOOK_EDIT_QUERY = """
 
 AUDIO_ADD_QUERY = """
 mutation addaudio($object:InputAddAudioBible){
-  addAudioBible(bibleArg:$object){
+  addAudioBible(audioBibleArg:$object){
     message
     data{
       name
@@ -110,7 +110,7 @@ mutation addaudio($object:InputAddAudioBible){
 
 AUDIO_EDIT_QUERY = """
      mutation editaudio($object:InputEditAudioBible){
-  editAudioBible(bibleArg:$object){
+  editAudioBible(audioBibleArg:$object){
     message
     data{
       name
@@ -861,7 +861,7 @@ bibleContents(sourceName:"gu_TTT_1_bible"){
   #try delete non existing audio
   query2 = """
       mutation editaudio($object:InputEditAudioBible){
-editAudioBible(bibleArg:$object){
+editAudioBible(audioBibleArg:$object){
   message
   data{
     name
@@ -932,7 +932,7 @@ def test_book_delete():
 
   query2 = """
        mutation editaudio($object:InputEditAudioBible){
-  editAudioBible(bibleArg:$object){
+  editAudioBible(audioBibleArg:$object){
     message
     data{
       name

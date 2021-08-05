@@ -32,7 +32,7 @@ tokens_trans = [
 
 Add_Gloss = """
      mutation learngloss($object:InputAddGloss){
-  addGloss(infoArg:$object){
+  addGloss(glossArg:$object){
  		message
     data{
       token
@@ -45,7 +45,7 @@ Add_Gloss = """
 
 Add_Alignment = """
      mutation learnalignment($object:InputAddAlignment){
-  addAlignment(infoArg:$object){
+  addAlignment(alignmentArg:$object){
  		message
     data{
       token
@@ -267,25 +267,23 @@ def test_learn_n_suggest():
     sentence_list[0]['sentence'] = "This his wish "+sentence_list[0]['sentence']
 
     suggest_translation_query = """
-        mutation suggesttransaltion($object:InputTranslation){
-  suggestTranslation(infoArg:$object){
-    data{
-      sentenceId
-      sentence
-      draft
-      draftMeta
-    }
+        query suggesttranslation($source_lan:String!,$target_lan:String!,$sentence:[SugggestTranslationInput]){
+  suggestTranslation(sourceLanguage:$source_lan,targetLanguage:$target_lan,sentence:$sentence){
+    sentenceId
+    sentence
+    draft
+    draftMeta
   }
 }
     """
     var_suggest = {
-  "object": {
-    "sourceLanguage": "en",
-    "targetLanguage": "ml",
-    "data": {
-      "sentacneList": sentence_list
+  "source_lan": "en",
+  "target_lan": "ml",
+  "sentence": [
+    {
+      "sentenceList": sentence_list
     }
-  }
+  ]
 }
 
     query_text = """
@@ -294,9 +292,9 @@ def test_learn_n_suggest():
 }
     """
 
-    executed_sug = gql_request(suggest_translation_query,operation="mutation",variables=var_suggest)
-    input = executed_sug["data"]["suggestTranslation"]["data"]
-
+    executed_sug = gql_request(suggest_translation_query,operation="query",variables=var_suggest)
+    input = executed_sug["data"]["suggestTranslation"]
+    print(input)
     for item in input:
       item["draftMeta"] = json.dumps(item["draftMeta"])
 
@@ -310,5 +308,3 @@ def test_learn_n_suggest():
     assert "ടെവെലപ്പര്‍" in draft["data"]["convertToText"]
     assert "ഇത് ആണ് the sad story of a poor ടെസ്റ്റ് " in draft["data"]["convertToText"]
 
-    
-    

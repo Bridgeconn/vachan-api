@@ -10,7 +10,7 @@ from .test_gql_bibles import add_bible
 
 PROJECT_CREATE_GLOBAL_QUERY = """
     mutation createproject($object:InputCreateAGMTProject){
-  createAgmtProject(agmtArg:$object){
+  createAgmtProject(projectArg:$object){
     message
     data{
       projectId
@@ -45,7 +45,7 @@ PROJECT_CREATE_GLOBAL_QUERY = """
 """
 PROJECT_EDIT_GLOBAL_QUERY = """
     mutation editAGMTProject($object:InputEditAGMTProject){
-  editAgmtProject(agmtArg:$object){
+  editAgmtProject(projectArg:$object){
     message
     data{
       projectId
@@ -112,7 +112,7 @@ PROJECT_GET_GLOBAL_QUERY = """
 """
 USER_CREATE_GLOBAL_QUERY = """
     mutation createagmtuser($object:AGMTUserCreateInput){
-  createAgmtProjectUser(agmtArg:$object){
+  createAgmtProjectUser(userArg:$object){
     message
     data{
       projectId
@@ -127,7 +127,7 @@ USER_CREATE_GLOBAL_QUERY = """
 """
 USER_EDIT_GLOBAL_QUERY = """
         mutation editAGMTuser($object:AGMTUserEditInput){
-  editAgmtProjectUser(agmtArg:$object){
+  editAgmtProjectUser(userArg:$object){
     message
     data{
       projectId
@@ -693,4 +693,3 @@ def test_soft_delete():
 
     executed_get  = gql_request(PROJECT_GET_GLOBAL_QUERY)
     assert len(executed_get["data"]["agmtProjects"]) == 4
-

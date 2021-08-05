@@ -202,7 +202,7 @@ def test_end_to_end_translation():
     # tokenize after adding token "परमेश्वर" via alignment
     query_auto_suggest = """
         mutation autosuggest($object:InputAutoTranslation){
-  suggestAutoTranslation(infoArg:$object){
+  suggestAgmtAutoTranslation(translationArg:$object){
     data{
       sentenceId
       sentence
@@ -219,7 +219,7 @@ def test_end_to_end_translation():
   }
 }
     executed_auto_sugg = gql_request(query_auto_suggest,operation="mutation",variables=var_auto_sugg)
-    draft = executed_auto_sugg["data"]["suggestAutoTranslation"]["data"][0]['draft']
+    draft = executed_auto_sugg["data"]["suggestAgmtAutoTranslation"]["data"][0]['draft']
     assert "ദൈവം" in draft
     assert "പുത്രന്‍" in draft
     assert "യേശു ക്രിസ്തു" in draft
