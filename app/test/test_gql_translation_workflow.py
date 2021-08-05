@@ -14,7 +14,7 @@ from .test_gql_agmt_projects import check_post as create_agmt_project
 from .test_gql_agmt_projects import PROJECT_CREATE_GLOBAL_QUERY,USER_CREATE_GLOBAL_QUERY,PROJECT_EDIT_GLOBAL_QUERY,\
     USER_EDIT_GLOBAL_QUERY,PROJECT_GET_GLOBAL_QUERY
 from .test_gql_agmt_translation import APPLY_TOKEN
-from .test_gql_translation_suggetion import Add_Alignment
+from .test_gql_translation_suggestion import Add_Alignment
 
 # have a bible source to be used
 source_name = "hi_XYZ_1_bible" # pylint: disable=C0103

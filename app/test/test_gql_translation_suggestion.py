@@ -267,8 +267,10 @@ def test_learn_n_suggest():
     sentence_list[0]['sentence'] = "This his wish "+sentence_list[0]['sentence']
 
     suggest_translation_query = """
-        query suggesttranslation($source_lan:String!,$target_lan:String!,$sentence:[SugggestTranslationInput]){
-  suggestTranslation(sourceLanguage:$source_lan,targetLanguage:$target_lan,sentence:$sentence){
+       query suggesttranslation($source_lan:String!,$target_lan:String!,$sentenceList:[SentenceInput]!,
+$punctuations:[String],$stopwords:Stopwords){
+  suggestTranslation(sourceLanguage:$source_lan,targetLanguage:$target_lan,sentenceList:$sentenceList,
+  punctuations:$punctuations,stopwords:$stopwords){
     sentenceId
     sentence
     draft
@@ -279,13 +281,9 @@ def test_learn_n_suggest():
     var_suggest = {
   "source_lan": "en",
   "target_lan": "ml",
-  "sentence": [
-    {
-      "sentenceList": sentence_list
-    }
-  ]
+  "sentenceList": sentence_list
 }
-
+  
     query_text = """
       query converttext($sentence:[SentenceInput]!){
   convertToText(sentenceList:$sentence)
