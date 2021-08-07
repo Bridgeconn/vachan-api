@@ -9,12 +9,12 @@ services:
    retries: 10
   restart: always
   environment: 
-   - POSTGRES_USER=postgres
-   - POSTGRES_PASSWORD=password
-   - POSTGRES_DB=postgres
-   - APP_DB_USER=uday
-   - APP_DB_PASS=uday123
-   - APP_DB_NAME=vachanapi
+   - POSTGRES_USER=${POSTGRES_USER}
+   - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+   - POSTGRES_DB=${POSTGRES_DB}
+   - APP_DB_USER=${APP_DB_USER}
+   - APP_DB_PASS=${APP_DB_PASS}
+   - APP_DB_NAME=${APP_DB_NAME}
   logging:
    options:
     max-size: 10m
@@ -37,13 +37,20 @@ services:
    dockerfile: Dockerfile
   container_name: vachan-app
   environment: 
-   - VACHAN_POSTGRES_HOST=localhost
-   - VACHAN_POSTGRES_USER=uday
-   - VACHAN_POSTGRES_PASSWORD=uday123
-   - VACHAN_POSTGRES_DATABASE=vachanapi
-   
+   - VACHAN_POSTGRES_HOST=${VACHAN_POSTGRES_HOST}
+   - VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER}
+   - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD}
+   - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE}
+   - VACHAN_POSTGRES_PORT=${VACHAN_POSTGRES_PORT}
   volumes:
    - ./app:/app/
+  restart: always
+  links:
+   - postgres
+  depends_on:
+   - postgres
+  ports:
+   - 5000:5000
   networks:
    my-network:
     aliases:
