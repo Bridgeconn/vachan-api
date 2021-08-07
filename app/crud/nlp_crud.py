@@ -726,7 +726,7 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
         db_models.TranslationMemory.token,
         db_models.TranslationMemory.translation,
         db_models.TranslationMemory.frequency,
-        text("levenshtein(source_token,'%s') as lev_score"%word)
+        text("levenshtein(source_token,:word) as lev_score").bindparams(word=word)
         ).filter(
             db_models.TranslationMemory.source_language.has(code=source_lang),
             db_models.TranslationMemory.target_language.has(code=target_lang),
@@ -737,7 +737,7 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
         db_models.TranslationMemory.translation,
         db_models.TranslationMemory.token,
         db_models.TranslationMemory.frequency,
-        text("levenshtein(translation,'%s') as lev_score"%word)
+        text("levenshtein(translation,:word) as lev_score").bindparams(word=word)
         ).filter(
             db_models.TranslationMemory.source_language.has(code=target_lang),
             db_models.TranslationMemory.target_language.has(code=source_lang),
