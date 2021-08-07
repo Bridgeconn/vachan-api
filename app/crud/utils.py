@@ -159,7 +159,7 @@ def to_eng(data):
     '''Convert to roman/english script.
     Not an acurate transliteration. But good enough for doing soundex'''
     data = normalize_unicode(data)
-    return unidecode(data).replace("'","")
+    return unidecode(data)
 
 def validate_language_tag(tag):
     '''uses an external service to validate newly added language sub tags'''
