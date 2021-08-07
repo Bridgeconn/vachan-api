@@ -1,6 +1,7 @@
 '''Set testing environment and define common tests'''
 from typing import Dict
 from fastapi.testclient import TestClient
+from graphene.types.structures import List
 from app.main import app
 
 client = TestClient(app)
@@ -109,20 +110,77 @@ def check_soft_delete(unit_url, check_post, data, delete_data):
     get_response3 = client.get(unit_url+source_name+'?active=false')
     assert len(get_response3.json()) == len(delete_data)
 
-def check_skip_gql(query1,query2):
-    '''All tests for the skip parameter of an API endpoint graphql'''
-    executed = gql_request(query1)
+def check_skip_limit_gql(query,api_name):
+    '''All tests for the skip and limit parameter of an API endpoint graphql'''
+   
+   #checking skip and limit 
+    var1 = {
+  "skip": 0,
+  "limit": 3
+}
+    var2 = {
+  "skip": 1,
+  "limit": 3
+}
+    executed = gql_request(query=query, operation="query", variables=var1)
     assert isinstance(executed, Dict)
-    if len(executed["data"]["languages"]) > 1:
-        executed2 = gql_request(query2)
+    if len(executed["data"][api_name]) >1:
+        executed2 = gql_request(query=query, operation="query", variables=var2)
         assert isinstance(executed2, Dict)
-        assert executed["data"]["languages"][1] == executed2["data"]["languages"][0]
+        assert executed["data"][api_name][1] == executed2["data"][api_name][0]
+        assert len(executed["data"][api_name]) <= 3
+        assert len(executed2["data"][api_name]) <= 3
 
-def check_limit_gql(query,limit):
-    '''All tests for the limit parameter of an API endpoint graphql'''
-    executed = gql_request(query)
-    assert isinstance(executed, Dict)
-    assert len(executed["data"]["languages"]) <= limit
+    # fetch a non existant page, with skip and limit values
+    var3 = {
+  "skip": 50000,
+  "limit": 10
+}
+
+    executed3 = gql_request(query=query, operation="query", variables=var3)
+    assert_not_available_content_gql(executed3["data"][api_name])
+
+    # skip should be an integer
+    var4 = {
+  "skip": "abc",
+  "limit": 10
+}
+    query4 = gql_request(query=query, operation="query", variables=var4)
+    executed4 = gql_request(query4)
+    assert "errors" in executed4.keys()
+
+    # skip should be a positive integer
+    var5 = {
+  "skip": -5,
+  "limit": 10
+}
+    query5 = gql_request(query=query, operation="query", variables=var5)
+    executed5 = gql_request(query5)
+    assert "errors" in executed5.keys()
+
+    var6 = {
+  "skip": 0,
+  "limit":0
+}
+    executed6 = gql_request(query=query, operation="query", variables=var6)
+    assert isinstance(executed6, Dict)
+    assert executed6["data"][api_name] == None
+
+    # limit should be an integer
+    var7 = {
+  "skip": "abc",
+  "limit": 10
+}
+    executed7 = gql_request(query=query, operation="query", variables=var7)
+    assert "errors" in executed7.keys()
+
+    # limit should be a positive integer
+    var8 = {
+  "skip": 0,
+  "limit": -1
+}
+    executed8 = gql_request(query=query, operation="query", variables=var8)
+    assert "errors" in executed8.keys()
 
 def assert_not_available_content_gql(item):
     '''Checks for empty array returned when requetsed content not available'''
