@@ -56,6 +56,12 @@ Contains all input output objects schema definitions, used by pydantic for input
 * Specifies the output objects, messages and error objects returned by each endpoint, which are used for response validations
 * Invokes the methods in CRUD module to perform functions required by each endpoint
 
+### app/graphql_apis
+
+* Defines types, queries and mutations corresponding to all the REST APIs operations
+* Uses same crud functions as REST
+* Converts the own types to the app/schemas for validation and uniformity in working with the ORM
+
 ![component diagram](./images/Vachan-apiv2components.png)
 *Component diagram*
 
