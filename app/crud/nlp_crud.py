@@ -462,8 +462,9 @@ def alignments_to_trainingdata(db_:Session, src_lang, trg_lang, alignment_list,
     sugg_data = []
     for sent in alignment_list:
         src_len = len(sent.sourceTokenList)
-        phrases = find_pharses_from_alignments(sent.sourceTokenList, sent.targetTokenList,
-            sent.alignedTokens)
+        src_toks = [utils.normalize_unicode(tok) for tok in sent.sourceTokenList]
+        trg_toks = [utils.normalize_unicode(tok) for tok in sent.targetTokenList]
+        phrases = find_pharses_from_alignments(src_toks, trg_toks, sent.alignedTokens)
         for obj in phrases:
             ## prepare data for translation memory/gloss
             if obj["token"] in dict_data:
@@ -685,7 +686,7 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0
     result_list = [result_dict[entry] for entry in result_dict]
     return result_list
 
-def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: disable=too-many-locals
+def get_gloss(db_:Session, index, context, source_lang, target_lang, first_pass=True): # pylint: disable=too-many-locals
     '''find the context based translation suggestions(gloss) for a word.
     Makes use of the learned model(trie), for the lang pair, based on translation memory
     output format: [(translation1, score1), (translation2, score2), ...]'''
@@ -700,6 +701,7 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
     to_right = context[index+1:]
     trans = {}
     total = 0
+    no_trie_match = True
     if len(to_right)+len(to_left) > 0:
         keys = form_trie_keys(word, to_left, to_right, [word], False)
         if source_lang+"-"+target_lang in suggestion_trie_in_mem: # check if aleady loaded in memory
@@ -710,6 +712,7 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
         for key in keys:
             if tree.has_subtrie(key) or tree.has_key(key):
                 # print("found:",key)
+                no_trie_match = False
                 nodes = tree.values(key)
                 level = len(key.split("/"))
                 for nod in nodes:
@@ -746,10 +749,19 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
             text("levenshtein(translation,:word) < 4").bindparams(word=word))
     forward_dict_entires =  forward_query.all()
     reverse_dict_entires = reverse_query.all()
+    matched_word = None
     for row in forward_dict_entires+ reverse_dict_entires:
+        if not matched_word:
+            matched_word = row[0]
         if row[1] not in trans:
             trans[row[1]] = row[2]/(row[3]+1)
             total += 1
+    if len(trans) == 0 and first_pass and len(word)>3:
+        # try chopping off the last letter
+        chopped_word = word[:-1]
+        result = get_gloss(db_, 0, [chopped_word], source_lang, target_lang)
+        if len(result['translations']) > 0:
+            return result
     if total == 0:
         total = 1
     sorted_trans = sorted(trans.items(), key=lambda x:x[1], reverse=True)
@@ -757,7 +769,10 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
     for sense in sorted_trans:
         scored_trans[sense[0]]=sense[1]/total
     result = {}
-    result['token'] = word
+    if no_trie_match:
+        result['token'] = matched_word
+    else:
+        result['token'] = word
     result['translations'] = scored_trans
     # check for metadata
     metadata_query = db_.query(db_models.TranslationMemory.metaData).filter(
@@ -825,6 +840,7 @@ def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range,
                 if meta[2] == "suggestion":
                     row.draftMeta[i][2] = "confirmed"
                     flag_modified(row, 'draftMeta')
+        # db_.add_all(draft_rows)
         db_.commit()
         return draft_rows
     args = {"db_":db_, "sentence_list":draft_rows,
