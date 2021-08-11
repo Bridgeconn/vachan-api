@@ -1,5 +1,6 @@
 """Test cases for Bibles in GQL"""
 import re
+import json
 from typing import Dict
 #pylint: disable=E0401
 #pylint: disable=C0301
@@ -12,7 +13,7 @@ from .test_gql_sources import check_post as source_add
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
-from . import  check_skip_limit_gql, gql_request,assert_not_available_content_gql
+from . import check_skip_limit_gql, gql_request,assert_not_available_content_gql
 
 VERSION_VAR  = {
         "object": {
@@ -90,7 +91,7 @@ BOOK_EDIT_QUERY = """
 
 AUDIO_ADD_QUERY = """
 mutation addaudio($object:InputAddAudioBible){
-  addAudioBible(bibleArg:$object){
+  addAudioBible(audioBibleArg:$object){
     message
     data{
       name
@@ -109,7 +110,7 @@ mutation addaudio($object:InputAddAudioBible){
 
 AUDIO_EDIT_QUERY = """
      mutation editaudio($object:InputEditAudioBible){
-  editAudioBible(bibleArg:$object){
+  editAudioBible(audioBibleArg:$object){
     message
     data{
       name
@@ -160,6 +161,7 @@ def add_bible():
         book_code = re.match(r'\\id (\w\w\w)', gospel_books_data[i]['USFM']).group(1)
         assert item['book']['bookCode'] == book_code.lower()
   assert len(gospel_books_data) == len(executed["data"]["addBibleBook"]['data'])
+  return executed,table
 
 def add_audio():
   '''Test the API for audio bible info upload'''
@@ -221,7 +223,6 @@ def test_post_default():
   }
 }
   """
-  
   check_skip_limit_gql(query_check,"bibleContents")
 
 def test_post_optional():
@@ -860,7 +861,7 @@ bibleContents(sourceName:"gu_TTT_1_bible"){
   #try delete non existing audio
   query2 = """
       mutation editaudio($object:InputEditAudioBible){
-editAudioBible(bibleArg:$object){
+editAudioBible(audioBibleArg:$object){
   message
   data{
     name
@@ -931,7 +932,7 @@ def test_book_delete():
 
   query2 = """
        mutation editaudio($object:InputEditAudioBible){
-  editAudioBible(bibleArg:$object){
+  editAudioBible(audioBibleArg:$object){
     message
     data{
       name

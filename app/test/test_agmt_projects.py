@@ -125,7 +125,7 @@ def test_default_post_put_get():
     assert response4.status_code == 201
     assert response4.json()['message'] == "Project updated successfully"
     updated_project = response4.json()['data']
-    assert_positive_get(updated_project)
+    assert_positive_get(updated_project)    
     assert updated_project['projectName']== "New name for old project"
 
 

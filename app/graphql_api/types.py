@@ -284,7 +284,7 @@ class GlossInput(graphene.InputObjectType):
     token = graphene.String(description='example="love"', required=True)
     translations = graphene.List(graphene.String,
         description="example=['प्यार', 'प्रेम', 'प्रेम करना']")
-    tokenMetaData = Metadata(description='example={"word-class":["noun", "verb"]}')
+    tokenMetaData = graphene.JSONString(description='example={"word-class":["noun", "verb"]}')
 
 class TokenOccurenceInput(graphene.InputObjectType):
     '''Object for token occurence'''
@@ -305,3 +305,11 @@ class DraftInput(graphene.InputObjectType):
     draft = graphene.String(required=True,
         description='example="അബ്രാഹാം के वंशज दाऊद के पुत्र यीशु मसीह की वंशावली इस प्रकार है"')
     draftMeta = graphene.JSONString()
+
+class SugggestTranslationInput(graphene.InputObjectType):
+    """Body content for transaltion"""
+    sentence_list = graphene.List(SentenceInput,\
+        required=True)
+    stopwords = graphene.Field(Stopwords)
+    punctuations = graphene.List(graphene.String,\
+        description="""List [ ",", "\"", "!", ".", ":", ";", "\n""]""")

@@ -729,22 +729,24 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang, first_pass=
         db_models.TranslationMemory.token,
         db_models.TranslationMemory.translation,
         db_models.TranslationMemory.frequency,
-        text("levenshtein(source_token,'%s') as lev_score"%word)
+        text("levenshtein(source_token,:word) as lev_score").bindparams(word=word)
         ).filter(
             db_models.TranslationMemory.source_language.has(code=source_lang),
             db_models.TranslationMemory.target_language.has(code=target_lang),
-            text("soundex(source_token_romanized) = soundex('%s')"%utils.to_eng(word)),
-            text("levenshtein(source_token,'%s') < 4"%word))
+            text("soundex(source_token_romanized) = soundex(:word)").\
+                bindparams(word=utils.to_eng(word)),
+            text("levenshtein(source_token,:word) < 4").bindparams(word=word))
     reverse_query = db_.query(db_models.TranslationMemory).with_entities(
         db_models.TranslationMemory.translation,
         db_models.TranslationMemory.token,
         db_models.TranslationMemory.frequency,
-        text("levenshtein(translation,'%s') as lev_score"%word)
+        text("levenshtein(translation,:word) as lev_score").bindparams(word=word)
         ).filter(
             db_models.TranslationMemory.source_language.has(code=target_lang),
             db_models.TranslationMemory.target_language.has(code=source_lang),
-            text("soundex(translation_romanized) = soundex('%s')"%utils.to_eng(word)),
-            text("levenshtein(translation,'%s') < 4"%word))
+            text("soundex(translation_romanized) = soundex(:word)").\
+                bindparams(word=utils.to_eng(word)),
+            text("levenshtein(translation,:word) < 4").bindparams(word=word))
     forward_dict_entires =  forward_query.all()
     reverse_dict_entires = reverse_query.all()
     matched_word = None
@@ -857,11 +859,11 @@ def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range,
 def obtain_draft(sentence_list, doc_type):
     '''Convert input sentences to required format'''
     for sent in sentence_list:
-        if sent.draft is None:
+        #pylint: disable=R0123
+        if sent.draft is None or sent.draft is '':
             sent.draft = sent.sentence
             offset = [0, len(sent.sentence)]
             sent.draftMeta = [offset, offset, "untranslated"]
-
     if doc_type == TranslationDocumentType.USFM:
         result = create_usfm(sentence_list)
         return result
