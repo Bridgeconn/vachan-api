@@ -729,24 +729,24 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang, first_pass=
         db_models.TranslationMemory.token,
         db_models.TranslationMemory.translation,
         db_models.TranslationMemory.frequency,
-        text("levenshtein(source_token,:word) as lev_score").bindparams(word=word)
+        text("levenshtein(source_token,:word1) as lev_score").bindparams(word1=word)
         ).filter(
             db_models.TranslationMemory.source_language.has(code=source_lang),
             db_models.TranslationMemory.target_language.has(code=target_lang),
-            text("soundex(source_token_romanized) = soundex(:word)").\
-                bindparams(word=utils.to_eng(word)),
-            text("levenshtein(source_token,:word) < 4").bindparams(word=word))
+            text("soundex(source_token_romanized) = soundex(:word2)").\
+                bindparams(word2=utils.to_eng(word)),
+            text("levenshtein(source_token,:word3) < 4").bindparams(word3=word))
     reverse_query = db_.query(db_models.TranslationMemory).with_entities(
         db_models.TranslationMemory.translation,
         db_models.TranslationMemory.token,
         db_models.TranslationMemory.frequency,
-        text("levenshtein(translation,:word) as lev_score").bindparams(word=word)
+        text("levenshtein(translation,:word1) as lev_score").bindparams(word1=word)
         ).filter(
             db_models.TranslationMemory.source_language.has(code=target_lang),
             db_models.TranslationMemory.target_language.has(code=source_lang),
-            text("soundex(translation_romanized) = soundex(:word)").\
-                bindparams(word=utils.to_eng(word)),
-            text("levenshtein(translation,:word) < 4").bindparams(word=word))
+            text("soundex(translation_romanized) = soundex(:word2)").\
+                bindparams(word2=utils.to_eng(word)),
+            text("levenshtein(translation,:word3) < 4").bindparams(word3=word))
     forward_dict_entires =  forward_query.all()
     reverse_dict_entires = reverse_query.all()
     matched_word = None
