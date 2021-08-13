@@ -89,7 +89,7 @@ def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, incl
         punctuations = utils.punctuations()+utils.numbers()
     # fetch all known tokens for the language and build a trie with it
     # We do this fresh for every tokenization request. Can be optimized
-    if use_translation_memory:
+    if use_translation_memory and include_phrases:
         translation_memory = db_.query(db_models.TranslationMemory.token).filter(
             db_models.TranslationMemory.source_language.has(code=src_lang)).all()
         reverse_memory = db_.query(db_models.TranslationMemory.translation).filter(
@@ -103,7 +103,7 @@ def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, incl
         #first split the text into chunks based on punctuations
         chunks = [chunk.strip() for chunk in re.split(r'['+"".join(punctuations)+']+', src_text)]
         updated_chunks = []
-        if use_translation_memory:
+        if use_translation_memory and include_phrases:
             for chunk in chunks:
                 #search the trie to get the longest matching phrases known to us
                 temp = chunk
