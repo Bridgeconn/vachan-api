@@ -40,13 +40,20 @@ mock_translation_memory = ["जीवन के वचन", "जीवन का
                           "यीशु मसीह", "परमेश्‍वर ज्योति", "झूठा ठहराते",
                           "Here is it", "hare", "no"]
 
-def find_phrases(src_text, stop_words, include_phrases=True):
+def find_phrases(src_text, stop_words, include_phrases=True, include_stopwords=False):
     '''try forming phrases as <preposition stop word>* <content word> <postposition stop word>*'''
     words = src_text.split()
-    if not include_phrases:
-        return words
     if not isinstance(stop_words, dict):
         stop_words = stop_words.__dict__
+    sw_list = stop_words['prepositions']+stop_words['postpositions']
+    if not include_phrases:
+        if not include_stopwords:
+            res_words = []
+            for wrd in words:
+                if wrd not in sw_list:
+                    res_words.append(wrd)
+            words = res_words
+        return words
     phrases = []
     current_phrase = ''
     state = 'pre'
@@ -71,6 +78,12 @@ def find_phrases(src_text, stop_words, include_phrases=True):
                     state = 'post'
         i += 1
     phrases.append(current_phrase.strip())
+    if not include_stopwords:
+        res_words = []
+        for wrd in phrases:
+            if wrd not in sw_list:
+                res_words.append(wrd)
+        phrases = res_words
     return phrases
 
 def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, include_phrases=True,
@@ -131,15 +144,12 @@ def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, incl
             if chunk.startswith('###'):
                 phrases.append(chunk.replace("###",""))
             else:
-                phrases+= find_phrases(chunk,stop_words, include_phrases)
+                phrases+= find_phrases(chunk,stop_words, include_phrases, include_stopwords)
         start = 0
         if not isinstance(stop_words, dict):
             stop_words = stop_words.__dict__
-        sw_list = stop_words['prepositions']+stop_words['postpositions']
         for phrase in phrases:
             if phrase.strip() == '':
-                continue
-            if (not include_stopwords) and phrase in sw_list:
                 continue
             offset = sent['sentence'].find(phrase, start)
             if offset == -1:
@@ -803,7 +813,7 @@ def auto_translate(db_, sentence_list, source_lang, target_lang, punctuations=No
     '''Attempts to tokenize the input sentence and replace each token with top suggestion.
     If draft_meta is provided indicating some portion of sentence is user translated,
     then it is left untouched.'''
-    args = {"db_":db_, "src_lang":source_lang, "include_stopwords":True, "include_phrases":True}
+    args = {"db_":db_, "src_lang":source_lang, "include_stopwords":False, "include_phrases":True}
     if punctuations:
         args['punctuations'] = punctuations
     if stop_words:
