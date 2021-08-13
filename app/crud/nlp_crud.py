@@ -688,7 +688,7 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0
     result_list = [result_dict[entry] for entry in result_dict]
     return result_list
 
-def get_gloss(db_:Session, index, context, source_lang, target_lang, first_pass=True): # pylint: disable=too-many-locals
+def get_gloss(db_:Session, index, context, source_lang, target_lang, pass_no=1): # pylint: disable=too-many-locals
     '''find the context based translation suggestions(gloss) for a word.
     Makes use of the learned model(trie), for the lang pair, based on translation memory
     output format: [(translation1, score1), (translation2, score2), ...]'''
@@ -758,10 +758,11 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang, first_pass=
         if row[1] not in trans:
             trans[row[1]] = row[2]/(row[3]+1)
             total += 1
-    if len(trans) == 0 and first_pass and len(word)>3:
+    if len(trans) == 0 and pass_no<3 and len(word)>3:
         # try chopping off the last letter
         chopped_word = word[:-1]
-        result = get_gloss(db_, 0, [chopped_word], source_lang, target_lang)
+        result = get_gloss(db_, 0, [chopped_word], source_lang, target_lang,
+            pass_no=pass_no+1)
         if len(result['translations']) > 0:
             return result
     if total == 0:
