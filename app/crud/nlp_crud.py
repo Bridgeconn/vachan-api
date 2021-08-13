@@ -802,7 +802,7 @@ def auto_translate(db_, sentence_list, source_lang, target_lang, punctuations=No
     '''Attempts to tokenize the input sentence and replace each token with top suggestion.
     If draft_meta is provided indicating some portion of sentence is user translated,
     then it is left untouched.'''
-    args = {"db_":db_, "src_lang":source_lang, "include_stopwords":True, "include_phrases":False}
+    args = {"db_":db_, "src_lang":source_lang, "include_stopwords":True, "include_phrases":True}
     if punctuations:
         args['punctuations'] = punctuations
     if stop_words:
