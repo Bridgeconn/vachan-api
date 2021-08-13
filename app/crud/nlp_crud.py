@@ -433,7 +433,8 @@ def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
     for obj in phrases: #check and eliminate non-continuous phrase alignments
         deleted = False
         for i in range(len(obj['src_indices'])-1):
-            if obj['src_indices'][i] + 1 !=  obj['src_indices'][i+1]:
+            if ((obj['src_indices'][i] != obj['src_indices'][i+1])
+                and (obj['src_indices'][i] + 1 !=  obj['src_indices'][i+1])):
                 log.warning("Eliminating non-continuous src phrase:%s, in %s",
                     obj['src_indices'], src_tok_list)
                 phrases.remove(obj)
@@ -441,7 +442,8 @@ def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
         if deleted:
             continue
         for i in range(len(obj['trg_indices'])-1):
-            if obj['trg_indices'][i] + 1 !=  obj['src_indices'][i+1]:
+            if ((obj['trg_indices'][i] != obj['trg_indices'][i])
+                and (obj['trg_indices'][i] + 1 !=  obj['src_indices'][i+1])):
                 log.warning("Eliminating non-continuous trg phrase:%s, in %s",
                     obj['trg_indices'], trg_tok_list)
                 phrases.remove(obj)
