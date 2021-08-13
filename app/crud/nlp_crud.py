@@ -769,7 +769,7 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang, first_pass=
     for sense in sorted_trans:
         scored_trans[sense[0]]=sense[1]/total
     result = {}
-    if no_trie_match:
+    if no_trie_match and matched_word:
         result['token'] = matched_word
     else:
         result['token'] = word
