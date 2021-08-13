@@ -22,6 +22,7 @@ def assert_positive_get_tokens_gql(item):
 
 tokens_trans = [
     {"token":"test", "translations":["ടെസ്റ്റ്"]},
+    {"token":"the", "translations":[""]},
     {"token":"test case", "translations":["ടെസ്റ്റ് കേസ്"]},
     {"token":"deveopler", "translations":["ടെവെലപ്പര്‍"]},
     {"token":"run", "translations":["റണ്‍"]},
@@ -304,5 +305,5 @@ $punctuations:[String],$stopwords:Stopwords){
     assert "ഒരു ടെസ്റ്റ് കേസ്." in draft["data"]["convertToText"]
     assert "ടെസ്റ്റ് കേസ് ടെസ്റ്റ് ചെയ്തു" in draft["data"]["convertToText"] or "ടെസ്റ്റ് കേസ് ടെസ്റ്റഡ്" in draft["data"]["convertToText"]
     assert "ടെവെലപ്പര്‍" in draft["data"]["convertToText"]
-    assert "ഇത് ആണ് the sad story of a poor ടെസ്റ്റ് " in draft["data"]["convertToText"]
+    assert "ഇത് ആണ്  sad story of a poor ടെസ്റ്റ് " in draft["data"]["convertToText"]
 
