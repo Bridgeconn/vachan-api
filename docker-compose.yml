@@ -9,14 +9,10 @@ services:
    retries: 10
   restart: always
   environment: 
-   - POSTGRES_USER=${POSTGRES_USER}
-   - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+   - POSTGRES_USER=
+   - POSTGRES_PASSWORD=
+   - POSTGRES_DB=postgres
    - POSTGRES_HOST_AUTH_METHOD=trust
-   - POSTGRES_DB=${POSTGRES_DB}
-   - APP_DB_USER=${APP_DB_USER}
-   - APP_DB_PASS=${APP_DB_PASS}
-   - APP_DB_NAME=${APP_DB_NAME}
-  env_file: .env.dev
   logging:
    options:
     max-size: 10m
@@ -27,7 +23,7 @@ services:
    # HOST:CONTAINER
    - "5432:5432"
   networks:
-   - default
+   - my-network
   volumes: 
    - /tmp/postgres-data:/var/lib/postgresql/data
    # All docker files for deplployment and database script
@@ -40,19 +36,22 @@ services:
    context: .
    dockerfile: Dockerfile
   container_name: vachan-app
+  healthcheck:
+   timeout: 45s
+   interval: 10s
+   retries: 10
   environment: 
-   - POSTGRES_USER=${POSTGRES_USER}
-   - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-   - POSTGRES_DB=${POSTGRES_DB}
-   - POSTGRES_HOSTNAME= ${POSTGRES_HOSTNAME}
-   - VACHAN_POSTGRES_HOST=${VACHAN_POSTGRES_HOST}
-   - VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER}
-   - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD}
-   - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE}
-   - VACHAN_POSTGRES_PORT=${VACHAN_POSTGRES_PORT}
-  env_file: .env.dev
+   - POSTGRES_USER=postgres
+   - POSTGRES_PASSWORD=
+   - POSTGRES_DB=
+   - POSTGRES_HOSTNAME=vachan-db
+   - VACHAN_POSTGRES_HOST=vachan-db
+   - VACHAN_POSTGRES_USER=
+   - VACHAN_POSTGRES_PASSWORD=
+   - VACHAN_POSTGRES_DATABASE=
+   - VACHAN_POSTGRES_PORT=
   volumes:
-   - ./app:/app/
+   - ./app:/app/app
   restart: always
   depends_on:
    - vachan-db
@@ -62,10 +61,8 @@ services:
    - 5000
   ports:
    - "5000:5000"
-  # networks:
-  #  my-network:
-  #   aliases:
-  #    - vachan-app
+  networks:
+   - my-network
 
 # Web Server
  web-server:
@@ -81,9 +78,13 @@ services:
    - ./nginx:/nginx/
   depends_on:
    - vachan-api
-#   networks:
-#    - my-network
+  healthcheck:
+   timeout: 45s
+   interval: 10s
+   retries: 10
+  networks:
+   - my-network
 
-# networks:
-#  my-network:              
+networks:
+ my-network:              
                                                                                                                                                                                                                              
