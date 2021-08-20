@@ -1555,6 +1555,9 @@ def uploadSource():
 			log.warning("Exiting uploadSource: No source created: %s",sourceId)
 			return '{"success":false, "message":"No source created"}'
 		bibleTable = rst[0]
+		if "book" not in parsedUsfmText:
+			log.warning("'book' not found in parsedUsfmText")
+			return '{"success":false, "message":"parsedUsfmText not of the expected format"}'
 		bookCode = parsedUsfmText["book"]["bookCode"].lower()
 		cursor.execute("select book_id from bible_books_look_up where book_code=%s",(bookCode,))
 		bookId = cursor.fetchone()[0]
