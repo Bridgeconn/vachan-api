@@ -768,7 +768,7 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang, pass_no=1):
         if row[1] not in trans:
             trans[row[1]] = row[2]/(row[3]+1)
             total += 1
-    if len(trans) == 0 and pass_no<3 and len(word)>3:
+    if len(trans) == 0 and pass_no<3 and len(word)>4:
         # try chopping off the last letter
         chopped_word = word[:-1]
         result = get_gloss(db_, 0, [chopped_word], source_lang, target_lang,
