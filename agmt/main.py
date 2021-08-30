@@ -18,6 +18,7 @@ from datetime import timedelta
 import re
 import json
 import logging
+import traceback
 import flask
 from flask import Flask, request, session, redirect, jsonify, make_response
 from flask import g
@@ -607,11 +608,7 @@ def createAssignments():
 	userId = req["userId"]
 	projectId = req["projectId"]
 	books = req["books"]
-	action = req["action"]
-	if not isinstance(books, list):
-		return '{"success":false, "message":"books expects an array of book codes"}'
-	if action not in ['assign', 'add_user']:
-		return '{"success":false, "message": "action should be assign or add_user"}'
+	# action = req["action"]
 	connection = get_db()
 	cursor = connection.cursor()
 	cursor.execute("select * from autographamt_assignments where user_id=%s and project_id=%s", (
@@ -619,33 +616,19 @@ def createAssignments():
 	))
 	rst = cursor.fetchone()
 
-	if action == "add_user":
-		'''when the action=add_user 
-		we check and ensure that the user-project pair do not exists in the assignments table 
-		and add a new entry to it. Book list can be empty or can have list of book code '''
-		if rst is not None:
-			return '{"success":false, "message":"User already added to project"}'
+	if not rst:
+
 		books = "|".join(books)
 		cursor.execute("insert into autographamt_assignments (books, user_id, project_id) \
 			values (%s, %s, %s)", (books, userId, projectId))
 		connection.commit()
-		return_message = '{"success":true, "message":"User added"}'
+		cursor.close()
+		return '{"success":true, "message":"User Role Assigned"}'
 
-	if action == "assign":
-		'''when the action=assign 
-		we check and ensure that the user-project pair exists in the assignments table 
-		and replace already present books with the new list. Book list can be empty or can have list of book code '''
-		if not rst:
-			return '{"success":false, "message":"User not added to project yet"}'
-		old_books = [buk for buk in rst[1].split('|') if buk != ""]
-		books = [buk for buk in books if buk != ""]
-		if sorted(old_books) == sorted(books):
-			return '{"success":false, "message":"No change in book assignments"}'
-		books = "|".join(books)
-		cursor.execute("update autographamt_assignments set books=%s where user_id=%s and \
-			project_id=%s", (books, userId, projectId))
-		connection.commit()
-		return_message = '{"success":true, "message":"Book assignments updated"}'
+	books = "|".join(books)
+	cursor.execute("update autographamt_assignments set books=%s where user_id=%s and \
+		project_id=%s", (books, userId, projectId))
+	connection.commit()
 	# send email notification
 	try:
 		cursor.execute("SELECT first_name, email_id from autographamt_users where user_id=%s",(userId,))
@@ -673,7 +656,8 @@ def createAssignments():
 	except Exception as e:
 		print(e)
 		return '{"success":false, "message":'+str(e)+'}'
-	return return_message
+
+	return '{"success":true, "message":"User Role Updated"}'
 
 @app.route("/v1/autographamt/projects/assignments", methods=["DELETE"])
 def removeUserFromProject():
@@ -1423,24 +1407,23 @@ def parseDataForDBInsert(usfmData):
 	cursor = connection.cursor()
 	cursor.execute("select book_id, book_code from bible_books_look_up")
 	bookIdDict = {v.lower():k for k,v in cursor.fetchall()}
-	bookName = usfmData["metadata"]["id"]["book"].lower()
+	bookName = usfmData["book"]["bookCode"].lower()
 	chapterData = usfmData["chapters"]
 	dbInsertData = []
 	verseContent = []
 	bookId = bookIdDict[bookName]
 	for chapter in chapterData:
-		chapterNumber = chapter["header"]["title"]
-		verseData = chapter["verses"]
-		for verse in verseData:
+		chapterNumber = chapter["chapterNumber"]
+		verseData = chapter["contents"]
+		for content in verseData:
 			crossRefs = ""
 			footNotes = ""
-			if 'metadata' in verse and 'cross-ref' in verse['metadata']:
-				crossRefs = verse['metadata']['cross-ref']
-			if 'metadata' in verse and 'footnote' in verse['metadata']:
-				footNotes = verse['metadata']['footnote']
-			verseNumber = verse['number'].strip()
+			verseNumber = content.get('verseNumber',"").strip() if isinstance(content, dict) else ""
+			if not verseNumber:
+				# not a verse
+				pass
 			if normalVersePattern.match(verseNumber):
-				verseText = verse["text"]
+				verseText = content["verseText"]
 				dbVerseText = verseText
 				bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
 					+ str(verseNumber).zfill(3))
@@ -1453,7 +1436,7 @@ def parseDataForDBInsert(usfmData):
 				postScript = matchObj.group(2)
 				verseNumber = matchObj.group(1)
 				if postScript == 'a':
-					verseText = verse['text']
+					verseText = content['verseText']
 					dbVerseText = verseText
 					bcv = int(str(bookId).zfill(3) + str(chapterNumber).zfill(3) \
 						+ str(verseNumber).zfill(3))
@@ -1463,13 +1446,13 @@ def parseDataForDBInsert(usfmData):
 				else:
 					prevdbInsertData = dbInsertData[-1]
 
-					verseText = prevdbInsertData[1] + ' '+ verse['text']
+					verseText = prevdbInsertData[1] + ' '+ content['verseText']
 					dbVerseText = verseText
 					dbInsertData[-1] = (prevdbInsertData[0], dbVerseText, prevdbInsertData[2],prevdbInsertData[3])
 					verseContent[-1] = verseText
 			elif mergedVersePattern.match(verseNumber):
 				## keep the whole text in first verseNumber of merged verses
-				verseText = verse['text']
+				verseText = content['verseText']
 				dbVerseText = verseText
 				matchObj = mergedVersePattern.match(verseNumber)
 				verseNumber = matchObj.group(1)
@@ -1488,8 +1471,7 @@ def parseDataForDBInsert(usfmData):
 					verseContent.append('')
 
 			else:
-				print("!!!Unrecognized pattern in verse number!!!")
-				print("verseNumber:",verse['number'])
+				log.info("Unrecognized pattern in %s chapter %s verse %s",bookName, chapterNumber, verseNumber)
 	return dbInsertData
 
 def createTableCommand(fields, tablename):
@@ -1578,7 +1560,7 @@ def uploadSource():
 			log.warning("Exiting uploadSource: No source created: %s",sourceId)
 			return '{"success":false, "message":"No source created"}'
 		bibleTable = rst[0]
-		bookCode = parsedUsfmText["metadata"]["id"]["book"].lower()
+		bookCode = parsedUsfmText["book"]["bookCode"].lower()
 		cursor.execute("select book_id from bible_books_look_up where book_code=%s",(bookCode,))
 		bookId = cursor.fetchone()[0]
 		cursor.execute(sql.SQL("select * from {} where book_id=%s").format(sql.Identifier(bibleTable)),(bookId,))
@@ -1830,12 +1812,16 @@ def downloadDraft():
 						print('translated_seq:',translated_seq)
 						print(nonLangComps,nonLangCompsFrontSpace,nonLangCompsTrailingSpace,nonLangCompsTwoSpaces)
 					for comp in nonLangCompsTwoSpaces:
+						comp = comp.replace("\\", '\\\\')
 						outputLine = re.sub(r' uuuQQQuuu '," "+comp+" ",outputLine,1)
 					for comp in nonLangCompsTrailingSpace:
+						comp = comp.replace("\\", '\\\\')
 						outputLine = re.sub(r' QQQuuu ',comp+" ",outputLine,1)
 					for comp in nonLangCompsFrontSpace:
+						comp = comp.replace("\\", '\\\\')
 						outputLine = re.sub(r' uuuQQQ '," "+comp,outputLine,1)
 					for comp in nonLangComps:
+						comp = comp.replace("\\", '\\\\')
 						outputLine = re.sub(r' QQQ ',comp,outputLine,1)
 					outputLine = re.sub(r'\s+',' ',outputLine)
 					# print(outputLine)
@@ -1849,7 +1835,7 @@ def downloadDraft():
 		else:
 			return '{"success": false, "message":"No translation available"}'
 	except Exception as e:
-		print(e)
+		traceback.print_exc()
 		print("line:",line)
 		print(marker,'of',markers_in_line)
 		print('usfmWordsList:',usfmWordsList)
