@@ -638,9 +638,14 @@ def createAssignments():
 		cursor.close()
 		headers = {"api-key": sendinblue_key}
 		url = "https://api.sendinblue.com/v2.0/email"
-		body = '''Hello %s,<br/><br/>
-		Books %s has been assigned to you in project %s.<br/><br/>
-		AutographaMT'''%(name, books.replace('|', ", "), project)
+		if action == "assign":
+			body = '''Hello %s,<br/><br/>
+			Your books assignment has changed to, %s, in project, %s.<br/><br/>
+			AutographaMT'''%(name, books.replace('|', ", "), project)
+		if action == "add_user":
+			body = '''Hello %s,<br/><br/>
+			You have been added to the project, %s.<br/><br/>
+			AutographaMT'''%(name, project)
 		payload = {
 			"to": {email: ""},
 			"from": ["noreply@autographamt.in", "Autographa MT"],
