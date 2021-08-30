@@ -292,7 +292,6 @@ $punctuations:[String],$stopwords:Stopwords){
 
     executed_sug = gql_request(suggest_translation_query,operation="query",variables=var_suggest)
     input = executed_sug["data"]["suggestTranslation"]
-    print(input)
     for item in input:
       item["draftMeta"] = json.dumps(item["draftMeta"])
 
