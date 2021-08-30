@@ -40,13 +40,20 @@ mock_translation_memory = ["जीवन के वचन", "जीवन का
                           "यीशु मसीह", "परमेश्‍वर ज्योति", "झूठा ठहराते",
                           "Here is it", "hare", "no"]
 
-def find_phrases(src_text, stop_words, include_phrases=True):
+def find_phrases(src_text, stop_words, include_phrases=True, include_stopwords=False):
     '''try forming phrases as <preposition stop word>* <content word> <postposition stop word>*'''
     words = src_text.split()
-    if not include_phrases:
-        return words
     if not isinstance(stop_words, dict):
         stop_words = stop_words.__dict__
+    sw_list = stop_words['prepositions']+stop_words['postpositions']
+    if not include_phrases:
+        if not include_stopwords:
+            res_words = []
+            for wrd in words:
+                if wrd not in sw_list:
+                    res_words.append(wrd)
+            words = res_words
+        return words
     phrases = []
     current_phrase = ''
     state = 'pre'
@@ -71,6 +78,12 @@ def find_phrases(src_text, stop_words, include_phrases=True):
                     state = 'post'
         i += 1
     phrases.append(current_phrase.strip())
+    if not include_stopwords:
+        res_words = []
+        for wrd in phrases:
+            if wrd not in sw_list:
+                res_words.append(wrd)
+        phrases = res_words
     return phrases
 
 def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, include_phrases=True,
@@ -89,7 +102,7 @@ def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, incl
         punctuations = utils.punctuations()+utils.numbers()
     # fetch all known tokens for the language and build a trie with it
     # We do this fresh for every tokenization request. Can be optimized
-    if use_translation_memory:
+    if use_translation_memory and include_phrases:
         translation_memory = db_.query(db_models.TranslationMemory.token).filter(
             db_models.TranslationMemory.source_language.has(code=src_lang)).all()
         reverse_memory = db_.query(db_models.TranslationMemory.translation).filter(
@@ -103,7 +116,7 @@ def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, incl
         #first split the text into chunks based on punctuations
         chunks = [chunk.strip() for chunk in re.split(r'['+"".join(punctuations)+']+', src_text)]
         updated_chunks = []
-        if use_translation_memory:
+        if use_translation_memory and include_phrases:
             for chunk in chunks:
                 #search the trie to get the longest matching phrases known to us
                 temp = chunk
@@ -131,15 +144,12 @@ def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, incl
             if chunk.startswith('###'):
                 phrases.append(chunk.replace("###",""))
             else:
-                phrases+= find_phrases(chunk,stop_words, include_phrases)
+                phrases+= find_phrases(chunk,stop_words, include_phrases, include_stopwords)
         start = 0
         if not isinstance(stop_words, dict):
             stop_words = stop_words.__dict__
-        sw_list = stop_words['prepositions']+stop_words['postpositions']
         for phrase in phrases:
             if phrase.strip() == '':
-                continue
-            if (not include_stopwords) and phrase in sw_list:
                 continue
             offset = sent['sentence'].find(phrase, start)
             if offset == -1:
@@ -433,7 +443,8 @@ def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
     for obj in phrases: #check and eliminate non-continuous phrase alignments
         deleted = False
         for i in range(len(obj['src_indices'])-1):
-            if obj['src_indices'][i] + 1 !=  obj['src_indices'][i+1]:
+            if ((obj['src_indices'][i] != obj['src_indices'][i+1])
+                and (obj['src_indices'][i] + 1 !=  obj['src_indices'][i+1])):
                 log.warning("Eliminating non-continuous src phrase:%s, in %s",
                     obj['src_indices'], src_tok_list)
                 phrases.remove(obj)
@@ -441,7 +452,8 @@ def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
         if deleted:
             continue
         for i in range(len(obj['trg_indices'])-1):
-            if obj['trg_indices'][i] + 1 !=  obj['src_indices'][i+1]:
+            if ((obj['trg_indices'][i] != obj['trg_indices'][i])
+                and (obj['trg_indices'][i] + 1 !=  obj['src_indices'][i+1])):
                 log.warning("Eliminating non-continuous trg phrase:%s, in %s",
                     obj['trg_indices'], trg_tok_list)
                 phrases.remove(obj)
@@ -462,8 +474,9 @@ def alignments_to_trainingdata(db_:Session, src_lang, trg_lang, alignment_list,
     sugg_data = []
     for sent in alignment_list:
         src_len = len(sent.sourceTokenList)
-        phrases = find_pharses_from_alignments(sent.sourceTokenList, sent.targetTokenList,
-            sent.alignedTokens)
+        src_toks = [utils.normalize_unicode(tok) for tok in sent.sourceTokenList]
+        trg_toks = [utils.normalize_unicode(tok) for tok in sent.targetTokenList]
+        phrases = find_pharses_from_alignments(src_toks, trg_toks, sent.alignedTokens)
         for obj in phrases:
             ## prepare data for translation memory/gloss
             if obj["token"] in dict_data:
@@ -685,7 +698,7 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0
     result_list = [result_dict[entry] for entry in result_dict]
     return result_list
 
-def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: disable=too-many-locals
+def get_gloss(db_:Session, index, context, source_lang, target_lang, pass_no=1): # pylint: disable=too-many-locals
     '''find the context based translation suggestions(gloss) for a word.
     Makes use of the learned model(trie), for the lang pair, based on translation memory
     output format: [(translation1, score1), (translation2, score2), ...]'''
@@ -700,6 +713,7 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
     to_right = context[index+1:]
     trans = {}
     total = 0
+    no_trie_match = True
     if len(to_right)+len(to_left) > 0:
         keys = form_trie_keys(word, to_left, to_right, [word], False)
         if source_lang+"-"+target_lang in suggestion_trie_in_mem: # check if aleady loaded in memory
@@ -710,6 +724,7 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
         for key in keys:
             if tree.has_subtrie(key) or tree.has_key(key):
                 # print("found:",key)
+                no_trie_match = False
                 nodes = tree.values(key)
                 level = len(key.split("/"))
                 for nod in nodes:
@@ -726,28 +741,40 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
         db_models.TranslationMemory.token,
         db_models.TranslationMemory.translation,
         db_models.TranslationMemory.frequency,
-        text("levenshtein(source_token,'%s') as lev_score"%word)
+        text("levenshtein(source_token,:word1) as lev_score").bindparams(word1=word)
         ).filter(
             db_models.TranslationMemory.source_language.has(code=source_lang),
             db_models.TranslationMemory.target_language.has(code=target_lang),
-            text("soundex(source_token_romanized) = soundex('%s')"%utils.to_eng(word)),
-            text("levenshtein(source_token,'%s') < 4"%word))
+            text("soundex(source_token_romanized) = soundex(:word2)").\
+                bindparams(word2=utils.to_eng(word)),
+            text("levenshtein(source_token,:word3) < 4").bindparams(word3=word))
     reverse_query = db_.query(db_models.TranslationMemory).with_entities(
         db_models.TranslationMemory.translation,
         db_models.TranslationMemory.token,
         db_models.TranslationMemory.frequency,
-        text("levenshtein(translation,'%s') as lev_score"%word)
+        text("levenshtein(translation,:word1) as lev_score").bindparams(word1=word)
         ).filter(
             db_models.TranslationMemory.source_language.has(code=target_lang),
             db_models.TranslationMemory.target_language.has(code=source_lang),
-            text("soundex(translation_romanized) = soundex('%s')"%utils.to_eng(word)),
-            text("levenshtein(translation,'%s') < 4"%word))
+            text("soundex(translation_romanized) = soundex(:word2)").\
+                bindparams(word2=utils.to_eng(word)),
+            text("levenshtein(translation,:word3) < 4").bindparams(word3=word))
     forward_dict_entires =  forward_query.all()
     reverse_dict_entires = reverse_query.all()
+    matched_word = None
     for row in forward_dict_entires+ reverse_dict_entires:
+        if not matched_word:
+            matched_word = row[0]
         if row[1] not in trans:
             trans[row[1]] = row[2]/(row[3]+1)
             total += 1
+    if len(trans) == 0 and pass_no<3 and len(word)>4:
+        # try chopping off the last letter
+        chopped_word = word[:-1]
+        result = get_gloss(db_, 0, [chopped_word], source_lang, target_lang,
+            pass_no=pass_no+1)
+        if len(result['translations']) > 0:
+            return result
     if total == 0:
         total = 1
     sorted_trans = sorted(trans.items(), key=lambda x:x[1], reverse=True)
@@ -755,7 +782,10 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang): # pylint: 
     for sense in sorted_trans:
         scored_trans[sense[0]]=sense[1]/total
     result = {}
-    result['token'] = word
+    if no_trie_match and matched_word:
+        result['token'] = matched_word
+    else:
+        result['token'] = word
     result['translations'] = scored_trans
     # check for metadata
     metadata_query = db_.query(db_models.TranslationMemory.metaData).filter(
@@ -783,7 +813,7 @@ def auto_translate(db_, sentence_list, source_lang, target_lang, punctuations=No
     '''Attempts to tokenize the input sentence and replace each token with top suggestion.
     If draft_meta is provided indicating some portion of sentence is user translated,
     then it is left untouched.'''
-    args = {"db_":db_, "src_lang":source_lang, "include_stopwords":True, "include_phrases":False}
+    args = {"db_":db_, "src_lang":source_lang, "include_stopwords":False, "include_phrases":True}
     if punctuations:
         args['punctuations'] = punctuations
     if stop_words:
@@ -823,6 +853,7 @@ def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range,
                 if meta[2] == "suggestion":
                     row.draftMeta[i][2] = "confirmed"
                     flag_modified(row, 'draftMeta')
+        # db_.add_all(draft_rows)
         db_.commit()
         return draft_rows
     args = {"db_":db_, "sentence_list":draft_rows,

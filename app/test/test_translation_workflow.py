@@ -256,10 +256,10 @@ alignment_data = [
         "sourceTokenIndex": 1,
         "targetTokenIndex": 8
       },
-      {
-        "sourceTokenIndex": 2,
-        "targetTokenIndex": 8
-      },
+      # {
+      #   "sourceTokenIndex": 2,
+      #   "targetTokenIndex": 8
+      # },
       {
         "sourceTokenIndex": 3,
         "targetTokenIndex": 12

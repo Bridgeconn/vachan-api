@@ -213,7 +213,7 @@ def test_tokenize_with_diff_flags():
     assert "यीशु मसीह" in all_tokens
     assert "की" in all_tokens
 
-    var["phrase"] = False
+    var["phrase"] = True
     var["sw"] = False
     var["tm"] = True
     executed5 = gql_request(query_tokenize,operation="query",variables=var)
