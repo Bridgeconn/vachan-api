@@ -658,7 +658,7 @@ def createAssignments():
 		if action == "assign":
 			body = '''Hello %s,<br/><br/>
 			Your books assignment has changed to, %s, in project, %s.<br/><br/>
-			AutographaMT'''%(name, ", ".join(books), project)
+			AutographaMT'''%(name, books.replace('|', ", "), project)
 		if action == "add_user":
 			body = '''Hello %s,<br/><br/>
 			You have been added to the project, %s.<br/><br/>
