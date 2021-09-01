@@ -9,17 +9,19 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 
+
 #pylint: disable=E0401
 #pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 from custom_exceptions import GenericException
-from custom_exceptions import NotAvailableException, AlreadyExistsException, TypeException
+from custom_exceptions import NotAvailableException, AlreadyExistsException, TypeException , PermisionException
 import db_models
 from database import engine
 from dependencies import get_db, log
 
 from schemas import NormalResponse
-from routers import content_apis, translation_apis
+from routers import content_apis, translation_apis, auth_api
 from graphql_api import router as gql_router
+from authentication import create_super_user
 
 app = FastAPI()
 app.add_middleware(
@@ -29,6 +31,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+create_super_user()
 
 ######### Error Handling ##############
 @app.exception_handler(Exception)
@@ -105,6 +109,17 @@ async def type_exception_handler(request, exc: TypeException):
         content={"error": exc.name, "details" : exc.detail},
     )
 
+@app.exception_handler(PermisionException)
+async def permision_exception_handler(request, exc: PermisionException):
+    '''logs and returns error details'''
+    log.error("Request URL:%s %s,  from : %s",
+        request.method ,request.url.path, request.client.host)
+    log.exception("%s: %s",exc.name, exc.detail)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": exc.name, "details" : exc.detail},
+    )    
+
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request, exc):
     '''logs and returns error details'''
@@ -137,6 +152,7 @@ async def unique_violation_exception_handler(request, exc: IntegrityError):
         status_code=409,
         content={"error": "Already Exists", "details" : str(exc.orig).replace("DETAIL","")},
     )
+    
 ######################################################
 
 db_models.map_all_dynamic_tables(db_= next(get_db()))
@@ -151,3 +167,4 @@ def test(db_: Session = Depends(get_db)):
 app.include_router(content_apis.router)
 app.include_router(translation_apis.router)
 app.include_router(gql_router)
+app.include_router(auth_api.router)
