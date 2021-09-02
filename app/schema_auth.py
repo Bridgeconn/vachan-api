@@ -1,3 +1,4 @@
+"""schema for auth related"""
 from pydantic import BaseModel
 
 class AuthDetails(BaseModel):
@@ -17,3 +18,7 @@ class userrole(BaseModel):
     """kratos user role"""
     userid:str
     roles:list
+
+class user_identity(BaseModel):
+    """kratos user role"""
+    userid:str

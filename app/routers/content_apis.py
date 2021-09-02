@@ -7,9 +7,9 @@ from sqlalchemy.orm import Session
 #pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 import schemas
 from dependencies import get_db, log
-from custom_exceptions import NotAvailableException, AlreadyExistsException , PermisionException
+from custom_exceptions import NotAvailableException, AlreadyExistsException
 from crud import structurals_crud, contents_crud
-from authentication import AuthHandler, verify_role_permision
+from authentication import AuthHandler
 
 router = APIRouter()
 auth_handler = AuthHandler()
