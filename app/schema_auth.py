@@ -1,11 +1,16 @@
 """schema for auth related"""
+#No name 'BaseModel' in module 'pydantic' (no-name-in-module)
+#pylint: disable=E0611
 from pydantic import BaseModel
 
+#Too few public methods (0/2) (too-few-public-methods)
+#pylint: disable=R0903
 class AuthDetails(BaseModel):
     """schema for authentication input"""
     username:str
     password:str
 
+#pylint: disable=R0903
 class Registration(BaseModel):
     """kratos registration input"""
     email:str
@@ -14,47 +19,56 @@ class Registration(BaseModel):
     lastname:str
     appname:str
 
-class userrole(BaseModel):
+#pylint: disable=R0903
+class UserRole(BaseModel):
     """kratos user role input"""
     userid:str
     roles:list
 
-class user_identity(BaseModel):
+#pylint: disable=R0903
+class UserIdentity(BaseModel):
     """kratos user role input"""
     userid:str
 
-class registration_out(BaseModel):
+#pylint: disable=R0903
+class RegistrationOut(BaseModel):
     """registration output"""
     id:str
     email:str
     Permisions:list
 
-class register_response(BaseModel):
+#pylint: disable=R0903
+class RegisterResponse(BaseModel):
     """Response object of registration"""
     details:str
-    registered_details:registration_out
+    registered_details:RegistrationOut
     token:str = None
 
-class login_response(BaseModel):
+#pylint: disable=R0903
+class LoginResponse(BaseModel):
     """Response object of login"""
     details:str
     token:str
 
-class logout_response(BaseModel):
+#pylint: disable=R0903
+class LogoutResponse(BaseModel):
     """Response object of logout"""
     message:str
 
-class commmon_error(BaseModel):
+#pylint: disable=R0903
+class CommmonError(BaseModel):
     """login error"""
     error:str
     details:str
 
-class userrole_response(BaseModel):
+#pylint: disable=R0903
+class UseroleResponse(BaseModel):
     """user role update response"""
     details:str
     role_list:list
 
-class identity_delete_response(BaseModel):
+#pylint: disable=R0903
+class IdentityDeleteResponse(BaseModel):
     """user identity delete response"""
     success:str
         
