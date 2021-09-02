@@ -1,8 +1,7 @@
 """router for authentication endpoints"""
-import json
-from custom_exceptions import NotAvailableException
 from fastapi import APIRouter, Depends
 #pylint: disable=E0401
+from custom_exceptions import NotAvailableException
 from authentication import AuthHandler
 import schema_auth
 #pylint: disable=C0412
@@ -70,17 +69,13 @@ permision = Depends(auth_handler.kratos_session_validation)):
     verified = verify_role_permision(api_name="delete_identity",permision=permision)
     if verified:
         response = delete_identity(user.userid)
+        #pylint: disable=R1720
         if response.status_code == 404:
             raise NotAvailableException("Unable to locate the resource")
         else:
-            id = user.userid
-            out =  {"success":"deleted identity %s"%id}
+            #pylint: disable=C0103
+            user_id = user.userid
+            out =  {"success":"deleted identity %s"%user_id}
     else:
         raise PermisionException("User have no permision to access API")
     return out
-
-"""responses={403: {"model": schema_auth.commmon_error},
-401: {"model": schema_auth.commmon_error},
-404: {"model": schema_auth.commmon_error}},
-
-"""

@@ -2,12 +2,12 @@
 import os
 import json
 import requests
-from custom_exceptions import NotAvailableException
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 #pylint: disable=E0401
 #pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
-from custom_exceptions import GenericException , PermisionException , AlreadyExistsException
+from custom_exceptions import GenericException , PermisionException ,\
+     AlreadyExistsException,NotAvailableException
 
 PUBLIC_BASE_URL = os.environ.get("KRATOS_PUBLIC_BASE_URL", "http://127.0.0.1:4433/self-service/")
 ADMIN_BASE_URL = os.environ.get("KRATOS_ADMIN_BASE_URL", "http://127.0.0.1:4434/")
