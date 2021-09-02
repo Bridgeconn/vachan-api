@@ -35,7 +35,6 @@ def register(data):
         assert isinstance(response.json()["registered_details"],dict)
         assert "id" in response.json()["registered_details"]
         assert "email" in response.json()["registered_details"]
-        assert "Name" in response.json()["registered_details"]
         assert "Permisions" in response.json()["registered_details"]
         assert "token" in response.json()
         token =  response.json()['token']
@@ -328,13 +327,11 @@ def test_role_assignment_superadmin():
     role_list = ["VachanAdmin"]
     response1 = assign_roles(data,user1_id,role_list)
     assert response1.status_code == 200
-    assert response1.json()["Success"]
     assert response1.json()["role_list"] == ["None", "VachanAdmin"]
 
     role_list = ["AgAdmin"]
     response2 = assign_roles(data,user2_id,role_list)
     assert response2.status_code == 200
-    assert response2.json()["Success"]
     assert response2.json()["role_list"] == ["None", "AgAdmin"]
 
     delete_user_identity(user1_id)

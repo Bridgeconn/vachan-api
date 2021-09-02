@@ -2,6 +2,7 @@
 import os
 import json
 import requests
+from custom_exceptions import NotAvailableException
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 #pylint: disable=E0401
@@ -233,7 +234,7 @@ def user_role_add(user_id,roles_list):
         user_data = json.loads(response.content)
 
     else:
-        raise HTTPException(status_code=401, detail=json.loads(response.content))
+        raise NotAvailableException("Content is unavailable")
 
     schema_id = user_data["schema_id"]
     state = user_data["state"]
