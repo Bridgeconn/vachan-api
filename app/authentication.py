@@ -6,13 +6,14 @@ from fastapi import HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 #pylint: disable=E0401
 #pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
+from dependencies import log
 from custom_exceptions import GenericException , PermisionException ,\
      AlreadyExistsException,NotAvailableException
 
-PUBLIC_BASE_URL = os.environ.get("KRATOS_PUBLIC_BASE_URL", "http://127.0.0.1:4433/self-service/")
+PUBLIC_BASE_URL = os.environ.get("KRATOS_PUBLIC_BASE_URL"+"self-service/",
+                                    "http://127.0.0.1:4433/self-service/")
 ADMIN_BASE_URL = os.environ.get("KRATOS_ADMIN_BASE_URL", "http://127.0.0.1:4434/")
-USER_SESSION_URL = os.environ.get("KRATOS_USER_SESSION_URL",\
-     "http://127.0.0.1:4433/sessions/whoami")
+USER_SESSION_URL = os.environ.get("KRATOS_PUBLIC_BASE_URL") + "sessions/whoami"
 SUPER_USER = os.environ.get("SUPER_USERNAME")
 SUPER_PASSWORD = os.environ.get("SUPER_PASSWORD")
 
@@ -30,11 +31,6 @@ access_roles = {
     "delete_identity":["SuperAdmin"]
 }
 
-#Roles based on app
-app_based_role = {
-    "ag":"aguser",
-    "vachan":"vachanuser"
-}
 
 #check roles for api
 def verify_role_permision(api_name,permision):
@@ -114,21 +110,16 @@ def get_all_kratos_users():
 #pylint: disable=R0914
 #pylint: disable=R1710
 #pylint: disable=R0912
-def user_register_kratos(register_details):
+def user_register_kratos(register_details,app_type):
     """user registration kratos"""
     email = register_details.email
     password = register_details.password
     firstname = register_details.firstname
     lastname = register_details.lastname
-    appname = register_details.appname
 
-    appname = appname.lower()
     #check auto role assign
     #pylint: disable=R1715
-    if appname in app_based_role:
-        user_role = app_based_role[appname]
-    else:
-        user_role = "None"
+    user_role = app_type
 
     register_url = PUBLIC_BASE_URL+"registration/api"
     reg_flow = requests.get(register_url)
@@ -139,7 +130,7 @@ def user_register_kratos(register_details):
         reg_data = {"traits.email": email,
                      "traits.name.first": firstname,
                      "traits.name.last": lastname,
-                     "password": password,
+                     "password": password.get_secret_value(),
                      "traits.userrole":user_role,
                      "method": "password"}
         headers = {}
@@ -151,7 +142,7 @@ def user_register_kratos(register_details):
         if reg_req.status_code == 200:
             name_path = reg_response["identity"]["traits"]["name"]
             data={
-                "details":"Registration Successfull",
+                "message":"Registration Successfull",
                 "registered_details":{
                     "id":reg_response["identity"]["id"],
                     "email":reg_response["identity"]["traits"]["email"],
@@ -176,7 +167,7 @@ def user_register_kratos(register_details):
                                 return_data = user_role_add(current_user_id,role_list)
                                 if return_data["Success"]:
                                     data={
-                                        "details":"User Already Registered, New Permision updated",
+                                        "message":"User Already Registered, New Permision updated",
                                         "registered_details":{
                                             "id":current_user_id,
                                             "email":email,
@@ -184,8 +175,6 @@ def user_register_kratos(register_details):
                                             }
                                     }
                                     return data
-                                else:
-                                    return return_data
                             else:
                                 raise HTTPException(status_code=reg_req.status_code, \
                                     detail=reg_response["ui"]["messages"][0]["text"])
@@ -193,24 +182,22 @@ def user_register_kratos(register_details):
                     raise HTTPException(status_code=reg_req.status_code,\
                          detail=reg_response["ui"]["messages"][0]["text"])
 
-def user_login_kratos(auth_details):
+def user_login_kratos(username,password):
     "kratos login"
-    username = auth_details.username
-    password =  auth_details.password
     data = {"details":"","token":""}
-
     login_url = PUBLIC_BASE_URL+"login/api/"
     flow_res = requests.get(login_url)
     if flow_res.status_code == 200:
         flow_res = json.loads(flow_res.content)
         flow_id = flow_res["ui"]["action"]
 
-        cred_data = {"password_identifier": username, "password": password, "method": "password"}
+        cred_data = {"password_identifier": username, "password": password.get_secret_value()
+                    , "method": "password"}
         login_req = requests.post(flow_id, json=cred_data)
         if login_req.status_code == 200:
             login_req = json.loads(login_req.content)
             session_id = login_req["session_token"]
-            data["details"] = "Login Succesfull"
+            data["message"] = "Login Succesfull"
             data["token"] = session_id
         else:
             raise HTTPException(status_code=401, detail="Invalid Credential")
@@ -234,7 +221,7 @@ def user_role_add(user_id,roles_list):
         user_data = json.loads(response.content)
 
     else:
-        raise NotAvailableException("Content is unavailable")
+        raise NotAvailableException("Requested User Not Found")
 
     schema_id = user_data["schema_id"]
     state = user_data["state"]
@@ -268,13 +255,13 @@ def user_role_add(user_id,roles_list):
             resp_data = json.loads(response.content)
             #pylint: disable=R1705
             if roles_list == resp_data["traits"]["userrole"]:
-                return {"Success":True,"details":"User Roles Updated",
+                return {"Success":True,"message":"User Roles Updated",
                         "role_list": resp_data["traits"]["userrole"]
                 }
             else:
-                return {"Success":False,"details":"Something went wrong .. Try again!"}
+                raise GenericException("User Role not updated properly.Check details provided")
         else:
-            raise HTTPException(status_code=401, detail=json.loads(response.content))
+            raise GenericException(response.content)
 
 #Create Super User
 def create_super_user():
@@ -307,8 +294,9 @@ def create_super_user():
             headers["Content-Type"] = "application/json"
             reg_req = requests.post(reg_flow_id,headers=headers,json=reg_data)
             if reg_req.status_code == 200:
-                print("Super Admin Created")
+                log.info('Super Admin already exist')
             elif reg_req.status_code == 400:
-                raise HTTPException(status_code=401, detail="Error on creating Super Admin")
+                log.error(reg_req.content)
+                raise HTTPException(status_code=400, detail="Error on creating Super Admin")
     else:
-        print("Super Admin already exist")
+        log.info('Super Admin already exist')

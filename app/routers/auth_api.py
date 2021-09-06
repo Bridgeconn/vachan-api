@@ -1,9 +1,12 @@
 """router for authentication endpoints"""
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
+#pylint: disable=E0611
+from pydantic.types import SecretStr
 #pylint: disable=E0401
 from custom_exceptions import NotAvailableException
 from authentication import AuthHandler
 import schema_auth
+import schemas
 #pylint: disable=C0412
 from authentication import user_register_kratos,user_login_kratos,user_role_add ,\
      verify_role_permision,delete_identity
@@ -13,43 +16,44 @@ router = APIRouter()
 auth_handler = AuthHandler()
 
 #Authentication apis
-@router.post('/register',response_model=schema_auth.RegisterResponse,
-responses={400: {"model": schema_auth.CommmonError}},
-tags=["Authentication"])
-def register(register_details:schema_auth.Registration):
-    """user register | Values for App Name : ag , vachan, None """
-    data = user_register_kratos(register_details)
+@router.post('/v2/user/register',response_model=schema_auth.RegisterResponse,
+responses={400: {"model": schemas.ErrorResponse}},
+status_code=201,tags=["Authentication"])
+def register(register_details:schema_auth.Registration,
+app_type: schema_auth.AppType=Query(schema_auth.AppType.none)):
+    """user register"""
+    data = user_register_kratos(register_details,app_type)
     return data
 
-@router.post('/login',response_model=schema_auth.LoginResponse,
-responses={401: {"model": schema_auth.CommmonError}},
-tags=["Authentication"])
-def login(auth_details:schema_auth.AuthDetails):
+@router.get('/v2/user/login',response_model=schema_auth.LoginResponse,
+responses={401: {"model": schemas.ErrorResponse}}
+,tags=["Authentication"])
+def login(username: str,password: SecretStr):
     """user login"""
-    data = user_login_kratos(auth_details)
+    data = user_login_kratos(username,password)
     return data
 
-@router.post('/logout',response_model=schema_auth.LogoutResponse,
-responses={403: {"model": schema_auth.CommmonError},
-401: {"model": schema_auth.CommmonError}},
-tags=["Authentication"])
+@router.get('/v2/user/logout',response_model=schema_auth.LogoutResponse,
+responses={403: {"model": schemas.ErrorResponse},
+401: {"model": schemas.ErrorResponse}}
+,tags=["Authentication"])
 def logout(message = Depends(auth_handler.kratos_logout)):
     """user logout"""
     return message
 
-@router.post('/userrole',response_model=schema_auth.UseroleResponse,
-responses={403: {"model": schema_auth.CommmonError},
-401: {"model": schema_auth.CommmonError}}
-,tags=["Authentication"])
+@router.post('/v2/user/userrole',response_model=schema_auth.UseroleResponse,
+responses={403: {"model": schemas.ErrorResponse},
+401: {"model": schemas.ErrorResponse},
+422: {"model": schemas.ErrorResponse}},
+status_code=201,tags=["Authentication"])
 def userrole(role_data:schema_auth.UserRole,
 permision = Depends(auth_handler.kratos_session_validation)):
-    """Update User Roles
-        User roles should provide in an ARRAY -
-        Array values will overwrite the exisitng array of roles -
-        No roles will be allocated on registration , will be consider as a normal user -
-        avaialable roles are
-        ["VachanAdmin" ,"AgAdmin"]
-    """
+    '''Update User Roles.
+    * User roles should provide in an ARRAY
+    * Array values will overwrite the exisitng array of roles
+    * No roles will be allocated on registration , will be consider as a normal user.
+    * avaialable roles are
+    * [VachanAdmin , AgAdmin , AgUser , VachanUser] '''
     verified = verify_role_permision(api_name="userRole",permision=permision)
     if verified:
         user_id = role_data.userid
@@ -59,10 +63,10 @@ permision = Depends(auth_handler.kratos_session_validation)):
         raise PermisionException("User have no permision to access API")
     return data
 
-@router.delete('/delete-identity',response_model=schema_auth.IdentityDeleteResponse,
-responses={404: {"model": schema_auth.CommmonError},
-401: {"model": schema_auth.CommmonError}},
-tags=["Authentication"])
+@router.delete('/v2/user/delete-identity',response_model=schema_auth.IdentityDeleteResponse,
+responses={404: {"model": schemas.ErrorResponse},
+401: {"model": schemas.ErrorResponse}},
+status_code=200,tags=["Authentication"])
 def delete_user(user:schema_auth.UserIdentity,
 permision = Depends(auth_handler.kratos_session_validation)):
     """identity delete"""
@@ -75,7 +79,7 @@ permision = Depends(auth_handler.kratos_session_validation)):
         else:
             #pylint: disable=C0103
             user_id = user.userid
-            out =  {"success":"deleted identity %s"%user_id}
+            out =  {"message":"deleted identity %s"%user_id}
     else:
         raise PermisionException("User have no permision to access API")
     return out

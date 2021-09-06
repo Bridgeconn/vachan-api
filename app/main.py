@@ -1,5 +1,4 @@
 '''Defines all API endpoints for the web server app'''
-
 from fastapi import FastAPI, Depends
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -9,11 +8,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 
-
 #pylint: disable=E0401
 #pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 from custom_exceptions import GenericException,TypeException , PermisionException
-from custom_exceptions import NotAvailableException, AlreadyExistsException
+from custom_exceptions import NotAvailableException, AlreadyExistsException,UnAuthorizedException
 import db_models
 from database import engine
 from dependencies import get_db, log
@@ -21,7 +19,7 @@ from dependencies import get_db, log
 from schemas import NormalResponse
 from routers import content_apis, translation_apis, auth_api
 from graphql_api import router as gql_router
-#from authentication import create_super_user
+from authentication import create_super_user
 
 app = FastAPI()
 app.add_middleware(
@@ -33,7 +31,7 @@ app.add_middleware(
 )
 
 #Need to un comment this function only if kratos is running-->
-#create_super_user()
+create_super_user()
 
 ######### Error Handling ##############
 @app.exception_handler(Exception)
@@ -112,6 +110,17 @@ async def type_exception_handler(request, exc: TypeException):
 
 @app.exception_handler(PermisionException)
 async def permision_exception_handler(request, exc: PermisionException):
+    '''logs and returns error details'''
+    log.error("Request URL:%s %s,  from : %s",
+        request.method ,request.url.path, request.client.host)
+    log.exception("%s: %s",exc.name, exc.detail)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": exc.name, "details" : exc.detail},
+    )
+
+@app.exception_handler(UnAuthorizedException)
+async def unauthorized_exception_handler(request, exc: UnAuthorizedException):
     '''logs and returns error details'''
     log.error("Request URL:%s %s,  from : %s",
         request.method ,request.url.path, request.client.host)

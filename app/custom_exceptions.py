@@ -52,3 +52,11 @@ class PermisionException(Exception):
         self.name = "Permision Denied"
         self.detail = detail
         self.status_code = 403
+
+class UnAuthorizedException(Exception):
+    """Format for un authorized error"""
+    def __init__(self, detail: str):
+        super().__init__()
+        self.name = "Un Authorized"
+        self.detail = detail
+        self.status_code = 401

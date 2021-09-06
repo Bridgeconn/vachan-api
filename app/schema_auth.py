@@ -2,28 +2,37 @@
 #No name 'BaseModel' in module 'pydantic' (no-name-in-module)
 #pylint: disable=E0611
 from pydantic import BaseModel
+from enum import Enum
+from pydantic.types import SecretStr
 
-#Too few public methods (0/2) (too-few-public-methods)
 #pylint: disable=R0903
-class AuthDetails(BaseModel):
-    """schema for authentication input"""
-    username:str
-    password:str
+class AppType(str, Enum):
+    '''user role based on app'''
+    aguser = 'AgUser'
+    vachanuser = 'VachanUser'
+    none = 'None'
 
 #pylint: disable=R0903
 class Registration(BaseModel):
     """kratos registration input"""
     email:str
-    password:str
-    firstname:str
-    lastname:str
-    appname:str
+    password:SecretStr
+    firstname:str = None
+    lastname:str = None
+
+#pylint: disable=R0903
+class AdminRoles(str, Enum):
+    '''Admin Roles'''
+    vachanadmin = 'VachanAdmin'
+    agadmin = 'AgAdmin'
+    aguser = 'AgUser'
+    vachanuser = 'VachanUser'
 
 #pylint: disable=R0903
 class UserRole(BaseModel):
     """kratos user role input"""
     userid:str
-    roles:list
+    roles:list[AdminRoles]
 
 #pylint: disable=R0903
 class UserIdentity(BaseModel):
@@ -35,19 +44,19 @@ class RegistrationOut(BaseModel):
     """registration output"""
     id:str
     email:str
-    Permisions:list
+    Permisions:list[AppType]
 
 #pylint: disable=R0903
 class RegisterResponse(BaseModel):
     """Response object of registration"""
-    details:str
+    message:str
     registered_details:RegistrationOut
     token:str = None
 
 #pylint: disable=R0903
 class LoginResponse(BaseModel):
     """Response object of login"""
-    details:str
+    message:str
     token:str
 
 #pylint: disable=R0903
@@ -64,11 +73,11 @@ class CommmonError(BaseModel):
 #pylint: disable=R0903
 class UseroleResponse(BaseModel):
     """user role update response"""
-    details:str
+    message:str
     role_list:list
 
 #pylint: disable=R0903
 class IdentityDeleteResponse(BaseModel):
     """user identity delete response"""
-    success:str
+    message:str
         
