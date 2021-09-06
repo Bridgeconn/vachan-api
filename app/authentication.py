@@ -13,7 +13,8 @@ from custom_exceptions import GenericException , PermisionException ,\
 PUBLIC_BASE_URL = os.environ.get("KRATOS_PUBLIC_BASE_URL"+"self-service/",
                                     "http://127.0.0.1:4433/self-service/")
 ADMIN_BASE_URL = os.environ.get("KRATOS_ADMIN_BASE_URL", "http://127.0.0.1:4434/")
-USER_SESSION_URL = os.environ.get("KRATOS_PUBLIC_BASE_URL") + "sessions/whoami"
+USER_SESSION_URL = os.environ.get("KRATOS_PUBLIC_BASE_URL"+ "sessions/whoami",
+                                "http://127.0.0.1:4433/sessions/whoami")
 SUPER_USER = os.environ.get("SUPER_USERNAME")
 SUPER_PASSWORD = os.environ.get("SUPER_PASSWORD")
 

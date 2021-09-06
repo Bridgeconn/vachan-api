@@ -2,6 +2,7 @@
 #No name 'BaseModel' in module 'pydantic' (no-name-in-module)
 #pylint: disable=E0611
 from enum import Enum
+from typing import List
 from pydantic import BaseModel
 from pydantic.types import SecretStr
 
@@ -32,7 +33,7 @@ class AdminRoles(str, Enum):
 class UserRole(BaseModel):
     """kratos user role input"""
     userid:str
-    roles:list[AdminRoles]
+    roles:List[AdminRoles]
 
 #pylint: disable=R0903
 class UserIdentity(BaseModel):
@@ -44,7 +45,7 @@ class RegistrationOut(BaseModel):
     """registration output"""
     id:str
     email:str
-    Permisions:list[AppType]
+    Permisions:List[AppType]
 
 #pylint: disable=R0903
 class RegisterResponse(BaseModel):
