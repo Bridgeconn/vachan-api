@@ -294,7 +294,7 @@ def create_super_user():
             headers["Content-Type"] = "application/json"
             reg_req = requests.post(reg_flow_id,headers=headers,json=reg_data)
             if reg_req.status_code == 200:
-                log.info('Super Admin already exist')
+                log.info('Super Admin created')
             elif reg_req.status_code == 400:
                 log.error(reg_req.content)
                 raise HTTPException(status_code=400, detail="Error on creating Super Admin")

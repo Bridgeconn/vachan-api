@@ -19,7 +19,10 @@ from dependencies import get_db, log
 from schemas import NormalResponse
 from routers import content_apis, translation_apis, auth_api
 from graphql_api import router as gql_router
-from authentication import create_super_user
+#from authentication import create_super_user
+
+#create super user
+#create_super_user()
 
 app = FastAPI()
 app.add_middleware(
@@ -29,9 +32,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-#Need to un comment this function only if kratos is running-->
-create_super_user()
 
 ######### Error Handling ##############
 @app.exception_handler(Exception)

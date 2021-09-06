@@ -2,11 +2,11 @@
 import os
 from . import assert_input_validation_error, client
 
-LOGIN_URL = '/login'
-REGISTER_URL = '/register'
-LOGOUT_URL = '/logout'
-USERROLE_URL = '/userrole'
-DELETE_URL = '/delete-identity'
+LOGIN_URL = '/v2/user/login'
+REGISTER_URL = '/v2/user/register'
+LOGOUT_URL = '/v2/user/logout'
+USERROLE_URL = '/v2/user/userrole'
+DELETE_URL = '/v2/user/delete-identity'
 SUPER_USER = os.environ.get("SUPER_USERNAME")
 SUPER_PASSWORD = os.environ.get("SUPER_PASSWORD")
 ADMIN_BASE_URL = os.environ.get("KRATOS_ADMIN_BASE_URL")
@@ -14,10 +14,11 @@ ADMIN_BASE_URL = os.environ.get("KRATOS_ADMIN_BASE_URL")
 #login check
 def login(data):
     '''test for login feature'''
-    headers = {"contentType": "application/json", "accept": "application/json"}
-    response = client.post(LOGIN_URL, headers=headers, json=data)
+    #headers = {"contentType": "application/json", "accept": "application/json"}
+    params = f"?username={data['username']}&password={data['password']}"
+    response = client.get(LOGIN_URL+params)
     if response.status_code == 200:
-        assert response.json()['details'] == "Login Succesfull"
+        assert response.json()['message'] == "Login Succesfull"
         token =  response.json()['token']
         assert len(token) == 32
     elif response.status_code == 401:
@@ -26,12 +27,13 @@ def login(data):
     return response
 
 #registration check
-def register(data):
+def register(data,apptype):
     """test for registration"""
     headers = {"contentType": "application/json", "accept": "application/json"}
-    response = client.post(REGISTER_URL, headers=headers, json=data)
+    params = f"?app_type={apptype}"
+    response = client.post(REGISTER_URL+params, headers=headers, json=data)
     if response.status_code == 200:
-        assert response.json()["details"] == "Registration Successfull"
+        assert response.json()["message"] == "Registration Successfull"
         assert isinstance(response.json()["registered_details"],dict)
         assert "id" in response.json()["registered_details"]
         assert "email" in response.json()["registered_details"]
@@ -42,16 +44,19 @@ def register(data):
     return response
 
 #appending roles to same user on duplicate registration
-def register_role_appending(data):
+def register_role_appending(data,apptype):
     """test for appending roles for same user registration"""
     headers = {"contentType": "application/json", "accept": "application/json"}
-    response = client.post(REGISTER_URL, headers=headers, json=data)
+    params = f"?app_type={apptype}"
+    response = client.post(REGISTER_URL+params, headers=headers, json=data)
     if response.status_code == 200:
-        assert response.json()["details"] == "User Already Registered, New Permision updated"
+        assert response.json()["message"] == "User Already Registered, New Permision updated"
         assert isinstance(response.json()["registered_details"],dict)
         assert "id" in response.json()["registered_details"]
         assert "email" in response.json()["registered_details"]
         assert "Permisions" in response.json()["registered_details"]
+        assert "token" in response.json()
+        assert response.json()['token'] == 'null'
     return response
 
 #delete created user with super admin authentication
@@ -72,10 +77,10 @@ def delete_user_identity(id):
             }
     response = client.delete(DELETE_URL, headers=headers, json=data)
     assert response.status_code == 200
-    assert response.json()["success"] == \
+    assert response.json()["message"] == \
         "deleted identity "+ id
 
-#role assignemnt
+#role assignment
 def assign_roles(data,user_id,role_list):
     """assign roles to users"""
     response = login(data)
@@ -100,7 +105,7 @@ def logout_user(token):
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+token
             }
-    response = client.post(LOGOUT_URL, headers=headers)
+    response = client.get(LOGOUT_URL, headers=headers)
     return response
 #--------------------------------------------test starts--------------------------------------
 
@@ -129,10 +134,9 @@ def test_login_register():
         "email": "abc@gmail.com",
         "password": "passwordabc@1",
         "firstname": "user registration",
-        "lastname": "ABC Test",
-        "appname": ""
+        "lastname": "ABC Test"
     }
-    response = register(data)
+    response = register(data,apptype=None)
     ABC_id = response.json()["registered_details"]["id"]
 
     #test user ABC login after register
@@ -147,10 +151,9 @@ def test_login_register():
         "email": "abc@gmail.com",
         "password": "passwordabc@1",
         "firstname": "user registration",
-        "lastname": "ABC Test",
-        "appname": ""
+        "lastname": "ABC Test"
     }
-    response = register(data)
+    response = register(data,apptype=None)
     assert response.status_code == 400
     assert response.json()['error'] == "HTTP Error"
     assert response.json()['details'] == \
@@ -158,29 +161,51 @@ def test_login_register():
 
     delete_user_identity(ABC_id)
 
+#test for optional params in registration
+def test_optional_register_params():
+    """test for optional params in the registration"""
+    #app type is none
+    data = {
+        "email": "abc@gmail.com",
+        "password": "passwordabc@1",
+        "firstname": "user registration",
+        "lastname": "ABC Test"
+    }
+    response = register(data,apptype=None)
+    assert response.json()["registered_details"]["Permisions"] == ['None']
+    ABC_id = response.json()["registered_details"]["id"]
+
+    #no first and last name, registration execute without error
+    data = {
+        "email": "abc1@gmail.com",
+        "password": "passwordabc@1"
+    }
+    response1 = register(data,apptype=None)
+    ABC1_id = response1.json()["registered_details"]["id"]
+    
+    delete_user_identity(ABC_id)
+    delete_user_identity(ABC1_id)
+
 #test register with missing field
 def test_register_incorrectdatas():
     """wrong data type check"""
     data = {
-  "email": "abc@gmail.com",
-  "appname": ""
-}
-    response = register(data)
-    assert_input_validation_error(response)
-
-    data = {
   "firstname": "user registration",
-  "lastname": "ABC Test",
-  "appname": ""
+  "lastname": "ABC Test"
 }
-    response = register(data)
+    response = register(data,apptype=None)
     assert_input_validation_error(response)
 
     data = {
-  "email": "abc@gmail.com",
-  "password": "passwordabc@1",
+  "email": "abc@gmail.com"
 }
-    response = register(data)
+    response = register(data,apptype=None)
+    assert_input_validation_error(response)
+
+    data = {
+  "password": "passwordabc@1"
+}
+    response = register(data,apptype=None)
     assert_input_validation_error(response)
 
 #Register new users, xyz1, xyz2, xyz3 with app_info as "Vachan", "Ag" and None respectively.
@@ -191,32 +216,29 @@ def test_register_roles():
         "email": "xyz1@gmail.com",
         "password": "passwordxyz1@1",
         "firstname": "user XYZ1",
-        "lastname": "Vachan role Test",
-        "appname": "vachan"
+        "lastname": "Vachan role Test"
     }
-    response1 = register(data_xyz1)
+    response1 = register(data_xyz1,apptype="VachanUser")
     XYZ1_id = response1.json()["registered_details"]["id"]
-    assert response1.json()["registered_details"]["Permisions"] == ['vachanuser']
+    assert response1.json()["registered_details"]["Permisions"] == ['VachanUser']
 
     data_xyz2 = {
         "email": "xyz2@gmail.com",
         "password": "passwordxyz2@1",
         "firstname": "user XYZ2",
-        "lastname": "Ag role Test",
-        "appname": "ag"
+        "lastname": "Ag role Test"
     }
-    response2 = register(data_xyz2)
+    response2 = register(data_xyz2,apptype="AgUser")
     XYZ2_id = response2.json()["registered_details"]["id"]
-    assert response2.json()["registered_details"]["Permisions"] == ['aguser']
+    assert response2.json()["registered_details"]["Permisions"] == ['AgUser']
 
     data_xyz3 = {
         "email": "xyz3@gmail.com",
         "password": "passwordxyz3@1",
         "firstname": "user XYZ3",
-        "lastname": "No role Test",
-        "appname": ""
+        "lastname": "No role Test"
     }
-    response3 = register(data_xyz3)
+    response3 = register(data_xyz3,apptype=None)
     XYZ3_id = response3.json()["registered_details"]["id"]
     assert response3.json()["registered_details"]["Permisions"] == ['None']
 
@@ -248,32 +270,25 @@ def test_register_roles():
         "password": "passwordxyz1@1",
         "firstname": "user XYZ1",
         "lastname": "Vachan role Test",
-        "appname": ""
     }
-    response1 = register_role_appending(data_xyz1)
-    assert response1.json()["registered_details"]["Permisions"] == ['vachanuser','None']
+    response1 = register_role_appending(data_xyz1,apptype=None)
+    assert response1.json()["registered_details"]["Permisions"] == ['VachanUser','None']
 
     # #role changed ag --> vachan
     data_xyz2 = {
         "email": "xyz2@gmail.com",
-        "password": "passwordxyz2@1",
-        "firstname": "user XYZ2",
-        "lastname": "Ag role Test",
-        "appname": "vachan"
+        "password": "passwordxyz2@1"
     }
-    response2 = register_role_appending(data_xyz2)
-    assert response2.json()["registered_details"]["Permisions"] == ['aguser','vachanuser']
+    response2 = register_role_appending(data_xyz2,apptype="VachanUser")
+    assert response2.json()["registered_details"]["Permisions"] == ['AgUser','VachanUser']
 
     #role changed none --> ag
     data_xyz3 = {
         "email": "xyz3@gmail.com",
-        "password": "passwordxyz3@1",
-        "firstname": "user XYZ3",
-        "lastname": "No role Test",
-        "appname": "ag"
+        "password": "passwordxyz3@1"
     }
-    response3 = register_role_appending(data_xyz3)
-    assert response3.json()["registered_details"]["Permisions"] == ['None','aguser']
+    response3 = register_role_appending(data_xyz3,apptype="AgUser")
+    assert response3.json()["registered_details"]["Permisions"] == ['None','AgUser']
 
     delete_user_identity(XYZ1_id)
     delete_user_identity(XYZ2_id)
@@ -288,23 +303,17 @@ def test_role_assignment_superadmin():
     #create 2 users
     user1 = {
         "email": "vachan@gmail.com",
-        "password": "passwordvachan@1",
-        "firstname": "user vachan",
-        "lastname": "No role Test",
-        "appname": ""
+        "password": "passwordvachan@1"
     }
-    response1 = register(user1)
+    response1 = register(user1,apptype=None)
     user1_id = response1.json()["registered_details"]["id"]
     assert response1.json()["registered_details"]["Permisions"] == ['None']
 
     user2 = {
         "email": "ag@gmail.com",
-        "password": "passwordag@1",
-        "firstname": "user ag",
-        "lastname": "No role Test",
-        "appname": ""
+        "password": "passwordag@1"
     }
-    response2 = register(user2)
+    response2 = register(user2,apptype=None)
     user2_id = response2.json()["registered_details"]["id"]
     assert response2.json()["registered_details"]["Permisions"] == ['None']
 
@@ -326,20 +335,26 @@ def test_role_assignment_superadmin():
     }
     role_list = ["VachanAdmin"]
     response1 = assign_roles(data,user1_id,role_list)
-    assert response1.status_code == 200
+    assert response1.status_code == 201
     assert response1.json()["role_list"] == ["None", "VachanAdmin"]
 
     role_list = ["AgAdmin"]
     response2 = assign_roles(data,user2_id,role_list)
-    assert response2.status_code == 200
+    assert response2.status_code == 201
     assert response2.json()["role_list"] == ["None", "AgAdmin"]
+
+    #assigning a wrong role that is not allowed
+    role_list = ["AllAdmin"]
+    response3 = assign_roles(data,user2_id,role_list)
+    assert response3.status_code == 422
+    assert response3.json()['error'] == "Input Validation Error"
 
     delete_user_identity(user1_id)
     delete_user_identity(user2_id)
 
 #Login a user and then log him out.
 #Then try using the old token and ensure it is expired
-def test_toke_expiry():
+def test_token_expiry():
     """checking the token expiry"""
     data = {
         "username": SUPER_USER,
@@ -355,12 +370,9 @@ def test_toke_expiry():
     #try change role with super user after logout
     user = {
         "email": "user@gmail.com",
-        "password": "passworduser@1",
-        "firstname": "user Normal",
-        "lastname": "No role Test",
-        "appname": ""
+        "password": "passworduser@1"
     }
-    response2 = register(user)
+    response2 = register(user,apptype=None)
     user_id = response2.json()["registered_details"]["id"]
     assert response2.json()["registered_details"]["Permisions"] == ['None']
 

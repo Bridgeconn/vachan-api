@@ -1,8 +1,8 @@
 """schema for auth related"""
 #No name 'BaseModel' in module 'pydantic' (no-name-in-module)
 #pylint: disable=E0611
-from pydantic import BaseModel
 from enum import Enum
+from pydantic import BaseModel
 from pydantic.types import SecretStr
 
 #pylint: disable=R0903
