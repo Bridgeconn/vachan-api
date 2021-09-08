@@ -1,4 +1,5 @@
 '''Defines all API endpoints for the web server app'''
+import os
 from fastapi import FastAPI, Depends
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -19,10 +20,11 @@ from dependencies import get_db, log
 from schemas import NormalResponse
 from routers import content_apis, translation_apis, auth_api
 from graphql_api import router as gql_router
-#from authentication import create_super_user
+from authentication import create_super_user
 
 #create super user
-#create_super_user()
+if not os.environ.get("TEST_MODE") == 'True':
+    create_super_user()
 
 app = FastAPI()
 app.add_middleware(
