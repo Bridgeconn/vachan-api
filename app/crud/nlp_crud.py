@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
 
-#pylint: disable=E0401, disable=E0611
+#pylint: disable=E0401
 #pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
 from crud import utils
 import db_models
@@ -872,8 +872,7 @@ def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range,
 def obtain_draft(sentence_list, doc_type):
     '''Convert input sentences to required format'''
     for sent in sentence_list:
-        #pylint: disable=R0123
-        if sent.draft is None or sent.draft is '':
+        if sent.draft is None or sent.draft == '':
             sent.draft = sent.sentence
             offset = [0, len(sent.sentence)]
             sent.draftMeta = [offset, offset, "untranslated"]

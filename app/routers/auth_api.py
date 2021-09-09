@@ -3,14 +3,11 @@ from fastapi import APIRouter, Depends, Query
 #pylint: disable=E0611
 from pydantic.types import SecretStr
 #pylint: disable=E0401
-from custom_exceptions import NotAvailableException
-from authentication import AuthHandler
 import schema_auth
 import schemas
-#pylint: disable=C0412
 from authentication import user_register_kratos,user_login_kratos,user_role_add ,\
-     verify_role_permision,delete_identity
-from custom_exceptions import PermisionException
+     verify_role_permision,delete_identity ,AuthHandler
+from custom_exceptions import PermisionException, NotAvailableException
 
 router = APIRouter()
 auth_handler = AuthHandler()
@@ -77,7 +74,6 @@ permision = Depends(auth_handler.kratos_session_validation)):
         if response.status_code == 404:
             raise NotAvailableException("Unable to locate the resource")
         else:
-            #pylint: disable=C0103
             user_id = user.userid
             out =  {"message":"deleted identity %s"%user_id}
     else:

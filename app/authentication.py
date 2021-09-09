@@ -119,7 +119,6 @@ def user_register_kratos(register_details,app_type):
     lastname = register_details.lastname
 
     #check auto role assign
-    #pylint: disable=R1715
     user_role = app_type
 
     register_url = PUBLIC_BASE_URL+"registration/api"
