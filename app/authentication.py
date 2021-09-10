@@ -8,15 +8,16 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 #pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
 from dependencies import log
 from custom_exceptions import GenericException , PermisionException ,\
-     AlreadyExistsException,NotAvailableException
+    AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
+    UnprocessableException
 
-PUBLIC_BASE_URL = os.environ.get("KRATOS_PUBLIC_BASE_URL"+"self-service/",
+PUBLIC_BASE_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL"+"self-service/",
                                     "http://127.0.0.1:4433/self-service/")
-ADMIN_BASE_URL = os.environ.get("KRATOS_ADMIN_BASE_URL", "http://127.0.0.1:4434/")
-USER_SESSION_URL = os.environ.get("KRATOS_PUBLIC_BASE_URL"+ "sessions/whoami",
+ADMIN_BASE_URL = os.environ.get("VACHAN_KRATOS_ADMIN_URL", "http://127.0.0.1:4434/")
+USER_SESSION_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL"+ "sessions/whoami",
                                 "http://127.0.0.1:4433/sessions/whoami")
-SUPER_USER = os.environ.get("SUPER_USERNAME")
-SUPER_PASSWORD = os.environ.get("SUPER_PASSWORD")
+SUPER_USER = os.environ.get("VACHAN_SUPER_USERNAME")
+SUPER_PASSWORD = os.environ.get("VACHAN_SUPER_PASSWORD")
 
 access_roles = {
     "contentType" : ["SuperAdmin","VachanAdmin"],
@@ -69,7 +70,7 @@ class AuthHandler():
                 roles = data["identity"]["traits"]["userrole"]
 
         elif user_data.status_code == 401:
-            raise HTTPException(status_code=401, detail=data["error"])
+            raise UnAuthorizedException(detail=data["error"])
 
         elif user_data.status_code == 500:
             raise GenericException(data["error"])
@@ -89,7 +90,10 @@ class AuthHandler():
             data = {"message":"Successfully Logged out"}
         elif response.status_code == 400:
             data = json.loads(response.content)
-            raise HTTPException(status_code=401, detail=data["error"])
+        elif response.status_code == 403:
+            data = "The provided Session Token could not be found,"+\
+                 "is invalid, or otherwise malformed"
+            raise HTTPException(status_code=403, detail=data)
         elif response.status_code == 500:
             data = json.loads(response.content)
             raise GenericException(data["error"])
@@ -104,7 +108,7 @@ def get_all_kratos_users():
     if response.status_code == 200:
         user_data = json.loads(response.content)
     else:
-        raise HTTPException(status_code=401, detail=json.loads(response.content))
+        raise UnAuthorizedException(detail=json.loads(response.content))
     return user_data
 
 #User registration with credentials
@@ -162,7 +166,8 @@ def user_register_kratos(register_details,app_type):
                     for user in kratos_users:
                         if email == user["traits"]["email"]:
                             current_user_id = user["id"]
-                            if user_role not in user["traits"]["userrole"]:
+                            if user_role not in user["traits"]["userrole"] and \
+                                'SuperAdmin' not in user["traits"]["userrole"]:
                                 role_list = [user_role]
                                 return_data = user_role_add(current_user_id,role_list)
                                 if return_data["Success"]:
@@ -181,8 +186,13 @@ def user_register_kratos(register_details,app_type):
                 else:
                     raise HTTPException(status_code=reg_req.status_code,\
                          detail=reg_response["ui"]["messages"][0]["text"])
+            else:
+                error_base = reg_response['ui']['nodes']
+                for i in range(1,3):
+                    if error_base[i]['messages'] != []:
+                        raise UnprocessableException(error_base[i]['messages'][0]['text'])
 
-def user_login_kratos(username,password):
+def user_login_kratos(user_email,password):
     "kratos login"
     data = {"details":"","token":""}
     login_url = PUBLIC_BASE_URL+"login/api/"
@@ -191,16 +201,16 @@ def user_login_kratos(username,password):
         flow_res = json.loads(flow_res.content)
         flow_id = flow_res["ui"]["action"]
 
-        cred_data = {"password_identifier": username, "password": password.get_secret_value()
+        cred_data = {"password_identifier": user_email, "password": password.get_secret_value()
                     , "method": "password"}
         login_req = requests.post(flow_id, json=cred_data)
+        login_req_content = json.loads(login_req.content)
         if login_req.status_code == 200:
-            login_req = json.loads(login_req.content)
-            session_id = login_req["session_token"]
+            session_id = login_req_content["session_token"]
             data["message"] = "Login Succesfull"
             data["token"] = session_id
         else:
-            raise HTTPException(status_code=401, detail="Invalid Credential")
+            raise UnAuthorizedException(login_req_content["ui"]["messages"][0]["text"])
         return data
 
 #delete an identity

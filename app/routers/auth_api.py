@@ -1,10 +1,10 @@
 """router for authentication endpoints"""
 from fastapi import APIRouter, Depends, Query
-#pylint: disable=E0611
-from pydantic.types import SecretStr
+from pydantic import types
 #pylint: disable=E0401
 import schema_auth
 import schemas
+from dependencies import log
 from authentication import user_register_kratos,user_login_kratos,user_role_add ,\
      verify_role_permision,delete_identity ,AuthHandler
 from custom_exceptions import PermisionException, NotAvailableException
@@ -18,16 +18,26 @@ responses={400: {"model": schemas.ErrorResponse}},
 status_code=201,tags=["Authentication"])
 def register(register_details:schema_auth.Registration,
 app_type: schema_auth.AppType=Query(schema_auth.AppType.none)):
-    """user register"""
+    '''Registration for Users
+    * user_email and password fiels are mandatory
+    * App type will be None by default, App Type will decide \
+        a default role for user
+    * first and last name fields are optional'''
+    log.info('In User Registration')
+    log.debug('registration:%s',register_details)
     data = user_register_kratos(register_details,app_type)
     return data
 
 @router.get('/v2/user/login',response_model=schema_auth.LoginResponse,
 responses={401: {"model": schemas.ErrorResponse}}
 ,tags=["Authentication"])
-def login(username: str,password: SecretStr):
-    """user login"""
-    data = user_login_kratos(username,password)
+def login(user_email: str,password: types.SecretStr):
+    '''Login for All Users
+    * user_email and password fiels are mandatory
+    * Successful login will return a token for user for a time period'''
+    log.info('In User Login')
+    log.debug('login:%s',user_email)
+    data = user_login_kratos(user_email,password)
     return data
 
 @router.get('/v2/user/logout',response_model=schema_auth.LogoutResponse,
@@ -35,7 +45,11 @@ responses={403: {"model": schemas.ErrorResponse},
 401: {"model": schemas.ErrorResponse}}
 ,tags=["Authentication"])
 def logout(message = Depends(auth_handler.kratos_logout)):
-    """user logout"""
+    '''Logout
+    * Loging out will end the expiry of a token even if the time period not expired.
+    * Successful login will return a token for user for a time period'''
+    log.info('In User Logout')
+    log.debug('logout:%s',message)
     return message
 
 @router.post('/v2/user/userrole',response_model=schema_auth.UseroleResponse,
@@ -51,6 +65,8 @@ permision = Depends(auth_handler.kratos_session_validation)):
     * No roles will be allocated on registration , will be consider as a normal user.
     * avaialable roles are
     * [VachanAdmin , AgAdmin , AgUser , VachanUser] '''
+    log.info('In User Role')
+    log.debug('userrole:%s',role_data)
     verified = verify_role_permision(api_name="userRole",permision=permision)
     if verified:
         user_id = role_data.userid
@@ -66,7 +82,10 @@ responses={404: {"model": schemas.ErrorResponse},
 status_code=200,tags=["Authentication"])
 def delete_user(user:schema_auth.UserIdentity,
 permision = Depends(auth_handler.kratos_session_validation)):
-    """identity delete"""
+    '''Delete Identity
+    * unique Identity key can be used to delete an exisiting identity'''
+    log.info('In Identity Delete')
+    log.debug('identity-delete:%s',user)
     verified = verify_role_permision(api_name="delete_identity",permision=permision)
     if verified:
         response = delete_identity(user.userid)

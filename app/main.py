@@ -11,8 +11,9 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 #pylint: disable=E0401
 #pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
-from custom_exceptions import GenericException,TypeException , PermisionException
-from custom_exceptions import NotAvailableException, AlreadyExistsException,UnAuthorizedException
+from custom_exceptions import GenericException,TypeException , PermisionException,\
+    UnprocessableException,NotAvailableException, AlreadyExistsException,\
+        UnAuthorizedException
 import db_models
 from database import engine
 from dependencies import get_db, log
@@ -132,6 +133,17 @@ async def unauthorized_exception_handler(request, exc: UnAuthorizedException):
         content={"error": exc.name, "details" : exc.detail},
     )
 
+@app.exception_handler(UnprocessableException)
+async def unprocessable_exception_handler(request, exc: UnprocessableException):
+    '''logs and returns error details'''
+    log.error("Request URL:%s %s,  from : %s",
+        request.method ,request.url.path, request.client.host)
+    log.exception("%s: %s",exc.name, exc.detail)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": exc.name, "details" : exc.detail},
+    )
+
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request, exc):
     '''logs and returns error details'''
@@ -176,7 +188,7 @@ def test(db_: Session = Depends(get_db)):
     db_.query(db_models.Language).first()
     return {"message": "App is up and running"}
 
+app.include_router(auth_api.router)
 app.include_router(content_apis.router)
 app.include_router(translation_apis.router)
 app.include_router(gql_router)
-app.include_router(auth_api.router)

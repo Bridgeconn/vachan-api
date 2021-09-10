@@ -7,23 +7,25 @@ REGISTER_URL = '/v2/user/register'
 LOGOUT_URL = '/v2/user/logout'
 USERROLE_URL = '/v2/user/userrole'
 DELETE_URL = '/v2/user/delete-identity'
-SUPER_USER = os.environ.get("SUPER_USERNAME")
-SUPER_PASSWORD = os.environ.get("SUPER_PASSWORD")
-ADMIN_BASE_URL = os.environ.get("KRATOS_ADMIN_BASE_URL")
+SUPER_USER = os.environ.get("VACHAN_SUPER_USERNAME")
+SUPER_PASSWORD = os.environ.get("VACHAN_SUPER_PASSWORD")
+ADMIN_BASE_URL = os.environ.get("VACHAN_KRATOS_ADMIN_URL")
 
 #login check
 def login(data):
     '''test for login feature'''
     #headers = {"contentType": "application/json", "accept": "application/json"}
-    params = f"?username={data['username']}&password={data['password']}"
+    params = f"?user_email={data['user_email']}&password={data['password']}"
     response = client.get(LOGIN_URL+params)
     if response.status_code == 200:
         assert response.json()['message'] == "Login Succesfull"
         token =  response.json()['token']
         assert len(token) == 32
     elif response.status_code == 401:
-        assert response.json()['error'] == "HTTP Error"
-        assert response.json()['details'] == "Invalid Credential"
+        assert response.json()['error'] == "Authentication Error"
+        assert response.json()['details'] ==\
+            "The provided credentials are invalid, check for spelling mistakes "+\
+            "in your password or username, email address, or phone number."
     return response
 
 #registration check
@@ -63,7 +65,7 @@ def register_role_appending(data,apptype):
 def delete_user_identity(id):
     """delete a user identity"""
     data = {
-        "username": SUPER_USER,
+        "user_email": SUPER_USER,
         "password": SUPER_PASSWORD
     }
     response = login(data)
@@ -113,7 +115,7 @@ def logout_user(token):
 def test_superuser_login():
     """test for super user login"""
     data = {
-  "username": SUPER_USER,
+  "user_email": SUPER_USER,
   "password": SUPER_PASSWORD
 }
     login(data)
@@ -124,7 +126,7 @@ def test_login_register():
 
     #login a non exisitng user ABC
     data = {
-        "username": "abc@gmail.com",
+        "user_email": "abc@gmail.com",
         "password": "passwordabc@1"
     }
     login(data)
@@ -141,7 +143,7 @@ def test_login_register():
 
     #test user ABC login after register
     data = {
-        "username": "abc@gmail.com",
+        "user_email": "abc@gmail.com",
         "password": "passwordabc@1"
     }
     login(data)
@@ -160,6 +162,38 @@ def test_login_register():
       "An account with the same identifier (email, phone, username, ...) exists already."
 
     delete_user_identity(ABC_id)
+
+#test for validate register data
+def test_incorrect_email():
+    """test for validation of incorrect email"""
+    data = {
+        "email": "incorrectemail",
+        "password": "passwordabc@1"
+    }
+    response = register(data,apptype=None)
+    assert response.status_code == 422
+    assert response.json()['error'] == "Unprocessable Data"
+
+#test for validate register data
+def test_validate_password():
+    """test for validation of password"""
+    #short password
+    data = {
+        "email": "PQR@gmail.com",
+        "password": "test"
+    }
+    response = register(data,apptype=None)
+    assert response.status_code == 422
+    assert response.json()['error'] == "Unprocessable Data"
+
+    #less secure password
+    data = {
+        "email": "PQR@gmail.com",
+        "password": "password"
+    }
+    response = register(data,apptype=None)
+    assert response.status_code == 422
+    assert response.json()['error'] == "Unprocessable Data"
 
 #test for optional params in registration
 def test_optional_register_params():
@@ -244,19 +278,19 @@ def test_register_roles():
 
     #login check for users
     data_xyz1 = {
-        "username": "xyz1@gmail.com",
+        "user_email": "xyz1@gmail.com",
         "password": "passwordxyz1@1"
     }
     login(data_xyz1)
 
     data_xyz2 = {
-        "username": "xyz2@gmail.com",
+        "user_email": "xyz2@gmail.com",
         "password": "passwordxyz2@1"
     }
     login(data_xyz2)
 
     data_xyz3 = {
-        "username": "xyz3@gmail.com",
+        "user_email": "xyz3@gmail.com",
         "password": "passwordxyz3@1"
     }
     login(data_xyz3)
@@ -319,7 +353,7 @@ def test_role_assignment_superadmin():
 
     #try to change user2 permision after login user1
     user1 = {
-        "username": "vachan@gmail.com",
+        "user_email": "vachan@gmail.com",
         "password": "passwordvachan@1"
     }
 
@@ -330,7 +364,7 @@ def test_role_assignment_superadmin():
 
     #role assign with super user
     data = {
-        "username": SUPER_USER,
+        "user_email": SUPER_USER,
         "password": SUPER_PASSWORD
     }
     role_list = ["VachanAdmin"]
@@ -357,7 +391,7 @@ def test_role_assignment_superadmin():
 def test_token_expiry():
     """checking the token expiry"""
     data = {
-        "username": SUPER_USER,
+        "user_email": SUPER_USER,
         "password": SUPER_PASSWORD
     }
     response = login(data)
@@ -389,4 +423,4 @@ def test_token_expiry():
     delete_user_identity(user_id)
 
     assert response.status_code == 401
-    assert response.json()["error"] == "HTTP Error"
+    assert response.json()["error"] == "Authentication Error"

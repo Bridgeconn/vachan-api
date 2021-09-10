@@ -57,6 +57,14 @@ class UnAuthorizedException(Exception):
     """Format for un authorized error"""
     def __init__(self, detail: str):
         super().__init__()
-        self.name = "Un Authorized"
+        self.name = "Authentication Error"
         self.detail = detail
         self.status_code = 401
+
+class UnprocessableException(Exception):
+    """Format for Unprocessable error"""
+    def __init__(self, detail: str):
+        super().__init__()
+        self.name = "Unprocessable Data"
+        self.detail = detail
+        self.status_code = 422

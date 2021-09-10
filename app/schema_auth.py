@@ -4,7 +4,7 @@
 from enum import Enum
 from typing import List
 from pydantic import BaseModel
-from pydantic.types import SecretStr
+from pydantic import types
 
 #pylint: disable=R0903
 class AppType(str, Enum):
@@ -17,13 +17,14 @@ class AppType(str, Enum):
 class Registration(BaseModel):
     """kratos registration input"""
     email:str
-    password:SecretStr
+    password:types.SecretStr
     firstname:str = None
     lastname:str = None
 
 #pylint: disable=R0903
 class AdminRoles(str, Enum):
     '''Admin Roles'''
+    superadmin = 'SuperAdmin'
     vachanadmin = 'VachanAdmin'
     agadmin = 'AgAdmin'
     aguser = 'AgUser'
