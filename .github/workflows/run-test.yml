@@ -33,6 +33,9 @@ jobs:
       - name: change Python path
         run: echo "PYTHONPATH=${PWD}/app" >> $GITHUB_ENV
         
+      - name: add env testmode
+        run: echo "TEST_MODE=True" >> $GITHUB_ENV  
+        
       - name: Set up App and run tests
         run: |
           pip install -r requirements.txt
