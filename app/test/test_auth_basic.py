@@ -409,7 +409,7 @@ def test_token_expiry():
     response2 = register(user,apptype=None)
     user_id = response2.json()["registered_details"]["id"]
     assert response2.json()["registered_details"]["Permisions"] == ['None']
-
+    
     role_data = {
         "userid": user_id,
         "roles": ["AgAdmin"]
