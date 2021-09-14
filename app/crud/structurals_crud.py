@@ -32,9 +32,11 @@ def create_content_type(db_: Session, content: schemas.ContentTypeCreate):
     db_.refresh(db_content)
     return db_content
 
-def get_languages(db_: Session, language_code = None, language_name = None, search_word=None,#pylint: disable=too-many-arguments
-    language_id = None, skip: int = 0, limit: int = 100):
+def get_languages(db_: Session, language_code = None, language_name = None, search_word=None,
+    language_id = None, **kwargs):
     '''Fetches rows of language, with pagination and various filters'''
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
     query = db_.query(db_models.Language)
     if language_code:
         query = query.filter(func.lower(db_models.Language.code) == language_code.lower())
@@ -88,9 +90,11 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
     db_.refresh(db_content)
     return db_content
 
-def get_licenses(db_: Session, license_code = None, license_name = None, #pylint: disable=too-many-arguments
-    permission = None, active=True, skip: int = 0, limit: int = 100):
+def get_licenses(db_: Session, license_code = None, license_name = None,
+    permission = None, active=True, **kwargs):
     '''Fetches rows of licenses, with pagination and various filters'''
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
     query = db_.query(db_models.License)
     if license_code:
         query = query.filter(db_models.License.code == license_code.upper())
@@ -132,9 +136,12 @@ def update_license(db_: Session, license_obj: schemas.LicenseEdit, user_id=None)
     db_.refresh(db_content)
     return db_content
 
-def get_versions(db_: Session, version_abbr = None, version_name = None, revision = None, #pylint: disable=too-many-arguments
-    metadata = None, version_id = None, skip: int = 0, limit: int = 100):
+def get_versions(db_: Session, version_abbr = None, version_name = None, revision = None,
+    metadata = None, **kwargs):
     '''Fetches rows of versions table, with various filters and pagination'''
+    version_id = kwargs.get("version_id",None)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
     query = db_.query(db_models.Version)
     if version_abbr:
         query = query.filter(db_models.Version.versionAbbreviation == version_abbr.upper().strip())
@@ -177,11 +184,18 @@ def update_version(db_: Session, version: schemas.VersionEdit):
     db_.refresh(db_content)
     return db_content
 
-def get_sources(db_: Session, #pylint: disable=too-many-arguments, disable-msg=too-many-locals, disable=too-many-branches
+def get_sources(db_: Session, #pylint: disable-msg=too-many-locals, disable=too-many-branches
     content_type=None, version_abbreviation=None, revision=None, language_code=None,
-    license_abbreviation=None, metadata=None, latest_revision=True, active=True, source_name=None,
-    skip: int = 0, limit: int = 100):
+    **kwargs):
     '''Fetches the rows of sources table'''
+    license_abbreviation = kwargs.get("license_abbreviation",None)
+    metadata = kwargs.get("metadata",None)
+    latest_revision = kwargs.get("latest_revision",True)
+    active = kwargs.get("active",True)
+    source_name = kwargs.get("source_name",None)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
+
     query = db_.query(db_models.Source)
     if content_type:
         query = query.filter(db_models.Source.contentType.has(contentType = content_type.strip()))
@@ -343,9 +357,11 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None): #py
     db_models.dynamicTables[db_content.sourceName] = db_models.dynamicTables[source.sourceName]
     return db_content
 
-def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None, #pylint: disable=too-many-arguments
-    skip=0, limit=100):
+def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None,
+    **kwargs):
     '''Fetches rows of bible_books_lookup, with pagination and various filters'''
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
     query = db_.query(db_models.BibleBook)
     if book_id:
         query = query.filter(db_models.BibleBook.bookId == book_id)

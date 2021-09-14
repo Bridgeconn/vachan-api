@@ -1,8 +1,6 @@
 ''' Place to define all data processing and Database CRUD operations
 related to NLP operations and translation apps'''
 #pylint: disable=too-many-lines
-
-
 import re
 import os
 import json
@@ -23,7 +21,7 @@ from dependencies import log
 from custom_exceptions import NotAvailableException, TypeException, GenericException
 from schemas_nlp import TranslationDocumentType
 
-#pylint: disable=too-many-branches, disable=too-many-locals, disable=too-many-arguments
+#pylint: disable=too-many-branches, disable=too-many-locals,
 #pylint: disable=too-many-statements, disable=W0102, disable=too-many-nested-blocks
 
 ###################### Tokenization ######################
@@ -85,7 +83,7 @@ def find_phrases(src_text, stop_words, include_phrases=True, include_stopwords=F
                 res_words.append(wrd)
         phrases = res_words
     return phrases
-
+#pylint: disable=too-many-arguments
 def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, include_phrases=True,
     include_stopwords=False, punctuations=None, stop_words=None):
     '''Get phrase and single word tokens and their occurances from input sentence list.
@@ -167,9 +165,13 @@ def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, incl
     return unique_tokens
 
 def get_generic_tokens(db_:Session, src_language, sentence_list, trg_language=None,
-    punctuations=None, stopwords=None,
-    use_translation_memory=True, include_phrases=True, include_stopwords=False):
+    **kwargs):
     '''tokenize the input sentences and return token list with details'''
+    punctuations = kwargs.get("punctuations",None)
+    stopwords = kwargs.get("stopwords",None)
+    use_translation_memory = kwargs.get("use_translation_memory",True)
+    include_phrases = kwargs.get("include_phrases",True)
+    include_stopwords = kwargs.get("include_stopwords",False)
     if isinstance(src_language, str):
         language_code = src_language
         src_language = db_.query(db_models.Language).filter(
@@ -205,8 +207,11 @@ def get_generic_tokens(db_:Session, src_language, sentence_list, trg_language=No
     return result
 
 def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_id_list,
-    use_translation_memory=True, include_phrases=True, include_stopwords=False):
+    **kwargs):
     '''Get the selected verses from drafts table and tokenize them'''
+    use_translation_memory = kwargs.get("use_translation_memory",True)
+    include_phrases = kwargs.get("include_phrases",True)
+    include_stopwords = kwargs.get("include_stopwords",False)
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException("Project with id, %s, not found"%project_id)
@@ -222,8 +227,10 @@ def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_
     return get_generic_tokens( **args)
 
 ###################### Token replacement translation ######################
-def replace_token(source, token_offset, translation, draft="", draft_meta=[], tag="confirmed"):
+def replace_token(source, token_offset, translation,draft_meta=[], tag="confirmed",
+    **kwargs):
     '''make a token replacement in draft and return updated sentence and draft_meta'''
+    draft= kwargs.get("draft","")
     trans_length = len(translation)
     updated_meta = []
     updated_draft = ""
@@ -274,9 +281,10 @@ def replace_token(source, token_offset, translation, draft="", draft_meta=[], ta
                 (trans_offset[0]+offset_diff, trans_offset[1]+offset_diff), status))
     return updated_draft, updated_meta
 
-def replace_bulk_tokens(db_, sentence_list, token_translations, src_code, trg_code, use_data=True):
+def replace_bulk_tokens(db_, sentence_list, token_translations, src_code, trg_code, **kwargs):
     '''Substitute tokens with provided trabslations and get updated drafts, draftMetas
     and add knowledge to translation memory'''
+    use_data = kwargs.get("use_data_for_learning",True)
     source = db_.query(db_models.Language).filter(
         db_models.Language.code == src_code).first()
     if not source:
@@ -297,7 +305,7 @@ def replace_bulk_tokens(db_, sentence_list, token_translations, src_code, trg_co
                 raise GenericException("Token, %s, and its occurence, not matching"%(
                     token.token))
             draft, meta = replace_token(draft_row.sentence, occur.offset, token.translation,
-                draft_row.draft, draft_row.draftMeta)
+                 draft_row.draftMeta, draft=draft_row.draft)
             draft_row.draft = draft
             draft_row.draftMeta = meta
             updated_sentences[occur.sentenceId]  = draft_row
@@ -332,7 +340,7 @@ def save_agmt_translations(db_, project_id, token_translations, return_drafts=Tr
                 raise GenericException("Token, %s, and its occurence, not matching"%(
                     token.token))
             draft, meta = replace_token(draft_row.sentence, occur.offset, token.translation,
-                draft_row.draft, draft_row.draftMeta)
+                 draft_row.draftMeta, draft=draft_row.draft)
             draft_row.draft = draft
             draft_row.draftMeta = meta
             flag_modified(draft_row, "draftMeta")
@@ -459,11 +467,16 @@ def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
                 phrases.remove(obj)
     return phrases
 
-def alignments_to_trainingdata(db_:Session, src_lang, trg_lang, alignment_list,
-    user_id=None, window_size=WINDOW_SIZE, output_dir=SUGGESTION_DATA_PATH):
+def alignments_to_trainingdata(db_:Session,window_size=WINDOW_SIZE,
+    output_dir=SUGGESTION_DATA_PATH,**kwargs):
     '''Convert alignments to training data for suggestions module and also add to translation_memory
     input format: [(<src sent>,<trg_sent>,[(0-0), (1-3),(2-1),..]]
     output: <index>\t<context ayrray>\t<translation>'''
+    src_lang = kwargs.get("src_lang")
+    trg_lang = kwargs.get("trg_lang")
+    alignment_list = kwargs.get("alignment_list")
+    user_id = kwargs.get("user_id")
+
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     timestamp = datetime.now().strftime("%d_%m_%Y-%H_%M_%S")
@@ -698,10 +711,15 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0
     result_list = [result_dict[entry] for entry in result_dict]
     return result_list
 
-def get_gloss(db_:Session, index, context, source_lang, target_lang, pass_no=1): # pylint: disable=too-many-locals
+def get_gloss(db_:Session, *args, **kwargs): # pylint: disable=too-many-locals
     '''find the context based translation suggestions(gloss) for a word.
     Makes use of the learned model(trie), for the lang pair, based on translation memory
     output format: [(translation1, score1), (translation2, score2), ...]'''
+    index = args[0]
+    context = args[1]
+    source_lang = args[2]
+    target_lang = args[3]
+    pass_no = kwargs.get("pass_no",1)
     if isinstance(index, int):
         word = context[index]
     elif isinstance(index, str):
@@ -797,8 +815,10 @@ def get_gloss(db_:Session, index, context, source_lang, target_lang, pass_no=1):
         result['metaData'] = mdt[0]
     return result
 
-def glossary(db_:Session, source_language, target_language, token, context=None, token_offset=None):
+def glossary(db_:Session, source_language, target_language, token, **kwargs):
     '''finds possible translation suggestion for a token'''
+    context = kwargs.get("context",None)
+    token_offset = kwargs.get("token_offset",None)
     if context is None:
         context = token
     if token_offset is None:
@@ -808,11 +828,12 @@ def glossary(db_:Session, source_language, target_language, token, context=None,
     suggs = get_gloss(db_, index, context_list, source_language, target_language)
     return suggs
 
-def auto_translate(db_, sentence_list, source_lang, target_lang, punctuations=None,
-    stop_words=None):
+def auto_translate(db_, sentence_list, source_lang, target_lang, **kwargs):
     '''Attempts to tokenize the input sentence and replace each token with top suggestion.
     If draft_meta is provided indicating some portion of sentence is user translated,
     then it is left untouched.'''
+    punctuations = kwargs.get("punctuations",None)
+    stop_words = kwargs.get("stop_words",None)
     args = {"db_":db_, "src_lang":source_lang, "include_stopwords":False, "include_phrases":True}
     if punctuations:
         args['punctuations'] = punctuations
@@ -830,7 +851,7 @@ def auto_translate(db_, sentence_list, source_lang, target_lang, punctuations=No
                 suggestions = list(gloss['translations'].keys())
                 if len(suggestions) > 0:
                     draft, meta = replace_token(sent.sentence, offset,
-                        suggestions[0], sent.draft, sent.draftMeta, "suggestion")
+                        suggestions[0], sent.draftMeta, "suggestion",draft=sent.draft)
                     sent.draft = draft
                     sent.draftMeta = meta
                 elif (sent.draft is None or sent.draft == ''):
@@ -840,8 +861,9 @@ def auto_translate(db_, sentence_list, source_lang, target_lang, punctuations=No
     return sentence_list
 
 def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range, sentence_id_list,
-    confirm_all=False):
+    **kwargs):
     '''Tokenize and auto fill draft with top suggestions'''
+    confirm_all= kwargs.get("confirm_all",False)
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException("Project with id, %s, not found"%project_id)
@@ -1005,8 +1027,9 @@ def export_to_json(source_lang, target_lang, sentence_list, last_modified):
 
 #########################################################
 def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=None,
-    sentence_id_list=None, with_draft=False):
+    sentence_id_list=None, **kwargs):
     '''fetches all or selected source sentences from translation_sentences table'''
+    with_draft= kwargs.get("with_draft",False)
     sentence_query = db_.query(db_models.TranslationDraft).filter(
         db_models.TranslationDraft.project_id == project_id)
     if books:

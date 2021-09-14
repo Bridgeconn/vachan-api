@@ -28,7 +28,7 @@ def get_projects(project_name:str=Query(None,example="Hindi-Bilaspuri Gospels"),
     log.debug('project_name: %s, source_language:%s, target_language:%s,\
         active:%s, user_id:%s',project_name, source_language, target_language, active, user_id)
     return projects_crud.get_agmt_projects(db_, project_name, source_language, target_language,
-        active, user_id, skip=skip, limit=limit)
+        active=active, user_id=user_id, skip=skip, limit=limit)
 
 @router.post('/v2/autographa/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse,
@@ -90,7 +90,8 @@ def get_tokens(project_id:int=Query(...,example="1022004"),
         books, sentence_id_range, sentence_id_range, use_translation_memory,
         include_phrases, include_stopwords)
     return nlp_crud.get_agmt_tokens(db_, project_id, books, sentence_id_range, sentence_id_list,
-        use_translation_memory, include_phrases, include_stopwords)
+        use_translation_memory=use_translation_memory,
+        include_phrases = include_phrases, include_stopwords=include_stopwords)
 
 @router.put('/v2/autographa/project/tokens', response_model=schemas_nlp.TranslateResponse,
     status_code=201, tags=['Autographa-Translation'])
@@ -146,7 +147,7 @@ def get_draft(project_id:int=Query(...,example="1022004"),
         output_format:%s',project_id, books, sentence_id_list, sentence_id_range,
         output_format)
     return projects_crud.obtain_agmt_draft(db_, project_id, books,
-        sentence_id_list, sentence_id_range, output_format)
+        sentence_id_list, sentence_id_range, output_format=output_format)
 
 @router.get('/v2/autographa/project/sentences', status_code=200,
     response_model_exclude_unset=True,
@@ -161,7 +162,7 @@ def get_project_source(project_id:int=Query(...,example="1022004"),
     log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s, with_draft:%s',
         project_id, books, sentence_id_list, sentence_id_range, with_draft)
     return nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_range, sentence_id_list,
-        with_draft)
+        with_draft=with_draft)
 
 @router.get('/v2/autographa/project/progress', status_code=200,
     response_model=schemas_nlp.Progress, tags=['Autographa-Translation'])
@@ -223,7 +224,9 @@ def tokenize(source_language:schemas.LangCodePattern=Query(...,example="hi"),
         source_language, sentence_list, target_language, punctuations, stopwords,
         use_translation_memory, include_phrases, include_stopwords)
     return nlp_crud.get_generic_tokens(db_, source_language, sentence_list, target_language,
-        punctuations, stopwords, use_translation_memory, include_phrases, include_stopwords)
+        punctuations =punctuations, stopwords = stopwords,
+        use_translation_memory = use_translation_memory, include_phrases = include_phrases,
+        include_stopwords = include_stopwords)
 
 @router.put('/v2/translation/token-translate', response_model=schemas_nlp.TranslateResponse,
     status_code=200, tags=['Generic Translation'])
@@ -239,7 +242,7 @@ def token_replace(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
         source_lanuage:%s, target_language:%s, use_data_for_learning:%s',
         sentence_list, token_translations, source_language, target_language, use_data_for_learning)
     result = nlp_crud.replace_bulk_tokens(db_, sentence_list, token_translations, source_language,
-        target_language, use_data_for_learning)
+        target_language, use_data_for_learning=use_data_for_learning)
     return {"message": "Tokens replaced with translations", "data": result}
 
 @router.put('/v2/translation/draft', status_code=200, tags=['Generic Translation'])
@@ -265,7 +268,7 @@ def suggest_translation(source_language:schemas.LangCodePattern=Query(...,exampl
     log.debug('source_language:%s, target_language:%s, sentence_list:%s,punctuations:%s\
         stopwords:%s', source_language, target_language, sentence_list, punctuations, stopwords)
     return nlp_crud.auto_translate(db_, sentence_list, source_language, target_language,
-        punctuations, stopwords)
+        punctuations=punctuations, stopwords=stopwords)
 
 @router.get('/v2/translation/gloss', response_model=schemas_nlp.GlossOutput,
     status_code=200, tags=["Translation Suggestion"])
@@ -280,7 +283,8 @@ def get_glossary(source_language:schemas.LangCodePattern=Query(...,example="en")
     log.debug('source_language:%s, target_language:%s, token:%s, context:%s,\
         token_offset:%s',source_language, target_language, token,
             context, token_offset)
-    return nlp_crud.glossary(db_, source_language, target_language, token, context, token_offset)
+    return nlp_crud.glossary(db_, source_language, target_language, token,
+    context=context, token_offset=token_offset)
 
 @router.post('/v2/translation/learn/gloss', response_model=schemas_nlp.GlossUpdateResponse,
     status_code=201, tags=["Translation Suggestion"])
@@ -303,6 +307,6 @@ def add_alignments(source_language:schemas.LangCodePattern, target_language:sche
     log.info('In add_alignments')
     log.debug('source_language:%s, target_language:%s, alignments:%s',
         source_language, target_language, alignments)
-    tw_data = nlp_crud.alignments_to_trainingdata(db_,source_language, target_language,
-        alignments, user_id=20202)
+    tw_data = nlp_crud.alignments_to_trainingdata(db_,src_lang=source_language,
+    trg_lang=target_language, alignment_list=alignments, user_id=20202)
     return { "message": "Alignments used for learning", "data":tw_data }
