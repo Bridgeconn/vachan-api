@@ -2,12 +2,12 @@
 #pylint: disable=C0302
 import graphene
 #pylint: disable=E0401
+import schemas
+import schemas_nlp
 #pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 from crud import structurals_crud,contents_crud,projects_crud,nlp_crud
 #pylint: disable=E0611
 from graphql_api import types, utils
-#pylint: disable=C0410
-import schemas,schemas_nlp
 
 ############ ADD NEW Language #################
 class InputAddLang(graphene.InputObjectType):

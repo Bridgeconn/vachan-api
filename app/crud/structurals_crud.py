@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
 
-#pylint: disable=E0401, disable=E0611
+#pylint: disable=E0401
 #pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
 import db_models
 import schemas

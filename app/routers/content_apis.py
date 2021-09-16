@@ -9,8 +9,10 @@ import schemas
 from dependencies import get_db, log
 from custom_exceptions import NotAvailableException, AlreadyExistsException
 from crud import structurals_crud, contents_crud
+from authentication import AuthHandler
 
 router = APIRouter()
+auth_handler = AuthHandler()
 
 ##### Content types #####
 @router.get('/v2/contents', response_model=List[schemas.ContentType],
@@ -38,12 +40,17 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
     Additional operations required:
         1. Add corresponding table creation functions and mappings.
         2. Define input, output resources and all required APIs to handle this content'''
+
+    #verified = verify_role_permision(api_name="contentType",permision= permision)
+    #if verified :
     log.info('In add_contents')
     log.debug('content: %s',content)
     if len(structurals_crud.get_content_types(db_, content.contentType)) > 0:
         raise AlreadyExistsException("%s already present"%(content.contentType))
     return {'message': "Content type created successfully",
     "data": structurals_crud.create_content_type(db_=db_, content=content)}
+    #else:
+        #raise PermisionException("User have no permision to access API")
 
 ##### languages #####
 @router.get('/v2/languages',
