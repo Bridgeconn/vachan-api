@@ -2,9 +2,6 @@
 import graphene
 from graphene.types import Scalar
 
-
-#pylint: disable=too-few-public-methods
-
 class Metadata(Scalar):
     '''metadata representing JSON'''
     @staticmethod
@@ -109,12 +106,11 @@ class BibleVerse(graphene.ObjectType):
     # crossReferences  = graphene.List(graphene.String)
 
     #pylint: disable=E1136
-
-    def resolve_refObject(parent, _): #pylint: disable=E0213, C0103
+    def resolve_refobject(parent, _): #pylint: disable=E0213
         '''resolver'''
         return parent['reference']
 
-    def resolve_refString(parent, _):  #pylint: disable=E0213, C0103
+    def resolve_refstring(parent, _):  #pylint: disable=E0213
         '''resolver'''
         if ('verseNumberEnd' in parent['reference'] and
             parent['reference']['verseNumberEnd'] is not None):
@@ -134,7 +130,7 @@ class Commentary(graphene.ObjectType):
     active = graphene.Boolean()
 
     #pylint: disable=E1101
-    def resolve_refString(parent, _):#pylint: disable=E0213, C0103
+    def resolve_refstring(parent, _):#pylint: disable=E0213
         '''resolver'''
         if parent.chapter == 0:
             return '%s introduction'%(parent.book.bookCode)
@@ -148,7 +144,7 @@ class Commentary(graphene.ObjectType):
             return '%s %s:%s'%(parent.book.bookCode, parent.chapter, parent.verseStart)
         return '%s %s:%s-%s'%(parent.book.bookCode, parent.chapter, parent.verseStart,
             parent.verseEnd)
-    def resolve_book(parent, _):#pylint: disable=E0213, C0103
+    def resolve_book(parent, _):#pylint: disable=E0213
         '''resolver'''
         return parent.book
 

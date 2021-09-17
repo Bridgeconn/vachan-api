@@ -8,8 +8,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
 
-#pylint: disable=E0401
-#pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
 import db_models
 import schemas
 from crud import utils
@@ -184,7 +182,7 @@ def update_version(db_: Session, version: schemas.VersionEdit):
     db_.refresh(db_content)
     return db_content
 
-def get_sources(db_: Session, #pylint: disable-msg=too-many-locals, disable=too-many-branches
+def get_sources(db_: Session,
     content_type=None, version_abbreviation=None, revision=None, language_code=None,
     **kwargs):
     '''Fetches the rows of sources table'''
@@ -307,7 +305,7 @@ def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_
     db_.refresh(db_content)
     return db_content
 
-def update_source(db_: Session, source: schemas.SourceEdit, user_id = None): #pylint: disable=too-many-branches
+def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
     '''changes one or more fields of sources, selected via sourceName or table_name'''
     db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source.sourceName).first()

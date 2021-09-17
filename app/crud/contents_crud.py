@@ -5,9 +5,6 @@ import json
 import sqlalchemy
 from sqlalchemy.orm import Session, defer, joinedload
 
-#pylint: disable=E0401
-#pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
-
 import db_models
 from crud import utils
 from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException
@@ -382,7 +379,7 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
     db_.refresh(source_db_content)
     return db_content
 
-def upload_bible_books(db_: Session, source_name, books, user_id=None): #pylint: disable=too-many-branches, disable=too-many-locals, disable=too-many-statements
+def upload_bible_books(db_: Session, source_name, books, user_id=None):
     '''Adds rows to the bible table and corresponding bible_cleaned specified by source_name'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
@@ -459,7 +456,7 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None): #pylint:
     db_.commit()
     return db_content
 
-def update_bible_books(db_: Session, source_name, books, user_id=None): #pylint: disable=too-many-locals, disable=too-many-branches
+def update_bible_books(db_: Session, source_name, books, user_id=None):
     '''change values of bible books already uploaded'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
@@ -661,7 +658,7 @@ def get_available_bible_books(db_, source_name, book_code=None, content_type=Non
     return results
 
 
-def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, verse=None, #pylint: disable=too-many-locals
+def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, verse=None,
     **kwargs):
     '''queries the bible cleaned table for verses'''
     last_verse = kwargs.get("last_verse",None)

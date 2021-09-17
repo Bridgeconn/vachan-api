@@ -4,12 +4,8 @@ from typing import List
 from enum import Enum
 from pydantic import BaseModel, constr, AnyUrl, validator, root_validator, Field
 
-#pylint: disable=E0401
-#pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
 from crud import utils
 
-
-# pylint: disable=too-few-public-methods
 
 class NormalResponse(BaseModel):
     '''Response with only a message'''
@@ -19,7 +15,7 @@ class ErrorResponse(BaseModel):
     '''common error response object'''
     error: str
     details: str
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
@@ -36,7 +32,7 @@ class ContentType(BaseModel):
     '''output object for content types'''
     contentId : int
     contentType : str
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''For SQL Alchemy'''
         orm_mode = True
         # '''display example value in API documentation'''
@@ -64,7 +60,7 @@ class LanguageCreate(BaseModel):
     code : LangCodePattern
     scriptDirection : Direction = None
     metaData: dict = None
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
@@ -84,7 +80,7 @@ class LanguageResponse(BaseModel):
     code : LangCodePattern
     scriptDirection : Direction = None
     metaData: dict = None
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
@@ -119,7 +115,7 @@ class LanguageEdit (BaseModel):
     code : LangCodePattern = None
     scriptDirection : Direction = None
     metaData: dict = None
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
@@ -149,7 +145,7 @@ class LicenseCreate(BaseModel):
     code : LicenseCodePattern
     license : str
     permissions : List[LicensePermisssion] = ['Private_use']
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
@@ -189,7 +185,7 @@ class LicenseResponse(BaseModel):
     license : str
     permissions : List[LicensePermisssion]
     active: bool
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
@@ -221,7 +217,7 @@ class LicenseEdit (BaseModel):
     license : str = None
     permissions : List[LicensePermisssion] = None
     active: bool = None
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
@@ -244,7 +240,7 @@ class VersionCreate(BaseModel):
     versionName : str
     revision : int = 1
     metaData : dict = None
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
@@ -262,7 +258,7 @@ class VersionResponse(BaseModel):
     versionName : str
     revision : int
     metaData : dict = None
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         # '''display example value in API documentation'''
@@ -293,7 +289,7 @@ class VersionEdit(BaseModel):
     versionName : str = None
     revision : int = None
     metaData : dict = None
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
@@ -317,7 +313,7 @@ class SourceCreate(BaseModel):
     year: int
     license: LicenseCodePattern = "CC-BY-SA"
     metaData: dict = None
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
@@ -342,7 +338,7 @@ class SourceResponse(BaseModel):
     license: LicenseShortResponse
     metaData: dict = None
     active: bool = True
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''For Pydantic'''
         orm_mode = True
         # '''display example value in API documentation'''
@@ -381,7 +377,7 @@ class SourceEdit(BaseModel):
     license: LicenseCodePattern = None
     metaData: dict = None
     active: bool = None
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
@@ -403,7 +399,7 @@ class BibleBook(BaseModel):
     bookId : int
     bookName : str
     bookCode : BookCodePattern
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         # '''display example value in API documentation'''
@@ -423,7 +419,7 @@ class AudioBible(BaseModel):
     # book:  BibleBook
     format: str = None
     active: bool = None
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         # '''display example value in API documentation'''
@@ -453,7 +449,7 @@ class AudioBibleUpload(BaseModel):
     books:  List[BookCodePattern]
     format: str
     active: bool = True
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
@@ -472,7 +468,7 @@ class AudioBibleEdit(BaseModel):
     books: List[BookCodePattern]
     format: str = None
     active: bool = None
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
@@ -491,7 +487,7 @@ class Reference(BaseModel):
     chapter: int
     verseNumber: int
     verseNumberEnd: int = None
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         '''display example value in API documentation'''
@@ -513,7 +509,7 @@ class BibleBookContent(BaseModel):
     JSON: dict = None
     audio: AudioBible = None
     active: bool
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         '''display example value in API documentation'''
@@ -560,7 +556,7 @@ class BibleBookUpload(BaseModel):
             raise ValueError("Either USFM and JSON should be provided")
         return values
 
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
@@ -589,7 +585,7 @@ class BibleBookEdit(BaseModel):
                 raise ValueError('"bookCode" is required to identiy the row to be updated')
         return values
 
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
@@ -628,7 +624,7 @@ class BibleVerse(BaseModel):
     verseText: str
     # footNote : str = None
     # crossReference : str = None
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         # '''display example value in API documentation'''
@@ -687,7 +683,7 @@ class CommentaryCreate(BaseModel):
         if val < -1:
             raise ValueError('chapter field should be greater than or equal to -1')
         return val
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
@@ -737,7 +733,7 @@ class CommentaryEdit(BaseModel):
         if val < -1:
             raise ValueError('chapter field should be greater than or equal to -1')
         return val
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
@@ -758,7 +754,7 @@ class CommentaryResponse(BaseModel):
     verseEnd: int = None
     commentary: str
     active: bool
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         # '''display example value in API documentation'''
@@ -789,7 +785,7 @@ class DictionaryWordCreate(BaseModel):
     word: str
     details: dict = None
     active: bool = True
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
@@ -805,7 +801,7 @@ class DictionaryWordEdit(BaseModel):
     word: str
     details: dict = None
     active: bool = None
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
@@ -823,7 +819,7 @@ class DictionaryWordResponse(BaseModel):
     word: str
     details: dict = None
     active: bool = None
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         '''display example value in API documentation'''
@@ -852,7 +848,7 @@ class InfographicCreate(BaseModel):
     title: str
     infographicLink : AnyUrl
     active: bool = True
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
@@ -869,7 +865,7 @@ class InfographicEdit(BaseModel):
     title: str
     infographicLink : AnyUrl = None
     active: bool = None
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
@@ -886,7 +882,7 @@ class InfographicResponse(BaseModel):
     title: str
     infographicLink : AnyUrl
     active: bool
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         # '''display example value in API documentation'''
@@ -917,7 +913,7 @@ class BibleVideo(BaseModel):
     description: str
     theme: str
     active: bool
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         '''display example value in API documentation'''
@@ -952,7 +948,7 @@ class BibleVideoUpload(BaseModel):
     description: str
     theme: str
     active: bool = True
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
@@ -977,7 +973,7 @@ class BibleVideoEdit(BaseModel):
     description: str  = None
     theme: str  = None
     active: bool  = None
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {

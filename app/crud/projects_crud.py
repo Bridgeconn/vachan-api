@@ -5,16 +5,10 @@ projects are included in nlp_crud module'''
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
-#pylint: disable=E0401
-#pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
-
 import db_models
 import schemas_nlp
 from crud import utils, nlp_crud
 from custom_exceptions import NotAvailableException, TypeException
-
-#pylint: disable=too-many-branches, disable=too-many-locals
-#pylint: disable=too-many-statements, disable=W0102, disable=too-many-nested-blocks
 
 ###################### AgMT Project Mangement ######################
 def create_agmt_project(db_:Session, project, user_id=None):

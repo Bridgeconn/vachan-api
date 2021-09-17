@@ -5,8 +5,6 @@ import unicodedata
 from unidecode import unidecode
 import requests
 
-#pylint: disable=E0401
-#pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
 from custom_exceptions import TypeException
 
 def normalize_unicode(text, form="NFKC"):

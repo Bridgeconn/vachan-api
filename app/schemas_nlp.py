@@ -4,8 +4,6 @@ from typing import List, Tuple
 from enum import Enum
 from pydantic import BaseModel, Field, constr, root_validator
 
-#pylint: disable=E0401
-#pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 from schemas import LangCodePattern, BookCodePattern, TableNamePattern
 from schemas import LanguageResponse
 
@@ -33,7 +31,7 @@ class ProjectUser(BaseModel):
     metaData: dict = Field(None, example={
         "lastProject":100002, "lastFilter":{"book":"mat","chapter":28}})
     active: bool =None
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
@@ -67,7 +65,7 @@ class TranslationProject(BaseModel):
     metaData: dict = Field(None, example={"books":['mat', 'mrk', 'luk', 'jhn'],
         "useDataForLearning":True})
     active: bool
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
@@ -107,7 +105,7 @@ class Token(BaseModel):
         example={'അബ്രാഹാമിന്റെ':{"frequency":10}, 'അബ്രാഹാം':{"frequency":24}})
     metaData: dict = Field(None, example={"translationWord": "Abraham",
     	"link": "https://git.door43.org/unfoldingWord/en_tw/src/branch/master/bible/names/abraham.md"})
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
@@ -127,7 +125,7 @@ class Sentence(BaseModel):
     draftMeta: List[Tuple[Tuple[int, int], Tuple[int,int],'str']] = Field(None,
         example=[[[0,8], [0,8],"confirmed"],
             [[8,64],[8,64],"untranslated"]])
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
@@ -177,7 +175,7 @@ class Suggestion(BaseModel):
     '''Response object for suggestion'''
     suggestion:str
     score: float
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
@@ -215,7 +213,7 @@ class GlossOutput(BaseModel):
     translations: dict = Field(None, example={'प्यार':3, "प्रेम":1.2,
         "प्रेम करना":0})
     metaData: dict = Field(None, example={"word-class":["noun", "verb"]})
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True

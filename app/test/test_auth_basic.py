@@ -62,7 +62,7 @@ def register_role_appending(data,apptype):
     return response
 
 #delete created user with super admin authentication
-def delete_user_identity(id):
+def delete_user_identity(user_identity):
     """delete a user identity"""
     data = {
         "user_email": SUPER_USER,
@@ -71,7 +71,7 @@ def delete_user_identity(id):
     response = login(data)
     token =  response.json()['token']
     data = {
-        "userid": id
+        "userid": user_identity
     }
     headers = {"contentType": "application/json",
                 "accept": "application/json",
@@ -80,7 +80,7 @@ def delete_user_identity(id):
     response = client.delete(DELETE_URL, headers=headers, json=data)
     assert response.status_code == 200
     assert response.json()["message"] == \
-        "deleted identity "+ id
+        "deleted identity "+ user_identity
 
 #role assignment
 def assign_roles(data,user_id,role_list):
@@ -139,7 +139,7 @@ def test_login_register():
         "lastname": "ABC Test"
     }
     response = register(data,apptype=None)
-    ABC_id = response.json()["registered_details"]["id"]
+    abc_id = response.json()["registered_details"]["id"]
 
     #test user ABC login after register
     data = {
@@ -161,7 +161,7 @@ def test_login_register():
     assert response.json()['details'] == \
       "An account with the same identifier (email, phone, username, ...) exists already."
 
-    delete_user_identity(ABC_id)
+    delete_user_identity(abc_id)
 
 #test for validate register data
 def test_incorrect_email():
@@ -207,7 +207,7 @@ def test_optional_register_params():
     }
     response = register(data,apptype=None)
     assert response.json()["registered_details"]["Permisions"] == ['None']
-    ABC_id = response.json()["registered_details"]["id"]
+    abc_id = response.json()["registered_details"]["id"]
 
     #no first and last name, registration execute without error
     data = {
@@ -215,10 +215,10 @@ def test_optional_register_params():
         "password": "passwordabc@1"
     }
     response1 = register(data,apptype=None)
-    ABC1_id = response1.json()["registered_details"]["id"]
-    
-    delete_user_identity(ABC_id)
-    delete_user_identity(ABC1_id)
+    abc1_id = response1.json()["registered_details"]["id"]
+
+    delete_user_identity(abc_id)
+    delete_user_identity(abc1_id)
 
 #test register with missing field
 def test_register_incorrectdatas():
@@ -253,7 +253,7 @@ def test_register_roles():
         "lastname": "Vachan role Test"
     }
     response1 = register(data_xyz1,apptype="VachanUser")
-    XYZ1_id = response1.json()["registered_details"]["id"]
+    xyz1_id = response1.json()["registered_details"]["id"]
     assert response1.json()["registered_details"]["Permisions"] == ['VachanUser']
 
     data_xyz2 = {
@@ -263,7 +263,7 @@ def test_register_roles():
         "lastname": "Ag role Test"
     }
     response2 = register(data_xyz2,apptype="AgUser")
-    XYZ2_id = response2.json()["registered_details"]["id"]
+    xyz2_id = response2.json()["registered_details"]["id"]
     assert response2.json()["registered_details"]["Permisions"] == ['AgUser']
 
     data_xyz3 = {
@@ -273,7 +273,7 @@ def test_register_roles():
         "lastname": "No role Test"
     }
     response3 = register(data_xyz3,apptype=None)
-    XYZ3_id = response3.json()["registered_details"]["id"]
+    xyz3_id = response3.json()["registered_details"]["id"]
     assert response3.json()["registered_details"]["Permisions"] == ['None']
 
     #login check for users
@@ -324,9 +324,9 @@ def test_register_roles():
     response3 = register_role_appending(data_xyz3,apptype="AgUser")
     assert response3.json()["registered_details"]["Permisions"] == ['None','AgUser']
 
-    delete_user_identity(XYZ1_id)
-    delete_user_identity(XYZ2_id)
-    delete_user_identity(XYZ3_id)
+    delete_user_identity(xyz1_id)
+    delete_user_identity(xyz2_id)
+    delete_user_identity(xyz3_id)
 
 #Register two users with app_info=None
 #and make them VachanAdmin and AgAdmin
@@ -409,7 +409,7 @@ def test_token_expiry():
     response2 = register(user,apptype=None)
     user_id = response2.json()["registered_details"]["id"]
     assert response2.json()["registered_details"]["Permisions"] == ['None']
-    
+
     role_data = {
         "userid": user_id,
         "roles": ["AgAdmin"]

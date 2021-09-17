@@ -1,6 +1,6 @@
 ''' Place to define all data processing and Database CRUD operations
 related to NLP operations and translation apps'''
-#pylint: disable=too-many-lines
+
 import re
 import os
 import json
@@ -13,16 +13,13 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
 
-#pylint: disable=E0401
-#pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
 from crud import utils
 import db_models
 from dependencies import log
 from custom_exceptions import NotAvailableException, TypeException, GenericException
 from schemas_nlp import TranslationDocumentType
 
-#pylint: disable=too-many-branches, disable=too-many-locals,
-#pylint: disable=too-many-statements, disable=W0102, disable=too-many-nested-blocks
+#pylint: disable= disable=W0102
 
 ###################### Tokenization ######################
 def build_memory_trie(translation_memory):
@@ -83,7 +80,7 @@ def find_phrases(src_text, stop_words, include_phrases=True, include_stopwords=F
                 res_words.append(wrd)
         phrases = res_words
     return phrases
-#pylint: disable=too-many-arguments
+
 def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, include_phrases=True,
     include_stopwords=False, punctuations=None, stop_words=None):
     '''Get phrase and single word tokens and their occurances from input sentence list.
@@ -711,7 +708,7 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0
     result_list = [result_dict[entry] for entry in result_dict]
     return result_list
 
-def get_gloss(db_:Session, *args, **kwargs): # pylint: disable=too-many-locals
+def get_gloss(db_:Session, *args, **kwargs):
     '''find the context based translation suggestions(gloss) for a word.
     Makes use of the learned model(trie), for the lang pair, based on translation memory
     output format: [(translation1, score1), (translation2, score2), ...]'''

@@ -4,8 +4,7 @@ import json
 import requests
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-#pylint: disable=E0401
-#pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
+
 from dependencies import log
 from custom_exceptions import GenericException , PermisionException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
@@ -112,9 +111,7 @@ def get_all_kratos_users():
     return user_data
 
 #User registration with credentials
-#pylint: disable=R0914
 #pylint: disable=R1710
-#pylint: disable=R0912
 def user_register_kratos(register_details,app_type):
     """user registration kratos"""
     email = register_details.email
@@ -253,25 +250,25 @@ def user_role_add(user_id,roles_list):
     "state": state,
     "traits": traits
     }
-    #pylint: disable=R1720
+
     if len(exist_roles) > 0:
         raise AlreadyExistsException("Already Exist permisions %s"%exist_roles)
-    else:
-        headers = {}
-        headers["Content-Type"] = "application/json"
-        response = requests.put(url,headers=headers,json=data)
 
-        if response.status_code == 200:
-            resp_data = json.loads(response.content)
-            #pylint: disable=R1705
-            if roles_list == resp_data["traits"]["userrole"]:
-                return {"Success":True,"message":"User Roles Updated",
-                        "role_list": resp_data["traits"]["userrole"]
-                }
-            else:
-                raise GenericException("User Role not updated properly.Check details provided")
+    headers = {}
+    headers["Content-Type"] = "application/json"
+    response = requests.put(url,headers=headers,json=data)
+
+    if response.status_code == 200:
+        resp_data = json.loads(response.content)
+        #pylint: disable=R1705
+        if roles_list == resp_data["traits"]["userrole"]:
+            return {"Success":True,"message":"User Roles Updated",
+                    "role_list": resp_data["traits"]["userrole"]
+            }
         else:
-            raise GenericException(response.content)
+            raise GenericException("User Role not updated properly.Check details provided")
+    else:
+        raise GenericException(response.content)
 
 #Create Super User
 def create_super_user():

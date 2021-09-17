@@ -1,12 +1,9 @@
 '''GraphQL queries and mutations'''
-#pylint: disable=C0302
 import graphene
-#pylint: disable=E0401
 import schemas
 import schemas_nlp
-#pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
+
 from crud import structurals_crud,contents_crud,projects_crud,nlp_crud
-#pylint: disable=E0611
 from graphql_api import types, utils
 
 ############ ADD NEW Language #################
@@ -18,7 +15,6 @@ class InputAddLang(graphene.InputObjectType):
     scriptDirection = graphene.String()
     metaData = graphene.JSONString(description="Expecting a dictionary Type")
 
-#pylint: disable=R0901,too-few-public-methods
 class AddLanguage(graphene.Mutation):
     """Mutation class for Add Language"""
     class Arguments:
@@ -29,7 +25,7 @@ class AddLanguage(graphene.Mutation):
     message = graphene.String()
 
 #pylint: disable=R0201,no-self-use
-#pylint: disable=W0613
+
     def mutate(self,info,language_addargs):
         '''resolve'''
         db_ = info.context["request"].db_session
@@ -114,7 +110,7 @@ class CreateContentTypes(graphene.Mutation):
             ,data = content_type)
 
 ########## Add License ########
-enum_val = types.LicensePermission
+EnumVal = types.LicensePermission
 
 class InputAddLicense(graphene.InputObjectType):
     """Add license Input"""
@@ -122,12 +118,11 @@ class InputAddLicense(graphene.InputObjectType):
     code = graphene.String(required=True,\
         description="pattern: '^[a-zA-Z0-9\\.\\_\\-]+$'")
     license = graphene.String(required=True)
-    permissions = graphene.List(enum_val, \
+    permissions = graphene.List(EnumVal, \
         default_value =["Private_use"],\
         description="Expecting a list \
         [ Commercial_use, Modification, Distribution, Patent_use, Private_use ]")
 
-#pylint: disable=R0901,too-few-public-methods
 class AddLicense(graphene.Mutation):
     """Mutation class for Add Licenses"""
     class Arguments:
@@ -156,7 +151,7 @@ class AddLicense(graphene.Mutation):
         return AddLicense(message=message,data=license_var)
 
 ########## Edit License ########
-enum_val = types.LicensePermission
+EnumVal = types.LicensePermission
 
 class InputEditLicense(graphene.InputObjectType):
     """Edit license Input"""
@@ -164,13 +159,12 @@ class InputEditLicense(graphene.InputObjectType):
     code = graphene.String(required=True,description=\
         "pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
     license = graphene.String()
-    permissions = graphene.List(enum_val, default_value =\
+    permissions = graphene.List(EnumVal, default_value =\
         ["Private_use"],\
         description="Expecting a list\
         [ Commercial_use, Modification, Distribution, Patent_use, Private_use ]")
     active = graphene.Boolean()
 
-#pylint: disable=R0901,too-few-public-methods
 class EditLicense(graphene.Mutation):
     """Mutation class for Edit Licenses"""
     class Arguments:
@@ -656,7 +650,7 @@ class EditCommentary(graphene.Mutation):
         return AddCommentary(message=message,data=comm_content_list)
 
 ##### AGMT PROJECT MANAGEMENT Create #######
-enum_doc = types.TranslationDocumentType
+EnumDoc = types.TranslationDocumentType
 
 class InputCreateAGMTProject(graphene.InputObjectType):
     """CreateAGMTProject Input"""
@@ -666,7 +660,7 @@ class InputCreateAGMTProject(graphene.InputObjectType):
         description="pattern:^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
     targetLanguageCode = graphene.String(required=True,\
         description="pattern:^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
-    documentFormat = graphene.Field(enum_doc)
+    documentFormat = graphene.Field(EnumDoc)
     useDataForLearning = graphene.Boolean()
     stopwords = graphene.Field(types.Stopwords)
     punctuations = graphene.List(graphene.String,\

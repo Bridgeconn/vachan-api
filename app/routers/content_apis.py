@@ -3,8 +3,6 @@ from typing import List
 from fastapi import APIRouter, Query, Body, Depends, Path
 from sqlalchemy.orm import Session
 
-#pylint: disable=E0401
-#pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 import schemas
 from dependencies import get_db, log
 from custom_exceptions import NotAvailableException, AlreadyExistsException
@@ -58,7 +56,7 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Languages"])
-def get_language(language_code : schemas.LangCodePattern = Query(None, example="hi"), #pylint: disable=too-many-arguments
+def get_language(language_code : schemas.LangCodePattern = Query(None, example="hi"),
     language_name: str = Query(None, example="hindi"),
     search_word: str = Query(None, example="Sri Lanka"),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
@@ -104,7 +102,7 @@ def edit_language(lang_obj: schemas.LanguageEdit = Body(...), db_: Session = Dep
     response_model=List[schemas.LicenseResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Licenses"])
-def get_license(license_code : schemas.LicenseCodePattern=Query(None, example="CC-BY-SA"), #pylint: disable=too-many-arguments
+def get_license(license_code : schemas.LicenseCodePattern=Query(None, example="CC-BY-SA"),
     license_name: str=Query(None, example="Creative Commons License"),
     permission: schemas.LicensePermisssion=Query(None, example="Commercial_use"),
     active: bool=Query(True),
@@ -150,7 +148,7 @@ def edit_license(license_obj: schemas.LicenseEdit = Body(...), db_: Session = De
     response_model=List[schemas.VersionResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Versions"])
-def get_version(version_abbreviation : schemas.VersionPattern = Query(None, example="KJV"), #pylint: disable=too-many-arguments
+def get_version(version_abbreviation : schemas.VersionPattern = Query(None, example="KJV"),
     version_name: str = Query(None, example="King James Version"), revision : int = Query(None),
     metadata: schemas.MetaDataPattern = Query(None, example='{"publishedIn":"1611"}'),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
@@ -204,7 +202,7 @@ def edit_version(ver_obj: schemas.VersionEdit = Body(...), db_: Session = Depend
     response_model=List[schemas.SourceResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Sources"])
-def get_source(content_type: str=Query(None, example="commentary"), #pylint: disable=too-many-arguments
+def get_source(content_type: str=Query(None, example="commentary"),
     version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
     revision: int=Query(None, example=1),
     language_code: schemas.LangCodePattern=Query(None,example="en"),
@@ -273,7 +271,7 @@ def edit_source(source_obj: schemas.SourceEdit = Body(...), db_: Session = Depen
     response_model=List[schemas.BibleBook],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Lookups"])
-def get_bible_book(book_id: int=Query(None, example=67), #pylint: disable=too-many-arguments
+def get_bible_book(book_id: int=Query(None, example=67),
     book_code: schemas.BookCodePattern=Query(None,example='rev'),
     book_name: str=Query(None, example="Revelation"),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
@@ -330,7 +328,7 @@ def edit_bible_book(source_name: schemas.TableNamePattern=Path(..., example="hi_
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
-def get_available_bible_book(source_name: schemas.TableNamePattern=Path(..., #pylint: disable=too-many-arguments
+def get_available_bible_book(source_name: schemas.TableNamePattern=Path(...,
     example="hi_IRV_1_bible"),
     book_code: schemas.BookCodePattern=Query(None, example="mat"),
     content_type: schemas.BookContentType=Query(None), active: bool=True,
@@ -366,7 +364,7 @@ def get_bible_versification(
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
-def get_bible_verse(source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"), #pylint: disable=too-many-arguments
+def get_bible_verse(source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
     book_code: schemas.BookCodePattern=Query(None, example="mat"),
     chapter: int=Query(None, example=1), verse: int=Query(None, example=1),
     last_verse: int=Query(None, example=15), search_phrase: str=Query(None, example='सन्‍तान'),
@@ -426,7 +424,7 @@ def edit_audio_bible(source_name: schemas.TableNamePattern=Path(..., example="hi
     response_model=List[schemas.CommentaryResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Commentaries"])
-def get_commentary(#pylint: disable=too-many-arguments
+def get_commentary(
     source_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
     book_code: schemas.BookCodePattern=Query(None, example="1ki"),
     chapter: int = Query(None, example=10, ge=-1), verse: int = Query(None, example=1, ge=-1),
@@ -493,7 +491,7 @@ def edit_commentary(source_name: schemas.TableNamePattern=Path(..., example="en_
     response_model=List[schemas.DictionaryWordResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Dictionaries"])
-def get_dictionary_word( #pylint: disable=too-many-arguments
+def get_dictionary_word(
     source_name: schemas.TableNamePattern=Path(...,example="en_TW_1_dictionary"),
     search_word: str=Query(None, example="Adam"),
     exact_match: bool=False, word_list_only: bool=False,
@@ -558,7 +556,7 @@ def edit_dictionary_word(
     response_model=List[schemas.InfographicResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Infographics"])
-def get_infographic(#pylint: disable=too-many-arguments
+def get_infographic(
     source_name:schemas.TableNamePattern=Path(...,example="hi_IRV_1_infographic"),
     book_code: schemas.BookCodePattern=Query(None, example="exo"),
     title: str=Query(None, example="Ark of Covenant"), active: bool=True,
@@ -612,7 +610,7 @@ def edit_infographics(source_name: schemas.TableNamePattern=Path(...,
     response_model=List[schemas.BibleVideo],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bible Videos"])
-def get_biblevideo(#pylint: disable=too-many-arguments
+def get_biblevideo(
     source_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
     book_code: schemas.BookCodePattern=Query(None, example="sng"),
     title: str=Query(None, example="Overview: song of songs"),
