@@ -10,6 +10,7 @@ import schemas_nlp
 from crud import utils, nlp_crud
 from custom_exceptions import NotAvailableException, TypeException
 
+#pylint: disable=W0143
 ###################### AgMT Project Mangement ######################
 def create_agmt_project(db_:Session, project, user_id=None):
     '''Add a new project entry to the translation projects table'''
