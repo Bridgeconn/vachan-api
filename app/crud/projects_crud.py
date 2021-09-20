@@ -13,7 +13,7 @@ import schemas_nlp
 from crud import utils, nlp_crud
 from custom_exceptions import NotAvailableException, TypeException
 
-#pylint: disable=too-many-branches, disable=too-many-locals, disable=too-many-arguments
+#pylint: disable=too-many-branches, disable=too-many-locals
 #pylint: disable=too-many-statements, disable=W0102, disable=too-many-nested-blocks
 
 ###################### AgMT Project Mangement ######################
@@ -141,8 +141,12 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
     return project_row
 
 def get_agmt_projects(db_:Session, project_name=None, source_language=None, target_language=None,
-    active=True, user_id=None, skip=0, limit=100):
+    **kwargs):
     '''Fetch autographa projects as per the query options'''
+    active = kwargs.get("active",True)
+    user_id = kwargs.get("user_id",None)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
     query = db_.query(db_models.TranslationProject)
     if project_name:
         query = query.filter(
@@ -198,10 +202,10 @@ def update_agmt_user(db_, user_obj, current_user=10101):
     db_.commit()
     return user_row
 
-
 def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence_id_range,
-    output_format="usfm"):
+    **kwargs):
     '''generate draft for selected sentences as usfm or json'''
+    output_format = kwargs.get("output_format","usfm")
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException("Project with id, %s, not found"%project_id)

@@ -10,7 +10,6 @@ import schemas_nlp
 
 
 #pylint: disable=R0201, too-many-arguments, too-many-public-methods
-
 class Query(graphene.ObjectType):
     '''All defined queries'''
     languages = graphene.List(types.Language,
@@ -74,9 +73,9 @@ class Query(graphene.ObjectType):
         latest_revision=True, skip=0, limit=100):
         '''resolver'''
         db_ = info.context["request"].db_session
-        results =  structurals_crud.get_sources(db_, content_type, version_abbreviation, revision,
-            language_code, license_code, latest_revision=latest_revision, active=active,
-            skip=skip, limit=limit)
+        results =  structurals_crud.get_sources(db_, content_type, version_abbreviation,
+        revision=revision,language_code=language_code, license_code=license_code,
+        latest_revision=latest_revision,active=active, skip=skip, limit=limit)
         return results
 
     bible_books = graphene.List(types.BibleBook,
@@ -139,8 +138,8 @@ class Query(graphene.ObjectType):
         active=True, skip=0, limit=100):
         '''resolver'''
         db_ = info.context["request"].db_session
-        return contents_crud.get_bible_videos(db_, source_name, book_code, title, theme, active,
-            skip=skip, limit=limit)
+        return contents_crud.get_bible_videos(db_, source_name, book_code, title, theme,
+        active=active, skip=skip, limit=limit)
 
     bible_contents = graphene.List(types.BibleContent,
         description="Query bible usfms, jsons and audios in vachan-db",
@@ -174,7 +173,8 @@ class Query(graphene.ObjectType):
         '''resolver'''
         db_ = info.context["request"].db_session
         return contents_crud.get_bible_verses(db_, source_name, book_code, chapter, verse,
-            last_verse, search_phrase, active=active, skip = skip, limit = limit)
+            last_verse = last_verse, search_phrase = search_phrase,
+            active=active, skip = skip, limit = limit)
 
     agmt_projects = graphene.List(types.TranslationProject,
         description="Query AutographaMT projects on vachan-db", project_name=graphene.String(),
@@ -190,7 +190,7 @@ class Query(graphene.ObjectType):
         '''resolver'''
         db_ = info.context["request"].db_session
         return projects_crud.get_agmt_projects(db_, project_name, source_language, target_language,
-            active, user_id, skip=skip, limit=limit)
+            active=active, user_id=user_id, skip=skip, limit=limit)
 
     agmt_project_tokens = graphene.List(types.Token,
         description="Tokenize specified portions of source in an AgMT project",
@@ -206,7 +206,8 @@ class Query(graphene.ObjectType):
         '''resolver'''
         db_ = info.context["request"].db_session
         return nlp_crud.get_agmt_tokens(db_, project_id, books, sentence_id_range, sentence_id_list,
-            use_translation_memory, include_phrases, include_stopwords)
+            use_translation_memory=use_translation_memory,
+            include_phrases=include_phrases, include_stopwords=include_stopwords)
 
     agmt_project_token_translation = graphene.Field(types.TokenTranslation,
         description="Query the translation done for a token in an AgMT project",
@@ -327,7 +328,8 @@ class Query(graphene.ObjectType):
         token_offset=None):
         '''resolver'''
         db_ = info.context["request"].db_session
-        return nlp_crud.glossary(db_, source_language, target_language, token,context,token_offset)
+        return nlp_crud.glossary(db_, source_language, target_language, token,
+        context=context,token_offset=token_offset)
 
     tokenize = graphene.List(types.Token,
         description='Tokenize a set of sentences',
@@ -345,7 +347,8 @@ class Query(graphene.ObjectType):
         '''resolver'''
         db_ = info.context["request"].db_session
         return nlp_crud.get_generic_tokens(db_, source_language, sentence_list, target_language,
-            punctuations, stopwords, use_translation_memory, include_phrases, include_stopwords)
+            punctuations= punctuations, stopwords=stopwords, include_phrases = include_phrases,
+            use_translation_memory=use_translation_memory, include_stopwords=include_stopwords)
 
     translate_token = graphene.List(types.Sentence,
         description='replace provided tokens with translation in the input sentences',
@@ -365,7 +368,7 @@ class Query(graphene.ObjectType):
         new_token_list =[ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.TokenUpdate)
                 for item in token_translations]
         return nlp_crud.replace_bulk_tokens(db_, new_sent_list, new_token_list, source_language,
-            target_language, use_data_for_learning)
+            target_language, use_data_for_learning=use_data_for_learning)
 
 
     convert_to_usfm = graphene.List(graphene.String,

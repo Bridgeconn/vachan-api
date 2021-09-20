@@ -11,6 +11,7 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL)
 Session = sessionmaker()
 CONN = None
 
+
 def override_get_db():
     '''To use a separate transaction for test sessions which can then be rolled back'''
     global CONN #pylint: disable=W0603

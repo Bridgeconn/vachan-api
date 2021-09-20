@@ -12,9 +12,18 @@ import db_models
 from crud import utils
 from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException
 
-def get_commentaries(db_:Session, source_name, book_code=None, chapter=None, #pylint: disable=too-many-arguments
-    verse=None, last_verse=None, active=True, skip=0, limit=100):
+
+def get_commentaries(db_:Session, *args,**kwargs):
     '''Fetches rows of commentries from the table specified by source_name'''
+    source_name = args[0]
+    book_code = args[1]
+    chapter = args[2]
+    verse = args[3]
+    last_verse = args[4]
+    active = kwargs.get("active",True)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
+
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
     if not source_name.endswith(db_models.ContentTypeName.commentary.value):
@@ -107,9 +116,14 @@ def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
     db_.refresh(source_db_content)
     return db_content
 
-def get_dictionary_words(db_:Session, source_name, search_word = None, details = None,  #pylint: disable=too-many-arguments
-    exact_match=False, word_list_only=False, active=True, skip=0, limit=100):
+def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):
     '''Fetches rows of dictionary from the table specified by source_name'''
+    details = kwargs.get("details",None)
+    exact_match = kwargs.get("exact_match",False)
+    word_list_only = kwargs.get("word_list_only",False)
+    active = kwargs.get("active",True)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
     if not source_name.endswith(db_models.ContentTypeName.dictionary.value):
@@ -181,9 +195,11 @@ def update_dictionary_words(db_: Session, source_name, dictionary_words, user_id
     db_.refresh(source_db_content)
     return db_content
 
-def get_infographics(db_:Session, source_name, book_code=None, title=None, #pylint: disable=too-many-arguments
-    active=True, skip=0, limit=100):
+def get_infographics(db_:Session, source_name, book_code=None, title=None,**kwargs):
     '''Fetches rows of infographics from the table specified by source_name'''
+    active = kwargs.get("active",True)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
     if not source_name.endswith(db_models.ContentTypeName.infographic.value):
@@ -268,9 +284,11 @@ def update_infographics(db_: Session, source_name, infographics, user_id=None):
     db_.refresh(source_db_content)
     return db_content
 
-def get_bible_videos(db_:Session, source_name, book_code=None, title=None, theme=None, active=True, #pylint: disable=too-many-arguments
-    skip=0, limit=100):
+def get_bible_videos(db_:Session, source_name, book_code=None, title=None, theme=None,**kwargs):
     '''fetches rows of bible videos as per provided source_name and filters'''
+    active = kwargs.get("active",True)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
     if not source_name.endswith(db_models.ContentTypeName.biblevideo.value):
@@ -606,9 +624,12 @@ def get_bible_versification(db_, source_name):
     return versification
 
 
-def get_available_bible_books(db_, source_name, book_code=None, content_type=None, #pylint: disable=too-many-arguments, disable=too-many-locals
-    active=True, skip=0, limit=100):
+def get_available_bible_books(db_, source_name, book_code=None, content_type=None,
+    **kwargs):
     '''fetches the contents of .._bible table based of provided source_name and other options'''
+    active = kwargs.get("active",True)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
     if not source_name.endswith('_bible'):
@@ -640,9 +661,14 @@ def get_available_bible_books(db_, source_name, book_code=None, content_type=Non
     return results
 
 
-def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, verse=None, #pylint: disable=too-many-locals, disable=too-many-arguments
-    last_verse=None, search_phrase=None, active=True, skip=0, limit=100):
+def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, verse=None, #pylint: disable=too-many-locals
+    **kwargs):
     '''queries the bible cleaned table for verses'''
+    last_verse = kwargs.get("last_verse",None)
+    search_phrase = kwargs.get("search_phrase",None)
+    active = kwargs.get("active",True)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
     if not source_name.endswith('_bible'):

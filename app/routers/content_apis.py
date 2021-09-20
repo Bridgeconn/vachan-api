@@ -225,9 +225,9 @@ def get_source(content_type: str=Query(None, example="commentary"), #pylint: dis
         license_code:%s, metadata: %s, latest_revision: %s, active: %s, skip: %s, limit: %s',
         content_type, version_abbreviation, revision, language_code, license_code, metadata,
         latest_revision, active, skip, limit)
-    return structurals_crud.get_sources(db_, content_type, version_abbreviation, revision,
-        language_code, license_code, metadata, latest_revision=latest_revision, active=active,
-        skip=skip, limit=limit)
+    return structurals_crud.get_sources(db_, content_type, version_abbreviation, revision=revision,
+        language_code=language_code, license_code=license_code, metadata=metadata,
+        latest_revision=latest_revision, active=active,skip=skip, limit=limit)
 
 @router.post('/v2/sources', response_model=schemas.SourceCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -387,8 +387,9 @@ def get_bible_verse(source_name: schemas.TableNamePattern=Path(..., example="hi_
     log.debug('source_name: %s, book_code: %s, chapter: %s, verse:%s, last_verse:%s,\
         search_phrase:%s, active:%s, skip: %s, limit: %s',
         source_name, book_code, chapter, verse, last_verse, search_phrase, active, skip, limit)
-    return contents_crud.get_bible_verses(db_, source_name, book_code, chapter, verse, last_verse,
-        search_phrase, active=active, skip = skip, limit = limit)
+    return contents_crud.get_bible_verses(db_, source_name, book_code, chapter, verse,
+    last_verse = last_verse, search_phrase=search_phrase, active=active,
+    skip = skip, limit = limit)
 
 # # ########### Audio bible ###################
 @router.post('/v2/bibles/{source_name}/audios', response_model=schemas.AudioBibleCreateResponse,
@@ -625,8 +626,8 @@ def get_biblevideo(#pylint: disable=too-many-arguments
     log.info('In get_biblevideo')
     log.debug('source_name: %s, book_code: %s, title: %s, theme: %s, skip: %s, limit: %s',
         source_name, book_code, title, theme, skip, limit)
-    return contents_crud.get_bible_videos(db_, source_name, book_code, title, theme, active,
-        skip=skip, limit=limit)
+    return contents_crud.get_bible_videos(db_, source_name, book_code, title, theme,
+    active=active, skip=skip, limit=limit)
 
 @router.post('/v2/biblevideos/{source_name}', response_model=schemas.BibleVideoCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
