@@ -1,6 +1,7 @@
 """Basic test cases of features Register, Login, Logout, Role assignment"""
 import os
 import pytest
+from urllib.parse import quote
 from . import assert_input_validation_error, client
 
 LOGIN_URL = '/v2/user/login'
@@ -26,7 +27,7 @@ def create_user_fixture():
 def login(data):
     '''test for login feature'''
     #headers = {"contentType": "application/json", "accept": "application/json"}
-    params = f"?user_email={data['user_email']}&password={data['password']}"
+    params = f"?user_email={quote(data['user_email'])}&password={quote(data['password'])}"
     response = client.get(LOGIN_URL+params)
     if response.status_code == 200:
         assert response.json()['message'] == "Login Succesfull"
@@ -132,7 +133,8 @@ def test_superuser_login():
   "user_email": SUPER_USER,
   "password": SUPER_PASSWORD
 }
-    login(data)
+    response =login(data)
+    assert response.json()['message'] == "Login Succesfull"
 
 #Try logging in user ABC before and after registration.
 def test_login_register(create_user_fixture):
@@ -143,7 +145,8 @@ def test_login_register(create_user_fixture):
         "user_email": "abc@gmail.com",
         "password": "passwordabc@1"
     }
-    login(data)
+    response = login(data)
+    assert 'error' in  response.json()
 
     #register the user ABC
     data = {
@@ -160,7 +163,8 @@ def test_login_register(create_user_fixture):
         "user_email": "abc@gmail.com",
         "password": "passwordabc@1"
     }
-    login(data)
+    response = login(data)
+    assert response.json()['message'] == "Login Succesfull"
 
     #register user ABC again with same credentials
     data = {
@@ -298,19 +302,22 @@ def test_register_roles(create_user_fixture):
         "user_email": "xyz1@gmail.com",
         "password": "passwordxyz1@1"
     }
-    login(data_xyz1)
+    response = login(data_xyz1)
+    assert response.json()['message'] == "Login Succesfull"
 
     data_xyz2 = {
         "user_email": "xyz2@gmail.com",
         "password": "passwordxyz2@1"
     }
-    login(data_xyz2)
+    response2 = login(data_xyz2)
+    assert response2.json()['message'] == "Login Succesfull"
 
     data_xyz3 = {
         "user_email": "xyz3@gmail.com",
         "password": "passwordxyz3@1"
     }
-    login(data_xyz3)
+    response3 = login(data_xyz3)
+    assert response3.json()['message'] == "Login Succesfull"
 
     #Register same users xyz1, xyz2 & xyz3 as above with different app_info
     # and ensure that, their roles are appended
@@ -414,6 +421,7 @@ def test_token_expiry(create_user_fixture):
         "password": SUPER_PASSWORD
     }
     response = login(data)
+    assert response.json()['message'] == "Login Succesfull"
     token =  response.json()['token']
 
     #logout user
