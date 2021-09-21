@@ -19,7 +19,8 @@ from dependencies import log
 from custom_exceptions import NotAvailableException, TypeException, GenericException
 from schemas_nlp import TranslationDocumentType
 
-#pylint: disable=W0102,E1101
+#Based on sqlalchemy
+#pylint: disable=W0102,E1101,W0143
 ###################### Tokenization ######################
 def build_memory_trie(translation_memory):
     '''form a trie from a list of known tokens in a source language, to be used for tokenization'''
