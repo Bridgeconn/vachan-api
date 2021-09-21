@@ -19,7 +19,7 @@ from dependencies import log
 from custom_exceptions import NotAvailableException, TypeException, GenericException
 from schemas_nlp import TranslationDocumentType
 
-#pylint: disable=W0102, C0206, W0143
+#pylint: disable=W0102,E1101
 ###################### Tokenization ######################
 def build_memory_trie(translation_memory):
     '''form a trie from a list of known tokens in a source language, to be used for tokenization'''
@@ -618,7 +618,7 @@ def rebuild_trie(db_, src, trg):
     files_on_disc = SUGGESTION_DATA_PATH.glob(src+"-"+trg+'*.json')
     for file in files_on_disc:
         with open(file, 'r', encoding='utf-8') as json_file:
-            log.warning("Using %s, to update %s-%s trie"%(file, src, trg))
+            log.warning("Using %s, to update %s-%s trie",file, src, trg)
             json_data = json.load(json_file)
             for key in json_data:
                 new_trie[key] = json_data[key]
