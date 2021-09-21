@@ -125,7 +125,7 @@ def test_default_post_put_get():
     assert response4.status_code == 201
     assert response4.json()['message'] == "Project updated successfully"
     updated_project = response4.json()['data']
-    assert_positive_get(updated_project)    
+    assert_positive_get(updated_project)
     assert updated_project['projectName']== "New name for old project"
 
 
@@ -294,9 +294,9 @@ def test_add_user():
     assert response.status_code == 201
     assert response.json()['message'] == "User added to project successfully"
     data = response.json()['data']
-    assert data["project_id"] == new_project['projectId'] 
-    assert data["userId"] == new_user_id 
-    assert data["userRole"] == "member" 
+    assert data["project_id"] == new_project['projectId']
+    assert data["userId"] == new_user_id
+    assert data["userRole"] == "member"
     assert data['active']
 
     # fetch this project and check for new user

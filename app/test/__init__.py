@@ -112,8 +112,8 @@ def check_soft_delete(unit_url, check_post, data, delete_data):
 
 def check_skip_limit_gql(query,api_name):
     '''All tests for the skip and limit parameter of an API endpoint graphql'''
-   
-   #checking skip and limit 
+
+   #checking skip and limit
     var1 = {
   "skip": 0,
   "limit": 3
