@@ -6,6 +6,18 @@ from typing import List
 from pydantic import BaseModel
 from pydantic import types
 
+class ResourceType(str, Enum):
+    '''Classify DB resources for defineing access rights on them'''
+    metaContent: "meta contents like licences, languages, versions or content types"
+    content: "contents like bibles, commentaries, infographics, dictionary or videos"
+    project: "Ag or translation project"
+
+class App(str, Enum):
+    '''Defined apps'''
+    ag = "Autographa"
+    vachan = "Vachan-online or vachan-app"
+    vachanAdmin = "Vachan Admin"
+
 #pylint: disable=R0903
 class AppType(str, Enum):
     '''user role based on app'''
