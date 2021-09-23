@@ -161,9 +161,9 @@ def tokenize(db_:Session, src_lang, sent_list, #pylint: disable=too-many-locals
     # We do this fresh for every tokenization request. Can be optimized
     if use_translation_memory and include_phrases:
         translation_memory = db_.query(db_models.TranslationMemory.token).filter(
-            db_models.TranslationMemory.source_language.has(code=src_lang)).all()
+            db_models.TranslationMemory.source_language.has(code=src_lang)).all()#pylint: disable=E1101
         reverse_memory = db_.query(db_models.TranslationMemory.translation).filter(
-            db_models.TranslationMemory.target_language.has(code=src_lang)).all()
+            db_models.TranslationMemory.target_language.has(code=src_lang)).all()#pylint: disable=E1101
         memory_trie = build_memory_trie(translation_memory+reverse_memory)
     for sent in sent_list:
         if not isinstance(sent, dict):
