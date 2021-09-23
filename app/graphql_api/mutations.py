@@ -1,5 +1,5 @@
 '''GraphQL queries and mutations'''
-#pylint: disable=C0302
+#pylint: disable=C0302,C0103
 import graphene
 #pylint: disable=E0401
 import schemas
