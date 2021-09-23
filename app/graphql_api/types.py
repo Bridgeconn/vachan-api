@@ -2,6 +2,7 @@
 import graphene
 from graphene.types import Scalar
 
+#pylint: disable=too-few-public-methods
 class Metadata(Scalar):
     '''metadata representing JSON'''
     @staticmethod

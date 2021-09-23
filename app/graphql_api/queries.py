@@ -6,6 +6,7 @@ from graphql_api import types, utils
 import schemas_nlp
 
 #pylint: disable=R0201
+#pylint: disable=too-many-arguments,too-many-public-methods
 class Query(graphene.ObjectType):
     '''All defined queries'''
     languages = graphene.List(types.Language,

@@ -10,7 +10,7 @@ import schemas_nlp
 from crud import nlp_crud, projects_crud
 
 router = APIRouter()
-
+#pylint: disable=too-many-arguments
 ############## Autographa Projects ##########################
 @router.get('/v2/autographa/projects', response_model=List[schemas_nlp.TranslationProject],
     status_code=200, tags=['Autographa-Project management'])

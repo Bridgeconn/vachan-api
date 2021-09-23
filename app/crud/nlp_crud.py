@@ -14,6 +14,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
 
 from crud import utils
+from crud import nlp_crud_utils as nlp_utils
 import db_models
 from dependencies import log
 from custom_exceptions import NotAvailableException, TypeException, GenericException
@@ -22,144 +23,23 @@ from schemas_nlp import TranslationDocumentType
 #Based on sqlalchemy
 #pylint: disable=W0102,E1101,W0143
 ###################### Tokenization ######################
-def build_memory_trie(translation_memory):
-    '''form a trie from a list of known tokens in a source language, to be used for tokenization'''
-    memory_trie = pygtrie.StringTrie()
-    space_pattern = re.compile(r'\s+')
-    for token in translation_memory:
-        key = re.sub(space_pattern,'/', token[0])
-        memory_trie[key] = 0
-    return memory_trie
 
-mock_translation_memory = ["जीवन के वचन", "जीवन का", "अपनी आँखों से देखा", "पिता के साथ",
-                          "यीशु मसीह", "परमेश्‍वर ज्योति", "झूठा ठहराते",
-                          "Here is it", "hare", "no"]
-
-def find_phrases(src_text, stop_words, include_phrases=True, include_stopwords=False):
-    '''try forming phrases as <preposition stop word>* <content word> <postposition stop word>*'''
-    words = src_text.split()
-    if not isinstance(stop_words, dict):
-        stop_words = stop_words.__dict__
-    sw_list = stop_words['prepositions']+stop_words['postpositions']
-    if not include_phrases:
-        if not include_stopwords:
-            res_words = []
-            for wrd in words:
-                if wrd not in sw_list:
-                    res_words.append(wrd)
-            words = res_words
-        return words
-    phrases = []
-    current_phrase = ''
-    state = 'pre'
-    i = 0
-    while i < len(words):
-        word = words[i]
-        if state == 'pre':
-            if word in stop_words['prepositions']:
-                current_phrase += ' '+ word # adds prepostion, staying in 'pre' state
-            else:
-                current_phrase += ' '+ word # adds one content word and goes to 'post' state
-                state = 'post'
-        elif state == 'post':
-            if word in stop_words['postpositions']:
-                current_phrase += ' '+ word # adds postposition, staying in 'post' state
-            else:
-                phrases.append(current_phrase.strip()) # stops the phrase building
-                current_phrase = word
-                if word in stop_words['prepositions']:
-                    state = 'pre'
-                else:
-                    state = 'post'
-        i += 1
-    phrases.append(current_phrase.strip())
-    if not include_stopwords:
-        res_words = []
-        for wrd in phrases:
-            if wrd not in sw_list:
-                res_words.append(wrd)
-        phrases = res_words
-    return phrases
-
-def tokenize(db_:Session, src_lang, sent_list, use_translation_memory=True, include_phrases=True,
-    include_stopwords=False, punctuations=None, stop_words=None):
-    '''Get phrase and single word tokens and their occurances from input sentence list.
-    Performs tokenization using two knowledge sources: translation memory and stopwords list
-    input: [(sent_id, sent_text), (sent_id, sent_text), ...]
-    output: {"token": [(sent_id, start_offset, end_offset),
-                            (sent_id, start_offset, end_offset)..],
-             "token": [(sent_id, start_offset, end_offset),
-                            (sent_id, start_offset, end_offset)..], ...}'''
-    unique_tokens = {}
-    if stop_words is None:
-        stop_words = utils.stopwords(src_lang)
-    if punctuations is None:
-        punctuations = utils.punctuations()+utils.numbers()
-    # fetch all known tokens for the language and build a trie with it
-    # We do this fresh for every tokenization request. Can be optimized
-    if use_translation_memory and include_phrases:
-        translation_memory = db_.query(db_models.TranslationMemory.token).filter(
-            db_models.TranslationMemory.source_language.has(code=src_lang)).all()
-        reverse_memory = db_.query(db_models.TranslationMemory.translation).filter(
-            db_models.TranslationMemory.target_language.has(code=src_lang)).all()
-        memory_trie = build_memory_trie(translation_memory+reverse_memory)
-    for sent in sent_list:
-        if not isinstance(sent, dict):
-            sent = sent.__dict__
-        phrases = []
-        src_text = re.sub(r'[\n\r]+', ' ', sent['sentence'])
-        #first split the text into chunks based on punctuations
-        chunks = [chunk.strip() for chunk in re.split(r'['+"".join(punctuations)+']+', src_text)]
-        updated_chunks = []
-        if use_translation_memory and include_phrases:
-            for chunk in chunks:
-                #search the trie to get the longest matching phrases known to us
-                temp = chunk
-                new_chunks = ['']
-                while temp != "":
-                    key = '/'.join(temp.split())
-                    lngst = memory_trie.longest_prefix(key)
-                    if lngst.key is not None:
-                        new_chunks.append("###"+lngst.key.replace('/',' '))
-                        temp = temp[len(lngst.key)+1:]
-                        new_chunks.append('')
-                    else:
-                        if " " in temp:
-                            indx = temp.index(' ')
-                            new_chunks[-1] += temp[:indx+1]
-                            temp = temp[indx+1:]
-                        else:
-                            new_chunks[-1] += temp
-                            temp = ""
-                updated_chunks += new_chunks
-            chunks = [ chk.strip() for chk in updated_chunks if chk.strip() != '']
-        for chunk in chunks:
-            # from the left out words in above step, try forming phrases
-            # as <preposition stop word>* <content word> <postposition stop word>*
-            if chunk.startswith('###'):
-                phrases.append(chunk.replace("###",""))
-            else:
-                phrases+= find_phrases(chunk,stop_words, include_phrases, include_stopwords)
-        start = 0
-        if not isinstance(stop_words, dict):
-            stop_words = stop_words.__dict__
-        for phrase in phrases:
-            if phrase.strip() == '':
-                continue
-            offset = sent['sentence'].find(phrase, start)
-            if offset == -1:
-                raise NotAvailableException("Tokenization: token, %s, not found in sentence: %s" %(
-                    phrase, sent['sentence']))
-            start = offset+len(phrase)
-            if phrase not in unique_tokens:
-                unique_tokens[phrase] = {
-                "occurrences":[{"sentenceId":sent['sentenceId'],
-                "offset":[offset, offset+len(phrase)]}],
-                "translations":[]}
-            else:
-                unique_tokens[phrase]["occurrences"].append(
-                    {"sentenceId":sent['sentenceId'], "offset":[offset, offset+len(phrase)]})
-    return unique_tokens
+def get_generic_tokens_result(db_, trg_language, src_language, args):
+    """get generic token function result generation"""
+    tokens = nlp_utils.tokenize(**args)
+    result = []
+    for token in tokens:
+        obj = tokens[token]
+        obj['token'] = token
+        trg = None
+        if trg_language is not None:
+            trg = trg_language.code
+        known_info = glossary(db_, src_language.code, trg, token)
+        obj['translations'] = known_info['translations']
+        if "metaData" in known_info:
+            obj['metaData'] = known_info['metaData']
+        result.append(obj)
+    return result
 
 def get_generic_tokens(db_:Session, src_language, sentence_list, trg_language=None,
     **kwargs):
@@ -188,19 +68,8 @@ def get_generic_tokens(db_:Session, src_language, sentence_list, trg_language=No
         args['stop_words'] = stopwords
     if punctuations is not None:
         args['punctuations'] = punctuations
-    tokens = tokenize(**args)
-    result = []
-    for token in tokens:
-        obj = tokens[token]
-        obj['token'] = token
-        trg = None
-        if trg_language is not None:
-            trg = trg_language.code
-        known_info = glossary(db_, src_language.code, trg, token)
-        obj['translations'] = known_info['translations']
-        if "metaData" in known_info:
-            obj['metaData'] = known_info['metaData']
-        result.append(obj)
+    #generate result based on tokens
+    result = get_generic_tokens_result(db_, trg_language, src_language, args)
     return result
 
 def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_id_list,
@@ -224,59 +93,27 @@ def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_
     return get_generic_tokens( **args)
 
 ###################### Token replacement translation ######################
-def replace_token(source, token_offset, translation,draft_meta=[], tag="confirmed",
-    **kwargs):
-    '''make a token replacement in draft and return updated sentence and draft_meta'''
-    draft= kwargs.get("draft","")
-    trans_length = len(translation)
-    updated_meta = []
-    updated_draft = ""
-    translation_offset = [None, None]
-    if draft_meta is None or len(draft_meta) == 0:
-        draft = source
-        draft_meta = [((0,len(source)), (0,len(source)), "untranslated")]
-    for meta in draft_meta:
-        tkn_offset = meta[0]
-        trans_offset = meta[1]
-        status = meta[2]
-        intersection = set(range(token_offset[0],token_offset[1])).intersection(
-            range(tkn_offset[0],tkn_offset[1]))
-        if len(intersection) > 0: # our area of interest overlaps with this segment
-            if token_offset[0] == tkn_offset[0]: #begining is same
-                translation_offset[0] = trans_offset[0]
-                updated_draft += translation
-            elif token_offset[0] > tkn_offset[0]: # begins within this segment
-                updated_draft += source[tkn_offset[0]: token_offset[0]]
-                new_seg_len = token_offset[0] - tkn_offset[0]
-                updated_meta.append(((tkn_offset[0], token_offset[0]),
-                    (trans_offset[0], trans_offset[0]+new_seg_len),"untranslated"))
-                translation_offset[0] = trans_offset[0]+new_seg_len
-                updated_draft += translation
-            else: # begins before this segment
-                pass
-            if token_offset[1] == tkn_offset[1]: # ending is the same
-                translation_offset[1] = translation_offset[0]+trans_length
-                updated_meta.append((token_offset, translation_offset, tag))
-                offset_diff = translation_offset[1] - trans_offset[1]
-            elif token_offset[1] < tkn_offset[1]: # ends within this segment
-                trailing_seg = source[token_offset[1]: tkn_offset[1]]
-                translation_offset[1] = translation_offset[0]+trans_length
-                updated_meta.append((token_offset, translation_offset, tag))
-                updated_draft += trailing_seg
-                updated_meta.append(((token_offset[1], tkn_offset[1]),
-                    (translation_offset[1],translation_offset[1]+len(trailing_seg)),
-                    "untranslated"))
-                offset_diff = translation_offset[1]+len(trailing_seg) - trans_offset[1]
-            else: # ends after this segment
-                pass
-        elif tkn_offset[1] < token_offset[1]: # our area of interest come after this segment
-            updated_draft += draft[trans_offset[0]: trans_offset[1]]
-            updated_meta.append(meta)
-        else: # our area of interest was before this segment
-            updated_draft += draft[trans_offset[0]: trans_offset[1]]
-            updated_meta.append((tkn_offset,
-                (trans_offset[0]+offset_diff, trans_offset[1]+offset_diff), status))
-    return updated_draft, updated_meta
+def replace_bulk_tokens_gloss_list(token_translations, updated_sentences):
+    """gloss list logic for replace bulk token function"""
+    gloss_list = []
+    for token in token_translations:
+        for occur in token.occurrences:
+            draft_row = updated_sentences[occur.sentenceId]
+            if not draft_row:
+                raise NotAvailableException("Sentence id, %s, not found in the sentence_list"
+                    %occur.sentenceId)
+            if token.token != draft_row.sentence[occur.offset[0]:occur.offset[1]]:
+                raise GenericException("Token, %s, and its occurence, not matching"%(
+                    token.token))
+            draft, meta = nlp_utils.replace_token(draft_row.sentence, occur.offset,
+                 token.translation,draft_row.draftMeta, draft=draft_row.draft)
+            draft_row.draft = draft
+            draft_row.draftMeta = meta
+            updated_sentences[occur.sentenceId]  = draft_row
+            gloss = {"token": token.token, "translations":{token.translation:{
+                        "frequency": len(token.occurrences)}}}
+            gloss_list.append(gloss)
+    return gloss_list
 
 def replace_bulk_tokens(db_, sentence_list, token_translations, src_code, trg_code, **kwargs):
     '''Substitute tokens with provided trabslations and get updated drafts, draftMetas
@@ -291,38 +128,17 @@ def replace_bulk_tokens(db_, sentence_list, token_translations, src_code, trg_co
     if not source:
         raise NotAvailableException("Language, %s, not in DB. Please create if required"%trg_code)
     updated_sentences = {sent.sentenceId:sent for sent in sentence_list}
-    gloss_list = []
-    for token in token_translations:
-        for occur in token.occurrences:
-            draft_row = updated_sentences[occur.sentenceId]
-            if not draft_row:
-                raise NotAvailableException("Sentence id, %s, not found in the sentence_list"
-                    %occur.sentenceId)
-            if token.token != draft_row.sentence[occur.offset[0]:occur.offset[1]]:
-                raise GenericException("Token, %s, and its occurence, not matching"%(
-                    token.token))
-            draft, meta = replace_token(draft_row.sentence, occur.offset, token.translation,
-                 draft_row.draftMeta, draft=draft_row.draft)
-            draft_row.draft = draft
-            draft_row.draftMeta = meta
-            updated_sentences[occur.sentenceId]  = draft_row
-            gloss = {"token": token.token, "translations":{token.translation:{
-                        "frequency": len(token.occurrences)}}}
-            gloss_list.append(gloss)
+
+    #get gloss list
+    gloss_list = replace_bulk_tokens_gloss_list(token_translations, updated_sentences)
     if use_data:
         add_to_translation_memory(db_, source, target, gloss_list)
 
     result = [updated_sentences[key] for key in updated_sentences]
     return result
 
-def save_agmt_translations(db_, project_id, token_translations, return_drafts=True, user_id=None):
-    '''replace tokens with provided translation in the drafts and update translation memory'''
-    project_row = db_.query(db_models.TranslationProject).get(project_id)
-    if not project_row:
-        raise NotAvailableException("Project with id, %s, not present"%project_id)
-    use_data = True
-    if project_row.metaData is not None and "useDataForLearning" in project_row.metaData:
-        use_data = project_row.metaData['useDataForLearning']
+def save_agmt_translations__gloss_list(db_, token_translations, project_id, user_id):
+    """get gloss list for save_agmt_translations function"""
     db_content = []
     gloss_list = []
     for token in token_translations:
@@ -336,8 +152,8 @@ def save_agmt_translations(db_, project_id, token_translations, return_drafts=Tr
             if token.token != draft_row.sentence[occur.offset[0]:occur.offset[1]]:
                 raise GenericException("Token, %s, and its occurence, not matching"%(
                     token.token))
-            draft, meta = replace_token(draft_row.sentence, occur.offset, token.translation,
-                 draft_row.draftMeta, draft=draft_row.draft)
+            draft, meta = nlp_utils.replace_token(draft_row.sentence, occur.offset,
+            token.translation, draft_row.draftMeta, draft=draft_row.draft)
             draft_row.draft = draft
             draft_row.draftMeta = meta
             flag_modified(draft_row, "draftMeta")
@@ -346,6 +162,20 @@ def save_agmt_translations(db_, project_id, token_translations, return_drafts=Tr
         gloss = {"token": token.token, "translations":{token.translation:{
             "frequency": len(token.occurrences)}}}
         gloss_list.append(gloss)
+    return gloss_list,db_content
+
+def save_agmt_translations(db_, project_id, token_translations, return_drafts=True, user_id=None):
+    '''replace tokens with provided translation in the drafts and update translation memory'''
+    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    if not project_row:
+        raise NotAvailableException("Project with id, %s, not present"%project_id)
+    use_data = True
+    if project_row.metaData is not None and "useDataForLearning" in project_row.metaData:
+        use_data = project_row.metaData['useDataForLearning']
+
+    #get gloss list
+    gloss_list, db_content = \
+        save_agmt_translations__gloss_list(db_, token_translations,project_id,user_id)
     project_row.updatedUser = user_id
     db_.add_all(db_content)
     db_.add(project_row)
@@ -394,6 +224,27 @@ def get_training_data_from_drafts(sentence_list, window_size=WINDOW_SIZE):
                 trans = row.draft[meta[1][0]:meta[1][1]]
                 training_data.append((index, context, trans))
     return training_data
+
+def check_eliminate_phrase_alignemnts(phrases, src_tok_list, trg_tok_list):
+    """check and eliminate non-continuous phrase alignments"""
+    for obj in phrases:
+        deleted = False
+        for i in range(len(obj['src_indices'])-1):
+            if ((obj['src_indices'][i] != obj['src_indices'][i+1])
+                and (obj['src_indices'][i] + 1 !=  obj['src_indices'][i+1])):
+                log.warning("Eliminating non-continuous src phrase:%s, in %s",
+                    obj['src_indices'], src_tok_list)
+                phrases.remove(obj)
+                deleted = True
+        if deleted:
+            continue
+        for i in range(len(obj['trg_indices'])-1):
+            if ((obj['trg_indices'][i] != obj['trg_indices'][i])
+                and (obj['trg_indices'][i] + 1 !=  obj['src_indices'][i+1])):
+                log.warning("Eliminating non-continuous trg phrase:%s, in %s",
+                    obj['trg_indices'], trg_tok_list)
+                phrases.remove(obj)
+    return phrases
 
 def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
     '''Takes one sentence's alignments and finds aligned phrases
@@ -445,41 +296,12 @@ def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
                 phrases.append(old_align)
         seen_src.append(align.sourceTokenIndex)
         seen_trg.append(align.targetTokenIndex)
-    for obj in phrases: #check and eliminate non-continuous phrase alignments
-        deleted = False
-        for i in range(len(obj['src_indices'])-1):
-            if ((obj['src_indices'][i] != obj['src_indices'][i+1])
-                and (obj['src_indices'][i] + 1 !=  obj['src_indices'][i+1])):
-                log.warning("Eliminating non-continuous src phrase:%s, in %s",
-                    obj['src_indices'], src_tok_list)
-                phrases.remove(obj)
-                deleted = True
-        if deleted:
-            continue
-        for i in range(len(obj['trg_indices'])-1):
-            if ((obj['trg_indices'][i] != obj['trg_indices'][i])
-                and (obj['trg_indices'][i] + 1 !=  obj['src_indices'][i+1])):
-                log.warning("Eliminating non-continuous trg phrase:%s, in %s",
-                    obj['trg_indices'], trg_tok_list)
-                phrases.remove(obj)
+    #check and eliminate non-continuous phrase alignments
+    phrases = check_eliminate_phrase_alignemnts(phrases, src_tok_list, trg_tok_list)
     return phrases
 
-def alignments_to_trainingdata(db_:Session,window_size=WINDOW_SIZE,
-    output_dir=SUGGESTION_DATA_PATH,**kwargs):
-    '''Convert alignments to training data for suggestions module and also add to translation_memory
-    input format: [(<src sent>,<trg_sent>,[(0-0), (1-3),(2-1),..]]
-    output: <index>\t<context ayrray>\t<translation>'''
-    src_lang = kwargs.get("src_lang")
-    trg_lang = kwargs.get("trg_lang")
-    alignment_list = kwargs.get("alignment_list")
-    user_id = kwargs.get("user_id")
-
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    timestamp = datetime.now().strftime("%d_%m_%Y-%H_%M_%S")
-    output_path = output_dir / (src_lang+"-"+trg_lang+"-"+str(user_id)+"-"+\
-        "-"+timestamp+".json")
-    output_file = open(output_path, "w", encoding='utf-8')
+def alignment_prepare_trainingdata(alignment_list, window_size):
+    """prepare data for translation memory/gloss"""
     dict_data = {}
     sugg_data = []
     for sent in alignment_list:
@@ -517,10 +339,31 @@ def alignments_to_trainingdata(db_:Session,window_size=WINDOW_SIZE,
 
             context = pre_context + [obj['token']] + post_context
             sugg_data.append((len(pre_context), context, obj['translation']))
-    new_trie = build_trie(sugg_data)
-    sugg_json = {item[0]:item[1] for item in new_trie.items()}
-    json.dump(sugg_json, output_file, ensure_ascii=False)
-    output_file.close()
+    return dict_data, sugg_data
+
+def alignments_to_trainingdata(db_:Session,window_size=WINDOW_SIZE,
+    output_dir=SUGGESTION_DATA_PATH,**kwargs):
+    '''Convert alignments to training data for suggestions module and also add to translation_memory
+    input format: [(<src sent>,<trg_sent>,[(0-0), (1-3),(2-1),..]]
+    output: <index>\t<context ayrray>\t<translation>'''
+    src_lang = kwargs.get("src_lang")
+    trg_lang = kwargs.get("trg_lang")
+    user_id = kwargs.get("user_id")
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    timestamp = datetime.now().strftime("%d_%m_%Y-%H_%M_%S")
+    output_path = output_dir / (src_lang+"-"+trg_lang+"-"+str(user_id)+"-"+\
+        "-"+timestamp+".json")
+    with open(output_path, "w", encoding='utf-8') as output_file:
+        #prepare data
+        dict_data, sugg_data = \
+            alignment_prepare_trainingdata(kwargs.get("alignment_list"), window_size)
+
+        new_trie = build_trie(sugg_data)
+        sugg_json = {item[0]:item[1] for item in new_trie.items()}
+        json.dump(sugg_json, output_file, ensure_ascii=False)
+
     log.warning("trie model saved on server: %s", output_path)
     new_trie = rebuild_trie(db_, src_lang, trg_lang)
     suggestion_trie_in_mem[src_lang+"-"+trg_lang] = new_trie
@@ -530,9 +373,8 @@ def alignments_to_trainingdata(db_:Session,window_size=WINDOW_SIZE,
         [dict_data[key] for key in dict_data], default_val=1)
     return tw_data
 
-def form_trie_keys(prefix, to_left, to_right, prev_keys, only_longest=True):
-    '''build the trie tree recursively'''
-    keys = prev_keys
+def from_trie_keys_checks(to_left, to_right, prefix, keys, only_longest):
+    """check for the build trie tree"""
     node_a = node_b = None
     if len(to_left) > 0:
         node_a = '/L:'+to_left.pop(0)
@@ -553,6 +395,13 @@ def form_trie_keys(prefix, to_left, to_right, prev_keys, only_longest=True):
         keys.append(key_both_2)
         keys = form_trie_keys(key_both_1, to_left.copy(), to_right.copy(), keys, only_longest)
         keys = form_trie_keys(key_both_2, to_left.copy(), to_right.copy(), keys, only_longest)
+    return keys
+
+def form_trie_keys(prefix, to_left, to_right, prev_keys, only_longest=True):
+    '''build the trie tree recursively'''
+    keys = prev_keys
+    #checks function
+    keys = from_trie_keys_checks(to_left, to_right, prefix, keys, only_longest)
     sorted_keys = sorted(keys, key=len, reverse=True)
     if not only_longest:
         return sorted_keys
@@ -626,22 +475,34 @@ def rebuild_trie(db_, src, trg):
     # display_tree(new_trie)
     return new_trie
 
-def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0):
-    '''Add glossary data to translation memory'''
-    if isinstance(src_lang, str):
-        source_lang = db_.query(db_models.Language).filter(
-            db_models.Language.code == src_lang).first()
-        if not source_lang:
-            raise NotAvailableException("Language, %s, not available"%src_lang)
-    else:
-        source_lang = src_lang
-    if isinstance(trg_lang, str):
-        target_lang = db_.query(db_models.Language).filter(
-            db_models.Language.code == trg_lang).first()
-        if not target_lang:
-            raise NotAvailableException("Language, %s, not available"%trg_lang)
-    else:
-        target_lang = trg_lang
+def add_metadata_to_first_occurance(db_, gloss, source_lang, target_lang, *args):
+    """Always add meta data to the first occurance of a source token only'''"""
+    recieved_args = args[0]
+    db_content = args[1]
+    if 'tokenMetaData' in gloss and gloss['tokenMetaData'] is not None:
+        # Always add meta data to the first occurance of a source token only'''
+        token_row = db_.query(db_models.TranslationMemory).filter(
+            db_models.TranslationMemory.source_lang_id == source_lang.languageId,
+            db_models.TranslationMemory.target_lang_id == target_lang.languageId,
+            db_models.TranslationMemory.token == gloss['token']).order_by(
+            db_models.TranslationMemory.tokenId.asc()).first()
+        if token_row:
+            if not token_row.metaData:
+                token_row.metaData = {}
+            for key in gloss['tokenMetaData']:
+                token_row.metaData[key] = gloss['tokenMetaData'][key]
+            flag_modified(token_row, 'metaData')
+        else:
+            updated_args = recieved_args
+            updated_args['metaData'] = gloss['tokenMetaData']
+            token_row = db_models.TranslationMemory(**updated_args)
+        db_.add(token_row)
+        db_content.append(token_row)
+    return db_content
+
+def add_translation_memory_gloss_dataprocess(db_, gloss_list, source_lang,
+    target_lang, default_val):
+    """gloss data process"""
     db_content = []
     for gloss in gloss_list:
         if not isinstance(gloss, dict):
@@ -676,26 +537,34 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0
                 db_.add(token_row)
                 db_content.append(token_row)
         db_.flush()
-        if 'tokenMetaData' in gloss and gloss['tokenMetaData'] is not None:
-            # Always add meta data to the first occurance of a source token only'''
-            token_row = db_.query(db_models.TranslationMemory).filter(
-                db_models.TranslationMemory.source_lang_id == source_lang.languageId,
-                db_models.TranslationMemory.target_lang_id == target_lang.languageId,
-                db_models.TranslationMemory.token == gloss['token']).order_by(
-                db_models.TranslationMemory.tokenId.asc()).first()
-            if token_row:
-                if not token_row.metaData:
-                    token_row.metaData = {}
-                for key in gloss['tokenMetaData']:
-                    token_row.metaData[key] = gloss['tokenMetaData'][key]
-                flag_modified(token_row, 'metaData')
-            else:
-                updated_args = args
-                updated_args['metaData'] = gloss['tokenMetaData']
-                token_row = db_models.TranslationMemory(**updated_args)
-            db_.add(token_row)
-            db_content.append(token_row)
+
+        #add meta data to the first occurance of a source token only
+        db_content =  add_metadata_to_first_occurance(db_, gloss, source_lang,
+            target_lang, args, db_content)
     db_.commit()
+    return db_content
+
+def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0):
+    '''Add glossary data to translation memory'''
+    if isinstance(src_lang, str):
+        source_lang = db_.query(db_models.Language).filter(
+            db_models.Language.code == src_lang).first()
+        if not source_lang:
+            raise NotAvailableException("Language, %s, not available"%src_lang)
+    else:
+        source_lang = src_lang
+    if isinstance(trg_lang, str):
+        target_lang = db_.query(db_models.Language).filter(
+            db_models.Language.code == trg_lang).first()
+        if not target_lang:
+            raise NotAvailableException("Language, %s, not available"%trg_lang)
+    else:
+        target_lang = trg_lang
+
+    #function for gloss data process
+    db_content= add_translation_memory_gloss_dataprocess(db_, gloss_list, source_lang,
+            target_lang, default_val)
+
     result_dict = {}
     for item in db_content:
         db_.refresh(item)
@@ -708,50 +577,39 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0
     result_list = [result_dict[entry] for entry in result_dict]
     return result_list
 
-def get_gloss(db_:Session, *args, **kwargs):
-    '''find the context based translation suggestions(gloss) for a word.
-    Makes use of the learned model(trie), for the lang pair, based on translation memory
-    output format: [(translation1, score1), (translation2, score2), ...]'''
-    index = args[0]
-    context = args[1]
-    source_lang = args[2]
-    target_lang = args[3]
-    pass_no = kwargs.get("pass_no",1)
-    if isinstance(index, int):
-        word = context[index]
-    elif isinstance(index, str):
-        word = index
-        index = context.index(word)
-    word = utils.normalize_unicode(word).lower()
-    context = [utils.normalize_unicode(con).lower() for con in context]
-    to_left = [context[i] for i in range(index-1, -1, -1)]
-    to_right = context[index+1:]
-    trans = {}
-    total = 0
-    no_trie_match = True
-    if len(to_right)+len(to_left) > 0:
-        keys = form_trie_keys(word, to_left, to_right, [word], False)
-        if source_lang+"-"+target_lang in suggestion_trie_in_mem: # check if aleady loaded in memory
-            tree = suggestion_trie_in_mem[source_lang+"-"+target_lang]
-        else:  # build trie loading data from disk and DB
-            tree = rebuild_trie(db_, source_lang, target_lang)
-            suggestion_trie_in_mem[source_lang+"-"+target_lang] = tree
-        for key in keys:
-            if tree.has_subtrie(key) or tree.has_key(key):
-                # print("found:",key)
-                no_trie_match = False
-                nodes = tree.values(key)
-                level = len(key.split("/"))
-                for nod in nodes:
-                    for sense in nod:
-                        if sense in trans:
-                            trans[sense] += nod[sense]*level*level
-                        else:
-                            trans[sense] = nod[sense]*level*level
-                        total += nod[sense]
-            else:
-                pass
-                # print("not found:",key)
+def get_gloss_chop_word(db_, no_trie_match, trans, matched_word,*args):
+    """get gloss chop word functionality"""
+    total = args[0]
+    word = args[1]
+    pass_no = args[2]
+    source_lang = args[3]
+    target_lang = args[4]
+
+    if len(trans) == 0 and pass_no<3 and len(word)>4:
+        # try chopping off the last letter
+        chopped_word = word[:-1]
+        result = get_gloss(db_, 0, [chopped_word], source_lang, target_lang,
+            pass_no=pass_no+1)
+        if len(result['translations']) > 0:
+            return result
+    if total == 0:
+        total = 1
+    sorted_trans = sorted(trans.items(), key=lambda x:x[1], reverse=True)
+    scored_trans = {}
+    for sense in sorted_trans:
+        scored_trans[sense[0]]=sense[1]/total
+    result = {}
+    if no_trie_match and matched_word:
+        result['token'] = matched_word
+    else:
+        result['token'] = word
+    result['translations'] = scored_trans
+
+    return result
+
+def gloss_forward_reverse_query(db_, word, source_lang, target_lang, total, *args):
+    """get forward and reverse query"""
+    trans = args[0]
     forward_query = db_.query(db_models.TranslationMemory).with_entities(
         db_models.TranslationMemory.token,
         db_models.TranslationMemory.translation,
@@ -783,25 +641,61 @@ def get_gloss(db_:Session, *args, **kwargs):
         if row[1] not in trans:
             trans[row[1]] = row[2]/(row[3]+1)
             total += 1
-    if len(trans) == 0 and pass_no<3 and len(word)>4:
-        # try chopping off the last letter
-        chopped_word = word[:-1]
-        result = get_gloss(db_, 0, [chopped_word], source_lang, target_lang,
-            pass_no=pass_no+1)
-        if len(result['translations']) > 0:
-            return result
-    if total == 0:
-        total = 1
-    sorted_trans = sorted(trans.items(), key=lambda x:x[1], reverse=True)
-    scored_trans = {}
-    for sense in sorted_trans:
-        scored_trans[sense[0]]=sense[1]/total
-    result = {}
-    if no_trie_match and matched_word:
-        result['token'] = matched_word
-    else:
-        result['token'] = word
-    result['translations'] = scored_trans
+    return matched_word , total
+
+def get_gloss(db_:Session, *args, **kwargs):#pylint: disable=too-many-locals,too-many-branches
+    '''find the context based translation suggestions(gloss) for a word.
+    Makes use of the learned model(trie), for the lang pair, based on translation memory
+    output format: [(translation1, score1), (translation2, score2), ...]'''
+    index = args[0]
+    context = args[1]
+    source_lang = args[2]
+    target_lang = args[3]
+    pass_no = kwargs.get("pass_no",1)
+    if isinstance(index, int):
+        word = context[index]
+    elif isinstance(index, str):
+        word = index
+        index = context.index(word)
+    word = utils.normalize_unicode(word).lower()
+    context = [utils.normalize_unicode(con).lower() for con in context]
+    to_left = [context[i] for i in range(index-1, -1, -1)]
+    to_right = context[index+1:]
+    trans = {}
+    total = 0
+    no_trie_match = True
+    if len(to_right)+len(to_left) > 0:#pylint: disable=too-many-nested-blocks
+        keys = form_trie_keys(word, to_left, to_right, [word], False)
+        if source_lang+"-"+target_lang in suggestion_trie_in_mem: # check if aleady loaded in memory
+            tree = suggestion_trie_in_mem[source_lang+"-"+target_lang]
+        else:  # build trie loading data from disk and DB
+            tree = rebuild_trie(db_, source_lang, target_lang)
+            suggestion_trie_in_mem[source_lang+"-"+target_lang] = tree
+        for key in keys:
+            if tree.has_subtrie(key) or tree.has_key(key):
+                # print("found:",key)
+                no_trie_match = False
+                nodes = tree.values(key)
+                level = len(key.split("/"))
+                for nod in nodes:
+                    for sense in nod:
+                        if sense in trans:
+                            trans[sense] += nod[sense]*level*level
+                        else:
+                            trans[sense] = nod[sense]*level*level
+                        total += nod[sense]
+            else:
+                pass
+                # print("not found:",key)
+
+    #get forward reverse query
+    matched_word , total = \
+        gloss_forward_reverse_query(db_, word, source_lang, target_lang, total, trans)
+
+    #get gloss chop word
+    result = get_gloss_chop_word(db_, no_trie_match,
+        trans, matched_word, total, word, pass_no, source_lang, target_lang)
+
     # check for metadata
     metadata_query = db_.query(db_models.TranslationMemory.metaData).filter(
         db_models.TranslationMemory.token == word,
@@ -825,6 +719,25 @@ def glossary(db_:Session, source_language, target_language, token, **kwargs):
     suggs = get_gloss(db_, index, context_list, source_language, target_language)
     return suggs
 
+def auto_translate_token_logic(db_,tokens, sent, source_lang, target_lang):
+    """auto translate token loop"""
+    for token in tokens:
+        for occurence in tokens[token]['occurrences']:
+            offset = occurence['offset']
+            index, context = extract_context(token, offset,
+                sent.sentence)
+            gloss = get_gloss(db_, index, context, source_lang, target_lang)
+            suggestions = list(gloss['translations'].keys())
+            if len(suggestions) > 0:
+                draft, meta = nlp_utils.replace_token(sent.sentence, offset,
+                    suggestions[0], sent.draftMeta, "suggestion",draft=sent.draft)
+                sent.draft = draft
+                sent.draftMeta = meta
+            elif (sent.draft is None or sent.draft == ''):
+                sent.draft = sent.sentence
+                offset = [0,len(sent.sentence)]
+                sent.draftMeta = [[offset, offset, "untranslated"]]
+
 def auto_translate(db_, sentence_list, source_lang, target_lang, **kwargs):
     '''Attempts to tokenize the input sentence and replace each token with top suggestion.
     If draft_meta is provided indicating some portion of sentence is user translated,
@@ -838,23 +751,11 @@ def auto_translate(db_, sentence_list, source_lang, target_lang, **kwargs):
         args['stop_words'] = stop_words
     for sent in sentence_list:
         args['sent_list'] = [{"sentenceId":sent.sentenceId, "sentence":sent.sentence}]
-        tokens = tokenize(**args)
-        for token in tokens:
-            for occurence in tokens[token]['occurrences']:
-                offset = occurence['offset']
-                index, context = extract_context(token, offset,
-                    sent.sentence)
-                gloss = get_gloss(db_, index, context, source_lang, target_lang)
-                suggestions = list(gloss['translations'].keys())
-                if len(suggestions) > 0:
-                    draft, meta = replace_token(sent.sentence, offset,
-                        suggestions[0], sent.draftMeta, "suggestion",draft=sent.draft)
-                    sent.draft = draft
-                    sent.draftMeta = meta
-                elif (sent.draft is None or sent.draft == ''):
-                    sent.draft = sent.sentence
-                    offset = [0,len(sent.sentence)]
-                    sent.draftMeta = [[offset, offset, "untranslated"]]
+        tokens = nlp_utils.tokenize(**args)
+
+        #auto tranaslte token loop
+        auto_translate_token_logic(db_,tokens, sent, source_lang, target_lang)
+
     return sentence_list
 
 def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range, sentence_id_list,

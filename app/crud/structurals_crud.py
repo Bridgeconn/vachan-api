@@ -182,7 +182,7 @@ def update_version(db_: Session, version: schemas.VersionEdit):
     db_.refresh(db_content)
     return db_content
 
-def get_sources(db_: Session,
+def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches
     content_type=None, version_abbreviation=None, revision=None, language_code=None,
     **kwargs):
     '''Fetches the rows of sources table'''
@@ -305,28 +305,33 @@ def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_
     db_.refresh(db_content)
     return db_content
 
+def update_source_sourcename(db_, source, db_content):
+    """update sourcename of source table"""
+    if source.version:
+        ver = source.version
+    else:
+        ver = db_content.version.versionAbbreviation
+    if source.revision:
+        rev = source.revision
+    else:
+        rev = db_content.version.revision
+    version = db_.query(db_models.Version).filter(
+        db_models.Version.versionAbbreviation == ver,
+        db_models.Version.revision == rev).first()
+    if not version:
+        raise NotAvailableException("Version, %s %s, not found in Database"%(ver,
+            rev))
+    db_content.versionId = version.versionId
+    table_name_parts = db_content.sourceName.split("_")
+    db_content.sourceName = "_".join([table_name_parts[0],ver, rev, table_name_parts[-1]])
+    return db_content
+
 def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
     '''changes one or more fields of sources, selected via sourceName or table_name'''
     db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source.sourceName).first()
     if source.version or source.revision:
-        if source.version:
-            ver = source.version
-        else:
-            ver = db_content.version.versionAbbreviation
-        if source.revision:
-            rev = source.revision
-        else:
-            rev = db_content.version.revision
-        version = db_.query(db_models.Version).filter(
-            db_models.Version.versionAbbreviation == ver,
-            db_models.Version.revision == rev).first()
-        if not version:
-            raise NotAvailableException("Version, %s %s, not found in Database"%(ver,
-                rev))
-        db_content.versionId = version.versionId
-        table_name_parts = db_content.sourceName.split("_")
-        db_content.sourceName = "_".join([table_name_parts[0],ver, rev, table_name_parts[-1]])
+        db_content =  update_source_sourcename(db_, source, db_content)
 
     if source.language:
         language = db_.query(db_models.Language).filter(

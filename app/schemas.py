@@ -1,11 +1,11 @@
 '''Defines all input and output classes for API endpoints'''
 
+#pylint: disable=C0103,too-few-public-methods,E0611
 from typing import List
 from enum import Enum
 from pydantic import BaseModel, constr, AnyUrl, validator, root_validator, Field
 
 from crud import utils
-
 
 class NormalResponse(BaseModel):
     '''Response with only a message'''

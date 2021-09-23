@@ -335,7 +335,6 @@ def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
     db_.commit()
     return db_content
 
-
 def update_bible_videos(db_: Session, source_name, videos, user_id=None):
     '''Update rows, that matches title in the bible videos table
     specified by source_name'''
@@ -387,47 +386,12 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None):
         raise NotAvailableException('Source %s, not found in database'%source_name)
     if source_db_content.contentType.contentType != db_models.ContentTypeName.bible.value:
         raise TypeException('The operation is supported only on bible')
-    model_cls = db_models.dynamicTables[source_name]
     model_cls_2 = db_models.dynamicTables[source_name+'_cleaned']
     db_content = []
     db_content2 = []
     for item in books:
-        book_code = None
-        if item.JSON is None:
-            try:
-                item.JSON = utils.parse_usfm(item.USFM)
-            except Exception as exe:
-                raise TypeException("USFM is not of the required format.") from exe
-        elif item.USFM is None:
-            try:
-                item.USFM = utils.form_usfm(item.JSON)
-            except Exception as exe:
-                raise TypeException("Input JSON is not of the required format.") from exe
-        try:
-            book_code = item.JSON['book']['bookCode']
-        except Exception as exe:
-            raise TypeException("Input JSON is not of the required format.") from exe
-
-        book = db_.query(db_models.BibleBook).filter(
-                db_models.BibleBook.bookCode == book_code.lower() ).first()
-        if not book:
-            raise NotAvailableException('Bible Book code, %s, not found in database'
-                %book_code)
-        row = db_.query(model_cls).filter(model_cls.book_id == book.bookId).first()
-        if row:
-            if row.USFM:
-                raise AlreadyExistsException("Bible book, %s, already present in DB"%book.bookCode)
-            row.USFM = utils.normalize_unicode(item.USFM)
-            row.JSON = item.JSON
-            row.active = True
-        else:
-            row = model_cls(
-                book_id=book.bookId,
-                USFM=utils.normalize_unicode(item.USFM),
-                JSON=item.JSON,
-                active=True)
-        db_.flush()
-        db_content.append(row)
+        #checks for uploaded books
+        book = upload_bible_books_checks(db_, item, source_name, db_content)
         if "chapters" not in item.JSON:
             raise TypeException("JSON is not of the required format")
         for chapter in item.JSON["chapters"]:
@@ -455,6 +419,47 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None):
     source_db_content.updatedUser = user_id
     db_.commit()
     return db_content
+
+def upload_bible_books_checks(db_, item, source_name, db_content):
+    """checks for uploaded bible books"""
+    model_cls = db_models.dynamicTables[source_name]
+    book_code = None
+    if item.JSON is None:
+        try:
+            item.JSON = utils.parse_usfm(item.USFM)
+        except Exception as exe:
+            raise TypeException("USFM is not of the required format.") from exe
+    elif item.USFM is None:
+        try:
+            item.USFM = utils.form_usfm(item.JSON)
+        except Exception as exe:
+            raise TypeException("Input JSON is not of the required format.") from exe
+    try:
+        book_code = item.JSON['book']['bookCode']
+    except Exception as exe:
+        raise TypeException("Input JSON is not of the required format.") from exe
+
+    book = db_.query(db_models.BibleBook).filter(
+            db_models.BibleBook.bookCode == book_code.lower() ).first()
+    if not book:
+        raise NotAvailableException('Bible Book code, %s, not found in database'
+            %book_code)
+    row = db_.query(model_cls).filter(model_cls.book_id == book.bookId).first()
+    if row:
+        if row.USFM:
+            raise AlreadyExistsException("Bible book, %s, already present in DB"%book.bookCode)
+        row.USFM = utils.normalize_unicode(item.USFM)
+        row.JSON = item.JSON
+        row.active = True
+    else:
+        row = model_cls(
+            book_id=book.bookId,
+            USFM=utils.normalize_unicode(item.USFM),
+            JSON=item.JSON,
+            active=True)
+    db_.flush()
+    db_content.append(row)
+    return book
 
 def update_bible_books(db_: Session, source_name, books, user_id=None):
     '''change values of bible books already uploaded'''
@@ -485,7 +490,11 @@ def update_bible_books(db_: Session, source_name, books, user_id=None):
             row.active = item.active
         db_.flush()
         db_content.append(row)
-    # update bible cleaned table
+        update_bible_books_cleaned(db_,source_name,books,source_db_content,user_id)
+        return db_content
+
+def update_bible_books_cleaned(db_,source_name,books,source_db_content,user_id):
+    """update bible cleaned table"""
     db_content2 = []
     model_cls_2 = db_models.dynamicTables[source_name+'_cleaned']
     for item in books:
@@ -514,8 +523,6 @@ def update_bible_books(db_: Session, source_name, books, user_id=None):
     db_.commit()
     source_db_content.updatedUser = user_id
     db_.commit()
-    return db_content
-
 
 def upload_bible_audios(db_:Session, source_name, audios, user_id=None):
     '''Add audio bible related contents to _bible_audio table'''
@@ -657,15 +664,11 @@ def get_available_bible_books(db_, source_name, book_code=None, content_type=Non
     results = [res.__dict__ for res in fetched]
     return results
 
-
 def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, verse=None,
     **kwargs):
     '''queries the bible cleaned table for verses'''
     last_verse = kwargs.get("last_verse",None)
     search_phrase = kwargs.get("search_phrase",None)
-    active = kwargs.get("active",True)
-    skip = kwargs.get("skip",0)
-    limit = kwargs.get("limit",100)
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
     if not source_name.endswith('_bible'):
@@ -683,7 +686,8 @@ def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, ver
     if search_phrase:
         query = query.filter(model_cls.verseText.like(
             '%'+utils.normalize_unicode(search_phrase.strip())+"%"))
-    results = query.filter(model_cls.active == active).offset(skip).limit(limit).all()
+    results = query.filter(model_cls.active ==
+        kwargs.get("active",True)).offset(kwargs.get("skip",0)).limit(kwargs.get("limit",100)).all()
     ref_combined_results = []
     for res in results:
         ref_combined = {}

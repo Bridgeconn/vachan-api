@@ -1,9 +1,12 @@
 """schema for auth related"""
 
+#pylint: disable=E0611
 from enum import Enum
 from typing import List
 from pydantic import BaseModel
 from pydantic import types
+
+#pylint: disable=C0103
 
 #pylint: disable=R0903
 class AppType(str, Enum):

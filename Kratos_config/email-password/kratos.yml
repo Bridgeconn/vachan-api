@@ -81,5 +81,5 @@ identity:
 
 courier:
   smtp:
-    connection_uri: smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true
-    #from_address: no-reply@fast-api-test.com
+    connection_uri: smtp://<EMAIL_ADDRESS@bridgeconn.com>:<PASSWORD>@smtp-mail.outlook.com:587/?skip_ssl_verify=true&legacy_ssl=true
+    from_address: <EMAIL_ADDRESS@bridgeconn.com>

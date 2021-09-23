@@ -12,6 +12,7 @@ from authentication import AuthHandler
 router = APIRouter()
 auth_handler = AuthHandler()
 
+#pylint: disable=too-many-arguments
 ##### Content types #####
 @router.get('/v2/contents', response_model=List[schemas.ContentType],
     responses={502: {"model": schemas.ErrorResponse},

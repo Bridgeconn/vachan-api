@@ -32,7 +32,6 @@ access_roles = {
     "delete_identity":["SuperAdmin"]
 }
 
-
 #check roles for api
 def verify_role_permision(api_name,permision):
     """check the user roles for the requested api"""
@@ -112,7 +111,7 @@ def get_all_kratos_users():
 
 #User registration with credentials
 #pylint: disable=R1710
-def user_register_kratos(register_details,app_type):
+def user_register_kratos(register_details,app_type):#pylint: disable=too-many-locals,too-many-branches
     """user registration kratos"""
     email = register_details.email
     password = register_details.password
