@@ -4,8 +4,11 @@ import json
 import requests
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.orm import Session
 #pylint: disable=E0401
 #pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
+import db_models
+import schema_auth
 from dependencies import log
 from custom_exceptions import GenericException , PermisionException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
@@ -19,36 +22,213 @@ USER_SESSION_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL"+ "sessions/whoami",
 SUPER_USER = os.environ.get("VACHAN_SUPER_USERNAME")
 SUPER_PASSWORD = os.environ.get("VACHAN_SUPER_PASSWORD")
 
-access_roles = {
-    "contentType" : ["SuperAdmin","VachanAdmin"],
-    "licenses" : ["SuperAdmin","VachanAdmin"],
-    "versions" : ["SuperAdmin","VachanAdmin"],
-    "sources" : ["SuperAdmin","VachanAdmin"],
-    "bibles" : ["SuperAdmin","VachanAdmin"],
-    "commentaries" : ["SuperAdmin","VachanAdmin"],
-    "dictionaries" : ["SuperAdmin","VachanAdmin"],
-    "infographics" : ["SuperAdmin","VachanAdmin"],
-    "bibleVideos" : ["SuperAdmin","VachanAdmin"],
-    "userRole" :["SuperAdmin"],
-    "delete_identity":["SuperAdmin"]
+access_rules = {
+    "meta-content":{
+        "create": ["registeredUser"],
+        "edit":["SuperAdmin", "resourceCreatedUser"],
+        "read-via-api":["noAuthRequired"],
+        "view-on-web":["noAuthRequired"],
+        "refer-for-translation": ["registeredUser"],
+    },
+    "content":{  # default tag for all sources in the sources table ie bibles, commentaries, videos
+        "read-via-api":["SuperAdmin", "VachanAdmin", "BcsDeveloper"],
+        "read-via-vachanadmin":["SuperAdmin", "VachanAdmin"],
+        "create": ["SuperAdmin", "VachanAdmin"],
+        "edit": ["SuperAdmin", "resourceCreatedUser"]
+    },
+    "open-access":{
+        "read-via-api":["noAuthRequired"],
+        "view-on-web":["noAuthRequired"],
+        "refer-for-translation": ["SuperAdmin", "AgAdmin", "AgUser"],
+        "translate":["SuperAdmin", "AgAdmin", "AgUser"]
+    },
+    "publishable":{
+        "read-via-api":["registeredUser"],
+        "view-on-web":["noAuthRequired"],
+        "refer-for-translation":["SuperAdmin", "AgAdmin", "AgUser"]
+    },
+    "downloadable":{
+        "download-n-save":["SuperAdmin", "VachanAdmin", "VachanUser"]
+    },
+    "derivable":{
+        "translate":["SuperAdmin", "AgAdmin", "AgUser"]
+    },
+    "translation-project":{ #default tag for all AG projects on cloud
+        "create":["SuperAdmin", "AgAdmin", "AgUser"],
+        "edit-Settings":["SuperAdmin", "AgAdmin", "projectOwner"],
+        "read-settings":['SuperAdmin', "AgAdmin", 'projectOwner', "projectMember"],
+        "edit-draft": ["SuperAdmin", "AgAdmin","projectOwner", "projectMember"],
+        "read-draft":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"]
+    },
+    "research-use":{
+        "read":["SuperAdmin", "BcsDeveloper"]
+    }
 }
 
+def metacontent_creator(db_:Session, resource_type, resource_id, user_id):
+    '''checks if the user is the creator of the given item'''
+    if resource_type == 'contents':
+        model_cls = db_models.ContentType
+    elif resource_type == "languages":
+        model_cls = db_models.Language
+    elif resource_type == "versions":
+        model_cls = db_models.Version
+    elif resource_type == "licenses":
+        model_cls = db_models.License
+    created_user = db_.query(model_cls.createdUser).get(resource_id)
+    if user_id == created_user:
+        return True 
+    return False
 
-#check roles for api
-def verify_role_permision(api_name,permision):
-    """check the user roles for the requested api"""
-    verified = False
-    if api_name in access_roles:
-        access_list = access_roles[api_name]
-        if len(access_list) != 0 and len(permision) != 0:
-            for role in permision:
-                if role in access_list:
-                    verified = True
+def resource_creator(db_:Session, source_id, user_id):
+    '''checks if the user is the creator of the given source'''
+    created_user =  db_.query(db_models.Source.createdUser).get(source_id).first()
+    if user_id == created_user:
+        return True
+    return False
+
+def project_owner(db_:Session, project_id, user_id):
+    '''checks if the user is the owner of the given project'''
+    project_owners = db_.query(db_models.TranslationProjectUser.userId).filter(
+        db_models.TranslationProjectUser.projectId == project_id,
+        db_models.TranslationProjectUser.userRole == "owner").all()
+    if user_id in project_owners:
+        return True
+    return False
+
+def project_member(db_:Session, project_id, user_id):
+    '''checks if the user is the memeber of the given project'''
+    project_owners = db_.query(db_models.TranslationProjectUser.userId).filter(
+        db_models.TranslationProjectUser.projectId == project_id,
+        db_models.TranslationProjectUser.userRole == "member").all()
+    if user_id in project_owners:
+        return True
+    return False
+
+def api_permission_map(endpoint, method, requesting_app, resource):
+    '''returns the required permission name as per the access rules'''
+    permission = None
+    if requesting_app == schema_auth.App.ag and method == "GET":
+        permission = "refer-for-translation"
+    elif requesting_app == schema_auth.App.vachan and method == "GET":
+        permission = "view-on-web"
+    elif requesting_app == schema_auth.App.vachanAdmin and method == "GET":
+        permission = "view-on-vachan-admin"
+    elif requesting_app is None and method == "GET":
+        permission = "read-via-api"
+    elif (endpoint == "/v2/autographa/projects" and method == "PUT"
+        and resource==schema_auth.ResourceType.content):
+        permission = "translate"
+    elif (endpoint == "/v2/autographa/projects" and method == "PUT"
+        and resource==schema_auth.ResourceType.project):
+        permission = "edit-Settings"
+    elif endpoint in ["/v2/autographa/project/tokens", "/v2/autographa/project/token-translations",
+        "/v2/autographa/project/token-sentences"]:
+        permission = "edit-draft"
+    elif method == "PUT" and resource==schema_auth.ResourceType.content:
+        permission = "edit" 
+    elif method == "PUT" and resource==schema_auth.ResourceType.metaContent:
+        permission = "edit" 
+    elif method == "POST":
+        permission = "create"    
+    else: 
+        raise Exception("API's required permission not defined")  
+    return permission
+
+
+def check_access_rights(db_:Session,
+    resource_id, request_context,
+    user_id=None, user_roles=None,
+    resource_type: schema_auth.ResourceType=None):
+    endpoint = request_context.endpoint
+    method = request_context.method
+    requesting_app = request_context.app
+    if resource_type is None:
+        if endpoint.spit('/')[-1] in ["contents", "languages", "licenses", 'versions']:
+            resource_type = schema_auth.ResourceType.metaContent
+        elif endpoint.startswith('/v2/autographa/project'):
+            resource_type = schema_auth.ResourceType.project
+        elif endpoint.startswith("/v2/translation"):
+            resource_type = None
         else:
-            raise PermisionException("User have no permision to access API")
+            resource_type = schema_auth.ResourceType.content
+    required_permission = api_permission_map(endpoint, method,requesting_app, resource_type)
+
+    if resource_type == schema_auth.ResourceType.metaContent:
+        access_tags = ["open-access"]
+    elif resource_type == schema_auth.ResourceType.project:
+        access_tags = ['translation-project']
+    elif resource_type == schema_auth.ResourceType.content:
+        source_content = db_.query(db_models.Source.Metadata).get(resource_id)
+        access_tags = source_content['access-tags']
     else:
-        raise GenericException("No permisions set for the API - %s"%api_name)
-    return verified
+        raise Exception("Unknown resource type")
+    
+    has_rights = False
+    for tag in access_tags:
+        allowed_users = access_rules[tag][required_permission]
+        for role in allowed_users:
+            if role == "noAuthRequired":
+                has_rights = True 
+                break
+            if role == "registeredUser" and user_id is not None:
+                has_rights = True
+                break
+            if user_roles and role in user_roles:
+                has_rights = True
+                break
+            if role == "createdUser":
+                if resource_type == schema_auth.ResourceType.content:
+                    if resource_creator(db_, resource_id, user_id):
+                        has_rights = True
+                        break
+                if resource_type == schema_auth.ResourceType.metaContent:
+                    rsc_type = endpoint.split('/')[-1]
+                    if metacontent_creator(db_, rsc_type, resource_id, user_id):
+                        has_rights = True
+                        break
+            if role == "projectOwner" and resource_type == schema_auth.ResourceType.project:
+                if project_owner(db_, resource_id, user_id):
+                    has_rights = True
+                    break
+            if role == "projectMember" and resource_type == schema_auth.ResourceType.project:
+                if project_member(db_, resource_id, user_id):
+                    has_rights = True
+                    break
+        if has_rights:
+            break 
+    return has_rights
+
+# access_roles = {
+#     "contentType" : ["SuperAdmin","VachanAdmin"],
+#     "licenses" : ["SuperAdmin","VachanAdmin"],
+#     "versions" : ["SuperAdmin","VachanAdmin"],
+#     "sources" : ["SuperAdmin","VachanAdmin"],
+#     "bibles" : ["SuperAdmin","VachanAdmin"],
+#     "commentaries" : ["SuperAdmin","VachanAdmin"],
+#     "dictionaries" : ["SuperAdmin","VachanAdmin"],
+#     "infographics" : ["SuperAdmin","VachanAdmin"],
+#     "bibleVideos" : ["SuperAdmin","VachanAdmin"],
+#     "userRole" :["SuperAdmin"],
+#     "delete_identity":["SuperAdmin"]
+# }
+
+
+# #check roles for api
+# def verify_role_permision(api_name,permision):
+#     """check the user roles for the requested api"""
+#     verified = False
+#     if api_name in access_roles:
+#         access_list = access_roles[api_name]
+#         if len(access_list) != 0 and len(permision) != 0:
+#             for role in permision:
+#                 if role in access_list:
+#                     verified = True
+#         else:
+#             raise PermisionException("User have no permision to access API")
+#     else:
+#         raise GenericException("No permisions set for the API - %s"%api_name)
+#     return verified
 
 #Class handles the session validation and logout
 class AuthHandler():
