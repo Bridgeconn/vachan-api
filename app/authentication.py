@@ -31,7 +31,7 @@ access_rules = {
         "refer-for-translation": ["registeredUser"],
     },
     "content":{  # default tag for all sources in the sources table ie bibles, commentaries, videos
-        "read-via-api":["SuperAdmin", "VachanAdmin", "BCS-developer"],
+        "read-via-api":["SuperAdmin", "VachanAdmin", "BcsDeveloper"],
         "read-via-vachanadmin":["SuperAdmin", "VachanAdmin"],
         "create": ["SuperAdmin", "VachanAdmin"],
         "edit": ["SuperAdmin", "resourceCreatedUser"]
@@ -58,10 +58,10 @@ access_rules = {
         "edit-Settings":["SuperAdmin", "AgAdmin", "projectOwner"],
         "read-settings":['SuperAdmin', "AgAdmin", 'projectOwner', "projectMember"],
         "edit-draft": ["SuperAdmin", "AgAdmin","projectOwner", "projectMember"],
-        "read-draft":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BCS-developer"]
+        "read-draft":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"]
     },
     "research-use":{
-        "read":["SuperAdmin", "BCS-developer"]
+        "read":["SuperAdmin", "BcsDeveloper"]
     }
 }
 
