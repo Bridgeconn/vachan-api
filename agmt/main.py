@@ -1178,29 +1178,38 @@ def availableProjectBooks(projectId, userId):
 @app.route("/v1/tokenlist/<sourceId>", methods=["GET"])
 def getTokenLists(sourceId):
 	books = request.args.getlist('books')
-	print("comes to getTokenLists for "+str(books))
+	log.info("comes to getTokenLists for "+str(books))
+	if len(books) == 0:
+		return '{"success":false, "message":"No books selected for tokens request"}'
 	connection = get_db()
 	cursor = connection.cursor()
 	cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
 	rst = cursor.fetchone()
-	cursor.execute("select book_id from bible_books_look_up where book_code=%s", (book.lower(),))
-	bookId = cursor.fetchone()[0]
+	bookIds = []
+	for book in books:
+		cursor.execute("select book_id from bible_books_look_up where book_code=%s", (book.lower(),))
+		bookIds.append(cursor.fetchone()[0])
 	tablename = rst[0] + '_tokens'
 	tablename_parts = tablename.split('_')
 	languageCode = tablename_parts[0]
 	version = '_'.join(tablename_parts[1:-2])
-	cursor.execute(sql.SQL("select token from {} where book_id=%s").format(sql.Identifier(tablename)), (bookId,))
-	tokenList = [item[0] for item in cursor.fetchall()]
-	if len(tokenList)==0:
-		try:
-			print("comes here to tokenize")
-			phrases.tokenize(connection, languageCode.lower(), version.lower() , bookId)
-			cursor.execute("select token from " + tablename + " where book_id=%s", (bookId,))
-			tokenList = [item[0] for item in cursor.fetchall()]
-		except Exception as ex:
-			print(ex)
-			return '{"success":false, "message":"Phrases method error"}'
-
+	tokenList = []
+	for bookId in bookIds:
+		this_book_tokens = []
+		cursor.execute(sql.SQL("select token from {} where book_id=%s").format(sql.Identifier(tablename)), (bookId,))
+		this_book_tokens = [item[0] for item in cursor.fetchall()]
+		if len(this_book_tokens)==0:
+			try:
+				log.info("comes here to tokenize book:"+str(bookId))
+				phrases.tokenize(connection, languageCode.lower(), version.lower() , bookId)
+				cursor.execute("select token from " + tablename + " where book_id=%s", (bookId,))
+				this_book_tokens = [item[0] for item in cursor.fetchall()]
+			except Exception as ex:
+				log.error(ex)
+				return '{"success":false, "message":"Phrases method error"}'
+		for item in this_book_tokens:
+			if item not in tokenList:
+				tokenList.append(item)
 	cursor.close()
 	jsonOut = json.dumps(tokenList)
 	# print(jsonOut)
