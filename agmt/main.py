@@ -1175,9 +1175,10 @@ def availableProjectBooks(projectId, userId):
 		print(ex1)
 		return '{"success":false, "message":"Server side error"}'
 
-@app.route("/v1/tokenlist/<sourceId>/<book>", methods=["GET"])
-def getTokenLists(sourceId, book):
-	print("comes to getTokenLists")
+@app.route("/v1/tokenlist/<sourceId>", methods=["GET"])
+def getTokenLists(sourceId):
+	books = request.args.getlist('books')
+	print("comes to getTokenLists for "+str(books))
 	connection = get_db()
 	cursor = connection.cursor()
 	cursor.execute("select table_name from sources where source_id=%s", (sourceId,))
