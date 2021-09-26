@@ -1177,6 +1177,7 @@ def availableProjectBooks(projectId, userId):
 
 @app.route("/v1/tokenlist/<sourceId>", methods=["GET"])
 def getTokenLists(sourceId):
+	only_words = bool(request.args.get("only_words", False))
 	books = request.args.getlist('books')
 	log.info("comes to getTokenLists for "+str(books))
 	if len(books) == 0:
@@ -1208,6 +1209,8 @@ def getTokenLists(sourceId):
 				log.error(ex)
 				return '{"success":false, "message":"Phrases method error"}'
 		for item in this_book_tokens:
+			if only_words and " " in item:
+				continue
 			if item not in tokenList:
 				tokenList.append(item)
 	cursor.close()
