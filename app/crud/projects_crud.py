@@ -112,7 +112,7 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
         raise NotAvailableException("Project with id, %s, not found"%project_obj.projectId)
     new_books = []
     if project_obj.selectedBooks:
-        if not project_obj.selectedBooks.bible.endswith("_"+db_models.ContentTypeName.bible.value):
+        if not project_obj.selectedBooks.bible.endswith("_"+db_models.ContentTypeName.BIBLE.value):
             raise TypeException("Operation only supported on Bible tables")
         if not project_obj.selectedBooks.bible+"_cleaned" in db_models.dynamicTables:
             raise NotAvailableException("Bible, %s, not found"%project_obj.selectedBooks.bible)

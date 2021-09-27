@@ -110,26 +110,84 @@ def get_all_kratos_users():
     return user_data
 
 #User registration with credentials
-#pylint: disable=R1710
-def user_register_kratos(register_details,app_type):#pylint: disable=too-many-locals,too-many-branches
+def register_check_success(reg_response):
+    """register reqirement success"""
+    name_path = reg_response["identity"]["traits"]["name"]
+    data={
+        "message":"Registration Successfull",
+        "registered_details":{
+            "id":reg_response["identity"]["id"],
+            "email":reg_response["identity"]["traits"]["email"],
+            "Name":str(name_path["first"]) + " " + str(name_path["last"]),
+            "Permisions": reg_response["identity"]["traits"]["userrole"]
+        },
+        "token":reg_response["session_token"]
+    }
+    return data
+
+def register_exist_update_user_role(kratos_users, email, user_role, reg_req, reg_response):
+    """#existing account : - update user role"""
+    data = {}
+    for user in kratos_users:
+        if email == user["traits"]["email"]:
+            current_user_id = user["id"]
+            if user_role not in user["traits"]["userrole"] and \
+                'SuperAdmin' not in user["traits"]["userrole"]:
+                role_list = [user_role]
+                return_data = user_role_add(current_user_id,role_list)
+                if return_data["Success"]:
+                    data={
+                        "message":"User Already Registered, New Permision updated",
+                        "registered_details":{
+                            "id":current_user_id,
+                            "email":email,
+                            "Permisions": return_data["role_list"]
+                            }
+                    }
+            else:
+                raise HTTPException(status_code=reg_req.status_code, \
+                    detail=reg_response["ui"]["messages"][0]["text"])
+    return data
+
+def register_flow_fail(reg_response,email,user_role,reg_req):
+    """register flow fails account already exist"""
+    if "messages" in reg_response["ui"]:
+        err_msg = \
+    "An account with the same identifier (email, phone, username, ...) exists already."
+        err_txt = reg_response["ui"]["messages"][0]["text"]
+        if err_txt == err_msg:
+            kratos_users = get_all_kratos_users()
+
+            #update user role for exisiting user
+            data = register_exist_update_user_role(kratos_users, email,
+                user_role, reg_req, reg_response)
+        else:
+            raise HTTPException(status_code=reg_req.status_code,\
+                    detail=reg_response["ui"]["messages"][0]["text"])
+    else:
+        error_base = reg_response['ui']['nodes']
+        for i in range(1,3):
+            if error_base[i]['messages'] != []:
+                raise UnprocessableException(error_base[i]['messages'][0]['text'])
+    return data
+
+def user_register_kratos(register_details,app_type):
     """user registration kratos"""
+    data = {}
     email = register_details.email
     password = register_details.password
-    firstname = register_details.firstname
-    lastname = register_details.lastname
 
     #check auto role assign
     user_role = app_type
 
     register_url = PUBLIC_BASE_URL+"registration/api"
     reg_flow = requests.get(register_url)
-    #pylint: disable=R1702
     if reg_flow.status_code == 200:
         flow_res = json.loads(reg_flow.content)
         reg_flow_id = flow_res["ui"]["action"]
         reg_data = {"traits.email": email,
-                     "traits.name.first": firstname,
-                     "traits.name.last": lastname,
+                     "traits.name.first": register_details.firstname,
+                     "traits.name.last": register_details.lastname,
                      "password": password.get_secret_value(),
                      "traits.userrole":user_role,
                      "method": "password"}
@@ -138,55 +196,14 @@ def user_register_kratos(register_details,app_type):#pylint: disable=too-many-lo
         headers["Content-Type"] = "application/json"
         reg_req = requests.post(reg_flow_id,headers=headers,json=reg_data)
         reg_response = json.loads(reg_req.content)
-        #pylint: disable=R1705
+
         if reg_req.status_code == 200:
-            name_path = reg_response["identity"]["traits"]["name"]
-            data={
-                "message":"Registration Successfull",
-                "registered_details":{
-                    "id":reg_response["identity"]["id"],
-                    "email":reg_response["identity"]["traits"]["email"],
-                    "Name":str(name_path["first"]) + " " + str(name_path["last"]),
-                    "Permisions": reg_response["identity"]["traits"]["userrole"]
-                },
-                "token":reg_response["session_token"]
-            }
-            return data
+            data = register_check_success(reg_response)
+
         elif reg_req.status_code == 400:
-            if "messages" in reg_response["ui"]:
-                err_msg = \
-        "An account with the same identifier (email, phone, username, ...) exists already."
-                err_txt = reg_response["ui"]["messages"][0]["text"]
-                if err_txt == err_msg:
-                    kratos_users = get_all_kratos_users()
-                    for user in kratos_users:
-                        if email == user["traits"]["email"]:
-                            current_user_id = user["id"]
-                            if user_role not in user["traits"]["userrole"] and \
-                                'SuperAdmin' not in user["traits"]["userrole"]:
-                                role_list = [user_role]
-                                return_data = user_role_add(current_user_id,role_list)
-                                if return_data["Success"]:
-                                    data={
-                                        "message":"User Already Registered, New Permision updated",
-                                        "registered_details":{
-                                            "id":current_user_id,
-                                            "email":email,
-                                            "Permisions": return_data["role_list"]
-                                            }
-                                    }
-                                    return data
-                            else:
-                                raise HTTPException(status_code=reg_req.status_code, \
-                                    detail=reg_response["ui"]["messages"][0]["text"])
-                else:
-                    raise HTTPException(status_code=reg_req.status_code,\
-                         detail=reg_response["ui"]["messages"][0]["text"])
-            else:
-                error_base = reg_response['ui']['nodes']
-                for i in range(1,3):
-                    if error_base[i]['messages'] != []:
-                        raise UnprocessableException(error_base[i]['messages'][0]['text'])
+            data = register_flow_fail(reg_response,email,user_role,reg_req)
+    return data
+
 
 def user_login_kratos(user_email,password):
     "kratos login"
@@ -207,7 +224,7 @@ def user_login_kratos(user_email,password):
             data["token"] = session_id
         else:
             raise UnAuthorizedException(login_req_content["ui"]["messages"][0]["text"])
-        return data
+    return data
 
 #delete an identity
 def delete_identity(user_id):

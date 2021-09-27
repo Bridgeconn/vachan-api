@@ -17,7 +17,7 @@ auth_handler = AuthHandler()
 responses={400: {"model": schemas.ErrorResponse}},
 status_code=201,tags=["Authentication"])
 def register(register_details:schema_auth.Registration,
-app_type: schema_auth.AppType=Query(schema_auth.AppType.none)):
+app_type: schema_auth.AppType=Query(schema_auth.AppType.NONE)):
     '''Registration for Users
     * user_email and password fiels are mandatory
     * App type will be None by default, App Type will decide \

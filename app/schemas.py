@@ -1,12 +1,12 @@
 '''Defines all input and output classes for API endpoints'''
 
-#pylint: disable=C0103,too-few-public-methods,E0611
 from typing import List
 from enum import Enum
 from pydantic import BaseModel, constr, AnyUrl, validator, root_validator, Field
 
 from crud import utils
 
+#pylint: disable=too-few-public-methods
 class NormalResponse(BaseModel):
     '''Response with only a message'''
     message : str = Field(...,example="App is up and running")
@@ -51,8 +51,8 @@ class ContentTypeUpdateResponse(BaseModel):
 LangCodePattern =constr(regex=r"^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
 class Direction(str, Enum):
     '''To specify direction of script'''
-    left_to_right = 'left-to-right'
-    right_to_left = 'right-to-left'
+    LEFTTORIGHT = 'left-to-right'
+    RIGHTTOLEFT = 'right-to-left'
 
 class LanguageCreate(BaseModel):
     '''To create new language'''
@@ -133,11 +133,11 @@ class LanguageEdit (BaseModel):
 LicenseCodePattern =constr(regex=r"^[a-zA-Z0-9\.\_\-]+$")
 class LicensePermisssion(str, Enum):
     '''To specify direction of script'''
-    commercial = "Commercial_use"
-    modification = "Modification"
-    distribution = "Distribution"
-    patent = "Patent_use"
-    private = "Private_use"
+    COMMERCIAL = "Commercial_use"
+    MODIFICATION = "Modification"
+    DISTRIBUTION = "Distribution"
+    PATENT = "Patent_use"
+    PRIVATE = "Private_use"
 
 class LicenseCreate(BaseModel):
     '''To create and upload new license'''
@@ -644,8 +644,8 @@ class BookContentType(str, Enum):
     '''choices for bible content types'''
     USFM = 'usfm'
     JSON = 'json'
-    audio = 'audio'
-    all = 'all'
+    AUDIO = 'audio'
+    ALL = 'all'
 
 class CommentaryCreate(BaseModel):
     '''Response object for commentaries'''

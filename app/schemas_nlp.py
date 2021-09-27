@@ -1,5 +1,4 @@
 '''Defines all input and output classes for translation Apps related API endpoints'''
-#pylint: disable=C0103,too-few-public-methods,E0611
 from typing import List, Tuple
 from enum import Enum
 from pydantic import BaseModel, Field, constr, root_validator
@@ -8,6 +7,7 @@ from schemas import LangCodePattern, BookCodePattern, TableNamePattern
 from schemas import LanguageResponse
 
 
+#pylint: disable=too-few-public-methods
 class TranslationDocumentType(Enum):
     '''Currently supports bible USFM only. Can be extended to
     CSV(for commentary or notes), doc(stories, other passages) etc.'''

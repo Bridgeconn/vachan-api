@@ -293,7 +293,7 @@ def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_
     db_.add(db_content)
     db_models.create_dynamic_table(source_name, table_name, content_type.contentType)
     db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine, checkfirst=True)
-    if content_type.contentType == db_models.ContentTypeName.bible.value:
+    if content_type.contentType == db_models.ContentTypeName.BIBLE.value:
         db_models.dynamicTables[db_content.sourceName+'_cleaned'].__table__.create(
             bind=engine, checkfirst=True)
         log.warning("User %s, creates a new table %s", user_id, db_content.sourceName+'_cleaned')

@@ -14,7 +14,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
 
 from crud import utils
-from crud import nlp_crud_utils as nlp_utils
+from crud import nlp_tokenization as nlp_utils
 import db_models
 from dependencies import log
 from custom_exceptions import NotAvailableException, TypeException, GenericException

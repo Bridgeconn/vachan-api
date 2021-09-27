@@ -5,6 +5,7 @@ from crud import structurals_crud, contents_crud, projects_crud, nlp_crud
 from graphql_api import types, utils
 import schemas_nlp
 
+#Pylint error :- Query class have all resolver functions
 #pylint: disable=R0201
 #pylint: disable=too-many-arguments,too-many-public-methods
 class Query(graphene.ObjectType):
