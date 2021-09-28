@@ -1,7 +1,7 @@
 """router for authentication endpoints"""
 from fastapi import APIRouter, Depends, Query
 from pydantic import types
-#pylint: disable=E0401
+
 import schema_auth
 import schemas
 from dependencies import log
@@ -17,7 +17,7 @@ auth_handler = AuthHandler()
 responses={400: {"model": schemas.ErrorResponse}},
 status_code=201,tags=["Authentication"])
 def register(register_details:schema_auth.Registration,
-app_type: schema_auth.AppType=Query(schema_auth.AppType.none)):
+app_type: schema_auth.AppType=Query(schema_auth.AppType.NONE)):
     '''Registration for Users
     * user_email and password fiels are mandatory
     * App type will be None by default, App Type will decide \
@@ -89,12 +89,12 @@ permision = Depends(auth_handler.kratos_session_validation)):
     verified = verify_role_permision(api_name="delete_identity",permision=permision)
     if verified:
         response = delete_identity(user.userid)
-        #pylint: disable=R1720
+
         if response.status_code == 404:
             raise NotAvailableException("Unable to locate the resource")
-        else:
-            user_id = user.userid
-            out =  {"message":"deleted identity %s"%user_id}
+
+        user_id = user.userid
+        out =  {"message":"deleted identity %s"%user_id}
     else:
         raise PermisionException("User have no permision to access API")
     return out

@@ -1,35 +1,21 @@
 '''GraphQL queries and mutations'''
-#pylint: disable=C0302
 import graphene
-#pylint: disable=E0401
 import schemas
 import schemas_nlp
-#pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 from crud import structurals_crud,contents_crud,projects_crud,nlp_crud
-#pylint: disable=E0611
 from graphql_api import types, utils
+#Data classes and graphql classes have few methods
 
 ############ ADD NEW Language #################
-class InputAddLang(graphene.InputObjectType):
-    """ADD Language Input"""
-    language = graphene.String(required=True)
-    code = graphene.String(required=True,\
-    description="language code as per bcp47(usually 2 letter code)")
-    scriptDirection = graphene.String()
-    metaData = graphene.JSONString(description="Expecting a dictionary Type")
-
-#pylint: disable=R0901,too-few-public-methods
 class AddLanguage(graphene.Mutation):
     """Mutation class for Add Language"""
-    class Arguments:
+    class Arguments:#pylint: disable=too-few-public-methods
         """Arguments declaration for the mutation"""
-        language_addargs = InputAddLang(required=True)
+        language_addargs = types.InputAddLang(required=True)
 
     data = graphene.Field(types.Language)
     message = graphene.String()
-
-#pylint: disable=R0201,no-self-use
-#pylint: disable=W0613
+#pylint: disable=R0201
     def mutate(self,info,language_addargs):
         '''resolve'''
         db_ = info.context["request"].db_session
@@ -46,27 +32,16 @@ class AddLanguage(graphene.Mutation):
         message = "Language created successfully"
         return UpdateLanguage(message=message,data=language)
 
-
-####### Update Language ##############
-class InputUpdateLang(graphene.InputObjectType):
-    """ update Language Input """
-    languageId = graphene.Int(required=True)
-    language = graphene.String()
-    code = graphene.String(description="language code as per bcp47(usually 2 letter code)")
-    scriptDirection = graphene.String()
-    metaData = graphene.JSONString(description="Expecting a dictionary Type")
-
+############### Update Language ##############
 class UpdateLanguage(graphene.Mutation):
     """ Mutation for update language"""
-    class Arguments:
+    class Arguments:#pylint: disable=too-few-public-methods
         """ Argumnets declare for mutations"""
-        language_updateargs = InputUpdateLang(required=True)
+        language_updateargs = types.InputUpdateLang(required=True)
 
     data = graphene.Field(types.Language)
     message = graphene.String()
-
-#pylint: disable=R0201,no-self-use
-#pylint: disable=W0613
+#pylint: disable=R0201
     def mutate(self,info,language_updateargs):
         """resolver"""
         db_ = info.context["request"].db_session
@@ -83,23 +58,16 @@ class UpdateLanguage(graphene.Mutation):
         message = "Language edited successfully"
         return UpdateLanguage(message=message,data=language)
 
-########## Add Contents Type ########
-class InputContentType(graphene.InputObjectType):
-    """ update Language Input """
-    contentType = graphene.String(required=True,\
-        description="Input object to ceate a new content type : pattern: ^[a-z]+$ :\
-        example: commentary")
-
+############# Add Contents Type ###############
 class CreateContentTypes(graphene.Mutation):
     """Mutation for Content types Creation"""
-    class Arguments:
+    class Arguments:#pylint: disable=too-few-public-methods
         "mutation arguments"
-        content_type = InputContentType(required=True)
+        content_type = types.InputContentType(required=True)
 
     data = graphene.Field(types.ContentType)
     message = graphene.String()
-
-#pylint: disable=R0201,no-self-use
+#pylint: disable=R0201
     def mutate(self,info,content_type):
         """resolver"""
         db_ = info.context["request"].db_session
@@ -114,31 +82,16 @@ class CreateContentTypes(graphene.Mutation):
             ,data = content_type)
 
 ########## Add License ########
-enum_val = types.LicensePermission
-
-class InputAddLicense(graphene.InputObjectType):
-    """Add license Input"""
-    name = graphene.String(required=True)
-    code = graphene.String(required=True,\
-        description="pattern: '^[a-zA-Z0-9\\.\\_\\-]+$'")
-    license = graphene.String(required=True)
-    permissions = graphene.List(enum_val, \
-        default_value =["Private_use"],\
-        description="Expecting a list \
-        [ Commercial_use, Modification, Distribution, Patent_use, Private_use ]")
-
-#pylint: disable=R0901,too-few-public-methods
+#pylint: disable=too-few-public-methods
 class AddLicense(graphene.Mutation):
     """Mutation class for Add Licenses"""
     class Arguments:
         """Arguments declaration for the mutation"""
-        license_args = InputAddLicense(required=True)
+        license_args = types.InputAddLicense(required=True)
 
     message = graphene.String()
     data = graphene.Field(types.License)
-
-#pylint: disable=R0201,no-self-use
-#pylint: disable=W0613
+#pylint: disable=R0201
     def mutate(self,info,license_args):
         '''resolve'''
         db_ = info.context["request"].db_session
@@ -156,32 +109,16 @@ class AddLicense(graphene.Mutation):
         return AddLicense(message=message,data=license_var)
 
 ########## Edit License ########
-enum_val = types.LicensePermission
-
-class InputEditLicense(graphene.InputObjectType):
-    """Edit license Input"""
-    name = graphene.String()
-    code = graphene.String(required=True,description=\
-        "pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
-    license = graphene.String()
-    permissions = graphene.List(enum_val, default_value =\
-        ["Private_use"],\
-        description="Expecting a list\
-        [ Commercial_use, Modification, Distribution, Patent_use, Private_use ]")
-    active = graphene.Boolean()
-
-#pylint: disable=R0901,too-few-public-methods
+#pylint: disable=too-few-public-methods
 class EditLicense(graphene.Mutation):
     """Mutation class for Edit Licenses"""
     class Arguments:
         """Arguments declaration for the mutation"""
-        license_args = InputEditLicense()
+        license_args = types.InputEditLicense()
 
     message = graphene.String()
     data = graphene.Field(types.License)
-
-#pylint: disable=R0201,no-self-use
-#pylint: disable=W0613
+#pylint: disable=R0201
     def mutate(self,info,license_args):
         '''resolve'''
         db_ = info.context["request"].db_session
@@ -199,25 +136,15 @@ class EditLicense(graphene.Mutation):
         return AddLicense(message=message,data=license_var)
 
 ########## Add Version ########
-class InputAddVersion(graphene.InputObjectType):
-    """Input for Edit versions"""
-    versionAbbreviation = graphene.String(required=True,\
-        description="pattern: ^[A-Z]+$")
-    versionName = graphene.String(required=True)
-    revision = graphene.Int(default_value = 1)
-    metaData = graphene.JSONString(default_value = None,\
-    description="Expecting a dictionary Type JSON String")
-
 class AddVersion(graphene.Mutation):
     "Mutations for Add Version"
     class Arguments:
         """Arguments for Add Version"""
-        version_arg = InputAddVersion()
+        version_arg = types.InputAddVersion()
 
     message = graphene.String()
     data = graphene.Field(types.Version)
-
-#pylint: disable=R0201,no-self-use
+#pylint: disable=R0201
     def mutate(self,info,version_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -235,25 +162,15 @@ class AddVersion(graphene.Mutation):
         return AddVersion(message=message,data=version_var)
 
 ########## Edit Version ########
-class InputEditVersion(graphene.InputObjectType):
-    """Input for Edit versions"""
-    versionId = graphene.ID(required=True)
-    versionAbbreviation = graphene.String(\
-        description="pattern: ^[A-Z]+$")
-    versionName = graphene.String()
-    revision = graphene.Int()
-    metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String")
-
 class EditVersion(graphene.Mutation):
     "Mutations for Edit Version"
     class Arguments:
         """Arguments for Edit Version"""
-        version_arg = InputEditVersion()
+        version_arg = types.InputEditVersion()
 
     message = graphene.String()
     data = graphene.Field(types.Version)
-
-#pylint: disable=R0201,no-self-use
+#pylint: disable=R0201
     def mutate(self,info,version_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -271,30 +188,15 @@ class EditVersion(graphene.Mutation):
         return EditVersion(message=message,data=version_var)
 
 ########## Add Source ########
-class InputAddSource(graphene.InputObjectType):
-    """Add Source Input"""
-    contentType  = graphene.String(required=True)
-    language = graphene.String(required=True,\
-        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
-    version = graphene.String(required=True,\
-        description="pattern:^[A-Z]+$")
-    revision = graphene.String(default_value = 1,\
-        description="default: 1")
-    year = graphene.Int(required=True)
-    license = graphene.String(default_value = "CC-BY-SA",\
-        description="pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
-    metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String")
-
 class AddSource(graphene.Mutation):
     "Mutations for Add Source"
     class Arguments:
         """Arguments for Add Source"""
-        source_arg = InputAddSource()
+        source_arg = types.InputAddSource()
 
     message = graphene.String()
     data = graphene.Field(types.Source)
-
-#pylint: disable=R0201,no-self-use
+#pylint: disable=R0201
     def mutate(self,info,source_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -317,29 +219,15 @@ class AddSource(graphene.Mutation):
         return AddSource(message=message,data=source_var)
 
 ########## Edit Sources ########
-class InputEditSource(graphene.InputObjectType):
-    """Edit Source Input"""
-    sourceName = graphene.String(required=True,\
-        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
-    contentType  = graphene.String()
-    language = graphene.String(description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
-    version = graphene.String(description="pattern:^[A-Z]+$")
-    revision = graphene.String(description="default: 1")
-    year = graphene.Int()
-    license = graphene.String(description="pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
-    metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String")
-    active = graphene.Boolean()
-
 class EditSource(graphene.Mutation):
     "Mutations for Edit Source"
     class Arguments:
         """Arguments for Edit Source"""
-        source_arg = InputEditSource()
+        source_arg = types.InputEditSource()
 
     message = graphene.String()
     data = graphene.Field(types.Source)
-
-    #pylint: disable=R0201,no-self-use
+#pylint: disable=R0201
     def mutate(self,info,source_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -360,28 +248,15 @@ class EditSource(graphene.Mutation):
         return AddSource(message=message,data=source_var)
 
 ########## Add Bible books ########
-class InputBibleDict(graphene.InputObjectType):
-    """Add Bible Dict"""
-    USFM = graphene.String()
-    JSON = graphene.JSONString(description="Provide JSON structure\
-         obtained from USFM-Grammar or one like that")
-
-class InputAddBible(graphene.InputObjectType):
-    """Add Bible Input"""
-    source_name = graphene.String(required=True,\
-        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
-    books = graphene.List(InputBibleDict,required=True,\
-        description="Must Provide One of the Two USFM or JSON")
-
 class AddBible(graphene.Mutation):
     "Mutations for Add Bible"
     class Arguments:
         """Arguments for Add Bible"""
-        bible_arg = InputAddBible()
+        bible_arg = types.InputAddBible()
 
     message = graphene.String()
     data = graphene.List(types.BibleContent)
-    #pylint: disable=R0201,no-self-use
+#pylint: disable=no-self-use
     def mutate(self,info,bible_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -408,30 +283,15 @@ class AddBible(graphene.Mutation):
         return AddBible(message=message,data=bible_content_list)
 
 ########## Edit Bible books ########
-class BibleEditDict(graphene.InputObjectType):
-    """bible books inputs"""
-    book_code = graphene.String(
-        description="pattern:^[a-zA-Z1-9][a-zA-Z][a-zA-Z]$")
-    USFM = graphene.String(description="USFM Data")
-    JSON = graphene.JSONString(description="Provide JSON structure obtained\
-        from USFM-Grammar or one like that")
-    active = graphene.Boolean(default_value = True)
-
-class InputEditBible(graphene.InputObjectType):
-    """Edit Bible Input"""
-    source_name = graphene.String(required=True,\
-        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
-    books = graphene.List(BibleEditDict,\
-        description="Either JSON or USFM should provide")
 class EditBible(graphene.Mutation):
     "Mutations for Edit Bible"
     class Arguments:
         """Arguments for Edit Bible"""
-        bible_arg = InputEditBible()
+        bible_arg = types.InputEditBible()
 
     message = graphene.String()
     data = graphene.List(types.BibleContent)
-    #pylint: disable=R0201,no-self-use
+    #pylint: disable=no-self-use
     def mutate(self,info,bible_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -458,29 +318,15 @@ class EditBible(graphene.Mutation):
         return AddBible(message=message,data=bible_content_list)
 
 ########## Add Audio bible ########
-class AudioAdddict(graphene.InputObjectType):
-    """audio input"""
-    name = graphene.String(required=True)
-    url = graphene.String(required=True)
-    books = graphene.List(graphene.String,required=True)
-    format = graphene.String(required=True)
-    active = graphene.Boolean(default_value = True)
-
-class InputAddAudioBible(graphene.InputObjectType):
-    """Add Audio Bible Input"""
-    source_name = graphene.String(required=True,\
-        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
-    audio_data = graphene.List(AudioAdddict)
-
 class AddAudioBible(graphene.Mutation):
     "Mutations for Add Audio Bible"
     class Arguments:
         """Arguments for Add Audio Bible"""
-        audio_bible_arg = InputAddAudioBible()
+        audio_bible_arg = types.InputAddAudioBible()
 
     message = graphene.String()
     data = graphene.List(types.AudioBible)
-    #pylint: disable=R0201,no-self-use
+#pylint: disable=R0201
     def mutate(self,info,audio_bible_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -506,29 +352,15 @@ class AddAudioBible(graphene.Mutation):
         return AddAudioBible(message=message,data=audio_content_list)
 
 ########## Edit Audio bible ########
-class AudioEditdict(graphene.InputObjectType):
-    """audio input"""
-    name = graphene.String()
-    url = graphene.String()
-    books = graphene.List(graphene.String,required=True)
-    format = graphene.String()
-    active = graphene.Boolean(default_value = True)
-
-class InputEditAudioBible(graphene.InputObjectType):
-    """Edit Audio Bible Input"""
-    source_name = graphene.String(required=True,\
-        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
-    audio_data = graphene.List(AudioEditdict)
-
 class EditAudioBible(graphene.Mutation):
     "Mutations for Edit Audio Bible"
     class Arguments:
         """Arguments for Edit Audio Bible"""
-        audio_bible_arg = InputEditAudioBible()
+        audio_bible_arg = types.InputEditAudioBible()
 
     message = graphene.String()
     data = graphene.List(types.AudioBible)
-    #pylint: disable=R0201,no-self-use
+#pylint: disable=no-self-use
     def mutate(self,info,audio_bible_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -554,30 +386,15 @@ class EditAudioBible(graphene.Mutation):
         return EditAudioBible(message=message,data=audio_content_list)
 
 ########## Add Commentaries ########
-class CommentaryDict(graphene.InputObjectType):
-    """commentary input"""
-    bookCode = graphene.String(required=True)
-    chapter = graphene.Int(required=True)
-    verseStart = graphene.Int()
-    verseEnd = graphene.Int()
-    commentary = graphene.String(required=True)
-    active = graphene.Boolean(default_value = True)
-
-class InputAddCommentary(graphene.InputObjectType):
-    """Add commentary Input"""
-    source_name = graphene.String(required=True,\
-        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
-    commentary_data = graphene.List(CommentaryDict)
-
 class AddCommentary(graphene.Mutation):
     "Mutations for Add Commentary"
     class Arguments:
         """Arguments for Add Commentary"""
-        comm_arg = InputAddCommentary()
+        comm_arg = types.InputAddCommentary()
 
     message = graphene.String()
     data = graphene.List(types.Commentary)
-    #pylint: disable=R0201,no-self-use
+#pylint: disable=no-self-use
     def mutate(self,info,comm_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -604,31 +421,16 @@ class AddCommentary(graphene.Mutation):
         message = "Commentaries added successfully"
         return AddCommentary(message=message,data=comm_content_list)
 
-########## Edit Commentaries ########
-class CommentaryEditDict(graphene.InputObjectType):
-    """commentary Edit input"""
-    bookCode = graphene.String(required=True)
-    chapter = graphene.Int(required=True)
-    verseStart = graphene.Int()
-    verseEnd = graphene.Int()
-    commentary = graphene.String()
-    active = graphene.Boolean(default_value = True)
-
-class InputEditCommentary(graphene.InputObjectType):
-    """Edit commentary Input"""
-    source_name = graphene.String(required=True,\
-        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
-    commentary_data = graphene.List(CommentaryEditDict)
-
+########## Edit Commentaries #######
 class EditCommentary(graphene.Mutation):
     "Mutations for Edit Commentary"
     class Arguments:
         """Arguments for Edit Commentary"""
-        comm_arg = InputEditCommentary()
+        comm_arg = types.InputEditCommentary()
 
     message = graphene.String()
     data = graphene.List(types.Commentary)
-    #pylint: disable=R0201,no-self-use
+#pylint: disable=no-self-use
     def mutate(self,info,comm_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -656,32 +458,15 @@ class EditCommentary(graphene.Mutation):
         return AddCommentary(message=message,data=comm_content_list)
 
 ##### AGMT PROJECT MANAGEMENT Create #######
-enum_doc = types.TranslationDocumentType
-
-class InputCreateAGMTProject(graphene.InputObjectType):
-    """CreateAGMTProject Input"""
-    projectName = graphene.String(required=True,\
-        description="example: Hindi Malayalam Gospels")
-    sourceLanguageCode = graphene.String(required=True,\
-        description="pattern:^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
-    targetLanguageCode = graphene.String(required=True,\
-        description="pattern:^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
-    documentFormat = graphene.Field(enum_doc)
-    useDataForLearning = graphene.Boolean()
-    stopwords = graphene.Field(types.Stopwords)
-    punctuations = graphene.List(graphene.String,\
-        description="""List [ ",", "\"", "!", ".", ":", ";", "\n""]""")
-    active = graphene.Boolean(default_value=True)
-
 class CreateAGMTProject(graphene.Mutation):
     "Mutations for CreateAGMTProject"
     class Arguments:
         """Arguments for CreateAGMTProject"""
-        project_arg = InputCreateAGMTProject()
+        project_arg = types.InputCreateAGMTProject()
 
     message = graphene.String()
     data = graphene.Field(types.TranslationProject)
-    #pylint: disable=R0201,no-self-use
+#pylint: disable=no-self-use
     def mutate(self,info,project_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -702,40 +487,16 @@ class CreateAGMTProject(graphene.Mutation):
         message = "Project created successfully"
         return CreateAGMTProject(message = message, data = comm)
 
-
 ##### AGMT PROJECT MANAGEMENT EDIT #######
-
-class InputSeclectedBooks(graphene.InputObjectType):
-    """List of selected books from an existing bible in the server"""
-    bible = graphene.String(required=True,\
-        description = "pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$\
-        example: hi_IRV_1_bible")
-    books = graphene.List(graphene.String,required=True,\
-        description = "pattern: ^[a-zA-Z1-9][a-zA-Z][a-zA-Z]$\
-        example: [ 'luk', 'jhn' ]")
-
-class InputEditAGMTProject(graphene.InputObjectType):
-    """CreateAGMTProject Input"""
-    projectId = graphene.Int(required=True)
-    projectName = graphene.String(\
-        description="example: Hindi Malayalam Gospels")
-    selectedBooks = graphene.Field(InputSeclectedBooks)
-    uploadedBooks = graphene.List(graphene.String)
-    useDataForLearning = graphene.Boolean()
-    stopwords = graphene.Field(types.Stopwords)
-    punctuations = graphene.List(graphene.String,\
-        description="""List [ ",", "\"", "!", ".", ":", ";", "\n""]""")
-    active = graphene.Boolean(default_value=True)
-
 class EditAGMTProject(graphene.Mutation):
     "Mutations for EditAGMTProject"
     class Arguments:
         """Arguments for EditAGMTProject"""
-        project_arg = InputEditAGMTProject()
+        project_arg = types.InputEditAGMTProject()
 
     message = graphene.String()
     data = graphene.Field(types.TranslationProject)
-    #pylint: disable=R0201,no-self-use
+#pylint: disable=no-self-use
     def mutate(self,info,project_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -756,22 +517,16 @@ class EditAGMTProject(graphene.Mutation):
         message = "Project updated successfully"
         return EditAGMTProject(message = message, data = comm)
 
-
 ##### AGMT project user #######
-class AGMTUserCreateInput(graphene.InputObjectType):
-    """input of AGMT user create"""
-    project_id = graphene.Int(required=True)
-    user_id = graphene.Int(required=True)
-
 class AGMTUserCreate(graphene.Mutation):
     """mutation for AGMT user create"""
     class Arguments:
         """args"""
-        user_arg = AGMTUserCreateInput()
+        user_arg = types.AGMTUserCreateInput()
 
     message = graphene.String()
     data = graphene.Field(types.ProjectUser)
-    #pylint: disable=R0201,no-self-use
+#pylint: disable=no-self-use
     def mutate(self,info,user_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -789,24 +544,16 @@ class AGMTUserCreate(graphene.Mutation):
         message = "User added in project successfully"
         return AGMTUserCreate(message = message, data = comm)
 
-##### AGMT project user Edit#######
-class AGMTUserEditInput(graphene.InputObjectType):
-    """input of AGMT user Edit"""
-    project_id = graphene.Int(required=True)
-    userId = graphene.Int(required=True)
-    userRole = graphene.String()
-    metaData = graphene.JSONString()
-    active = graphene.Boolean()
-
+##### AGMT project user Edit #######
 class AGMTUserEdit(graphene.Mutation):
     """mutation for AGMT user Edit"""
     class Arguments:
         """args"""
-        user_arg = AGMTUserEditInput()
+        user_arg = types.AGMTUserEditInput()
 
     message = graphene.String()
     data = graphene.Field(types.ProjectUser)
-    #pylint: disable=R0201,no-self-use
+#pylint: disable=no-self-use
     def mutate(self,info,user_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -822,32 +569,17 @@ class AGMTUserEdit(graphene.Mutation):
         )
         message = "User updated in project successfully"
         return AGMTUserEdit(message = message, data = comm)
+
 ########## Add BibleVideo ########
-class BibleVideoDict(graphene.InputObjectType):
-    """BibleVideo input"""
-    title = graphene.String(required=True)
-    books = graphene.List(graphene.String,required=True,\
-        description="provide book codes")
-    videoLink = graphene.String(required=True)
-    description = graphene.String(required=True)
-    theme = graphene.String(required=True)
-    active = graphene.Boolean(default_value = True)
-
-class InputAddBibleVideo(graphene.InputObjectType):
-    """Add BibleVideo Input"""
-    source_name = graphene.String(required=True,\
-        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
-    video_data = graphene.List(BibleVideoDict)
-
 class AddBibleVideo(graphene.Mutation):
     "Mutations for Add BibleVideo"
     class Arguments:
         """Arguments for Add BibleVideo"""
-        video_arg = InputAddBibleVideo()
+        video_arg = types.InputAddBibleVideo()
 
     message = graphene.String()
     data = graphene.List(types.BibleVideo)
-    #pylint: disable=R0201,no-self-use
+#pylint: disable=no-self-use
     def mutate(self,info,video_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -875,30 +607,15 @@ class AddBibleVideo(graphene.Mutation):
         return AddBibleVideo(message=message,data=video_content_list)
 
 ########## Edit BibleVideo ########
-class BibleVideoEditDict(graphene.InputObjectType):
-    """BibleVideo Edit input"""
-    title = graphene.String(required=True)
-    books = graphene.List(graphene.String)
-    videoLink = graphene.String()
-    description = graphene.String()
-    theme = graphene.String()
-    active = graphene.Boolean(default_value = True)
-
-class InputEditBibleVideo(graphene.InputObjectType):
-    """Edit BibleVideo Input"""
-    source_name = graphene.String(required=True,\
-        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
-    video_data = graphene.List(BibleVideoEditDict)
-
 class EditBibleVideo(graphene.Mutation):
     "Mutations for Edit BibleVideo"
     class Arguments:
         """Arguments for Edit BibleVideo"""
-        video_arg = InputEditBibleVideo()
+        video_arg = types.InputEditBibleVideo()
 
     message = graphene.String()
     data = graphene.List(types.BibleVideo)
-    #pylint: disable=R0201,no-self-use
+#pylint: disable=no-self-use
     def mutate(self,info,video_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -924,28 +641,17 @@ class EditBibleVideo(graphene.Mutation):
             video_content_list.append(comm_var)
         message = "Bible videos updated successfully"
         return AddBibleVideo(message=message,data=video_content_list)
-########## Add Dictionary ########
-class DictionaryDict(graphene.InputObjectType):
-    """Dictionary input"""
-    word = graphene.String(required=True)
-    details = graphene.JSONString(description="Expecting a dictionary Type")
-    active = graphene.Boolean(default_value = True)
 
-class InputAddDictionary(graphene.InputObjectType):
-    """Add Dictionary Input"""
-    source_name = graphene.String(required=True,\
-        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
-    word_list = graphene.List(DictionaryDict)
-
+############# Add Dictionary ###############
 class AddDictionary(graphene.Mutation):
     "Mutations for Add Dictionary"
     class Arguments:
         """Arguments for Add Dictionary"""
-        dict_arg = InputAddDictionary()
+        dict_arg = types.InputAddDictionary()
 
     message = graphene.String()
     data = graphene.List(types.DictionaryWord)
-    #pylint: disable=R0201,no-self-use
+#pylint: disable=no-self-use
     def mutate(self,info,dict_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -970,27 +676,15 @@ class AddDictionary(graphene.Mutation):
         return AddDictionary(message=message,data=dict_content_list)
 
 ########## Edit Dictionary ########
-class DictionaryEditDict(graphene.InputObjectType):
-    """Dictionary input"""
-    word = graphene.String(required=True)
-    details = graphene.JSONString(description="Expecting a dictionary Type")
-    active = graphene.Boolean(default_value = True)
-
-class InputEditDictionary(graphene.InputObjectType):
-    """Add Dictionary Input"""
-    source_name = graphene.String(required=True,\
-        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
-    word_list = graphene.List(DictionaryEditDict)
-
 class EditDictionary(graphene.Mutation):
     "Mutations for Edit Dictionary"
     class Arguments:
         """Arguments for Add Dictionary"""
-        dict_arg = InputEditDictionary()
+        dict_arg = types.InputEditDictionary()
 
     message = graphene.String()
     data = graphene.List(types.DictionaryWord)
-    #pylint: disable=R0201,no-self-use
+#pylint: disable=no-self-use
     def mutate(self,info,dict_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -1015,30 +709,15 @@ class EditDictionary(graphene.Mutation):
         return EditDictionary(message=message,data=dict_content_list)
 
 ########## Add Infographics ########
-class InfographicDict(graphene.InputObjectType):
-    """Infographic input"""
-    bookCode = graphene.String(required=True,\
-        description="pattern: ^[a-zA-Z1-9][a-zA-Z][a-zA-Z]$")
-    title = graphene.String(required=True)
-    infographicLink = graphene.String(required=True,\
-        description="Provide valid URL")
-    active = graphene.Boolean(default_value = True)
-
-class InputAddInfographic(graphene.InputObjectType):
-    """Add Infographic Input"""
-    source_name = graphene.String(required=True,\
-        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
-    data = graphene.List(InfographicDict)
-
 class AddInfographic(graphene.Mutation):
     "Mutations for Add Infographic"
     class Arguments:
         """Arguments for Add Infographic"""
-        info_arg = InputAddInfographic()
+        info_arg = types.InputAddInfographic()
 
     message = graphene.String()
     data = graphene.List(types.Infographic)
-    #pylint: disable=R0201,no-self-use
+#pylint: disable=no-self-use
     def mutate(self,info,info_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -1064,30 +743,15 @@ class AddInfographic(graphene.Mutation):
         return AddInfographic(message=message,data=dict_content_list)
 
 ########## Edit Infographics ########
-class InfographicEditDict(graphene.InputObjectType):
-    """Infographic Edit input"""
-    bookCode = graphene.String(required=True,\
-        description="pattern: ^[a-zA-Z1-9][a-zA-Z][a-zA-Z]$")
-    title = graphene.String(required=True)
-    infographicLink = graphene.String(\
-        description="Provide valid URL")
-    active = graphene.Boolean(default_value = True)
-
-class InputEditInfographic(graphene.InputObjectType):
-    """Edit Infographic Input"""
-    source_name = graphene.String(required=True,\
-        description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
-    data = graphene.List(InfographicEditDict)
-
 class EditInfographic(graphene.Mutation):
     "Mutations for Edit Infographic"
     class Arguments:
         """Arguments for Edit Infographic"""
-        info_arg = InputEditInfographic()
+        info_arg = types.InputEditInfographic()
 
     message = graphene.String()
     data = graphene.List(types.Infographic)
-    #pylint: disable=R0201,no-self-use
+#pylint: disable=no-self-use
     def mutate(self,info,info_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -1114,22 +778,15 @@ class EditInfographic(graphene.Mutation):
 
 ########## Autographa - Translation ########
 # Apply token translation
-
-class InputApplyToken(graphene.InputObjectType):
-    """Inputs for Aplly Token"""
-    project_id = graphene.Int(required=True)
-    return_drafts = graphene.Boolean(default_value = True)
-    token = graphene.List(types.TokenUpdate)
-
 class AgmtTokenApply(graphene.Mutation):
     "Mutations for  Token apply"
     class Arguments:
         """Arguments for Token apply"""
-        token_arg = InputApplyToken()
+        token_arg = types.InputApplyToken()
 
     message = graphene.String()
     data = graphene.List(types.Sentence)
-    #pylint: disable=R0201,no-self-use
+#pylint: disable=no-self-use
     def mutate(self,info,token_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -1158,24 +815,14 @@ class AgmtTokenApply(graphene.Mutation):
 
 #### Translation Suggetions ##########
 #Suggeest Auto Translation
-class InputAutoTranslation(graphene.InputObjectType):
-    """Auto Translation Suggestion input"""
-    project_id  = graphene.Int(required=True)
-    books = graphene.List(graphene.String)
-    sentence_id_list = graphene.List(graphene.Int,\
-        description="List of sentance id BCV")
-    sentence_id_range = graphene.List(graphene.Int,\
-        description="List of sentance range BCV , 2 values in list")
-    confirm_all = graphene.Boolean(default_value = False)
-
 class AutoTranslationSuggetion(graphene.Mutation):
     "Mutations for AutoTranslationSuggetion"
     class Arguments:
         """Arguments for AutoTranslationSuggetion"""
-        translation_arg = InputAutoTranslation()
+        translation_arg = types.InputAutoTranslation()
 
     Output = graphene.List(types.Sentence)
-    #pylint: disable=R0201,no-self-use
+#pylint: disable=no-self-use
     def mutate(self,info,translation_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -1201,23 +848,15 @@ class AutoTranslationSuggetion(graphene.Mutation):
         return dict_content_list
 
 ############### Add Gloss ##############
-class InputAddGloss(graphene.InputObjectType):
-    """Add Gloss input"""
-    source_language = graphene.String(required=True,\
-        description="patten:^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
-    target_language  = graphene.String(required=True,\
-        description="patten:^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
-    data = graphene.List(types.GlossInput,required=True)
-
 class AddGloss(graphene.Mutation):
     "Mutations for AddGloss"
     class Arguments:
         """Arguments for AddGloss"""
-        gloss_arg = InputAddGloss()
+        gloss_arg = types.InputAddGloss()
 
     message = graphene.String()
     data = graphene.List(types.Gloss)
-    #pylint: disable=R0201,no-self-use
+#pylint: disable=no-self-use
     def mutate(self,info,gloss_arg):
         """resolve"""
         db_ = info.context["request"].db_session
@@ -1256,23 +895,15 @@ class AddGloss(graphene.Mutation):
         return AddGloss(message=message,data=dict_content_list)
 
 ############### Add Alignment
-class InputAddAlignment(graphene.InputObjectType):
-    """Add Alignement input"""
-    source_language = graphene.String(required=True,\
-        description="patten:^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
-    target_language  = graphene.String(required=True,\
-        description="patten:^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
-    data = graphene.List(types.Alignment,required=True)
-
 class AddAlignment(graphene.Mutation):
     "Mutations for AddAlignment"
     class Arguments:
         """Arguments for AddAlignment"""
-        alignment_arg = InputAddAlignment()
+        alignment_arg = types.InputAddAlignment()
 
     message = graphene.String()
     data = graphene.List(types.Gloss)
-    #pylint: disable=R0201,no-self-use
+#pylint: disable=no-self-use
     def mutate(self,info,alignment_arg):
         """resolve"""
         db_ = info.context["request"].db_session

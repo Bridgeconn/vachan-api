@@ -1,15 +1,13 @@
 '''GraphQL queries and mutations'''
 
 import graphene
-
-#pylint: disable=E0401
-#pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 from crud import structurals_crud, contents_crud, projects_crud, nlp_crud
 from graphql_api import types, utils
 import schemas_nlp
 
-
-#pylint: disable=R0201, too-many-arguments, too-many-public-methods
+#Pylint error :- Query class have all resolver functions
+#pylint: disable=R0201
+#pylint: disable=too-many-arguments,too-many-public-methods
 class Query(graphene.ObjectType):
     '''All defined queries'''
     languages = graphene.List(types.Language,
