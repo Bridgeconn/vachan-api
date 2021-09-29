@@ -156,7 +156,7 @@ def test_login_register(create_user_fixture):
         "lastname": "ABC Test"
     }
     response = register(data,apptype=None)
-    ABC_id = response.json()["registered_details"]["id"]
+    abc_id = response.json()["registered_details"]["id"]
 
     #test user ABC login after register
     data = {
@@ -180,7 +180,7 @@ def test_login_register(create_user_fixture):
       "An account with the same identifier (email, phone, username, ...) exists already."
 
     users_list = create_user_fixture
-    users_list.append(ABC_id)
+    users_list.append(abc_id)
 
 
 #test for validate register data
@@ -227,7 +227,7 @@ def test_optional_register_params(create_user_fixture):
     }
     response = register(data,apptype=None)
     assert response.json()["registered_details"]["Permisions"] == ['None']
-    ABC_id = response.json()["registered_details"]["id"]
+    abc_id = response.json()["registered_details"]["id"]
 
     #no first and last name, registration execute without error
     data = {
@@ -235,11 +235,11 @@ def test_optional_register_params(create_user_fixture):
         "password": "passwordabc@1"
     }
     response1 = register(data,apptype=None)
-    ABC1_id = response1.json()["registered_details"]["id"]
+    abc1_id = response1.json()["registered_details"]["id"]
 
     users_list = create_user_fixture
-    users_list.append(ABC_id)
-    users_list.append(ABC1_id)
+    users_list.append(abc_id)
+    users_list.append(abc1_id)
 
 #test register with missing field
 def test_register_incorrectdatas():
@@ -274,7 +274,7 @@ def test_register_roles(create_user_fixture):
         "lastname": "Vachan role Test"
     }
     response1 = register(data_xyz1,apptype="VachanUser")
-    XYZ1_id = response1.json()["registered_details"]["id"]
+    xyz1_id = response1.json()["registered_details"]["id"]
     assert response1.json()["registered_details"]["Permisions"] == ['VachanUser']
 
     data_xyz2 = {
@@ -284,7 +284,7 @@ def test_register_roles(create_user_fixture):
         "lastname": "Ag role Test"
     }
     response2 = register(data_xyz2,apptype="AgUser")
-    XYZ2_id = response2.json()["registered_details"]["id"]
+    xyz2_id = response2.json()["registered_details"]["id"]
     assert response2.json()["registered_details"]["Permisions"] == ['AgUser']
 
     data_xyz3 = {
@@ -294,7 +294,7 @@ def test_register_roles(create_user_fixture):
         "lastname": "No role Test"
     }
     response3 = register(data_xyz3,apptype=None)
-    XYZ3_id = response3.json()["registered_details"]["id"]
+    xyz3_id = response3.json()["registered_details"]["id"]
     assert response3.json()["registered_details"]["Permisions"] == ['None']
 
     #login check for users
@@ -349,9 +349,9 @@ def test_register_roles(create_user_fixture):
     assert response3.json()["registered_details"]["Permisions"] == ['None','AgUser']
 
     users_list = create_user_fixture
-    users_list.append(XYZ1_id)
-    users_list.append(XYZ2_id)
-    users_list.append(XYZ3_id)
+    users_list.append(xyz1_id)
+    users_list.append(xyz2_id)
+    users_list.append(xyz3_id)
 
 #Register two users with app_info=None
 #and make them VachanAdmin and AgAdmin

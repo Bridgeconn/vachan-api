@@ -8,16 +8,12 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
-
-#pylint: disable=E0401
-#pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 from custom_exceptions import GenericException,TypeException , PermisionException,\
     UnprocessableException,NotAvailableException, AlreadyExistsException,\
         UnAuthorizedException
 import db_models
 from database import engine
 from dependencies import get_db, log
-
 from schemas import NormalResponse
 from routers import content_apis, translation_apis, auth_api
 from graphql_api import router as gql_router

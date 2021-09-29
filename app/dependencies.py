@@ -1,7 +1,5 @@
 '''Common stuff required by main and different routers'''
 
-#pylint: disable=E0401
-#pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 import os
 import logging
 from logging.handlers import RotatingFileHandler

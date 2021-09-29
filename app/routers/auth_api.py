@@ -1,7 +1,6 @@
 """router for authentication endpoints"""
 from fastapi import APIRouter, Depends, Query, Request
 from pydantic import types
-#pylint: disable=E0401
 from sqlalchemy.orm import Session
 import schema_auth
 import schemas
@@ -139,12 +138,12 @@ permision = Depends(auth_handler.kratos_session_validation),db_: Session = Depen
         user_id=None, user_roles=permision,resource_type = None)
     if verified:
         response = delete_identity(user.userid)
-        #pylint: disable=R1720
+
         if response.status_code == 404:
             raise NotAvailableException("Unable to locate the resource")
-        else:
-            user_id = user.userid
-            out =  {"message":"deleted identity %s"%user_id}
+
+        user_id = user.userid
+        out =  {"message":"deleted identity %s"%user_id}
     else:
         raise PermisionException("User have no permision to access API")
     return out

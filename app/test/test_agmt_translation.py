@@ -30,6 +30,7 @@ def assert_positive_get_tokens(item):
         assert isinstance(item['metaData'], dict)
 
 def assert_positive_get_sentence(item):
+    '''common test for senstence object'''
     assert "sentenceId" in item
     assert "sentence" in item
     assert isinstance(item['sentence'], str)
@@ -177,7 +178,7 @@ def test_save_translation():
     resp = add_project(project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
-   
+
     put_data = {
         "projectId": project_id,
         "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
@@ -221,7 +222,7 @@ def test_save_translation():
     assert response.json()['message'] == 'Token translations saved'
     for sent in response.json()['data']:
         assert "test translation" in sent['draft']
-   
+
     # all tokens at once
     post_obj_list = []
     for item in all_tokens:
@@ -244,7 +245,7 @@ def test_save_translation_invalid():
     resp = add_project(project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
-   
+
     put_data = {
         "projectId": project_id,
         "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
@@ -317,14 +318,15 @@ def test_save_translation_invalid():
     response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
         headers=headers, json=[obj])
     assert response.status_code == 500
-    assert response.json()['details'] == 'Token, %s, and its occurence, not matching'%(all_tokens[0]['token'])
+    assert response.json()['details'] ==\
+         'Token, %s, and its occurence, not matching'%(all_tokens[0]['token'])
 
 def test_drafts():
     '''End to end test from tokenization to draft generation'''
     resp = add_project(project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
-   
+
     put_data = {
         "projectId": project_id,
         "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
@@ -430,7 +432,7 @@ def test_get_sentence():
     resp = add_project(project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
-   
+
     # before adding books
     response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id))
     assert_not_available_content(response)
@@ -485,7 +487,7 @@ def test_progress_n_suggestion():
     resp = add_project(project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
-   
+
     # before adding books
     response = client.get(UNIT_URL+"/progress?project_id="+str(project_id))
     assert response.status_code ==200
@@ -553,7 +555,7 @@ def test_get_versification():
     resp = add_project(project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
-   
+
     # before adding books
     response = client.get(UNIT_URL+"/versification?project_id="+str(project_id))
     for key in response.json():

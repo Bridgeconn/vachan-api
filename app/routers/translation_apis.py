@@ -4,17 +4,13 @@ from typing import List
 from fastapi import APIRouter, Query, Body, Depends
 from sqlalchemy.orm import Session
 
-#pylint: disable=E0401
-#pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 from dependencies import get_db, log
 import schemas
 import schemas_nlp
 from crud import nlp_crud, projects_crud
 
 router = APIRouter()
-
 #pylint: disable=too-many-arguments
-
 ############## Autographa Projects ##########################
 @router.get('/v2/autographa/projects', response_model=List[schemas_nlp.TranslationProject],
     status_code=200, tags=['Autographa-Project management'])
@@ -116,7 +112,7 @@ def get_token_translation(project_id:int=Query(...,example="1022004"),
     '''Get the current translation for specific tokens providing their occurence in source'''
     log.info('In get_token_translation')
     occurrences = [{"sentenceId":sentence_id, "offset":offset}]
-    log.debug('project_id: %s, token:%s, occurrences:%s'%(project_id, token, occurrences))
+    log.debug('project_id: %s, token:%s, occurrences:%s',project_id, token, occurrences)
     return projects_crud.obtain_agmt_token_translation(db_, project_id, token, occurrences)[0]
 
 @router.put('/v2/autographa/project/token-sentences', status_code=200,
@@ -130,7 +126,7 @@ def get_token_sentences(project_id:int=Query(...,example="1022004"),
     '''Pass in the occurence list of a token and get all sentences it is present in with draftMeta
     that allows easy highlight of token and translation'''
     log.info('In get_token_sentences')
-    log.debug('project_id: %s, token:%s, occurrences:%s'%(project_id, token, occurrences))
+    log.debug('project_id: %s, token:%s, occurrences:%s',project_id, token, occurrences)
     return projects_crud.get_agmt_source_per_token(db_, project_id, token, occurrences)
 
 @router.get('/v2/autographa/project/draft', status_code=200, tags=['Autographa-Translation'])

@@ -9,19 +9,17 @@ from sqlalchemy.orm import relationship, Session
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.schema import Sequence
 
-#pylint: disable=E0401
-#pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 from database import Base
 from custom_exceptions import GenericException
 
 class ContentTypeName(Enum):
     '''The string literals used as value of ContentType field in ContentType
     and also used to as the ending of respective database table names'''
-    bible = "bible"
-    commentary = "commentary"
-    infographic = "infographic"
-    biblevideo = "biblevideo"
-    dictionary = "dictionary"
+    BIBLE = "bible"
+    COMMENTARY = "commentary"
+    INFOGRAPHIC = "infographic"
+    BIBLEVIDEO = "biblevideo"
+    DICTIONARY = "dictionary"
 
 class TranslationDocumentType(Enum):
     '''Currently supports bible USFM only. Can be extended to
@@ -236,7 +234,7 @@ class BibleContentCleaned(): # pylint: disable=too-few-public-methods
 dynamicTables = {}
 def create_dynamic_table(source_name, table_name, content_type):
     '''To map or create one dynamic table based on the content Type'''
-    if content_type == ContentTypeName.bible.value:
+    if content_type == ContentTypeName.BIBLE.value:
         dynamicTables[source_name+'_audio'] = type(
             table_name+'_audio',(BibleAudio, Base,),
             {"__tablename__": table_name+'_audio'})
@@ -246,16 +244,16 @@ def create_dynamic_table(source_name, table_name, content_type):
         dynamicTables[source_name+'_cleaned'] = type(
             table_name+'_cleaned',(BibleContentCleaned, Base,),
             {"__tablename__": table_name+'_cleaned'})
-    elif content_type == ContentTypeName.commentary.value:
+    elif content_type == ContentTypeName.COMMENTARY.value:
         dynamicTables[source_name] = type(
             table_name,(Commentary, Base,),{"__tablename__": table_name})
-    elif content_type == ContentTypeName.dictionary.value:
+    elif content_type == ContentTypeName.DICTIONARY.value:
         dynamicTables[source_name] = type(
             table_name,(Dictionary, Base,),{"__tablename__": table_name})
-    elif content_type == ContentTypeName.infographic.value:
+    elif content_type == ContentTypeName.INFOGRAPHIC.value:
         dynamicTables[source_name] = type(
             table_name,(Infographic, Base,),{"__tablename__": table_name})
-    elif content_type == ContentTypeName.biblevideo.value:
+    elif content_type == ContentTypeName.BIBLEVIDEO.value:
         dynamicTables[source_name] = type(
             table_name,(BibleVideo, Base,),{"__tablename__": table_name})
     else:

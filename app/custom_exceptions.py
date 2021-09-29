@@ -1,6 +1,5 @@
 '''Customize predefined errors and define new ones'''
 
-
 class GenericException(Exception):
     '''Format for Database error'''
     def __init__(self, detail: str):
