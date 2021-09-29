@@ -1,6 +1,6 @@
 """schema for auth related"""
 #No name 'BaseModel' in module 'pydantic' (no-name-in-module)
-#pylint: disable=E0611
+#pylint: disable=E0611,C0103
 from enum import Enum
 from typing import List
 from pydantic import BaseModel
@@ -18,13 +18,7 @@ class App(str, Enum):
     ag = "Autographa"
     vachan = "Vachan-online or vachan-app"
     vachanAdmin = "Vachan Admin"
-
-#pylint: disable=R0903
-class AppType(str, Enum):
-    '''user role based on app'''
-    aguser = 'AgUser'
-    vachanuser = 'VachanUser'
-    none = 'None'
+    api = "API-user"
 
 #pylint: disable=R0903
 class Registration(BaseModel):
@@ -59,7 +53,7 @@ class RegistrationOut(BaseModel):
     """registration output"""
     id:str
     email:str
-    Permisions:List[AppType]
+    Permisions:List[App]
 
 #pylint: disable=R0903
 class RegisterResponse(BaseModel):

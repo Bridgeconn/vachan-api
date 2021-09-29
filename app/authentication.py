@@ -10,9 +10,10 @@ from sqlalchemy.orm import Session
 import db_models
 import schema_auth
 from dependencies import log
-from custom_exceptions import GenericException , PermisionException ,\
+from custom_exceptions import GenericException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
     UnprocessableException
+from api_permission_map import api_permission_map
 
 PUBLIC_BASE_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL"+"self-service/",
                                     "http://127.0.0.1:4433/self-service/")
@@ -21,10 +22,6 @@ USER_SESSION_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL"+ "sessions/whoami",
                                 "http://127.0.0.1:4433/sessions/whoami")
 SUPER_USER = os.environ.get("VACHAN_SUPER_USERNAME")
 SUPER_PASSWORD = os.environ.get("VACHAN_SUPER_PASSWORD")
-
-################################ test for  access rights ###############################
-
-################################ ------------------- ###############################
 
 access_rules = {
     "meta-content":{
@@ -118,41 +115,41 @@ def project_member(db_:Session, project_id, user_id):
         return True
     return False
 
-def api_permission_map(endpoint, method, requesting_app, resource):
-    '''returns the required permission name as per the access rules'''
-    permission = None
-    if requesting_app == schema_auth.App.ag and method == "GET":
-        permission = "refer-for-translation"
-    elif requesting_app == schema_auth.App.vachan and method == "GET":
-        permission = "view-on-web"
-    elif requesting_app == schema_auth.App.vachanAdmin and method == "GET":
-        permission = "view-on-vachan-admin"
-    elif requesting_app is None and method == "GET":
-        permission = "read-via-api"
-    elif (endpoint == "/v2/autographa/projects" and method == "PUT"
-        and resource==schema_auth.ResourceType.content):
-        permission = "translate"
-    elif (endpoint == "/v2/autographa/projects" and method == "PUT"
-        and resource==schema_auth.ResourceType.project):
-        permission = "edit-Settings"
-    elif endpoint in ["/v2/autographa/project/tokens", "/v2/autographa/project/token-translations",
-        "/v2/autographa/project/token-sentences"]:
-        permission = "edit-draft"
-    elif method == "PUT" and resource==schema_auth.ResourceType.content:
-        permission = "edit"
-    elif method == "PUT" and resource==schema_auth.ResourceType.metaContent:
-        permission = "edit"
-    elif method == "POST" and resource==schema_auth.ResourceType.user:
-        permission = "edit-role"
-    elif method == "POST":
-        permission = "create"
-    else:
-        raise Exception("API's required permission not defined")
-    return permission
+# def api_permission_map(endpoint, method, requesting_app, resource):
+#     '''returns the required permission name as per the access rules'''
+#     permission = None
+#     if requesting_app == schema_auth.App.ag and method == "GET":
+#         permission = "refer-for-translation"
+#     elif requesting_app == schema_auth.App.vachan and method == "GET":
+#         permission = "view-on-web"
+#     elif requesting_app == schema_auth.App.vachanAdmin and method == "GET":
+#         permission = "view-on-vachan-admin"
+#     elif requesting_app is None and method == "GET":
+#         permission = "read-via-api"
+#     elif (endpoint == "/v2/autographa/projects" and method == "PUT"
+#         and resource==schema_auth.ResourceType.content):
+#         permission = "translate"
+#     elif (endpoint == "/v2/autographa/projects" and method == "PUT"
+#         and resource==schema_auth.ResourceType.project):
+#         permission = "edit-Settings"
+#     elif endpoint in ["/v2/autographa/project/tokens",
+#             "/v2/autographa/project/token-translations",
+#         "/v2/autographa/project/token-sentences"]:
+#         permission = "edit-draft"
+#     elif method == "PUT" and resource==schema_auth.ResourceType.content:
+#         permission = "edit"
+#     elif method == "PUT" and resource==schema_auth.ResourceType.metaContent:
+#         permission = "edit"
+#     elif method == "PUT" and resource==schema_auth.ResourceType.user:
+#         permission = "edit-role"
+#     elif method == "POST":
+#         permission = "create"
+#     else:
+#         raise Exception("API's required permission not defined")
+#     return permission
 
 def get_accesstags_permission(request_context, resource_type, db_, resource_id):
     """get access_tag and permission"""
-    print("=======>",request_context)
     endpoint = request_context['endpoint']
     method = request_context['method']
     requesting_app = request_context['app']
@@ -274,26 +271,28 @@ def check_access_rights(db_:Session, resource_id, *args, user_id=None, user_role
             #         break
             has_rights = role_check_has_right(db_, role, user_roles, resource_type,
                  resource_id, user_id, endpoint)
+            if has_rights:
+                break
         if has_rights:
             break
     return has_rights
 
 
-#check roles for api
-def verify_role_permision(api_name,permision):
-    """check the user roles for the requested api"""
-    verified = False
-    if api_name in access_rules:#changed acces_role to access rule
-        access_list = access_rules[api_name]
-        if len(access_list) != 0 and len(permision) != 0:
-            for role in permision:
-                if role in access_list:
-                    verified = True
-        else:
-            raise PermisionException("User have no permision to access API")
-    else:
-        raise GenericException("No permisions set for the API - %s"%api_name)
-    return verified
+# #check roles for api
+# def verify_role_permision(api_name,permision):
+#     """check the user roles for the requested api"""
+#     verified = False
+#     if api_name in access_rules:#changed acces_role to access rule
+#         access_list = access_rules[api_name]
+#         if len(access_list) != 0 and len(permision) != 0:
+#             for role in permision:
+#                 if role in access_list:
+#                     verified = True
+#         else:
+#             raise PermisionException("User have no permision to access API")
+#     else:
+#         raise GenericException("No permisions set for the API - %s"%api_name)
+#     return verified
 
 #Class handles the session validation and logout
 class AuthHandler():
@@ -365,7 +364,10 @@ def user_register_kratos(register_details,app_type):#pylint: disable=too-many-lo
     lastname = register_details.lastname
 
     #check auto role assign
-    user_role = app_type
+    if app_type is None:
+        user_role = schema_auth.App.api
+    else:
+        user_role = app_type
 
     register_url = PUBLIC_BASE_URL+"registration/api"
     reg_flow = requests.get(register_url)
@@ -480,8 +482,8 @@ def user_role_add(user_id,roles_list):
     traits = user_data["traits"]
     exist_roles = []
 
-    if "" in roles_list or len(roles_list) == 0:
-        roles_list = ["None"]
+    if '' in roles_list or len(roles_list) == 0 or None in roles_list:
+        roles_list = ['']
 
     for role in roles_list:
         if role in traits["userrole"]:
