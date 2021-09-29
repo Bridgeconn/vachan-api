@@ -5,8 +5,6 @@ import requests
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
-#pylint: disable=E0401
-#pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
 import db_models
 import schema_auth
 from dependencies import log
@@ -155,24 +153,24 @@ def get_accesstags_permission(request_context, resource_type, db_, resource_id):
     requesting_app = request_context['app']
     if resource_type is None:
         if endpoint.split('/')[-1] in ["contents", "languages", "licenses", 'versions']:
-            resource_type = schema_auth.ResourceType.metaContent
+            resource_type = schema_auth.ResourceType.METACONTENT
         elif endpoint.startswith('/v2/autographa/project'):
-            resource_type = schema_auth.ResourceType.project
+            resource_type = schema_auth.ResourceType.PROJECT
         elif endpoint.startswith('/v2/user'):
-            resource_type = schema_auth.ResourceType.user
+            resource_type = schema_auth.ResourceType.USER
         elif endpoint.startswith("/v2/translation"):
             resource_type = None
         else:
-            resource_type = schema_auth.ResourceType.content
+            resource_type = schema_auth.ResourceType.CONTENT
     required_permission = api_permission_map(endpoint, method,requesting_app, resource_type)
 
-    if resource_type == schema_auth.ResourceType.metaContent:
+    if resource_type == schema_auth.ResourceType.METACONTENT:
         access_tags = ["open-access"]
-    elif resource_type == schema_auth.ResourceType.project:
+    elif resource_type == schema_auth.ResourceType.PROJECT:
         access_tags = ['translation-project']
-    elif resource_type == schema_auth.ResourceType.user:
+    elif resource_type == schema_auth.ResourceType.USER:
         access_tags = ['user']
-    elif resource_type == schema_auth.ResourceType.content:
+    elif resource_type == schema_auth.ResourceType.CONTENT:
         source_content = db_.query(db_models.Source.Metadata).get(resource_id)
         access_tags = source_content['access-tags']
     else:
@@ -186,10 +184,10 @@ def role_check_has_right(db_, role, user_roles, resource_type, resource_id, *arg
     endpoint = args[1]
     def created_user_check(resource_type, db_, resource_id, user_id, endpoint):
         """checks for createduser role"""
-        if resource_type == schema_auth.ResourceType.content:
+        if resource_type == schema_auth.ResourceType.CONTENT:
             if resource_creator(db_, resource_id, user_id):
                 has_rights = True
-        if resource_type == schema_auth.ResourceType.metaContent:
+        if resource_type == schema_auth.ResourceType.METACONTENT:
             rsc_type = endpoint.split('/')[-1]
             if metacontent_creator(db_, rsc_type, resource_id, user_id):
                 has_rights =  True
@@ -198,7 +196,7 @@ def role_check_has_right(db_, role, user_roles, resource_type, resource_id, *arg
     def project_owner_check(resource_type,db_, resource_id, user_id):
         """checks for project owner role"""
         has_rights = False
-        if role == "projectOwner" and resource_type == schema_auth.ResourceType.project:
+        if role == "projectOwner" and resource_type == schema_auth.ResourceType.PROJECT:
             if project_owner(db_, resource_id, user_id):
                 has_rights =  True
         return has_rights
@@ -206,7 +204,7 @@ def role_check_has_right(db_, role, user_roles, resource_type, resource_id, *arg
     def project_member_check(db_, resource_id, user_id, resource_type):
         """checks for creaproject member role"""
         has_rights = False
-        if role == "projectMember" and resource_type == schema_auth.ResourceType.project:
+        if role == "projectMember" and resource_type == schema_auth.ResourceType.PROJECT:
             if project_member(db_, resource_id, user_id):
                 has_rights =  True
         return has_rights
@@ -425,7 +423,7 @@ def user_register_kratos(register_details,app_type):
 
     #check auto role assign
     if app_type is None:
-        user_role = schema_auth.App.api
+        user_role = schema_auth.App.API
     else:
         user_role = app_type
 

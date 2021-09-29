@@ -6,19 +6,17 @@ from pydantic import types
 
 class ResourceType(str, Enum):
     '''Classify DB resources for defineing access rights on them'''
-    metaContent = "meta contents like licences, languages, versions or content types"
-    content = "contents like bibles, commentaries, infographics, dictionary or videos"
-    project = "Ag or translation project"
-    user = "all users in our system (Kratos)"
+    METACONTENT = "meta contents like licences, languages, versions or content types"
+    CONTENT = "contents like bibles, commentaries, infographics, dictionary or videos"
+    PROJECT = "Ag or translation project"
+    USER = "all users in our system (Kratos)"
 
 class App(str, Enum):
     '''Defined apps'''
-    ag = "Autographa"
-    vachan = "Vachan-online or vachan-app"
-    vachanAdmin = "Vachan Admin"
-    api = "API-user"
-
-
+    AG = "Autographa"
+    VACHAN = "Vachan-online or vachan-app"
+    VACHANADMIN = "Vachan Admin"
+    API = "API-user"
 
 class Registration(BaseModel):
     """kratos registration input"""

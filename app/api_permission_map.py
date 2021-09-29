@@ -48,11 +48,11 @@ def api_permission_map(endpoint, method, requesting_app, resource):
         """content types endpoint"""
         permission = None
         if method == 'GET':
-            if requesting_app == schema_auth.App.ag:
+            if requesting_app == schema_auth.App.AG:
                 permission = "refer-for-translation"
-            elif requesting_app == schema_auth.App.vachan:
+            elif requesting_app == schema_auth.App.VACHAN:
                 permission = "view-on-web"
-            elif requesting_app == schema_auth.App.vachan:
+            elif requesting_app == schema_auth.App.VACHAN:
                 permission = "read-via-vachanadmin"
             elif requesting_app is None:
                 permission = "read-via-api"
@@ -66,20 +66,20 @@ def api_permission_map(endpoint, method, requesting_app, resource):
         """Agmt projects endpoint"""
         permission = None
         if method == 'GET':
-            if requesting_app == schema_auth.App.ag:
+            if requesting_app == schema_auth.App.AG:
                 permission = "refer-for-translation"
-            elif requesting_app == schema_auth.App.vachan:
+            elif requesting_app == schema_auth.App.VACHAN:
                 permission = "view-on-web"
-            elif requesting_app == schema_auth.App.vachan:
+            elif requesting_app == schema_auth.App.VACHAN:
                 permission = "view-on-vachan-admin"
             elif requesting_app is None:
                 permission = "read-via-api"
         if method == 'POST':
             permission = "create"
         if method == 'PUT':
-            if resource==schema_auth.ResourceType.content:
+            if resource==schema_auth.ResourceType.CONTENT:
                 permission = "translate"
-            elif resource==schema_auth.ResourceType.project:
+            elif resource==schema_auth.ResourceType.PROJECT:
                 permission = "edit-Settings"
         return permission
 
@@ -87,11 +87,11 @@ def api_permission_map(endpoint, method, requesting_app, resource):
         """Agmt projects endpoint"""
         permission = None
         if method == 'GET':
-            if requesting_app == schema_auth.App.ag:
+            if requesting_app == schema_auth.App.AG:
                 permission = "refer-for-translation"
-            elif requesting_app == schema_auth.App.vachan:
+            elif requesting_app == schema_auth.App.VACHAN:
                 permission = "view-on-web"
-            elif requesting_app == schema_auth.App.vachan:
+            elif requesting_app == schema_auth.App.VACHAN:
                 permission = "view-on-vachan-admin"
             elif requesting_app is None:
                 permission = "read-via-api"
