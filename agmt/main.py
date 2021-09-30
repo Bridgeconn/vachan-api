@@ -349,15 +349,13 @@ def autographamtOrganisations():
 				organisation_phone, organisation_email, verified, user_id, status from autographamt_organisations\
 					order by organisation_id")
 			rst = cursor.fetchall()
-		elif role == 2:
+		else:
 			connection = get_db()
 			cursor = connection.cursor()
 			cursor.execute("select organisation_id, organisation_name, organisation_address, \
 				organisation_phone, organisation_email, verified, user_id, status from autographamt_organisations\
-					where user_id=%s and verified=true order by organisation_id", (userId,))
+					where user_id=%s order by organisation_id", (userId,))
 			rst = cursor.fetchall()
-		else:
-			return '{"success":false, "message":"UnAuthorized"}'
 		cursor.close()
 		if not rst:
 			return '{"success":false, "message":"No organisation data available"}'
@@ -608,7 +606,7 @@ def createAssignments():
 	userId = req["userId"]
 	projectId = req["projectId"]
 	books = req["books"]
-	# action = req["action"]
+	action = req["action"]
 	connection = get_db()
 	cursor = connection.cursor()
 	cursor.execute("select * from autographamt_assignments where user_id=%s and project_id=%s", (
