@@ -155,19 +155,20 @@ def get_versions(db_: Session, version_abbr = None, version_name = None, revisio
         query = query.filter(db_models.Version.versionId == version_id)
     return query.offset(skip).limit(limit).all()
 
-def create_version(db_: Session, version: schemas.VersionCreate):
+def create_version(db_: Session, version: schemas.VersionCreate,user_id=None):
     '''Adds a row to versions table'''
     db_content = db_models.Version(
         versionAbbreviation = version.versionAbbreviation.upper().strip(),
         versionName = utils.normalize_unicode(version.versionName.strip()),
         revision = version.revision,
-        metaData = version.metaData)
+        metaData = version.metaData,
+        createdUser=user_id)
     db_.add(db_content)
     db_.commit()
     db_.refresh(db_content)
     return db_content
 
-def update_version(db_: Session, version: schemas.VersionEdit):
+def update_version(db_: Session, version: schemas.VersionEdit, user_id=None):
     '''changes one or more fields of versions, selected via version id'''
     db_content = db_.query(db_models.Version).get(version.versionId)
     if version.versionAbbreviation:
@@ -178,6 +179,7 @@ def update_version(db_: Session, version: schemas.VersionEdit):
         db_content.revision = version.revision
     if version.metaData:
         db_content.metaData = version.metaData
+    db_content.updatedUser = user_id
     db_.commit()
     db_.refresh(db_content)
     return db_content
