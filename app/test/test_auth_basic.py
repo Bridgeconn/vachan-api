@@ -111,7 +111,7 @@ def assign_roles(data,user_id,role_list):
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+token
             }
-    response = client.post(USERROLE_URL, headers=headers, json=role_data)
+    response = client.put(USERROLE_URL, headers=headers, json=role_data)
     return response
 
 #logout user
@@ -155,7 +155,7 @@ def test_login_register(create_user_fixture):
         "firstname": "user registration",
         "lastname": "ABC Test"
     }
-    response = register(data,apptype=None)
+    response = register(data,apptype='API-user')
     abc_id = response.json()["registered_details"]["id"]
 
     #test user ABC login after register
@@ -173,7 +173,7 @@ def test_login_register(create_user_fixture):
         "firstname": "user registration",
         "lastname": "ABC Test"
     }
-    response = register(data,apptype=None)
+    response = register(data,apptype='API-user')
     assert response.status_code == 400
     assert response.json()['error'] == "HTTP Error"
     assert response.json()['details'] == \
@@ -190,7 +190,7 @@ def test_incorrect_email():
         "email": "incorrectemail",
         "password": "passwordabc@1"
     }
-    response = register(data,apptype=None)
+    response = register(data,apptype='API-user')
     assert response.status_code == 422
     assert response.json()['error'] == "Unprocessable Data"
 
@@ -202,7 +202,7 @@ def test_validate_password():
         "email": "PQR@gmail.com",
         "password": "test"
     }
-    response = register(data,apptype=None)
+    response = register(data,apptype='API-user')
     assert response.status_code == 422
     assert response.json()['error'] == "Unprocessable Data"
 
@@ -211,7 +211,7 @@ def test_validate_password():
         "email": "PQR@gmail.com",
         "password": "password"
     }
-    response = register(data,apptype=None)
+    response = register(data,apptype='API-user')
     assert response.status_code == 422
     assert response.json()['error'] == "Unprocessable Data"
 
@@ -225,8 +225,8 @@ def test_optional_register_params(create_user_fixture):
         "firstname": "user registration",
         "lastname": "ABC Test"
     }
-    response = register(data,apptype=None)
-    assert response.json()["registered_details"]["Permisions"] == ['None']
+    response = register(data,apptype='API-user')
+    assert response.json()["registered_details"]["Permisions"] == ['API-user']
     abc_id = response.json()["registered_details"]["id"]
 
     #no first and last name, registration execute without error
@@ -234,7 +234,7 @@ def test_optional_register_params(create_user_fixture):
         "email": "abc1@gmail.com",
         "password": "passwordabc@1"
     }
-    response1 = register(data,apptype=None)
+    response1 = register(data,apptype='API-user')
     abc1_id = response1.json()["registered_details"]["id"]
 
     users_list = create_user_fixture
@@ -248,22 +248,113 @@ def test_register_incorrectdatas():
   "firstname": "user registration",
   "lastname": "ABC Test"
 }
-    response = register(data,apptype=None)
+    response = register(data,apptype='API-user')
     assert_input_validation_error(response)
 
     data = {
   "email": "abc@gmail.com"
 }
-    response = register(data,apptype=None)
+    response = register(data,apptype='API-user')
     assert_input_validation_error(response)
 
     data = {
   "password": "passwordabc@1"
 }
-    response = register(data,apptype=None)
+    response = register(data,apptype='API-user')
     assert_input_validation_error(response)
 
-#Register new users, xyz1, xyz2, xyz3 with app_info as "Vachan", "Ag" and None respectively.
+# #Register new users, xyz1, xyz2, xyz3 with app_info as "Vachan", "Ag" and None respectively.
+# #Check logins and their user roles
+# def test_register_roles(create_user_fixture):
+#     """check for expected roles on register"""
+#     data_xyz1 = {
+#         "email": "xyz1@gmail.com",
+#         "password": "passwordxyz1@1",
+#         "firstname": "user XYZ1",
+#         "lastname": "Vachan role Test"
+#     }
+#     response1 = register(data_xyz1,apptype="Autographa")
+#     xyz1_id = response1.json()["registered_details"]["id"]
+#     assert response1.json()["registered_details"]["Permisions"] == ['Autographa']
+
+#     data_xyz2 = {
+#         "email": "xyz2@gmail.com",
+#         "password": "passwordxyz2@1",
+#         "firstname": "user XYZ2",
+#         "lastname": "Ag role Test"
+#     }
+#     response2 = register(data_xyz2,apptype="Vachan-online or vachan-app")
+#     xyz2_id = response2.json()["registered_details"]["id"]
+#     assert response2.json()["registered_details"]["Permisions"] == ['Vachan-online or vachan-app']
+
+#     data_xyz3 = {
+#         "email": "xyz3@gmail.com",
+#         "password": "passwordxyz3@1",
+#         "firstname": "user XYZ3",
+#         "lastname": "No role Test"
+#     }
+#     response3 = register(data_xyz3,apptype='API-user')
+#     xyz3_id = response3.json()["registered_details"]["id"]
+#     assert response3.json()["registered_details"]["Permisions"] == ['API-user']
+
+#     #login check for users
+#     data_xyz1 = {
+#         "user_email": "xyz1@gmail.com",
+#         "password": "passwordxyz1@1"
+#     }
+#     response = login(data_xyz1)
+#     assert response.json()['message'] == "Login Succesfull"
+
+#     data_xyz2 = {
+#         "user_email": "xyz2@gmail.com",
+#         "password": "passwordxyz2@1"
+#     }
+#     response2 = login(data_xyz2)
+#     assert response2.json()['message'] == "Login Succesfull"
+
+#     data_xyz3 = {
+#         "user_email": "xyz3@gmail.com",
+#         "password": "passwordxyz3@1"
+#     }
+#     response3 = login(data_xyz3)
+#     assert response3.json()['message'] == "Login Succesfull"
+
+#     #Register same users xyz1, xyz2 & xyz3 as above with different app_info
+#     # and ensure that, their roles are appended
+
+#     #role changed vachan --> none
+#     data_xyz1 = {
+#         "email": "xyz1@gmail.com",
+#         "password": "passwordxyz1@1",
+#         "firstname": "user XYZ1",
+#         "lastname": "Vachan role Test",
+#     }
+#     response1 = register_role_appending(data_xyz1,apptype='API-user')
+#     assert response1.json()["registered_details"]["Permisions"] == ['Vachan-online or vachan-app','API-user']
+
+#     # #role changed ag --> vachan
+#     data_xyz2 = {
+#         "email": "xyz2@gmail.com",
+#         "password": "passwordxyz2@1"
+#     }
+#     response2 = register_role_appending(data_xyz2,apptype="Vachan-online or vachan-app")
+#     assert response2.json()["registered_details"]["Permisions"] == ['Autographa','Vachan-online or vachan-app']
+
+#     #role changed none --> ag
+#     data_xyz3 = {
+#         "email": "xyz3@gmail.com",
+#         "password": "passwordxyz3@1"
+#     }
+#     response3 = register_role_appending(data_xyz3,apptype="Autographa")
+#     assert response3.json()["registered_details"]["Permisions"] == ['API-user','Autographa']
+
+#     users_list = create_user_fixture
+#     users_list.append(xyz1_id)
+#     users_list.append(xyz2_id)
+#     users_list.append(xyz3_id)
+
+#Register new users, xyz1, xyz2, xyz3 with app_info as "Vachan-online or vachan-app", 
+# "Autographa" and API-user respectively.
 #Check logins and their user roles
 def test_register_roles(create_user_fixture):
     """check for expected roles on register"""
@@ -273,9 +364,9 @@ def test_register_roles(create_user_fixture):
         "firstname": "user XYZ1",
         "lastname": "Vachan role Test"
     }
-    response1 = register(data_xyz1,apptype="VachanUser")
+    response1 = register(data_xyz1,apptype="Vachan-online or vachan-app")
     xyz1_id = response1.json()["registered_details"]["id"]
-    assert response1.json()["registered_details"]["Permisions"] == ['VachanUser']
+    assert response1.json()["registered_details"]["Permisions"] == ['Vachan-online or vachan-app']
 
     data_xyz2 = {
         "email": "xyz2@gmail.com",
@@ -283,9 +374,9 @@ def test_register_roles(create_user_fixture):
         "firstname": "user XYZ2",
         "lastname": "Ag role Test"
     }
-    response2 = register(data_xyz2,apptype="AgUser")
+    response2 = register(data_xyz2,apptype="Autographa")
     xyz2_id = response2.json()["registered_details"]["id"]
-    assert response2.json()["registered_details"]["Permisions"] == ['AgUser']
+    assert response2.json()["registered_details"]["Permisions"] == ['Autographa']
 
     data_xyz3 = {
         "email": "xyz3@gmail.com",
@@ -293,9 +384,19 @@ def test_register_roles(create_user_fixture):
         "firstname": "user XYZ3",
         "lastname": "No role Test"
     }
-    response3 = register(data_xyz3,apptype=None)
+    response3 = register(data_xyz3,apptype="API-user")
     xyz3_id = response3.json()["registered_details"]["id"]
-    assert response3.json()["registered_details"]["Permisions"] == ['None']
+    assert response3.json()["registered_details"]["Permisions"] == ['API-user']
+
+    data_xyz4 = {
+        "email": "xyz4@gmail.com",
+        "password": "passwordxyz4@1",
+        "firstname": "user XYZ4",
+        "lastname": "No role Test"
+    }
+    response4 = register(data_xyz4,apptype="Vachan Admin")
+    xyz4_id = response4.json()["registered_details"]["id"]
+    assert response4.json()["registered_details"]["Permisions"] == ['Vachan Admin']
 
     #login check for users
     data_xyz1 = {
@@ -319,6 +420,13 @@ def test_register_roles(create_user_fixture):
     response3 = login(data_xyz3)
     assert response3.json()['message'] == "Login Succesfull"
 
+    data_xyz4 = {
+        "user_email": "xyz4@gmail.com",
+        "password": "passwordxyz4@1"
+    }
+    response4 = login(data_xyz4)
+    assert response4.json()['message'] == "Login Succesfull"
+
     #Register same users xyz1, xyz2 & xyz3 as above with different app_info
     # and ensure that, their roles are appended
 
@@ -329,29 +437,38 @@ def test_register_roles(create_user_fixture):
         "firstname": "user XYZ1",
         "lastname": "Vachan role Test",
     }
-    response1 = register_role_appending(data_xyz1,apptype=None)
-    assert response1.json()["registered_details"]["Permisions"] == ['VachanUser','None']
+    response1 = register_role_appending(data_xyz1,apptype="API-user")
+    assert response1.json()["registered_details"]["Permisions"] == ['Vachan-online or vachan-app','API-user']
 
     # #role changed ag --> vachan
     data_xyz2 = {
         "email": "xyz2@gmail.com",
         "password": "passwordxyz2@1"
     }
-    response2 = register_role_appending(data_xyz2,apptype="VachanUser")
-    assert response2.json()["registered_details"]["Permisions"] == ['AgUser','VachanUser']
+    response2 = register_role_appending(data_xyz2,apptype="Vachan-online or vachan-app")
+    assert response2.json()["registered_details"]["Permisions"] == ['Autographa','Vachan-online or vachan-app']
 
     #role changed none --> ag
     data_xyz3 = {
         "email": "xyz3@gmail.com",
         "password": "passwordxyz3@1"
     }
-    response3 = register_role_appending(data_xyz3,apptype="AgUser")
-    assert response3.json()["registered_details"]["Permisions"] == ['None','AgUser']
+    response3 = register_role_appending(data_xyz3,apptype="Autographa")
+    assert response3.json()["registered_details"]["Permisions"] == ['API-user','Autographa']
+
+    #role changed Vachan Admin --> ag
+    data_xyz4 = {
+        "email": "xyz4@gmail.com",
+        "password": "passwordxyz4@1"
+    }
+    response4 = register_role_appending(data_xyz4,apptype="Autographa")
+    assert response4.json()["registered_details"]["Permisions"] == ['Vachan Admin','Autographa']
 
     users_list = create_user_fixture
     users_list.append(xyz1_id)
     users_list.append(xyz2_id)
     users_list.append(xyz3_id)
+    users_list.append(xyz4_id)
 
 #Register two users with app_info=None
 #and make them VachanAdmin and AgAdmin
@@ -364,17 +481,17 @@ def test_role_assignment_superadmin(create_user_fixture):
         "email": "vachan@gmail.com",
         "password": "passwordvachan@1"
     }
-    response1 = register(user1,apptype=None)
+    response1 = register(user1,apptype='API-user')
     user1_id = response1.json()["registered_details"]["id"]
-    assert response1.json()["registered_details"]["Permisions"] == ['None']
+    assert response1.json()["registered_details"]["Permisions"] == ['API-user']
 
     user2 = {
         "email": "ag@gmail.com",
         "password": "passwordag@1"
     }
-    response2 = register(user2,apptype=None)
+    response2 = register(user2,apptype='API-user')
     user2_id = response2.json()["registered_details"]["id"]
-    assert response2.json()["registered_details"]["Permisions"] == ['None']
+    assert response2.json()["registered_details"]["Permisions"] == ['API-user']
 
     #try to change user2 permision after login user1
     user1 = {
@@ -395,12 +512,12 @@ def test_role_assignment_superadmin(create_user_fixture):
     role_list = ["VachanAdmin"]
     response1 = assign_roles(data,user1_id,role_list)
     assert response1.status_code == 201
-    assert response1.json()["role_list"] == ["None", "VachanAdmin"]
+    assert response1.json()["role_list"] == ["API-user", "VachanAdmin"]
 
     role_list = ["AgAdmin"]
     response2 = assign_roles(data,user2_id,role_list)
     assert response2.status_code == 201
-    assert response2.json()["role_list"] == ["None", "AgAdmin"]
+    assert response2.json()["role_list"] == ["API-user", "AgAdmin"]
 
     #assigning a wrong role that is not allowed
     role_list = ["AllAdmin"]
@@ -433,9 +550,9 @@ def test_token_expiry(create_user_fixture):
         "email": "user@gmail.com",
         "password": "passworduser@1"
     }
-    response2 = register(user,apptype=None)
+    response2 = register(user,apptype='API-user')
     user_id = response2.json()["registered_details"]["id"]
-    assert response2.json()["registered_details"]["Permisions"] == ['None']
+    assert response2.json()["registered_details"]["Permisions"] == ['API-user']
 
     role_data = {
         "userid": user_id,
@@ -445,7 +562,7 @@ def test_token_expiry(create_user_fixture):
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+token
             }
-    response = client.post(USERROLE_URL, headers=headers, json=role_data)
+    response = client.put(USERROLE_URL, headers=headers, json=role_data)
 
     users_list = create_user_fixture
     users_list.append(user_id)
