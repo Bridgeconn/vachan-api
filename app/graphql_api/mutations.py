@@ -150,7 +150,7 @@ class AddVersion(graphene.Mutation):
         db_ = info.context["request"].db_session
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (version_arg,schemas.VersionCreate)
-        result =structurals_crud.create_version(db_,schema_model)
+        result =structurals_crud.create_version(db_,schema_model, user_id=None)
         version_var = types.Version(
             versionId = result.versionId,
             versionAbbreviation = result.versionAbbreviation,
@@ -176,7 +176,7 @@ class EditVersion(graphene.Mutation):
         db_ = info.context["request"].db_session
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (version_arg,schemas.VersionEdit)
-        result =structurals_crud.update_version(db_,schema_model)
+        result =structurals_crud.update_version(db_,schema_model, user_id=None)
         version_var = types.Version(
             versionId = result.versionId,
             versionAbbreviation = result.versionAbbreviation,

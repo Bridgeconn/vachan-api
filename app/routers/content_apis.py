@@ -180,7 +180,7 @@ def add_version(version_obj : schemas.VersionCreate = Body(...),
         raise AlreadyExistsException("%s, %s already present"%(
             version_obj.versionAbbreviation, version_obj.revision))
     return {'message': "Version created successfully",
-    "data": structurals_crud.create_version(db_=db_, version=version_obj)}
+    "data": structurals_crud.create_version(db_=db_, version=version_obj, user_id=None)}
 
 @router.put('/v2/versions', response_model=schemas.VersionUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -196,7 +196,7 @@ def edit_version(ver_obj: schemas.VersionEdit = Body(...), db_: Session = Depend
     if len(structurals_crud.get_versions(db_, version_id = ver_obj.versionId)) == 0:
         raise NotAvailableException("Version id %s not found"%(ver_obj.versionId))
     return {'message': "Version edited successfully",
-    "data": structurals_crud.update_version(db_=db_, version=ver_obj)}
+    "data": structurals_crud.update_version(db_=db_, version=ver_obj, user_id=None)}
 
 # ##### Source #####
 @router.get('/v2/sources',

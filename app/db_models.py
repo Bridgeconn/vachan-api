@@ -71,6 +71,9 @@ class Version(Base): # pylint: disable=too-few-public-methods
     versionName = Column('version_description', String)
     revision = Column('revision', Integer)
     metaData = Column('metadata', JSON)
+    createdUser = Column('created_user', Integer)
+    updatedUser = Column('last_updated_user', Integer)
+    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
 
 class Source(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table sources in vachan DB(postgres)'''

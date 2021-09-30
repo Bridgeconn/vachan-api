@@ -63,6 +63,10 @@ CREATE TABLE public.versions (
     version_description text NOT NULL,
     revision integer DEFAULT 1,
     metadata jsonb,
+    created_at timestamp with time zone DEFAULT NOW(),
+    created_user int NULL,
+    last_updated_at  timestamp with time zone DEFAULT NOW(),
+    last_updated_user int NULL,
     UNIQUE(version_code, revision)
 );
 
