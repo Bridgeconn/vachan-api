@@ -30,7 +30,7 @@ def get_request_context(request):
 responses={400: {"model": schemas.ErrorResponse}},
 status_code=201,tags=["Authentication"])
 def register(register_details:schema_auth.Registration,request: Request,
-app_type: schema_auth.App=Query(None),db_: Session = Depends(get_db)):
+app_type: schema_auth.App=Query(schema_auth.App.API),db_: Session = Depends(get_db)):
     '''Registration for Users
     * user_email and password fiels are mandatory
     * App type will be None by default, App Type will decide \
