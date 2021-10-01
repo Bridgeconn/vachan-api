@@ -4,26 +4,13 @@ from pydantic import types
 from sqlalchemy.orm import Session
 import schema_auth
 import schemas
-from dependencies import log , get_db
+from dependencies import log , get_db , get_request_context
 from authentication import user_register_kratos,user_login_kratos,user_role_add ,\
      delete_identity ,AuthHandler, check_access_rights
 from custom_exceptions import PermisionException, NotAvailableException
 
 router = APIRouter()
 auth_handler = AuthHandler()
-
-#test case for getting request context
-def get_request_context(request):
-    """get the context of requests"""
-    request_context = {}
-    request_context['method'] = request.method
-    request_context['endpoint'] = request.url.path
-    if 'app' in request.headers:
-        request_context['app'] = request.headers['app']
-    else:
-        request_context['app'] = None
-
-    return request_context
 
 #Authentication apis
 @router.post('/v2/user/register',response_model=schema_auth.RegisterResponse,

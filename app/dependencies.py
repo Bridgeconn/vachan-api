@@ -22,3 +22,16 @@ def get_db():
     finally:
         # pass
         db_.close()
+
+#test case for getting request context
+def get_request_context(request):
+    """get the context of requests"""
+    request_context = {}
+    request_context['method'] = request.method
+    request_context['endpoint'] = request.url.path
+    if 'app' in request.headers:
+        request_context['app'] = request.headers['app']
+    else:
+        request_context['app'] = None
+
+    return request_context

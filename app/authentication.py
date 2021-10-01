@@ -113,39 +113,6 @@ def project_member(db_:Session, project_id, user_id):
         return True
     return False
 
-# def api_permission_map(endpoint, method, requesting_app, resource):
-#     '''returns the required permission name as per the access rules'''
-#     permission = None
-#     if requesting_app == schema_auth.App.ag and method == "GET":
-#         permission = "refer-for-translation"
-#     elif requesting_app == schema_auth.App.vachan and method == "GET":
-#         permission = "view-on-web"
-#     elif requesting_app == schema_auth.App.vachanAdmin and method == "GET":
-#         permission = "view-on-vachan-admin"
-#     elif requesting_app is None and method == "GET":
-#         permission = "read-via-api"
-#     elif (endpoint == "/v2/autographa/projects" and method == "PUT"
-#         and resource==schema_auth.ResourceType.content):
-#         permission = "translate"
-#     elif (endpoint == "/v2/autographa/projects" and method == "PUT"
-#         and resource==schema_auth.ResourceType.project):
-#         permission = "edit-Settings"
-#     elif endpoint in ["/v2/autographa/project/tokens",
-#             "/v2/autographa/project/token-translations",
-#         "/v2/autographa/project/token-sentences"]:
-#         permission = "edit-draft"
-#     elif method == "PUT" and resource==schema_auth.ResourceType.content:
-#         permission = "edit"
-#     elif method == "PUT" and resource==schema_auth.ResourceType.metaContent:
-#         permission = "edit"
-#     elif method == "PUT" and resource==schema_auth.ResourceType.user:
-#         permission = "edit-role"
-#     elif method == "POST":
-#         permission = "create"
-#     else:
-#         raise Exception("API's required permission not defined")
-#     return permission
-
 def get_accesstags_permission(request_context, resource_type, db_, resource_id):
     """get access_tag and permission"""
     endpoint = request_context['endpoint']
@@ -240,33 +207,7 @@ def check_access_rights(db_:Session, resource_id, *args, user_id=None, user_role
     for tag in access_tags:
         allowed_users = access_rules[tag][required_permission]
         for role in allowed_users:
-            # if role == "noAuthRequired":
-            #     has_rights = True
-            #     break
-            # if role == "registeredUser" and user_id is not None:
-            #     has_rights = True
-            #     break
-            # if user_roles and role in user_roles:
-            #     has_rights = True
-            #     break
-            # if role == "createdUser":
-            #     if resource_type == schema_auth.ResourceType.content:
-            #         if resource_creator(db_, resource_id, user_id):
-            #             has_rights = True
-            #             break
-            #     if resource_type == schema_auth.ResourceType.metaContent:
-            #         rsc_type = endpoint.split('/')[-1]
-            #         if metacontent_creator(db_, rsc_type, resource_id, user_id):
-            #             has_rights = True
-            #             break
-            # if role == "projectOwner" and resource_type == schema_auth.ResourceType.project:
-            #     if project_owner(db_, resource_id, user_id):
-            #         has_rights = True
-            #         break
-            # if role == "projectMember" and resource_type == schema_auth.ResourceType.project:
-            #     if project_member(db_, resource_id, user_id):
-            #         has_rights = True
-            #         break
+            
             has_rights = role_check_has_right(db_, role, user_roles, resource_type,
                  resource_id, user_id, endpoint)
             if has_rights:
@@ -274,23 +215,6 @@ def check_access_rights(db_:Session, resource_id, *args, user_id=None, user_role
         if has_rights:
             break
     return has_rights
-
-
-# #check roles for api
-# def verify_role_permision(api_name,permision):
-#     """check the user roles for the requested api"""
-#     verified = False
-#     if api_name in access_rules:#changed acces_role to access rule
-#         access_list = access_rules[api_name]
-#         if len(access_list) != 0 and len(permision) != 0:
-#             for role in permision:
-#                 if role in access_list:
-#                     verified = True
-#         else:
-#             raise PermisionException("User have no permision to access API")
-#     else:
-#         raise GenericException("No permisions set for the API - %s"%api_name)
-#     return verified
 
 #Class handles the session validation and logout
 class AuthHandler():
