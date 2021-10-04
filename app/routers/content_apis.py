@@ -1,13 +1,15 @@
 '''API endpoints related to content management'''
 from typing import List
-from fastapi import APIRouter, Query, Body, Depends, Path
+from fastapi import APIRouter, Query, Body, Depends, Path , Request
 from sqlalchemy.orm import Session
 
 import schemas
-from dependencies import get_db, log
-from custom_exceptions import NotAvailableException, AlreadyExistsException
+from dependencies import get_db, log , get_request_context
+from custom_exceptions import NotAvailableException, AlreadyExistsException,\
+    PermisionException
 from crud import structurals_crud, contents_crud
-from authentication import AuthHandler
+from authentication import AuthHandler, check_access_rights ,\
+    get_request_context_access_rights
 
 router = APIRouter()
 auth_handler = AuthHandler()
@@ -18,38 +20,47 @@ auth_handler = AuthHandler()
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}},  status_code=200,
     tags=["Contents Types"])
-def get_contents(content_type: str = Query(None, example="bible"), skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
+def get_contents(request: Request,content_type: str = Query(None, example="bible"),
+     skip: int = Query(0, ge=0),limit: int = Query(100, ge=0),
+     db_: Session = Depends(get_db)):
     '''fetches all the contents types supported and their details
     * the optional query parameter can be used to filter the result set
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n'''
     log.info('In get_contents')
     log.debug('contentType:%s, skip: %s, limit: %s',content_type, skip, limit)
-    return structurals_crud.get_content_types(db_, content_type, skip, limit)
+
+    verified = get_request_context_access_rights(request,db_,resource_id=None,user_id=None,
+        user_roles=None,resource_type=None)
+    if verified:
+        data = structurals_crud.get_content_types(db_, content_type, skip, limit)
+    else:
+        raise PermisionException("Access Permission Denied for the URL")
+    return data
 
 @router.post('/v2/contents', response_model=schemas.ContentTypeUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Contents Types"])
-def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_db)):
+def add_contents(request: Request, content: schemas.ContentTypeCreate, 
+    permision = Depends(auth_handler.kratos_session_validation),
+    db_: Session = Depends(get_db)):
     ''' Creates a new content type.
     Naming conventions to be followed
     - Use only english alphabets in lower case
     Additional operations required:
         1. Add corresponding table creation functions and mappings.
         2. Define input, output resources and all required APIs to handle this content'''
-
-    #verified = verify_role_permision(api_name="contentType",permision= permision)
-    #if verified :
     log.info('In add_contents')
     log.debug('content: %s',content)
-    if len(structurals_crud.get_content_types(db_, content.contentType)) > 0:
-        raise AlreadyExistsException("%s already present"%(content.contentType))
+    verified = get_request_context_access_rights(request,db_,resource_id=None,user_id=None,
+        user_roles=permision,resource_type=None)
+    if verified:
+        if len(structurals_crud.get_content_types(db_, content.contentType)) > 0:
+            raise AlreadyExistsException("%s already present"%(content.contentType))
+        data = structurals_crud.create_content_type(db_=db_, content=content)
     return {'message': "Content type created successfully",
-    "data": structurals_crud.create_content_type(db_=db_, content=content)}
-    #else:
-        #raise PermisionException("User have no permision to access API")
+            "data": data}
 
 ##### languages #####
 @router.get('/v2/languages',

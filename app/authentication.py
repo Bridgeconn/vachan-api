@@ -10,7 +10,7 @@ import schema_auth
 from dependencies import log
 from custom_exceptions import GenericException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
-    UnprocessableException
+    UnprocessableException, PermisionException
 from api_permission_map import api_permission_map
 
 PUBLIC_BASE_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL"+"self-service/",
@@ -132,7 +132,7 @@ def get_accesstags_permission(request_context, resource_type, db_, resource_id):
     required_permission = api_permission_map(endpoint, method,requesting_app, resource_type)
 
     if resource_type == schema_auth.ResourceType.METACONTENT:
-        access_tags = ["open-access"]
+        access_tags = ["meta-content","open-access"]
     elif resource_type == schema_auth.ResourceType.PROJECT:
         access_tags = ['translation-project']
     elif resource_type == schema_auth.ResourceType.USER:
@@ -194,20 +194,18 @@ def role_check_has_right(db_, role, user_roles, resource_type, resource_id, *arg
     return has_rights
 
 
-def check_access_rights(db_:Session, resource_id, *args, user_id=None, user_roles=None,
+def check_access_rights(db_:Session, *args, resource_id=None, user_id=None, user_roles=None,
     resource_type: schema_auth.ResourceType=None):
     """check access right"""
     request_context = args[0]
     endpoint = request_context['endpoint']
-
     access_tags,required_permission = \
         get_accesstags_permission(request_context,resource_type,db_,resource_id)
-
     has_rights = False
     for tag in access_tags:
-        allowed_users = access_rules[tag][required_permission]
+        if required_permission in access_rules[tag].keys():
+            allowed_users = access_rules[tag][required_permission]
         for role in allowed_users:
-            
             has_rights = role_check_has_right(db_, role, user_roles, resource_type,
                  resource_id, user_id, endpoint)
             if has_rights:
@@ -215,6 +213,25 @@ def check_access_rights(db_:Session, resource_id, *args, user_id=None, user_role
         if has_rights:
             break
     return has_rights
+
+
+def get_request_context_access_rights(request,db_,resource_id,user_id,
+    user_roles,resource_type):
+    """get the context of requests"""
+    request_context = {}
+    request_context['method'] = request.method
+    request_context['endpoint'] = request.url.path
+    if 'app' in request.headers:
+        request_context['app'] = request.headers['app']
+    else:
+        request_context['app'] = None
+
+    verified = check_access_rights(db_, request_context,resource_id=resource_id,
+        user_id=user_id, user_roles=user_roles, resource_type=resource_type)
+    if not verified:
+        raise PermisionException("Access Permission Denied for the URL")    
+
+    return verified
 
 #Class handles the session validation and logout
 class AuthHandler():
@@ -224,16 +241,18 @@ class AuthHandler():
     def kratos_session_validation(self,auth:HTTPAuthorizationCredentials = Security(security)):
         """kratos session validity check"""
         recieve_token = auth.credentials
+        user_details = {"user_id":"", "user_roles":""}
         headers = {}
         headers["Accept"] = "application/json"
         headers["Authorization"] = f"Bearer {recieve_token}"
 
         user_data = requests.get(USER_SESSION_URL, headers=headers)
         data = json.loads(user_data.content)
-        roles = []
+
         if user_data.status_code == 200:
+            user_details["user_id"] = data["identity"]["id"]
             if "userrole" in data["identity"]["traits"]:
-                roles = data["identity"]["traits"]["userrole"]
+                user_details["user_roles"] = data["identity"]["traits"]["userrole"]
 
         elif user_data.status_code == 401:
             raise UnAuthorizedException(detail=data["error"])
@@ -241,7 +260,7 @@ class AuthHandler():
         elif user_data.status_code == 500:
             raise GenericException(data["error"])
 
-        return roles
+        return user_details
 
     def kratos_logout(self,auth:HTTPAuthorizationCredentials= Security(security)):
         """logout function"""
@@ -264,6 +283,24 @@ class AuthHandler():
             data = json.loads(response.content)
             raise GenericException(data["error"])
         return data
+
+    #get current user data
+    def get_current_user_data(self,auth:HTTPAuthorizationCredentials= Security(security)):
+        """get current user details"""
+        recieve_token = auth.credentials
+        headers = {}
+        headers["Accept"] = "application/json"
+        headers["Authorization"] = f"Bearer {recieve_token}"
+
+        user_data = requests.get(USER_SESSION_URL, headers=headers)
+        data = json.loads(user_data.content)
+        if user_data.status_code == 200:
+            current_user_id = data['id']
+        elif user_data.status_code == 401:
+            raise UnAuthorizedException(detail=data["error"])
+        elif user_data.status_code == 500:
+            raise GenericException(data["error"])
+        return current_user_id
 
 #get all user details
 def get_all_kratos_users():

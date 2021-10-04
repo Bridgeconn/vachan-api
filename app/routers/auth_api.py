@@ -4,9 +4,9 @@ from pydantic import types
 from sqlalchemy.orm import Session
 import schema_auth
 import schemas
-from dependencies import log , get_db , get_request_context
+from dependencies import log , get_db
 from authentication import user_register_kratos,user_login_kratos,user_role_add ,\
-     delete_identity ,AuthHandler, check_access_rights
+     delete_identity ,AuthHandler, get_request_context_access_rights
 from custom_exceptions import PermisionException, NotAvailableException
 
 router = APIRouter()
@@ -26,13 +26,8 @@ app_type: schema_auth.App=Query(schema_auth.App.API),db_: Session = Depends(get_
     log.info('In User Registration')
     log.debug('registration:%s',register_details)
 
-    #test function for get request context
-    request_context = get_request_context(request)
-
-    #TEst for new access right function
-    resource_id =None
-    verified = check_access_rights(db_, resource_id, request_context,
-        user_id=None, user_roles=None,resource_type = None)
+    verified = get_request_context_access_rights(request,db_,resource_id=None,user_id=None,
+        user_roles=None,resource_type=None)
     if verified:
         data = user_register_kratos(register_details,app_type)
     else:
@@ -50,13 +45,8 @@ def login(user_email: str,password: types.SecretStr,
     log.info('In User Login')
     log.debug('login:%s',user_email)
 
-    #test function for get request context
-    request_context = get_request_context(request)
-
-    #TEst for new access right function
-    resource_id =None
-    verified = check_access_rights(db_, resource_id, request_context,
-        user_id=None, user_roles=None,resource_type = None)
+    verified = get_request_context_access_rights(request,db_,resource_id=None,user_id=None,
+        user_roles=None,resource_type=None)
     if verified:
         data = user_login_kratos(user_email,password)
     else:
@@ -81,7 +71,7 @@ responses={403: {"model": schemas.ErrorResponse},
 422: {"model": schemas.ErrorResponse}},
 status_code=201,tags=["Authentication"])
 def userrole(role_data:schema_auth.UserRole,request: Request,
-permision = Depends(auth_handler.kratos_session_validation),db_: Session = Depends(get_db)):
+user_details = Depends(auth_handler.kratos_session_validation),db_: Session = Depends(get_db)):
     '''Update User Roles.
     * User roles should provide in an ARRAY
     * Array values will overwrite the exisitng array of roles
@@ -91,13 +81,9 @@ permision = Depends(auth_handler.kratos_session_validation),db_: Session = Depen
     log.info('In User Role')
     log.debug('userrole:%s',role_data)
 
-    #test function for get request context
-    request_context = get_request_context(request)
-
-    #TEst for new access right function
-    resource_id =None
-    verified = check_access_rights(db_, resource_id, request_context,
-        user_id=None, user_roles=permision,resource_type = None)
+    verified = get_request_context_access_rights(request,db_,resource_id=None,
+    user_id=user_details["user_id"], user_roles=user_details["user_roles"],
+    resource_type=None)
     if verified:
         user_id = role_data.userid
         role_list = role_data.roles
@@ -111,18 +97,15 @@ responses={404: {"model": schemas.ErrorResponse},
 401: {"model": schemas.ErrorResponse}},
 status_code=200,tags=["Authentication"])
 def delete_user(user:schema_auth.UserIdentity,request: Request,
-permision = Depends(auth_handler.kratos_session_validation),db_: Session = Depends(get_db)):
+user_details = Depends(auth_handler.kratos_session_validation),db_: Session = Depends(get_db)):
     '''Delete Identity
     * unique Identity key can be used to delete an exisiting identity'''
     log.info('In Identity Delete')
     log.debug('identity-delete:%s',user)
 
-    #test function for get request context
-    request_context = get_request_context(request)
-    #TEst for new access right function
-    resource_id =None
-    verified = check_access_rights(db_, resource_id, request_context,
-        user_id=None, user_roles=permision,resource_type = None)
+    verified = get_request_context_access_rights(request,db_,resource_id=None,
+    user_id=user_details["user_id"], user_roles=user_details["user_roles"],
+    resource_type=None)
     if verified:
         response = delete_identity(user.userid)
 
