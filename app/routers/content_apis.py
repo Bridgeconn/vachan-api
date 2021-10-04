@@ -4,7 +4,7 @@ from fastapi import APIRouter, Query, Body, Depends, Path , Request
 from sqlalchemy.orm import Session
 
 import schemas
-from dependencies import get_db, log , get_request_context
+from dependencies import get_db, log
 from custom_exceptions import NotAvailableException, AlreadyExistsException,\
     PermisionException
 from crud import structurals_crud, contents_crud

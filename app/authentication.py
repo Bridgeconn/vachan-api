@@ -5,6 +5,7 @@ import requests
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
+from functools import wraps
 import db_models
 import schema_auth
 from dependencies import log
@@ -194,10 +195,15 @@ def role_check_has_right(db_, role, user_roles, resource_type, resource_id, *arg
     return has_rights
 
 
-def check_access_rights(db_:Session, *args, resource_id=None, user_id=None, user_roles=None,
-    resource_type: schema_auth.ResourceType=None):
+# def check_access_rights(db_:Session, *args, resource_id=None, user_id=None, user_roles=None,
+#     resource_type: schema_auth.ResourceType=None,**kwargs):
+def check_access_rights(db_:Session, required_params):
     """check access right"""
-    request_context = args[0]
+    request_context = required_params.get('request_context',None)
+    resource_id = required_params.get('resource_id',None)
+    user_id = required_params.get('user_id',None)
+    user_roles = required_params.get('user_roles',None)
+    resource_type = required_params.get('resource_type',None)
     endpoint = request_context['endpoint']
     access_tags,required_permission = \
         get_accesstags_permission(request_context,resource_type,db_,resource_id)
@@ -212,6 +218,7 @@ def check_access_rights(db_:Session, *args, resource_id=None, user_id=None, user
                 break
         if has_rights:
             break
+    print("Finished work in access right==================>")    
     return has_rights
 
 
@@ -232,6 +239,64 @@ def get_request_context_access_rights(request,db_,resource_id,user_id,
         raise PermisionException("Access Permission Denied for the URL")    
 
     return verified
+
+#decorator function for auth and access rules #################################################
+def verify_auth_decorator_params(kwargs):
+    """check passed params to auth from router"""
+    print("======>kwargs in verify decorator==>",kwargs)
+    required_params = {
+            "request_context":"",
+            "db_":"",
+            "resource_id":"",
+            "user_id":"",
+            "user_roles":"",
+            "resource_type":""
+        }
+    for param in required_params:
+        if param in kwargs.keys():
+            required_params[param] = kwargs[param]
+        else:
+            required_params[param] = None
+
+    if 'user_details' in kwargs.keys():
+        required_params['user_id'] = kwargs['user_details']["user_id"]
+        required_params['user_roles'] = kwargs['user_details']['user_roles']
+
+    if 'request' in kwargs.keys():
+        request_context = {}
+        request = kwargs['request']
+        request_context['method'] = request.method
+        request_context['endpoint'] = request.url.path
+        if 'app' in request.headers:
+            request_context['app'] = request.headers['app']
+        else:
+            request_context['app'] = None
+        required_params['request_context'] = request_context
+        print("=============>inside check none",required_params)
+    return required_params
+
+#decorator for authentication and access check
+def get_auth_access_check_decorator(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        #Before Router function execute
+        print("=========================>Before inner fucntion, inside decorator")
+        
+        required_params = verify_auth_decorator_params(kwargs)
+
+        verified = check_access_rights(required_params['db_'], required_params)
+        if not verified:
+            raise PermisionException("Access Permission Denied for the URL")  
+
+        #calling router functions
+        response = await func(*args, **kwargs)
+
+        #After router function execution
+        print("===========================>After inner fucntion, inside decorator")
+
+        #returning final response from router function
+        return response
+    return wrapper
 
 #Class handles the session validation and logout
 class AuthHandler():
@@ -439,6 +504,8 @@ def delete_identity(user_id):
     """delete identity"""
     base_url = ADMIN_BASE_URL+"identities/"+user_id
     response = requests.delete(base_url)
+    if response.status_code == 404:
+        raise NotAvailableException("Unable to locate the resource")
     return response
 
 #user role add
