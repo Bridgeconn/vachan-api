@@ -1218,9 +1218,9 @@ def getTokenLists(sourceId):
 	# print(jsonOut)
 	return jsonOut
 
-@app.route("/v1/tokentranslationlist/<projectId>/<book>", methods=["GET"])
+@app.route("/v1/tokentranslationlist/<projectId>", methods=["GET"])
 @check_token
-def getTokenTranslationList(projectId, book):
+def getTokenTranslationList(projectId):
 	'''
 	This method is used to fetch all tokens in a selected book,
 	associated with a project. If a translation is added for it, in that project,
@@ -1240,6 +1240,11 @@ def getTokenTranslationList(projectId, book):
 	This format of array of arrays and comma seperated string for senses was chosen due to
 	the requirement from UI side (the xlsx npm module)
 	'''
+	only_words = bool(request.args.get("only_words", False))
+	books = request.args.getlist('books')
+	log.info("comes to getTokenLists for "+str(books))
+	if len(books) == 0:
+		return '{"success":false, "message":"No books selected for tokens request"}'
 
 	try:
 		connection = get_db()
@@ -1252,49 +1257,60 @@ def getTokenTranslationList(projectId, book):
 		cursor.execute("select books from autographamt_assignments where user_id=%s and \
 			project_id=%s", (userId, projectId))
 		assignments = cursor.fetchone()
-		if (not assignments) or (book.lower() not in assignments[0].split('|')):
-			return '{"success":false, "message":"UnAuthorized! You haven\'t been assigned this book/project"}'
+		for book in books:
+			if (not assignments) or (book.lower() not in assignments[0].split('|')):
+				return '{"success":false, "message":"UnAuthorized! You haven\'t been assigned the book/project('+book+')"}'
 
 		cursor.execute("select s.table_name from sources as s join autographamt_projects as p \
 		on s.source_id = p.source_id where p.project_id=%s", (projectId,))
 		source_table = cursor.fetchone()[0]
 		tablename = source_table + '_tokens'
-
-		cursor.execute("select book_id from bible_books_look_up where book_code=%s", (book,))
-		bookId_rst = cursor.fetchone()
-		if not bookId_rst:
-			return '{"success":false, "message":"Invalid book code. The 3 letter code expected."}'
-		bookId = bookId_rst[0]
-		cursor.execute(sql.SQL("SELECT s.token, t.translation, t.senses, l.project_id FROM {} s \
-			LEFT JOIN translations t ON s.token = t.token \
-			LEFT JOIN translation_projects_look_up l ON t.translation_id = l.translation_id \
-			where s.book_id=%s;").format(sql.Identifier(tablename)), (bookId,))
-		token_List = {}
-		for item in cursor.fetchall():
-			if item[3] == projectId:
-				senses = None
-				if item[2]:
-					senses = item[2].replace('|',',')
-					if senses[-1] == ',':
-						senses = senses[:-1]
-				token_List[item[0]] = [item[1], senses]
-			elif item[0] not in token_List:
-				token_List[item[0]] = [None, None]
-		tokenList = [[key]+token_List[key] for key in token_List]
-		if len(tokenList)==0:
-			try:
-				languageCode = source_table.split('_')[0]
-				version = '_'.join(source_table.split('_')[1:3])
-				phrases.tokenize(connection, languageCode.lower(), version.lower() , bookId)
-				cursor.execute(sql.SQL("select token from {} where book_id=%s").format(sql.Identifier(tablename)), (bookId,))
-				tokenList = [[item[0], None, None] for item in cursor.fetchall()]
-			except Exception as ex:
-				print(ex)
-				return json.dumps({"success":False, "message":"Phrases method error"})
-		if len(tokenList)==0:
-			return json.dumps({"success":False, "message": "No tokens available. Check if bible books are uploaded."})
+		tokenList = {}
+		for book in books:
+			cursor.execute("select book_id from bible_books_look_up where book_code=%s", (book.lower(),))
+			bookId_rst = cursor.fetchone()
+			if not bookId_rst:
+				return '{"success":false, "message":"Invalid book code, '+book+'. The 3 letter code expected."}'
+			bookId = bookId_rst[0]
+			cursor.execute(sql.SQL("SELECT s.token, t.translation, t.senses, l.project_id FROM {} s \
+				LEFT JOIN translations t ON s.token = t.token \
+				LEFT JOIN translation_projects_look_up l ON t.translation_id = l.translation_id \
+				where s.book_id=%s;").format(sql.Identifier(tablename)), (bookId,))
+			tokens = cursor.fetchall()
+			if len(tokens)==0:
+				try:
+					languageCode = source_table.split('_')[0]
+					version = '_'.join(source_table.split('_')[1:3])
+					phrases.tokenize(connection, languageCode.lower(), version.lower() , bookId)
+					cursor.execute(sql.SQL("SELECT s.token, t.translation, t.senses, l.project_id FROM {} s \
+						LEFT JOIN translations t ON s.token = t.token \
+						LEFT JOIN translation_projects_look_up l ON t.translation_id = l.translation_id \
+						where s.book_id=%s;").format(sql.Identifier(tablename)), (bookId,))
+					tokens = cursor.fetchall()
+				except Exception as ex:
+					log.exception(ex)
+					return json.dumps({"success":False, "message":"Phrases method error"})
+			if len(tokens)==0:
+				return json.dumps({"success":False, "message": "No tokens available for, "+book+". Check if bible books are uploaded."})
+			this_book_token_List = {}
+			for item in tokens:
+				if only_words and " " in item[0]:
+					continue
+				if item[3] == projectId:
+					senses = None
+					if item[2]:
+						senses = item[2].replace('|',',')
+						if senses[-1] == ',':
+							senses = senses[:-1]
+					this_book_token_List[item[0]] = [item[1], senses]
+				elif item[0] not in this_book_token_List:
+					this_book_token_List[item[0]] = [None, None]
+			for key in this_book_token_List:
+				if key not in tokenList:
+					tokenList[key] = this_book_token_List[key]
 		cursor.close()
-		jsonOut = json.dumps(tokenList)
+		result_list = [[key]+this_book_token_List[key] for key in this_book_token_List]
+		jsonOut = json.dumps(result_list)
 		return jsonOut
 	except Exception as e:
 		print(e)
