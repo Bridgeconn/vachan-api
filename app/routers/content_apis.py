@@ -5,22 +5,21 @@ from sqlalchemy.orm import Session
 
 import schemas
 from dependencies import get_db, log
-from custom_exceptions import NotAvailableException, AlreadyExistsException,\
-    PermisionException
+from custom_exceptions import NotAvailableException, AlreadyExistsException
 from crud import structurals_crud, contents_crud
-from authentication import AuthHandler, check_access_rights ,\
-    get_request_context_access_rights
+from authentication import AuthHandler, get_auth_access_check_decorator
 
 router = APIRouter()
 auth_handler = AuthHandler()
 
-#pylint: disable=too-many-arguments
+#pylint: disable=too-many-arguments,unused-argument
 ##### Content types #####
 @router.get('/v2/contents', response_model=List[schemas.ContentType],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}},  status_code=200,
     tags=["Contents Types"])
-def get_contents(request: Request,content_type: str = Query(None, example="bible"),
+@get_auth_access_check_decorator
+async def get_contents(request: Request,content_type: str = Query(None, example="bible"),
      skip: int = Query(0, ge=0),limit: int = Query(100, ge=0),
      db_: Session = Depends(get_db)):
     '''fetches all the contents types supported and their details
@@ -29,21 +28,15 @@ def get_contents(request: Request,content_type: str = Query(None, example="bible
     * limit=n: limits the no. of items to be returned to n'''
     log.info('In get_contents')
     log.debug('contentType:%s, skip: %s, limit: %s',content_type, skip, limit)
-
-    verified = get_request_context_access_rights(request,db_,resource_id=None,user_id=None,
-        user_roles=None,resource_type=None)
-    if verified:
-        data = structurals_crud.get_content_types(db_, content_type, skip, limit)
-    else:
-        raise PermisionException("Access Permission Denied for the URL")
-    return data
+    return structurals_crud.get_content_types(db_, content_type, skip, limit)
 
 @router.post('/v2/contents', response_model=schemas.ContentTypeUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Contents Types"])
-def add_contents(request: Request, content: schemas.ContentTypeCreate, 
-    permision = Depends(auth_handler.kratos_session_validation),
+@get_auth_access_check_decorator
+async def add_contents(request: Request, content: schemas.ContentTypeCreate,
+    user_details = Depends(auth_handler.kratos_session_validation),
     db_: Session = Depends(get_db)):
     ''' Creates a new content type.
     Naming conventions to be followed
@@ -53,12 +46,9 @@ def add_contents(request: Request, content: schemas.ContentTypeCreate,
         2. Define input, output resources and all required APIs to handle this content'''
     log.info('In add_contents')
     log.debug('content: %s',content)
-    verified = get_request_context_access_rights(request,db_,resource_id=None,user_id=None,
-        user_roles=permision,resource_type=None)
-    if verified:
-        if len(structurals_crud.get_content_types(db_, content.contentType)) > 0:
-            raise AlreadyExistsException("%s already present"%(content.contentType))
-        data = structurals_crud.create_content_type(db_=db_, content=content)
+    if len(structurals_crud.get_content_types(db_, content.contentType)) > 0:
+        raise AlreadyExistsException("%s already present"%(content.contentType))
+    data = structurals_crud.create_content_type(db_=db_, content=content)
     return {'message': "Content type created successfully",
             "data": data}
 
@@ -68,7 +58,9 @@ def add_contents(request: Request, content: schemas.ContentTypeCreate,
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Languages"])
-def get_language(language_code : schemas.LangCodePattern = Query(None, example="hi"),
+@get_auth_access_check_decorator
+async def get_language(request: Request,
+    language_code : schemas.LangCodePattern = Query(None, example="hi"),
     language_name: str = Query(None, example="hindi"),
     search_word: str = Query(None, example="Sri Lanka"),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
@@ -87,34 +79,44 @@ def get_language(language_code : schemas.LangCodePattern = Query(None, example="
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Languages"])
-def add_language(lang_obj : schemas.LanguageCreate = Body(...), db_: Session = Depends(get_db)):
+@get_auth_access_check_decorator
+async def add_language(request: Request, lang_obj : schemas.LanguageCreate = Body(...),
+    user_details = Depends(auth_handler.kratos_session_validation),
+    db_: Session = Depends(get_db)):
     ''' Creates a new language. Langugage code should of 3 letters which uniquely identifies it.'''
     log.info('In add_language')
     log.debug('lang_obj: %s',lang_obj)
     if len(structurals_crud.get_languages(db_, language_code = lang_obj.code)) > 0:
         raise AlreadyExistsException("%s already present"%(lang_obj.code))
     return {'message': "Language created successfully",
-    "data": structurals_crud.create_language(db_=db_, lang=lang_obj)}
+        "data": structurals_crud.create_language(db_=db_, lang=lang_obj,
+        user_id=user_details['user_id'])}
 
 @router.put('/v2/languages', response_model=schemas.LanguageUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Languages"])
-def edit_language(lang_obj: schemas.LanguageEdit = Body(...), db_: Session = Depends(get_db)):
+@get_auth_access_check_decorator
+async def edit_language(request: Request, lang_obj: schemas.LanguageEdit = Body(...),
+    user_details = Depends(auth_handler.kratos_session_validation),
+    db_: Session = Depends(get_db)):
     ''' Changes one or more fields of language'''
     log.info('In edit_language')
     log.debug('lang_obj: %s',lang_obj)
     if len(structurals_crud.get_languages(db_, language_id = lang_obj.languageId)) == 0:
         raise NotAvailableException("Language id %s not found"%(lang_obj.languageId))
     return {'message': "Language edited successfully",
-        "data": structurals_crud.update_language(db_=db_, lang=lang_obj)}
+            "data": structurals_crud.update_language(db_=db_, lang=lang_obj,
+            user_id=user_details['user_id'])}
 
 ########### Licenses ######################
 @router.get('/v2/licenses',
     response_model=List[schemas.LicenseResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Licenses"])
-def get_license(license_code : schemas.LicenseCodePattern=Query(None, example="CC-BY-SA"),
+@get_auth_access_check_decorator
+async def get_license(request: Request,
+    license_code : schemas.LicenseCodePattern=Query(None, example="CC-BY-SA"),
     license_name: str=Query(None, example="Creative Commons License"),
     permission: schemas.LicensePermisssion=Query(None, example="Commercial_use"),
     active: bool=Query(True),
@@ -134,18 +136,22 @@ def get_license(license_code : schemas.LicenseCodePattern=Query(None, example="C
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Licenses"])
-def add_license(license_obj : schemas.LicenseCreate = Body(...), db_: Session = Depends(get_db)):
+@get_auth_access_check_decorator
+async def add_license(request: Request, license_obj : schemas.LicenseCreate = Body(...),
+    user_details = Depends(auth_handler.kratos_session_validation), db_: Session = Depends(get_db)):
     ''' Uploads a new license. License code provided will be used as the unique identifier.'''
     log.info('In add_license')
     log.debug('license_obj: %s',license_obj)
     return {'message': "License uploaded successfully",
-        "data": structurals_crud.create_license(db_, license_obj, user_id=None)}
+        "data": structurals_crud.create_license(db_, license_obj, user_id=user_details['user_id'])}
 
 @router.put('/v2/licenses', response_model=schemas.LicenseUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Licenses"])
-def edit_license(license_obj: schemas.LicenseEdit = Body(...), db_: Session = Depends(get_db)):
+@get_auth_access_check_decorator
+async def edit_license(request: Request, license_obj: schemas.LicenseEdit = Body(...),
+    user_details = Depends(auth_handler.kratos_session_validation), db_: Session = Depends(get_db)):
     ''' Changes one or more fields of license.
     Item identifier is license code, which cannot be altered.
     Active field can be used to activate or deactivate a content.
@@ -153,14 +159,17 @@ def edit_license(license_obj: schemas.LicenseEdit = Body(...), db_: Session = De
     log.info('In edit_license')
     log.debug('license_obj: %s',license_obj)
     return {'message': "License edited successfully",
-        "data": structurals_crud.update_license(db_=db_, license_obj=license_obj, user_id=None)}
+        "data": structurals_crud.update_license(db_=db_, license_obj=license_obj,
+        user_id=user_details['user_id'])}
 
 ##### Version #####
 @router.get('/v2/versions',
     response_model=List[schemas.VersionResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Versions"])
-def get_version(version_abbreviation : schemas.VersionPattern = Query(None, example="KJV"),
+@get_auth_access_check_decorator
+async def get_version(request: Request,
+    version_abbreviation : schemas.VersionPattern = Query(None, example="KJV"),
     version_name: str = Query(None, example="King James Version"), revision : int = Query(None),
     metadata: schemas.MetaDataPattern = Query(None, example='{"publishedIn":"1611"}'),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
@@ -179,8 +188,9 @@ def get_version(version_abbreviation : schemas.VersionPattern = Query(None, exam
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Versions"])
-def add_version(version_obj : schemas.VersionCreate = Body(...),
-    db_: Session = Depends(get_db)):
+@get_auth_access_check_decorator
+async def add_version(request: Request, version_obj : schemas.VersionCreate = Body(...),
+    user_details = Depends(auth_handler.kratos_session_validation), db_: Session = Depends(get_db)):
     ''' Creates a new version. Version code provided will be used as unique identifier'''
     log.info('In add_version')
     log.debug('version_obj: %s',version_obj)
@@ -191,13 +201,16 @@ def add_version(version_obj : schemas.VersionCreate = Body(...),
         raise AlreadyExistsException("%s, %s already present"%(
             version_obj.versionAbbreviation, version_obj.revision))
     return {'message': "Version created successfully",
-    "data": structurals_crud.create_version(db_=db_, version=version_obj, user_id=None)}
+        "data": structurals_crud.create_version(db_=db_, version=version_obj,
+        user_id=user_details['user_id'])}
 
 @router.put('/v2/versions', response_model=schemas.VersionUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Versions"])
-def edit_version(ver_obj: schemas.VersionEdit = Body(...), db_: Session = Depends(get_db)):
+@get_auth_access_check_decorator
+async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...),
+    user_details = Depends(auth_handler.kratos_session_validation),db_: Session = Depends(get_db)):
     ''' Changes one or more fields of version types table.
     Item identifier is version id.
     Active field can be used to activate or deactivate a content.
@@ -207,7 +220,8 @@ def edit_version(ver_obj: schemas.VersionEdit = Body(...), db_: Session = Depend
     if len(structurals_crud.get_versions(db_, version_id = ver_obj.versionId)) == 0:
         raise NotAvailableException("Version id %s not found"%(ver_obj.versionId))
     return {'message': "Version edited successfully",
-    "data": structurals_crud.update_version(db_=db_, version=ver_obj, user_id=None)}
+        "data": structurals_crud.update_version(db_=db_, version=ver_obj,
+        user_id=user_details['user_id'])}
 
 # ##### Source #####
 @router.get('/v2/sources',

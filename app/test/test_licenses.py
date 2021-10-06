@@ -1,9 +1,23 @@
 '''Test cases for licenses related APIs'''
 from . import client, check_default_get
 from . import assert_input_validation_error, assert_not_available_content
+from .test_auth_basic import register,delete_user_identity
 
 UNIT_URL = '/v2/licenses'
 headers = {"contentType": "application/json", "accept": "application/json"}
+
+#create a normal user for this module test
+test_user_data = {
+        "email": "abc@gmail.com",
+        "password": "passwordabc@1"
+    }
+response = register(test_user_data,apptype='API-user')
+test_user_id = [response.json()["registered_details"]["id"]]
+test_user_token = response.json()["token"]
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+test_user_token
+            }
 
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
@@ -81,6 +95,11 @@ def test_post():
       "permissions": ["Private_use"]
     }
     response = client.post(UNIT_URL, headers=headers, json=data)
+    #without Auth
+    assert response.status_code == 403
+    assert response.json()['details'] == 'Not authenticated'
+    #With Auth
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 201
     assert response.json()['message'] == "License uploaded successfully"
     assert_positive_get(response.json()['data'])
@@ -91,6 +110,10 @@ def test_post():
     data['name']= "Test License version 2"
 
     response = client.post(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 403
+    assert response.json()['details'] == 'Not authenticated'
+    #with auth
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 201
     assert response.json()['message'] == "License uploaded successfully"
     assert_positive_get(response.json()['data'])
@@ -102,32 +125,38 @@ def test_post():
         "name": "Test License version 3",
         "license": "a long long long text"
     }
+    #without auth
     response = client.post(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 403
+    assert response.json()['details'] == 'Not authenticated'
+    #with auth
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 201
     assert response.json()['message'] == "License uploaded successfully"
     assert_positive_get(response.json()['data'])
     assert response.json()["data"]["permissions"] == ["Private_use"]
 
     # '''without mandatory fields'''
+    #with auth
     data = {
         "code": "lic-4",
         "name": "Test License version 4",
     }
-    response = client.post(UNIT_URL, headers=headers, json=data)
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     data = {
         "code": "lic-4",
         "license": "Test License version 4",
     }
-    response = client.post(UNIT_URL, headers=headers, json=data)
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     data = {
         "license": "long long text",
         "name": "Test License version 4",
     }
-    response = client.post(UNIT_URL, headers=headers, json=data)
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     # '''code should have letters numbers  . _ or - only'''
@@ -136,7 +165,7 @@ def test_post():
       "code": "AB@",
       "name": "new name"
     }
-    response = client.post(UNIT_URL, headers=headers, json=data)
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     data = {
@@ -144,7 +173,7 @@ def test_post():
       "code": "AB 1",
       "name": "new name"
     }
-    response = client.post(UNIT_URL, headers=headers, json=data)
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     # '''permissions should be from the pre-defined list'''
@@ -154,7 +183,7 @@ def test_post():
       "name": "new name",
       "permissions": ["regular"]
     }
-    response = client.post(UNIT_URL, headers=headers, json=data)
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
 def test_put():
@@ -165,37 +194,53 @@ def test_put():
       "name": "Test License version 1",
       "permissions": ["Private_use"]
     }
+    #without Auth
     response = client.post(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 403
+    assert response.json()['details'] == 'Not authenticated'
+
+    #with auth
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 201
     assert response.json()['message'] == "License uploaded successfully"
 
     update_data = {"code":"LIC-1", "permissions":["Private_use", "Patent_use"]}
+    #without auth update
     response = client.put(UNIT_URL, json=update_data, headers=headers)
+    assert response.status_code == 403
+    assert response.json()['details'] == 'Not authenticated'
+
+    #with auth
+    response = client.put(UNIT_URL, json=update_data, headers=headers_auth)
+    print(response.json())
     assert response.status_code == 201
     assert response.json()['message'] == "License edited successfully"
     assert response.json()['data']['permissions'] == ["Private_use", "Patent_use"]
 
+    #delete id list
+    delete_user_identity(test_user_id)
+
     update_data = {"code":"LIC-1", "name":"New name for test license"}
-    response = client.put(UNIT_URL, json=update_data, headers=headers)
+    response = client.put(UNIT_URL, json=update_data, headers=headers_auth)
     assert response.status_code == 201
     assert response.json()['message'] == "License edited successfully"
     assert response.json()['data']['name'] == "New name for test license"
 
     update_data = {"code":"LIC-1", "license":"A different text"}
-    response = client.put(UNIT_URL, json=update_data, headers=headers)
+    response = client.put(UNIT_URL, json=update_data, headers=headers_auth)
     assert response.status_code == 201
     assert response.json()['message'] == "License edited successfully"
     assert response.json()['data']['license'] == "A different text"
 
     # unavailable code
     update_data['code'] = "LIC-2"
-    response = client.put(UNIT_URL, json=update_data, headers=headers)
+    response = client.put(UNIT_URL, json=update_data, headers=headers_auth)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
 
     #without code
     update_data = {"name": "some name", "active":False}
-    response = client.put(UNIT_URL, json=update_data, headers=headers)
+    response = client.put(UNIT_URL, json=update_data, headers=headers_auth)
     assert_input_validation_error(response)
 
     #deactivate or soft-delete
@@ -204,9 +249,11 @@ def test_put():
     assert len(resp1.json()) >= 3
 
     update_data = {"code": "LIC-1", "active":False}
-    response = client.put(UNIT_URL, json=update_data, headers=headers)
+    response = client.put(UNIT_URL, json=update_data, headers=headers_auth)
     assert response.status_code == 201
 
     resp2 = client.get(UNIT_URL)
     assert resp1.status_code == 200
     assert len(resp1.json()) - len(resp2.json()) == 1
+
+    

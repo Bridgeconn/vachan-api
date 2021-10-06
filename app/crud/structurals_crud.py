@@ -26,8 +26,8 @@ def create_content_type(db_: Session, content: schemas.ContentTypeCreate):
     '''Adds a row to content_types table'''
     db_content = db_models.ContentType(contentType = content.contentType)
     db_.add(db_content)
-    db_.commit()
-    db_.refresh(db_content)
+    # db_.commit()
+    # db_.refresh(db_content)
     return db_content
 
 def get_languages(db_: Session, language_code = None, language_name = None, search_word=None,
@@ -63,8 +63,8 @@ def create_language(db_: Session, lang: schemas.LanguageCreate, user_id=None):
         createdUser= user_id,
         updatedUser=user_id)
     db_.add(db_content)
-    db_.commit()
-    db_.refresh(db_content)
+    # db_.commit()
+    # db_.refresh(db_content)
     return db_content
 
 def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
@@ -84,8 +84,8 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
         db_content.metaData = lang.metaData
         flag_modified(db_content, "metaData")
     db_content.updatedUser = user_id
-    db_.commit()
-    db_.refresh(db_content)
+    # db_.commit()
+    # db_.refresh(db_content)
     return db_content
 
 def get_licenses(db_: Session, license_code = None, license_name = None,
@@ -111,8 +111,8 @@ def create_license(db_: Session, license_obj: schemas.LicenseCreate, user_id=Non
         active=True,
         createdUser=user_id)
     db_.add(db_content)
-    db_.commit()
-    db_.refresh(db_content)
+    # db_.commit()
+    # db_.refresh(db_content)
     return db_content
 
 def update_license(db_: Session, license_obj: schemas.LicenseEdit, user_id=None):
@@ -130,8 +130,8 @@ def update_license(db_: Session, license_obj: schemas.LicenseEdit, user_id=None)
     if license_obj.active is not None:
         db_content.active = license_obj.active
     db_content.updatedUser = user_id
-    db_.commit()
-    db_.refresh(db_content)
+    # db_.commit()
+    # db_.refresh(db_content)
     return db_content
 
 def get_versions(db_: Session, version_abbr = None, version_name = None, revision = None,
@@ -164,8 +164,8 @@ def create_version(db_: Session, version: schemas.VersionCreate,user_id=None):
         metaData = version.metaData,
         createdUser=user_id)
     db_.add(db_content)
-    db_.commit()
-    db_.refresh(db_content)
+    # db_.commit()
+    # db_.refresh(db_content)
     return db_content
 
 def update_version(db_: Session, version: schemas.VersionEdit, user_id=None):
@@ -180,8 +180,8 @@ def update_version(db_: Session, version: schemas.VersionEdit, user_id=None):
     if version.metaData:
         db_content.metaData = version.metaData
     db_content.updatedUser = user_id
-    db_.commit()
-    db_.refresh(db_content)
+    # db_.commit()
+    # db_.refresh(db_content)
     return db_content
 
 def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches

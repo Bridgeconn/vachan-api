@@ -1,11 +1,12 @@
 """Authentication related functions"""
+from enum import unique
 import os
 import json
+from functools import wraps
 import requests
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
-from functools import wraps
 import db_models
 import schema_auth
 from dependencies import log
@@ -74,27 +75,38 @@ access_rules = {
     }
 }
 
-def metacontent_creator(db_:Session, resource_type, resource_id, user_id):
-    '''checks if the user is the creator of the given item'''
-    if resource_type == 'contents':
-        model_cls = db_models.ContentType
-    elif resource_type == "languages":
-        model_cls = db_models.Language
-    elif resource_type == "versions":
-        model_cls = db_models.Version
-    elif resource_type == "licenses":
-        model_cls = db_models.License
-    created_user = db_.query(model_cls.createdUser).get(resource_id)
-    if user_id == created_user:
-        return True
-    return False
+# def metacontent_creator(db_:Session, resource_type, resource_id, user_id):
+#     '''checks if the user is the creator of the given item'''
+    
+#     if resource_type == 'contents':
+#         model_cls = db_models.ContentType
+#         unique_col = model_cls.contentType
+#         resource_id = resource_id if resource_id != None else 'contentType'
+#     elif resource_type == "languages":
+#         model_cls = db_models.Language
+#         unique_col = model_cls.code
+#         resource_id = resource_id if resource_id != None else 'code'
+#     elif resource_type == "versions":
+#         model_cls = db_models.Version
+#         unique_col = model_cls.versionAbbreviation
+#         resource_id = resource_id if resource_id != None else 'versionId'
+#     elif resource_type == "licenses":
+#         model_cls = db_models.License
+#         unique_col = model_cls.code
+#         resource_id = resource_id if resource_id != None else 'code'
 
-def resource_creator(db_:Session, source_id, user_id):
-    '''checks if the user is the creator of the given source'''
-    created_user =  db_.query(db_models.Source.createdUser).get(source_id).first()
-    if user_id == created_user:
-        return True
-    return False
+#     # primary_key = db_.query(pk_col).filter(unique_col == resource_id).first()
+#     created_user = db_.query(model_cls.createdUser).filter(unique_col == resource_id).first()
+#     if created_user != None and user_id == created_user[0]:
+#         return True
+#     return False
+
+# def resource_creator(db_:Session, source_id, user_id):
+#     '''checks if the user is the creator of the given source'''
+#     created_user =  db_.query(db_models.Source.createdUser).get(source_id).first()
+#     if user_id == created_user:
+#         return True
+#     return False
 
 def project_owner(db_:Session, project_id, user_id):
     '''checks if the user is the owner of the given project'''
@@ -144,21 +156,28 @@ def get_accesstags_permission(request_context, resource_type, db_, resource_id):
     else:
         raise Exception("Unknown resource type")
 
-    return access_tags,required_permission
+    return access_tags, required_permission, resource_type
 
 def role_check_has_right(db_, role, user_roles, resource_type, resource_id, *args):
     """check the has right for roles"""
     user_id = args[0]
     endpoint = args[1]
+    db_resource = args[2]
     def created_user_check(resource_type, db_, resource_id, user_id, endpoint):
         """checks for createduser role"""
-        if resource_type == schema_auth.ResourceType.CONTENT:
-            if resource_creator(db_, resource_id, user_id):
-                has_rights = True
-        if resource_type == schema_auth.ResourceType.METACONTENT:
-            rsc_type = endpoint.split('/')[-1]
-            if metacontent_creator(db_, rsc_type, resource_id, user_id):
-                has_rights =  True
+        has_rights = False
+        # if resource_type == schema_auth.ResourceType.CONTENT:
+        #     if resource_creator(db_, resource_id, user_id):
+        #         has_rights = True
+        # if resource_type == schema_auth.ResourceType.METACONTENT:
+        #     rsc_type = endpoint.split('/')[-1]
+        #     if metacontent_creator(db_, rsc_type, resource_id, user_id):
+        #         has_rights =  True
+        createdUser = db_resource.createdUser
+        print("createdUSer from check =====>>>>>",createdUser)
+        print("user id from check =====>>>>>",user_id)
+        if createdUser == user_id:
+            has_rights = True
         return has_rights
 
     def project_owner_check(resource_type,db_, resource_id, user_id):
@@ -177,10 +196,17 @@ def role_check_has_right(db_, role, user_roles, resource_type, resource_id, *arg
                 has_rights =  True
         return has_rights
 
+    def registred_user_check(user_id):
+        """check registered user id is none or not"""
+        has_rights =False
+        if not user_id is None:
+            has_rights = True
+        return has_rights    
+
     switcher = {
         "noAuthRequired" : True,
-        "registeredUser" : True,
-        "createdUser" : created_user_check,
+        "registeredUser" : registred_user_check,
+        "resourceCreatedUser" : created_user_check,
         "projectOwner" : project_owner_check ,
         "projectMember" : project_member_check ,
     }
@@ -194,10 +220,7 @@ def role_check_has_right(db_, role, user_roles, resource_type, resource_id, *arg
 
     return has_rights
 
-
-# def check_access_rights(db_:Session, *args, resource_id=None, user_id=None, user_roles=None,
-#     resource_type: schema_auth.ResourceType=None,**kwargs):
-def check_access_rights(db_:Session, required_params):
+def check_access_rights(db_:Session, required_params, db_resource=None):
     """check access right"""
     request_context = required_params.get('request_context',None)
     resource_id = required_params.get('resource_id',None)
@@ -205,7 +228,7 @@ def check_access_rights(db_:Session, required_params):
     user_roles = required_params.get('user_roles',None)
     resource_type = required_params.get('resource_type',None)
     endpoint = request_context['endpoint']
-    access_tags,required_permission = \
+    access_tags,required_permission, resource_type = \
         get_accesstags_permission(request_context,resource_type,db_,resource_id)
     has_rights = False
     for tag in access_tags:
@@ -213,37 +236,16 @@ def check_access_rights(db_:Session, required_params):
             allowed_users = access_rules[tag][required_permission]
         for role in allowed_users:
             has_rights = role_check_has_right(db_, role, user_roles, resource_type,
-                 resource_id, user_id, endpoint)
+                 resource_id, user_id, endpoint, db_resource)
             if has_rights:
                 break
         if has_rights:
             break
-    print("Finished work in access right==================>")    
     return has_rights
 
-
-def get_request_context_access_rights(request,db_,resource_id,user_id,
-    user_roles,resource_type):
-    """get the context of requests"""
-    request_context = {}
-    request_context['method'] = request.method
-    request_context['endpoint'] = request.url.path
-    if 'app' in request.headers:
-        request_context['app'] = request.headers['app']
-    else:
-        request_context['app'] = None
-
-    verified = check_access_rights(db_, request_context,resource_id=resource_id,
-        user_id=user_id, user_roles=user_roles, resource_type=resource_type)
-    if not verified:
-        raise PermisionException("Access Permission Denied for the URL")    
-
-    return verified
-
-#decorator function for auth and access rules #################################################
+#####decorator function for auth and access rules ######
 def verify_auth_decorator_params(kwargs):
     """check passed params to auth from router"""
-    print("======>kwargs in verify decorator==>",kwargs)
     required_params = {
             "request_context":"",
             "db_":"",
@@ -271,29 +273,33 @@ def verify_auth_decorator_params(kwargs):
             request_context['app'] = request.headers['app']
         else:
             request_context['app'] = None
-        required_params['request_context'] = request_context
-        print("=============>inside check none",required_params)
+        required_params['request_context'] = request_context    
     return required_params
 
 #decorator for authentication and access check
 def get_auth_access_check_decorator(func):
+    """Decorator function for auth and access check for all routers"""
     @wraps(func)
     async def wrapper(*args, **kwargs):
-        #Before Router function execute
-        print("=========================>Before inner fucntion, inside decorator")
-        
-        required_params = verify_auth_decorator_params(kwargs)
-
-        verified = check_access_rights(required_params['db_'], required_params)
-        if not verified:
-            raise PermisionException("Access Permission Denied for the URL")  
-
         #calling router functions
         response = await func(*args, **kwargs)
+        required_params = verify_auth_decorator_params(kwargs)
+        db_resource =None
+        print("Response full >>>>>>>>>>>>>>>>>>",response)
+        if required_params['request_context']['method'] != 'GET':
+            db_ = required_params["db_"]
+            db_resource = response['data']
+            # db_.commit()
+            # db_.refresh(data)
+        elif required_params['request_context']['method'] == 'GET' and not \
+            required_params['request_context']['endpoint'].startswith("/v2/user"):
+            db_resource = response['data']
+
+        verified = check_access_rights(required_params['db_'], required_params, db_resource)
+        if not verified:
+            raise PermisionException("Access Permission Denied for the URL")
 
         #After router function execution
-        print("===========================>After inner fucntion, inside decorator")
-
         #returning final response from router function
         return response
     return wrapper

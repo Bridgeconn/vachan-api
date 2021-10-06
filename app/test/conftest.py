@@ -3,9 +3,9 @@ import pytest
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
 from app.main import app, get_db, log
 from app.database import SQLALCHEMY_DATABASE_URL
+from .test_auth_basic import login,register,delete_user_identity
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 Session = sessionmaker()

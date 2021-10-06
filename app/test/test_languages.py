@@ -2,9 +2,18 @@
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
+from .test_auth_basic import register,delete_user_identity
 
 UNIT_URL = '/v2/languages'
 
+#create a normal user for this module test
+test_user_data = {
+        "email": "abc@gmail.com",
+        "password": "passwordabc@1"
+    }
+response = register(test_user_data,apptype='API-user')
+test_user_id = [response.json()["registered_details"]["id"]]
+test_user_token = response.json()["token"]
 
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
@@ -93,8 +102,17 @@ def test_post_default():
       "code": "x-aaj",
       "scriptDirection": "left-to-right"
     }
+    #Add Language without Auth
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 403
+    assert response.json()['details'] == 'Not authenticated'
+    #Add with Auth
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+    response = client.post(UNIT_URL, headers=headers, json=data)        
     assert response.status_code == 201
     assert response.json()['message'] == "Language created successfully"
     assert_positive_get(response.json()['data'])
@@ -107,9 +125,17 @@ def test_post_upper_case_code():
       "code": "X-AAJ",
       "scriptDirection": "left-to-right"
     }
+    #Add Language without Auth
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
-    print(response.json())
+    assert response.status_code == 403
+    assert response.json()['details'] == 'Not authenticated'
+    #Add with Auth
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+    response = client.post(UNIT_URL, headers=headers, json=data)        
     assert response.status_code == 201
     assert response.json()['message'] == "Language created successfully"
     assert_positive_get(response.json()['data'])
@@ -121,9 +147,17 @@ def test_post_optional_script_direction():
       "language": "new-lang",
       "code": "x-aaj"
     }
+    #Add without Auth
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
-    print(response.json())
+    assert response.status_code == 403
+    assert response.json()['details'] == 'Not authenticated'
+    #Add with Auth
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+    response = client.post(UNIT_URL, headers=headers, json=data)        
     assert response.status_code == 201
     assert response.json()['message'] == "Language created successfully"
     assert_positive_get(response.json()['data'])
@@ -136,7 +170,11 @@ def test_post_incorrectdatatype1():
       "code": "123",
       "scriptDirection": "left-to-right"
     }
-    headers = {"contentType": "application/json", "accept": "application/json"}
+    #Add with Auth
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }        
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
 
@@ -147,7 +185,11 @@ def test_post_incorrectdatatype2():
       "code": "MMM",
       "scriptDirection": "regular"
     }
-    headers = {"contentType": "application/json", "accept": "application/json"}
+    #Add with Auth
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
 
@@ -157,9 +199,16 @@ def test_post_missingvalue_language():
       "code": "MMM",
       "scriptDirection": "left-to-right"
     }
-    headers = {"contentType": "application/json", "accept": "application/json"}
+    #Add with Auth
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
+
+    #delete id list
+    delete_user_identity(test_user_id)
 
 def test_searching():
     '''Being able to query languages with code, name, country of even other info'''

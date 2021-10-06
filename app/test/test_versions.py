@@ -2,9 +2,22 @@
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
+from .test_auth_basic import register,delete_user_identity
 
 UNIT_URL = '/v2/versions'
 
+#create a normal user for this module test
+test_user_data = {
+        "email": "abc@gmail.com",
+        "password": "passwordabc@1"
+    }
+response = register(test_user_data,apptype='API-user')
+test_user_id = [response.json()["registered_details"]["id"]]
+test_user_token = response.json()["token"]
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+test_user_token
+            }
 
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
@@ -17,8 +30,14 @@ def assert_positive_get(item):
 
 def check_post(data):
     '''common steps for positive post test cases'''
+    #without AUth
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 403
+    assert response.json()['details'] == 'Not authenticated'
+
+    #with Auth
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 201
     assert response.json()['message'] == "Version created successfully"
     assert_positive_get(response.json()['data'])
@@ -57,7 +76,7 @@ def test_post_multiple_with_same_abbr_negative():
     }
     check_post(data)
     headers = {"contentType": "application/json", "accept": "application/json"}
-    response = client.post(UNIT_URL, headers=headers, json=data)
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 409
     assert response.json()['error'] == "Already Exists"
 
@@ -88,8 +107,8 @@ def test_post_without_abbr():
         "revision": "1",
         "metaData": {"owner": "some", "access-key": "123xyz"}
     }
-    headers = {"contentType": "application/json", "accept": "application/json"}
-    response = client.post(UNIT_URL, headers=headers, json=data)
+    # headers = {"contentType": "application/json", "accept": "application/json"}
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
 def test_post_wrong_abbr():
@@ -100,12 +119,12 @@ def test_post_wrong_abbr():
         "revision": "1",
         "metaData": {"owner": "one", "access-key": "123xyz"}
     }
-    headers = {"contentType": "application/json", "accept": "application/json"}
-    response = client.post(UNIT_URL, headers=headers, json=data)
+    # headers = {"contentType": "application/json", "accept": "application/json"}
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     data['versionAbbreviation'] = 'X.Y'
-    response = client.post(UNIT_URL, headers=headers, json=data)
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
 def test_post_wrong_revision():
@@ -116,16 +135,16 @@ def test_post_wrong_revision():
         "revision": "1.0",
         "metaData": {"owner": "another one", "access-key": "123xyz"}
     }
-    headers = {"contentType": "application/json", "accept": "application/json"}
-    response = client.post(UNIT_URL, headers=headers, json=data)
+    # headers = {"contentType": "application/json", "accept": "application/json"}
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     data['revision'] = "1 2"
-    response = client.post(UNIT_URL, headers=headers, json=data)
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     data['revision'] = '1a'
-    response = client.post(UNIT_URL, headers=headers, json=data)
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
 def test_post_without_name():
@@ -135,8 +154,8 @@ def test_post_without_name():
         "revision": "1",
         "metaData": {"owner": "no one", "access-key": "123xyz"}
     }
-    headers = {"contentType": "application/json", "accept": "application/json"}
-    response = client.post(UNIT_URL, headers=headers, json=data)
+    # headers = {"contentType": "application/json", "accept": "application/json"}
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
 def test_get():
@@ -224,3 +243,6 @@ def test_get_after_adding_data():
     assert response.json()[0]['versionAbbreviation'] == 'CCC'
     assert response.json()[0]['revision'] == 1
     assert response.json()[0]['metaData']['owner'] == 'myself'
+
+    #delete id list
+    delete_user_identity(test_user_id)
