@@ -6,18 +6,21 @@ from .test_auth_basic import register,delete_user_identity
 
 UNIT_URL = '/v2/versions'
 
-#create a normal user for this module test
-test_user_data = {
+def create_test_user():
+    """create test user"""
+    #create a normal user for this module test
+    test_user_data = {
         "email": "abc@gmail.com",
         "password": "passwordabc@1"
     }
-response = register(test_user_data,apptype='API-user')
-test_user_id = [response.json()["registered_details"]["id"]]
-test_user_token = response.json()["token"]
-headers_auth = {"contentType": "application/json",
-                "accept": "application/json",
-                'Authorization': "Bearer"+" "+test_user_token
-            }
+    response = register(test_user_data,apptype='API-user')
+    test_user_id = [response.json()["registered_details"]["id"]]
+    test_user_token = response.json()["token"]
+    headers_auth = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+                }
+    return test_user_id,headers_auth
 
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
@@ -37,11 +40,13 @@ def check_post(data):
     assert response.json()['details'] == 'Not authenticated'
 
     #with Auth
+    test_user_id,headers_auth = create_test_user()
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 201
     assert response.json()['message'] == "Version created successfully"
     assert_positive_get(response.json()['data'])
     assert response.json()["data"]["versionAbbreviation"] == data['versionAbbreviation']
+    delete_user_identity(test_user_id)
     return response
 
 def test_post_default():
@@ -75,10 +80,12 @@ def test_post_multiple_with_same_abbr_negative():
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     check_post(data)
-    headers = {"contentType": "application/json", "accept": "application/json"}
+    # headers = {"contentType": "application/json", "accept": "application/json"}
+    test_user_id,headers_auth = create_test_user()
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 409
     assert response.json()['error'] == "Already Exists"
+    delete_user_identity(test_user_id)
 
 def test_post_without_revision():
     '''revision field should have a default value, even not provided'''
@@ -108,8 +115,10 @@ def test_post_without_abbr():
         "metaData": {"owner": "some", "access-key": "123xyz"}
     }
     # headers = {"contentType": "application/json", "accept": "application/json"}
+    test_user_id,headers_auth = create_test_user()
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
+    delete_user_identity(test_user_id)
 
 def test_post_wrong_abbr():
     '''versionAbbreviation cannot have space, dot etc'''
@@ -120,12 +129,14 @@ def test_post_wrong_abbr():
         "metaData": {"owner": "one", "access-key": "123xyz"}
     }
     # headers = {"contentType": "application/json", "accept": "application/json"}
+    test_user_id,headers_auth = create_test_user()
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     data['versionAbbreviation'] = 'X.Y'
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
+    delete_user_identity(test_user_id)
 
 def test_post_wrong_revision():
     '''revision cannot have space, dot letters etc'''
@@ -136,6 +147,7 @@ def test_post_wrong_revision():
         "metaData": {"owner": "another one", "access-key": "123xyz"}
     }
     # headers = {"contentType": "application/json", "accept": "application/json"}
+    test_user_id,headers_auth = create_test_user()
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
@@ -146,6 +158,7 @@ def test_post_wrong_revision():
     data['revision'] = '1a'
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
+    delete_user_identity(test_user_id)
 
 def test_post_without_name():
     '''versionName is mandatory'''
@@ -155,8 +168,10 @@ def test_post_without_name():
         "metaData": {"owner": "no one", "access-key": "123xyz"}
     }
     # headers = {"contentType": "application/json", "accept": "application/json"}
+    test_user_id,headers_auth = create_test_user()
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
+    delete_user_identity(test_user_id)
 
 def test_get():
     '''Test get before adding data to table. Usually run on new test DB on local or github.
@@ -244,5 +259,47 @@ def test_get_after_adding_data():
     assert response.json()[0]['revision'] == 1
     assert response.json()[0]['metaData']['owner'] == 'myself'
 
-    #delete id list
+def test_put_version():
+    """test default put for versions with auth check"""
+    #create version with auth
+    data = {
+        "versionAbbreviation": "XYZ",
+        "versionName": "Xyz version to test",
+        "revision": "1",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    test_user_id,headers_auth = create_test_user()
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
+    version_id = response.json()['data']['versionId']
+
+    #edit with same user created
+    data = {
+        "versionId": version_id,
+        "versionAbbreviation": "XYZ",
+        "versionName": "Xyz version to test edited",
+        "revision": "1",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    response = client.put(UNIT_URL, headers=headers_auth, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Version edited successfully"
+    assert response.json()["data"]["versionName"] == "Xyz version to test edited"
     delete_user_identity(test_user_id)
+
+    #edit with another user
+    test_user_data2 = {
+        "email": "abc@gmail.com",
+        "password": "passwordabc@1"
+    }
+    response = register(test_user_data2,apptype='API-user')
+    test_user_id2 = [response.json()["registered_details"]["id"]]
+    test_user_token2 = response.json()["token"]
+    headers_auth2 = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token2
+                }
+    response = client.put(UNIT_URL, headers=headers_auth2, json=data)
+    assert response.status_code == 403
+    assert response.json()['error'] == "Permision Denied"
+
+    delete_user_identity(test_user_id2)

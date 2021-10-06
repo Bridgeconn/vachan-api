@@ -163,6 +163,7 @@ def test_post_optional_script_direction():
     assert_positive_get(response.json()['data'])
     assert response.json()["data"]["code"] == "x-aaj"
 
+
 def test_post_incorrectdatatype1():
     '''code should have letters only'''
     data = {
@@ -207,8 +208,68 @@ def test_post_missingvalue_language():
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
 
-    #delete id list
+def test_put_languages():
+    """put test for languages"""
+    #create a new langauge
+    data = {
+      "language": "new-lang-test",
+      "code": "x-abc"
+    }
+    #Add with Auth
+    headers_auth = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Language created successfully"
+    assert_positive_get(response.json()['data'])
+    assert response.json()["data"]["code"] == "x-abc"
+
+    #get language id
+    response = client.get(UNIT_URL+'?language_code=x-abc')
+    assert response.status_code == 200
+    language_id = response.json()[0]['languageId']
+
+    #edit with created user
+    data = {
+      "languageId": language_id,  
+      "language": "new-lang-test-edited",
+      "code": "x-abc"
+    }
+    response = client.put(UNIT_URL, headers=headers_auth, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Language edited successfully"
+    assert_positive_get(response.json()['data'])
+    assert response.json()["data"]["language"] == "new-lang-test-edited"
+
+    #delete the user
     delete_user_identity(test_user_id)
+
+    #edit without login
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    response = client.put(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 403
+    assert response.json()['details'] == "Not authenticated"
+
+    #create a new user and edit the previous user created content
+    test_user_data2 = {
+        "email": "abc2@gmail.com",
+        "password": "passwordabc@2"
+    }
+    response = register(test_user_data2, apptype='API-user')
+    test_user_id2 = [response.json()["registered_details"]["id"]]
+    test_user_token2 = response.json()["token"]
+    headers_auth2 = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token2
+            }
+    response = client.put(UNIT_URL, headers=headers_auth2, json=data)
+    assert response.status_code == 403
+    assert response.json()['error'] == "Permision Denied"
+
+    #delete the user
+    delete_user_identity(test_user_id2)
 
 def test_searching():
     '''Being able to query languages with code, name, country of even other info'''
@@ -239,3 +300,5 @@ def test_searching():
         if lang['language'] == "Sinhala":
             found = True
     assert found    
+
+    

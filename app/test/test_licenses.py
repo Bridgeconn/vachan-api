@@ -212,13 +212,9 @@ def test_put():
 
     #with auth
     response = client.put(UNIT_URL, json=update_data, headers=headers_auth)
-    print(response.json())
     assert response.status_code == 201
     assert response.json()['message'] == "License edited successfully"
     assert response.json()['data']['permissions'] == ["Private_use", "Patent_use"]
-
-    #delete id list
-    delete_user_identity(test_user_id)
 
     update_data = {"code":"LIC-1", "name":"New name for test license"}
     response = client.put(UNIT_URL, json=update_data, headers=headers_auth)
@@ -231,6 +227,24 @@ def test_put():
     assert response.status_code == 201
     assert response.json()['message'] == "License edited successfully"
     assert response.json()['data']['license'] == "A different text"
+
+    #Try to edit with different user
+    test_user_data2 = {
+        "email": "abc2@gmail.com",
+        "password": "passwordabc@2"
+    }
+    response = register(test_user_data2,apptype='API-user')
+    test_user_id2 = [response.json()["registered_details"]["id"]]
+    test_user_token2 = response.json()["token"]
+    headers_auth2 = {"contentType": "application/json",
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+test_user_token2
+            }
+    response = client.put(UNIT_URL, json=update_data, headers=headers_auth2)
+    assert response.status_code == 403
+    assert response.json()['error'] == "Permision Denied"
+
+    delete_user_identity(test_user_id2)
 
     # unavailable code
     update_data['code'] = "LIC-2"
@@ -255,5 +269,8 @@ def test_put():
     resp2 = client.get(UNIT_URL)
     assert resp1.status_code == 200
     assert len(resp1.json()) - len(resp2.json()) == 1
+
+    #delete id list
+    delete_user_identity(test_user_id)
 
     

@@ -11,7 +11,7 @@ test_user_data = {
         "email": "abc@gmail.com",
         "password": "passwordabc@1"
     }
-response = register(test_user_data,apptype='API-user')
+response = register(test_user_data, apptype='API-user')
 test_user_id = [response.json()["registered_details"]["id"]]
 test_user_token = response.json()["token"]
 

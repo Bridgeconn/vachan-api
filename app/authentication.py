@@ -1,5 +1,4 @@
 """Authentication related functions"""
-from enum import unique
 import os
 import json
 from functools import wraps
@@ -77,7 +76,6 @@ access_rules = {
 
 # def metacontent_creator(db_:Session, resource_type, resource_id, user_id):
 #     '''checks if the user is the creator of the given item'''
-    
 #     if resource_type == 'contents':
 #         model_cls = db_models.ContentType
 #         unique_col = model_cls.contentType
@@ -108,8 +106,10 @@ access_rules = {
 #         return True
 #     return False
 
-def project_owner(db_:Session, project_id, user_id):
+#pylint: disable=unused-argument
+def project_owner(db_:Session, db_resource, user_id):
     '''checks if the user is the owner of the given project'''
+    project_id = db_resource.projectId
     project_owners = db_.query(db_models.TranslationProjectUser.userId).filter(
         db_models.TranslationProjectUser.projectId == project_id,
         db_models.TranslationProjectUser.userRole == "owner").all()
@@ -117,8 +117,9 @@ def project_owner(db_:Session, project_id, user_id):
         return True
     return False
 
-def project_member(db_:Session, project_id, user_id):
+def project_member(db_:Session, db_resource, user_id):
     '''checks if the user is the memeber of the given project'''
+    project_id = db_resource.projectId
     project_owners = db_.query(db_models.TranslationProjectUser.userId).filter(
         db_models.TranslationProjectUser.projectId == project_id,
         db_models.TranslationProjectUser.userRole == "member").all()
@@ -126,7 +127,7 @@ def project_member(db_:Session, project_id, user_id):
         return True
     return False
 
-def get_accesstags_permission(request_context, resource_type, db_, resource_id):
+def get_accesstags_permission(request_context, resource_type, db_):
     """get access_tag and permission"""
     endpoint = request_context['endpoint']
     method = request_context['method']
@@ -142,7 +143,7 @@ def get_accesstags_permission(request_context, resource_type, db_, resource_id):
             resource_type = None
         else:
             resource_type = schema_auth.ResourceType.CONTENT
-    required_permission = api_permission_map(endpoint, method,requesting_app, resource_type)
+    required_permission = api_permission_map(endpoint, method ,requesting_app, resource_type)
 
     if resource_type == schema_auth.ResourceType.METACONTENT:
         access_tags = ["meta-content","open-access"]
@@ -150,20 +151,18 @@ def get_accesstags_permission(request_context, resource_type, db_, resource_id):
         access_tags = ['translation-project']
     elif resource_type == schema_auth.ResourceType.USER:
         access_tags = ['user']
-    elif resource_type == schema_auth.ResourceType.CONTENT:
-        source_content = db_.query(db_models.Source.Metadata).get(resource_id)
-        access_tags = source_content['access-tags']
+    # elif resource_type == schema_auth.ResourceType.CONTENT:
+    #     source_content = db_.query(db_models.Source.Metadata).get(resource_id)
+    #     access_tags = source_content['access-tags']
     else:
         raise Exception("Unknown resource type")
 
     return access_tags, required_permission, resource_type
 
-def role_check_has_right(db_, role, user_roles, resource_type, resource_id, *args):
+def role_check_has_right(db_, role, user_roles, resource_type, db_resource, *args):
     """check the has right for roles"""
     user_id = args[0]
-    endpoint = args[1]
-    db_resource = args[2]
-    def created_user_check(resource_type, db_, resource_id, user_id, endpoint):
+    def created_user_check(resource_type, db_, db_resource, user_id):
         """checks for createduser role"""
         has_rights = False
         # if resource_type == schema_auth.ResourceType.CONTENT:
@@ -173,35 +172,33 @@ def role_check_has_right(db_, role, user_roles, resource_type, resource_id, *arg
         #     rsc_type = endpoint.split('/')[-1]
         #     if metacontent_creator(db_, rsc_type, resource_id, user_id):
         #         has_rights =  True
-        createdUser = db_resource.createdUser
-        print("createdUSer from check =====>>>>>",createdUser)
-        print("user id from check =====>>>>>",user_id)
-        if createdUser == user_id:
+        created_user = db_resource.createdUser
+        if created_user == user_id:
             has_rights = True
         return has_rights
 
-    def project_owner_check(resource_type,db_, resource_id, user_id):
+    def project_owner_check(resource_type, db_, db_resource, user_id):
         """checks for project owner role"""
         has_rights = False
         if role == "projectOwner" and resource_type == schema_auth.ResourceType.PROJECT:
-            if project_owner(db_, resource_id, user_id):
+            if project_owner(db_, db_resource, user_id):
                 has_rights =  True
         return has_rights
 
-    def project_member_check(db_, resource_id, user_id, resource_type):
+    def project_member_check(resource_type, db_, db_resource, user_id):
         """checks for creaproject member role"""
         has_rights = False
         if role == "projectMember" and resource_type == schema_auth.ResourceType.PROJECT:
-            if project_member(db_, resource_id, user_id):
+            if project_member(db_, db_resource, user_id):
                 has_rights =  True
         return has_rights
 
-    def registred_user_check(user_id):
+    def registred_user_check(resource_type, db_, db_resource, user_id):
         """check registered user id is none or not"""
         has_rights =False
         if not user_id is None:
             has_rights = True
-        return has_rights    
+        return has_rights
 
     switcher = {
         "noAuthRequired" : True,
@@ -213,7 +210,7 @@ def role_check_has_right(db_, role, user_roles, resource_type, resource_id, *arg
     has_rights =  switcher.get(role, False)
 
     if not isinstance(has_rights,bool):
-        has_rights = has_rights(resource_type, db_, resource_id, user_id, endpoint)
+        has_rights = has_rights(resource_type, db_, db_resource, user_id)
 
     if user_roles and role in user_roles:
         has_rights = True
@@ -223,20 +220,20 @@ def role_check_has_right(db_, role, user_roles, resource_type, resource_id, *arg
 def check_access_rights(db_:Session, required_params, db_resource=None):
     """check access right"""
     request_context = required_params.get('request_context',None)
-    resource_id = required_params.get('resource_id',None)
+    # resource_id = required_params.get('resource_id',None)
     user_id = required_params.get('user_id',None)
     user_roles = required_params.get('user_roles',None)
     resource_type = required_params.get('resource_type',None)
-    endpoint = request_context['endpoint']
+    # endpoint = request_context['endpoint']
     access_tags,required_permission, resource_type = \
-        get_accesstags_permission(request_context,resource_type,db_,resource_id)
+        get_accesstags_permission(request_context, resource_type, db_)
     has_rights = False
     for tag in access_tags:
         if required_permission in access_rules[tag].keys():
             allowed_users = access_rules[tag][required_permission]
         for role in allowed_users:
             has_rights = role_check_has_right(db_, role, user_roles, resource_type,
-                 resource_id, user_id, endpoint, db_resource)
+                db_resource, user_id)
             if has_rights:
                 break
         if has_rights:
@@ -249,7 +246,6 @@ def verify_auth_decorator_params(kwargs):
     required_params = {
             "request_context":"",
             "db_":"",
-            "resource_id":"",
             "user_id":"",
             "user_roles":"",
             "resource_type":""
@@ -273,7 +269,7 @@ def verify_auth_decorator_params(kwargs):
             request_context['app'] = request.headers['app']
         else:
             request_context['app'] = None
-        required_params['request_context'] = request_context    
+        required_params['request_context'] = request_context
     return required_params
 
 #decorator for authentication and access check
@@ -281,26 +277,32 @@ def get_auth_access_check_decorator(func):
     """Decorator function for auth and access check for all routers"""
     @wraps(func)
     async def wrapper(*args, **kwargs):
-        #calling router functions
-        response = await func(*args, **kwargs)
-        required_params = verify_auth_decorator_params(kwargs)
         db_resource =None
-        print("Response full >>>>>>>>>>>>>>>>>>",response)
-        if required_params['request_context']['method'] != 'GET':
-            db_ = required_params["db_"]
-            db_resource = response['data']
-            # db_.commit()
-            # db_.refresh(data)
-        elif required_params['request_context']['method'] == 'GET' and not \
-            required_params['request_context']['endpoint'].startswith("/v2/user"):
-            db_resource = response['data']
+        verified = False
+        required_params = verify_auth_decorator_params(kwargs)
+        db_ = required_params["db_"]
 
-        verified = check_access_rights(required_params['db_'], required_params, db_resource)
-        if not verified:
-            raise PermisionException("Access Permission Denied for the URL")
-
-        #After router function execution
-        #returning final response from router function
+        if required_params['request_context']['endpoint'].startswith("/v2/user"):#pylint: disable=E1126
+            verified = check_access_rights(db_, required_params, db_resource)
+            if not verified:
+                raise PermisionException("Access Permission Denied for the URL")
+            #calling router functions
+            response = await func(*args, **kwargs)
+        else:
+            #calling router functions
+            response = await func(*args, **kwargs)
+            if required_params['request_context']['method'] != 'GET':#pylint: disable=E1126
+                db_resource = response['data']
+                verified = check_access_rights(db_, required_params, db_resource)
+                if not verified:
+                    raise PermisionException("Access Permission Denied for the URL")
+                db_.commit()#pylint: disable=E1101
+                db_.refresh(db_resource)#pylint: disable=E1101
+            elif required_params['request_context']['method'] == 'GET':#pylint: disable=E1126
+                db_resource = response
+                verified = check_access_rights(db_, required_params, db_resource)
+                if not verified:
+                    raise PermisionException("Access Permission Denied for the URL")
         return response
     return wrapper
 
