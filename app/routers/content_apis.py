@@ -264,6 +264,8 @@ def add_source(source_obj : schemas.SourceCreate = Body(...),
     * The required content type, version, language and license should be present in DB,
     * if not create them first.
     * Revision, if not provided, will be assumed as 1
+    * AccessPermissions is list of permissions ["content", "open-access", "publishable",
+        "downloadable","derivable"]. Default will be ["content"]
     '''
     log.info('In add_source')
     log.debug('source_obj: %s',source_obj)
@@ -273,6 +275,7 @@ def add_source(source_obj : schemas.SourceCreate = Body(...),
     source_obj.revision + "_" + source_obj.contentType
     if len(structurals_crud.get_sources(db_, source_name = source_name)) > 0:
         raise AlreadyExistsException("%s already present"%source_name)
+    source_obj.metaData['accessPermissions'] = source_obj.accessPermissions
     return {'message': "Source created successfully",
     "data": structurals_crud.create_source(db_=db_, source=source_obj, source_name=source_name,
         user_id=None)}
@@ -283,12 +286,15 @@ def add_source(source_obj : schemas.SourceCreate = Body(...),
     status_code=201, tags=["Sources"])
 def edit_source(source_obj: schemas.SourceEdit = Body(...), db_: Session = Depends(get_db)):
     ''' Changes one or more fields of source. Item identifier is source_name.
-    Active field can be used to activate or deactivate a content.
-    Deactivated items are not included in normal fetch results if not specified otherwise'''
+    * Active field can be used to activate or deactivate a content.
+    * Deactivated items are not included in normal fetch results if not specified otherwise
+    * AccessPermissions is list of permissions ["content", "open-access", "publishable",
+        "downloadable", "derivable"]. Edit accessPermission will overwrite the current list'''
     log.info('In edit_source')
     log.debug('source_obj: %s',source_obj)
     if len(structurals_crud.get_sources(db_, source_name = source_obj.sourceName)) == 0:
         raise NotAvailableException("Source %s not found"%(source_obj.sourceName))
+    source_obj.metaData['accessPermissions'] = source_obj.accessPermissions
     return {'message': "Source edited successfully",
     "data": structurals_crud.update_source(db_=db_, source=source_obj, user_id=None)}
 
