@@ -30,6 +30,14 @@ def test_get_notavailable_content_type():
     response = client.get(UNIT_URL+"?content_type=bib")
     assert_not_available_content(response)
 
+    #test get not avaialble content with auth header
+    headers_auth = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+    response = client.get(UNIT_URL+"?content_type=bib",headers=headers_auth)
+    assert_not_available_content(response)
+
 def test_post_default():
     '''positive test case, checking for correct return object'''
     data = {"contentType":"altbible"}

@@ -2,7 +2,8 @@
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
-from .test_auth_basic import register,delete_user_identity
+from .test_auth_basic import register,delete_user_identity,SUPER_USER,\
+    SUPER_PASSWORD, login, logout_user
 
 UNIT_URL = '/v2/languages'
 
@@ -30,13 +31,26 @@ def test_get_default():
     check_default_get(UNIT_URL, assert_positive_get)
 
 def test_get_language_code():
-    '''positive test case, with one optional params, code'''
+    '''positive test case, with one optional params, code wihtout registered user'''
     response = client.get(UNIT_URL+'?language_code=hi')
     assert response.status_code == 200
     assert isinstance( response.json(), list)
     assert len(response.json()) == 1
     assert_positive_get(response.json()[0])
     assert response.json()[0]['code'] == 'hi'
+
+    #with registred user header
+    headers_auth = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+    response = client.get(UNIT_URL+'?language_code=hi',headers=headers_auth)
+    assert response.status_code == 200
+    assert isinstance( response.json(), list)
+    assert len(response.json()) == 1
+    assert_positive_get(response.json()[0])
+    assert response.json()[0]['code'] == 'hi'
+
 
 def test_get_language_code_upper_case():
     '''positive test case, with one optional params, code in upper case'''
@@ -270,6 +284,32 @@ def test_put_languages():
 
     #delete the user
     delete_user_identity(test_user_id2)
+
+    #super admin can edit the content
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }      
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+
+    data = {
+      "languageId": language_id,  
+      "language": "new-lang-test-edited-by-admin",
+      "code": "x-abc"
+    }
+    headers_admin = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+            }
+    response = client.put(UNIT_URL, headers=headers_admin, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Language edited successfully"
+    assert_positive_get(response.json()['data'])
+    assert response.json()["data"]["language"] == "new-lang-test-edited-by-admin"
+
+    logout_user(token_admin)
 
 def test_searching():
     '''Being able to query languages with code, name, country of even other info'''

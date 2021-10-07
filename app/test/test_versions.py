@@ -2,7 +2,8 @@
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
-from .test_auth_basic import register,delete_user_identity
+from .test_auth_basic import register,delete_user_identity,login,\
+        SUPER_USER,SUPER_PASSWORD,logout_user  
 
 UNIT_URL = '/v2/versions'
 
@@ -222,6 +223,15 @@ def test_get_after_adding_data():
         assert_positive_get(item)
         assert item['versionAbbreviation'] == 'AAA'
 
+    # filter with abbr with registered user
+    test_user_id,headers_auth = create_test_user()
+    response = client.get(UNIT_URL + '?version_abbreviation=AAA',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+    for item in response.json():
+        assert_positive_get(item)
+        assert item['versionAbbreviation'] == 'AAA'
+    delete_user_identity(test_user_id)        
 
     # filter with abbr, for not available content
     response = client.get(UNIT_URL + '?version_abbreviation=CCC')
@@ -303,3 +313,30 @@ def test_put_version():
     assert response.json()['error'] == "Permision Denied"
 
     delete_user_identity(test_user_id2)
+
+    #edit with super user
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }      
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+
+    data = {
+        "versionId": version_id,
+        "versionAbbreviation": "XYZ",
+        "versionName": "Xyz version edited by admin",
+        "revision": "1",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    headers_admin = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+            }
+    response = client.put(UNIT_URL, headers=headers_admin, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Version edited successfully"
+    assert response.json()["data"]["versionName"] == "Xyz version edited by admin"
+
+    logout_user(token_admin)

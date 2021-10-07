@@ -260,10 +260,10 @@ def get_source(content_type: str=Query(None, example="commentary"),
 def add_source(source_obj : schemas.SourceCreate = Body(...),
     db_: Session = Depends(get_db)):
     ''' Creates a new source entry in sources table.
-    Also creates all associtated tables for the content type.
-    The required content type, version, language and license should be present in DB,
-    if not create them first.
-    Revision, if not provided, will be assumed as 1
+    * Also creates all associtated tables for the content type.
+    * The required content type, version, language and license should be present in DB,
+    * if not create them first.
+    * Revision, if not provided, will be assumed as 1
     '''
     log.info('In add_source')
     log.debug('source_obj: %s',source_obj)

@@ -1,7 +1,8 @@
 '''Test cases for licenses related APIs'''
 from . import client, check_default_get
 from . import assert_input_validation_error, assert_not_available_content
-from .test_auth_basic import register,delete_user_identity
+from .test_auth_basic import register,delete_user_identity,logout_user,\
+    login,SUPER_PASSWORD,SUPER_USER
 
 UNIT_URL = '/v2/licenses'
 headers = {"contentType": "application/json", "accept": "application/json"}
@@ -32,8 +33,16 @@ def test_get():
     '''positive test case, without optional params'''
     check_default_get(UNIT_URL, assert_positive_get)
 
-    # '''positive test case, with one optional params, code'''
+    # '''positive test case, with one optional params, code and without registered user'''
     response = client.get(UNIT_URL+'?license_code=ISC')
+    assert response.status_code == 200
+    assert isinstance( response.json(), list)
+    assert len(response.json()) == 1
+    assert_positive_get(response.json()[0])
+    assert response.json()[0]['code'] == 'ISC'
+
+    # '''positive test case, with one optional params, code with registered user header'''
+    response = client.get(UNIT_URL+'?license_code=ISC',headers=headers_auth)
     assert response.status_code == 200
     assert isinstance( response.json(), list)
     assert len(response.json()) == 1
@@ -245,6 +254,32 @@ def test_put():
     assert response.json()['error'] == "Permision Denied"
 
     delete_user_identity(test_user_id2)
+
+    #try to edit with super admin
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }      
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+
+    data = {
+      "license": "license edited by admin",
+      "code": "LIC-1",
+      "name": "Test License version 1",
+      "permissions": ["Private_use"]
+    }
+    headers_admin = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+            }
+    response = client.put(UNIT_URL, headers=headers_admin, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "License edited successfully"
+    assert response.json()['data']['license'] == "license edited by admin"
+
+    logout_user(token_admin)
 
     # unavailable code
     update_data['code'] = "LIC-2"
