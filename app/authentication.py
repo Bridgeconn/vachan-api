@@ -306,7 +306,7 @@ def get_auth_access_check_decorator(func):
         return response
     return wrapper
 
-######################################### Auth Functions #################################################
+######################################### Auth Functions ####################
 
 #Class handles the session validation and logout
 class AuthHandler():
