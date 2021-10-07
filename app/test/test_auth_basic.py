@@ -429,7 +429,7 @@ def test_role_assignment_superadmin(create_user_fixture):
     role_list = ["VachanAdmin"]
     response = assign_roles(user1,user2_id,role_list)
     assert response.status_code == 403
-    assert response.json()["details"] == "User have no permision to access API"
+    assert response.json()["details"] == "Access Permission Denied for the URL"
 
     #role assign with super user
     data = {

@@ -52,7 +52,7 @@ def api_permission_map(endpoint, method, requesting_app, resource):
                 permission = "refer-for-translation"
             elif requesting_app == schema_auth.App.VACHAN:
                 permission = "view-on-web"
-            elif requesting_app == schema_auth.App.VACHAN:
+            elif requesting_app == schema_auth.App.VACHANADMIN:
                 permission = "read-via-vachanadmin"
             elif requesting_app is None:
                 permission = "read-via-api"
@@ -70,7 +70,7 @@ def api_permission_map(endpoint, method, requesting_app, resource):
                 permission = "refer-for-translation"
             elif requesting_app == schema_auth.App.VACHAN:
                 permission = "view-on-web"
-            elif requesting_app == schema_auth.App.VACHAN:
+            elif requesting_app == schema_auth.App.VACHANADMIN:
                 permission = "view-on-vachan-admin"
             elif requesting_app is None:
                 permission = "read-via-api"
@@ -91,7 +91,7 @@ def api_permission_map(endpoint, method, requesting_app, resource):
                 permission = "refer-for-translation"
             elif requesting_app == schema_auth.App.VACHAN:
                 permission = "view-on-web"
-            elif requesting_app == schema_auth.App.VACHAN:
+            elif requesting_app == schema_auth.App.VACHANADMIN:
                 permission = "view-on-vachan-admin"
             elif requesting_app is None:
                 permission = "read-via-api"
@@ -115,6 +115,8 @@ def api_permission_map(endpoint, method, requesting_app, resource):
         "/v2/licenses" : switch_contents,
 
         "/v2/versions" : switch_contents,
+
+        "/v2/sources" : switch_contents,
 
         "/v2/lookup/bible/books" : switch_contents,
 

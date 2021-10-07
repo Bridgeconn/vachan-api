@@ -21,9 +21,9 @@ CREATE TABLE public.languages (
     script_direction text,
     metadata jsonb,
     created_at timestamp with time zone DEFAULT NOW(),
-    created_user int NULL,
+    created_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
-    last_updated_user int NULL
+    last_updated_user text NULL
 );
 
 ALTER SEQUENCE public.languages_language_id_seq RESTART WITH 100000;
@@ -46,9 +46,9 @@ CREATE TABLE public.licenses (
     license_text text NOT NULL,
     permissions text[],
     created_at timestamp with time zone DEFAULT NOW(),
-    created_user int NULL,
+    created_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
-    last_updated_user int NULL,
+    last_updated_user text NULL,
     active boolean DEFAULT true NOT NULL,
     metadata jsonb NULL
 );
@@ -64,9 +64,9 @@ CREATE TABLE public.versions (
     revision integer DEFAULT 1,
     metadata jsonb,
     created_at timestamp with time zone DEFAULT NOW(),
-    created_user int NULL,
+    created_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
-    last_updated_user int NULL,
+    last_updated_user text NULL,
     UNIQUE(version_code, revision)
 );
 

@@ -4,6 +4,7 @@ This is to be used manually during develepment testing'''
 import json
 import requests
 from . import client
+from .test_versions import check_post
 
 BASE_URL = "v2/"
 headers = {"contentType": "application/json", "accept": "application/json"}
@@ -363,7 +364,8 @@ alignment_data = [
 
 def test_end_to_end_translation():
     '''happy path test for AGMT translation workflow'''
-    resp = client.post(BASE_URL+"versions", headers=headers, json=ver_data)
+    # resp = client.post(BASE_URL+"versions", headers=headers, json=ver_data)
+    resp = check_post(ver_data)
     assert resp.json()['message'] == "Version created successfully"
 
     resp = client.post(BASE_URL+"sources", headers=headers, json=src_data)
