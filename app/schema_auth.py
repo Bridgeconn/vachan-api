@@ -15,7 +15,7 @@ class App(str, Enum):
     '''Defined apps'''
     AG = "Autographa"
     VACHAN = "Vachan-online or vachan-app"
-    VACHANADMIN = "Vachan Admin"
+    VACHANADMIN = "VachanAdmin"
     API = "API-user"
 
 class Registration(BaseModel):
@@ -32,6 +32,8 @@ class AdminRoles(str, Enum):
     AGADMIN = 'AgAdmin'
     AGUSER = 'AgUser'
     VACHANUSER = 'VachanUser'
+    APIUSER = 'APIUser'
+    BCSDEV = 'BcsDeveloper'
 
 class UserRole(BaseModel):
     """kratos user role input"""

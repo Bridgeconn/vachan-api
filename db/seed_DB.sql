@@ -82,9 +82,9 @@ CREATE TABLE public.sources (
     language_id int NOT NULL REFERENCES languages(language_id) ON DELETE CASCADE,
     version_id int NOT NULL REFERENCES versions(version_id) ON DELETE CASCADE,
     created_at timestamp with time zone DEFAULT NOW(),
-    created_user int NULL,
+    created_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
-    last_updated_user int NULL,
+    last_updated_user text NULL,
     active boolean DEFAULT true NOT NULL,
     metadata jsonb NULL
 );
@@ -109,9 +109,9 @@ CREATE TABLE public.translation_projects(
     source_document_format text DEFAULT 'Bible USFM',
     active boolean default true,
     metadata jsonb,
-    created_user int,
+    created_user text,
     created_at timestamp with time zone DEFAULT NOW(),
-    last_updated_user int,
+    last_updated_user text,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
     UNIQUE(project_name, created_user)
 );

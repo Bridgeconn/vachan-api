@@ -1,6 +1,7 @@
 '''API endpoints related to content management'''
 from typing import List
 from fastapi import APIRouter, Query, Body, Depends, Path , Request
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 import schemas
@@ -11,6 +12,12 @@ from authentication import AuthHandler, get_auth_access_check_decorator
 
 router = APIRouter()
 auth_handler = AuthHandler()
+
+#optional authentication with token or none
+optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth", auto_error=False)
+async def get_user_or_none(token: str = Depends(optional_oauth2_scheme)):
+    # print("token===>",token)
+    return token
 
 #pylint: disable=too-many-arguments,unused-argument
 ##### Content types #####
@@ -228,7 +235,8 @@ async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...
     response_model=List[schemas.SourceResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Sources"])
-def get_source(content_type: str=Query(None, example="commentary"),
+@get_auth_access_check_decorator
+async def get_source(request: Request,content_type: str=Query(None, example="commentary"),
     version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
     revision: int=Query(None, example=1),
     language_code: schemas.LangCodePattern=Query(None,example="en"),
@@ -236,7 +244,8 @@ def get_source(content_type: str=Query(None, example="commentary"),
     metadata: schemas.MetaDataPattern=Query(None,
         example='{"otherName": "KJBC, King James Bible Commentaries"}'),
     active: bool = True, latest_revision: bool = True,
-    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
+    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
+    user_token =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     '''Fetches all sources and their details.
     * optional query parameters can be used to filter the result set
     * If revision is not explictly set or latest_revision is not set to False,
@@ -257,8 +266,9 @@ def get_source(content_type: str=Query(None, example="commentary"),
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Sources"])
-def add_source(source_obj : schemas.SourceCreate = Body(...),
-    db_: Session = Depends(get_db)):
+@get_auth_access_check_decorator  
+async def add_source(request: Request, source_obj : schemas.SourceCreate = Body(...),
+    user_details = Depends(auth_handler.kratos_session_validation), db_: Session = Depends(get_db)):
     ''' Creates a new source entry in sources table.
     * Also creates all associtated tables for the content type.
     * The required content type, version, language and license should be present in DB,
@@ -275,16 +285,20 @@ def add_source(source_obj : schemas.SourceCreate = Body(...),
     source_obj.revision + "_" + source_obj.contentType
     if len(structurals_crud.get_sources(db_, source_name = source_name)) > 0:
         raise AlreadyExistsException("%s already present"%source_name)
+    if 'content' not in source_obj.accessPermissions:
+        source_obj.accessPermissions.append(schemas.SourcePermisions.CONTENT)
     source_obj.metaData['accessPermissions'] = source_obj.accessPermissions
     return {'message': "Source created successfully",
     "data": structurals_crud.create_source(db_=db_, source=source_obj, source_name=source_name,
-        user_id=None)}
+        user_id=user_details['user_id'])}
 
 @router.put('/v2/sources', response_model=schemas.SourceUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Sources"])
-def edit_source(source_obj: schemas.SourceEdit = Body(...), db_: Session = Depends(get_db)):
+@get_auth_access_check_decorator
+async def edit_source(request: Request,source_obj: schemas.SourceEdit = Body(...),
+    user_details = Depends(auth_handler.kratos_session_validation),db_: Session = Depends(get_db)):
     ''' Changes one or more fields of source. Item identifier is source_name.
     * Active field can be used to activate or deactivate a content.
     * Deactivated items are not included in normal fetch results if not specified otherwise
@@ -294,9 +308,12 @@ def edit_source(source_obj: schemas.SourceEdit = Body(...), db_: Session = Depen
     log.debug('source_obj: %s',source_obj)
     if len(structurals_crud.get_sources(db_, source_name = source_obj.sourceName)) == 0:
         raise NotAvailableException("Source %s not found"%(source_obj.sourceName))
+    if 'content' not in source_obj.accessPermissions:
+        source_obj.accessPermissions.append(schemas.SourcePermisions.CONTENT)    
     source_obj.metaData['accessPermissions'] = source_obj.accessPermissions
     return {'message': "Source edited successfully",
-    "data": structurals_crud.update_source(db_=db_, source=source_obj, user_id=None)}
+    "data": structurals_crud.update_source(db_=db_, source=source_obj, 
+        user_id=user_details['user_id'])}
 
 # ############ Bible Books ##########
 @router.get('/v2/lookup/bible/books',
