@@ -1309,7 +1309,7 @@ def getTokenTranslationList(projectId):
 				if key not in tokenList:
 					tokenList[key] = this_book_token_List[key]
 		cursor.close()
-		result_list = [[key]+this_book_token_List[key] for key in this_book_token_List]
+		result_list = [[key]+tokenList[key] for key in tokenList]
 		jsonOut = json.dumps(result_list)
 		return jsonOut
 	except Exception as e:
