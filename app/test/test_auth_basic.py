@@ -2,6 +2,8 @@
 import os
 import pytest
 from urllib.parse import quote
+
+from app import schema_auth
 from . import assert_input_validation_error, client
 
 LOGIN_URL = '/v2/user/login'
@@ -171,7 +173,7 @@ def test_login_register(create_user_fixture):
         "firstname": "user registration",
         "lastname": "ABC Test"
     }
-    response = register(data,apptype='API-user')
+    response = register(data,apptype=schema_auth.App.API.value)
     abc_id = response.json()["registered_details"]["id"]
 
     #test user ABC login after register
@@ -189,7 +191,7 @@ def test_login_register(create_user_fixture):
         "firstname": "user registration",
         "lastname": "ABC Test"
     }
-    response = register(data,apptype='API-user')
+    response = register(data,apptype=schema_auth.App.API.value)
     assert response.status_code == 400
     assert response.json()['error'] == "HTTP Error"
     assert response.json()['details'] == \
@@ -206,7 +208,7 @@ def test_incorrect_email():
         "email": "incorrectemail",
         "password": "passwordabc@1"
     }
-    response = register(data,apptype='API-user')
+    response = register(data,apptype=schema_auth.App.API.value)
     assert response.status_code == 422
     assert response.json()['error'] == "Unprocessable Data"
 
@@ -218,7 +220,7 @@ def test_validate_password():
         "email": "PQR@gmail.com",
         "password": "test"
     }
-    response = register(data,apptype='API-user')
+    response = register(data,apptype=schema_auth.App.API.value)
     assert response.status_code == 422
     assert response.json()['error'] == "Unprocessable Data"
 
@@ -227,7 +229,7 @@ def test_validate_password():
         "email": "PQR@gmail.com",
         "password": "password"
     }
-    response = register(data,apptype='API-user')
+    response = register(data,apptype=schema_auth.App.API.value)
     assert response.status_code == 422
     assert response.json()['error'] == "Unprocessable Data"
 
@@ -241,8 +243,9 @@ def test_optional_register_params(create_user_fixture):
         "firstname": "user registration",
         "lastname": "ABC Test"
     }
-    response = register(data,apptype='API-user')
-    assert response.json()["registered_details"]["Permisions"] == ['API-user']
+    response = register(data,apptype=schema_auth.App.API.value)
+    assert response.json()["registered_details"]["Permisions"] == \
+        [schema_auth.App.API.value]
     abc_id = response.json()["registered_details"]["id"]
 
     #no first and last name, registration execute without error
@@ -250,7 +253,7 @@ def test_optional_register_params(create_user_fixture):
         "email": "abc1@gmail.com",
         "password": "passwordabc@1"
     }
-    response1 = register(data,apptype='API-user')
+    response1 = register(data,apptype=schema_auth.App.API.value)
     abc1_id = response1.json()["registered_details"]["id"]
 
     users_list = create_user_fixture
@@ -264,19 +267,19 @@ def test_register_incorrectdatas():
   "firstname": "user registration",
   "lastname": "ABC Test"
 }
-    response = register(data,apptype='API-user')
+    response = register(data,apptype=schema_auth.App.API.value)
     assert_input_validation_error(response)
 
     data = {
   "email": "abc@gmail.com"
 }
-    response = register(data,apptype='API-user')
+    response = register(data,apptype=schema_auth.App.API.value)
     assert_input_validation_error(response)
 
     data = {
   "password": "passwordabc@1"
 }
-    response = register(data,apptype='API-user')
+    response = register(data,apptype=schema_auth.App.API.value)
     assert_input_validation_error(response)
 
 
@@ -291,9 +294,10 @@ def test_register_roles(create_user_fixture):
         "firstname": "user XYZ1",
         "lastname": "Vachan role Test"
     }
-    response1 = register(data_xyz1,apptype="Vachan-online or vachan-app")
+    response1 = register(data_xyz1,apptype=schema_auth.App.VACHAN.value)
     xyz1_id = response1.json()["registered_details"]["id"]
-    assert response1.json()["registered_details"]["Permisions"] == ['Vachan-online or vachan-app']
+    assert response1.json()["registered_details"]["Permisions"] == \
+            [schema_auth.App.VACHAN.value]
 
     data_xyz2 = {
         "email": "xyz2@gmail.com",
@@ -301,19 +305,20 @@ def test_register_roles(create_user_fixture):
         "firstname": "user XYZ2",
         "lastname": "Ag role Test"
     }
-    response2 = register(data_xyz2,apptype="Autographa")
+    response2 = register(data_xyz2,apptype= schema_auth.App.AG.value)
     xyz2_id = response2.json()["registered_details"]["id"]
-    assert response2.json()["registered_details"]["Permisions"] == ['Autographa']
-
-    data_xyz3 = {
+    assert response2.json()["registered_details"]["Permisions"] == \
+        [ schema_auth.App.AG.value]
+    data_xyz3 = \
+        {
         "email": "xyz3@gmail.com",
         "password": "passwordxyz3@1",
         "firstname": "user XYZ3",
         "lastname": "No role Test"
     }
-    response3 = register(data_xyz3,apptype="API-user")
+    response3 = register(data_xyz3,apptype=schema_auth.App.API.value)
     xyz3_id = response3.json()["registered_details"]["id"]
-    assert response3.json()["registered_details"]["Permisions"] == ['API-user']
+    assert response3.json()["registered_details"]["Permisions"] == [schema_auth.App.API.value]
 
     data_xyz4 = {
         "email": "xyz4@gmail.com",
@@ -321,9 +326,10 @@ def test_register_roles(create_user_fixture):
         "firstname": "user XYZ4",
         "lastname": "No role Test"
     }
-    response4 = register(data_xyz4,apptype="Vachan Admin")
+    response4 = register(data_xyz4,apptype=schema_auth.App.VACHANADMIN.value)
     xyz4_id = response4.json()["registered_details"]["id"]
-    assert response4.json()["registered_details"]["Permisions"] == ['Vachan Admin']
+    assert response4.json()["registered_details"]["Permisions"] == \
+        [schema_auth.App.VACHANADMIN.value]
 
     #login check for users
     data_xyz1 = {
@@ -364,32 +370,36 @@ def test_register_roles(create_user_fixture):
         "firstname": "user XYZ1",
         "lastname": "Vachan role Test",
     }
-    response1 = register_role_appending(data_xyz1,apptype="API-user")
-    assert response1.json()["registered_details"]["Permisions"] == ['Vachan-online or vachan-app','API-user']
+    response1 = register_role_appending(data_xyz1,apptype=schema_auth.App.API.value)
+    assert response1.json()["registered_details"]["Permisions"] == \
+        [schema_auth.App.VACHAN.value,schema_auth.App.API.value]
 
     # #role changed ag --> vachan
     data_xyz2 = {
         "email": "xyz2@gmail.com",
         "password": "passwordxyz2@1"
     }
-    response2 = register_role_appending(data_xyz2,apptype="Vachan-online or vachan-app")
-    assert response2.json()["registered_details"]["Permisions"] == ['Autographa','Vachan-online or vachan-app']
+    response2 = register_role_appending(data_xyz2,apptype=schema_auth.App.VACHAN.value)
+    assert response2.json()["registered_details"]["Permisions"] ==\
+        [schema_auth.App.AG.value,schema_auth.App.VACHAN.value]
 
     #role changed none --> ag
     data_xyz3 = {
         "email": "xyz3@gmail.com",
         "password": "passwordxyz3@1"
     }
-    response3 = register_role_appending(data_xyz3,apptype="Autographa")
-    assert response3.json()["registered_details"]["Permisions"] == ['API-user','Autographa']
+    response3 = register_role_appending(data_xyz3,apptype=schema_auth.App.AG.value)
+    assert response3.json()["registered_details"]["Permisions"] ==\
+        [schema_auth.App.API.value,schema_auth.App.AG.value]
 
     #role changed Vachan Admin --> ag
     data_xyz4 = {
         "email": "xyz4@gmail.com",
         "password": "passwordxyz4@1"
     }
-    response4 = register_role_appending(data_xyz4,apptype="Autographa")
-    assert response4.json()["registered_details"]["Permisions"] == ['Vachan Admin','Autographa']
+    response4 = register_role_appending(data_xyz4,apptype=schema_auth.App.AG.value)
+    assert response4.json()["registered_details"]["Permisions"] == \
+        [schema_auth.App.VACHANADMIN.value,schema_auth.App.AG.value]
 
     users_list = create_user_fixture
     users_list.append(xyz1_id)
@@ -397,7 +407,7 @@ def test_register_roles(create_user_fixture):
     users_list.append(xyz3_id)
     users_list.append(xyz4_id)
 
-#Register two users with app_info=None
+#Register two users with app_info=API
 #and make them VachanAdmin and AgAdmin
 #(ensure only SuperAdmin should be able to do this)
 def test_role_assignment_superadmin(create_user_fixture):
@@ -408,17 +418,17 @@ def test_role_assignment_superadmin(create_user_fixture):
         "email": "vachan@gmail.com",
         "password": "passwordvachan@1"
     }
-    response1 = register(user1,apptype='API-user')
+    response1 = register(user1,apptype=schema_auth.App.API.value)
     user1_id = response1.json()["registered_details"]["id"]
-    assert response1.json()["registered_details"]["Permisions"] == ['API-user']
+    assert response1.json()["registered_details"]["Permisions"] == [schema_auth.App.API.value]
 
     user2 = {
         "email": "ag@gmail.com",
         "password": "passwordag@1"
     }
-    response2 = register(user2,apptype='API-user')
+    response2 = register(user2,apptype=schema_auth.App.API.value)
     user2_id = response2.json()["registered_details"]["id"]
-    assert response2.json()["registered_details"]["Permisions"] == ['API-user']
+    assert response2.json()["registered_details"]["Permisions"] == [schema_auth.App.API.value]
 
     #try to change user2 permision after login user1
     user1 = {
@@ -426,7 +436,7 @@ def test_role_assignment_superadmin(create_user_fixture):
         "password": "passwordvachan@1"
     }
 
-    role_list = ["VachanAdmin"]
+    role_list = [schema_auth.App.VACHANADMIN.value]
     response = assign_roles(user1,user2_id,role_list)
     assert response.status_code == 403
     assert response.json()["details"] == "Access Permission Denied for the URL"
@@ -436,15 +446,17 @@ def test_role_assignment_superadmin(create_user_fixture):
         "user_email": SUPER_USER,
         "password": SUPER_PASSWORD
     }
-    role_list = ["VachanAdmin"]
+    role_list = [schema_auth.AdminRoles.VACHANADMIN.value]
     response1 = assign_roles(data,user1_id,role_list)
     assert response1.status_code == 201
-    assert response1.json()["role_list"] == ["API-user", "VachanAdmin"]
+    assert response1.json()["role_list"] == \
+        [schema_auth.AdminRoles.APIUSER.value, schema_auth.AdminRoles.VACHANADMIN.value]
 
-    role_list = ["AgAdmin"]
+    role_list = [schema_auth.AdminRoles.AGADMIN.value]
     response2 = assign_roles(data,user2_id,role_list)
     assert response2.status_code == 201
-    assert response2.json()["role_list"] == ["API-user", "AgAdmin"]
+    assert response2.json()["role_list"] == \
+        [schema_auth.AdminRoles.APIUSER.value, schema_auth.AdminRoles.AGADMIN.value]
 
     #assigning a wrong role that is not allowed
     role_list = ["AllAdmin"]
@@ -477,13 +489,13 @@ def test_token_expiry(create_user_fixture):
         "email": "user@gmail.com",
         "password": "passworduser@1"
     }
-    response2 = register(user,apptype='API-user')
+    response2 = register(user,apptype=schema_auth.App.API.value)
     user_id = response2.json()["registered_details"]["id"]
-    assert response2.json()["registered_details"]["Permisions"] == ['API-user']
+    assert response2.json()["registered_details"]["Permisions"] == [schema_auth.App.API.value]
 
     role_data = {
         "userid": user_id,
-        "roles": ["AgAdmin"]
+        "roles": [schema_auth.AdminRoles.AGADMIN.value]
     }
     headers = {"contentType": "application/json",
                 "accept": "application/json",
@@ -496,3 +508,4 @@ def test_token_expiry(create_user_fixture):
 
     assert response.status_code == 401
     assert response.json()["error"] == "Authentication Error"
+

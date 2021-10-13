@@ -16,6 +16,7 @@ auth_handler = AuthHandler()
 #optional authentication with token or none
 optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth", auto_error=False)
 async def get_user_or_none(token: str = Depends(optional_oauth2_scheme)):
+    """optional auth for getting token of logined user not raise error if no auth"""
     # print("token===>",token)
     return token
 
@@ -28,7 +29,7 @@ async def get_user_or_none(token: str = Depends(optional_oauth2_scheme)):
 @get_auth_access_check_decorator
 async def get_contents(request: Request,content_type: str = Query(None, example="bible"),
      skip: int = Query(0, ge=0),limit: int = Query(100, ge=0),
-     db_: Session = Depends(get_db)):
+     user_token =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     '''fetches all the contents types supported and their details
     * the optional query parameter can be used to filter the result set
     * skip=n: skips the first n objects in return list
@@ -70,7 +71,8 @@ async def get_language(request: Request,
     language_code : schemas.LangCodePattern = Query(None, example="hi"),
     language_name: str = Query(None, example="hindi"),
     search_word: str = Query(None, example="Sri Lanka"),
-    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
+    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
+    user_token =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     '''fetches all the languages supported in the DB, their code and other details.
     * if any of the optional query parameters are provided, returns details of that language
     * skip=n: skips the first n objects in return list
@@ -126,8 +128,8 @@ async def get_license(request: Request,
     license_code : schemas.LicenseCodePattern=Query(None, example="CC-BY-SA"),
     license_name: str=Query(None, example="Creative Commons License"),
     permission: schemas.LicensePermisssion=Query(None, example="Commercial_use"),
-    active: bool=Query(True),
-    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
+    active: bool=Query(True), skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
+    user_token =Depends(get_user_or_none),db_: Session=Depends(get_db)):
     '''fetches all the licenses present in the DB, their code and other details.
     * optional query parameters can be used to filter the result set
     * skip=n: skips the first n objects in return list
@@ -179,7 +181,8 @@ async def get_version(request: Request,
     version_abbreviation : schemas.VersionPattern = Query(None, example="KJV"),
     version_name: str = Query(None, example="King James Version"), revision : int = Query(None),
     metadata: schemas.MetaDataPattern = Query(None, example='{"publishedIn":"1611"}'),
-    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
+    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
+    user_token =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Fetches all versions and their details.
     * optional query parameters can be used to filter the result set
     * skip=n: skips the first n objects in return list
@@ -266,7 +269,7 @@ async def get_source(request: Request,content_type: str=Query(None, example="com
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Sources"])
-@get_auth_access_check_decorator  
+@get_auth_access_check_decorator
 async def add_source(request: Request, source_obj : schemas.SourceCreate = Body(...),
     user_details = Depends(auth_handler.kratos_session_validation), db_: Session = Depends(get_db)):
     ''' Creates a new source entry in sources table.
@@ -309,10 +312,10 @@ async def edit_source(request: Request,source_obj: schemas.SourceEdit = Body(...
     if len(structurals_crud.get_sources(db_, source_name = source_obj.sourceName)) == 0:
         raise NotAvailableException("Source %s not found"%(source_obj.sourceName))
     if 'content' not in source_obj.accessPermissions:
-        source_obj.accessPermissions.append(schemas.SourcePermisions.CONTENT)    
+        source_obj.accessPermissions.append(schemas.SourcePermisions.CONTENT)
     source_obj.metaData['accessPermissions'] = source_obj.accessPermissions
     return {'message': "Source edited successfully",
-    "data": structurals_crud.update_source(db_=db_, source=source_obj, 
+    "data": structurals_crud.update_source(db_=db_, source=source_obj,
         user_id=user_details['user_id'])}
 
 # ############ Bible Books ##########

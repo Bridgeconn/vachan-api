@@ -213,7 +213,8 @@ def test_get_after_adding_data():
     check_post(data)
     data['revision'] = 2
     check_post(data)
-    check_default_get(UNIT_URL, assert_positive_get)
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    check_default_get(UNIT_URL, headers,assert_positive_get)
 
     # filter with abbr
     response = client.get(UNIT_URL + '?version_abbreviation=AAA')

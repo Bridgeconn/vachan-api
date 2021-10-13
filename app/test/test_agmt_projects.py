@@ -164,7 +164,8 @@ def test_default_post_put_get():
     }
     resp = client.post(UNIT_URL, headers=headers, json=post_data)
     assert resp.status_code == 201
-    check_default_get(UNIT_URL, assert_positive_get)
+    
+    check_default_get(UNIT_URL,headers, assert_positive_get)
 
 
 def test_post_invalid():

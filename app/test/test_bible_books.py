@@ -15,7 +15,8 @@ def assert_positive_get(item):
 
 def test_get_default():
     '''positive test case, without optional params'''
-    check_default_get(UNIT_URL, assert_positive_get)
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    check_default_get(UNIT_URL, headers, assert_positive_get)
 
 def test_get_book_code():
     '''positive test case, with one optional params, code'''

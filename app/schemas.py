@@ -320,7 +320,7 @@ class SourceCreate(BaseModel):
     year: int
     license: LicenseCodePattern = "CC-BY-SA"
     accessPermissions : List[SourcePermisions] = [SourcePermisions.CONTENT]
-    metaData: dict = None
+    metaData: dict = {}
     class Config:
         '''display example value in API documentation'''
         schema_extra = {
@@ -385,7 +385,7 @@ class SourceEdit(BaseModel):
     year: int = None
     license: LicenseCodePattern = None
     accessPermissions : List[SourcePermisions] = [SourcePermisions.CONTENT]
-    metaData: dict = None
+    metaData: dict = {}
     active: bool = None
     class Config:
         '''display example value in API documentation'''

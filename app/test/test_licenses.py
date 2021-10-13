@@ -31,7 +31,7 @@ def assert_positive_get(item):
 
 def test_get():
     '''positive test case, without optional params'''
-    check_default_get(UNIT_URL, assert_positive_get)
+    check_default_get(UNIT_URL, headers,assert_positive_get)
 
     # '''positive test case, with one optional params, code and without registered user'''
     response = client.get(UNIT_URL+'?license_code=ISC')
