@@ -92,7 +92,7 @@
     Environment="AGMT_POSTGRES_DATABASE=<db_name>"
     Environment="AGMT_HOST_API_URL=<api_url>"
     Environment="AGMT_HOST_UI_URL=<UI_url>"
-    ExecStart=/home/amt/venv3/bin/gunicorn --workers 3 --bind unix:/home/amt/vachan-api/agmt/agmt.sock   main:app
+    ExecStart=/home/amt/venv3/bin/gunicorn --workers 3 --bind unix:/home/amt/vachan-api/agmt/agmt.sock   main:app --timeout=18000
     
     [Install]
     WantedBy=multi-user.target
@@ -121,6 +121,10 @@
        location / {
             include proxy_params;
             proxy_pass http://unix:/home/amt/vachan-api/agmt/agmt.sock;
+            proxy_read_timeout 18000;
+            proxy_connect_timeout 18000;
+            proxy_send_timeout 18000;
+            send_timeout 18000;
         }
     
     }
