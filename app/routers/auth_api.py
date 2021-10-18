@@ -6,7 +6,7 @@ import schema_auth
 import schemas
 from dependencies import log , get_db
 from authentication import user_register_kratos,user_login_kratos,user_role_add ,\
-     delete_identity ,AuthHandler, get_auth_access_check_decorator
+     delete_identity ,AuthHandler, get_auth_access_check_decorator , get_user_or_none
 
 router = APIRouter()
 auth_handler = AuthHandler()
@@ -17,7 +17,8 @@ responses={400: {"model": schemas.ErrorResponse}},
 status_code=201,tags=["Authentication"])
 @get_auth_access_check_decorator
 async def register(register_details:schema_auth.Registration,request: Request,#pylint: disable=unused-argument
-app_type: schema_auth.App=Query(schema_auth.App.API),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+app_type: schema_auth.App=Query(schema_auth.App.API),user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Registration for Users
     * user_email and password fiels are mandatory
     * App type will be None by default, App Type will decide \
@@ -32,7 +33,8 @@ responses={401: {"model": schemas.ErrorResponse}}
 ,tags=["Authentication"])
 @get_auth_access_check_decorator
 async def login(user_email: str,password: types.SecretStr,
-    request: Request,db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+    request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+    db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Login for All Users
     * user_email and password fiels are mandatory
     * Successful login will return a token for user for a time period'''
@@ -59,7 +61,7 @@ responses={403: {"model": schemas.ErrorResponse},
 status_code=201,tags=["Authentication"])
 @get_auth_access_check_decorator
 async def userrole(role_data:schema_auth.UserRole,request: Request,#pylint: disable=unused-argument
-user_details = Depends(auth_handler.kratos_session_validation),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Update User Roles.
     * User roles should provide in an ARRAY
     * Array values will overwrite the exisitng array of roles
@@ -78,7 +80,7 @@ responses={404: {"model": schemas.ErrorResponse},
 status_code=200,tags=["Authentication"])
 @get_auth_access_check_decorator
 async def delete_user(user:schema_auth.UserIdentity,request: Request,#pylint: disable=unused-argument
-user_details = Depends(auth_handler.kratos_session_validation),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Delete Identity
     * unique Identity key can be used to delete an exisiting identity'''
     log.info('In Identity Delete')

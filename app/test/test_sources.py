@@ -45,8 +45,8 @@ def check_post(data: dict):
     #without auth
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['details'] == 'Not authenticated'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
 
     #With auth Only vachan and super admin can only create source
     #Test with non permited user API USER
@@ -340,8 +340,8 @@ def test_put_default():
     #update source without auth
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.put(UNIT_URL, headers=headers, json=data_update)
-    assert response.status_code == 403
-    assert response.json()['details'] == 'Not authenticated'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
 
     # #with vachan admin who created the data
     # vachanAdmin_user_data = {

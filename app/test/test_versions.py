@@ -37,8 +37,8 @@ def check_post(data):
     #without AUth
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['details'] == 'Not authenticated'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
 
     #with Auth
     test_user_id,headers_auth = create_test_user()

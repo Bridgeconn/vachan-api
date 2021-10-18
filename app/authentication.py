@@ -3,8 +3,9 @@ import os
 import json
 from functools import wraps
 import requests
-from fastapi import HTTPException, Security
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import HTTPException, Security , Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer ,\
+    OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 import db_models
 import schema_auth
@@ -88,11 +89,24 @@ def get_current_user_data(recieve_token):
         user_details["user_id"] = data["identity"]["id"]
         if "userrole" in data["identity"]["traits"]:
             user_details["user_roles"] = data["identity"]["traits"]["userrole"]
-
     elif user_data.status_code == 401:
-        raise UnAuthorizedException(detail=data["error"])
+        # raise UnAuthorizedException(detail=data["error"])
+        user_details["user_id"] =None
+        user_details["user_roles"] = ['noAuthRequired']
+        user_details["error"] = UnAuthorizedException(detail=data["error"])
     elif user_data.status_code == 500:
-        raise GenericException(data["error"])
+        # raise GenericException(data["error"])
+        user_details["user_id"] =None
+        user_details["user_roles"] = ['noAuthRequired']
+        user_details["error"] = GenericException(detail=data["error"])
+    return user_details
+
+#optional authentication with token or none
+optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth", auto_error=False)
+async def get_user_or_none(token: str = Depends(optional_oauth2_scheme)):
+    """optional auth for getting token of logined user not raise error if no auth"""
+    # print("token===>",token)
+    user_details = get_current_user_data(token)
     return user_details
 
 #pylint: disable=unused-argument
@@ -139,7 +153,7 @@ def get_accesstags_basedon_resourcetype(resource_type, method, db_resource):
         raise Exception("Unknown resource type")
     return access_tags
 
-def get_accesstags_permission(request_context, resource_type, db_, db_resource):
+def get_accesstags_permission(request_context, resource_type, db_, db_resource , user_details):
     """get access_tag and permission"""
     endpoint = request_context['endpoint']
     method = request_context['method']
@@ -155,22 +169,24 @@ def get_accesstags_permission(request_context, resource_type, db_, db_resource):
             resource_type = None
         else:
             resource_type = schema_auth.ResourceType.CONTENT
-    required_permission = api_permission_map(endpoint, method ,requesting_app, resource_type)
+    required_permission = api_permission_map(endpoint, method ,requesting_app, resource_type,
+                            user_details)
 
     access_tags = get_accesstags_basedon_resourcetype(resource_type, method, db_resource)
 
     return access_tags, required_permission, resource_type
 
-def role_check_has_right(db_, role, user_roles, resource_type, db_resource, *args):
+def role_check_has_right(db_, role, user_details, resource_type, db_resource, *args):
     """check the has right for roles"""
-    user_id = args[0]
+    # user_id = args[0]
+    user_id = user_details['user_id']
     def created_user_check(resource_type, db_, db_resource, user_id):
         """checks for createduser role"""
         has_rights = False
         created_user = db_resource.createdUser
         # print("created_user==>",created_user)
         # print("user_-=id===>",user_id)
-        if created_user == user_id:
+        if user_id is not None and created_user == user_id:
             has_rights = True
         return has_rights
 
@@ -209,19 +225,26 @@ def role_check_has_right(db_, role, user_roles, resource_type, db_resource, *arg
     if not isinstance(has_rights,bool):
         has_rights = has_rights(resource_type, db_, db_resource, user_id)
 
-    if user_roles and role in user_roles:
+    if user_details['user_roles'] and role in user_details['user_roles']:
         has_rights = True
 
     return has_rights
 
 ###############################################################################################
-def filter_resource_content_get(db_resource, access_tags, required_permission, recieve_token):
+def filter_resource_content_get(db_resource, access_tags, required_permission, user_details):
     """filter the content for get request for resource type content"""
     has_rights = False
     filtered_content = []
 
-    if not recieve_token is None:
-        user_details = get_current_user_data(recieve_token)
+    # if not recieve_token is None:
+    #     user_details = get_current_user_data(recieve_token)
+    #     if not 'error' in  user_details.keys():
+    #         user_id = user_details['user_id'] #pylint: disable=W0612  #use in future
+    #         user_roles = user_details['user_roles']
+    #         if 'APIUser' in user_roles:
+    #             user_roles.remove('APIUser')#pylint: disable=no-member #unwanted error
+    #             user_roles.append('registeredUser')#pylint: disable=no-member
+    if not 'error' in  user_details.keys():
         user_id = user_details['user_id'] #pylint: disable=W0612  #use in future
         user_roles = user_details['user_roles']
         if 'APIUser' in user_roles:
@@ -249,15 +272,16 @@ def filter_resource_content_get(db_resource, access_tags, required_permission, r
     return has_rights, filtered_content
 ##############################################################################################
 
-def check_access_rights(db_:Session, required_params, db_resource=None , token=None):
+def check_access_rights(db_:Session, required_params, db_resource=None):
     """check access right"""
     request_context = required_params.get('request_context',None)
-    user_id = required_params.get('user_id',None)
-    user_roles = required_params.get('user_roles',None)
+    # user_id = required_params.get('user_',None)
+    # user_roles = required_params.get('user_roles',None)
+    user_details = required_params.get('user_details',None)
     resource_type = required_params.get('resource_type',None)
     allowed_users = []
     access_tags,required_permission, resource_type = \
-        get_accesstags_permission(request_context, resource_type, db_ , db_resource)
+        get_accesstags_permission(request_context, resource_type, db_ , db_resource ,user_details)
     # print("Access Tag==>>>",access_tags)
     # print("permission==>>>",required_permission)
     has_rights = False
@@ -266,7 +290,7 @@ def check_access_rights(db_:Session, required_params, db_resource=None , token=N
     if resource_type == schema_auth.ResourceType.CONTENT and \
             request_context["method"] == 'GET':
         has_rights , filtered_content  = \
-            filter_resource_content_get(db_resource,access_tags,required_permission, token)
+            filter_resource_content_get(db_resource,access_tags,required_permission, user_details)
     else:
         filtered_content = None
         for tag in access_tags:
@@ -275,8 +299,10 @@ def check_access_rights(db_:Session, required_params, db_resource=None , token=N
             # print("Allowed User ==>>>>",allowed_users)
             if len(allowed_users) > 0:
                 for role in allowed_users:
-                    has_rights = role_check_has_right(db_, role, user_roles, resource_type,
-                        db_resource, user_id)
+                    has_rights = role_check_has_right(db_, role, user_details, resource_type,
+                        db_resource)
+                    # has_rights = role_check_has_right(db_, role, user_roles, resource_type,
+                    #     db_resource, user_id)
                     if has_rights:
                         break
                 if has_rights:
@@ -289,8 +315,9 @@ def verify_auth_decorator_params(kwargs):
     required_params = {
             "request_context":"",
             "db_":"",
-            "user_id":"",
-            "user_roles":"",
+            "user_details":"",
+            # "user_id":"",
+            # "user_roles":"",
             "resource_type":""
         }
     for param in required_params:
@@ -299,9 +326,9 @@ def verify_auth_decorator_params(kwargs):
         else:
             required_params[param] = None
 
-    if 'user_details' in kwargs.keys() and isinstance(kwargs['user_details'],dict):
-        required_params['user_id'] = kwargs['user_details']["user_id"]
-        required_params['user_roles'] = kwargs['user_details']['user_roles']
+    # if 'user_details' in kwargs.keys() and isinstance(kwargs['user_details'],dict):
+    #     required_params['user_id'] = kwargs['user_details']["user_id"]
+    #     required_params['user_roles'] = kwargs['user_details']['user_roles']
 
     if 'request' in kwargs.keys():
         request_context = {}
@@ -336,22 +363,23 @@ def get_auth_access_check_decorator(func):
             #calling router functions
             response = await func(*args, **kwargs)
             if len(response) > 0:
-                if required_params['request_context']['method'] != 'GET':#pylint: disable=E1126
+                #pylint: disable=E1126
+                if required_params['request_context']['method'] != 'GET':
                     db_resource = response['data']
                     verified , filtered_content = \
                         check_access_rights(db_, required_params, db_resource)
                     if not verified:
                         raise PermisionException("Access Permission Denied for the URL")
+                    if required_params['request_context']["method"] == 'POST' :
+                        response['data'].createdUser = required_params['user_details']["user_id"]
+                    if required_params['request_context']["method"] == 'PUT' :
+                        response['data'].updatedUser = required_params['user_details']["user_id"]
                     db_.commit()#pylint: disable=E1101
                     db_.refresh(db_resource)#pylint: disable=E1101
-                elif required_params['request_context']['method'] == 'GET':#pylint: disable=E1126
+                elif required_params['request_context']['method'] == 'GET':
                     db_resource = response
-                    if 'user_token' in kwargs.keys():
-                        token = kwargs['user_token']
-                    else:
-                        token = None
                     verified , filtered_content  = \
-                        check_access_rights(db_, required_params, db_resource, token)
+                        check_access_rights(db_, required_params, db_resource)
                     if not filtered_content is None:
                         response = filtered_content
                     if not verified:

@@ -46,8 +46,8 @@ def test_post_default():
     #Add test without login
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['details'] == 'Not authenticated'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
 
     #Add content with auth
     headers = {"contentType": "application/json",

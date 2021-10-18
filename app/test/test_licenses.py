@@ -105,8 +105,8 @@ def test_post():
     }
     response = client.post(UNIT_URL, headers=headers, json=data)
     #without Auth
-    assert response.status_code == 403
-    assert response.json()['details'] == 'Not authenticated'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
     #With Auth
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 201
@@ -119,8 +119,8 @@ def test_post():
     data['name']= "Test License version 2"
 
     response = client.post(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['details'] == 'Not authenticated'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
     #with auth
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 201
@@ -136,8 +136,8 @@ def test_post():
     }
     #without auth
     response = client.post(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['details'] == 'Not authenticated'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
     #with auth
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 201
@@ -205,8 +205,8 @@ def test_put():
     }
     #without Auth
     response = client.post(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['details'] == 'Not authenticated'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
 
     #with auth
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
@@ -216,8 +216,8 @@ def test_put():
     update_data = {"code":"LIC-1", "permissions":["Private_use", "Patent_use"]}
     #without auth update
     response = client.put(UNIT_URL, json=update_data, headers=headers)
-    assert response.status_code == 403
-    assert response.json()['details'] == 'Not authenticated'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
 
     #with auth
     response = client.put(UNIT_URL, json=update_data, headers=headers_auth)
