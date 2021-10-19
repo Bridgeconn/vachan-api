@@ -3,8 +3,9 @@ import os
 import json
 from functools import wraps
 import requests
-from fastapi import HTTPException, Security
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import HTTPException, Security , Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer ,\
+    OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 import db_models
 import schema_auth
@@ -13,6 +14,7 @@ from custom_exceptions import GenericException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
     UnprocessableException, PermisionException
 from api_permission_map import api_permission_map
+
 
 PUBLIC_BASE_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL"+"self-service/",
                                     "http://127.0.0.1:4433/self-service/")
@@ -74,37 +76,38 @@ access_rules = {
     }
 }
 
-# def metacontent_creator(db_:Session, resource_type, resource_id, user_id):
-#     '''checks if the user is the creator of the given item'''
-#     if resource_type == 'contents':
-#         model_cls = db_models.ContentType
-#         unique_col = model_cls.contentType
-#         resource_id = resource_id if resource_id != None else 'contentType'
-#     elif resource_type == "languages":
-#         model_cls = db_models.Language
-#         unique_col = model_cls.code
-#         resource_id = resource_id if resource_id != None else 'code'
-#     elif resource_type == "versions":
-#         model_cls = db_models.Version
-#         unique_col = model_cls.versionAbbreviation
-#         resource_id = resource_id if resource_id != None else 'versionId'
-#     elif resource_type == "licenses":
-#         model_cls = db_models.License
-#         unique_col = model_cls.code
-#         resource_id = resource_id if resource_id != None else 'code'
+#get current user data
+def get_current_user_data(recieve_token):
+    """get current user details"""
+    user_details = {"user_id":"", "user_roles":""}
+    headers = {}
+    headers["Accept"] = "application/json"
+    headers["Authorization"] = f"Bearer {recieve_token}"
+    user_data = requests.get(USER_SESSION_URL, headers=headers)
+    data = json.loads(user_data.content)
+    if user_data.status_code == 200:
+        user_details["user_id"] = data["identity"]["id"]
+        if "userrole" in data["identity"]["traits"]:
+            user_details["user_roles"] = data["identity"]["traits"]["userrole"]
+    elif user_data.status_code == 401:
+        # raise UnAuthorizedException(detail=data["error"])
+        user_details["user_id"] =None
+        user_details["user_roles"] = ['noAuthRequired']
+        user_details["error"] = UnAuthorizedException(detail=data["error"])
+    elif user_data.status_code == 500:
+        # raise GenericException(data["error"])
+        user_details["user_id"] =None
+        user_details["user_roles"] = ['noAuthRequired']
+        user_details["error"] = GenericException(detail=data["error"])
+    return user_details
 
-#     # primary_key = db_.query(pk_col).filter(unique_col == resource_id).first()
-#     created_user = db_.query(model_cls.createdUser).filter(unique_col == resource_id).first()
-#     if created_user != None and user_id == created_user[0]:
-#         return True
-#     return False
-
-# def resource_creator(db_:Session, source_id, user_id):
-#     '''checks if the user is the creator of the given source'''
-#     created_user =  db_.query(db_models.Source.createdUser).get(source_id).first()
-#     if user_id == created_user:
-#         return True
-#     return False
+#optional authentication with token or none
+optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth", auto_error=False)
+async def get_user_or_none(token: str = Depends(optional_oauth2_scheme)):
+    """optional auth for getting token of logined user not raise error if no auth"""
+    # print("token===>",token)
+    user_details = get_current_user_data(token)
+    return user_details
 
 #pylint: disable=unused-argument
 def project_owner(db_:Session, db_resource, user_id):
@@ -127,7 +130,30 @@ def project_member(db_:Session, db_resource, user_id):
         return True
     return False
 
-def get_accesstags_permission(request_context, resource_type, db_):
+def get_accesstags_basedon_resourcetype(resource_type, method, db_resource):
+    """check the type of resource and provide access tags"""
+    if resource_type == schema_auth.ResourceType.METACONTENT:
+        access_tags = ["meta-content","open-access"]
+    elif resource_type == schema_auth.ResourceType.PROJECT:
+        access_tags = ['translation-project']
+    elif resource_type == schema_auth.ResourceType.USER:
+        access_tags = ['user']
+    elif resource_type == schema_auth.ResourceType.CONTENT:
+        access_tags = []
+        if method != 'GET':
+            for perm in db_resource.metaData['accessPermissions']:
+                access_tags.append(perm.value)
+        if method == 'GET':
+            for i in range(len(db_resource)):#pylint: disable=consider-using-enumerate
+                permissions = db_resource[i].metaData['accessPermissions']
+                for perm in permissions:
+                    if not perm in access_tags:
+                        access_tags.append(perm)
+    else:
+        raise Exception("Unknown resource type")
+    return access_tags
+
+def get_accesstags_permission(request_context, resource_type, db_, db_resource , user_details):
     """get access_tag and permission"""
     endpoint = request_context['endpoint']
     method = request_context['method']
@@ -143,37 +169,24 @@ def get_accesstags_permission(request_context, resource_type, db_):
             resource_type = None
         else:
             resource_type = schema_auth.ResourceType.CONTENT
-    required_permission = api_permission_map(endpoint, method ,requesting_app, resource_type)
+    required_permission = api_permission_map(endpoint, method ,requesting_app, resource_type,
+                            user_details)
 
-    if resource_type == schema_auth.ResourceType.METACONTENT:
-        access_tags = ["meta-content","open-access"]
-    elif resource_type == schema_auth.ResourceType.PROJECT:
-        access_tags = ['translation-project']
-    elif resource_type == schema_auth.ResourceType.USER:
-        access_tags = ['user']
-    # elif resource_type == schema_auth.ResourceType.CONTENT:
-    #     source_content = db_.query(db_models.Source.Metadata).get(resource_id)
-    #     access_tags = source_content['access-tags']
-    else:
-        raise Exception("Unknown resource type")
+    access_tags = get_accesstags_basedon_resourcetype(resource_type, method, db_resource)
 
     return access_tags, required_permission, resource_type
 
-def role_check_has_right(db_, role, user_roles, resource_type, db_resource, *args):
+def role_check_has_right(db_, role, user_details, resource_type, db_resource, *args):
     """check the has right for roles"""
-    user_id = args[0]
+    # user_id = args[0]
+    user_id = user_details['user_id']
     def created_user_check(resource_type, db_, db_resource, user_id):
         """checks for createduser role"""
         has_rights = False
-        # if resource_type == schema_auth.ResourceType.CONTENT:
-        #     if resource_creator(db_, resource_id, user_id):
-        #         has_rights = True
-        # if resource_type == schema_auth.ResourceType.METACONTENT:
-        #     rsc_type = endpoint.split('/')[-1]
-        #     if metacontent_creator(db_, rsc_type, resource_id, user_id):
-        #         has_rights =  True
         created_user = db_resource.createdUser
-        if created_user == user_id:
+        # print("created_user==>",created_user)
+        # print("user_-=id===>",user_id)
+        if user_id is not None and created_user == user_id:
             has_rights = True
         return has_rights
 
@@ -212,33 +225,89 @@ def role_check_has_right(db_, role, user_roles, resource_type, db_resource, *arg
     if not isinstance(has_rights,bool):
         has_rights = has_rights(resource_type, db_, db_resource, user_id)
 
-    if user_roles and role in user_roles:
+    if user_details['user_roles'] and role in user_details['user_roles']:
         has_rights = True
 
     return has_rights
 
+###############################################################################################
+def filter_resource_content_get(db_resource, access_tags, required_permission, user_details):
+    """filter the content for get request for resource type content"""
+    has_rights = False
+    filtered_content = []
+
+    # if not recieve_token is None:
+    #     user_details = get_current_user_data(recieve_token)
+    #     if not 'error' in  user_details.keys():
+    #         user_id = user_details['user_id'] #pylint: disable=W0612  #use in future
+    #         user_roles = user_details['user_roles']
+    #         if 'APIUser' in user_roles:
+    #             user_roles.remove('APIUser')#pylint: disable=no-member #unwanted error
+    #             user_roles.append('registeredUser')#pylint: disable=no-member
+    if not 'error' in  user_details.keys():
+        user_id = user_details['user_id'] #pylint: disable=W0612  #use in future
+        user_roles = user_details['user_roles']
+        if 'APIUser' in user_roles:
+            user_roles.remove('APIUser')#pylint: disable=no-member #unwanted error
+            user_roles.append('registeredUser')#pylint: disable=no-member
+    else:
+        user_id = None ##pylint: disable=W0612
+        user_roles = []
+
+    for source in db_resource:
+        for tag in source.metaData['accessPermissions']:
+            if required_permission in access_rules[tag].keys():
+                allowed_users = access_rules[tag][required_permission]
+                # print("ALLOWED USERS PERMISIONS=====>",tag,":=>",allowed_users)
+                role = "noAuthRequired"
+                if role in allowed_users:
+                    filtered_content.append(source)
+
+                for role in user_roles:
+                    if role in allowed_users and \
+                            not any(source == dic for dic in filtered_content):
+                        filtered_content.append(source)
+    if len(filtered_content) > 0:
+        has_rights = True
+    return has_rights, filtered_content
+##############################################################################################
+
 def check_access_rights(db_:Session, required_params, db_resource=None):
     """check access right"""
     request_context = required_params.get('request_context',None)
-    # resource_id = required_params.get('resource_id',None)
-    user_id = required_params.get('user_id',None)
-    user_roles = required_params.get('user_roles',None)
+    # user_id = required_params.get('user_',None)
+    # user_roles = required_params.get('user_roles',None)
+    user_details = required_params.get('user_details',None)
     resource_type = required_params.get('resource_type',None)
-    # endpoint = request_context['endpoint']
+    allowed_users = []
     access_tags,required_permission, resource_type = \
-        get_accesstags_permission(request_context, resource_type, db_)
+        get_accesstags_permission(request_context, resource_type, db_ , db_resource ,user_details)
+    # print("Access Tag==>>>",access_tags)
+    # print("permission==>>>",required_permission)
     has_rights = False
-    for tag in access_tags:
-        if required_permission in access_rules[tag].keys():
-            allowed_users = access_rules[tag][required_permission]
-        for role in allowed_users:
-            has_rights = role_check_has_right(db_, role, user_roles, resource_type,
-                db_resource, user_id)
-            if has_rights:
-                break
-        if has_rights:
-            break
-    return has_rights
+    filtered_content = []
+    # test function seperate permision check and filter for get of contents
+    if resource_type == schema_auth.ResourceType.CONTENT and \
+            request_context["method"] == 'GET':
+        has_rights , filtered_content  = \
+            filter_resource_content_get(db_resource,access_tags,required_permission, user_details)
+    else:
+        filtered_content = None
+        for tag in access_tags:
+            if required_permission in access_rules[tag].keys():
+                allowed_users = access_rules[tag][required_permission]
+            # print("Allowed User ==>>>>",allowed_users)
+            if len(allowed_users) > 0:
+                for role in allowed_users:
+                    has_rights = role_check_has_right(db_, role, user_details, resource_type,
+                        db_resource)
+                    # has_rights = role_check_has_right(db_, role, user_roles, resource_type,
+                    #     db_resource, user_id)
+                    if has_rights:
+                        break
+                if has_rights:
+                    break
+    return has_rights , filtered_content
 
 #####decorator function for auth and access rules ######
 def verify_auth_decorator_params(kwargs):
@@ -246,8 +315,9 @@ def verify_auth_decorator_params(kwargs):
     required_params = {
             "request_context":"",
             "db_":"",
-            "user_id":"",
-            "user_roles":"",
+            "user_details":"",
+            # "user_id":"",
+            # "user_roles":"",
             "resource_type":""
         }
     for param in required_params:
@@ -256,9 +326,9 @@ def verify_auth_decorator_params(kwargs):
         else:
             required_params[param] = None
 
-    if 'user_details' in kwargs.keys():
-        required_params['user_id'] = kwargs['user_details']["user_id"]
-        required_params['user_roles'] = kwargs['user_details']['user_roles']
+    # if 'user_details' in kwargs.keys() and isinstance(kwargs['user_details'],dict):
+    #     required_params['user_id'] = kwargs['user_details']["user_id"]
+    #     required_params['user_roles'] = kwargs['user_details']['user_roles']
 
     if 'request' in kwargs.keys():
         request_context = {}
@@ -283,7 +353,8 @@ def get_auth_access_check_decorator(func):
         db_ = required_params["db_"]
 
         if required_params['request_context']['endpoint'].startswith("/v2/user"):#pylint: disable=E1126
-            verified = check_access_rights(db_, required_params, db_resource)
+            verified , filtered_content = \
+                check_access_rights(db_, required_params, db_resource)
             if not verified:
                 raise PermisionException("Access Permission Denied for the URL")
             #calling router functions
@@ -291,18 +362,28 @@ def get_auth_access_check_decorator(func):
         else:
             #calling router functions
             response = await func(*args, **kwargs)
-            if required_params['request_context']['method'] != 'GET':#pylint: disable=E1126
-                db_resource = response['data']
-                verified = check_access_rights(db_, required_params, db_resource)
-                if not verified:
-                    raise PermisionException("Access Permission Denied for the URL")
-                db_.commit()#pylint: disable=E1101
-                db_.refresh(db_resource)#pylint: disable=E1101
-            elif required_params['request_context']['method'] == 'GET':#pylint: disable=E1126
-                db_resource = response
-                verified = check_access_rights(db_, required_params, db_resource)
-                if not verified:
-                    raise PermisionException("Access Permission Denied for the URL")
+            if len(response) > 0:
+                #pylint: disable=E1126
+                if required_params['request_context']['method'] != 'GET':
+                    db_resource = response['data']
+                    verified , filtered_content = \
+                        check_access_rights(db_, required_params, db_resource)
+                    if not verified:
+                        raise PermisionException("Access Permission Denied for the URL")
+                    if required_params['request_context']["method"] == 'POST' :
+                        response['data'].createdUser = required_params['user_details']["user_id"]
+                    if required_params['request_context']["method"] == 'PUT' :
+                        response['data'].updatedUser = required_params['user_details']["user_id"]
+                    db_.commit()#pylint: disable=E1101
+                    db_.refresh(db_resource)#pylint: disable=E1101
+                elif required_params['request_context']['method'] == 'GET':
+                    db_resource = response
+                    verified , filtered_content  = \
+                        check_access_rights(db_, required_params, db_resource)
+                    if not filtered_content is None:
+                        response = filtered_content
+                    if not verified:
+                        raise PermisionException("Access Permission Denied for the URL")
         return response
     return wrapper
 
@@ -359,24 +440,6 @@ class AuthHandler():
             raise GenericException(data["error"])
         return data
 
-    #get current user data
-    def get_current_user_data(self,auth:HTTPAuthorizationCredentials= Security(security)):
-        """get current user details"""
-        recieve_token = auth.credentials
-        headers = {}
-        headers["Accept"] = "application/json"
-        headers["Authorization"] = f"Bearer {recieve_token}"
-
-        user_data = requests.get(USER_SESSION_URL, headers=headers)
-        data = json.loads(user_data.content)
-        if user_data.status_code == 200:
-            current_user_id = data['id']
-        elif user_data.status_code == 401:
-            raise UnAuthorizedException(detail=data["error"])
-        elif user_data.status_code == 500:
-            raise GenericException(data["error"])
-        return current_user_id
-
 #get all user details
 def get_all_kratos_users():
     """get all user info"""
@@ -403,6 +466,15 @@ def register_check_success(reg_response):
         },
         "token":reg_response["session_token"]
     }
+
+    user_permision = data["registered_details"]['Permisions']
+    switcher = {
+        schema_auth.AdminRoles.AGUSER.value : schema_auth.App.AG.value,
+        schema_auth.AdminRoles.VACHANUSER.value : schema_auth.App.VACHAN.value,
+        schema_auth.AdminRoles.VACHANADMIN.value : schema_auth.App.VACHANADMIN.value
+            }
+    user_role =  switcher.get(user_permision[0], schema_auth.App.API.value)
+    data["registered_details"]['Permisions'] = [user_role]
     return data
 
 def register_exist_update_user_role(kratos_users, email, user_role, reg_req, reg_response):
@@ -441,6 +513,17 @@ def register_flow_fail(reg_response,email,user_role,reg_req):
             #update user role for exisiting user
             data = register_exist_update_user_role(kratos_users, email,
                 user_role, reg_req, reg_response)
+            user_permision = data["registered_details"]['Permisions']
+            conv_permission = []
+            for perm in user_permision:
+                switcher = {
+                    schema_auth.AdminRoles.AGUSER.value : schema_auth.App.AG.value,
+                    schema_auth.AdminRoles.VACHANUSER.value : schema_auth.App.VACHAN.value,
+                    schema_auth.AdminRoles.VACHANADMIN.value : schema_auth.App.VACHANADMIN.value
+                    }
+                role =  switcher.get(perm, schema_auth.App.API.value)
+                conv_permission.append(role)
+                data["registered_details"]['Permisions'] = conv_permission
         else:
             raise HTTPException(status_code=reg_req.status_code,\
                     detail=reg_response["ui"]["messages"][0]["text"])
@@ -457,11 +540,12 @@ def user_register_kratos(register_details,app_type):
     email = register_details.email
     password = register_details.password
 
-    #check auto role assign
-    if app_type is None:
-        user_role = schema_auth.App.API
-    else:
-        user_role = app_type
+    switcher = {
+        schema_auth.App.AG : schema_auth.AdminRoles.AGUSER.value,
+        schema_auth.App.VACHAN: schema_auth.AdminRoles.VACHANUSER.value,
+        schema_auth.App.VACHANADMIN: schema_auth.AdminRoles.VACHANADMIN.value
+            }
+    user_role =  switcher.get(app_type, schema_auth.AdminRoles.APIUSER.value)
 
     register_url = PUBLIC_BASE_URL+"registration/api"
     reg_flow = requests.get(register_url)

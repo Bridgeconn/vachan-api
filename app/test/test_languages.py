@@ -28,7 +28,8 @@ def assert_positive_get(item):
 
 def test_get_default():
     '''positive test case, without optional params'''
-    check_default_get(UNIT_URL, assert_positive_get)
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    check_default_get(UNIT_URL, headers,assert_positive_get)
 
 def test_get_language_code():
     '''positive test case, with one optional params, code wihtout registered user'''
@@ -119,8 +120,8 @@ def test_post_default():
     #Add Language without Auth
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['details'] == 'Not authenticated'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
     #Add with Auth
     headers = {"contentType": "application/json",
                     "accept": "application/json",
@@ -142,8 +143,8 @@ def test_post_upper_case_code():
     #Add Language without Auth
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['details'] == 'Not authenticated'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
     #Add with Auth
     headers = {"contentType": "application/json",
                     "accept": "application/json",
@@ -164,8 +165,8 @@ def test_post_optional_script_direction():
     #Add without Auth
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['details'] == 'Not authenticated'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
     #Add with Auth
     headers = {"contentType": "application/json",
                     "accept": "application/json",
@@ -263,8 +264,8 @@ def test_put_languages():
     #edit without login
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.put(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['details'] == "Not authenticated"
+    assert response.status_code == 401
+    assert response.json()['error'] == "Authentication Error"
 
     #create a new user and edit the previous user created content
     test_user_data2 = {

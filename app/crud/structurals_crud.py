@@ -252,7 +252,7 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches
             latest_res.append(res_item)
     return latest_res
 
-def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_id = None):
+def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_id):
     '''Adds a row to sources table'''
     content_type = db_.query(db_models.ContentType).filter(
         db_models.ContentType.contentType == source.contentType.strip()).first()
@@ -291,7 +291,7 @@ def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_
         metaData = source.metaData,
         active = True)
     if user_id:
-        db_content.created_user = user_id
+        db_content.createdUser = user_id
     db_.add(db_content)
     db_models.create_dynamic_table(source_name, table_name, content_type.contentType)
     db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine, checkfirst=True)
@@ -303,8 +303,8 @@ def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_
             bind=engine, checkfirst=True)
         log.warning("User %s, creates a new table %s", user_id, db_content.sourceName+'_audio')
     log.warning("User %s, creates a new table %s", user_id, db_content.sourceName)
-    db_.commit()
-    db_.refresh(db_content)
+    # db_.commit()
+    # db_.refresh(db_content)
     return db_content
 
 def update_source_sourcename(db_, source, db_content):
@@ -357,8 +357,8 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
         db_content.active = source.active
     if user_id:
         db_content.updatedUser = user_id
-    db_.commit()
-    db_.refresh(db_content)
+    # db_.commit()
+    # db_.refresh(db_content)
     db_models.dynamicTables[db_content.sourceName] = db_models.dynamicTables[source.sourceName]
     return db_content
 

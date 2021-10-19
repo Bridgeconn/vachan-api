@@ -315,8 +315,8 @@ def test_get_books_contenttype():
     '''Add some books data into the table and do content type related get tests'''
     res, source_name = check_post(gospel_books_data)
     assert res.status_code == 201
-
-    check_default_get(UNIT_URL+source_name+"/books", assert_positive_get_for_books)
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    check_default_get(UNIT_URL+source_name+"/books", headers,assert_positive_get_for_books)
 
     # content_type
     response = client.get(UNIT_URL+source_name+'/books')

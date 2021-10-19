@@ -3,7 +3,7 @@
 import schema_auth
 
 #pylint: disable=too-many-locals,too-many-statements
-def api_permission_map(endpoint, method, requesting_app, resource):
+def api_permission_map(endpoint, method, requesting_app, resource, user_details):
     '''returns the required permission name as per the access rules'''
 
     message = "API's required permission not defined"
@@ -33,15 +33,21 @@ def api_permission_map(endpoint, method, requesting_app, resource):
     def switch_userrole():
         """register endpoint"""
         permission = None
-        if method == 'PUT':
-            permission = "edit-role"
+        if not 'error' in user_details.keys():
+            if method == 'PUT':
+                permission = "edit-role"
+        else:
+            raise user_details['error']
         return permission
 
     def switch_delete_identity():
         """register endpoint"""
         permission = None
-        if method == 'DELETE':
-            permission = "detele/deactivate"
+        if not 'error' in user_details.keys():
+            if method == 'DELETE':
+                permission = "detele/deactivate"
+        else:
+            raise user_details['error']
         return permission
 
     def switch_contents():
@@ -57,12 +63,18 @@ def api_permission_map(endpoint, method, requesting_app, resource):
             elif requesting_app is None:
                 permission = "read-via-api"
         elif method == 'POST':
-            permission = "create"
+            if not 'error' in user_details.keys():
+                permission = "create"
+            else:
+                raise user_details['error']
         elif method == 'PUT':
-            permission = "edit"
+            if not 'error' in user_details.keys():
+                permission = "edit"
+            else:
+                raise user_details['error']
         return permission
 
-    def switch_agmt_project():
+    def switch_agmt_project():#pylint: disable=too-many-branches
         """Agmt projects endpoint"""
         permission = None
         if method == 'GET':
@@ -75,12 +87,18 @@ def api_permission_map(endpoint, method, requesting_app, resource):
             elif requesting_app is None:
                 permission = "read-via-api"
         if method == 'POST':
-            permission = "create"
+            if not 'error' in user_details.keys():
+                permission = "create"
+            else:
+                raise user_details['error']
         if method == 'PUT':
-            if resource==schema_auth.ResourceType.CONTENT:
-                permission = "translate"
-            elif resource==schema_auth.ResourceType.PROJECT:
-                permission = "edit-Settings"
+            if not 'error' in user_details.keys():
+                if resource==schema_auth.ResourceType.CONTENT:
+                    permission = "translate"
+                elif resource==schema_auth.ResourceType.PROJECT:
+                    permission = "edit-Settings"
+            else:
+                raise user_details['error']
         return permission
 
     def switch_agmt_project_tokens():
@@ -96,9 +114,15 @@ def api_permission_map(endpoint, method, requesting_app, resource):
             elif requesting_app is None:
                 permission = "read-via-api"
         if method == 'PUT':
-            permission = "edit-draft"
+            if not 'error' in user_details.keys():
+                permission = "edit-draft"
+            else:
+                raise user_details['error']
         if method == 'POST':
-            permission = "create"
+            if not 'error' in user_details.keys():
+                permission = "create"
+            else:
+                raise user_details['error']
         return permission
 
     switcher = {

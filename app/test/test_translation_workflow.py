@@ -5,6 +5,7 @@ import json
 import requests
 from . import client
 from .test_versions import check_post
+from .test_sources import check_post as source_post
 
 BASE_URL = "v2/"
 headers = {"contentType": "application/json", "accept": "application/json"}
@@ -368,7 +369,9 @@ def test_end_to_end_translation():
     resp = check_post(ver_data)
     assert resp.json()['message'] == "Version created successfully"
 
-    resp = client.post(BASE_URL+"sources", headers=headers, json=src_data)
+
+    # resp = client.post(BASE_URL+"sources", headers=headers, json=src_data)
+    resp = source_post(src_data)
     assert resp.json()['message'] == "Source created successfully"
     source_name = resp.json()['data']['sourceName']
 

@@ -37,8 +37,8 @@ def check_post(data):
     #without AUth
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['details'] == 'Not authenticated'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
 
     #with Auth
     test_user_id,headers_auth = create_test_user()
@@ -213,7 +213,8 @@ def test_get_after_adding_data():
     check_post(data)
     data['revision'] = 2
     check_post(data)
-    check_default_get(UNIT_URL, assert_positive_get)
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    check_default_get(UNIT_URL, headers,assert_positive_get)
 
     # filter with abbr
     response = client.get(UNIT_URL + '?version_abbreviation=AAA')

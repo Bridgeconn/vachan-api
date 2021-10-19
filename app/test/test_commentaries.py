@@ -183,8 +183,8 @@ def test_get_after_data_upload():
     resp, source_name = check_post(data)
 
     assert resp.status_code == 201
-
-    check_default_get(UNIT_URL+source_name, assert_positive_get)
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    check_default_get(UNIT_URL+source_name, headers,assert_positive_get)
 
     #filter by book
     response = client.get(UNIT_URL+source_name+'?book_code=gen')

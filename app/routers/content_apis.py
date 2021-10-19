@@ -7,7 +7,8 @@ import schemas
 from dependencies import get_db, log
 from custom_exceptions import NotAvailableException, AlreadyExistsException
 from crud import structurals_crud, contents_crud
-from authentication import AuthHandler, get_auth_access_check_decorator
+from authentication import AuthHandler, get_auth_access_check_decorator ,\
+    get_user_or_none
 
 router = APIRouter()
 auth_handler = AuthHandler()
@@ -21,7 +22,7 @@ auth_handler = AuthHandler()
 @get_auth_access_check_decorator
 async def get_contents(request: Request,content_type: str = Query(None, example="bible"),
      skip: int = Query(0, ge=0),limit: int = Query(100, ge=0),
-     db_: Session = Depends(get_db)):
+     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     '''fetches all the contents types supported and their details
     * the optional query parameter can be used to filter the result set
     * skip=n: skips the first n objects in return list
@@ -36,7 +37,7 @@ async def get_contents(request: Request,content_type: str = Query(None, example=
     status_code=201, tags=["Contents Types"])
 @get_auth_access_check_decorator
 async def add_contents(request: Request, content: schemas.ContentTypeCreate,
-    user_details = Depends(auth_handler.kratos_session_validation),
+    user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
     ''' Creates a new content type.
     Naming conventions to be followed
@@ -63,7 +64,8 @@ async def get_language(request: Request,
     language_code : schemas.LangCodePattern = Query(None, example="hi"),
     language_name: str = Query(None, example="hindi"),
     search_word: str = Query(None, example="Sri Lanka"),
-    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
+    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
+    user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     '''fetches all the languages supported in the DB, their code and other details.
     * if any of the optional query parameters are provided, returns details of that language
     * skip=n: skips the first n objects in return list
@@ -81,8 +83,7 @@ async def get_language(request: Request,
     status_code=201, tags=["Languages"])
 @get_auth_access_check_decorator
 async def add_language(request: Request, lang_obj : schemas.LanguageCreate = Body(...),
-    user_details = Depends(auth_handler.kratos_session_validation),
-    db_: Session = Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     ''' Creates a new language. Langugage code should of 3 letters which uniquely identifies it.'''
     log.info('In add_language')
     log.debug('lang_obj: %s',lang_obj)
@@ -98,8 +99,7 @@ async def add_language(request: Request, lang_obj : schemas.LanguageCreate = Bod
     status_code=201, tags=["Languages"])
 @get_auth_access_check_decorator
 async def edit_language(request: Request, lang_obj: schemas.LanguageEdit = Body(...),
-    user_details = Depends(auth_handler.kratos_session_validation),
-    db_: Session = Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     ''' Changes one or more fields of language'''
     log.info('In edit_language')
     log.debug('lang_obj: %s',lang_obj)
@@ -119,8 +119,8 @@ async def get_license(request: Request,
     license_code : schemas.LicenseCodePattern=Query(None, example="CC-BY-SA"),
     license_name: str=Query(None, example="Creative Commons License"),
     permission: schemas.LicensePermisssion=Query(None, example="Commercial_use"),
-    active: bool=Query(True),
-    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
+    active: bool=Query(True), skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
+    user_details =Depends(get_user_or_none),db_: Session=Depends(get_db)):
     '''fetches all the licenses present in the DB, their code and other details.
     * optional query parameters can be used to filter the result set
     * skip=n: skips the first n objects in return list
@@ -138,7 +138,7 @@ async def get_license(request: Request,
     status_code=201, tags=["Licenses"])
 @get_auth_access_check_decorator
 async def add_license(request: Request, license_obj : schemas.LicenseCreate = Body(...),
-    user_details = Depends(auth_handler.kratos_session_validation), db_: Session = Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     ''' Uploads a new license. License code provided will be used as the unique identifier.'''
     log.info('In add_license')
     log.debug('license_obj: %s',license_obj)
@@ -151,7 +151,7 @@ async def add_license(request: Request, license_obj : schemas.LicenseCreate = Bo
     status_code=201, tags=["Licenses"])
 @get_auth_access_check_decorator
 async def edit_license(request: Request, license_obj: schemas.LicenseEdit = Body(...),
-    user_details = Depends(auth_handler.kratos_session_validation), db_: Session = Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     ''' Changes one or more fields of license.
     Item identifier is license code, which cannot be altered.
     Active field can be used to activate or deactivate a content.
@@ -172,7 +172,8 @@ async def get_version(request: Request,
     version_abbreviation : schemas.VersionPattern = Query(None, example="KJV"),
     version_name: str = Query(None, example="King James Version"), revision : int = Query(None),
     metadata: schemas.MetaDataPattern = Query(None, example='{"publishedIn":"1611"}'),
-    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
+    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Fetches all versions and their details.
     * optional query parameters can be used to filter the result set
     * skip=n: skips the first n objects in return list
@@ -190,7 +191,7 @@ async def get_version(request: Request,
     status_code=201, tags=["Versions"])
 @get_auth_access_check_decorator
 async def add_version(request: Request, version_obj : schemas.VersionCreate = Body(...),
-    user_details = Depends(auth_handler.kratos_session_validation), db_: Session = Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     ''' Creates a new version. Version code provided will be used as unique identifier'''
     log.info('In add_version')
     log.debug('version_obj: %s',version_obj)
@@ -210,7 +211,7 @@ async def add_version(request: Request, version_obj : schemas.VersionCreate = Bo
     status_code=201, tags=["Versions"])
 @get_auth_access_check_decorator
 async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...),
-    user_details = Depends(auth_handler.kratos_session_validation),db_: Session = Depends(get_db)):
+    user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     ''' Changes one or more fields of version types table.
     Item identifier is version id.
     Active field can be used to activate or deactivate a content.
@@ -228,7 +229,8 @@ async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...
     response_model=List[schemas.SourceResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Sources"])
-def get_source(content_type: str=Query(None, example="commentary"),
+@get_auth_access_check_decorator
+async def get_source(request: Request,content_type: str=Query(None, example="commentary"),
     version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
     revision: int=Query(None, example=1),
     language_code: schemas.LangCodePattern=Query(None,example="en"),
@@ -236,7 +238,8 @@ def get_source(content_type: str=Query(None, example="commentary"),
     metadata: schemas.MetaDataPattern=Query(None,
         example='{"otherName": "KJBC, King James Bible Commentaries"}'),
     active: bool = True, latest_revision: bool = True,
-    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
+    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
+    user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     '''Fetches all sources and their details.
     * optional query parameters can be used to filter the result set
     * If revision is not explictly set or latest_revision is not set to False,
@@ -257,13 +260,17 @@ def get_source(content_type: str=Query(None, example="commentary"),
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Sources"])
-def add_source(source_obj : schemas.SourceCreate = Body(...),
-    db_: Session = Depends(get_db)):
+@get_auth_access_check_decorator
+async def add_source(request: Request, source_obj : schemas.SourceCreate = Body(...),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    # user_details = Depends(auth_handler.kratos_session_validation)
     ''' Creates a new source entry in sources table.
     * Also creates all associtated tables for the content type.
     * The required content type, version, language and license should be present in DB,
     * if not create them first.
     * Revision, if not provided, will be assumed as 1
+    * AccessPermissions is list of permissions ["content", "open-access", "publishable",
+        "downloadable","derivable"]. Default will be ["content"]
     '''
     log.info('In add_source')
     log.debug('source_obj: %s',source_obj)
@@ -273,24 +280,35 @@ def add_source(source_obj : schemas.SourceCreate = Body(...),
     source_obj.revision + "_" + source_obj.contentType
     if len(structurals_crud.get_sources(db_, source_name = source_name)) > 0:
         raise AlreadyExistsException("%s already present"%source_name)
+    if 'content' not in source_obj.accessPermissions:
+        source_obj.accessPermissions.append(schemas.SourcePermisions.CONTENT)
+    source_obj.metaData['accessPermissions'] = source_obj.accessPermissions
     return {'message': "Source created successfully",
     "data": structurals_crud.create_source(db_=db_, source=source_obj, source_name=source_name,
-        user_id=None)}
+        user_id=user_details['user_id'])}
 
 @router.put('/v2/sources', response_model=schemas.SourceUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Sources"])
-def edit_source(source_obj: schemas.SourceEdit = Body(...), db_: Session = Depends(get_db)):
+@get_auth_access_check_decorator
+async def edit_source(request: Request,source_obj: schemas.SourceEdit = Body(...),
+    user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     ''' Changes one or more fields of source. Item identifier is source_name.
-    Active field can be used to activate or deactivate a content.
-    Deactivated items are not included in normal fetch results if not specified otherwise'''
+    * Active field can be used to activate or deactivate a content.
+    * Deactivated items are not included in normal fetch results if not specified otherwise
+    * AccessPermissions is list of permissions ["content", "open-access", "publishable",
+        "downloadable", "derivable"]. Edit accessPermission will overwrite the current list'''
     log.info('In edit_source')
     log.debug('source_obj: %s',source_obj)
     if len(structurals_crud.get_sources(db_, source_name = source_obj.sourceName)) == 0:
         raise NotAvailableException("Source %s not found"%(source_obj.sourceName))
+    if 'content' not in source_obj.accessPermissions:
+        source_obj.accessPermissions.append(schemas.SourcePermisions.CONTENT)
+    source_obj.metaData['accessPermissions'] = source_obj.accessPermissions
     return {'message': "Source edited successfully",
-    "data": structurals_crud.update_source(db_=db_, source=source_obj, user_id=None)}
+    "data": structurals_crud.update_source(db_=db_, source=source_obj,
+        user_id=user_details['user_id'])}
 
 # ############ Bible Books ##########
 @router.get('/v2/lookup/bible/books',

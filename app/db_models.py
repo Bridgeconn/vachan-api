@@ -93,8 +93,8 @@ class Source(Base): # pylint: disable=too-few-public-methods
     version = relationship('Version')
     active = Column('active', Boolean)
     metaData = Column('metadata', JSON)
-    createdUser = Column('created_user', Integer)
-    updatedUser = Column('last_updated_user', Integer)
+    createdUser = Column('created_user', String)
+    updatedUser = Column('last_updated_user', String)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
 
 class BibleBook(Base): # pylint: disable=too-few-public-methods
@@ -304,8 +304,8 @@ class TranslationProject(Base): # pylint: disable=too-few-public-methods
     documentFormat = Column('source_document_format', String)
     metaData = Column('metadata', JSON)
     active = Column('active', Boolean, default=True)
-    createdUser = Column('created_user', Integer)
-    updatedUser = Column('last_updated_user', Integer)
+    createdUser = Column('created_user', String)
+    updatedUser = Column('last_updated_user', String)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
 
 class TranslationDraft(Base): # pylint: disable=too-few-public-methods
