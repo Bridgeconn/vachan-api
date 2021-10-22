@@ -142,7 +142,8 @@ def get_accesstags_basedon_resourcetype(resource_type, method, db_resource):
         access_tags = []
         if method != 'GET':
             for perm in db_resource.metaData['accessPermissions']:
-                access_tags.append(perm.value)
+                # access_tags.append(perm.value)
+                access_tags.append(perm)
         if method == 'GET':
             for i in range(len(db_resource)):#pylint: disable=consider-using-enumerate
                 permissions = db_resource[i].metaData['accessPermissions']
@@ -169,6 +170,7 @@ def get_accesstags_permission(request_context, resource_type, db_, db_resource ,
             resource_type = None
         else:
             resource_type = schema_auth.ResourceType.CONTENT
+
     required_permission = api_permission_map(endpoint, method ,requesting_app, resource_type,
                             user_details)
 
@@ -178,7 +180,7 @@ def get_accesstags_permission(request_context, resource_type, db_, db_resource ,
 
 def role_check_has_right(db_, role, user_details, resource_type, db_resource, *args):
     """check the has right for roles"""
-    # user_id = args[0]
+    request_context = args[0]
     user_id = user_details['user_id']
     def created_user_check(resource_type, db_, db_resource, user_id):
         """checks for createduser role"""
@@ -186,6 +188,7 @@ def role_check_has_right(db_, role, user_details, resource_type, db_resource, *a
         created_user = db_resource.createdUser
         # print("created_user==>",created_user)
         # print("user_-=id===>",user_id)
+        print("INSIDE POST CHECK created user==================>")
         if user_id is not None and created_user == user_id:
             has_rights = True
         return has_rights
@@ -226,7 +229,17 @@ def role_check_has_right(db_, role, user_details, resource_type, db_resource, *a
         has_rights = has_rights(resource_type, db_, db_resource, user_id)
 
     if user_details['user_roles'] and role in user_details['user_roles']:
-        has_rights = True
+        #check for created user for content api post
+        if not role == 'SuperAdmin' and  request_context['method'] == 'POST':
+            endpoint = request_context['endpoint']
+            source_contents_list = ['bibles','commentaries','dictionaries','infographics','biblevideos']
+            endpoint_split_list = endpoint.split('/')
+            if endpoint_split_list[2] in source_contents_list:
+                has_rights = created_user_check(resource_type, db_, db_resource, user_id)
+            else:
+                has_rights = True
+        else:
+            has_rights = True
 
     return has_rights
 
@@ -282,8 +295,8 @@ def check_access_rights(db_:Session, required_params, db_resource=None):
     allowed_users = []
     access_tags,required_permission, resource_type = \
         get_accesstags_permission(request_context, resource_type, db_ , db_resource ,user_details)
-    # print("Access Tag==>>>",access_tags)
-    # print("permission==>>>",required_permission)
+    print("Access Tag==>>>",access_tags)
+    print("permission==>>>",required_permission)
     has_rights = False
     filtered_content = []
     # test function seperate permision check and filter for get of contents
@@ -300,7 +313,7 @@ def check_access_rights(db_:Session, required_params, db_resource=None):
             if len(allowed_users) > 0:
                 for role in allowed_users:
                     has_rights = role_check_has_right(db_, role, user_details, resource_type,
-                        db_resource)
+                        db_resource,request_context)
                     # has_rights = role_check_has_right(db_, role, user_roles, resource_type,
                     #     db_resource, user_id)
                     if has_rights:
@@ -365,15 +378,32 @@ def get_auth_access_check_decorator(func):
             if len(response) > 0:
                 #pylint: disable=E1126
                 if required_params['request_context']['method'] != 'GET':
-                    db_resource = response['data']
+                    if isinstance(response['data'],dict) and \
+                        'source_content' in response['data'].keys():
+                        response['data']['source_content'].updatedUser = \
+                            required_params['user_details']["user_id"]
+                        db_resource = response['data']['source_content']
+                        db_content = response['data']['db_content']
+                        message = response['message']
+                        response = {}
+                        response['message'] = message
+                        response['data'] = db_content
+                        # print("final resposne ===>",response)
+                        # print("final resposne db content ===>",response["data"][0].__dict__)
+                        # print("final resposne db content ===>",db_resource.__dict__)
+
+                    else:    
+                        db_resource = response['data']
+                        if required_params['request_context']["method"] == 'POST':
+                            response['data'].createdUser = required_params['user_details']["user_id"]
+                        if required_params['request_context']["method"] == 'PUT' :
+                            response['data'].updatedUser = required_params['user_details']["user_id"]
+                    
                     verified , filtered_content = \
                         check_access_rights(db_, required_params, db_resource)
                     if not verified:
                         raise PermisionException("Access Permission Denied for the URL")
-                    if required_params['request_context']["method"] == 'POST' :
-                        response['data'].createdUser = required_params['user_details']["user_id"]
-                    if required_params['request_context']["method"] == 'PUT' :
-                        response['data'].updatedUser = required_params['user_details']["user_id"]
+                    print("verified================>",verified)
                     db_.commit()#pylint: disable=E1101
                     db_.refresh(db_resource)#pylint: disable=E1101
                 elif required_params['request_context']['method'] == 'GET':
@@ -384,6 +414,7 @@ def get_auth_access_check_decorator(func):
                         response = filtered_content
                     if not verified:
                         raise PermisionException("Access Permission Denied for the URL")
+        # print("response===>",response['data'].__dict__)
         return response
     return wrapper
 

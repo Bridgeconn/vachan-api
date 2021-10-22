@@ -8,6 +8,14 @@ def api_permission_map(endpoint, method, requesting_app, resource, user_details)
 
     message = "API's required permission not defined"
 
+    # check sourcename is present or not
+    source_contents_list = ['bibles','commentaries','dictionaries','infographics','biblevideos']
+    endpoint_split_list = endpoint.split('/')
+    if endpoint_split_list[2] in source_contents_list:
+        endpoint_source_name = endpoint_split_list[3]
+    else:
+        endpoint_source_name = None
+
     #Methods related to swither
     def switch_register():
         """register endpoint"""
@@ -144,15 +152,21 @@ def api_permission_map(endpoint, method, requesting_app, resource, user_details)
 
         "/v2/lookup/bible/books" : switch_contents,
 
-        "/v2/bibles" : switch_contents,
+        f"/v2/bibles/{endpoint_source_name}/books" : switch_contents,
 
-        "/v2/commentaries" : switch_contents,
+        f"/v2/bibles/{endpoint_source_name}/versification" : switch_contents,
 
-        "/v2/dictionaries" : switch_contents,
+        f"/v2/bibles/{endpoint_source_name}/verses" : switch_contents,
+        
+        f"/v2/bibles/{endpoint_source_name}/audios" : switch_contents,
+        
+        f"/v2/commentaries/{endpoint_source_name}" : switch_contents,
 
-        "/v2/infographics" : switch_contents,
+        f"/v2/dictionaries/{endpoint_source_name}" : switch_contents,
 
-        "/v2/biblevideos" : switch_contents,
+        f"/v2/infographics/{endpoint_source_name}" : switch_contents,
+
+        f"/v2/biblevideos/{endpoint_source_name}" : switch_contents,
 
         "/v2/autographa/projects" : switch_agmt_project,
 

@@ -417,8 +417,13 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None):
     db_.add_all(db_content)
     db_.add_all(db_content2)
     source_db_content.updatedUser = user_id
-    db_.commit()
-    return db_content
+    # db_.commit()
+    response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+    }
+    # return db_content
+    return response
 
 def upload_bible_books_checks(db_, item, source_name, db_content):
     """checks for uploaded bible books"""
@@ -490,8 +495,13 @@ def update_bible_books(db_: Session, source_name, books, user_id=None):
             row.active = item.active
         db_.flush()
         db_content.append(row)
-        update_bible_books_cleaned(db_,source_name,books,source_db_content,user_id)
-        return db_content
+        source_db_content = update_bible_books_cleaned(db_,source_name,books,source_db_content,user_id)
+        response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+        }
+        # return db_content
+        return response
 
 def update_bible_books_cleaned(db_,source_name,books,source_db_content,user_id):
     """update bible cleaned table"""
@@ -520,9 +530,11 @@ def update_bible_books_cleaned(db_,source_name,books,source_db_content,user_id):
                 model_cls_2.book_id == book.bookId).all()
             for row in rows:
                 row.active = item.active
-    db_.commit()
+    # db_.commit()
+    # source_db_content.updatedUser = user_id
     source_db_content.updatedUser = user_id
-    db_.commit()
+    return source_db_content
+    # db_.commit()
 
 def upload_bible_audios(db_:Session, source_name, audios, user_id=None):
     '''Add audio bible related contents to _bible_audio table'''

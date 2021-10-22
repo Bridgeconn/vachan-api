@@ -336,23 +336,29 @@ def get_bible_book(book_id: int=Query(None, example=67),
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bibles"])
-def add_bible_book(source_name : schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
-    books: List[schemas.BibleBookUpload] = Body(...), db_: Session = Depends(get_db)):
+@get_auth_access_check_decorator
+async def add_bible_book(request: Request,
+    source_name : schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
+    books: List[schemas.BibleBookUpload] = Body(...), user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
     '''Uploads a bible book. It update 2 tables: ..._bible, .._bible_cleaned.
     The JSON provided should be generated from the USFM, using usfm-grammar 2.0.0-beta.8 or above'''
     log.info('In add_bible_book')
     log.debug('source_name: %s, books: %s',source_name, books)
     return {'message': "Bible books uploaded and processed successfully",
         "data": contents_crud.upload_bible_books(db_=db_, source_name=source_name,
-        books=books, user_id=None)}
+        books=books, user_id=user_details['user_id'])}
 
 @router.put('/v2/bibles/{source_name}/books', response_model=schemas.BibleBookUpdateResponse,
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bibles"])
-def edit_bible_book(source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
-    books: List[schemas.BibleBookEdit] = Body(...), db_: Session = Depends(get_db)):
+@get_auth_access_check_decorator
+async def edit_bible_book(request: Request,
+    source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
+    books: List[schemas.BibleBookEdit] = Body(...),user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
     '''Either changes the active status or the bible contents.
     * Active field can be used to activate or deactivate a content. For which,
     Item identifier is book code.
@@ -365,7 +371,7 @@ def edit_bible_book(source_name: schemas.TableNamePattern=Path(..., example="hi_
     log.debug('source_name: %s, books: %s',source_name, books)
     return {'message': "Bible books updated successfully",
         "data": contents_crud.update_bible_books(db_=db_, source_name=source_name,
-        books=books, user_id=None)}
+        books=books, user_id=user_details['user_id'])}
 
 @router.get('/v2/bibles/{source_name}/books',
     response_model=List[schemas.BibleBookContent],
