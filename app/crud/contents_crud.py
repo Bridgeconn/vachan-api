@@ -699,3 +699,23 @@ def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, ver
         ref_combined['reference'] = ref
         ref_combined_results.append(ref_combined)
     return ref_combined_results
+
+def extract_text(db_:Session, tables):
+    '''get all text field contents from the list of tables provided.
+    The text column would be determined based on the table type'''
+    sentence_list = []
+    for table in tables:
+        if table.contentType.contentType == db_models.ContentTypeName.BIBLE.value:
+            model_cls = db_models.dynamicTables[table.sourceName+'_cleaned']
+            query = db_.query(model_cls.refId.label('sentenceId'),
+                model_cls.verseText.label('sentence'))
+        elif table.contentType.contentType == db_models.ContentTypeName.COMMENTARY.value:
+            model_cls = db_models.dynamicTables[table.sourceName]
+            query = db_.query(model_cls.commentaryId.label('sentenceId'),
+                model_cls.commentary.label('sentence'))
+        else:
+            continue
+        sentence_list += query.all()
+    if len(sentence_list)==0:
+        raise NotAvailableException("Not text available for the specified source or language")
+    return sentence_list
