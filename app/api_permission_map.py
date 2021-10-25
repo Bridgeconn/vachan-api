@@ -7,7 +7,7 @@ def api_permission_map(endpoint, method, requesting_app, resource, user_details)
     '''returns the required permission name as per the access rules'''
 
     message = "API's required permission not defined"
-
+    print("requesting_app==========>",requesting_app)
     # check sourcename is present or not
     source_contents_list = ['bibles','commentaries','dictionaries','infographics','biblevideos']
     endpoint_split_list = endpoint.split('/')
@@ -68,7 +68,8 @@ def api_permission_map(endpoint, method, requesting_app, resource, user_details)
                 permission = "view-on-web"
             elif requesting_app == schema_auth.App.VACHANADMIN:
                 permission = "read-via-vachanadmin"
-            elif requesting_app is None:
+            elif requesting_app is None or \
+                requesting_app == schema_auth.App.API:
                 permission = "read-via-api"
         elif method == 'POST':
             if not 'error' in user_details.keys():

@@ -45,7 +45,7 @@ access_rules = {
         "translate":["SuperAdmin", "AgAdmin", "AgUser"]
     },
     "publishable":{
-        "read-via-api":["registeredUser"],
+        "read-via-api":["registeredUser","SuperAdmin","VachanAdmin","BcsDeveloper"],
         "view-on-web":["noAuthRequired"],
         "refer-for-translation":["SuperAdmin", "AgAdmin", "AgUser"]
     },
@@ -375,6 +375,9 @@ def get_auth_access_check_decorator(func):
         else:
             #calling router functions
             response = await func(*args, **kwargs)
+            # print("===GET CONTETNS====>>>",response)
+            # print("===GET CONTETNS====>>>",response['db_content'])
+            # print("===GET CONTETNS====>>>",response['source_content'].__dict__)
             if len(response) > 0:
                 #pylint: disable=E1126
                 if required_params['request_context']['method'] != 'GET':
@@ -403,15 +406,26 @@ def get_auth_access_check_decorator(func):
                         check_access_rights(db_, required_params, db_resource)
                     if not verified:
                         raise PermisionException("Access Permission Denied for the URL")
-                    print("verified================>",verified)
                     db_.commit()#pylint: disable=E1101
                     db_.refresh(db_resource)#pylint: disable=E1101
+
                 elif required_params['request_context']['method'] == 'GET':
-                    db_resource = response
-                    verified , filtered_content  = \
-                        check_access_rights(db_, required_params, db_resource)
-                    if not filtered_content is None:
-                        response = filtered_content
+                    if isinstance(response,dict) and \
+                        'source_content' in response.keys():
+                        db_resource = []
+                        db_resource.append(response['source_content'])
+                        verified , filtered_content  = \
+                            check_access_rights(db_, required_params, db_resource)
+                        # print("filtered content get===========>",filtered_content[0].sourceName)
+                        # print("filtered content get===========>",verified)
+                        if verified and db_resource[0].sourceName == filtered_content[0].sourceName:
+                            response = response['db_content']
+                    else:
+                        db_resource = response
+                        verified , filtered_content  = \
+                            check_access_rights(db_, required_params, db_resource)
+                        if not filtered_content is None:
+                            response = filtered_content
                     if not verified:
                         raise PermisionException("Access Permission Denied for the URL")
         # print("response===>",response['data'].__dict__)
