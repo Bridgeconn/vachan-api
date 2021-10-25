@@ -7,7 +7,7 @@ def api_permission_map(endpoint, method, requesting_app, resource, user_details)
     '''returns the required permission name as per the access rules'''
 
     message = "API's required permission not defined"
-    print("requesting_app==========>",requesting_app)
+    # print("requesting_app==========>",requesting_app)
     # check sourcename is present or not
     source_contents_list = ['bibles','commentaries','dictionaries','infographics','biblevideos']
     endpoint_split_list = endpoint.split('/')

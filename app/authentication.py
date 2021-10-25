@@ -188,7 +188,6 @@ def role_check_has_right(db_, role, user_details, resource_type, db_resource, *a
         created_user = db_resource.createdUser
         # print("created_user==>",created_user)
         # print("user_-=id===>",user_id)
-        print("INSIDE POST CHECK created user==================>")
         if user_id is not None and created_user == user_id:
             has_rights = True
         return has_rights
@@ -295,8 +294,8 @@ def check_access_rights(db_:Session, required_params, db_resource=None):
     allowed_users = []
     access_tags,required_permission, resource_type = \
         get_accesstags_permission(request_context, resource_type, db_ , db_resource ,user_details)
-    print("Access Tag==>>>",access_tags)
-    print("permission==>>>",required_permission)
+    # print("Access Tag==>>>",access_tags)
+    # print("permission==>>>",required_permission)
     has_rights = False
     filtered_content = []
     # test function seperate permision check and filter for get of contents

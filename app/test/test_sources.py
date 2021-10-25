@@ -47,7 +47,7 @@ def check_post(data: dict):
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
-
+    
     #With auth Only vachan and super admin can only create source
     #Test with non permited user API USER
     # api_user_data = {

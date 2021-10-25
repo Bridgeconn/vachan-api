@@ -75,6 +75,7 @@ def check_limit(unit_url,headers):
 
 def check_default_get(unit_url, headers, assert_positive_get):
     '''checks for an array of items of particular type'''
+    #without auth
     response = client.get(unit_url,headers=headers)
     assert response.status_code == 200
     assert isinstance( response.json(), list)
@@ -85,29 +86,29 @@ def check_default_get(unit_url, headers, assert_positive_get):
     check_skip(unit_url,headers)
     check_limit(unit_url,headers)
 
-def check_soft_delete(unit_url, check_post, data, delete_data):
+def check_soft_delete(unit_url, check_post, data, delete_data , headers):
     '''set active field to False'''
     response, source_name = check_post(data)
     assert response.status_code == 201
 
-    get_response1 = client.get(unit_url+source_name)
+    get_response1 = client.get(unit_url+source_name,headers=headers)
     assert len(get_response1.json()) == len(data)
 
 
     # positive PUT
     for item in delete_data:
         item['active'] = False
-    headers = {"contentType": "application/json", "accept": "application/json"}
+    # headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.put(unit_url+source_name,headers=headers, json=delete_data)
     assert response.status_code == 201
     assert response.json()['message'].endswith('updated successfully')
     for item in response.json()['data']:
         assert not item['active']
 
-    get_response2 = client.get(unit_url+source_name)
+    get_response2 = client.get(unit_url+source_name, headers=headers)
     assert len(get_response2.json()) == len(data) - len(delete_data)
 
-    get_response3 = client.get(unit_url+source_name+'?active=false')
+    get_response3 = client.get(unit_url+source_name+'?active=false',headers=headers)
     assert len(get_response3.json()) == len(delete_data)
 
 def check_skip_limit_gql(query,api_name):

@@ -631,7 +631,7 @@ async def edit_dictionary_word(request: Request,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Infographics"])
 @get_auth_access_check_decorator
-def get_infographic(request: Request,
+async def get_infographic(request: Request,
     source_name:schemas.TableNamePattern=Path(...,example="hi_IRV_1_infographic"),
     book_code: schemas.BookCodePattern=Query(None, example="exo"),
     title: str=Query(None, example="Ark of Covenant"), active: bool=True,
