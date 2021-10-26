@@ -663,6 +663,7 @@ def edit_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="en_TB
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Sources"])
 def extract_text_contents(source_name:schemas.TableNamePattern=Query(None,example="en_TBP_1_bible"),
+    books:List[schemas.BookCodePattern]=Query(None,example='GEN'),
     language_code=Query(None, example="hi"),
     db_: Session = Depends(get_db)):
     '''A generic API for all content type tables to get just the text contents of that table
@@ -677,7 +678,7 @@ def extract_text_contents(source_name:schemas.TableNamePattern=Query(None,exampl
     #     projects_crud.get_agmt_projects(db_, target_language=language_code)
     if len(tables) == 0:
         raise NotAvailableException("No sources available for the requested name or language")
-    return contents_crud.extract_text(db_, tables)
+    return contents_crud.extract_text(db_, tables, books)
 
 
 
