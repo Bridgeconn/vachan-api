@@ -75,13 +75,26 @@ class SelectedBooks(BaseModel):
     bible: TableNamePattern = Field(..., example='hi_IRV_1_bible')
     books: List[BookCodePattern]= Field(..., example=['luk', 'jhn'])
 
+class SentenceInput(BaseModel):
+    '''Input sentences for tokenization'''
+    sentenceId: str = Field(..., example=41001001)
+    sentence: str = Field(...,
+        example="इब्राहीम के वंशज दाऊद के पुत्र यीशु मसीह की वंशावली इस प्रकार है")
+    @root_validator
+    def set_surrogate_id(cls, values): # pylint: disable=R0201 disable=E0213
+        '''USFM and JSON should be updated together. If they are absent, bookCode is required'''
+        values['surrogateId'] = values['sentenceId']
+        values['sentenceId'] = int(values['sentenceId'])
+        return values
+
 class TranslationProjectEdit(BaseModel):
     '''New books to be added or active flag change'''
     projectId: int
     projectName: str = None
     active: bool = None
     selectedBooks: SelectedBooks = None
-    uploadedBooks: List[str] = None
+    uploadedUSFMs: List[str] = None
+    sentenceList: List[SentenceInput] = None
     useDataForLearning: bool = None
     stopwords: Stopwords = None
     punctuations: List[constr(max_length=1)] = None
@@ -145,18 +158,6 @@ class DraftInput(BaseModel):
     draftMeta: List[Tuple[Tuple[int, int], Tuple[int,int],'str']] = Field(None,
         example=[[[0,8], [0,8],"confirmed"],
             [[8,64],[8,64],"untranslated"]])
-    @root_validator
-    def set_surrogate_id(cls, values): # pylint: disable=R0201 disable=E0213
-        '''USFM and JSON should be updated together. If they are absent, bookCode is required'''
-        values['surrogateId'] = values['sentenceId']
-        values['sentenceId'] = int(values['sentenceId'])
-        return values
-
-class SentenceInput(BaseModel):
-    '''Input sentences for tokenization'''
-    sentenceId: str = Field(..., example=41001001)
-    sentence: str = Field(...,
-        example="इब्राहीम के वंशज दाऊद के पुत्र यीशु मसीह की वंशावली इस प्रकार है")
     @root_validator
     def set_surrogate_id(cls, values): # pylint: disable=R0201 disable=E0213
         '''USFM and JSON should be updated together. If they are absent, bookCode is required'''
