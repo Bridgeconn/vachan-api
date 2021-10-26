@@ -1,6 +1,6 @@
 '''Test cases for bible videos related APIs'''
 import re
-from . import client
+from . import client , contetapi_get_accessrule_checks_app_userroles
 from . import check_default_get
 from . import assert_input_validation_error, assert_not_available_content
 from .test_sources import check_post as add_source
@@ -714,4 +714,10 @@ def test_created_user_can_only_edit():
     assert response1.status_code == 403
     assert response1.json()['error'] == 'Permision Denied'
 
+def test_get_access_with_user_roles_and_apps():
+    """Test get filter from apps and with users having different permissions"""
+    data = [
+    	    {"USFM":"\\id mat\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"}
+    ]
+    contetapi_get_accessrule_checks_app_userroles("bible",UNIT_URL,data, bible=True)
     

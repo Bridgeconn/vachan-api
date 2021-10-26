@@ -1,5 +1,5 @@
 '''Test cases for dictionary related APIs'''
-from . import client
+from . import client , contetapi_get_accessrule_checks_app_userroles
 from . import assert_input_validation_error, assert_not_available_content
 
 from . import check_default_get, check_soft_delete
@@ -339,4 +339,11 @@ def test_created_user_can_only_edit():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     response = client.put(UNIT_URL+source_name,headers=headers_auth, json=new_data)
     assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied' 
+    assert response.json()['error'] == 'Permision Denied'
+
+def test_get_access_with_user_roles_and_apps():
+    """Test get filter from apps and with users having different permissions"""
+    data = [
+    	{"word": "one", "details":{"digit": 1, "type":"odd", "link":UNIT_URL+'dictionary?word=one'}}
+    ]
+    contetapi_get_accessrule_checks_app_userroles("dictionary",UNIT_URL,data)

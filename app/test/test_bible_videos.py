@@ -1,5 +1,5 @@
 '''Test cases for bible videos related APIs'''
-from . import client
+from . import client, contetapi_get_accessrule_checks_app_userroles
 from . import check_default_get, check_soft_delete
 from .test_sources import check_post as add_source
 from .test_versions import check_post as add_version
@@ -425,3 +425,13 @@ def test_created_user_can_only_edit():
     new_response = client.put(UNIT_URL+source_name,headers=headers_auth, json=new_data)
     assert new_response.status_code == 403
     assert new_response.json()['error'] == 'Permision Denied'
+
+def test_get_access_with_user_roles_and_apps():
+    """Test get filter from apps and with users having different permissions"""
+    data = [
+    	{'title':'Overview: Acts of Apostles', 'theme': 'New testament',
+            'description':"brief description",
+            'books': ['act'], 'videoLink': 'https://www.youtube.com/biblevideos/vid',
+            'status':True}
+    ]
+    contetapi_get_accessrule_checks_app_userroles("biblevideo",UNIT_URL,data)

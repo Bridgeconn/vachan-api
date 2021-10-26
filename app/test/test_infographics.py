@@ -1,5 +1,5 @@
 '''Test cases for infographics related APIs'''
-from . import client
+from . import client , contetapi_get_accessrule_checks_app_userroles
 from . import check_default_get, check_soft_delete
 from . import assert_input_validation_error, assert_not_available_content
 from .test_versions import check_post as add_version
@@ -406,4 +406,11 @@ def test_created_user_can_only_edit():
     assert response.status_code == 403
     assert response.json()['error'] == 'Permision Denied'  
 
+def test_get_access_with_user_roles_and_apps():
+    """Test get filter from apps and with users having different permissions"""
+    data = [
+    	{'bookCode':'mat', 'title':"12 apostles",
+        "infographicLink":"http://somewhere.com/something"}
+    ]
+    contetapi_get_accessrule_checks_app_userroles("infographic",UNIT_URL,data)
    

@@ -178,7 +178,7 @@ def get_accesstags_permission(request_context, resource_type, db_, db_resource ,
 
     return access_tags, required_permission, resource_type
 
-def role_check_has_right(db_, role, user_details, resource_type, db_resource, *args):
+def role_check_has_right(db_, role, user_details, resource_type, db_resource, *args):#pylint: disable=too-many-locals
     """check the has right for roles"""
     request_context = args[0]
     user_id = user_details['user_id']
@@ -231,7 +231,8 @@ def role_check_has_right(db_, role, user_details, resource_type, db_resource, *a
         #check for created user for content api post
         if not role == 'SuperAdmin' and  request_context['method'] == 'POST':
             endpoint = request_context['endpoint']
-            source_contents_list = ['bibles','commentaries','dictionaries','infographics','biblevideos']
+            source_contents_list = ['bibles','commentaries',
+                'dictionaries','infographics','biblevideos']
             endpoint_split_list = endpoint.split('/')
             if endpoint_split_list[2] in source_contents_list:
                 has_rights = created_user_check(resource_type, db_, db_resource, user_id)
@@ -358,7 +359,7 @@ def verify_auth_decorator_params(kwargs):
 def get_auth_access_check_decorator(func):
     """Decorator function for auth and access check for all routers"""
     @wraps(func)
-    async def wrapper(*args, **kwargs):
+    async def wrapper(*args, **kwargs):#pylint: disable=too-many-branches
         db_resource =None
         verified = False
         required_params = verify_auth_decorator_params(kwargs)
@@ -374,9 +375,6 @@ def get_auth_access_check_decorator(func):
         else:
             #calling router functions
             response = await func(*args, **kwargs)
-            # print("===GET CONTETNS====>>>",response)
-            # print("===GET CONTETNS====>>>",response['db_content'])
-            # print("===GET CONTETNS====>>>",response['source_content'].__dict__)
             if len(response) > 0:
                 #pylint: disable=E1126
                 if required_params['request_context']['method'] != 'GET':
@@ -390,17 +388,16 @@ def get_auth_access_check_decorator(func):
                         response = {}
                         response['message'] = message
                         response['data'] = db_content
-                        # print("final resposne ===>",response)
-                        # print("final resposne db content ===>",response["data"][0].__dict__)
-                        # print("final resposne db content ===>",db_resource.__dict__)
 
-                    else:    
+                    else:
                         db_resource = response['data']
                         if required_params['request_context']["method"] == 'POST':
-                            response['data'].createdUser = required_params['user_details']["user_id"]
+                            response['data'].createdUser = \
+                                required_params['user_details']["user_id"]
                         if required_params['request_context']["method"] == 'PUT' :
-                            response['data'].updatedUser = required_params['user_details']["user_id"]
-                    
+                            response['data'].updatedUser = \
+                                required_params['user_details']["user_id"]
+
                     verified , filtered_content = \
                         check_access_rights(db_, required_params, db_resource)
                     if not verified:

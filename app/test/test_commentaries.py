@@ -1,5 +1,5 @@
 '''Test cases for commentaries related APIs'''
-from . import client
+from . import client, contetapi_get_accessrule_checks_app_userroles
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get, check_soft_delete
 from .test_versions import check_post as add_version
@@ -41,7 +41,6 @@ def check_post(data: list):
     }
     source = add_source(source_data)
     source_name = source.json()['data']['sourceName']
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     #without auth
     response = client.post(UNIT_URL+source_name, headers=headers, json=data)
     if response.status_code == 422:
@@ -50,6 +49,7 @@ def check_post(data: list):
         assert response.status_code == 401
         assert response.json()['error'] == 'Authentication Error'
     #with auth
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
     return response, source_name
 
@@ -202,6 +202,7 @@ def test_get_after_data_upload():
     assert response.status_code == 403
     assert response.json()['error'] == 'Permision Denied'
 
+    #with auth
     response = client.get(UNIT_URL+source_name+'?book_code=gen',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 6
@@ -476,3 +477,11 @@ def test_created_user_can_only_edit():
     response = client.put(UNIT_URL+source_name,headers=headers_auth, json=new_data)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permision Denied'
+
+
+def test_get_access_with_user_roles_and_apps():
+    """Test get filter from apps and with users having different permissions"""
+    data = [
+    	{'bookCode':'gen', 'chapter':0, 'commentary':'book intro to Genesis'}
+    ]
+    contetapi_get_accessrule_checks_app_userroles("commentary",UNIT_URL,data)

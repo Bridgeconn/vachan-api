@@ -130,7 +130,7 @@ def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
     # return db_content
     return response
 
-def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):
+def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):#pylint: disable=too-many-locals
     '''Fetches rows of dictionary from the table specified by source_name'''
     details = kwargs.get("details",None)
     exact_match = kwargs.get("exact_match",False)
@@ -387,7 +387,7 @@ def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
     db_.add_all(db_content)
     # db_.commit()
     db_.expire_all()
-    # source_db_content.updatedUser = user_id
+    source_db_content.updatedUser = user_id
     # db_.commit()
     # return db_content
     response = {
@@ -444,7 +444,7 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
         }
     return response
 
-def upload_bible_books(db_: Session, source_name, books, user_id=None):
+def upload_bible_books(db_: Session, source_name, books, user_id=None):#pylint: disable=too-many-locals
     '''Adds rows to the bible table and corresponding bible_cleaned specified by source_name'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
@@ -561,7 +561,8 @@ def update_bible_books(db_: Session, source_name, books, user_id=None):
             row.active = item.active
         db_.flush()
         db_content.append(row)
-        source_db_content = update_bible_books_cleaned(db_,source_name,books,source_db_content,user_id)
+        source_db_content = update_bible_books_cleaned\
+            (db_,source_name,books,source_db_content,user_id)
         response = {
         'db_content':db_content,
         'source_content':source_db_content
@@ -766,7 +767,7 @@ def get_available_bible_books(db_, source_name, book_code=None, content_type=Non
         }
     return response
 
-def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, verse=None,
+def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, verse=None,#pylint: disable=too-many-locals
     **kwargs):
     '''queries the bible cleaned table for verses'''
     last_verse = kwargs.get("last_verse",None)

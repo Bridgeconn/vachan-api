@@ -518,7 +518,8 @@ async def get_commentary(request: Request,
 @get_auth_access_check_decorator
 async def add_commentary(request: Request,
     source_name : schemas.TableNamePattern=Path(...,example="en_BBC_1_commentary"),
-    commentaries: List[schemas.CommentaryCreate] = Body(...), user_details =Depends(get_user_or_none),
+    commentaries: List[schemas.CommentaryCreate] = Body(...),
+    user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
     '''Uploads a list of commentaries.
     * Duplicate commentries are allowed for same verses,
@@ -656,7 +657,8 @@ async def get_infographic(request: Request,
 async def add_infographics(request: Request,
     source_name : schemas.TableNamePattern=Path(...,
     example="hi_IRV_1_infographic"),
-    infographics: List[schemas.InfographicCreate] = Body(...),user_details =Depends(get_user_or_none),
+    infographics: List[schemas.InfographicCreate] = Body(...),
+    user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
     '''Uploads a list of infograhics. BookCode and title provided, serves as the unique idetifier
     Only the  link to infographic is stored, not the actual file'''

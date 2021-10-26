@@ -158,9 +158,9 @@ def api_permission_map(endpoint, method, requesting_app, resource, user_details)
         f"/v2/bibles/{endpoint_source_name}/versification" : switch_contents,
 
         f"/v2/bibles/{endpoint_source_name}/verses" : switch_contents,
-        
+
         f"/v2/bibles/{endpoint_source_name}/audios" : switch_contents,
-        
+
         f"/v2/commentaries/{endpoint_source_name}" : switch_contents,
 
         f"/v2/dictionaries/{endpoint_source_name}" : switch_contents,
