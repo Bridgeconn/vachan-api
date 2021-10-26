@@ -52,7 +52,6 @@ def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectE
         for buk in project_obj.selectedBooks.books:
             books_param_list += "&books=%s"%(buk)
         host = str(request.url).split('/v2/')[0]
-        print(project_obj.selectedBooks.bible)
         response = requests.get(host+
                 '/v2/sources/get-sentence?source_name'+
                 '=%s%s'%(project_obj.selectedBooks.bible, books_param_list),
