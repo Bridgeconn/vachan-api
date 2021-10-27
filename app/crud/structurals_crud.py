@@ -190,6 +190,7 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches
     '''Fetches the rows of sources table'''
     license_abbreviation = kwargs.get("license_abbreviation",None)
     metadata = kwargs.get("metadata",None)
+    access_tags = kwargs.get("access_tag",None)
     latest_revision = kwargs.get("latest_revision",True)
     active = kwargs.get("active",True)
     source_name = kwargs.get("source_name",None)
@@ -249,7 +250,15 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches
                     exculde = True
                     break
         if not exculde:
-            latest_res.append(res_item)
+            #check for filter based on access tag
+            db_access_list = res_item.metaData['accessPermissions']
+            if not access_tags is None:
+                for check_tag in access_tags:
+                    if check_tag in db_access_list:
+                        if not res_item in latest_res:
+                            latest_res.append(res_item)
+            else:
+                latest_res.append(res_item)
     return latest_res
 
 def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_id):

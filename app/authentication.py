@@ -249,14 +249,6 @@ def filter_resource_content_get(db_resource, access_tags, required_permission, u
     has_rights = False
     filtered_content = []
 
-    # if not recieve_token is None:
-    #     user_details = get_current_user_data(recieve_token)
-    #     if not 'error' in  user_details.keys():
-    #         user_id = user_details['user_id'] #pylint: disable=W0612  #use in future
-    #         user_roles = user_details['user_roles']
-    #         if 'APIUser' in user_roles:
-    #             user_roles.remove('APIUser')#pylint: disable=no-member #unwanted error
-    #             user_roles.append('registeredUser')#pylint: disable=no-member
     if not 'error' in  user_details.keys():
         user_id = user_details['user_id'] #pylint: disable=W0612  #use in future
         user_roles = user_details['user_roles']
