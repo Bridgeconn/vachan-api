@@ -171,8 +171,8 @@ def get_accesstags_permission(request_context, resource_type, db_, db_resource ,
         else:
             resource_type = schema_auth.ResourceType.CONTENT
 
-    required_permission = api_permission_map(endpoint, method ,requesting_app, resource_type,
-                            user_details)
+    required_permission = api_permission_map(endpoint, request_context ,
+        requesting_app, resource_type, user_details)
 
     access_tags = get_accesstags_basedon_resourcetype(resource_type, method, db_resource)
 
@@ -342,12 +342,12 @@ def verify_auth_decorator_params(kwargs):
     # if 'user_details' in kwargs.keys() and isinstance(kwargs['user_details'],dict):
     #     required_params['user_id'] = kwargs['user_details']["user_id"]
     #     required_params['user_roles'] = kwargs['user_details']['user_roles']
-
     if 'request' in kwargs.keys():
         request_context = {}
         request = kwargs['request']
         request_context['method'] = request.method
         request_context['endpoint'] = request.url.path
+        request_context['path_params'] = request.path_params
         if 'app' in request.headers:
             request_context['app'] = request.headers['app']
         else:
