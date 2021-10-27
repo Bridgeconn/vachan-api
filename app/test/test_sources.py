@@ -49,28 +49,12 @@ def check_post(data: dict):
     assert response.json()['error'] == 'Authentication Error'
     
     #With auth Only vachan and super admin can only create source
-    #Test with non permited user API USER
-    # api_user_data = {
-    #         "user_email": "apitest@mail.test",
-    #         "password": "passwordtest@1"
-    #     }
-    # response = login(api_user_data)
-    # assert response.json()['message'] == "Login Succesfull"
-    # test_user_token = response.json()["token"]
     headers_auth['Authorization'] = "Bearer"+" "+ initial_test_users['APIUser']['token']
-
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permision Denied'
 
     #try with vachanAdmin
-    # vachanAdmin_user_data = {
-    #         "user_email": "vachanadmintest@mail.test",
-    #         "password": "passwordtest@1"
-    #     }
-    # response = login(vachanAdmin_user_data)
-    # assert response.json()['message'] == "Login Succesfull"
-    # test_user_token = response.json()["token"]
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
 
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
@@ -583,6 +567,58 @@ def test_get_after_adding_data():
     assert len(response.json()) >= 3
     for item in response.json():
         assert_positive_get(item)
+
+def test_get_source_filter_access_tag():
+    """filter source with access tags"""
+    #########################################################################################################
+    version_data = {
+        "versionAbbreviation": "TTT",
+        "versionName": "test version",
+    }
+    add_version(version_data)
+    data = {
+        "contentType": "infographic",
+        "version": "TTT",
+        "year": 2020,
+        "accessPermissions": [
+            "content"
+        ],
+    }
+    data['language'] = 'hi'
+    check_post(data)
+    data['language'] = 'mr'
+    data['accessPermissions'] = ['open-access']
+    check_post(data)
+    data['language'] = 'te'
+    data['accessPermissions'] = ['publishable']
+    check_post(data)
+    
+    response1 = client.get(UNIT_URL,headers=headers_auth)
+    assert response1.status_code == 200
+    assert len(response1.json()) == 3
+    for item in response1.json():
+        assert_positive_get(item)
+    response2 = client.get(UNIT_URL + '?access_tag=open-access',headers=headers_auth)
+    assert response2.status_code == 200
+    assert len(response2.json()) == 1
+    for item in response2.json():
+        assert_positive_get(item)
+    response3 = client.get(UNIT_URL + '?access_tag=publishable',headers=headers_auth)
+    assert response3.status_code == 200
+    assert len(response3.json()) == 1
+    for item in response3.json():
+        assert_positive_get(item)
+    response4 = client.get(UNIT_URL + '?access_tag=content',headers=headers_auth)
+    assert response4.status_code == 200
+    assert len(response4.json()) == 3
+    for item in response4.json():
+        assert_positive_get(item)
+    response4 = client.get(UNIT_URL + '?access_tag=publishable&access_tag=open-access',headers=headers_auth)
+    assert response4.status_code == 200
+    assert len(response4.json()) == 2
+    for item in response4.json():
+        assert_positive_get(item)        
+        
 
 def test_diffrernt_sources_with_app_and_roles():
     """Test getting sources with users having different permissions and 
