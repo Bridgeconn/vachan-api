@@ -184,7 +184,7 @@ def update_version(db_: Session, version: schemas.VersionEdit, user_id=None):
     # db_.refresh(db_content)
     return db_content
 
-def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches
+def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks
     content_type=None, version_abbreviation=None, revision=None, language_code=None,
     **kwargs):
     '''Fetches the rows of sources table'''
@@ -240,7 +240,7 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches
     # Filtering out the latest versions here from the query result.
     # Had tried to include that into the query, but it seemed very difficult.
     latest_res = []
-    for res_item in res:
+    for res_item in res:#pylint: disable=too-many-nested-blocks
         exculde = False
         x_parts = res_item.sourceName.split('_')
         for latest_item in latest_res:

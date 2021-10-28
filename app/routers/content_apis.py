@@ -224,7 +224,7 @@ async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...
         "data": structurals_crud.update_version(db_=db_, version=ver_obj,
         user_id=user_details['user_id'])}
 
-# ##### Source ##### 
+###### Source #####
 @router.get('/v2/sources',
     response_model=List[schemas.SourceResponse],
     responses={502: {"model": schemas.ErrorResponse},
@@ -251,7 +251,8 @@ async def get_source(request: Request,content_type: str=Query(None, example="com
     * returns [] for not available content'''
     log.info('In get_source')
     log.debug('contentType:%s, versionAbbreviation: %s, revision: %s, languageCode: %s,\
-        license_code:%s, metadata: %s, latest_revision: %s, active: %s, skip: %s, limit: %s',
+        license_code:%s, metadata: %s, access_tag: %s, latest_revision: %s, active: %s,\
+             skip: %s, limit: %s',
         content_type, version_abbreviation, revision, language_code, license_code, metadata,
         access_tag, latest_revision, active, skip, limit)
     return structurals_crud.get_sources(db_, content_type, version_abbreviation, revision=revision,
