@@ -709,7 +709,8 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
             response1 = client.get(UNIT_URL+sourcename_list[2]+'/books',headers=headers_auth)
             response2 = client.get(UNIT_URL+sourcename_list[2]+'/versification',headers=headers_auth)
             response3 = client.get(UNIT_URL+sourcename_list[2]+'/verses',headers=headers_auth)
-            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG:
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
+                or headers_auth['app'] == API:
                 assert response1.status_code == 200
                 assert response2.status_code == 200
                 assert response3.status_code == 200
@@ -722,7 +723,8 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response2.json()['error'] == 'Permision Denied'
         else:
             response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
-            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG:
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
+                or headers_auth['app'] == API:
                 assert response.status_code == 200
             else:    
                 assert response.status_code == 403
@@ -737,7 +739,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
             response1 = client.get(UNIT_URL+sourcename_list[2]+'/books',headers=headers_auth)
             response2 = client.get(UNIT_URL+sourcename_list[2]+'/versification',headers=headers_auth)
             response3 = client.get(UNIT_URL+sourcename_list[2]+'/verses',headers=headers_auth)
-            if headers_auth['app'] == VACHAN:
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == API:
                 assert response1.status_code == 200
                 assert response2.status_code == 200
                 assert response3.status_code == 200
@@ -750,7 +752,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response2.json()['error'] == 'Permision Denied'
         else:
             response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
-            if headers_auth['app'] == VACHAN:
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == API:
                 assert response.status_code == 200
             else:    
                 assert response.status_code == 403
@@ -823,7 +825,8 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
             response1 = client.get(UNIT_URL+sourcename_list[2]+'/books',headers=headers_auth)
             response2 = client.get(UNIT_URL+sourcename_list[2]+'/versification',headers=headers_auth)
             response3 = client.get(UNIT_URL+sourcename_list[2]+'/verses',headers=headers_auth)
-            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG:
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
+                or headers_auth['app'] == API:
                 assert response1.status_code == 200
                 assert response2.status_code == 200
                 assert response3.status_code == 200
@@ -836,7 +839,8 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response2.json()['error'] == 'Permision Denied'
         else:
             response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
-            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG:
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
+                or headers_auth['app'] == API:
                 assert response.status_code == 200
             else:    
                 assert response.status_code == 403

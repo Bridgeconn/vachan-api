@@ -678,9 +678,9 @@ def test_diffrernt_sources_with_app_and_roles():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
     response = client.get(UNIT_URL, headers=headers_auth)
     assert response.status_code == 200
-    assert len(response.json()) == 1
-    resp_data = response.json()[0]['metaData']
-    assert 'open-access' in resp_data['accessPermissions']
+    assert len(response.json()) == 2
+    assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
+    assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
     #APP : Autographa
     headers_auth['app'] = AG
     response = client.get(UNIT_URL, headers=headers_auth)
@@ -707,9 +707,9 @@ def test_diffrernt_sources_with_app_and_roles():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
     response = client.get(UNIT_URL, headers=headers_auth)
     assert response.status_code == 200
-    assert len(response.json()) == 1
-    resp_data = response.json()[0]['metaData']
-    assert 'open-access' in resp_data['accessPermissions']
+    assert len(response.json()) == 2
+    assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
+    assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
     #APP : Autographa
     headers_auth['app'] = AG
     response = client.get(UNIT_URL, headers=headers_auth)
@@ -795,8 +795,9 @@ def test_diffrernt_sources_with_app_and_roles():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     response = client.get(UNIT_URL, headers=headers_auth)
     assert response.status_code == 200
-    assert len(response.json()) == 1
+    assert len(response.json()) == 2
     assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
+    assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
     #APP : Autographa
     headers_auth['app'] = AG
     response = client.get(UNIT_URL, headers=headers_auth)
