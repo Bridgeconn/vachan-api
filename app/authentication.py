@@ -45,7 +45,7 @@ access_rules = {
         "translate":["SuperAdmin", "AgAdmin", "AgUser"]
     },
     "publishable":{
-        "read-via-api":["registeredUser","SuperAdmin","VachanAdmin","BcsDeveloper"],
+        "read-via-api":["registeredUser"],
         "view-on-web":["noAuthRequired"],
         "refer-for-translation":["SuperAdmin", "AgAdmin", "AgUser"]
     },
@@ -171,8 +171,8 @@ def get_accesstags_permission(request_context, resource_type, db_, db_resource ,
         else:
             resource_type = schema_auth.ResourceType.CONTENT
 
-    required_permission = api_permission_map(endpoint, method ,requesting_app, resource_type,
-                            user_details)
+    required_permission = api_permission_map(endpoint, request_context ,
+        requesting_app, resource_type, user_details)
 
     access_tags = get_accesstags_basedon_resourcetype(resource_type, method, db_resource)
 
@@ -255,11 +255,13 @@ def filter_resource_content_get(db_resource, access_tags, required_permission, u
         if 'APIUser' in user_roles:
             user_roles.remove('APIUser')#pylint: disable=no-member #unwanted error
             user_roles.append('registeredUser')#pylint: disable=no-member
+        if not user_id is None and not 'registeredUser' in user_roles:
+            user_roles.append('registeredUser')
     else:
         user_id = None ##pylint: disable=W0612
         user_roles = []
 
-    for source in db_resource:
+    for source in db_resource:#pylint: disable=too-many-nested-blocks
         for tag in source.metaData['accessPermissions']:
             if required_permission in access_rules[tag].keys():
                 allowed_users = access_rules[tag][required_permission]
@@ -267,11 +269,11 @@ def filter_resource_content_get(db_resource, access_tags, required_permission, u
                 role = "noAuthRequired"
                 if role in allowed_users:
                     filtered_content.append(source)
-
-                for role in user_roles:
-                    if role in allowed_users and \
-                            not any(source == dic for dic in filtered_content):
-                        filtered_content.append(source)
+                else:
+                    for role in user_roles:
+                        if role in allowed_users and \
+                                not any(source == dic for dic in filtered_content):
+                            filtered_content.append(source)
     if len(filtered_content) > 0:
         has_rights = True
     return has_rights, filtered_content
@@ -334,12 +336,12 @@ def verify_auth_decorator_params(kwargs):
     # if 'user_details' in kwargs.keys() and isinstance(kwargs['user_details'],dict):
     #     required_params['user_id'] = kwargs['user_details']["user_id"]
     #     required_params['user_roles'] = kwargs['user_details']['user_roles']
-
     if 'request' in kwargs.keys():
         request_context = {}
         request = kwargs['request']
         request_context['method'] = request.method
         request_context['endpoint'] = request.url.path
+        request_context['path_params'] = request.path_params
         if 'app' in request.headers:
             request_context['app'] = request.headers['app']
         else:

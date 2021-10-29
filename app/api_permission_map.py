@@ -3,18 +3,23 @@
 import schema_auth
 
 #pylint: disable=too-many-locals,too-many-statements
-def api_permission_map(endpoint, method, requesting_app, resource, user_details):
+def api_permission_map(endpoint, request_context, requesting_app, resource, user_details):
     '''returns the required permission name as per the access rules'''
 
     message = "API's required permission not defined"
-    # print("requesting_app==========>",requesting_app)
+    method = request_context['method']
     # check sourcename is present or not
-    source_contents_list = ['bibles','commentaries','dictionaries','infographics','biblevideos']
-    endpoint_split_list = endpoint.split('/')
-    if endpoint_split_list[2] in source_contents_list:
-        endpoint_source_name = endpoint_split_list[3]
+    if not request_context['path_params'] == {} and\
+        'source_name' in request_context['path_params'].keys():
+        source_name = request_context['path_params']['source_name']
     else:
-        endpoint_source_name = None
+        source_name = None
+    # source_contents_list = ['bibles','commentaries','dictionaries','infographics','biblevideos']
+    # endpoint_split_list = endpoint.split('/')
+    # if endpoint_split_list[2] in source_contents_list:
+    #     endpoint_source_name = endpoint_split_list[3]
+    # else:
+    #     endpoint_source_name = None
 
     #Methods related to swither
     def switch_register():
@@ -153,21 +158,21 @@ def api_permission_map(endpoint, method, requesting_app, resource, user_details)
 
         "/v2/lookup/bible/books" : switch_contents,
 
-        f"/v2/bibles/{endpoint_source_name}/books" : switch_contents,
+        f"/v2/bibles/{source_name}/books" : switch_contents,
 
-        f"/v2/bibles/{endpoint_source_name}/versification" : switch_contents,
+        f"/v2/bibles/{source_name}/versification" : switch_contents,
 
-        f"/v2/bibles/{endpoint_source_name}/verses" : switch_contents,
+        f"/v2/bibles/{source_name}/verses" : switch_contents,
 
-        f"/v2/bibles/{endpoint_source_name}/audios" : switch_contents,
+        f"/v2/bibles/{source_name}/audios" : switch_contents,
 
-        f"/v2/commentaries/{endpoint_source_name}" : switch_contents,
+        f"/v2/commentaries/{source_name}" : switch_contents,
 
-        f"/v2/dictionaries/{endpoint_source_name}" : switch_contents,
+        f"/v2/dictionaries/{source_name}" : switch_contents,
 
-        f"/v2/infographics/{endpoint_source_name}" : switch_contents,
+        f"/v2/infographics/{source_name}" : switch_contents,
 
-        f"/v2/biblevideos/{endpoint_source_name}" : switch_contents,
+        f"/v2/biblevideos/{source_name}" : switch_contents,
 
         "/v2/autographa/projects" : switch_agmt_project,
 
