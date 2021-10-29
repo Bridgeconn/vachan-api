@@ -60,7 +60,8 @@ def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectE
         if "error" in response:
             raise GenericException(response['error'])
         for item in response:
-            sentences.append(schemas_nlp.SentenceInput(sentenceId=item[0], sentence=item[1]))
+            sentences.append(schemas_nlp.SentenceInput(
+                sentenceId=item[0], surrogateId=item[1], sentence=item[2]))
         if project_obj.sentenceList is not None:
             project_obj.sentenceList += sentences
         else:

@@ -78,12 +78,14 @@ class SelectedBooks(BaseModel):
 class SentenceInput(BaseModel):
     '''Input sentences for tokenization'''
     sentenceId: str = Field(..., example=41001001)
+    surrogateId: str= Field(None, example="MAT 1:1")
     sentence: str = Field(...,
         example="इब्राहीम के वंशज दाऊद के पुत्र यीशु मसीह की वंशावली इस प्रकार है")
     @root_validator
     def set_surrogate_id(cls, values): # pylint: disable=R0201 disable=E0213
-        '''USFM and JSON should be updated together. If they are absent, bookCode is required'''
-        values['surrogateId'] = values['sentenceId']
+        '''Set surrogate id value, if not provided and make id int'''
+        if values['surrogateId'] is None:
+            values['surrogateId'] = values['sentenceId']
         values['sentenceId'] = int(values['sentenceId'])
         return values
 
@@ -151,6 +153,7 @@ class TranslateResponse(BaseModel):
 class DraftInput(BaseModel):
     '''Input sentences for translation'''
     sentenceId: str = Field(..., example=41001001)
+    surrogateId: str= Field(None, example="MAT 1:1")
     sentence: str = Field(...,
     	example="इब्राहीम के वंशज दाऊद के पुत्र यीशु मसीह की वंशावली इस प्रकार है")
     draft: str = Field(None,
@@ -160,8 +163,9 @@ class DraftInput(BaseModel):
             [[8,64],[8,64],"untranslated"]])
     @root_validator
     def set_surrogate_id(cls, values): # pylint: disable=R0201 disable=E0213
-        '''USFM and JSON should be updated together. If they are absent, bookCode is required'''
-        values['surrogateId'] = values['sentenceId']
+        '''Set surrogate id value, if not provided and make id int'''
+        if values['surrogateId'] is None:
+            values['surrogateId'] = values['sentenceId']
         values['sentenceId'] = int(values['sentenceId'])
         return values
 

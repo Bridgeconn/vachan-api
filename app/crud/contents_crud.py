@@ -708,10 +708,12 @@ def extract_text(db_:Session, tables, books):
         if table.contentType.contentType == db_models.ContentTypeName.BIBLE.value:
             model_cls = db_models.dynamicTables[table.sourceName+'_cleaned']
             query = db_.query(model_cls.refId.label('sentenceId'),
+                model_cls.refString.label('surrogateId'),
                 model_cls.verseText.label('sentence'))
         elif table.contentType.contentType == db_models.ContentTypeName.COMMENTARY.value:
             model_cls = db_models.dynamicTables[table.sourceName]
             query = db_.query(model_cls.commentaryId.label('sentenceId'),
+                model_cls.refString.label('surrogateId'),
                 model_cls.commentary.label('sentence'))
         else:
             continue
