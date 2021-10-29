@@ -1,6 +1,6 @@
 '''API endpoints related to content management'''
 from typing import List
-from fastapi import APIRouter, Query, Body, Depends, Path
+from fastapi import APIRouter, Query, Body, Depends, Path, Request
 from sqlalchemy.orm import Session
 
 import schemas, schemas_nlp
@@ -662,7 +662,7 @@ def edit_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="en_TB
 @router.get('/v2/sources/get-sentence', response_model=List[schemas_nlp.SentenceInput],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Sources"])
-def extract_text_contents(source_name:schemas.TableNamePattern=Query(None,example="en_TBP_1_bible"),
+def extract_text_contents(request:Request, source_name:schemas.TableNamePattern=Query(None,example="en_TBP_1_bible"),
     books:List[schemas.BookCodePattern]=Query(None,example='GEN'),
     language_code=Query(None, example="hi"),
     db_: Session = Depends(get_db)):

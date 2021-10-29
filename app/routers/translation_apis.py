@@ -11,6 +11,7 @@ import schemas
 import schemas_nlp
 from crud import nlp_crud, projects_crud, utils
 from custom_exceptions import GenericException
+from routers import content_apis
 
 router = APIRouter()
 #pylint: disable=too-many-arguments
@@ -52,16 +53,16 @@ def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectE
         books_param_list = "" 
         for buk in project_obj.selectedBooks.books:
             books_param_list += "&books=%s"%(buk)
-        url = request.url_for('extract_text_contents')
-        print(url)
-        response = requests.get(url+
-                '?source_name'+
-                '=%s%s'%(project_obj.selectedBooks.bible, books_param_list),
-                headers=request.headers).json()
+        response = content_apis.extract_text_contents(
+            request=request,
+            source_name=project_obj.selectedBooks.bible,
+            books=project_obj.selectedBooks.books,
+            language_code=None,
+            db_=db_)
         if "error" in response:
             raise GenericException(response['error'])
         for item in response:
-            sentences.append(utils.convert_dict_obj_to_pydantic(item, schemas_nlp.SentenceInput))
+            sentences.append(schemas_nlp.SentenceInput(sentenceId=item[0], sentence=item[1]))
         if project_obj.sentenceList is not None:
             project_obj.sentenceList += sentences
         else:
