@@ -1,8 +1,8 @@
 '''Set testing environment and define common tests'''
 from typing import Dict
 from fastapi.testclient import TestClient
-from graphene.types.structures import List
 from app.main import app
+from app import schema_auth
 
 client = TestClient(app)
 
@@ -75,6 +75,7 @@ def check_limit(unit_url,headers):
 
 def check_default_get(unit_url, headers, assert_positive_get):
     '''checks for an array of items of particular type'''
+    #without auth
     response = client.get(unit_url,headers=headers)
     assert response.status_code == 200
     assert isinstance( response.json(), list)
@@ -85,29 +86,29 @@ def check_default_get(unit_url, headers, assert_positive_get):
     check_skip(unit_url,headers)
     check_limit(unit_url,headers)
 
-def check_soft_delete(unit_url, check_post, data, delete_data):
+def check_soft_delete(unit_url, check_post, data, delete_data , headers):
     '''set active field to False'''
     response, source_name = check_post(data)
     assert response.status_code == 201
 
-    get_response1 = client.get(unit_url+source_name)
+    get_response1 = client.get(unit_url+source_name,headers=headers)
     assert len(get_response1.json()) == len(data)
 
 
     # positive PUT
     for item in delete_data:
         item['active'] = False
-    headers = {"contentType": "application/json", "accept": "application/json"}
+    # headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.put(unit_url+source_name,headers=headers, json=delete_data)
     assert response.status_code == 201
     assert response.json()['message'].endswith('updated successfully')
     for item in response.json()['data']:
         assert not item['active']
 
-    get_response2 = client.get(unit_url+source_name)
+    get_response2 = client.get(unit_url+source_name, headers=headers)
     assert len(get_response2.json()) == len(data) - len(delete_data)
 
-    get_response3 = client.get(unit_url+source_name+'?active=false')
+    get_response3 = client.get(unit_url+source_name+'?active=false',headers=headers)
     assert len(get_response3.json()) == len(delete_data)
 
 def check_skip_limit_gql(query,api_name):
@@ -185,3 +186,707 @@ def check_skip_limit_gql(query,api_name):
 def assert_not_available_content_gql(item):
     '''Checks for empty array returned when requetsed content not available'''
     assert len(item) == 0
+
+
+def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , bible = False):
+    """checks for content api access based on user roles and apps"""
+    from .test_versions import check_post as add_version
+    from .conftest import initial_test_users
+    from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER
+
+    headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
+    #create 5 sources for contents with 5 different permisions
+    language_list = ['en','ml','tn','ab','af']
+    permission_list = ["content","open-access","publishable","downloadable","derivable"]
+    sourcename_list = []
+    version_data = {
+        "versionAbbreviation": "TTT",
+        "versionName": "test version",
+    }
+    add_version(version_data)
+    source_data = {
+        "contentType": contenttype,
+        "language": "",
+        "version": "TTT",
+        "revision": 1,
+        "year": 2020,
+        "license": "CC-BY-SA",
+        "accessPermissions": [],
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    #SuperAdmin login and token
+    SA_user_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(SA_user_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    SA_TOKEN = "Bearer"+" "+test_user_token
+
+    #create source and corresponsing contents
+    #source can only created by VA or SA
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    for num in range(5):
+        source_data["language"] = language_list[num]
+        source_data["accessPermissions"] = [permission_list[num]]
+        response = client.post('/v2/sources', headers=headers_auth, json=source_data)
+        assert response.status_code == 201
+        assert response.json()['message'] == "Source created successfully"
+        resp_data = response.json()['data']['metaData']
+        assert permission_list[num]  in resp_data['accessPermissions']
+        source_name = language_list[num] + "_TTT_1_" + contenttype
+        sourcename_list.append(source_name)
+
+        if bible :
+            contentapi_post_url = UNIT_URL+source_name+'/books'
+            response = client.post(contentapi_post_url, headers=headers_auth, json=data)
+            assert response.status_code == 201
+        else:
+            contentapi_post_url = UNIT_URL+source_name
+            response = client.post(contentapi_post_url, headers=headers_auth, json=data)
+            assert response.status_code == 201
+
+    API = schema_auth.App.API.value
+    AG = schema_auth.App.AG.value
+    VACHAN = schema_auth.App.VACHAN.value
+    VACHANADMIN = schema_auth.App.VACHANADMIN.value       
+    Apps = [ API,AG,VACHAN,VACHANADMIN]
+
+    #Get without Login headers=headers_auth
+    #permision -------------------------> content , downloadable , derivable
+    print("source respectivily for -------------------------> \
+        content(en) , downloadable(ab) , derivable(af)")
+    test_permissions_list  = ["en_TTT_1_" + contenttype , "ab_TTT_1_" + contenttype ,
+                                "af_TTT_1_" + contenttype]
+    for i in range(len(test_permissions_list)):
+        headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}  
+        print(f"permisioln source-------------------------> {test_permissions_list[i]}")
+        
+        for num in range(4):
+            headers_auth['app'] = Apps[num]
+            if bible:
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+            else:    
+                response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+        print(f"Test passed -----> NO LOGIN")
+
+        #Get with AgUser
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+        for num in range(4):
+            headers_auth['app'] = Apps[num]
+            if bible:
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+            else:
+                response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+        print(f"Test passed -----> AG USER")
+
+        #Get with VachanUser
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
+        for num in range(4):
+            headers_auth['app'] = Apps[num]
+            if bible:
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+            else:
+                response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+        print(f"Test passed -----> VACHAN USER")
+
+        #Get with VachanAdmin
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+        for num in range(4):
+            headers_auth['app'] = Apps[num]
+            if bible:
+                response1 = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
+                response2 = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
+                response3 = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
+                if headers_auth['app'] == API or headers_auth['app'] == VACHANADMIN:
+                    assert response1.status_code == 200
+                    assert response2.status_code == 200
+                    assert response3.status_code == 200
+                else:
+                    assert response1.status_code == 403
+                    assert response1.json()['error'] == 'Permision Denied'
+                    assert response2.status_code == 403
+                    assert response2.json()['error'] == 'Permision Denied'
+                    assert response3.status_code == 403
+                    assert response2.json()['error'] == 'Permision Denied'
+            else:
+                response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
+                if headers_auth['app'] == API or headers_auth['app'] == VACHANADMIN:
+                    assert response.status_code == 200
+                else:
+                    assert response.status_code == 403
+                    assert response.json()['error'] == 'Permision Denied'
+        print(f"Test passed -----> VACHAN ADMIN")
+
+        #Get with API User
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+        for num in range(4):
+            headers_auth['app'] = Apps[num]
+            if bible:
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+            else:
+                response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+        print(f"Test passed -----> API USER")
+
+        #Get with AgAdmin
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+        for num in range(4):
+            headers_auth['app'] = Apps[num]
+            if bible:
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+            else:
+                response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+        print(f"Test passed -----> AG ADMIN")
+
+        #Get with SuperAdmin
+        headers_auth['Authorization'] = SA_TOKEN
+        for num in range(4):
+            headers_auth['app'] = Apps[num]
+            if bible:
+                response1 = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
+                response2 = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
+                response3 = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
+                if headers_auth['app'] == API or headers_auth['app'] == VACHANADMIN:
+                    assert response1.status_code == 200
+                    assert response2.status_code == 200
+                    assert response3.status_code == 200
+                else:
+                    assert response1.status_code == 403
+                    assert response1.json()['error'] == 'Permision Denied'
+                    assert response2.status_code == 403
+                    assert response2.json()['error'] == 'Permision Denied'
+                    assert response3.status_code == 403
+                    assert response2.json()['error'] == 'Permision Denied'
+            else:
+                response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
+                if headers_auth['app'] == API or headers_auth['app'] == VACHANADMIN:
+                    assert response.status_code == 200
+                else:
+                    assert response.status_code == 403
+                    assert response.json()['error'] == 'Permision Denied'
+        print(f"Test passed -----> SUPER ADMIN")
+
+        #Get with Bcs Dev
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
+        for num in range(4):
+            headers_auth['app'] = Apps[num]
+            if bible:
+                response1 = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
+                response2 = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
+                response3 = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
+                if headers_auth['app'] == API:
+                    assert response1.status_code == 200
+                    assert response2.status_code == 200
+                    assert response3.status_code == 200
+                else:
+                    assert response1.status_code == 403
+                    assert response1.json()['error'] == 'Permision Denied'
+                    assert response2.status_code == 403
+                    assert response2.json()['error'] == 'Permision Denied'
+                    assert response3.status_code == 403
+                    assert response2.json()['error'] == 'Permision Denied'
+            else:
+                response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
+                if headers_auth['app'] == API:
+                    assert response.status_code == 200
+                else:
+                    assert response.status_code == 403
+                    assert response.json()['error'] == 'Permision Denied'
+        print(f"Test passed -----> BCS DEVELOPER")
+
+    #test for permissions -----------------------------------------------> open-access
+
+    print('permision -------------------------> open access')
+    headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
+    #No login
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = client.get(UNIT_URL+sourcename_list[1]+'/books',headers=headers_auth)
+            response2 = client.get(UNIT_URL+sourcename_list[1]+'/versification',headers=headers_auth)
+            response3 = client.get(UNIT_URL+sourcename_list[1]+'/verses',headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert response1.status_code == 200
+                assert response2.status_code == 200
+                assert response3.status_code == 200
+            else:
+                assert response1.status_code == 403
+                assert response1.json()['error'] == 'Permision Denied'
+                assert response2.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+                assert response3.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+        else:
+            response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert response.status_code == 200
+            else:    
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+    print(f"Test passed -----> NO LOGIN")
+
+    #Get with AgUser
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = client.get(UNIT_URL+sourcename_list[1]+'/books',headers=headers_auth)
+            response2 = client.get(UNIT_URL+sourcename_list[1]+'/versification',headers=headers_auth)
+            response3 = client.get(UNIT_URL+sourcename_list[1]+'/verses',headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
+                or headers_auth['app'] == AG:
+                assert response1.status_code == 200
+                assert response2.status_code == 200
+                assert response3.status_code == 200
+            else:
+                assert response1.status_code == 403
+                assert response1.json()['error'] == 'Permision Denied'
+                assert response2.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+                assert response3.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+        else:
+            response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
+                or headers_auth['app'] == AG:
+                assert response.status_code == 200
+            else:    
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+    print(f"Test passed -----> AG USER")
+
+    #Get with VachanUser
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = client.get(UNIT_URL+sourcename_list[1]+'/books',headers=headers_auth)
+            response2 = client.get(UNIT_URL+sourcename_list[1]+'/versification',headers=headers_auth)
+            response3 = client.get(UNIT_URL+sourcename_list[1]+'/verses',headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert response1.status_code == 200
+                assert response2.status_code == 200
+                assert response3.status_code == 200
+            else:
+                assert response1.status_code == 403
+                assert response1.json()['error'] == 'Permision Denied'
+                assert response2.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+                assert response3.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+        else:
+            response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert response.status_code == 200
+            else:    
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+    print(f"Test passed -----> VACHAN USER")
+
+    #Get with VachanAdmin
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = client.get(UNIT_URL+sourcename_list[1]+'/books',headers=headers_auth)
+            response2 = client.get(UNIT_URL+sourcename_list[1]+'/versification',headers=headers_auth)
+            response3 = client.get(UNIT_URL+sourcename_list[1]+'/verses',headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHANADMIN\
+                or headers_auth['app'] == VACHAN:
+                assert response1.status_code == 200
+                assert response2.status_code == 200
+                assert response3.status_code == 200
+            else:
+                assert response1.status_code == 403
+                assert response1.json()['error'] == 'Permision Denied'
+                assert response2.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+                assert response3.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+        else:
+            response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHANADMIN\
+                or headers_auth['app'] == VACHAN:
+                assert response.status_code == 200
+            else:
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+    print(f"Test passed -----> VACHAN ADMIN")
+
+    #Get with API User
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = client.get(UNIT_URL+sourcename_list[1]+'/books',headers=headers_auth)
+            response2 = client.get(UNIT_URL+sourcename_list[1]+'/versification',headers=headers_auth)
+            response3 = client.get(UNIT_URL+sourcename_list[1]+'/verses',headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert response1.status_code == 200
+                assert response2.status_code == 200
+                assert response3.status_code == 200
+            else:
+                assert response1.status_code == 403
+                assert response1.json()['error'] == 'Permision Denied'
+                assert response2.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+                assert response3.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+        else:
+            response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert response.status_code == 200
+            else:    
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+    print(f"Test passed -----> API USER")
+
+    #Get with AgAdmin
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = client.get(UNIT_URL+sourcename_list[1]+'/books',headers=headers_auth)
+            response2 = client.get(UNIT_URL+sourcename_list[1]+'/versification',headers=headers_auth)
+            response3 = client.get(UNIT_URL+sourcename_list[1]+'/verses',headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
+                or headers_auth['app'] == AG:
+                assert response1.status_code == 200
+                assert response2.status_code == 200
+                assert response3.status_code == 200
+            else:
+                assert response1.status_code == 403
+                assert response1.json()['error'] == 'Permision Denied'
+                assert response2.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+                assert response3.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+        else:
+            response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
+                or headers_auth['app'] == AG:
+                assert response.status_code == 200
+            else:    
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+    print(f"Test passed -----> AG ADMIN")
+
+    #Get with SuperAdmin
+    headers_auth['Authorization'] = SA_TOKEN
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = client.get(UNIT_URL+sourcename_list[1]+'/books',headers=headers_auth)
+            response2 = client.get(UNIT_URL+sourcename_list[1]+'/versification',headers=headers_auth)
+            response3 = client.get(UNIT_URL+sourcename_list[1]+'/verses',headers=headers_auth)
+            assert response1.status_code == 200
+            assert response2.status_code == 200
+            assert response3.status_code == 200
+        else:
+            response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
+            assert response.status_code == 200
+    print(f"Test passed -----> SUPER ADMIN")
+
+    #Get with Bcs Dev
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = client.get(UNIT_URL+sourcename_list[1]+'/books',headers=headers_auth)
+            response2 = client.get(UNIT_URL+sourcename_list[1]+'/versification',headers=headers_auth)
+            response3 = client.get(UNIT_URL+sourcename_list[1]+'/verses',headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert response1.status_code == 200
+                assert response2.status_code == 200
+                assert response3.status_code == 200
+            else:
+                assert response1.status_code == 403
+                assert response1.json()['error'] == 'Permision Denied'
+                assert response2.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+                assert response3.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+        else:
+            response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert response.status_code == 200
+            else:
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+    print(f"Test passed -----> BCS DEVELOPER")
+
+    #test for permissions -----------------------------------------------> publishable
+
+    print('permision -------------------------> publishable')
+    headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
+    #No login
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = client.get(UNIT_URL+sourcename_list[2]+'/books',headers=headers_auth)
+            response2 = client.get(UNIT_URL+sourcename_list[2]+'/versification',headers=headers_auth)
+            response3 = client.get(UNIT_URL+sourcename_list[2]+'/verses',headers=headers_auth)
+            if headers_auth['app'] == VACHAN:
+                assert response1.status_code == 200
+                assert response2.status_code == 200
+                assert response3.status_code == 200
+            else:
+                assert response1.status_code == 403
+                assert response1.json()['error'] == 'Permision Denied'
+                assert response2.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+                assert response3.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+        else:
+            response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
+            if headers_auth['app'] == VACHAN:
+                assert response.status_code == 200
+            else:    
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+    print(f"Test passed -----> NO LOGIN")
+
+    #Get with AgUser
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = client.get(UNIT_URL+sourcename_list[2]+'/books',headers=headers_auth)
+            response2 = client.get(UNIT_URL+sourcename_list[2]+'/versification',headers=headers_auth)
+            response3 = client.get(UNIT_URL+sourcename_list[2]+'/verses',headers=headers_auth)
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
+                or headers_auth['app'] == API:
+                assert response1.status_code == 200
+                assert response2.status_code == 200
+                assert response3.status_code == 200
+            else:
+                assert response1.status_code == 403
+                assert response1.json()['error'] == 'Permision Denied'
+                assert response2.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+                assert response3.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+        else:
+            response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
+                or headers_auth['app'] == API:
+                assert response.status_code == 200
+            else:    
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+    print(f"Test passed -----> AG USER")
+
+    #Get with VachanUser
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = client.get(UNIT_URL+sourcename_list[2]+'/books',headers=headers_auth)
+            response2 = client.get(UNIT_URL+sourcename_list[2]+'/versification',headers=headers_auth)
+            response3 = client.get(UNIT_URL+sourcename_list[2]+'/verses',headers=headers_auth)
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == API:
+                assert response1.status_code == 200
+                assert response2.status_code == 200
+                assert response3.status_code == 200
+            else:
+                assert response1.status_code == 403
+                assert response1.json()['error'] == 'Permision Denied'
+                assert response2.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+                assert response3.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+        else:
+            response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == API:
+                assert response.status_code == 200
+            else:    
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+    print(f"Test passed -----> VACHAN USER")
+
+    #Get with VachanAdmin
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = client.get(UNIT_URL+sourcename_list[2]+'/books',headers=headers_auth)
+            response2 = client.get(UNIT_URL+sourcename_list[2]+'/versification',headers=headers_auth)
+            response3 = client.get(UNIT_URL+sourcename_list[2]+'/verses',headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHANADMIN\
+                or headers_auth['app'] == VACHAN:
+                assert response1.status_code == 200
+                assert response2.status_code == 200
+                assert response3.status_code == 200
+            else:
+                assert response1.status_code == 403
+                assert response1.json()['error'] == 'Permision Denied'
+                assert response2.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+                assert response3.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+        else:
+            response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHANADMIN\
+                or headers_auth['app'] == VACHAN:
+                assert response.status_code == 200
+            else:
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+    print(f"Test passed -----> VACHAN ADMIN")
+
+    #Get with API User
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = client.get(UNIT_URL+sourcename_list[2]+'/books',headers=headers_auth)
+            response2 = client.get(UNIT_URL+sourcename_list[2]+'/versification',headers=headers_auth)
+            response3 = client.get(UNIT_URL+sourcename_list[2]+'/verses',headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert response1.status_code == 200
+                assert response2.status_code == 200
+                assert response3.status_code == 200
+            else:
+                assert response1.status_code == 403
+                assert response1.json()['error'] == 'Permision Denied'
+                assert response2.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+                assert response3.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+        else:
+            response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert response.status_code == 200
+            else:    
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+    print(f"Test passed -----> API USER")
+
+    #Get with AgAdmin
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = client.get(UNIT_URL+sourcename_list[2]+'/books',headers=headers_auth)
+            response2 = client.get(UNIT_URL+sourcename_list[2]+'/versification',headers=headers_auth)
+            response3 = client.get(UNIT_URL+sourcename_list[2]+'/verses',headers=headers_auth)
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
+                or headers_auth['app'] == API:
+                assert response1.status_code == 200
+                assert response2.status_code == 200
+                assert response3.status_code == 200
+            else:
+                assert response1.status_code == 403
+                assert response1.json()['error'] == 'Permision Denied'
+                assert response2.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+                assert response3.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+        else:
+            response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
+                or headers_auth['app'] == API:
+                assert response.status_code == 200
+            else:    
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+    print(f"Test passed -----> AG ADMIN")
+
+    #Get with SuperAdmin
+    headers_auth['Authorization'] = SA_TOKEN
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = client.get(UNIT_URL+sourcename_list[2]+'/books',headers=headers_auth)
+            response2 = client.get(UNIT_URL+sourcename_list[2]+'/versification',headers=headers_auth)
+            response3 = client.get(UNIT_URL+sourcename_list[2]+'/verses',headers=headers_auth)
+            assert response1.status_code == 200
+            assert response2.status_code == 200
+            assert response3.status_code == 200
+        else:
+            response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
+            assert response.status_code == 200
+    print(f"Test passed -----> SUPER ADMIN")
+
+    #Get with Bcs Dev
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = client.get(UNIT_URL+sourcename_list[2]+'/books',headers=headers_auth)
+            response2 = client.get(UNIT_URL+sourcename_list[2]+'/versification',headers=headers_auth)
+            response3 = client.get(UNIT_URL+sourcename_list[2]+'/verses',headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert response1.status_code == 200
+                assert response2.status_code == 200
+                assert response3.status_code == 200
+            else:
+                assert response1.status_code == 403
+                assert response1.json()['error'] == 'Permision Denied'
+                assert response2.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+                assert response3.status_code == 403
+                assert response2.json()['error'] == 'Permision Denied'
+        else:
+            response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert response.status_code == 200
+            else:
+                assert response.status_code == 403
+                assert response.json()['error'] == 'Permision Denied'
+    print(f"Test passed -----> BCS DEVELOPER")

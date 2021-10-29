@@ -3,10 +3,23 @@
 import schema_auth
 
 #pylint: disable=too-many-locals,too-many-statements
-def api_permission_map(endpoint, method, requesting_app, resource, user_details):
+def api_permission_map(endpoint, request_context, requesting_app, resource, user_details):
     '''returns the required permission name as per the access rules'''
 
     message = "API's required permission not defined"
+    method = request_context['method']
+    # check sourcename is present or not
+    if not request_context['path_params'] == {} and\
+        'source_name' in request_context['path_params'].keys():
+        source_name = request_context['path_params']['source_name']
+    else:
+        source_name = None
+    # source_contents_list = ['bibles','commentaries','dictionaries','infographics','biblevideos']
+    # endpoint_split_list = endpoint.split('/')
+    # if endpoint_split_list[2] in source_contents_list:
+    #     endpoint_source_name = endpoint_split_list[3]
+    # else:
+    #     endpoint_source_name = None
 
     #Methods related to swither
     def switch_register():
@@ -60,7 +73,8 @@ def api_permission_map(endpoint, method, requesting_app, resource, user_details)
                 permission = "view-on-web"
             elif requesting_app == schema_auth.App.VACHANADMIN:
                 permission = "read-via-vachanadmin"
-            elif requesting_app is None:
+            elif requesting_app is None or \
+                requesting_app == schema_auth.App.API:
                 permission = "read-via-api"
         elif method == 'POST':
             if not 'error' in user_details.keys():
@@ -144,15 +158,21 @@ def api_permission_map(endpoint, method, requesting_app, resource, user_details)
 
         "/v2/lookup/bible/books" : switch_contents,
 
-        "/v2/bibles" : switch_contents,
+        f"/v2/bibles/{source_name}/books" : switch_contents,
 
-        "/v2/commentaries" : switch_contents,
+        f"/v2/bibles/{source_name}/versification" : switch_contents,
 
-        "/v2/dictionaries" : switch_contents,
+        f"/v2/bibles/{source_name}/verses" : switch_contents,
 
-        "/v2/infographics" : switch_contents,
+        f"/v2/bibles/{source_name}/audios" : switch_contents,
 
-        "/v2/biblevideos" : switch_contents,
+        f"/v2/commentaries/{source_name}" : switch_contents,
+
+        f"/v2/dictionaries/{source_name}" : switch_contents,
+
+        f"/v2/infographics/{source_name}" : switch_contents,
+
+        f"/v2/biblevideos/{source_name}" : switch_contents,
 
         "/v2/autographa/projects" : switch_agmt_project,
 

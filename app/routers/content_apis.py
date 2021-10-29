@@ -336,23 +336,29 @@ def get_bible_book(book_id: int=Query(None, example=67),
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bibles"])
-def add_bible_book(source_name : schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
-    books: List[schemas.BibleBookUpload] = Body(...), db_: Session = Depends(get_db)):
+@get_auth_access_check_decorator
+async def add_bible_book(request: Request,
+    source_name : schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
+    books: List[schemas.BibleBookUpload] = Body(...), user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
     '''Uploads a bible book. It update 2 tables: ..._bible, .._bible_cleaned.
     The JSON provided should be generated from the USFM, using usfm-grammar 2.0.0-beta.8 or above'''
     log.info('In add_bible_book')
     log.debug('source_name: %s, books: %s',source_name, books)
     return {'message': "Bible books uploaded and processed successfully",
         "data": contents_crud.upload_bible_books(db_=db_, source_name=source_name,
-        books=books, user_id=None)}
+        books=books, user_id=user_details['user_id'])}
 
 @router.put('/v2/bibles/{source_name}/books', response_model=schemas.BibleBookUpdateResponse,
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bibles"])
-def edit_bible_book(source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
-    books: List[schemas.BibleBookEdit] = Body(...), db_: Session = Depends(get_db)):
+@get_auth_access_check_decorator
+async def edit_bible_book(request: Request,
+    source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
+    books: List[schemas.BibleBookEdit] = Body(...),user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
     '''Either changes the active status or the bible contents.
     * Active field can be used to activate or deactivate a content. For which,
     Item identifier is book code.
@@ -365,18 +371,20 @@ def edit_bible_book(source_name: schemas.TableNamePattern=Path(..., example="hi_
     log.debug('source_name: %s, books: %s',source_name, books)
     return {'message': "Bible books updated successfully",
         "data": contents_crud.update_bible_books(db_=db_, source_name=source_name,
-        books=books, user_id=None)}
+        books=books, user_id=user_details['user_id'])}
 
 @router.get('/v2/bibles/{source_name}/books',
     response_model=List[schemas.BibleBookContent],
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
-def get_available_bible_book(source_name: schemas.TableNamePattern=Path(...,
-    example="hi_IRV_1_bible"),
+@get_auth_access_check_decorator
+async def get_available_bible_book(request: Request,
+    source_name: schemas.TableNamePattern=Path(...,example="hi_IRV_1_bible"),
     book_code: schemas.BookCodePattern=Query(None, example="mat"),
     content_type: schemas.BookContentType=Query(None), active: bool=True,
-    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
+    user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
     '''Fetches all the books available(has been uploaded) in the specified bible
     * by default returns list of available(uploaded) books, without their contents
     * optional query parameters can be used to filter the result set
@@ -394,9 +402,10 @@ def get_available_bible_book(source_name: schemas.TableNamePattern=Path(...,
     response_model=schemas.Versification,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
-def get_bible_versification(
+@get_auth_access_check_decorator
+async def get_bible_versification(request: Request,
     source_name:schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
-    db_: Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
     '''Fetches the versification structure of the specified bible,
     with details of number of chapters, max verses in each chapter etc'''
     log.info('In get_bible_versification')
@@ -408,12 +417,15 @@ def get_bible_versification(
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
-def get_bible_verse(source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
+@get_auth_access_check_decorator
+async def get_bible_verse(request: Request,
+    source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
     book_code: schemas.BookCodePattern=Query(None, example="mat"),
     chapter: int=Query(None, example=1), verse: int=Query(None, example=1),
     last_verse: int=Query(None, example=15), search_phrase: str=Query(None, example='सन्‍तान'),
     active: bool=True,
-    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
+    user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
     ''' Fetches the cleaned contents of bible, within a verse range, if specified.
     This API could be used for fetching,
      * all verses of a source : with out giving any query params.
@@ -438,21 +450,27 @@ def get_bible_verse(source_name: schemas.TableNamePattern=Path(..., example="hi_
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bibles"])
-def add_audio_bible(source_name : schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
-    audios: List[schemas.AudioBibleUpload] = Body(...), db_: Session = Depends(get_db)):
+@get_auth_access_check_decorator
+async def add_audio_bible(request: Request,
+    source_name : schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
+    audios: List[schemas.AudioBibleUpload] = Body(...), user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
     '''uploads audio(links and related info, not files) for a bible'''
     log.info('In add_audio_bible')
     log.debug('source_name: %s, audios: %s',source_name, audios)
     return {'message': "Bible audios details uploaded successfully",
         "data": contents_crud.upload_bible_audios(db_=db_, source_name=source_name,
-        audios=audios, user_id=None)}
+        audios=audios, user_id=user_details['user_id'])}
 
 @router.put('/v2/bibles/{source_name}/audios', response_model=schemas.AudioBibleUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bibles"])
-def edit_audio_bible(source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
-    audios: List[schemas.AudioBibleEdit] = Body(...), db_: Session = Depends(get_db)):
+@get_auth_access_check_decorator
+async def edit_audio_bible(request: Request,
+    source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
+    audios: List[schemas.AudioBibleEdit] = Body(...), user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
     ''' Changes the mentioned fields of audio bible row.
     book codes are used to identify items and at least one is mandatory.
     Active field can be used to activate or deactivate a content.
@@ -461,19 +479,21 @@ def edit_audio_bible(source_name: schemas.TableNamePattern=Path(..., example="hi
     log.debug('source_name: %s, audios: %s',source_name, audios)
     return {'message': "Bible audios details updated successfully",
         "data": contents_crud.update_bible_audios(db_=db_, source_name=source_name,
-        audios=audios, user_id=None)}
+        audios=audios, user_id=user_details['user_id'])}
 
 # # ##### Commentary #####
 @router.get('/v2/commentaries/{source_name}',
     response_model=List[schemas.CommentaryResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Commentaries"])
-def get_commentary(
+@get_auth_access_check_decorator
+async def get_commentary(request: Request,
     source_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
     book_code: schemas.BookCodePattern=Query(None, example="1ki"),
     chapter: int = Query(None, example=10, ge=-1), verse: int = Query(None, example=1, ge=-1),
     last_verse: int = Query(None, example=3, ge=-1), active: bool = True,
-    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
+    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Fetches commentries under the specified source.
     * optional query parameters can be used to filter the result set
     * Using the params bookCode, chapter, and verse the result set can be filtered as per need,
@@ -495,8 +515,12 @@ def get_commentary(
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Commentaries"])
-def add_commentary(source_name : schemas.TableNamePattern=Path(...,example="en_BBC_1_commentary"),
-    commentaries: List[schemas.CommentaryCreate] = Body(...), db_: Session = Depends(get_db)):
+@get_auth_access_check_decorator
+async def add_commentary(request: Request,
+    source_name : schemas.TableNamePattern=Path(...,example="en_BBC_1_commentary"),
+    commentaries: List[schemas.CommentaryCreate] = Body(...),
+    user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
     '''Uploads a list of commentaries.
     * Duplicate commentries are allowed for same verses,
     unless they have excalty same values for reference range.
@@ -511,14 +535,17 @@ def add_commentary(source_name : schemas.TableNamePattern=Path(...,example="en_B
     log.debug('source_name: %s, commentaries: %s',source_name, commentaries)
     return {'message': "Commentaries added successfully",
     "data": contents_crud.upload_commentaries(db_=db_, source_name=source_name,
-        commentaries=commentaries, user_id=None)}
+        commentaries=commentaries, user_id=user_details['user_id'])}
 
 @router.put('/v2/commentaries/{source_name}', response_model=schemas.CommentaryUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Commentaries"])
-def edit_commentary(source_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
-    commentaries: List[schemas.CommentaryEdit] = Body(...), db_: Session = Depends(get_db)):
+@get_auth_access_check_decorator
+async def edit_commentary(request: Request,
+    source_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
+    commentaries: List[schemas.CommentaryEdit] = Body(...), user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
     ''' Changes the commentary field to the given value in the row selected using
     book, chapter, verseStart and verseEnd values.
     Also active field can be used to activate or deactivate a content.
@@ -527,7 +554,7 @@ def edit_commentary(source_name: schemas.TableNamePattern=Path(..., example="en_
     log.debug('source_name: %s, commentaries: %s',source_name, commentaries)
     return {'message': "Commentaries updated successfully",
     "data": contents_crud.update_commentaries(db_=db_, source_name=source_name,
-        commentaries=commentaries, user_id=None)}
+        commentaries=commentaries, user_id=user_details['user_id'])}
 
 # # ########### Dictionary ###################
 @router.get('/v2/dictionaries/{source_name}',
@@ -535,12 +562,14 @@ def edit_commentary(source_name: schemas.TableNamePattern=Path(..., example="en_
     response_model=List[schemas.DictionaryWordResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Dictionaries"])
-def get_dictionary_word(
+@get_auth_access_check_decorator
+async def get_dictionary_word(request: Request,
     source_name: schemas.TableNamePattern=Path(...,example="en_TW_1_dictionary"),
     search_word: str=Query(None, example="Adam"),
     exact_match: bool=False, word_list_only: bool=False,
     details: schemas.MetaDataPattern=Query(None, example='{"type":"person"}'), active: bool=True,
-    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
+    user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
     '''fetches list of dictionary words and all available details about them.
     Using the searchIndex appropriately, it is possible to get
     * All words starting with a letter
@@ -564,10 +593,11 @@ def get_dictionary_word(
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Dictionaries"])
-def add_dictionary_word(
+@get_auth_access_check_decorator
+async def add_dictionary_word(request: Request,
     source_name : schemas.TableNamePattern=Path(..., example="en_TW_1_dictionary"),
     dictionary_words: List[schemas.DictionaryWordCreate] = Body(...),
-    db_: Session = Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     ''' uploads dictionay words and their details. 'Details' should be of JSON datatype and  have
     all the additional info we have for each word, as key-value pairs.
     The word will serve as the unique identifier'''
@@ -575,16 +605,17 @@ def add_dictionary_word(
     log.debug('source_name: %s, dictionary_words: %s',source_name, dictionary_words)
     return {'message': "Dictionary words added successfully",
         "data": contents_crud.upload_dictionary_words(db_=db_, source_name=source_name,
-        dictionary_words=dictionary_words, user_id=None)}
+        dictionary_words=dictionary_words, user_id=user_details['user_id'])}
 
 @router.put('/v2/dictionaries/{source_name}', response_model=schemas.DictionaryUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Dictionaries"])
-def edit_dictionary_word(
+@get_auth_access_check_decorator
+async def edit_dictionary_word(request: Request,
     source_name: schemas.TableNamePattern=Path(..., example="en_TW_1_dictionary"),
     dictionary_words: List[schemas.DictionaryWordEdit] = Body(...),
-    db_: Session = Depends(get_db)):
+    user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     ''' Updates a dictionary word. Item identifier is word, which cannot be altered.
     * Updates all the details, of the specifed word, if details is provided.
     * Active field can be used to activate or deactivate a word.
@@ -593,18 +624,20 @@ def edit_dictionary_word(
     log.debug('source_name: %s, dictionary_words: %s',source_name, dictionary_words)
     return {'message': "Dictionary words updated successfully",
         "data": contents_crud.update_dictionary_words(db_=db_, source_name=source_name,
-        dictionary_words=dictionary_words, user_id=None)}
+        dictionary_words=dictionary_words, user_id=user_details['user_id'])}
 
 # # ########### Infographic ###################
 @router.get('/v2/infographics/{source_name}',
     response_model=List[schemas.InfographicResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Infographics"])
-def get_infographic(
+@get_auth_access_check_decorator
+async def get_infographic(request: Request,
     source_name:schemas.TableNamePattern=Path(...,example="hi_IRV_1_infographic"),
     book_code: schemas.BookCodePattern=Query(None, example="exo"),
     title: str=Query(None, example="Ark of Covenant"), active: bool=True,
-    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
+    user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
     '''Fetches the infographics. Can use, bookCode and/or title to filter the results
     * optional query parameters can be used to filter the result set
     * skip=n: skips the first n objects in return list
@@ -620,24 +653,30 @@ def get_infographic(
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Infographics"])
-def add_infographics(source_name : schemas.TableNamePattern=Path(...,
+@get_auth_access_check_decorator
+async def add_infographics(request: Request,
+    source_name : schemas.TableNamePattern=Path(...,
     example="hi_IRV_1_infographic"),
-    infographics: List[schemas.InfographicCreate] = Body(...), db_: Session = Depends(get_db)):
+    infographics: List[schemas.InfographicCreate] = Body(...),
+    user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
     '''Uploads a list of infograhics. BookCode and title provided, serves as the unique idetifier
     Only the  link to infographic is stored, not the actual file'''
     log.info('In add_infographics')
     log.debug('source_name: %s, infographics: %s',source_name, infographics)
     return {'message': "Infographics added successfully",
         "data": contents_crud.upload_infographics(db_=db_, source_name=source_name,
-        infographics=infographics, user_id=None)}
+        infographics=infographics, user_id=user_details['user_id'])}
 
 @router.put('/v2/infographics/{source_name}', response_model=schemas.InfographicUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Infographics"])
-def edit_infographics(source_name: schemas.TableNamePattern=Path(...,
+@get_auth_access_check_decorator
+async def edit_infographics(request: Request,
+    source_name: schemas.TableNamePattern=Path(...,
     example="hi_IRV_1_infographic"),
-    infographics: List[schemas.InfographicEdit] = Body(...),
+    infographics: List[schemas.InfographicEdit] = Body(...),user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
     ''' Changes either the infographic link or active status.
     Item identifier is book code and title, which cannot be altered.
@@ -647,19 +686,21 @@ def edit_infographics(source_name: schemas.TableNamePattern=Path(...,
     log.debug('source_name: %s, infographics: %s',source_name, infographics)
     return {'message': "Infographics updated successfully",
         "data": contents_crud.update_infographics(db_=db_, source_name=source_name,
-        infographics=infographics, user_id=None)}
+        infographics=infographics, user_id=user_details['user_id'])}
 
 # # ########### bible videos ###################
 @router.get('/v2/biblevideos/{source_name}',
     response_model=List[schemas.BibleVideo],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bible Videos"])
-def get_biblevideo(
+@get_auth_access_check_decorator
+async def get_biblevideo(request: Request,
     source_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
     book_code: schemas.BookCodePattern=Query(None, example="sng"),
     title: str=Query(None, example="Overview: song of songs"),
     theme: str=Query(None, example="Old Testament"), active: bool=True,
-    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
+    user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
     '''Fetches the Bible video details and URL.
     * optional query parameters can be used to filter the result set
     * skip=n: skips the first n objects in return list
@@ -675,22 +716,27 @@ def get_biblevideo(
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bible Videos"])
-def add_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
-    videos: List[schemas.BibleVideoUpload] = Body(...), db_: Session = Depends(get_db)):
+@get_auth_access_check_decorator
+async def add_biblevideo(request: Request,
+    source_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
+    videos: List[schemas.BibleVideoUpload] = Body(...),user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
     '''Uploads a list of bible video links and details.
     Provided title will serve as the unique identifier'''
     log.info('In add_biblevideo')
     log.debug('source_name: %s, videos: %s',source_name, videos)
     return {'message': "Bible videos added successfully",
         "data": contents_crud.upload_bible_videos(db_=db_, source_name=source_name,
-        videos=videos, user_id=None)}
+        videos=videos, user_id=user_details['user_id'])}
 
 @router.put('/v2/biblevideos/{source_name}', response_model=schemas.BibleVideoUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bible Videos"])
-def edit_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
-    videos: List[schemas.BibleVideoEdit] = Body(...),
+@get_auth_access_check_decorator
+async def edit_biblevideo(request: Request,
+    source_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
+    videos: List[schemas.BibleVideoEdit] = Body(...),user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
     ''' Changes the selected rows of bible videos table.
     Item identified by title, which cannot be altered.
@@ -700,4 +746,4 @@ def edit_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="en_TB
     log.debug('source_name: %s, videos: %s',source_name, videos)
     return {'message': "Bible videos updated successfully",
         "data": contents_crud.update_bible_videos(db_=db_, source_name=source_name,
-        videos=videos, user_id=None)}
+        videos=videos, user_id=user_details['user_id'])}
