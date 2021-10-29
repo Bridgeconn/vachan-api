@@ -1,15 +1,13 @@
 '''API endpoints for AgMT app'''
 
-import requests
 from typing import List
 from fastapi import APIRouter, Query, Body, Depends, Request
-from starlette.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from dependencies import get_db, log
 import schemas
 import schemas_nlp
-from crud import nlp_crud, projects_crud, utils
+from crud import nlp_crud, projects_crud
 from custom_exceptions import GenericException
 from routers import content_apis
 
@@ -50,7 +48,7 @@ def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectE
     log.debug('project_obj: %s',project_obj)
     if project_obj.selectedBooks:
         sentences = []
-        books_param_list = "" 
+        books_param_list = ""
         for buk in project_obj.selectedBooks.books:
             books_param_list += "&books=%s"%(buk)
         response = content_apis.extract_text_contents(
