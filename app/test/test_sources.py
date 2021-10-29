@@ -570,7 +570,6 @@ def test_get_after_adding_data():
 
 def test_get_source_filter_access_tag():
     """filter source with access tags"""
-    #########################################################################################################
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version",
