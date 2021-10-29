@@ -1,6 +1,5 @@
 '''GraphQL queries and mutations'''
 import graphene
-from starlette.datastructures import URL
 import schemas
 import schemas_nlp
 from routers import translation_apis
