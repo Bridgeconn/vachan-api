@@ -721,6 +721,7 @@ def extract_text(db_:Session, tables, books, skip=0, limit=100):
             query = query.filter(
                 db_models.BibleBook.bookCode.in_([buk.lower() for buk in books]))
         sentence_list += query.offset(skip).limit(limit).all()
-    if len(sentence_list)==0:
-        raise NotAvailableException("Not text available for the specified source or language")
+        if len(sentence_list) >= limit:
+            sentence_list = sentence_list[:limit]
+            break
     return sentence_list
