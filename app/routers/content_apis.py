@@ -204,7 +204,7 @@ def edit_version(ver_obj: schemas.VersionEdit = Body(...), db_: Session = Depend
     response_model=List[schemas.SourceResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Sources"])
-def get_source(content_type: str=Query(None, example="commentary"),
+def get_source(request:Request, content_type: str=Query(None, example="commentary"),
     version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
     revision: int=Query(None, example=1),
     language_code: schemas.LangCodePattern=Query(None,example="en"),
@@ -671,11 +671,25 @@ def extract_text_contents(request:Request, #pylint: disable=W0613
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     db_: Session = Depends(get_db)):
     '''A generic API for all content type tables to get just the text contents of that table
-    that could be used for translation, as corpus for NLP operations like SW identification'''
+    that could be used for translation, as corpus for NLP operations like SW identification.
+    If source_name is provided, only that filter will be considered over content_type and language.'''
     log.info('In extract_text_contents')
     log.debug('source_name: %s, language_code: %s',source_name, language_code)
-    tables = structurals_crud.get_sources(db_, source_name=source_name, language_code=language_code,
-        content_type=content_type)
+    version_abbreviation = None
+    revision = None
+    if source_name:
+        parts = source_name.split('_')
+        language_code = parts[0]
+        version_abbreviation = parts[1]
+        revision = parts[2]
+        content_type = parts[3]
+    tables = get_source(request=request, content_type=content_type,
+        version_abbreviation=version_abbreviation,
+        revision=revision,
+        language_code=language_code,
+        license_code=None, metadata=None,
+        active= True, latest_revision= True,
+        skip=0, limit=1000, db_=db_)
     # the projects sources or drafts where people are willing to share their data for learning
     # could be used for text content extraction. But need to be able to filter projects based on
     # use_data_for_learning flag and translation status(need to add a field in metadata for that).
