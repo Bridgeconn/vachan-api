@@ -700,7 +700,7 @@ def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, ver
         ref_combined_results.append(ref_combined)
     return ref_combined_results
 
-def extract_text(db_:Session, tables, books):
+def extract_text(db_:Session, tables, books, skip=0, limit=100):
     '''get all text field contents from the list of tables provided.
     The text column would be determined based on the table type'''
     sentence_list = []
@@ -720,7 +720,7 @@ def extract_text(db_:Session, tables, books):
         if books is not None:
             query = query.filter(
                 db_models.BibleBook.bookCode.in_([buk.lower() for buk in books]))
-        sentence_list += query.all()
+        sentence_list += query.offset(skip).limit(limit).all()
     if len(sentence_list)==0:
         raise NotAvailableException("Not text available for the specified source or language")
     return sentence_list

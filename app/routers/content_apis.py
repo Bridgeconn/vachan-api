@@ -668,6 +668,7 @@ def extract_text_contents(request:Request, #pylint: disable=W0613
     books:List[schemas.BookCodePattern]=Query(None,example='GEN'),
     language_code:schemas.LangCodePattern=Query(None, example="hi"),
     content_type:str=Query(None, example="commentary"),
+    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     db_: Session = Depends(get_db)):
     '''A generic API for all content type tables to get just the text contents of that table
     that could be used for translation, as corpus for NLP operations like SW identification'''
@@ -682,4 +683,4 @@ def extract_text_contents(request:Request, #pylint: disable=W0613
     #     projects_crud.get_agmt_projects(db_, target_language=language_code)
     if len(tables) == 0:
         raise NotAvailableException("No sources available for the requested name or language")
-    return contents_crud.extract_text(db_, tables, books)
+    return contents_crud.extract_text(db_, tables, books, skip=skip, limit=limit)
