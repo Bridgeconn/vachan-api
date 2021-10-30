@@ -204,7 +204,7 @@ def edit_version(ver_obj: schemas.VersionEdit = Body(...), db_: Session = Depend
     response_model=List[schemas.SourceResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Sources"])
-def get_source(request:Request, content_type: str=Query(None, example="commentary"),
+def get_source(request:Request, content_type: str=Query(None, example="commentary"), #pylint: disable=W0613
     version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
     revision: int=Query(None, example=1),
     language_code: schemas.LangCodePattern=Query(None,example="en"),
@@ -672,7 +672,7 @@ def extract_text_contents(request:Request, #pylint: disable=W0613
     db_: Session = Depends(get_db)):
     '''A generic API for all content type tables to get just the text contents of that table
     that could be used for translation, as corpus for NLP operations like SW identification.
-    If source_name is provided, only that filter will be considered over content_type and language.'''
+    If source_name is provided, only that filter will be considered over content_type & language.'''
     log.info('In extract_text_contents')
     log.debug('source_name: %s, language_code: %s',source_name, language_code)
     version_abbreviation = None
