@@ -56,6 +56,7 @@ def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectE
             source_name=project_obj.selectedBooks.bible,
             books=project_obj.selectedBooks.books,
             language_code=None,
+            content_type='bible',
             db_=db_)
         if "error" in response:
             raise GenericException(response['error'])

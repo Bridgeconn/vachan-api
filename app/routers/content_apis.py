@@ -666,13 +666,15 @@ def edit_biblevideo(source_name:schemas.TableNamePattern=Path(...,example="en_TB
 def extract_text_contents(request:Request, #pylint: disable=W0613
     source_name:schemas.TableNamePattern=Query(None,example="en_TBP_1_bible"),
     books:List[schemas.BookCodePattern]=Query(None,example='GEN'),
-    language_code=Query(None, example="hi"),
+    language_code:schemas.LangCodePattern=Query(None, example="hi"),
+    content_type:str=Query(None, example="commentary"),
     db_: Session = Depends(get_db)):
     '''A generic API for all content type tables to get just the text contents of that table
     that could be used for translation, as corpus for NLP operations like SW identification'''
     log.info('In extract_text_contents')
     log.debug('source_name: %s, language_code: %s',source_name, language_code)
-    tables = structurals_crud.get_sources(db_, source_name=source_name, language_code=language_code)
+    tables = structurals_crud.get_sources(db_, source_name=source_name, language_code=language_code,
+        content_type=content_type)
     # the projects sources or drafts where people are willing to share their data for learning
     # could be used for text content extraction. But need to be able to filter projects based on
     # use_data_for_learning flag and translation status(need to add a field in metadata for that).

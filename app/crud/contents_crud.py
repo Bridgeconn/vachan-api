@@ -705,7 +705,6 @@ def extract_text(db_:Session, tables, books):
     The text column would be determined based on the table type'''
     sentence_list = []
     for table in tables:
-        print(table.sourceName)
         if table.contentType.contentType == db_models.ContentTypeName.BIBLE.value:
             model_cls = db_models.dynamicTables[table.sourceName+'_cleaned']
             query = db_.query(model_cls.refId.label('sentenceId'),
@@ -721,8 +720,6 @@ def extract_text(db_:Session, tables, books):
         if books is not None:
             query = query.filter(
                 db_models.BibleBook.bookCode.in_([buk.lower() for buk in books]))
-            print(query)
-            # query = query.filter(model_cls.book.bookCode.in_([buk.lower() for buk in books]))
         sentence_list += query.all()
     if len(sentence_list)==0:
         raise NotAvailableException("Not text available for the specified source or language")
