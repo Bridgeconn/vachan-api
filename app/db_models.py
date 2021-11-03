@@ -373,7 +373,7 @@ class TranslationProjectUser(Base): # pylint: disable=too-few-public-methods
     active = Column('active', Boolean)
 
 
-class StopWords(Base):
+class StopWords(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table stopwords_look_up in vachan DB '''
     __tablename__ = 'stopwords_look_up'
 

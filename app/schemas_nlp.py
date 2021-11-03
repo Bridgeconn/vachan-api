@@ -229,7 +229,6 @@ class Translation(BaseModel):
     translation: str = Field(..., example="താറാവ്")
     occurrence: TokenOccurence
     status: str = Field(..., example="confirmed")
-    
 
 class StopWords(BaseModel):
     '''Response object for stop words'''
