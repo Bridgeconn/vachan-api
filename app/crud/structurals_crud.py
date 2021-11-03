@@ -7,6 +7,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
+from sqlalchemy import and_
 
 import db_models
 import schemas
@@ -220,12 +221,22 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
         query = query.filter(db_models.Source.active == False) #pylint: disable=singleton-comparison
     if source_name:
         query = query.filter(db_models.Source.sourceName == source_name)
+    if access_tags:
+        if len(access_tags) == 1:
+            query = query.filter(db_models.Source.metaData.op('->>')('accessPermissions').contains(access_tags[0].value))
+        if len(access_tags) > 1:
+            for tag in access_tags:
+                # print("tag==>",tag.value)
+                # contais_check = 
+            # query = query.filter(db_models.Source.metaData.op('->>')('accessPermissions').contains(tag.value))
+                query = query.filter(db_models.Source.metaData.op('->>')('accessPermissions').contains(tag.value))
+        print("===============================================================================================")
 
     res = query.join(db_models.Version).order_by(db_models.Version.revision.desc()
         ).offset(skip).limit(limit).all()
     if not latest_revision or revision:
         return res
-
+    # print("res=============>",res)
     # sub_qry = query.join(db_models.Version, func.max(db_models.Version.revision).label(
     #     "latest_rev")).group_by(
     #     db_models.Source.contentId, db_models.Source.languageId,
@@ -250,15 +261,16 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
                     exculde = True
                     break
         if not exculde:
-            #check for filter based on access tag
-            db_access_list = res_item.metaData['accessPermissions']
-            if not access_tags is None:
-                for check_tag in access_tags:
-                    if check_tag in db_access_list:
-                        if not res_item in latest_res:
-                            latest_res.append(res_item)
-            else:
-                latest_res.append(res_item)
+            latest_res.append(res_item)
+            # #check for filter based on access tag
+            # db_access_list = res_item.metaData['accessPermissions']
+            # if not access_tags is None:
+            #     for check_tag in access_tags:
+            #         if check_tag in db_access_list:
+            #             if not res_item in latest_res:
+            #                 latest_res.append(res_item)
+            # else:
+            #     latest_res.append(res_item)
     return latest_res
 
 def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_id):

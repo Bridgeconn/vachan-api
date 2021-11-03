@@ -21,6 +21,7 @@ def test_get_all_data():
     }
     """
     executed = gql_request(default_get_query)
+    # print(executed)
     assert isinstance(executed, Dict)
     assert len(executed["data"]["languages"])>0
     assert isinstance(executed["data"]["languages"], list)
