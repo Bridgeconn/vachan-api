@@ -49,28 +49,12 @@ def check_post(data: dict):
     assert response.json()['error'] == 'Authentication Error'
     
     #With auth Only vachan and super admin can only create source
-    #Test with non permited user API USER
-    # api_user_data = {
-    #         "user_email": "apitest@mail.test",
-    #         "password": "passwordtest@1"
-    #     }
-    # response = login(api_user_data)
-    # assert response.json()['message'] == "Login Succesfull"
-    # test_user_token = response.json()["token"]
     headers_auth['Authorization'] = "Bearer"+" "+ initial_test_users['APIUser']['token']
-
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permision Denied'
 
     #try with vachanAdmin
-    # vachanAdmin_user_data = {
-    #         "user_email": "vachanadmintest@mail.test",
-    #         "password": "passwordtest@1"
-    #     }
-    # response = login(vachanAdmin_user_data)
-    # assert response.json()['message'] == "Login Succesfull"
-    # test_user_token = response.json()["token"]
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
 
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
@@ -420,13 +404,7 @@ def test_created_user_can_only_edit():
         "sourceName": 'ml_TTT_2_commentary',
         "revision": 1
     }
-    # vachanAdmin_user_data = {
-    #         "user_email": "vachanadmintest@mail.test",
-    #         "password": "passwordtest@1"
-    #     }
-    # response = login(vachanAdmin_user_data)
-    # assert response.json()['message'] == "Login Succesfull"
-    # test_user_token = response.json()["token"]
+    
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
 
     response = client.put(UNIT_URL, headers=headers_auth, json=data_update)
@@ -470,7 +448,7 @@ def test_soft_delete():
 def test_get_empty():
     '''Test get before adding data to table. Usually done on freshly set up test DB.
     If the testing is done on a DB that already has some data, the response wont be empty.'''
-    response = client.get(UNIT_URL,)
+    response = client.get(UNIT_URL + '?version_abbreviation=TTT')
     if len(response.json()) == 0:
         assert_not_available_content(response)
 
@@ -521,11 +499,13 @@ def test_get_after_adding_data():
     headers = {"contentType": "application/json", "accept": "application/json"}
     # filter with contentType
     #without auth
-    response = client.get(UNIT_URL + "?content_type=commentary&latest_revision=false",headers=headers)
+    response = client.get(UNIT_URL + "?content_type=commentary&version_abbreviation=TTT"+
+        "&latest_revision=false",headers=headers)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permision Denied'
     #with auth
-    response = client.get(UNIT_URL + "?content_type=commentary&latest_revision=false",headers=headers_auth)
+    response = client.get(UNIT_URL + "?content_type=commentary&version_abbreviation=TTT"+
+        "&latest_revision=false",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) >= 3
     for item in response.json():
@@ -533,18 +513,19 @@ def test_get_after_adding_data():
 
     # filter with language
     #without auth
-    response = client.get(UNIT_URL + "?language_code=hi&latest_revision=false")
+    response = client.get(UNIT_URL + "?language_code=hi&&version_abbreviation=TTT&latest_revision=false")
     assert response.status_code == 403
     assert response.json()['error'] == 'Permision Denied'
     #with auth
-    response = client.get(UNIT_URL + "?language_code=hi&latest_revision=false",headers=headers_auth)
+    response = client.get(UNIT_URL + "?language_code=hi&&version_abbreviation=TTT"+
+        "&latest_revision=false",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) >= 3
     for item in response.json():
         assert_positive_get(item)
 
     # filter with revision  #WITH AUTH
-    response = client.get(UNIT_URL + "?revision=2",headers=headers_auth)
+    response = client.get(UNIT_URL + "?revision=2&version_abbreviation=TTT",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) >= 3
     for item in response.json():
@@ -558,20 +539,21 @@ def test_get_after_adding_data():
         assert_positive_get(item)
 
     # filter with license
-    response = client.get(UNIT_URL + "?license=CC-BY-SA",headers=headers_auth)
+    response = client.get(UNIT_URL + "?license=CC-BY-SA&version_abbreviation=TTT",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) >= 6
     for item in response.json():
         assert_positive_get(item)
 
-    response = client.get(UNIT_URL + "?license=ISC",headers=headers_auth)
+    response = client.get(UNIT_URL + "?license=ISC&version_abbreviation=TTT",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) >= 3
     for item in response.json():
         assert_positive_get(item)
 
     # filter with metadata
-    response = client.get(UNIT_URL + '?metadata={"owner": "myself"}&latest_revision=false',headers=headers_auth)
+    response = client.get(UNIT_URL + '?metadata={"owner": "myself"}&&version_abbreviation=TTT'+
+        '&latest_revision=false',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 3
     for item in response.json():
@@ -583,6 +565,69 @@ def test_get_after_adding_data():
     assert len(response.json()) >= 3
     for item in response.json():
         assert_positive_get(item)
+
+def test_get_source_filter_access_tag():
+    """filter source with access tags"""
+    version_data = {
+        "versionAbbreviation": "TTT",
+        "versionName": "test version",
+    }
+    add_version(version_data)
+    data = {
+        "contentType": "infographic",
+        "version": "TTT",
+        "year": 2020,
+        "accessPermissions": [
+            "content"
+        ],
+    }
+    data['language'] = 'hi'
+    check_post(data)
+    data['language'] = 'mr'
+    data['accessPermissions'] = ['open-access']
+    check_post(data)
+    data['language'] = 'te'
+    data['accessPermissions'] = ['publishable']
+    check_post(data)
+    
+    response1 = client.get(UNIT_URL,headers=headers_auth)
+    assert response1.status_code == 200
+    assert len(response1.json()) == 3
+    for item in response1.json():
+        assert_positive_get(item)
+
+    response2 = client.get(UNIT_URL + '?version_abbreviation=TTT&access_tag=open-access',headers=headers_auth)
+    assert response2.status_code == 200
+    assert len(response2.json()) == 1
+    for item in response2.json():
+        assert_positive_get(item)
+
+    response3 = client.get(UNIT_URL + '?version_abbreviation=TTT&access_tag=publishable',headers=headers_auth)
+    assert response3.status_code == 200
+    assert len(response3.json()) == 1
+    for item in response3.json():
+        assert_positive_get(item)
+
+    response4 = client.get(UNIT_URL + '?version_abbreviation=TTT&access_tag=content',headers=headers_auth)
+    assert response4.status_code == 200
+    assert len(response4.json()) == 3
+    for item in response4.json():
+        assert_positive_get(item)
+
+    response5 = client.get(UNIT_URL + '?version_abbreviation=TTT&access_tag=publishable&access_tag=open-access',headers=headers_auth)
+    assert response5.status_code == 200
+    assert len(response5.json()) == 0
+
+    #Add source with access tags publishable , open-access
+    data['language'] = 'ho'
+    data['accessPermissions'] = ['publishable','open-access']
+    check_post(data)
+
+    response6 = client.get(UNIT_URL + '?version_abbreviation=TTT&access_tag=publishable&access_tag=open-access',headers=headers_auth)
+    assert response6.status_code == 200
+    assert len(response6.json()) == 1
+    
+        
 
 def test_diffrernt_sources_with_app_and_roles():
     """Test getting sources with users having different permissions and 
@@ -649,26 +694,26 @@ def test_diffrernt_sources_with_app_and_roles():
 
     #Get without Login
     #default : API
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
     resp_data = response.json()[0]['metaData']
     assert 'open-access' in resp_data['accessPermissions']
     #APP : Autographa
     headers_auth['app'] = AG
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permision Denied'
     #APP : Vachan Online
     headers_auth['app'] = VACHAN
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
     assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
     assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permision Denied'
 
@@ -676,28 +721,28 @@ def test_diffrernt_sources_with_app_and_roles():
     #default : API
     headers_auth = {"contentType": "application/json","accept": "application/json"}
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
     assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
     assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
     #APP : Autographa
     headers_auth['app'] = AG
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
     assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
     assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
     #APP : Vachan Online
     headers_auth['app'] = VACHAN
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
     assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
     assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permision Denied'
 
@@ -705,26 +750,26 @@ def test_diffrernt_sources_with_app_and_roles():
     #default : API
     headers_auth = {"contentType": "application/json","accept": "application/json"}
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
     assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
     assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
     #APP : Autographa
     headers_auth['app'] = AG
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permision Denied'
     #APP : Vachan Online
     headers_auth['app'] = VACHAN
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
     assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
     assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permision Denied'
 
@@ -732,7 +777,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #default : API
     headers_auth = {"contentType": "application/json","accept": "application/json"}
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 5
     assert 'content' in response.json()[0]['metaData']['accessPermissions']
@@ -742,19 +787,19 @@ def test_diffrernt_sources_with_app_and_roles():
     assert 'derivable' in response.json()[4]['metaData']['accessPermissions']
     #APP : Autographa
     headers_auth['app'] = AG
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permision Denied'
     #APP : Vachan Online
     headers_auth['app'] = VACHAN
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
     assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
     assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert len(response.json()) == 5
     assert 'content' in response.json()[0]['metaData']['accessPermissions']
     assert 'open-access' in response.json()[1]['metaData']['accessPermissions']
@@ -766,26 +811,26 @@ def test_diffrernt_sources_with_app_and_roles():
     #default : API
     headers_auth = {"contentType": "application/json","accept": "application/json"}
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
     assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
     assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
     #APP : Autographa
     headers_auth['app'] = AG
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permision Denied'
     #APP : Vachan Online
     headers_auth['app'] = VACHAN
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
     assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
     assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permision Denied'
 
@@ -793,28 +838,28 @@ def test_diffrernt_sources_with_app_and_roles():
     #default : API
     headers_auth = {"contentType": "application/json","accept": "application/json"}
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
     assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
     assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
     #APP : Autographa
     headers_auth['app'] = AG
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
     assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
     assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
     #APP : Vachan Online
     headers_auth['app'] = VACHAN
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
     assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
     assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permision Denied'
 
@@ -822,7 +867,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #default : API
     headers_auth = {"contentType": "application/json","accept": "application/json"}
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 5
     assert 'content' in response.json()[0]['metaData']['accessPermissions']
@@ -832,19 +877,19 @@ def test_diffrernt_sources_with_app_and_roles():
     assert 'derivable' in response.json()[4]['metaData']['accessPermissions']
     #APP : Autographa
     headers_auth['app'] = AG
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permision Denied'
     #APP : Vachan Online
     headers_auth['app'] = VACHAN
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
     assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
     assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permision Denied'
 
@@ -861,7 +906,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #default : API
     headers_auth = {"contentType": "application/json","accept": "application/json"}
     headers_auth['Authorization'] = "Bearer"+" "+ test_user_token
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 5
     assert 'content' in response.json()[0]['metaData']['accessPermissions']
@@ -871,21 +916,21 @@ def test_diffrernt_sources_with_app_and_roles():
     assert 'derivable' in response.json()[4]['metaData']['accessPermissions']
     #APP : Autographa
     headers_auth['app'] = AG
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
     assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
     assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
     #APP : Vachan Online
     headers_auth['app'] = VACHAN
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
     assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
     assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
-    response = client.get(UNIT_URL, headers=headers_auth)
+    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 5
     assert 'content' in response.json()[0]['metaData']['accessPermissions']

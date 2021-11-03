@@ -8,6 +8,22 @@ import schemas_nlp
 #Pylint error :- Query class have all resolver functions
 #pylint: disable=R0201
 #pylint: disable=too-many-arguments,too-many-public-methods
+# class Query(graphene.ObjectType):
+#     '''All defined queries'''
+#     languages = graphene.List(types.Language,
+#         description="Query languages in vachan-db",
+#         search_word=graphene.String(),
+#         language_name=graphene.String(), language_code=graphene.String(
+#             description="language code as per bcp47(usually 2 letter code)"),
+#         skip=graphene.Int(), limit=graphene.Int())
+#     def resolve_languages(self, info,
+#         search_word=None, language_code=None, language_name=None,
+#         skip=0, limit=100):
+#         '''resolver'''
+#         db_ = info.context["request"].db_session
+#         return structurals_crud.get_languages(db_, language_code=language_code,
+#             language_name=language_name, search_word=search_word,
+#             skip=skip, limit=limit)
 class Query(graphene.ObjectType):
     '''All defined queries'''
     languages = graphene.List(types.Language,
@@ -21,6 +37,17 @@ class Query(graphene.ObjectType):
         skip=0, limit=100):
         '''resolver'''
         db_ = info.context["request"].db_session
+
+        # req = info.context["request"]
+        # token = req.headers['Authorization']
+        # token = token.split(' ')[1]
+        # user_details = get_current_user_data(token)
+        # print("token===>",token)
+        # print("token===>",req.headers['Authorization'])
+        # print("user_details===>",user_details)
+        # return content_apis.get_language(req,language_code,language_name,
+        # search_word,skip,limit,user_details,db_)
+
         return structurals_crud.get_languages(db_, language_code=language_code,
             language_name=language_name, search_word=search_word,
             skip=skip, limit=limit)

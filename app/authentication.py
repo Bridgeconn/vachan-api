@@ -16,11 +16,11 @@ from custom_exceptions import GenericException ,\
 from api_permission_map import api_permission_map
 
 
-PUBLIC_BASE_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL"+"self-service/",
-                                    "http://127.0.0.1:4433/self-service/")
+PUBLIC_BASE_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL",
+                                    "http://127.0.0.1:4433/")+"self-service/"
 ADMIN_BASE_URL = os.environ.get("VACHAN_KRATOS_ADMIN_URL", "http://127.0.0.1:4434/")
-USER_SESSION_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL"+ "sessions/whoami",
-                                "http://127.0.0.1:4433/sessions/whoami")
+USER_SESSION_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL",
+                                "http://127.0.0.1:4433/")+ "sessions/whoami"
 SUPER_USER = os.environ.get("VACHAN_SUPER_USERNAME")
 SUPER_PASSWORD = os.environ.get("VACHAN_SUPER_PASSWORD")
 
@@ -249,14 +249,6 @@ def filter_resource_content_get(db_resource, access_tags, required_permission, u
     has_rights = False
     filtered_content = []
 
-    # if not recieve_token is None:
-    #     user_details = get_current_user_data(recieve_token)
-    #     if not 'error' in  user_details.keys():
-    #         user_id = user_details['user_id'] #pylint: disable=W0612  #use in future
-    #         user_roles = user_details['user_roles']
-    #         if 'APIUser' in user_roles:
-    #             user_roles.remove('APIUser')#pylint: disable=no-member #unwanted error
-    #             user_roles.append('registeredUser')#pylint: disable=no-member
     if not 'error' in  user_details.keys():
         user_id = user_details['user_id'] #pylint: disable=W0612  #use in future
         user_roles = user_details['user_roles']
@@ -275,7 +267,8 @@ def filter_resource_content_get(db_resource, access_tags, required_permission, u
                 allowed_users = access_rules[tag][required_permission]
                 # print("ALLOWED USERS PERMISIONS=====>",tag,":=>",allowed_users)
                 role = "noAuthRequired"
-                if role in allowed_users:
+                if role in allowed_users and \
+                        not any(source == dic for dic in filtered_content):
                     filtered_content.append(source)
                 else:
                     for role in user_roles:
@@ -362,6 +355,7 @@ def get_auth_access_check_decorator(func):
     """Decorator function for auth and access check for all routers"""
     @wraps(func)
     async def wrapper(*args, **kwargs):#pylint: disable=too-many-branches
+        # print("inside decorator===>")
         db_resource =None
         verified = False
         required_params = verify_auth_decorator_params(kwargs)

@@ -224,7 +224,7 @@ async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...
         "data": structurals_crud.update_version(db_=db_, version=ver_obj,
         user_id=user_details['user_id'])}
 
-# ##### Source #####
+###### Source #####
 @router.get('/v2/sources',
     response_model=List[schemas.SourceResponse],
     responses={502: {"model": schemas.ErrorResponse},
@@ -237,6 +237,8 @@ async def get_source(request: Request,content_type: str=Query(None, example="com
     license_code: schemas.LicenseCodePattern=Query(None,example="ISC"),
     metadata: schemas.MetaDataPattern=Query(None,
         example='{"otherName": "KJBC, King James Bible Commentaries"}'),
+    # access_tag:List[schemas.SourcePermisions]=Query(schemas.SourcePermisions.CONTENT),
+    access_tag:List[schemas.SourcePermisions]=Query(None),
     active: bool = True, latest_revision: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
@@ -249,12 +251,13 @@ async def get_source(request: Request,content_type: str=Query(None, example="com
     * returns [] for not available content'''
     log.info('In get_source')
     log.debug('contentType:%s, versionAbbreviation: %s, revision: %s, languageCode: %s,\
-        license_code:%s, metadata: %s, latest_revision: %s, active: %s, skip: %s, limit: %s',
+        license_code:%s, metadata: %s, access_tag: %s, latest_revision: %s, active: %s,\
+             skip: %s, limit: %s',
         content_type, version_abbreviation, revision, language_code, license_code, metadata,
-        latest_revision, active, skip, limit)
+        access_tag, latest_revision, active, skip, limit)
     return structurals_crud.get_sources(db_, content_type, version_abbreviation, revision=revision,
         language_code=language_code, license_code=license_code, metadata=metadata,
-        latest_revision=latest_revision, active=active,skip=skip, limit=limit)
+        access_tag=access_tag,latest_revision=latest_revision, active=active,skip=skip, limit=limit)
 
 @router.post('/v2/sources', response_model=schemas.SourceCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \

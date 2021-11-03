@@ -38,6 +38,7 @@ def check_post(query, variables):
     assert isinstance(executed, Dict)
     assert executed["data"]["addVersion"]["message"] == "Version created successfully"
     item =executed["data"]["addVersion"]["data"]
+    print("Created Version Data ============>",item)
     item["versionId"] = int(item["versionId"])
     assert_positive_get(item)
     assert item["versionAbbreviation"] == variables["object"]["versionAbbreviation"]
@@ -269,14 +270,43 @@ def test_get_after_adding_data():
     variables2["object"]["revision"] = 2
     check_post(GLOBAL_QUERY,variables2)
 
-    executed_get = gql_request(QUERY_GET)
+    #get added versions
+    query_get_version_added = """
+        query get_version($VAbb:String){
+        versions(versionAbbreviation:$VAbb){
+    versionId
+    versionAbbreviation
+    versionName
+    revision
+    metaData
+  }
+}
+    """ 
+    get_version_var = {
+    "VAbb": "AAA"
+    }
+
+    executed_get = gql_request(query_get_version_added,variables=get_version_var)
     assert isinstance(executed_get, Dict)
-    assert len(executed_get["data"]["versions"]) == 4
+    assert len(executed_get["data"]["versions"]) == 2
     items =executed_get["data"]["versions"]
     for item in items:
         if 'versionId' in item:
             item["versionId"] = int(item["versionId"])
             assert_positive_get(item)
+
+    get_version_var = {
+    "VAbb": "BBB"
+    }
+
+    executed_get = gql_request(query_get_version_added,variables=get_version_var)
+    assert isinstance(executed_get, Dict)
+    assert len(executed_get["data"]["versions"]) == 2
+    items =executed_get["data"]["versions"]
+    for item in items:
+        if 'versionId' in item:
+            item["versionId"] = int(item["versionId"])
+            assert_positive_get(item)        
 
     #get test after successfull creation
     # filter with abbr

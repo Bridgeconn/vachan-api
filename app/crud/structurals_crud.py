@@ -184,12 +184,13 @@ def update_version(db_: Session, version: schemas.VersionEdit, user_id=None):
     # db_.refresh(db_content)
     return db_content
 
-def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches
+def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks
     content_type=None, version_abbreviation=None, revision=None, language_code=None,
     **kwargs):
     '''Fetches the rows of sources table'''
     license_abbreviation = kwargs.get("license_abbreviation",None)
     metadata = kwargs.get("metadata",None)
+    access_tags = kwargs.get("access_tag",None)
     latest_revision = kwargs.get("latest_revision",True)
     active = kwargs.get("active",True)
     source_name = kwargs.get("source_name",None)
@@ -219,12 +220,15 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches
         query = query.filter(db_models.Source.active == False) #pylint: disable=singleton-comparison
     if source_name:
         query = query.filter(db_models.Source.sourceName == source_name)
+    if access_tags:
+        query = query.filter(db_models.Source.metaData.contains(
+            {"accessPermissions":[tag.value for tag in access_tags]}))
 
     res = query.join(db_models.Version).order_by(db_models.Version.revision.desc()
         ).offset(skip).limit(limit).all()
     if not latest_revision or revision:
         return res
-
+    # print("res=============>",res)
     # sub_qry = query.join(db_models.Version, func.max(db_models.Version.revision).label(
     #     "latest_rev")).group_by(
     #     db_models.Source.contentId, db_models.Source.languageId,
@@ -239,7 +243,7 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches
     # Filtering out the latest versions here from the query result.
     # Had tried to include that into the query, but it seemed very difficult.
     latest_res = []
-    for res_item in res:
+    for res_item in res:#pylint: disable=too-many-nested-blocks
         exculde = False
         x_parts = res_item.sourceName.split('_')
         for latest_item in latest_res:
