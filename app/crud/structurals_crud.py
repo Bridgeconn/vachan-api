@@ -7,7 +7,6 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
-from sqlalchemy import and_
 
 import db_models
 import schemas
@@ -222,15 +221,8 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
     if source_name:
         query = query.filter(db_models.Source.sourceName == source_name)
     if access_tags:
-        if len(access_tags) == 1:
-            query = query.filter(db_models.Source.metaData.op('->>')('accessPermissions').contains(access_tags[0].value))
-        if len(access_tags) > 1:
-            for tag in access_tags:
-                # print("tag==>",tag.value)
-                # contais_check = 
-            # query = query.filter(db_models.Source.metaData.op('->>')('accessPermissions').contains(tag.value))
-                query = query.filter(db_models.Source.metaData.op('->>')('accessPermissions').contains(tag.value))
-        print("===============================================================================================")
+        query = query.filter(db_models.Source.metaData.contains(
+            {"accessPermissions":[tag.value for tag in access_tags]}))
 
     res = query.join(db_models.Version).order_by(db_models.Version.revision.desc()
         ).offset(skip).limit(limit).all()
@@ -262,15 +254,6 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
                     break
         if not exculde:
             latest_res.append(res_item)
-            # #check for filter based on access tag
-            # db_access_list = res_item.metaData['accessPermissions']
-            # if not access_tags is None:
-            #     for check_tag in access_tags:
-            #         if check_tag in db_access_list:
-            #             if not res_item in latest_res:
-            #                 latest_res.append(res_item)
-            # else:
-            #     latest_res.append(res_item)
     return latest_res
 
 def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_id):

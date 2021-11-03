@@ -616,10 +616,9 @@ def test_get_source_filter_access_tag():
     for item in response4.json():
         assert_positive_get(item)
 
-    # response5 = client.get(UNIT_URL + '?access_tag=publishable&access_tag=open-access',headers=headers_auth)
-    # print("resposne===4 both ===>",response5.json())
-    # assert response5.status_code == 200
-    # assert len(response5.json()) == 0
+    response5 = client.get(UNIT_URL + '?access_tag=publishable&access_tag=open-access',headers=headers_auth)
+    assert response5.status_code == 200
+    assert len(response5.json()) == 0
 
     #Add source with access tags publishable , open-access
     data['language'] = 'ho'
@@ -627,7 +626,6 @@ def test_get_source_filter_access_tag():
     check_post(data)
 
     response6 = client.get(UNIT_URL + '?access_tag=publishable&access_tag=open-access',headers=headers_auth)
-    print("resposne===5 both ===>",response6.json())
     assert response6.status_code == 200
     assert len(response6.json()) == 1
     

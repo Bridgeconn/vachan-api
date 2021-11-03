@@ -267,7 +267,8 @@ def filter_resource_content_get(db_resource, access_tags, required_permission, u
                 allowed_users = access_rules[tag][required_permission]
                 # print("ALLOWED USERS PERMISIONS=====>",tag,":=>",allowed_users)
                 role = "noAuthRequired"
-                if role in allowed_users:
+                if role in allowed_users and \
+                        not any(source == dic for dic in filtered_content):
                     filtered_content.append(source)
                 else:
                     for role in user_roles:

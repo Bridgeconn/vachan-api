@@ -92,7 +92,7 @@ PROJECT_GET_GLOBAL_QUERY = """
     }
     targetLanguage {
       languageId
-      language
+      language 
       code
       scriptDirection
       metaData
@@ -154,7 +154,13 @@ def check_post(query,variables):
 
 def test_default_post_put_get():
     '''Positive test to create a project'''
-    executed = gql_request(query=PROJECT_GET_GLOBAL_QUERY)
+    get_non_exisitng_project = """{
+  agmtProjects(projectName:"Test project 1"){
+    projectId
+    projectName
+  }
+}"""
+    executed = gql_request(query=get_non_exisitng_project)
     assert_not_available_content_gql(executed["data"]["agmtProjects"])
 
     # create with minimum data
@@ -676,20 +682,34 @@ def test_soft_delete():
       executed = check_post(PROJECT_CREATE_GLOBAL_QUERY,project_data)
 
     executed_get  = gql_request(PROJECT_GET_GLOBAL_QUERY)
-    assert len(executed_get["data"]["agmtProjects"]) == 5
+    assert len(executed_get["data"]["agmtProjects"]) >= 5
 
-    get_project = executed_get["data"]["agmtProjects"][0]
+    # Get 1 uploaded project
+    get_project_0_qry = """
+    {
+  agmtProjects(projectName:"Test project0"){
+    projectId
+    projectName
+    active
+  }
+}"""
+
+    get_project_0 = gql_request(get_project_0_qry)
+    project0_data = get_project_0["data"]["agmtProjects"][0]
+
     put_data = {
      "object": {
-        "projectId":int(get_project['projectId']),
-        "projectName":get_project['projectName'],
+        "projectId":int(project0_data['projectId']),
+        "projectName":project0_data['projectName'],
         "active": False
+    }
   }
-}
     executed3 = gql_request(query=PROJECT_EDIT_GLOBAL_QUERY,operation="mutation", variables=put_data)
     assert isinstance(executed3, Dict)
     assert executed3["data"]["editAgmtProject"]["message"] == "Project updated successfully"
     assert not executed3["data"]["editAgmtProject"]["data"]["active"]
 
-    executed_get  = gql_request(PROJECT_GET_GLOBAL_QUERY)
-    assert len(executed_get["data"]["agmtProjects"]) == 4
+    #get the project deleted
+    get_project_0 = gql_request(get_project_0_qry)
+    print("deleted project data==>",get_project_0)
+    assert get_project_0["data"]["agmtProjects"] == []

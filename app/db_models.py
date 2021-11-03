@@ -8,6 +8,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, Session
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.schema import Sequence
+from sqlalchemy.dialects.postgresql import JSONB
 
 from database import Base
 from custom_exceptions import GenericException
@@ -92,7 +93,7 @@ class Source(Base): # pylint: disable=too-few-public-methods
     versionId = Column('version_id', Integer, ForeignKey('versions.version_id'))
     version = relationship('Version')
     active = Column('active', Boolean)
-    metaData = Column('metadata', JSON)
+    metaData = Column('metadata', JSONB)
     createdUser = Column('created_user', String)
     updatedUser = Column('last_updated_user', String)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())

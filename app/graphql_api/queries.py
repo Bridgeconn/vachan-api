@@ -4,8 +4,6 @@ import graphene
 from crud import structurals_crud, contents_crud, projects_crud, nlp_crud
 from graphql_api import types, utils
 import schemas_nlp
-from routers import content_apis
-from authentication import get_current_user_data
 
 #Pylint error :- Query class have all resolver functions
 #pylint: disable=R0201
@@ -49,7 +47,7 @@ class Query(graphene.ObjectType):
         # print("user_details===>",user_details)
         # return content_apis.get_language(req,language_code,language_name,
         # search_word,skip,limit,user_details,db_)
-        
+
         return structurals_crud.get_languages(db_, language_code=language_code,
             language_name=language_name, search_word=search_word,
             skip=skip, limit=limit)
