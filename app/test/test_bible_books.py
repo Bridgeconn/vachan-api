@@ -55,7 +55,7 @@ def test_get_book_name_mixed_case():
 
 def test_get_multiple_params():
     '''positive test case, with two optional params'''
-    response = client.get(UNIT_URL+'?book_name=1%20Samuel;book_code=1sa')
+    response = client.get(UNIT_URL+'?book_name=1%20Samuel&book_code=1sa')
     assert response.status_code == 200
     assert isinstance( response.json(), list)
     assert len(response.json()) == 1

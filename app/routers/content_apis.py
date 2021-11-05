@@ -3,15 +3,16 @@ from typing import List
 from fastapi import APIRouter, Query, Body, Depends, Path
 from sqlalchemy.orm import Session
 
-#pylint: disable=E0401
-#pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 import schemas
 from dependencies import get_db, log
 from custom_exceptions import NotAvailableException, AlreadyExistsException
 from crud import structurals_crud, contents_crud
+from authentication import AuthHandler
 
 router = APIRouter()
+auth_handler = AuthHandler()
 
+#pylint: disable=too-many-arguments
 ##### Content types #####
 @router.get('/v2/contents', response_model=List[schemas.ContentType],
     responses={502: {"model": schemas.ErrorResponse},
@@ -38,12 +39,17 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
     Additional operations required:
         1. Add corresponding table creation functions and mappings.
         2. Define input, output resources and all required APIs to handle this content'''
+
+    #verified = verify_role_permision(api_name="contentType",permision= permision)
+    #if verified :
     log.info('In add_contents')
     log.debug('content: %s',content)
     if len(structurals_crud.get_content_types(db_, content.contentType)) > 0:
         raise AlreadyExistsException("%s already present"%(content.contentType))
     return {'message': "Content type created successfully",
     "data": structurals_crud.create_content_type(db_=db_, content=content)}
+    #else:
+        #raise PermisionException("User have no permision to access API")
 
 ##### languages #####
 @router.get('/v2/languages',
@@ -51,7 +57,7 @@ def add_contents(content: schemas.ContentTypeCreate, db_: Session = Depends(get_
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Languages"])
-def get_language(language_code : schemas.LangCodePattern = Query(None, example="hi"), #pylint: disable=too-many-arguments
+def get_language(language_code : schemas.LangCodePattern = Query(None, example="hi"),
     language_name: str = Query(None, example="hindi"),
     search_word: str = Query(None, example="Sri Lanka"),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
@@ -97,7 +103,7 @@ def edit_language(lang_obj: schemas.LanguageEdit = Body(...), db_: Session = Dep
     response_model=List[schemas.LicenseResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Licenses"])
-def get_license(license_code : schemas.LicenseCodePattern=Query(None, example="CC-BY-SA"), #pylint: disable=too-many-arguments
+def get_license(license_code : schemas.LicenseCodePattern=Query(None, example="CC-BY-SA"),
     license_name: str=Query(None, example="Creative Commons License"),
     permission: schemas.LicensePermisssion=Query(None, example="Commercial_use"),
     active: bool=Query(True),
@@ -143,7 +149,7 @@ def edit_license(license_obj: schemas.LicenseEdit = Body(...), db_: Session = De
     response_model=List[schemas.VersionResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Versions"])
-def get_version(version_abbreviation : schemas.VersionPattern = Query(None, example="KJV"), #pylint: disable=too-many-arguments
+def get_version(version_abbreviation : schemas.VersionPattern = Query(None, example="KJV"),
     version_name: str = Query(None, example="King James Version"), revision : int = Query(None),
     metadata: schemas.MetaDataPattern = Query(None, example='{"publishedIn":"1611"}'),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
@@ -197,7 +203,7 @@ def edit_version(ver_obj: schemas.VersionEdit = Body(...), db_: Session = Depend
     response_model=List[schemas.SourceResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Sources"])
-def get_source(content_type: str=Query(None, example="commentary"), #pylint: disable=too-many-arguments
+def get_source(content_type: str=Query(None, example="commentary"),
     version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
     revision: int=Query(None, example=1),
     language_code: schemas.LangCodePattern=Query(None,example="en"),
@@ -218,9 +224,9 @@ def get_source(content_type: str=Query(None, example="commentary"), #pylint: dis
         license_code:%s, metadata: %s, latest_revision: %s, active: %s, skip: %s, limit: %s',
         content_type, version_abbreviation, revision, language_code, license_code, metadata,
         latest_revision, active, skip, limit)
-    return structurals_crud.get_sources(db_, content_type, version_abbreviation, revision,
-        language_code, license_code, metadata, latest_revision=latest_revision, active=active,
-        skip=skip, limit=limit)
+    return structurals_crud.get_sources(db_, content_type, version_abbreviation, revision=revision,
+        language_code=language_code, license_code=license_code, metadata=metadata,
+        latest_revision=latest_revision, active=active,skip=skip, limit=limit)
 
 @router.post('/v2/sources', response_model=schemas.SourceCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -266,7 +272,7 @@ def edit_source(source_obj: schemas.SourceEdit = Body(...), db_: Session = Depen
     response_model=List[schemas.BibleBook],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Lookups"])
-def get_bible_book(book_id: int=Query(None, example=67), #pylint: disable=too-many-arguments
+def get_bible_book(book_id: int=Query(None, example=67),
     book_code: schemas.BookCodePattern=Query(None,example='rev'),
     book_name: str=Query(None, example="Revelation"),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
@@ -323,7 +329,7 @@ def edit_bible_book(source_name: schemas.TableNamePattern=Path(..., example="hi_
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
-def get_available_bible_book(source_name: schemas.TableNamePattern=Path(..., #pylint: disable=too-many-arguments
+def get_available_bible_book(source_name: schemas.TableNamePattern=Path(...,
     example="hi_IRV_1_bible"),
     book_code: schemas.BookCodePattern=Query(None, example="mat"),
     content_type: schemas.BookContentType=Query(None), active: bool=True,
@@ -359,7 +365,7 @@ def get_bible_versification(
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
-def get_bible_verse(source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"), #pylint: disable=too-many-arguments
+def get_bible_verse(source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
     book_code: schemas.BookCodePattern=Query(None, example="mat"),
     chapter: int=Query(None, example=1), verse: int=Query(None, example=1),
     last_verse: int=Query(None, example=15), search_phrase: str=Query(None, example='सन्‍तान'),
@@ -380,8 +386,9 @@ def get_bible_verse(source_name: schemas.TableNamePattern=Path(..., example="hi_
     log.debug('source_name: %s, book_code: %s, chapter: %s, verse:%s, last_verse:%s,\
         search_phrase:%s, active:%s, skip: %s, limit: %s',
         source_name, book_code, chapter, verse, last_verse, search_phrase, active, skip, limit)
-    return contents_crud.get_bible_verses(db_, source_name, book_code, chapter, verse, last_verse,
-        search_phrase, active=active, skip = skip, limit = limit)
+    return contents_crud.get_bible_verses(db_, source_name, book_code, chapter, verse,
+    last_verse = last_verse, search_phrase=search_phrase, active=active,
+    skip = skip, limit = limit)
 
 # # ########### Audio bible ###################
 @router.post('/v2/bibles/{source_name}/audios', response_model=schemas.AudioBibleCreateResponse,
@@ -418,7 +425,7 @@ def edit_audio_bible(source_name: schemas.TableNamePattern=Path(..., example="hi
     response_model=List[schemas.CommentaryResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Commentaries"])
-def get_commentary(#pylint: disable=too-many-arguments
+def get_commentary(
     source_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
     book_code: schemas.BookCodePattern=Query(None, example="1ki"),
     chapter: int = Query(None, example=10, ge=-1), verse: int = Query(None, example=1, ge=-1),
@@ -485,7 +492,7 @@ def edit_commentary(source_name: schemas.TableNamePattern=Path(..., example="en_
     response_model=List[schemas.DictionaryWordResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Dictionaries"])
-def get_dictionary_word( #pylint: disable=too-many-arguments
+def get_dictionary_word(
     source_name: schemas.TableNamePattern=Path(...,example="en_TW_1_dictionary"),
     search_word: str=Query(None, example="Adam"),
     exact_match: bool=False, word_list_only: bool=False,
@@ -550,7 +557,7 @@ def edit_dictionary_word(
     response_model=List[schemas.InfographicResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Infographics"])
-def get_infographic(#pylint: disable=too-many-arguments
+def get_infographic(
     source_name:schemas.TableNamePattern=Path(...,example="hi_IRV_1_infographic"),
     book_code: schemas.BookCodePattern=Query(None, example="exo"),
     title: str=Query(None, example="Ark of Covenant"), active: bool=True,
@@ -604,7 +611,7 @@ def edit_infographics(source_name: schemas.TableNamePattern=Path(...,
     response_model=List[schemas.BibleVideo],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bible Videos"])
-def get_biblevideo(#pylint: disable=too-many-arguments
+def get_biblevideo(
     source_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
     book_code: schemas.BookCodePattern=Query(None, example="sng"),
     title: str=Query(None, example="Overview: song of songs"),
@@ -618,8 +625,8 @@ def get_biblevideo(#pylint: disable=too-many-arguments
     log.info('In get_biblevideo')
     log.debug('source_name: %s, book_code: %s, title: %s, theme: %s, skip: %s, limit: %s',
         source_name, book_code, title, theme, skip, limit)
-    return contents_crud.get_bible_videos(db_, source_name, book_code, title, theme, active,
-        skip=skip, limit=limit)
+    return contents_crud.get_bible_videos(db_, source_name, book_code, title, theme,
+    active=active, skip=skip, limit=limit)
 
 @router.post('/v2/biblevideos/{source_name}', response_model=schemas.BibleVideoCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \

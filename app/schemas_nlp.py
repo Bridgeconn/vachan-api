@@ -1,15 +1,13 @@
 '''Defines all input and output classes for translation Apps related API endpoints'''
-
 from typing import List, Tuple
 from enum import Enum
 from pydantic import BaseModel, Field, constr, root_validator
 
-#pylint: disable=E0401
-#pylint gives import error if relative import is not used. But app(uvicorn) doesn't accept it
 from schemas import LangCodePattern, BookCodePattern, TableNamePattern
 from schemas import LanguageResponse
 
 
+#pylint: disable=too-few-public-methods
 class TranslationDocumentType(Enum):
     '''Currently supports bible USFM only. Can be extended to
     CSV(for commentary or notes), doc(stories, other passages) etc.'''
@@ -33,7 +31,7 @@ class ProjectUser(BaseModel):
     metaData: dict = Field(None, example={
         "lastProject":100002, "lastFilter":{"book":"mat","chapter":28}})
     active: bool =None
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
@@ -67,7 +65,7 @@ class TranslationProject(BaseModel):
     metaData: dict = Field(None, example={"books":['mat', 'mrk', 'luk', 'jhn'],
         "useDataForLearning":True})
     active: bool
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
@@ -107,7 +105,7 @@ class Token(BaseModel):
         example={'അബ്രാഹാമിന്റെ':{"frequency":10}, 'അബ്രാഹാം':{"frequency":24}})
     metaData: dict = Field(None, example={"translationWord": "Abraham",
     	"link": "https://git.door43.org/unfoldingWord/en_tw/src/branch/master/bible/names/abraham.md"})
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
@@ -127,7 +125,7 @@ class Sentence(BaseModel):
     draftMeta: List[Tuple[Tuple[int, int], Tuple[int,int],'str']] = Field(None,
         example=[[[0,8], [0,8],"confirmed"],
             [[8,64],[8,64],"untranslated"]])
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
@@ -177,7 +175,7 @@ class Suggestion(BaseModel):
     '''Response object for suggestion'''
     suggestion:str
     score: float
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
@@ -215,13 +213,27 @@ class GlossOutput(BaseModel):
     translations: dict = Field(None, example={'प्यार':3, "प्रेम":1.2,
         "प्रेम करना":0})
     metaData: dict = Field(None, example={"word-class":["noun", "verb"]})
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
-
 
 class GlossUpdateResponse(BaseModel):
     '''Response object for learn/gloss and learn/alignments'''
     message: str = Field(..., example="Added to glossary/Alignments used for learning")
     data: List[GlossOutput]
+
+class Translation(BaseModel):
+    '''Response of what is the current translation of a specific token in agmt'''
+    token: str = Field(..., example="duck")
+    translation: str = Field(..., example="താറാവ്")
+    occurrence: TokenOccurence
+    status: str = Field(..., example="confirmed")
+
+class StopWords(BaseModel):
+    '''Response object for stop words'''
+    stopword: str = Field(..., example='और')
+    confidence: float = Field(..., example="0.8")
+    active : bool = Field(..., example="True")
+    metaData: dict = Field(None, example={
+        "type":'preposition'})

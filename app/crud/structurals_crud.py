@@ -8,8 +8,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
 
-#pylint: disable=E0401, disable=E0611
-#pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
 import db_models
 import schemas
 from crud import utils
@@ -32,9 +30,11 @@ def create_content_type(db_: Session, content: schemas.ContentTypeCreate):
     db_.refresh(db_content)
     return db_content
 
-def get_languages(db_: Session, language_code = None, language_name = None, search_word=None,#pylint: disable=too-many-arguments
-    language_id = None, skip: int = 0, limit: int = 100):
+def get_languages(db_: Session, language_code = None, language_name = None, search_word=None,
+    language_id = None, **kwargs):
     '''Fetches rows of language, with pagination and various filters'''
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
     query = db_.query(db_models.Language)
     if language_code:
         query = query.filter(func.lower(db_models.Language.code) == language_code.lower())
@@ -42,9 +42,10 @@ def get_languages(db_: Session, language_code = None, language_name = None, sear
         query = query.filter(func.lower(db_models.Language.language) == language_name.lower())
     if search_word:
         search_pattern = re.sub(r'\s+', " & ", search_word)
+        search_pattern += ":*"
         query = query.filter(text("to_tsvector(language_code || ' ' || language_name || ' ' || "+\
             "jsonb_to_tsvector('simple', metadata, '[\"string\", \"numeric\"]') || ' ')"+\
-            " @@ to_tsquery('simple', '%s:*')"%search_pattern))
+            " @@ to_tsquery('simple', :pattern)").bindparams(pattern=search_pattern))
     if language_id is not None:
         query = query.filter(db_models.Language.languageId == language_id)
     return query.offset(skip).limit(limit).all()
@@ -87,9 +88,11 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
     db_.refresh(db_content)
     return db_content
 
-def get_licenses(db_: Session, license_code = None, license_name = None, #pylint: disable=too-many-arguments
-    permission = None, active=True, skip: int = 0, limit: int = 100):
+def get_licenses(db_: Session, license_code = None, license_name = None,
+    permission = None, active=True, **kwargs):
     '''Fetches rows of licenses, with pagination and various filters'''
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
     query = db_.query(db_models.License)
     if license_code:
         query = query.filter(db_models.License.code == license_code.upper())
@@ -131,9 +134,12 @@ def update_license(db_: Session, license_obj: schemas.LicenseEdit, user_id=None)
     db_.refresh(db_content)
     return db_content
 
-def get_versions(db_: Session, version_abbr = None, version_name = None, revision = None, #pylint: disable=too-many-arguments
-    metadata = None, version_id = None, skip: int = 0, limit: int = 100):
+def get_versions(db_: Session, version_abbr = None, version_name = None, revision = None,
+    metadata = None, **kwargs):
     '''Fetches rows of versions table, with various filters and pagination'''
+    version_id = kwargs.get("version_id",None)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
     query = db_.query(db_models.Version)
     if version_abbr:
         query = query.filter(db_models.Version.versionAbbreviation == version_abbr.upper().strip())
@@ -176,11 +182,18 @@ def update_version(db_: Session, version: schemas.VersionEdit):
     db_.refresh(db_content)
     return db_content
 
-def get_sources(db_: Session, #pylint: disable=too-many-arguments, disable-msg=too-many-locals, disable=too-many-branches
+def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches
     content_type=None, version_abbreviation=None, revision=None, language_code=None,
-    license_abbreviation=None, metadata=None, latest_revision=True, active=True, source_name=None,
-    skip: int = 0, limit: int = 100):
+    **kwargs):
     '''Fetches the rows of sources table'''
+    license_abbreviation = kwargs.get("license_abbreviation",None)
+    metadata = kwargs.get("metadata",None)
+    latest_revision = kwargs.get("latest_revision",True)
+    active = kwargs.get("active",True)
+    source_name = kwargs.get("source_name",None)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
+
     query = db_.query(db_models.Source)
     if content_type:
         query = query.filter(db_models.Source.contentType.has(contentType = content_type.strip()))
@@ -280,7 +293,7 @@ def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_
     db_.add(db_content)
     db_models.create_dynamic_table(source_name, table_name, content_type.contentType)
     db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine, checkfirst=True)
-    if content_type.contentType == db_models.ContentTypeName.bible.value:
+    if content_type.contentType == db_models.ContentTypeName.BIBLE.value:
         db_models.dynamicTables[db_content.sourceName+'_cleaned'].__table__.create(
             bind=engine, checkfirst=True)
         log.warning("User %s, creates a new table %s", user_id, db_content.sourceName+'_cleaned')
@@ -292,28 +305,33 @@ def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_
     db_.refresh(db_content)
     return db_content
 
-def update_source(db_: Session, source: schemas.SourceEdit, user_id = None): #pylint: disable=too-many-branches
+def update_source_sourcename(db_, source, db_content):
+    """update sourcename of source table"""
+    if source.version:
+        ver = source.version
+    else:
+        ver = db_content.version.versionAbbreviation
+    if source.revision:
+        rev = source.revision
+    else:
+        rev = db_content.version.revision
+    version = db_.query(db_models.Version).filter(
+        db_models.Version.versionAbbreviation == ver,
+        db_models.Version.revision == rev).first()
+    if not version:
+        raise NotAvailableException("Version, %s %s, not found in Database"%(ver,
+            rev))
+    db_content.versionId = version.versionId
+    table_name_parts = db_content.sourceName.split("_")
+    db_content.sourceName = "_".join([table_name_parts[0],ver, rev, table_name_parts[-1]])
+    return db_content
+
+def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
     '''changes one or more fields of sources, selected via sourceName or table_name'''
     db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source.sourceName).first()
     if source.version or source.revision:
-        if source.version:
-            ver = source.version
-        else:
-            ver = db_content.version.versionAbbreviation
-        if source.revision:
-            rev = source.revision
-        else:
-            rev = db_content.version.revision
-        version = db_.query(db_models.Version).filter(
-            db_models.Version.versionAbbreviation == ver,
-            db_models.Version.revision == rev).first()
-        if not version:
-            raise NotAvailableException("Version, %s %s, not found in Database"%(ver,
-                rev))
-        db_content.versionId = version.versionId
-        table_name_parts = db_content.sourceName.split("_")
-        db_content.sourceName = "_".join([table_name_parts[0],ver, rev, table_name_parts[-1]])
+        db_content =  update_source_sourcename(db_, source, db_content)
 
     if source.language:
         language = db_.query(db_models.Language).filter(
@@ -342,9 +360,11 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None): #py
     db_models.dynamicTables[db_content.sourceName] = db_models.dynamicTables[source.sourceName]
     return db_content
 
-def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None, #pylint: disable=too-many-arguments
-    skip=0, limit=100):
+def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None,
+    **kwargs):
     '''Fetches rows of bible_books_lookup, with pagination and various filters'''
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
     query = db_.query(db_models.BibleBook)
     if book_id:
         query = query.filter(db_models.BibleBook.bookId == book_id)

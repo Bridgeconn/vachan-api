@@ -10,6 +10,7 @@ headers = {"contentType": "application/json", "accept": "application/json"}
 
 tokens_trans = [
     {"token":"test", "translations":["ടെസ്റ്റ്"]},
+    {"token":"the", "translations":[""]},
     {"token":"test case", "translations":["ടെസ്റ്റ് കേസ്"]},
     {"token":"deveopler", "translations":["ടെവെലപ്പര്‍"]},
     {"token":"run", "translations":["റണ്‍"]},
@@ -37,8 +38,8 @@ align_data = [
         "targetTokenList": ["സന്തോഷവാന്‍ ആയ", "ഉപയോക്താവ്" , "ഇവിടുണ്ട്"],
         "alignedTokens":[
             {"sourceTokenIndex":0, "targetTokenIndex":0},
-            {"sourceTokenIndex":1, "targetTokenIndex":2},
-            {"sourceTokenIndex":2, "targetTokenIndex":1}]
+            {"sourceTokenIndex":1, "targetTokenIndex":1},
+            {"sourceTokenIndex":2, "targetTokenIndex":2}]
     }
 
 ]
@@ -201,9 +202,8 @@ def test_learn_n_suggest():
         headers=headers, json={"sentence_list":sentence_list})
     draft = client.put(UNIT_URL+'/draft?doc_type=text', headers=headers, json=response.json())
     draft = draft.json()
-    print(draft)
     assert "ഒരു ടെസ്റ്റ് കേസ്." in draft
-    assert "ടെസ്റ്റ് കേസ് ടെസ്റ്റ് ചെയ്തു" in draft
+    assert "ടെസ്റ്റ് കേസ് ടെസ്റ്റ് ചെയ്തു" in draft or "ടെസ്റ്റ് കേസ് ടെസ്റ്റഡ്" in draft
     assert "ടെവെലപ്പര്‍" in draft
-    assert "This ആണ് the sad story of a poor ടെസ്റ്റ് " in draft
+    assert "ഇത് ആണ്  sad story of a poor ടെസ്റ്റ് " in draft
     

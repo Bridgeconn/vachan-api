@@ -5,17 +5,12 @@ projects are included in nlp_crud module'''
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
-#pylint: disable=E0401, disable=E0611
-#pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
-
 import db_models
 import schemas_nlp
 from crud import utils, nlp_crud
 from custom_exceptions import NotAvailableException, TypeException
 
-#pylint: disable=too-many-branches, disable=too-many-locals, disable=too-many-arguments
-#pylint: disable=too-many-statements, disable=W0102, disable=too-many-nested-blocks
-
+#pylint: disable=W0143,E1101
 ###################### AgMT Project Mangement ######################
 def create_agmt_project(db_:Session, project, user_id=None):
     '''Add a new project entry to the translation projects table'''
@@ -51,6 +46,64 @@ def create_agmt_project(db_:Session, project, user_id=None):
     db_.commit()
     return db_content
 
+def update_agmt_project_selected_book(db_, project_obj, new_books, user_id):
+    """bulk selected book update in update agmt project"""
+    bible_cls = db_models.dynamicTables[project_obj.selectedBooks.bible+"_cleaned"]
+    verse_query = db_.query(bible_cls)
+    for buk in project_obj.selectedBooks.books:
+        book = db_.query(db_models.BibleBook).filter(
+            db_models.BibleBook.bookCode == buk).first()
+        if not book:
+            raise NotAvailableException("Book, %s, not found in database" %buk)
+        new_books.append(buk)
+        refid_start = book.bookId * 1000000
+        refid_end = refid_start + 999999
+        verses = verse_query.filter(
+            bible_cls.refId >= refid_start, bible_cls.refId <= refid_end).all()
+        if len(verses) == 0:
+            raise NotAvailableException("Book, %s, is empty for %s"%(
+                buk, project_obj.selectedBooks.bible))
+        for verse in verses:
+            sent = utils.normalize_unicode(verse.verseText)
+            offsets = [0, len(sent)]
+            draft_row = db_models.TranslationDraft(
+                project_id=project_obj.projectId,
+                sentenceId=verse.refId,
+                surrogateId=buk+" "+str(verse.chapter)+":"+str(verse.verseNumber),
+                sentence=sent,
+                draft=sent,
+                draftMeta=[[offsets,offsets,"untranslated"]],
+                updatedUser=user_id)
+            db_.add(draft_row)
+
+def update_agmt_project_uploaded_book(db_,project_obj,new_books,user_id):
+    """bulk uploaded book update in update agmt project"""
+    for usfm in project_obj.uploadedBooks:
+        usfm_json = utils.parse_usfm(usfm)
+        book_code = usfm_json['book']['bookCode'].lower()
+        book = db_.query(db_models.BibleBook).filter(
+            db_models.BibleBook.bookCode == book_code).first()
+        if not book:
+            raise NotAvailableException("Book, %s, not found in database"% book_code)
+        new_books.append(book_code)
+        for chap in usfm_json['chapters']:
+            chapter_number = chap['chapterNumber']
+            for cont in chap['contents']:
+                if "verseNumber" in cont:
+                    verse_number = cont['verseNumber']
+                    verse_text = cont['verseText']
+                    offsets = [0, len(verse_text)]
+                    draft_row = db_models.TranslationDraft(
+                        project_id=project_obj.projectId,
+                        sentenceId=book.bookId*1000000+
+                            int(chapter_number)*1000+int(verse_number),
+                        surrogateId=book_code+" "+str(chapter_number)+":"+str(verse_number),
+                        sentence=verse_text,
+                        draft=verse_text,
+                        draftMeta=[[offsets,offsets,'untranslated']],
+                        updatedUser=user_id)
+                    db_.add(draft_row)
+
 def update_agmt_project(db_:Session, project_obj, user_id=None):
     '''Either activate or deactivate a project or Add more books to a project,
     adding all new verses to the drafts table'''
@@ -59,63 +112,18 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
         raise NotAvailableException("Project with id, %s, not found"%project_obj.projectId)
     new_books = []
     if project_obj.selectedBooks:
-        if not project_obj.selectedBooks.bible.endswith("_"+db_models.ContentTypeName.bible.value):
+        if not project_obj.selectedBooks.bible.endswith("_"+db_models.ContentTypeName.BIBLE.value):
             raise TypeException("Operation only supported on Bible tables")
         if not project_obj.selectedBooks.bible+"_cleaned" in db_models.dynamicTables:
             raise NotAvailableException("Bible, %s, not found"%project_obj.selectedBooks.bible)
-        bible_cls = db_models.dynamicTables[project_obj.selectedBooks.bible+"_cleaned"]
-        verse_query = db_.query(bible_cls)
-        for buk in project_obj.selectedBooks.books:
-            book = db_.query(db_models.BibleBook).filter(
-                db_models.BibleBook.bookCode == buk).first()
-            if not book:
-                raise NotAvailableException("Book, %s, not found in database" %buk)
-            new_books.append(buk)
-            refid_start = book.bookId * 1000000
-            refid_end = refid_start + 999999
-            verses = verse_query.filter(
-                bible_cls.refId >= refid_start, bible_cls.refId <= refid_end).all()
-            if len(verses) == 0:
-                raise NotAvailableException("Book, %s, is empty for %s"%(
-                    buk, project_obj.selectedBooks.bible))
-            for verse in verses:
-                sent = utils.normalize_unicode(verse.verseText)
-                offsets = [0, len(sent)]
-                draft_row = db_models.TranslationDraft(
-                    project_id=project_obj.projectId,
-                    sentenceId=verse.refId,
-                    surrogateId=buk+" "+str(verse.chapter)+":"+str(verse.verseNumber),
-                    sentence=sent,
-                    draft=sent,
-                    draftMeta=[[offsets,offsets,"untranslated"]],
-                    updatedUser=user_id)
-                db_.add(draft_row)
+        #bulk book add to project
+        update_agmt_project_selected_book(db_, project_obj,
+            new_books, user_id)
+
     if project_obj.uploadedBooks:
-        for usfm in project_obj.uploadedBooks:
-            usfm_json = utils.parse_usfm(usfm)
-            book_code = usfm_json['book']['bookCode'].lower()
-            book = db_.query(db_models.BibleBook).filter(
-                db_models.BibleBook.bookCode == book_code).first()
-            if not book:
-                raise NotAvailableException("Book, %s, not found in database"% book_code)
-            new_books.append(book_code)
-            for chap in usfm_json['chapters']:
-                chapter_number = chap['chapterNumber']
-                for cont in chap['contents']:
-                    if "verseNumber" in cont:
-                        verse_number = cont['verseNumber']
-                        verse_text = cont['verseText']
-                        offsets = [0, len(verse_text)]
-                        draft_row = db_models.TranslationDraft(
-                            project_id=project_obj.projectId,
-                            sentenceId=book.bookId*1000000+
-                                int(chapter_number)*1000+int(verse_number),
-                            surrogateId=book_code+" "+str(chapter_number)+":"+str(verse_number),
-                            sentence=verse_text,
-                            draft=verse_text,
-                            draftMeta=[[offsets,offsets,'untranslated']],
-                            updatedUser=user_id)
-                        db_.add(draft_row)
+        #uploaded book add to project
+        update_agmt_project_uploaded_book(db_,project_obj,new_books,user_id)
+
     db_.commit()
     db_.expire_all()
     if project_obj.projectName:
@@ -127,8 +135,10 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
         flag_modified(project_row, "metaData")
     if project_obj.stopwords:
         project_row.metaData['stopwords'] = project_obj.stopwords.__dict__
+        flag_modified(project_row, "metaData")
     if project_obj.punctuations:
         project_row.metaData['punctuations'] = project_obj.punctuations
+        flag_modified(project_row, "metaData")
     project_row.updatedUser = user_id
     if len(new_books) > 0:
         project_row.metaData['books'] += new_books
@@ -139,8 +149,12 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
     return project_row
 
 def get_agmt_projects(db_:Session, project_name=None, source_language=None, target_language=None,
-    active=True, user_id=None, skip=0, limit=100):
+    **kwargs):
     '''Fetch autographa projects as per the query options'''
+    active = kwargs.get("active",True)
+    user_id = kwargs.get("user_id",None)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
     query = db_.query(db_models.TranslationProject)
     if project_name:
         query = query.filter(
@@ -196,10 +210,10 @@ def update_agmt_user(db_, user_obj, current_user=10101):
     db_.commit()
     return user_row
 
-
 def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence_id_range,
-    output_format="usfm"):
+    **kwargs):
     '''generate draft for selected sentences as usfm or json'''
+    output_format = kwargs.get("output_format","usfm")
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException("Project with id, %s, not found"%project_id)
@@ -258,17 +272,87 @@ def obtain_agmt_token_translation(db_, project_id, token, occurrences): # pylint
     sentence_list = [occur["sentenceId"] for occur in occurrences]
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, sentence_id_list=sentence_list,
         with_draft=True)
+    translations = pin_point_token_in_draft(occurrences, draft_rows)
+    return translations
+
+def versification_check(row, prev_book_code, versification, prev_verse, prev_chapter):
+    """versification check for agmt source versification"""
+    if row.sentenceId not in range(1000000,68000000):
+        raise TypeException("For versification, sentenceIds need to be refids(bbcccvvv)")
+    book_id = int(row.sentenceId/1000000)
+    chapter = int(row.sentenceId/1000)%1000
+    verse = row.sentenceId%1000
+    book_code = utils.books[book_id]['book_code']
+    if book_code != prev_book_code:
+        if prev_book_code is not None:
+            versification['maxVerses'][prev_book_code].append(prev_verse)
+        versification['maxVerses'][book_code] = []
+        prev_book_code = book_code
+        prev_chapter = chapter
+    elif chapter != prev_chapter:
+        versification['maxVerses'][book_code].append(prev_verse)
+        if prev_chapter+1 != chapter:
+            for chap in range(prev_chapter+1, chapter): #pylint: disable=unused-variable
+                versification['maxVerses'][book_code].append(0)
+        prev_chapter = chapter
+    elif verse != prev_verse + 1:
+        for i in range(prev_verse+1, verse):
+            versification['excludedVerses'].append('%s %s:%s'%(prev_book_code, chapter, i))
+    prev_verse = verse
+    return prev_book_code, versification, prev_verse
+
+def get_agmt_source_versification(db_, project_id):
+    '''considering the AgMT source is always bible verses, get their versification structure'''
+    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    if not project_row:
+        raise NotAvailableException("Project with id, %s, not found"%project_id)
+    query = db_.query(db_models.TranslationDraft).filter(
+        db_models.TranslationDraft.project_id==project_id)
+    verse_rows = query.order_by(db_models.TranslationDraft.sentenceId).all()
+    versification = {"maxVerses":{}, "mappedVerses":{}, "excludedVerses":[], "partialVerses":{}}
+    prev_book_code = None
+    prev_chapter = 0
+    prev_verse = 0
+    for row in verse_rows:
+        #versification checks
+        prev_book_code, versification, prev_verse =\
+             versification_check(row, prev_book_code, versification, prev_verse, prev_chapter)
+    if prev_book_code is not None:
+        versification['maxVerses'][prev_book_code].append(prev_verse)
+    return versification
+
+def get_agmt_source_per_token(db_:Session, project_id, token, occurrences): #pylint: disable=unused-argument
+    '''get sentences and drafts for the token, which splits the token & translation in metadraft
+    allowing it to be easily identifiable and highlightable at UI'''
+    sent_ids = [occur.sentenceId for occur in occurrences]
+    draft_rows = nlp_crud.obtain_agmt_source(db_, project_id,
+        sentence_id_list=sent_ids, with_draft=True)
+    occur_list = []
+    for occur in occurrences:
+        occur_list.append(occur.__dict__)
+    translations = pin_point_token_in_draft(occur_list, draft_rows)
+    for draft, trans in zip(draft_rows, translations):
+        for mta in trans['meta_to_be_replaced']:
+            draft.draftMeta.remove(mta)
+        for mta in trans['replacement_meta']:
+            draft.draftMeta.append(mta)
+    return draft_rows
+
+def pin_point_token_in_draft(occurrences, draft_rows):#pylint: disable=too-many-locals,too-many-branches
+    '''find out token's aligned portion in draft'''
     translations = []
     for occur, row in zip(occurrences, draft_rows):
         trans_offset = [None, None]
         new_token_offset = [None, None]
         status = None
+        segments_of_interest = []
         for meta in row.draftMeta:
             token_offset = occur["offset"]
             segment_offset = meta[0]
             intersection = set(range(token_offset[0],token_offset[1])).intersection(
             range(segment_offset[0],segment_offset[1]))
             if len(intersection) > 0: # our area of interest overlaps with this segment
+                segments_of_interest.append(meta)
                 if meta[2] != "untranslated":
                     if token_offset[0] >= segment_offset[0]: #begining is this segment
                         trans_offset[0] = meta[1][0]
@@ -295,6 +379,19 @@ def obtain_agmt_token_translation(db_, project_id, token, occurrences): # pylint
                         pass
                     if status is None:
                         status = meta[2]
+        new_metas = [
+                    [[segments_of_interest[0][0][0],new_token_offset[0]],
+                     [segments_of_interest[0][1][0], trans_offset[0]],
+                     segments_of_interest[0][2]],
+                    [new_token_offset, trans_offset, status],
+                    [[new_token_offset[1], segments_of_interest[-1][0][1]],
+                     [trans_offset[1], segments_of_interest[-1][1][1]],
+                     segments_of_interest[-1][2]]
+                    ]
+        replacements = []
+        for mta in new_metas:
+            if mta[0][1] - mta[0][0] > 0:
+                replacements.append(mta)
         res = {
                 "token": row.sentence[new_token_offset[0]: new_token_offset[1]],
                 "translation": row.draft[trans_offset[0]: trans_offset[1]],
@@ -302,7 +399,9 @@ def obtain_agmt_token_translation(db_, project_id, token, occurrences): # pylint
                     "sentenceId": occur["sentenceId"],
                     "offset": new_token_offset
                 },
-                "status": status
+                "status": status,
+                "meta_to_be_replaced":segments_of_interest,
+                "replacement_meta":replacements
         }
         translations.append(res)
     return translations

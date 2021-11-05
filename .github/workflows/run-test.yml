@@ -33,10 +33,11 @@ jobs:
       - name: change Python path
         run: echo "PYTHONPATH=${PWD}/app" >> $GITHUB_ENV
         
+      - name: add env testmode
+        run: echo "TEST_MODE=True" >> $GITHUB_ENV  
+        
       - name: Set up App and run tests
         run: |
           pip install -r requirements.txt
-          mkdir logs
-          touch logs/API_logs.log
           cd app 
-          python -m pytest --disable-warnings -k "not agmt and not translation and not bibles"
+          python -m pytest --disable-warnings -k "not agmt and not translation and not bibles and not auth"

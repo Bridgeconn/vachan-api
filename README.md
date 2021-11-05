@@ -46,9 +46,10 @@ Prerequisite: Postgresql (refer [postgresql website](https://www.postgresql.org/
   `>>> cd DB`
   
   `>>> psql db_name < seed_DB.sql`
-  (use your username and password if required)
 
-
+  (use your username and password if required
+  `>>> psql -U username db_name < seed_DB.sql` )
+  
 ### Set up Environmental Variables
 
 go to the home directory and open `.bashrc` file
@@ -79,10 +80,8 @@ to refresh the bashrc file or logout and login to refresh it
 ### Run the app
 
 From the vachan-api folder
-1. `mkdir logs`
-2. `touch logs/API_logs.log`
-3. `cd app`
-4. `uvicorn main:app`
+1. `cd app`
+2. `uvicorn main:app`
 
 If all goes well, you will get a message like this in terminal
 ```

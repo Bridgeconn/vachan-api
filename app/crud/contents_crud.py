@@ -5,19 +5,25 @@ import json
 import sqlalchemy
 from sqlalchemy.orm import Session, defer, joinedload
 
-#pylint: disable=E0401
-#pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
-
 import db_models
 from crud import utils
 from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException
 
-def get_commentaries(db_:Session, source_name, book_code=None, chapter=None, #pylint: disable=too-many-arguments
-    verse=None, last_verse=None, active=True, skip=0, limit=100):
+
+def get_commentaries(db_:Session, *args,**kwargs):
     '''Fetches rows of commentries from the table specified by source_name'''
+    source_name = args[0]
+    book_code = args[1]
+    chapter = args[2]
+    verse = args[3]
+    last_verse = args[4]
+    active = kwargs.get("active",True)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
+
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
-    if not source_name.endswith(db_models.ContentTypeName.commentary.value):
+    if not source_name.endswith(db_models.ContentTypeName.COMMENTARY.value):
         raise TypeException('The operation is supported only on commentaries')
     model_cls = db_models.dynamicTables[source_name]
     query = db_.query(model_cls)
@@ -38,7 +44,7 @@ def upload_commentaries(db_: Session, source_name, commentaries, user_id=None):
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
         raise NotAvailableException('Source %s, not found in database'%source_name)
-    if source_db_content.contentType.contentType != db_models.ContentTypeName.commentary.value:
+    if source_db_content.contentType.contentType != db_models.ContentTypeName.COMMENTARY.value:
         raise TypeException('The operation is supported only on commentaries')
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
@@ -74,7 +80,7 @@ def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
         raise NotAvailableException('Source %s, not found in database'%source_name)
-    if source_db_content.contentType.contentType != db_models.ContentTypeName.commentary.value:
+    if source_db_content.contentType.contentType != db_models.ContentTypeName.COMMENTARY.value:
         raise TypeException('The operation is supported only on commentaries')
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
@@ -107,12 +113,17 @@ def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
     db_.refresh(source_db_content)
     return db_content
 
-def get_dictionary_words(db_:Session, source_name, search_word = None, details = None,  #pylint: disable=too-many-arguments
-    exact_match=False, word_list_only=False, active=True, skip=0, limit=100):
+def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):
     '''Fetches rows of dictionary from the table specified by source_name'''
+    details = kwargs.get("details",None)
+    exact_match = kwargs.get("exact_match",False)
+    word_list_only = kwargs.get("word_list_only",False)
+    active = kwargs.get("active",True)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
-    if not source_name.endswith(db_models.ContentTypeName.dictionary.value):
+    if not source_name.endswith(db_models.ContentTypeName.DICTIONARY.value):
         raise TypeException('The operation is supported only on dictionaries')
     model_cls = db_models.dynamicTables[source_name]
     if word_list_only:
@@ -137,7 +148,7 @@ def upload_dictionary_words(db_: Session, source_name, dictionary_words, user_id
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
         raise NotAvailableException('Source %s, not found in database'%source_name)
-    if source_db_content.contentType.contentType != db_models.ContentTypeName.dictionary.value:
+    if source_db_content.contentType.contentType != db_models.ContentTypeName.DICTIONARY.value:
         raise TypeException('The operation is supported only on dictionaries')
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
@@ -160,7 +171,7 @@ def update_dictionary_words(db_: Session, source_name, dictionary_words, user_id
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
         raise NotAvailableException('Source %s, not found in database'%source_name)
-    if source_db_content.contentType.contentType != db_models.ContentTypeName.dictionary.value:
+    if source_db_content.contentType.contentType != db_models.ContentTypeName.DICTIONARY.value:
         raise TypeException('The operation is supported only on dictionaries')
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
@@ -181,12 +192,14 @@ def update_dictionary_words(db_: Session, source_name, dictionary_words, user_id
     db_.refresh(source_db_content)
     return db_content
 
-def get_infographics(db_:Session, source_name, book_code=None, title=None, #pylint: disable=too-many-arguments
-    active=True, skip=0, limit=100):
+def get_infographics(db_:Session, source_name, book_code=None, title=None,**kwargs):
     '''Fetches rows of infographics from the table specified by source_name'''
+    active = kwargs.get("active",True)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
-    if not source_name.endswith(db_models.ContentTypeName.infographic.value):
+    if not source_name.endswith(db_models.ContentTypeName.INFOGRAPHIC.value):
         raise TypeException('The operation is supported only on infographics')
     model_cls = db_models.dynamicTables[source_name]
     query = db_.query(model_cls)
@@ -203,7 +216,7 @@ def upload_infographics(db_: Session, source_name, infographics, user_id=None):
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
         raise NotAvailableException('Source %s, not found in database'%source_name)
-    if source_db_content.contentType.contentType != db_models.ContentTypeName.infographic.value:
+    if source_db_content.contentType.contentType != db_models.ContentTypeName.INFOGRAPHIC.value:
         raise TypeException('The operation is supported only on infographics')
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
@@ -236,7 +249,7 @@ def update_infographics(db_: Session, source_name, infographics, user_id=None):
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
         raise NotAvailableException('Source %s, not found in database'%source_name)
-    if source_db_content.contentType.contentType != db_models.ContentTypeName.infographic.value:
+    if source_db_content.contentType.contentType != db_models.ContentTypeName.INFOGRAPHIC.value:
         raise TypeException('The operation is supported only on infographics')
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
@@ -268,12 +281,14 @@ def update_infographics(db_: Session, source_name, infographics, user_id=None):
     db_.refresh(source_db_content)
     return db_content
 
-def get_bible_videos(db_:Session, source_name, book_code=None, title=None, theme=None, active=True, #pylint: disable=too-many-arguments
-    skip=0, limit=100):
+def get_bible_videos(db_:Session, source_name, book_code=None, title=None, theme=None,**kwargs):
     '''fetches rows of bible videos as per provided source_name and filters'''
+    active = kwargs.get("active",True)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
-    if not source_name.endswith(db_models.ContentTypeName.biblevideo.value):
+    if not source_name.endswith(db_models.ContentTypeName.BIBLEVIDEO.value):
         raise TypeException('The operation is supported only on biblevideo')
     model_cls = db_models.dynamicTables[source_name]
     query = db_.query(model_cls)
@@ -294,7 +309,7 @@ def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
         raise NotAvailableException('Source %s, not found in database'%source_name)
-    if source_db_content.contentType.contentType != db_models.ContentTypeName.biblevideo.value:
+    if source_db_content.contentType.contentType != db_models.ContentTypeName.BIBLEVIDEO.value:
         raise TypeException('The operation is supported only on biblevideo')
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
@@ -320,7 +335,6 @@ def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
     db_.commit()
     return db_content
 
-
 def update_bible_videos(db_: Session, source_name, videos, user_id=None):
     '''Update rows, that matches title in the bible videos table
     specified by source_name'''
@@ -328,7 +342,7 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
         raise NotAvailableException('Source %s, not found in database'%source_name)
-    if source_db_content.contentType.contentType != db_models.ContentTypeName.biblevideo.value:
+    if source_db_content.contentType.contentType != db_models.ContentTypeName.BIBLEVIDEO.value:
         raise TypeException('The operation is supported only on biblevideo')
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
@@ -364,55 +378,20 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
     db_.refresh(source_db_content)
     return db_content
 
-def upload_bible_books(db_: Session, source_name, books, user_id=None): #pylint: disable=too-many-branches, disable=too-many-locals, disable=too-many-statements
+def upload_bible_books(db_: Session, source_name, books, user_id=None):
     '''Adds rows to the bible table and corresponding bible_cleaned specified by source_name'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
         raise NotAvailableException('Source %s, not found in database'%source_name)
-    if source_db_content.contentType.contentType != db_models.ContentTypeName.bible.value:
+    if source_db_content.contentType.contentType != db_models.ContentTypeName.BIBLE.value:
         raise TypeException('The operation is supported only on bible')
-    model_cls = db_models.dynamicTables[source_name]
     model_cls_2 = db_models.dynamicTables[source_name+'_cleaned']
     db_content = []
     db_content2 = []
     for item in books:
-        book_code = None
-        if item.JSON is None:
-            try:
-                item.JSON = utils.parse_usfm(item.USFM)
-            except Exception as exe:
-                raise TypeException("USFM is not of the required format.") from exe
-        elif item.USFM is None:
-            try:
-                item.USFM = utils.form_usfm(item.JSON)
-            except Exception as exe:
-                raise TypeException("Input JSON is not of the required format.") from exe
-        try:
-            book_code = item.JSON['book']['bookCode']
-        except Exception as exe:
-            raise TypeException("Input JSON is not of the required format.") from exe
-
-        book = db_.query(db_models.BibleBook).filter(
-                db_models.BibleBook.bookCode == book_code.lower() ).first()
-        if not book:
-            raise NotAvailableException('Bible Book code, %s, not found in database'
-                %book_code)
-        row = db_.query(model_cls).filter(model_cls.book_id == book.bookId).first()
-        if row:
-            if row.USFM:
-                raise AlreadyExistsException("Bible book, %s, already present in DB"%book.bookCode)
-            row.USFM = utils.normalize_unicode(item.USFM)
-            row.JSON = item.JSON
-            row.active = True
-        else:
-            row = model_cls(
-                book_id=book.bookId,
-                USFM=utils.normalize_unicode(item.USFM),
-                JSON=item.JSON,
-                active=True)
-        db_.flush()
-        db_content.append(row)
+        #checks for uploaded books
+        book = upload_bible_books_checks(db_, item, source_name, db_content)
         if "chapters" not in item.JSON:
             raise TypeException("JSON is not of the required format")
         for chapter in item.JSON["chapters"]:
@@ -441,13 +420,54 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None): #pylint:
     db_.commit()
     return db_content
 
-def update_bible_books(db_: Session, source_name, books, user_id=None): #pylint: disable=too-many-locals, disable=too-many-branches
+def upload_bible_books_checks(db_, item, source_name, db_content):
+    """checks for uploaded bible books"""
+    model_cls = db_models.dynamicTables[source_name]
+    book_code = None
+    if item.JSON is None:
+        try:
+            item.JSON = utils.parse_usfm(item.USFM)
+        except Exception as exe:
+            raise TypeException("USFM is not of the required format.") from exe
+    elif item.USFM is None:
+        try:
+            item.USFM = utils.form_usfm(item.JSON)
+        except Exception as exe:
+            raise TypeException("Input JSON is not of the required format.") from exe
+    try:
+        book_code = item.JSON['book']['bookCode']
+    except Exception as exe:
+        raise TypeException("Input JSON is not of the required format.") from exe
+
+    book = db_.query(db_models.BibleBook).filter(
+            db_models.BibleBook.bookCode == book_code.lower() ).first()
+    if not book:
+        raise NotAvailableException('Bible Book code, %s, not found in database'
+            %book_code)
+    row = db_.query(model_cls).filter(model_cls.book_id == book.bookId).first()
+    if row:
+        if row.USFM:
+            raise AlreadyExistsException("Bible book, %s, already present in DB"%book.bookCode)
+        row.USFM = utils.normalize_unicode(item.USFM)
+        row.JSON = item.JSON
+        row.active = True
+    else:
+        row = model_cls(
+            book_id=book.bookId,
+            USFM=utils.normalize_unicode(item.USFM),
+            JSON=item.JSON,
+            active=True)
+    db_.flush()
+    db_content.append(row)
+    return book
+
+def update_bible_books(db_: Session, source_name, books, user_id=None):
     '''change values of bible books already uploaded'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
         raise NotAvailableException('Source %s, not found in database'%source_name)
-    if source_db_content.contentType.contentType != db_models.ContentTypeName.bible.value:
+    if source_db_content.contentType.contentType != db_models.ContentTypeName.BIBLE.value:
         raise TypeException('The operation is supported only on bible')
     # update the bible table
     model_cls = db_models.dynamicTables[source_name]
@@ -470,7 +490,11 @@ def update_bible_books(db_: Session, source_name, books, user_id=None): #pylint:
             row.active = item.active
         db_.flush()
         db_content.append(row)
-    # update bible cleaned table
+        update_bible_books_cleaned(db_,source_name,books,source_db_content,user_id)
+        return db_content
+
+def update_bible_books_cleaned(db_,source_name,books,source_db_content,user_id):
+    """update bible cleaned table"""
     db_content2 = []
     model_cls_2 = db_models.dynamicTables[source_name+'_cleaned']
     for item in books:
@@ -499,8 +523,6 @@ def update_bible_books(db_: Session, source_name, books, user_id=None): #pylint:
     db_.commit()
     source_db_content.updatedUser = user_id
     db_.commit()
-    return db_content
-
 
 def upload_bible_audios(db_:Session, source_name, audios, user_id=None):
     '''Add audio bible related contents to _bible_audio table'''
@@ -573,8 +595,6 @@ def update_bible_audios(db_: Session, source_name, audios, user_id=None):
     db_.commit()
     return db_content
 
-
-
 def get_bible_versification(db_, source_name):
     '''select the reference list from bible_cleaned table'''
     model_cls = db_models.dynamicTables[source_name+"_cleaned"]
@@ -584,7 +604,7 @@ def get_bible_versification(db_, source_name):
     query = query.order_by(model_cls.refId)
     versification = {"maxVerses":{}, "mappedVerses":{}, "excludedVerses":[], "partialVerses":{}}
     prev_book_code = None
-    prev_chapter = None
+    prev_chapter = 0
     prev_verse = 0
     for row in query.all():
         if row.book.bookCode != prev_book_code:
@@ -595,18 +615,25 @@ def get_bible_versification(db_, source_name):
             prev_chapter = row.chapter
         elif row.chapter != prev_chapter:
             versification['maxVerses'][row.book.bookCode].append(prev_verse)
+            if prev_chapter+1 != row.chapter:
+                for chap in range(prev_chapter+1, row.chapter): #pylint: disable=unused-variable
+                    versification['maxVerses'][row.book.bookCode].append(0)
             prev_chapter = row.chapter
         elif row.verseNumber != prev_verse + 1:
             for i in range(prev_verse+1, row.verseNumber):
                 versification['excludedVerses'].append('%s %s:%s'%(prev_book_code, row.chapter, i))
         prev_verse = row.verseNumber
-    versification['maxVerses'][prev_book_code].append(prev_verse)
+    if prev_book_code is not None:
+        versification['maxVerses'][prev_book_code].append(prev_verse)
     return versification
 
 
-def get_available_bible_books(db_, source_name, book_code=None, content_type=None, #pylint: disable=too-many-arguments, disable=too-many-locals
-    active=True, skip=0, limit=100):
+def get_available_bible_books(db_, source_name, book_code=None, content_type=None,
+    **kwargs):
     '''fetches the contents of .._bible table based of provided source_name and other options'''
+    active = kwargs.get("active",True)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
     if not source_name.endswith('_bible'):
@@ -637,10 +664,11 @@ def get_available_bible_books(db_, source_name, book_code=None, content_type=Non
     results = [res.__dict__ for res in fetched]
     return results
 
-
-def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, verse=None, #pylint: disable=too-many-locals, disable=too-many-arguments
-    last_verse=None, search_phrase=None, active=True, skip=0, limit=100):
+def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, verse=None,
+    **kwargs):
     '''queries the bible cleaned table for verses'''
+    last_verse = kwargs.get("last_verse",None)
+    search_phrase = kwargs.get("search_phrase",None)
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
     if not source_name.endswith('_bible'):
@@ -658,7 +686,8 @@ def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, ver
     if search_phrase:
         query = query.filter(model_cls.verseText.like(
             '%'+utils.normalize_unicode(search_phrase.strip())+"%"))
-    results = query.filter(model_cls.active == active).offset(skip).limit(limit).all()
+    results = query.filter(model_cls.active ==
+        kwargs.get("active",True)).offset(kwargs.get("skip",0)).limit(kwargs.get("limit",100)).all()
     ref_combined_results = []
     for res in results:
         ref_combined = {}

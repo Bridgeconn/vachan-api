@@ -32,10 +32,17 @@ jobs:
         run: pip install -r requirements.txt
         
       - name: Run linter
-        run: pylint --extension-pkg-whitelist='pydantic' app/*.py
+        working-directory: ./app
+        run: pylint --rcfile=.pylintrc --extension-pkg-whitelist='pydantic' *.py
 
       - name: Run linter in crud module
-        run: pylint --extension-pkg-whitelist='pydantic' app/crud/*.py
+        working-directory: ./app
+        run: pylint --extension-pkg-whitelist='pydantic' crud/*.py
 
       - name: Run linter in routers module
-        run: pylint --extension-pkg-whitelist='pydantic' app/routers/*.py
+        working-directory: ./app
+        run: pylint --extension-pkg-whitelist='pydantic' routers/*.py
+
+      - name: Run linter in graphql module
+        working-directory: ./app
+        run: pylint --extension-pkg-whitelist='pydantic' graphql_api/*.py

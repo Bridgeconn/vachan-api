@@ -5,8 +5,6 @@ import unicodedata
 from unidecode import unidecode
 import requests
 
-#pylint: disable=E0401
-#pylint gives import error if not relative import is used. But app(uvicorn) doesn't accept it
 from custom_exceptions import TypeException
 
 def normalize_unicode(text, form="NFKC"):
@@ -125,10 +123,10 @@ def stopwords(lang):
 
 def parse_usfm(usfm_string):
     '''parse an uploaded usfm file using usfm-grammar'''
-    file= open("temp.usfm", "w")
+    file= open("temp.usfm", "w", encoding='utf-8')
     file.write(normalize_unicode(usfm_string))
     file.close()
-    process = subprocess.Popen(['usfm-grammar temp.usfm'],
+    process = subprocess.Popen('usfm-grammar temp.usfm',
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          shell=True)
@@ -140,11 +138,11 @@ def parse_usfm(usfm_string):
 
 def form_usfm(json_obj):
     '''convert a usfm-grammar format JSON into usfm'''
-    file = open("temp.json", "w")
+    file = open("temp.json", "w", encoding='utf-8')
     json.dump(json_obj, file)
     # file.write(json_obj)
     file.close()
-    process = subprocess.Popen(['usfm-grammar --output=usfm temp.json'],
+    process = subprocess.Popen('usfm-grammar --output=usfm temp.json',
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          shell=True)
