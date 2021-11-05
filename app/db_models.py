@@ -1,7 +1,7 @@
 ''' Defines SQL Alchemy models for each Database Table'''
 
 from enum import Enum
-from sqlalchemy import Column, Integer, String, JSON, ARRAY
+from sqlalchemy import Column, Integer, String, JSON, ARRAY, Float
 from sqlalchemy import Boolean, ForeignKey, DateTime
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.sql import func
@@ -371,3 +371,19 @@ class TranslationProjectUser(Base): # pylint: disable=too-few-public-methods
     userRole = Column('user_role', String)
     metaData = Column('metadata', JSON)
     active = Column('active', Boolean)
+
+
+class StopWords(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table stopwords_look_up in vachan DB '''
+    __tablename__ = 'stopwords_look_up'
+
+    swId = Column('sw_id', Integer, primary_key=True, autoincrement=True)
+    languageId = Column('language_id', Integer)
+    stopWord = Column('stopword', String)
+    confidence = Column('confidence', Float)
+    metaData = Column('metadata', JSON)
+    active = Column('active', Boolean, default=True)
+    createdUser = Column('created_user', String)
+    createTime = Column('created_at', DateTime, onupdate=func.now())
+    updatedUser = Column('last_updated_user', String)
+    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())

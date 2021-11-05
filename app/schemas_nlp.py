@@ -229,4 +229,11 @@ class Translation(BaseModel):
     translation: str = Field(..., example="താറാവ്")
     occurrence: TokenOccurence
     status: str = Field(..., example="confirmed")
-    
+
+class StopWords(BaseModel):
+    '''Response object for stop words'''
+    stopword: str = Field(..., example='और')
+    confidence: float = Field(..., example="0.8")
+    active : bool = Field(..., example="True")
+    metaData: dict = Field(None, example={
+        "type":'preposition'})

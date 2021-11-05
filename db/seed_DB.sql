@@ -158,3 +158,21 @@ CREATE TABLE public.translation_project_users(
 );
 
 ALTER SEQUENCE public.translation_project_users_project_user_id_seq RESTART WITH 100000;
+
+
+CREATE TABLE public.stopwords_look_up(
+    sw_id SERIAL PRIMARY KEY,
+    language_id int,
+    stopword text,
+    confidence float, 
+    created_at timestamp with time zone DEFAULT NOW(),	
+    created_user int, 
+    last_updated_at timestamp with time zone DEFAULT NOW(),
+    last_updated_user int, 
+    active boolean, 
+    metadata jsonb NULL, 
+    UNIQUE(language_id, stopword)
+); 
+
+ALTER SEQUENCE public.stopwords_look_up_sw_id_seq RESTART WITH 100000;
+
