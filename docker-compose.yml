@@ -53,6 +53,7 @@ services:
    - VACHAN_TEST_MODE=True
   volumes:
    - ./app:/app/app
+   - ./logs:/app/logs
   restart: always
   depends_on:
    - vachan-db
