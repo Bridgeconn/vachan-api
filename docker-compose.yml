@@ -9,7 +9,9 @@ services:
    retries: 10
   restart: always
   environment: 
-   - POSTGRES_DB=postgres
+   - POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
+   - POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
+   - POSTGRES_DB=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
    - POSTGRES_HOST_AUTH_METHOD=trust
   logging:
    options:
@@ -40,9 +42,9 @@ services:
    retries: 10
   environment: 
    - VACHAN_POSTGRES_HOST=vachan-db
-   - VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER}
-   - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD}
-   - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE}
+   - VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
+   - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
+   - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
    - VACHAN_POSTGRES_PORT=5432
    - VACHAN_TEST_MODE=True
   volumes:
@@ -51,8 +53,6 @@ services:
   restart: always
   depends_on:
    - vachan-db
-  # links:
-  #  - vachan-db:vachan-db
   expose:
    - 5000
   ports:
