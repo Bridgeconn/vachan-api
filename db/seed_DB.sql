@@ -37,7 +37,7 @@ CREATE INDEX languages_search_idx ON languages USING gin (
 );
 
 
-\COPY languages (language_code,language_name, script_direction, metadata) FROM 'consolidated_languages.csv' DELIMITER ',' CSV;
+\COPY languages (language_code,language_name, script_direction, metadata) FROM 'csvs/consolidated_languages.csv' DELIMITER ',' CSV;
 
 CREATE TABLE public.licenses (
     license_id SERIAL PRIMARY KEY,
@@ -55,7 +55,7 @@ CREATE TABLE public.licenses (
 
 ALTER SEQUENCE public.licenses_license_id_seq RESTART WITH 100000;
 
-\COPY licenses (license_code, license_name, license_text, permissions) FROM 'licenses.csv' DELIMITER ',' CSV HEADER;
+\COPY licenses (license_code, license_name, license_text, permissions) FROM 'csvs/licenses.csv' DELIMITER ',' CSV HEADER;
 
 CREATE TABLE public.versions (
     version_id SERIAL PRIMARY KEY,
@@ -93,7 +93,7 @@ CREATE TABLE public.bible_books_look_up (
     book_code char(3) NOT NULL
 );
 
-\COPY bible_books_look_up (book_id,book_name, book_code) FROM 'bible_books.csv' DELIMITER ',' CSV HEADER;
+\COPY bible_books_look_up (book_id,book_name, book_code) FROM 'csvs/bible_books.csv' DELIMITER ',' CSV HEADER;
 
 CREATE TABLE public.translation_projects(
     project_id SERIAL PRIMARY KEY,

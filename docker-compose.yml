@@ -25,10 +25,9 @@ services:
   networks:
    - my-network
   volumes: 
-   - /tmp/postgres-data:/var/lib/postgresql/data
-   # All docker files for deplployment and database script
-   - ./db/:/docker-entrypoint-initdb.d/
-   # Seed file
+   - ./pgdata:/var/lib/postgresql/data
+   - ./db/csvs:/csvs
+   - ./db/seed_DB.sql:/docker-entrypoint-initdb.d/seed_DB.sql
 
 # vachan-api app
  vachan-api:
