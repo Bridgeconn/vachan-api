@@ -3,11 +3,7 @@ services:
  vachan-db:
   image: postgres:12.7
   healthcheck:
-<<<<<<< HEAD
    test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "postgres" ]
-=======
-   test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "uday" ]
->>>>>>> af6ebc7bf11f6efd50f86d22fa72e648923af31f
    timeout: 45s
    interval: 10s
    retries: 10
