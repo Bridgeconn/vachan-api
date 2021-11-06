@@ -12,6 +12,20 @@ Implemented Using
 - Postgresql Database
 - DGraph Database
 
+## Starting App with docker
+
+```git clone https://github.com/Bridgeconn/vachan-api.git```
+
+```cd vachan-api```
+
+```git checkout version-2```
+
+```docker-compose up```
+or
+```sudo -E docker-compose up```
+
+Refer the section below to configure environment variables as required. 
+
 ## How to set up locally for development and testing
 
 ### Clone git repo
