@@ -25,7 +25,7 @@ services:
   networks:
    - my-network
   volumes: 
-   - ./pgdata:/var/lib/postgresql/data
+   - ${VACHAN_POSTGRES_DATA_DIR:-./pgdata}:/var/lib/postgresql/data
    - ./db/csvs:/csvs
    - ./db/seed_DB.sql:/docker-entrypoint-initdb.d/seed_DB.sql
 

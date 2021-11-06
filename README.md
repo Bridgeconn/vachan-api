@@ -65,6 +65,7 @@ Edit the following contents appropriatetly and paste to the `.bashrc` file
   export VACHAN_POSTGRES_USER="<db_user>"
   export VACHAN_POSTGRES_PASSWORD="<db_password>"
   export VACHAN_POSTGRES_DATABASE="<db_name>"
+  export VACHAN_POSTGRES_DATA_DIR="<data_dirrctory_path>"
   export VACHAN_LOGGING_LEVEL="WARNING"
   export VACHAN_KRATOS_ADMIN_URL="http://127.0.0.1:4434/"
   export VACHAN_KRATOS_PUBLIC_URL="http://127.0.0.1:4433/"
