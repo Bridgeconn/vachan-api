@@ -34,7 +34,6 @@ services:
   build:
    context: .
    dockerfile: Dockerfile
-  container_name: vachan-app
   healthcheck:
    timeout: 45s
    interval: 10s
@@ -53,9 +52,7 @@ services:
   depends_on:
    - vachan-db
   expose:
-   - 5000
-  ports:
-   - "5000:5000"
+   - 8000
   networks:
    - my-network
 
@@ -67,10 +64,8 @@ services:
   environment:
    domain: ""
   ports:
-   - 5001:80
-   - 5002:443
-  volumes:
-   - ./nginx:/nginx/
+   - 80:80
+   - 443:443
   depends_on:
    - vachan-api
   healthcheck:
