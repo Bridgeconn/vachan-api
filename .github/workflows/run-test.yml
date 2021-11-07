@@ -34,7 +34,7 @@ jobs:
         run: echo "PYTHONPATH=${PWD}/app" >> $GITHUB_ENV
         
       - name: add env testmode
-        run: echo "TEST_MODE=True" >> $GITHUB_ENV  
+        run: echo "VACHAN_TEST_MODE=True" >> $GITHUB_ENV  
         
       - name: Set up App and run tests
         run: |
