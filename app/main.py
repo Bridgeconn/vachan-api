@@ -20,7 +20,7 @@ from graphql_api import router as gql_router
 from authentication import create_super_user
 
 #create super user
-if not os.environ.get("VACHAN_TEST_MODE", "False") == 'True':
+if os.environ.get("VACHAN_TEST_MODE", "False") != 'True':
 
     create_super_user()
 
