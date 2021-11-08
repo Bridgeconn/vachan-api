@@ -1,13 +1,15 @@
 '''API endpoints for AgMT app'''
 
 from typing import List
-from fastapi import APIRouter, Query, Body, Depends
+from fastapi import APIRouter, Query, Body, Depends, Request
 from sqlalchemy.orm import Session
 
 from dependencies import get_db, log
 import schemas
 import schemas_nlp
 from crud import nlp_crud, projects_crud
+from custom_exceptions import GenericException
+from routers import content_apis
 
 router = APIRouter()
 #pylint: disable=too-many-arguments
@@ -39,10 +41,33 @@ def create_project(project_obj:schemas_nlp.TranslationProjectCreate, db_:Session
 @router.put('/v2/autographa/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse,
     tags=['Autographa-Project management'])
-def update_project(project_obj:schemas_nlp.TranslationProjectEdit, db_:Session=Depends(get_db)):
+def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectEdit,
+    db_:Session=Depends(get_db)):
     '''Adds more books to a autographa MT project's source. Delete or activate project.'''
     log.info('In update_project')
     log.debug('project_obj: %s',project_obj)
+    if project_obj.selectedBooks:
+        sentences = []
+        books_param_list = ""
+        for buk in project_obj.selectedBooks.books:
+            books_param_list += "&books=%s"%(buk)
+        response = content_apis.extract_text_contents(
+            request=request,
+            source_name=project_obj.selectedBooks.bible,
+            books=project_obj.selectedBooks.books,
+            language_code=None,
+            content_type='bible',
+            skip=0, limit=100000,
+            db_=db_)
+        if "error" in response:
+            raise GenericException(response['error'])
+        for item in response:
+            sentences.append(schemas_nlp.SentenceInput(
+                sentenceId=item[0], surrogateId=item[1], sentence=item[2]))
+        if project_obj.sentenceList is not None:
+            project_obj.sentenceList += sentences
+        else:
+            project_obj.sentenceList = sentences
     return {'message': "Project updated successfully",
         "data": projects_crud.update_agmt_project(db_, project_obj, user_id=10101)}
 

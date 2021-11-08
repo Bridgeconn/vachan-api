@@ -46,39 +46,24 @@ def create_agmt_project(db_:Session, project, user_id=None):
     db_.commit()
     return db_content
 
-def update_agmt_project_selected_book(db_, project_obj, new_books, user_id):
+def update_agmt_project_sentences(db_, project_obj, user_id):
     """bulk selected book update in update agmt project"""
-    bible_cls = db_models.dynamicTables[project_obj.selectedBooks.bible+"_cleaned"]
-    verse_query = db_.query(bible_cls)
-    for buk in project_obj.selectedBooks.books:
-        book = db_.query(db_models.BibleBook).filter(
-            db_models.BibleBook.bookCode == buk).first()
-        if not book:
-            raise NotAvailableException("Book, %s, not found in database" %buk)
-        new_books.append(buk)
-        refid_start = book.bookId * 1000000
-        refid_end = refid_start + 999999
-        verses = verse_query.filter(
-            bible_cls.refId >= refid_start, bible_cls.refId <= refid_end).all()
-        if len(verses) == 0:
-            raise NotAvailableException("Book, %s, is empty for %s"%(
-                buk, project_obj.selectedBooks.bible))
-        for verse in verses:
-            sent = utils.normalize_unicode(verse.verseText)
-            offsets = [0, len(sent)]
-            draft_row = db_models.TranslationDraft(
-                project_id=project_obj.projectId,
-                sentenceId=verse.refId,
-                surrogateId=buk+" "+str(verse.chapter)+":"+str(verse.verseNumber),
-                sentence=sent,
-                draft=sent,
-                draftMeta=[[offsets,offsets,"untranslated"]],
-                updatedUser=user_id)
-            db_.add(draft_row)
+    for sent in project_obj.sentenceList:
+        norm_sent = utils.normalize_unicode(sent.sentence)
+        offsets = [0, len(norm_sent)]
+        draft_row = db_models.TranslationDraft(
+            project_id=project_obj.projectId,
+            sentenceId=sent.sentenceId,
+            surrogateId=sent.surrogateId,
+            sentence=norm_sent,
+            draft=norm_sent,
+            draftMeta=[[offsets,offsets,"untranslated"]],
+            updatedUser=user_id)
+        db_.add(draft_row)
 
 def update_agmt_project_uploaded_book(db_,project_obj,new_books,user_id):
     """bulk uploaded book update in update agmt project"""
-    for usfm in project_obj.uploadedBooks:
+    for usfm in project_obj.uploadedUSFMs:
         usfm_json = utils.parse_usfm(usfm)
         book_code = usfm_json['book']['bookCode'].lower()
         book = db_.query(db_models.BibleBook).filter(
@@ -112,16 +97,12 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
         raise NotAvailableException("Project with id, %s, not found"%project_obj.projectId)
     new_books = []
     if project_obj.selectedBooks:
-        if not project_obj.selectedBooks.bible.endswith("_"+db_models.ContentTypeName.BIBLE.value):
-            raise TypeException("Operation only supported on Bible tables")
-        if not project_obj.selectedBooks.bible+"_cleaned" in db_models.dynamicTables:
-            raise NotAvailableException("Bible, %s, not found"%project_obj.selectedBooks.bible)
-        #bulk book add to project
-        update_agmt_project_selected_book(db_, project_obj,
-            new_books, user_id)
+        new_books += project_obj.selectedBooks.books
+    if project_obj.sentenceList:
+        update_agmt_project_sentences(db_, project_obj, user_id)
 
-    if project_obj.uploadedBooks:
-        #uploaded book add to project
+    if project_obj.uploadedUSFMs:
+        #uploaded usfm book add to project
         update_agmt_project_uploaded_book(db_,project_obj,new_books,user_id)
 
     db_.commit()

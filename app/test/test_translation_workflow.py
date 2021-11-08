@@ -199,7 +199,7 @@ bible_books = {
 
 project_update_data = {
 	"projectId":project_id,
-    "uploadedBooks":[bible_books['mat'], bible_books['mrk']],
+    "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']],
     "selectedBooks":{"bible": source_name,
     				 "books": ['luk', 'jhn']}
 
