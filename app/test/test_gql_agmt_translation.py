@@ -84,7 +84,7 @@ def test_get_tokens():
   put_data = {
      "object": {
         "projectId":int(new_project['projectId']),
-        "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
+        "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
   }
 }  
   executed2 = gql_request(query=PROJECT_EDIT_GLOBAL_QUERY,operation="mutation", variables=put_data)
@@ -307,7 +307,7 @@ def create_project_get_alltoken():
   put_data = {
      "object": {
         "projectId":int(project_id),
-        "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
+        "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
   }
 }  
   executed = gql_request(query=PROJECT_EDIT_GLOBAL_QUERY,operation="mutation", variables=put_data)
@@ -708,7 +708,7 @@ def test_progress_n_suggestion():
   put_data = {
      "object": {
         "projectId":int(project_id),
-        "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
+        "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
   }
 }  
   executed = gql_request(query=PROJECT_EDIT_GLOBAL_QUERY,operation="mutation", variables=put_data)

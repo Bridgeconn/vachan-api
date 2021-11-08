@@ -1,14 +1,18 @@
 ''' Defines SQL Alchemy models for each Database Table'''
 
 from enum import Enum
-from sqlalchemy import Column, Integer, String, JSON, ARRAY
+from sqlalchemy import Column, Integer, String, JSON, ARRAY, Float
 from sqlalchemy import Boolean, ForeignKey, DateTime
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, Session
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.schema import Sequence
+<<<<<<< HEAD
 from sqlalchemy.dialects.postgresql import JSONB
+=======
+from sqlalchemy.ext.hybrid import hybrid_property
+>>>>>>> e587d8d9ec0e35be26f6687e9fbefd29ec077eea
 
 from database import Base
 from custom_exceptions import GenericException
@@ -118,6 +122,14 @@ class Commentary(): # pylint: disable=too-few-public-methods
     def book(cls): # pylint: disable=E0213
         '''For modelling the book field in derived classes'''
         return relationship(BibleBook)
+    @hybrid_property
+    def ref_string(self):
+        '''To compose surrogate id'''
+        return f'{self.book.bookCode} {self.chapter}:{self.verseStart}-{self.verseEnd}'
+    @ref_string.expression
+    def ref_string(cls): # pylint: disable=E0213
+        '''To compose surrogate id'''
+        return func.concat(BibleBook.bookCode," ",cls.chapter,":",cls.verseStart,"-",cls.verseEnd)
     chapter = Column('chapter', Integer)
     verseStart = Column('verse_start', Integer)
     verseEnd = Column('verse_end', Integer)
@@ -224,6 +236,15 @@ class BibleContentCleaned(): # pylint: disable=too-few-public-methods
     def book(cls): # pylint: disable=E0213
         '''For modelling the book field in bible content classes'''
         return relationship(BibleBook)
+    @hybrid_property
+    def ref_string(self):
+        '''To compose surrogate id'''
+        return f'{self.book.bookCode} {self.chapter}:{self.verseNumber}'
+
+    @ref_string.expression
+    def ref_string(cls): # pylint: disable=E0213
+        '''To compose surrogate id'''
+        return func.concat(BibleBook.bookCode," ",cls.chapter,":",cls.verseNumber)
     chapter = Column('chapter', Integer)
     verseNumber = Column('verse_number', Integer)
     verseText = Column('verse_text', String)
@@ -375,3 +396,19 @@ class TranslationProjectUser(Base): # pylint: disable=too-few-public-methods
     userRole = Column('user_role', String)
     metaData = Column('metadata', JSON)
     active = Column('active', Boolean)
+
+
+class StopWords(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table stopwords_look_up in vachan DB '''
+    __tablename__ = 'stopwords_look_up'
+
+    swId = Column('sw_id', Integer, primary_key=True, autoincrement=True)
+    languageId = Column('language_id', Integer)
+    stopWord = Column('stopword', String)
+    confidence = Column('confidence', Float)
+    metaData = Column('metadata', JSON)
+    active = Column('active', Boolean, default=True)
+    createdUser = Column('created_user', String)
+    createTime = Column('created_at', DateTime, onupdate=func.now())
+    updatedUser = Column('last_updated_user', String)
+    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())

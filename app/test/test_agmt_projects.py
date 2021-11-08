@@ -72,7 +72,7 @@ def test_default_post_put_get():
     # upload books
     put_data = {
     "projectId":new_project['projectId'],
-    "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
+    "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
     response2 = client.put(UNIT_URL, headers=headers, json=put_data)
     assert response2.status_code == 201
@@ -249,12 +249,12 @@ def test_put_invalid():
     assert_input_validation_error(resp)
 
     data = {"projectId": new_project['projectId'],
-    "uploadedBooks": "mat"}
+    "uploadedUSFMs": "mat"}
     resp = client.put(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(resp)
 
     data = {"projectId": new_project['projectId'],
-    "uploadedBooks": ["The contents of matthew in text"]}
+    "uploadedUSFMs": ["The contents of matthew in text"]}
     resp = client.put(UNIT_URL, headers=headers, json=data)
     assert resp.status_code == 415
     assert resp.json()['error'] == "Not the Required Type"

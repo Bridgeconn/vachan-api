@@ -2,6 +2,7 @@
 import graphene
 import schemas
 import schemas_nlp
+from routers import translation_apis
 from crud import structurals_crud,contents_crud,projects_crud,nlp_crud
 from graphql_api import types, utils
 #Data classes and graphql classes have few methods
@@ -500,21 +501,18 @@ class EditAGMTProject(graphene.Mutation):
     def mutate(self,info,project_arg):
         """resolve"""
         db_ = info.context["request"].db_session
+        req = info.context['request']
+        req.scope['method'] = "PUT"
+        req.scope['path'] = "/v2/autographa/projects"
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (project_arg,schemas_nlp.TranslationProjectEdit)
 
-        result = projects_crud.update_agmt_project(db_=db_,project_obj=schema_model,user_id=10101)
-        comm = types.TranslationProject(
-            projectId = result.projectId,
-            projectName = result.projectName,
-            sourceLanguage = result.sourceLanguage,
-            targetLanguage = result.targetLanguage,
-            documentFormat = result.documentFormat,
-            users = result.users,
-            metaData = result.metaData,
-            active = result.active
-        )
-        message = "Project updated successfully"
+        result = translation_apis.update_project(
+            request=req,
+            project_obj=schema_model,
+            db_=db_)
+        message = result["message"]
+        comm = result["data"]
         return EditAGMTProject(message = message, data = comm)
 
 ##### AGMT project user #######
