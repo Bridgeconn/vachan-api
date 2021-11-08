@@ -176,3 +176,5 @@ CREATE TABLE public.stopwords_look_up(
 
 ALTER SEQUENCE public.stopwords_look_up_sw_id_seq RESTART WITH 100000;
 
+\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM PROGRAM 'awk FNR-1 ./stop_words/*.csv | cat' csv NULL AS 'NULL'
+
