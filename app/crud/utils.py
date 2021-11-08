@@ -166,3 +166,12 @@ def validate_language_tag(tag):
     if resp.status_code != 200:
         resp.raise_for_status()
     return resp.json()[0]['Valid'], ' '.join(resp.json()[0]['Messages'])
+
+
+def convert_dict_obj_to_pydantic(input_obj, target_class):
+    '''convert a graphene input object into specified pydantic model'''
+    kwargs = {}
+    for key in input_obj:
+        kwargs[key] = input_obj[key]
+    new_obj = target_class(**kwargs)
+    return new_obj

@@ -117,7 +117,7 @@ def test_end_to_end_translation():
     project_update_data = {
      "object": {
         "projectId":project_id,
-        "uploadedBooks":[bible_books['mat'], bible_books['mrk']],
+        "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']],
         "selectedBooks": {
             "bible": source_name,
             "books": ["luk", "jhn"]
