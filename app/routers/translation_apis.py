@@ -1,15 +1,13 @@
 '''API endpoints for AgMT app'''
 
 from typing import List
-from fastapi import APIRouter, Query, Body, Depends, Request
+from fastapi import APIRouter, Query, Body, Depends, Path
 from sqlalchemy.orm import Session
 
 from dependencies import get_db, log
 import schemas
 import schemas_nlp
 from crud import nlp_crud, projects_crud
-from custom_exceptions import GenericException
-from routers import content_apis
 
 router = APIRouter()
 #pylint: disable=too-many-arguments
@@ -41,33 +39,10 @@ def create_project(project_obj:schemas_nlp.TranslationProjectCreate, db_:Session
 @router.put('/v2/autographa/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse,
     tags=['Autographa-Project management'])
-def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectEdit,
-    db_:Session=Depends(get_db)):
+def update_project(project_obj:schemas_nlp.TranslationProjectEdit, db_:Session=Depends(get_db)):
     '''Adds more books to a autographa MT project's source. Delete or activate project.'''
     log.info('In update_project')
     log.debug('project_obj: %s',project_obj)
-    if project_obj.selectedBooks:
-        sentences = []
-        books_param_list = ""
-        for buk in project_obj.selectedBooks.books:
-            books_param_list += "&books=%s"%(buk)
-        response = content_apis.extract_text_contents(
-            request=request,
-            source_name=project_obj.selectedBooks.bible,
-            books=project_obj.selectedBooks.books,
-            language_code=None,
-            content_type='bible',
-            skip=0, limit=100000,
-            db_=db_)
-        if "error" in response:
-            raise GenericException(response['error'])
-        for item in response:
-            sentences.append(schemas_nlp.SentenceInput(
-                sentenceId=item[0], surrogateId=item[1], sentence=item[2]))
-        if project_obj.sentenceList is not None:
-            project_obj.sentenceList += sentences
-        else:
-            project_obj.sentenceList = sentences
     return {'message': "Project updated successfully",
         "data": projects_crud.update_agmt_project(db_, project_obj, user_id=10101)}
 
@@ -331,3 +306,19 @@ def add_alignments(source_language:schemas.LangCodePattern, target_language:sche
     tw_data = nlp_crud.alignments_to_trainingdata(db_,src_lang=source_language,
     trg_lang=target_language, alignment_list=alignments, user_id=20202)
     return { "message": "Alignments used for learning", "data":tw_data }
+
+@router.get('/v2/translation/stopwords/{language_code}', response_model=List[schemas_nlp.StopWords],
+    status_code=200, tags=["Generic Translation"])
+def get_stop_words(language_code:schemas.LangCodePattern=Path(...,example="hi"),
+    include_system_defined:bool=True, include_user_defined:bool=True,
+    include_auto_generated :bool=True, only_active:bool=True, skip: int=Query(0, ge=0),
+    limit: int=Query(100, ge=0), db_:Session=Depends(get_db)):
+    '''Api to retreive stopwords from lookup table'''
+    log.info('In get_stop_words')
+    log.debug('language_code:%s, include_system_defined:%s, include_user_defined:%s, \
+        include_auto_generated:%s ,only_active:%s',language_code, include_system_defined,
+        include_user_defined, include_auto_generated, only_active)
+    return nlp_crud.retrieve_stopwords(db_, language_code,
+        include_system_defined=include_system_defined, include_user_defined=include_user_defined,
+        include_auto_generated=include_auto_generated, only_active=only_active, skip=skip,
+        limit=limit)
