@@ -8,7 +8,6 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, Session
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.schema import Sequence
-from sqlalchemy.ext.hybrid import hybrid_property
 
 from database import Base
 from custom_exceptions import GenericException
@@ -115,14 +114,6 @@ class Commentary(): # pylint: disable=too-few-public-methods
     def book(cls): # pylint: disable=E0213
         '''For modelling the book field in derived classes'''
         return relationship(BibleBook)
-    @hybrid_property
-    def ref_string(self):
-        '''To compose surrogate id'''
-        return f'{self.book.bookCode} {self.chapter}:{self.verseStart}-{self.verseEnd}'
-    @ref_string.expression
-    def ref_string(cls): # pylint: disable=E0213
-        '''To compose surrogate id'''
-        return func.concat(BibleBook.bookCode," ",cls.chapter,":",cls.verseStart,"-",cls.verseEnd)
     chapter = Column('chapter', Integer)
     verseStart = Column('verse_start', Integer)
     verseEnd = Column('verse_end', Integer)
@@ -229,15 +220,6 @@ class BibleContentCleaned(): # pylint: disable=too-few-public-methods
     def book(cls): # pylint: disable=E0213
         '''For modelling the book field in bible content classes'''
         return relationship(BibleBook)
-    @hybrid_property
-    def ref_string(self):
-        '''To compose surrogate id'''
-        return f'{self.book.bookCode} {self.chapter}:{self.verseNumber}'
-
-    @ref_string.expression
-    def ref_string(cls): # pylint: disable=E0213
-        '''To compose surrogate id'''
-        return func.concat(BibleBook.bookCode," ",cls.chapter,":",cls.verseNumber)
     chapter = Column('chapter', Integer)
     verseNumber = Column('verse_number', Integer)
     verseText = Column('verse_text', String)
@@ -392,7 +374,7 @@ class TranslationProjectUser(Base): # pylint: disable=too-few-public-methods
 
 
 class StopWords(Base): # pylint: disable=too-few-public-methods
-    '''Corresponds to table stopwords_look_up in vachan DB '''
+    '''Corresponds to stop words lookup table in vachan db'''
     __tablename__ = 'stopwords_look_up'
 
     swId = Column('sw_id', Integer, primary_key=True, autoincrement=True)
