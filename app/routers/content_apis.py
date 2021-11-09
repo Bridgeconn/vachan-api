@@ -750,10 +750,7 @@ async def edit_biblevideo(request: Request,
     log.debug('source_name: %s, videos: %s',source_name, videos)
     return {'message': "Bible videos updated successfully",
         "data": contents_crud.update_bible_videos(db_=db_, source_name=source_name,
-<<<<<<< HEAD
         videos=videos, user_id=user_details['user_id'])}
-=======
-        videos=videos, user_id=None)}
 
 @router.get('/v2/sources/get-sentence', response_model=List[schemas_nlp.SentenceInput],
     responses={502: {"model": schemas.ErrorResponse},
@@ -793,4 +790,3 @@ def extract_text_contents(request:Request, #pylint: disable=W0613
     if len(tables) == 0:
         raise NotAvailableException("No sources available for the requested name or language")
     return contents_crud.extract_text(db_, tables, books, skip=skip, limit=limit)
->>>>>>> e587d8d9ec0e35be26f6687e9fbefd29ec077eea

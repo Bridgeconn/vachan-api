@@ -8,11 +8,8 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, Session
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.schema import Sequence
-<<<<<<< HEAD
 from sqlalchemy.dialects.postgresql import JSONB
-=======
 from sqlalchemy.ext.hybrid import hybrid_property
->>>>>>> e587d8d9ec0e35be26f6687e9fbefd29ec077eea
 
 from database import Base
 from custom_exceptions import GenericException
