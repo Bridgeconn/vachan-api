@@ -3,6 +3,7 @@
 from typing import List
 from fastapi import APIRouter, Query, Body, Depends, Request
 from sqlalchemy.orm import Session
+from starlette.datastructures import URL
 
 from dependencies import get_db, log
 import schemas
@@ -10,6 +11,7 @@ import schemas_nlp
 from crud import nlp_crud, projects_crud
 from custom_exceptions import GenericException
 from routers import content_apis
+from authentication import get_user_or_none,get_auth_access_check_decorator
 
 router = APIRouter()
 #pylint: disable=too-many-arguments
@@ -31,18 +33,23 @@ def get_projects(project_name:str=Query(None,example="Hindi-Bilaspuri Gospels"),
 @router.post('/v2/autographa/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse,
     tags=['Autographa-Project management'])
-def create_project(project_obj:schemas_nlp.TranslationProjectCreate, db_:Session=Depends(get_db)):
+@get_auth_access_check_decorator
+async def create_project(request: Request,#pylint: disable=unused-argument
+    project_obj:schemas_nlp.TranslationProjectCreate,
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Creates a new autographa MT project'''
     log.info('In create_project')
     log.debug('project_obj: %s',project_obj)
     return {'message': "Project created successfully",
-        "data": projects_crud.create_agmt_project(db_=db_, project=project_obj, user_id=10101)}
+        "data": projects_crud.create_agmt_project(db_=db_, project=project_obj,
+            user_id=user_details['user_id'])}
 
 @router.put('/v2/autographa/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse,
     tags=['Autographa-Project management'])
-def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectEdit,
-    db_:Session=Depends(get_db)):
+@get_auth_access_check_decorator
+async def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectEdit,
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Adds more books to a autographa MT project's source. Delete or activate project.'''
     log.info('In update_project')
     log.debug('project_obj: %s',project_obj)
@@ -51,14 +58,19 @@ def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectE
         books_param_list = ""
         for buk in project_obj.selectedBooks.books:
             books_param_list += "&books=%s"%(buk)
-        response = content_apis.extract_text_contents(
+
+        request.scope['method'] = 'GET'
+        request._url = URL('/v2/sources')#pylint: disable=protected-access
+        response = await content_apis.extract_text_contents(
             request=request,
             source_name=project_obj.selectedBooks.bible,
             books=project_obj.selectedBooks.books,
             language_code=None,
             content_type='bible',
             skip=0, limit=100000,
+            user_details = user_details,
             db_=db_)
+
         if "error" in response:
             raise GenericException(response['error'])
         for item in response:
@@ -69,7 +81,8 @@ def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectE
         else:
             project_obj.sentenceList = sentences
     return {'message': "Project updated successfully",
-        "data": projects_crud.update_agmt_project(db_, project_obj, user_id=10101)}
+        "data": projects_crud.update_agmt_project(db_, project_obj,
+            user_id=user_details['user_id'])}
 
 @router.post('/v2/autographa/project/user', status_code=201,
     response_model=schemas_nlp.UserUpdateResponse, tags=['Autographa-Project management'])

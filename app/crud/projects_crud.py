@@ -40,10 +40,10 @@ def create_agmt_project(db_:Session, project, user_id=None):
     db_content2 = db_models.TranslationProjectUser(
         project_id=db_content.projectId,
         userId=user_id,
-        userRole="owner",
+        userRole="projectOwner",
         active=True)
     db_.add(db_content2)
-    db_.commit()
+    # db_.commit()
     return db_content
 
 def update_agmt_project_sentences(db_, project_obj, user_id):
@@ -104,9 +104,8 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
     if project_obj.uploadedUSFMs:
         #uploaded usfm book add to project
         update_agmt_project_uploaded_book(db_,project_obj,new_books,user_id)
-
-    db_.commit()
-    db_.expire_all()
+    # db_.commit()
+    # db_.expire_all()
     if project_obj.projectName:
         project_row.projectName = project_obj.projectName
     if project_obj.active is not None:
@@ -125,8 +124,8 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
         project_row.metaData['books'] += new_books
         flag_modified(project_row, "metaData")
     db_.add(project_row)
-    db_.commit()
-    db_.refresh(project_row)
+    # db_.commit()
+    # db_.refresh(project_row)
     return project_row
 
 def get_agmt_projects(db_:Session, project_name=None, source_language=None, target_language=None,

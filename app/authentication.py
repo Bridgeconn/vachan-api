@@ -114,8 +114,9 @@ def project_owner(db_:Session, db_resource, user_id):
     '''checks if the user is the owner of the given project'''
     project_id = db_resource.projectId
     project_owners = db_.query(db_models.TranslationProjectUser.userId).filter(
-        db_models.TranslationProjectUser.projectId == project_id,
-        db_models.TranslationProjectUser.userRole == "owner").all()
+        db_models.TranslationProjectUser.project_id == project_id,#pylint: disable=comparison-with-callable
+        db_models.TranslationProjectUser.userRole == "projectOwner").all()
+    project_owners = [id for id, in project_owners]
     if user_id in project_owners:
         return True
     return False
@@ -125,7 +126,7 @@ def project_member(db_:Session, db_resource, user_id):
     project_id = db_resource.projectId
     project_owners = db_.query(db_models.TranslationProjectUser.userId).filter(
         db_models.TranslationProjectUser.projectId == project_id,
-        db_models.TranslationProjectUser.userRole == "member").all()
+        db_models.TranslationProjectUser.userRole == "projectMember").all()
     if user_id in project_owners:
         return True
     return False
@@ -170,7 +171,6 @@ def get_accesstags_permission(request_context, resource_type, db_, db_resource ,
             resource_type = None
         else:
             resource_type = schema_auth.ResourceType.CONTENT
-
     required_permission = api_permission_map(endpoint, request_context ,
         requesting_app, resource_type, user_details)
 
@@ -182,6 +182,7 @@ def role_check_has_right(db_, role, user_details, resource_type, db_resource, *a
     """check the has right for roles"""
     request_context = args[0]
     user_id = user_details['user_id']
+    print("update role coming =====>",role,"===user role==>",user_details)
     def created_user_check(resource_type, db_, db_resource, user_id):
         """checks for createduser role"""
         has_rights = False
@@ -248,7 +249,6 @@ def filter_resource_content_get(db_resource, access_tags, required_permission, u
     """filter the content for get request for resource type content"""
     has_rights = False
     filtered_content = []
-
     if not 'error' in  user_details.keys():
         user_id = user_details['user_id'] #pylint: disable=W0612  #use in future
         user_roles = user_details['user_roles']
@@ -283,15 +283,13 @@ def filter_resource_content_get(db_resource, access_tags, required_permission, u
 def check_access_rights(db_:Session, required_params, db_resource=None):
     """check access right"""
     request_context = required_params.get('request_context',None)
-    # user_id = required_params.get('user_',None)
-    # user_roles = required_params.get('user_roles',None)
     user_details = required_params.get('user_details',None)
     resource_type = required_params.get('resource_type',None)
     allowed_users = []
     access_tags,required_permission, resource_type = \
         get_accesstags_permission(request_context, resource_type, db_ , db_resource ,user_details)
-    # print("Access Tag==>>>",access_tags)
-    # print("permission==>>>",required_permission)
+    print("Access Tag==>>>",access_tags)
+    print("permission==>>>",required_permission)
     has_rights = False
     filtered_content = []
     # test function seperate permision check and filter for get of contents
@@ -304,7 +302,7 @@ def check_access_rights(db_:Session, required_params, db_resource=None):
         for tag in access_tags:
             if required_permission in access_rules[tag].keys():
                 allowed_users = access_rules[tag][required_permission]
-            # print("Allowed User ==>>>>",allowed_users)
+            print("Allowed User ==>>>>",allowed_users)
             if len(allowed_users) > 0:
                 for role in allowed_users:
                     has_rights = role_check_has_right(db_, role, user_details, resource_type,
@@ -355,12 +353,10 @@ def get_auth_access_check_decorator(func):
     """Decorator function for auth and access check for all routers"""
     @wraps(func)
     async def wrapper(*args, **kwargs):#pylint: disable=too-many-branches
-        # print("inside decorator===>")
         db_resource =None
         verified = False
         required_params = verify_auth_decorator_params(kwargs)
         db_ = required_params["db_"]
-
         if required_params['request_context']['endpoint'].startswith("/v2/user"):#pylint: disable=E1126
             verified , filtered_content = \
                 check_access_rights(db_, required_params, db_resource)
@@ -371,6 +367,7 @@ def get_auth_access_check_decorator(func):
         else:
             #calling router functions
             response = await func(*args, **kwargs)
+            # print("call back to decorator ------------------->>>>>>>>>>",response)
             if len(response) > 0:
                 #pylint: disable=E1126
                 if required_params['request_context']['method'] != 'GET':
@@ -420,7 +417,6 @@ def get_auth_access_check_decorator(func):
                             response = filtered_content
                     if not verified:
                         raise PermisionException("Access Permission Denied for the URL")
-        # print("response===>",response['data'].__dict__)
         return response
     return wrapper
 

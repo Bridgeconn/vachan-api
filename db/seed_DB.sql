@@ -109,9 +109,9 @@ CREATE TABLE public.translation_projects(
     source_document_format text DEFAULT 'Bible USFM',
     active boolean default true,
     metadata jsonb,
-    created_user text,
+    created_user text NULL,
     created_at timestamp with time zone DEFAULT NOW(),
-    last_updated_user text,
+    last_updated_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
     UNIQUE(project_name, created_user)
 );
@@ -126,7 +126,7 @@ CREATE TABLE public.translation_sentences(
     sentence text,
     draft text,
     draft_metadata jsonb,
-    last_updated_user int NULL,
+    last_updated_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
     UNIQUE(project_id, sentence_id)
 );
@@ -154,8 +154,8 @@ ALTER SEQUENCE public.translation_memory_token_id_seq RESTART WITH 100000;
 CREATE TABLE public.translation_project_users(
     project_user_id SERIAL PRIMARY KEY,
     project_id int REFERENCES translation_projects(project_id),
-    user_id int,
-    user_role text default 'member',
+    user_id text NULL,
+    user_role text default 'projectMember',
     metadata jsonb,
     active boolean default true,
     UNIQUE(project_id, user_id)

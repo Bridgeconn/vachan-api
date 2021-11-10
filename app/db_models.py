@@ -345,7 +345,7 @@ class TranslationDraft(Base): # pylint: disable=too-few-public-methods
     sentence = Column('sentence', String)
     draft = Column('draft', String)
     draftMeta = Column('draft_metadata', JSON)
-    updatedUser = Column('last_updated_user', Integer)
+    updatedUser = Column('last_updated_user', String)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
 
 class TranslationMemory(Base):  # pylint: disable=too-few-public-methods
