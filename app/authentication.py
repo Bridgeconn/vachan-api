@@ -56,7 +56,7 @@ access_rules = {
         "translate":["SuperAdmin", "AgAdmin", "AgUser"]
     },
     "translation-project":{ #default tag for all AG projects on cloud
-        "create":["SuperAdmin", "AgAdmin", "AgUser"],
+        "create":["SuperAdmin", "AgAdmin", "projectOwner"],
         "edit-Settings":["SuperAdmin", "AgAdmin", "projectOwner"],
         "read-settings":['SuperAdmin', "AgAdmin", 'projectOwner', "projectMember"],
         "edit-draft": ["SuperAdmin", "AgAdmin","projectOwner", "projectMember"],
@@ -349,15 +349,15 @@ def verify_auth_decorator_params(kwargs):
     return required_params
 
 #decorator for authentication and access check
-def get_auth_access_check_decorator(func):
+def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
     """Decorator function for auth and access check for all routers"""
     @wraps(func)
-    async def wrapper(*args, **kwargs):#pylint: disable=too-many-branches
+    async def wrapper(*args, **kwargs):#pylint: disable=too-many-branches,too-many-statements
         db_resource =None
         verified = False
         required_params = verify_auth_decorator_params(kwargs)
         db_ = required_params["db_"]
-        if required_params['request_context']['endpoint'].startswith("/v2/user"):#pylint: disable=E1126
+        if required_params['request_context']['endpoint'].startswith("/v2/user"):#pylint: disable=E1126.too-many-nested-blocks
             verified , filtered_content = \
                 check_access_rights(db_, required_params, db_resource)
             if not verified:
@@ -367,7 +367,6 @@ def get_auth_access_check_decorator(func):
         else:
             #calling router functions
             response = await func(*args, **kwargs)
-            # print("call back to decorator ------------------->>>>>>>>>>",response)
             if len(response) > 0:
                 #pylint: disable=E1126
                 if required_params['request_context']['method'] != 'GET':
@@ -385,11 +384,26 @@ def get_auth_access_check_decorator(func):
                     else:
                         db_resource = response['data']
                         if required_params['request_context']["method"] == 'POST':
-                            response['data'].createdUser = \
-                                required_params['user_details']["user_id"]
+                            if isinstance(db_resource,dict) and \
+                                'project' in db_resource.keys():
+                                db_resource['project'].updatedUser = \
+                                   required_params['user_details']["user_id"]
+                                db_resource = db_resource['project']
+                                response['data'] = response['data']['db_content']
+                            else:
+                                response['data'].createdUser = \
+                                    required_params['user_details']["user_id"]
+
                         if required_params['request_context']["method"] == 'PUT' :
-                            response['data'].updatedUser = \
-                                required_params['user_details']["user_id"]
+                            if isinstance(db_resource,dict) and \
+                                'project' in db_resource.keys():
+                                db_resource['project'].project.updatedUser = \
+                                    required_params['user_details']["user_id"]
+                                db_resource = db_resource['project'].project
+                                response['data'] = response['data']['project']
+                            else:
+                                response['data'].updatedUser = \
+                                    required_params['user_details']["user_id"]
 
                     verified , filtered_content = \
                         check_access_rights(db_, required_params, db_resource)

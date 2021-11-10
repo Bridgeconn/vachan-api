@@ -86,21 +86,27 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
 
 @router.post('/v2/autographa/project/user', status_code=201,
     response_model=schemas_nlp.UserUpdateResponse, tags=['Autographa-Project management'])
-def add_user(project_id:int, user_id:int, db_:Session=Depends(get_db)):
+@get_auth_access_check_decorator
+async def add_user(request: Request,project_id:int, user_id:str,#pylint: disable=unused-argument
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Adds new user to a project.'''
     log.info('In add_user')
     log.debug('project_id: %s, user_id:%s',project_id, user_id)
     return {'message': "User added to project successfully",
-        "data": projects_crud.add_agmt_user(db_, project_id, user_id, current_user=10101)}
+        "data": projects_crud.add_agmt_user(db_, project_id, user_id,
+            current_user=user_details['user_id'])}
 
 @router.put('/v2/autographa/project/user', status_code=201,
     response_model=schemas_nlp.UserUpdateResponse, tags=['Autographa-Project management'])
-def update_user(user_obj:schemas_nlp.ProjectUser, db_:Session=Depends(get_db)):
+@get_auth_access_check_decorator
+async def update_user(request: Request,user_obj:schemas_nlp.ProjectUser,#pylint: disable=unused-argument
+    user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):
     '''Changes role, metadata or active status of user of a project.'''
     log.info('In update_user')
     log.debug('user_obj:%s',user_obj)
     return {'message': "User updated in project successfully",
-        "data": projects_crud.update_agmt_user(db_, user_obj, current_user=10101)}
+        "data": projects_crud.update_agmt_user(db_, user_obj,
+            current_user=user_details['user_id'])}
 
 ############## Autographa Translations ##########################
 @router.get('/v2/autographa/project/tokens', response_model=List[schemas_nlp.Token],

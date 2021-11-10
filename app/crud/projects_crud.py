@@ -164,12 +164,16 @@ def add_agmt_user(db_:Session, project_id, user_id, current_user=None):
     db_content = db_models.TranslationProjectUser(
         project_id=project_id,
         userId=user_id,
-        userRole='member',
+        userRole='projectMember',
         active=True)
     db_.add(db_content)
     project_row.updatedUser = current_user
-    db_.commit()
-    return db_content
+    response = {
+        "db_content" : db_content,
+        "project" : project_row
+    }
+    # db_.commit()
+    return response
 
 def update_agmt_user(db_, user_obj, current_user=10101):
     '''Change role, active status or metadata of user in a project'''
@@ -187,8 +191,11 @@ def update_agmt_user(db_, user_obj, current_user=10101):
         user_row.active = user_obj.active
     user_row.project.updatedUser = current_user
     db_.add(user_row)
-    db_.commit()
-    return user_row
+    # db_.commit()
+    response = {
+        "project" : user_row
+    }
+    return response
 
 def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence_id_range,
     **kwargs):
