@@ -3,10 +3,15 @@ from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
 from .test_bibles import check_post as add_bible, gospel_books_data
+from .conftest import initial_test_users
 
-UNIT_URL = '/v2/autographa/projects'
+
+UNIT_URL = '/v2/autographa/projects' 
 USER_URL = '/v2/autographa/project/user'
 headers = {"contentType": "application/json", "accept": "application/json"}
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json"
+            }
 
 bible_books = {
     "mat":  "\\id MAT\n\\c 1\n\\p\n\\v 1 इब्राहीम के वंशज दाऊद के पुत्र यीशु मसीह की वंशावली इस "+
@@ -47,8 +52,8 @@ def check_post(data):
 
 def test_default_post_put_get():
     '''Positive test to create a project'''
-
-    resp = client.get(UNIT_URL+'?project_name=Test project 1')
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    resp = client.get(UNIT_URL+'?project_name=Test project 1',headers=headers_auth)
     assert_not_available_content(resp)
 
     # create with minimum data
@@ -57,7 +62,7 @@ def test_default_post_put_get():
     "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml"
     }
-    response = client.post(UNIT_URL, headers=headers, json=post_data)
+    response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"
     new_project = response.json()['data']
