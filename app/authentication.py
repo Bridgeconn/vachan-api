@@ -59,8 +59,9 @@ access_rules = {
         "create":["SuperAdmin", "AgAdmin", "projectOwner"],
         "edit-Settings":["SuperAdmin", "AgAdmin", "projectOwner"],
         "read-settings":['SuperAdmin', "AgAdmin", 'projectOwner', "projectMember"],
-        "edit-draft": ["SuperAdmin", "AgAdmin","projectOwner", "projectMember"],
-        "read-draft":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"]
+        "edit-draft": ["SuperAdmin", "AgAdmin", "projectOwner", "projectMember"],
+        "read-draft":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"],
+        "view-project":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"]
     },
     "research-use":{
         "read":["SuperAdmin", "BcsDeveloper"]
@@ -182,7 +183,6 @@ def role_check_has_right(db_, role, user_details, resource_type, db_resource, *a
     """check the has right for roles"""
     request_context = args[0]
     user_id = user_details['user_id']
-    print("update role coming =====>",role,"===user role==>",user_details)
     def created_user_check(resource_type, db_, db_resource, user_id):
         """checks for createduser role"""
         has_rights = False
@@ -279,6 +279,42 @@ def filter_resource_content_get(db_resource, access_tags, required_permission, u
         has_rights = True
     return has_rights, filtered_content
 ##############################################################################################
+def filter_agmt_project_get(db_resource,access_tags,required_permission, user_details):
+    """filter the get for Agmt Prokect realted"""
+    has_rights = False
+    filtered_content = []
+    allowed_users = []
+    if not 'error' in  user_details.keys():
+        user_id = user_details['user_id']
+        user_roles = user_details['user_roles']
+    else:
+        user_id = None
+        user_roles = []
+
+    tag = access_tags[0]
+    if required_permission in access_rules[tag].keys():
+        allowed_users = access_rules[tag][required_permission]
+
+    if not user_id is None and len(user_roles) > 0 and len(allowed_users) > 0:
+        for role in user_roles:
+            if role in allowed_users:
+                filtered_content = db_resource
+
+        if len(filtered_content) == 0:
+            for project in db_resource:
+                project_user_obj = project.users
+                for user in project_user_obj:
+                    if user_id == user.userId and\
+                        user.userRole in allowed_users and \
+                            not any(project == dic for dic in filtered_content):
+                        filtered_content.append(project)
+
+    if len(filtered_content) > 0:
+        has_rights = True
+        # print("filtered content---------------->",filtered_content)
+        # print("filtered has right---------------->",has_rights)
+    return has_rights , filtered_content
+
 
 def check_access_rights(db_:Session, required_params, db_resource=None):
     """check access right"""
@@ -288,8 +324,8 @@ def check_access_rights(db_:Session, required_params, db_resource=None):
     allowed_users = []
     access_tags,required_permission, resource_type = \
         get_accesstags_permission(request_context, resource_type, db_ , db_resource ,user_details)
-    print("Access Tag==>>>",access_tags)
-    print("permission==>>>",required_permission)
+    # print("Access Tag==>>>",access_tags)
+    # print("permission==>>>",required_permission)
     has_rights = False
     filtered_content = []
     # test function seperate permision check and filter for get of contents
@@ -297,12 +333,16 @@ def check_access_rights(db_:Session, required_params, db_resource=None):
             request_context["method"] == 'GET':
         has_rights , filtered_content  = \
             filter_resource_content_get(db_resource,access_tags,required_permission, user_details)
+    elif request_context["method"] == 'GET' and\
+        request_context['endpoint'].startswith('/v2/autographa'):
+        has_rights , filtered_content  = \
+        filter_agmt_project_get(db_resource,access_tags,required_permission, user_details)
     else:
         filtered_content = None
         for tag in access_tags:
             if required_permission in access_rules[tag].keys():
                 allowed_users = access_rules[tag][required_permission]
-            print("Allowed User ==>>>>",allowed_users)
+            # print("Allowed User ==>>>>",allowed_users)
             if len(allowed_users) > 0:
                 for role in allowed_users:
                     has_rights = role_check_has_right(db_, role, user_details, resource_type,
@@ -419,8 +459,6 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                         db_resource.append(response['source_content'])
                         verified , filtered_content  = \
                             check_access_rights(db_, required_params, db_resource)
-                        # print("filtered content get===========>",filtered_content[0].sourceName)
-                        # print("filtered content get===========>",verified)
                         if verified and db_resource[0].sourceName == filtered_content[0].sourceName:
                             response = response['db_content']
                     else:

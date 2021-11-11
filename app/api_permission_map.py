@@ -93,7 +93,7 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
         permission = None
         if method == 'GET':
             if requesting_app == schema_auth.App.AG:
-                permission = "refer-for-translation"
+                permission = "view-project"
             elif requesting_app == schema_auth.App.VACHAN:
                 permission = "view-on-web"
             elif requesting_app == schema_auth.App.VACHANADMIN:

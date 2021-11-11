@@ -18,11 +18,14 @@ router = APIRouter()
 ############## Autographa Projects ##########################
 @router.get('/v2/autographa/projects', response_model=List[schemas_nlp.TranslationProject],
     status_code=200, tags=['Autographa-Project management'])
-def get_projects(project_name:str=Query(None,example="Hindi-Bilaspuri Gospels"),
+@get_auth_access_check_decorator
+async def get_projects(request: Request,#pylint: disable=unused-argument
+    project_name:str=Query(None,example="Hindi-Bilaspuri Gospels"),
     source_language:schemas.LangCodePattern=Query(None,example='en'),
     target_language:schemas.LangCodePattern=Query(None,example='ml'),
-    active:bool=True, user_id:int=Query(None),
-    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_:Session=Depends(get_db)):
+    active:bool=True, user_id:str=Query(None),
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Fetches the list of proejct and their details'''
     log.info('In get_projects')
     log.debug('project_name: %s, source_language:%s, target_language:%s,\
