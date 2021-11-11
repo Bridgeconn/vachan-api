@@ -156,6 +156,8 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
 
         "/v2/sources" : switch_contents,
 
+        "/v2/sources/get-sentence" : switch_contents,
+
         "/v2/lookup/bible/books" : switch_contents,
 
         f"/v2/bibles/{source_name}/books" : switch_contents,

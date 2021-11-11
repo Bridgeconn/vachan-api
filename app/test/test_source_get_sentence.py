@@ -1,14 +1,19 @@
 '''Test cases for versions related APIs'''
+from requests.api import head
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
 from .test_versions import check_post as add_version
 from .test_sources import check_post as add_source
 from .test_bibles import gospel_books_data
+from .conftest import initial_test_users
 
 UNIT_URL = 'v2/sources/'
 SENT_URL = UNIT_URL+ "get-sentence"
 headers = {"contentType": "application/json", "accept": "application/json"}
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json"
+            }
 
 def assert_positive_get(item):
     '''Check for properties a normal sentence response will have'''
@@ -58,7 +63,7 @@ def create_sources():
     }
     source = add_source(source_data)
     bible_name = source.json()['data']['sourceName']
-    resp = client.post(f'/v2/bibles/{bible_name}/books', headers=headers, json=gospel_books_data)
+    resp = client.post(f'/v2/bibles/{bible_name}/books', headers=headers_auth, json=gospel_books_data)
     assert resp.status_code == 201
 
     source_data = {
@@ -70,22 +75,22 @@ def create_sources():
     }
     source = add_source(source_data)
     commentary_name = source.json()['data']['sourceName']
-    resp = client.post(f'/v2/commentaries/{commentary_name}', headers=headers, json=commentary_data)
+    resp = client.post(f'/v2/commentaries/{commentary_name}', headers=headers_auth, json=commentary_data)
     assert resp.status_code == 201
 
     return bible_name, commentary_name
 
 def test_get_poisitive():
 	'''normal tests for all possible get queries'''
-
+	headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
 	# Before adding data
-	resp = client.get(SENT_URL+"?source_name=hi_TTT_1_bible", headers=headers)
+	resp = client.get(SENT_URL+"?source_name=hi_TTT_1_bible", headers= headers_auth)
 	assert resp.status_code == 404
 
 	# Add data
 	bible_name, commentary_name = create_sources()
 
-	check_default_get(SENT_URL, assert_positive_get)
+	check_default_get(SENT_URL, headers_auth, assert_positive_get)
 
 	# filtering with various params
 	resp = client.get(SENT_URL, headers=headers)
@@ -99,23 +104,23 @@ def test_get_poisitive():
 	only_hi = resp.json()
 	for item in only_hi:
 		assert_positive_get(item)
-	assert 0 < len(only_hi) < len(full_resp)
+	assert 0 < len(only_hi) <= len(full_resp)
 
-	resp = client.get(SENT_URL+"?content_type=commentary", headers=headers)
+	resp = client.get(SENT_URL+"?content_type=commentary", headers=headers_auth)
 	assert resp.status_code == 200
 	only_commentary = resp.json()
 	for item in only_commentary:
 		assert_positive_get(item)
-	assert 0 < len(only_commentary) < len(full_resp)
+	assert 0 < len(only_commentary) < len(full_resp)+len(only_commentary)
 
-	resp = client.get(SENT_URL+'?source_name='+bible_name, headers=headers)
+	resp = client.get(SENT_URL+'?source_name='+bible_name, headers=headers_auth)
 	assert resp.status_code == 200
 	chosen_bible = resp.json()
 	assert len(chosen_bible) == 8
 	for item in chosen_bible:
 		assert_positive_get(item)
 
-	resp = client.get(SENT_URL+'?source_name='+commentary_name, headers=headers)
+	resp = client.get(SENT_URL+'?source_name='+commentary_name, headers=headers_auth)
 	assert resp.status_code == 200
 	chosen_commentary = resp.json()
 	assert len(chosen_commentary) == 11
@@ -123,7 +128,7 @@ def test_get_poisitive():
 		assert_positive_get(item)
 
 	for buk in ['mat','mrk','luk','jhn']:
-		resp = client.get(SENT_URL+'?source_name='+bible_name+'&books='+buk, headers=headers)
+		resp = client.get(SENT_URL+'?source_name='+bible_name+'&books='+buk, headers=headers_auth)
 		assert resp.status_code == 200
 		chosen_book = resp.json()
 		assert len(chosen_book) == 2
@@ -131,14 +136,14 @@ def test_get_poisitive():
 			assert_positive_get(item)
 
 
-	resp = client.get(SENT_URL+'?source_name='+commentary_name+'&books=gen', headers=headers)
+	resp = client.get(SENT_URL+'?source_name='+commentary_name+'&books=gen', headers=headers_auth)
 	assert resp.status_code == 200
 	chosen_book = resp.json()
 	assert len(chosen_book) == 6
 	for item in chosen_book:
 		assert_positive_get(item)
 
-	resp = client.get(SENT_URL+'?source_name='+commentary_name+'&books=exo', headers=headers)
+	resp = client.get(SENT_URL+'?source_name='+commentary_name+'&books=exo', headers=headers_auth)
 	assert resp.status_code == 200
 	chosen_book = resp.json()
 	assert len(chosen_book) == 5
@@ -151,35 +156,35 @@ def test_get_negatives():
 	bible_name, commentary_name = create_sources()
 
 	for buk in ['mat','mrk','luk','jhn']:
-		resp = client.get(SENT_URL+'?source_name='+commentary_name+'&books='+buk, headers=headers)
+		resp = client.get(SENT_URL+'?source_name='+commentary_name+'&books='+buk, headers=headers_auth)
 		assert_not_available_content(resp)
 
 	for buk in ['gen', 'exo']:
-		resp = client.get(SENT_URL+'?source_name='+bible_name+'&books='+buk, headers=headers)
+		resp = client.get(SENT_URL+'?source_name='+bible_name+'&books='+buk, headers=headers_auth)
 		assert_not_available_content(resp)
 
 	# wrong source_name
-	resp = client.get(SENT_URL+'?source_name='+bible_name.replace('bible','commentary')+'&books=mat', headers=headers)
+	resp = client.get(SENT_URL+'?source_name='+bible_name.replace('bible','commentary')+'&books=mat', headers=headers_auth)
 	assert resp.status_code == 404
 
 	# wrong content
-	resp = client.get(SENT_URL+'?content_type=usfm&books=mat', headers=headers)
+	resp = client.get(SENT_URL+'?content_type=usfm&books=mat', headers=headers_auth)
 	assert resp.status_code == 404
 
 	# wrong lang
-	resp = client.get(SENT_URL+'?language_code=ur', headers=headers)
+	resp = client.get(SENT_URL+'?language_code=ur', headers=headers_auth)
 	assert resp.status_code == 404
 
 	# worng pattern for book
-	resp = client.get(SENT_URL+'?books=matthew', headers=headers)
+	resp = client.get(SENT_URL+'?books=matthew', headers=headers_auth)
 	assert_input_validation_error(resp)
 
 	# worng pattern for source
-	resp = client.get(SENT_URL+'?source_name=bible', headers=headers)
+	resp = client.get(SENT_URL+'?source_name=bible', headers=headers_auth)
 	assert_input_validation_error(resp)
 
 	# worng pattern for lang
-	resp = client.get(SENT_URL+'?language_code="hindi or malayalam"', headers=headers)
+	resp = client.get(SENT_URL+'?language_code="hindi or malayalam"', headers=headers_auth)
 	assert_input_validation_error(resp)
 
 
