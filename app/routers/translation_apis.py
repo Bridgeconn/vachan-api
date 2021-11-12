@@ -73,7 +73,6 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
             skip=0, limit=100000,
             user_details = user_details,
             db_=db_)
-
         if "error" in response:
             raise GenericException(response['error'])
         for item in response:

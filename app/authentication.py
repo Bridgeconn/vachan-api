@@ -56,7 +56,8 @@ access_rules = {
         "translate":["SuperAdmin", "AgAdmin", "AgUser"]
     },
     "translation-project":{ #default tag for all AG projects on cloud
-        "create":["SuperAdmin", "AgAdmin", "projectOwner"],
+        "create":["SuperAdmin", "AgAdmin", "AgUser"],
+        "create-user":["SuperAdmin", "AgAdmin", "projectOwner"],
         "edit-Settings":["SuperAdmin", "AgAdmin", "projectOwner"],
         "read-settings":['SuperAdmin', "AgAdmin", 'projectOwner', "projectMember"],
         "edit-draft": ["SuperAdmin", "AgAdmin", "projectOwner", "projectMember"],
@@ -77,7 +78,7 @@ access_rules = {
     }
 }
 
-#get current user data
+#get current user data based on token
 def get_current_user_data(recieve_token):
     """get current user details"""
     user_details = {"user_id":"", "user_roles":""}
@@ -326,6 +327,7 @@ def check_access_rights(db_:Session, required_params, db_resource=None):
         get_accesstags_permission(request_context, resource_type, db_ , db_resource ,user_details)
     # print("Access Tag==>>>",access_tags)
     # print("permission==>>>",required_permission)
+    # print("resource type==>>>",resource_type)
     has_rights = False
     filtered_content = []
     # test function seperate permision check and filter for get of contents
@@ -444,7 +446,6 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                             else:
                                 response['data'].updatedUser = \
                                     required_params['user_details']["user_id"]
-
                     verified , filtered_content = \
                         check_access_rights(db_, required_params, db_resource)
                     if not verified:
@@ -526,15 +527,22 @@ class AuthHandler():
         return data
 
 #get all user details
-def get_all_kratos_users():
-    """get all user info"""
+def get_all_kratos_users(rec_user_id=None):
+    """get all user info or a particular user details"""
     base_url = ADMIN_BASE_URL+"identities/"
 
-    response = requests.get(base_url)
-    if response.status_code == 200:
-        user_data = json.loads(response.content)
+    if id is None:
+        response = requests.get(base_url)
+        if response.status_code == 200:
+            user_data = json.loads(response.content)
+        else:
+            raise UnAuthorizedException(detail=json.loads(response.content))
     else:
-        raise UnAuthorizedException(detail=json.loads(response.content))
+        response = requests.get(base_url+rec_user_id)
+        if response.status_code == 200:
+            user_data = json.loads(response.content)
+        else:
+            raise NotAvailableException("User does not exist")
     return user_data
 
 #User registration with credentials

@@ -101,18 +101,37 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
             elif requesting_app is None:
                 permission = "read-via-api"
         if method == 'POST':
-            if not 'error' in user_details.keys():
-                permission = "create"
-            else:
-                raise user_details['error']
+            if requesting_app == schema_auth.App.AG:
+                if not 'error' in user_details.keys():
+                    permission = "create"
+                else:
+                    raise user_details['error']
         if method == 'PUT':
-            if not 'error' in user_details.keys():
-                if resource==schema_auth.ResourceType.CONTENT:
-                    permission = "translate"
-                elif resource==schema_auth.ResourceType.PROJECT:
+            if requesting_app == schema_auth.App.AG:
+                if not 'error' in user_details.keys():
+                    if resource==schema_auth.ResourceType.CONTENT:
+                        permission = "translate"
+                    elif resource==schema_auth.ResourceType.PROJECT:
+                        permission = "edit-Settings"
+                else:
+                    raise user_details['error']
+        return permission
+
+    def switch_agmt_project_user():#pylint: disable=too-many-branches
+        """Agmt projects user endpoint"""
+        permission = None
+        if method == 'POST':
+            if requesting_app == schema_auth.App.AG:
+                if not 'error' in user_details.keys():
+                    permission = "create-user"
+                else:
+                    raise user_details['error']
+        if method == 'PUT':
+            if requesting_app == schema_auth.App.AG:
+                if not 'error' in user_details.keys():
                     permission = "edit-Settings"
-            else:
-                raise user_details['error']
+                else:
+                    raise user_details['error']
         return permission
 
     def switch_agmt_project_tokens():
@@ -178,7 +197,7 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
 
         "/v2/autographa/projects" : switch_agmt_project,
 
-        "/v2/autographa/project/user" : switch_agmt_project,
+        "/v2/autographa/project/user" : switch_agmt_project_user,
 
         "/v2/autographa/project/tokens" : switch_agmt_project_tokens,
         "/v2/autographa/project/token-translations" : switch_agmt_project_tokens,
