@@ -6,11 +6,11 @@ from routers import translation_apis
 from crud import structurals_crud,contents_crud,projects_crud,nlp_crud
 from graphql_api import types, utils
 #Data classes and graphql classes have few methods
-
+#pylint: disable=E1101
 ############ ADD NEW Language #################
 class AddLanguage(graphene.Mutation):
     """Mutation class for Add Language"""
-    class Arguments:#pylint: disable=too-few-public-methods
+    class Arguments:#pylint: disable=too-few-public-methods,E1101
         """Arguments declaration for the mutation"""
         language_addargs = types.InputAddLang(required=True)
 
