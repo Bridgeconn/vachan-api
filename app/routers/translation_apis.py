@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from dependencies import get_db, log
 import schemas
 import schemas_nlp
-from crud import nlp_crud, projects_crud
+from crud import nlp_crud, projects_crud, nlp_sw_crud
 
 router = APIRouter()
 #pylint: disable=too-many-arguments
@@ -308,7 +308,7 @@ def add_alignments(source_language:schemas.LangCodePattern, target_language:sche
     return { "message": "Alignments used for learning", "data":tw_data }
 
 @router.get('/v2/translation/stopwords/{language_code}', response_model=List[schemas_nlp.StopWords],
-    status_code=200, tags=["Generic Translation"])
+    response_model_exclude_unset=True, status_code=200, tags=["Generic Translation"])
 def get_stop_words(language_code:schemas.LangCodePattern=Path(...,example="hi"),
     include_system_defined:bool=True, include_user_defined:bool=True,
     include_auto_generated :bool=True, only_active:bool=True, skip: int=Query(0, ge=0),
@@ -318,7 +318,7 @@ def get_stop_words(language_code:schemas.LangCodePattern=Path(...,example="hi"),
     log.debug('language_code:%s, include_system_defined:%s, include_user_defined:%s, \
         include_auto_generated:%s ,only_active:%s',language_code, include_system_defined,
         include_user_defined, include_auto_generated, only_active)
-    return nlp_crud.retrieve_stopwords(db_, language_code,
+    return nlp_sw_crud.retrieve_stopwords(db_, language_code,
         include_system_defined=include_system_defined, include_user_defined=include_user_defined,
         include_auto_generated=include_auto_generated, only_active=only_active, skip=skip,
         limit=limit)
