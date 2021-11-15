@@ -237,8 +237,9 @@ class Translation(BaseModel):
 
 class StopWords(BaseModel):
     '''Response object for stop words'''
-    stopword: str = Field(..., example='और')
-    confidence: float = Field(..., example="0.8")
+    stopword: str = Field(..., example="और")
+    stopwordType: str = Field(..., example="System defined")
+    confidence: float = Field(None, example="0.8")
     active : bool = Field(..., example="True")
     metaData: dict = Field(None, example={
-        "type":'preposition'})
+        "type":'postposition'})
