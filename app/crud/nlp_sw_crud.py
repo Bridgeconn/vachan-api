@@ -25,28 +25,28 @@ def retrieve_stopwords(db_: Session, language_code, **kwargs):
     if not language_id:
         raise NotAvailableException("Language with code %s, not in database"%language_code)
     query = db_.query(db_models.StopWords)
-    sw_query = query.filter(db_models.StopWords.languageId == language_id[0])
+    query = query.filter(db_models.StopWords.languageId == language_id[0])
     if not include_system_defined:
-        sw_query = sw_query.filter(db_models.StopWords.confidence != 2)
+        query = query.filter(db_models.StopWords.confidence != 2)
     if not include_user_defined:
-        sw_query = sw_query.filter(db_models.StopWords.confidence != 1)
+        query = query.filter(db_models.StopWords.confidence != 1)
     if not include_auto_generated:
-        sw_query = sw_query.filter(db_models.StopWords.confidence >= 1)
+        query = query.filter(db_models.StopWords.confidence >= 1)
     if only_active:
-        sw_query = sw_query.filter(db_models.StopWords.active == only_active)
-    sw_query = sw_query.offset(skip).limit(limit).all()
+        query = query.filter(db_models.StopWords.active == only_active)
+    query = query.offset(skip).limit(limit).all()
     result = []
-    for row in sw_query:
+    for row in query:
         sw_type = ''
         if row.confidence == 2:
             sw_type = 'System defined'
         elif row.confidence == 1:
             sw_type = 'User defined'
         else:
-            sw_type = 'Auto generated' 
+            sw_type = 'Auto generated'
         conf_val = None
         if row.confidence not in [1, 2]:
-            conf_val = row.confidence         
-        obj = {"stopword": row.stopWord, "stopwordType": sw_type, "confidence": conf_val, "active": row.active}
-        result.append(obj)
+            conf_val = row.confidence
+        result.append({"stopword": row.stopWord, "stopwordType": sw_type, "confidence": conf_val,
+        "active": row.active})
     return result

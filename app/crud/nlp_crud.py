@@ -8,7 +8,7 @@ from datetime import datetime
 from math import floor, ceil
 from pathlib import Path
 import pygtrie
-from sqlalchemy import or_, func
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
