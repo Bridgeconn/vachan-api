@@ -310,9 +310,7 @@ def filter_agmt_project_get(db_resource,access_tags,required_permission, user_de
                             not any(project == dic for dic in filtered_content):
                         filtered_content.append(project)
 
-    if len(filtered_content) > 0 or\
-        schema_auth.AdminRoles.AGUSER.value in user_roles:
-        has_rights = True
+    has_rights = True
     return has_rights , filtered_content
 
 

@@ -775,20 +775,17 @@ def test_get_project_access_rules():
     assert response.status_code == 403
     assert response.json()['error'] == 'Permision Denied'
 
-    #get project from Autographa with not allowed users
+    #get project from Autographa with not allowed users get empty result
     headers_auth["app"] = "Autographa"
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     response = client.get(UNIT_URL,headers=headers_auth)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert len(response.json()) == 0
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
     response = client.get(UNIT_URL,headers=headers_auth)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert len(response.json()) == 0
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
     response = client.get(UNIT_URL,headers=headers_auth)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert len(response.json()) == 0
 
     #get all project by SA , AgAdmin, Bcs internal dev
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
