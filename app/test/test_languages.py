@@ -209,3 +209,7 @@ def test_searching():
         if lang['language'] == "Sinhala":
             found = True
     assert found    
+
+    # ensure search words are not stemmed as per rules of english
+    response = client.get(UNIT_URL+"?search_word=chinese")
+    assert len(response.json()) > 5
