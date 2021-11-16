@@ -9,7 +9,7 @@ import db_models
 import schemas_nlp
 from crud import utils, nlp_crud
 from custom_exceptions import NotAvailableException, TypeException
-from authentication import get_all_kratos_users
+from authentication import get_all_or_one_kratos_users
 
 #pylint: disable=W0143,E1101
 ###################### AgMT Project Mangement ######################
@@ -162,7 +162,7 @@ def add_agmt_user(db_:Session, project_id, user_id, current_user=None):
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException("Project with id, %s, not found"%project_id)
-    get_all_kratos_users(user_id)
+    get_all_or_one_kratos_users(user_id)
     db_content = db_models.TranslationProjectUser(
         project_id=project_id,
         userId=user_id,

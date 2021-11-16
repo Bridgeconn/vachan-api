@@ -310,10 +310,9 @@ def filter_agmt_project_get(db_resource,access_tags,required_permission, user_de
                             not any(project == dic for dic in filtered_content):
                         filtered_content.append(project)
 
-    if len(filtered_content) > 0:
+    if len(filtered_content) > 0 or\
+        schema_auth.AdminRoles.AGUSER.value in user_roles:
         has_rights = True
-        # print("filtered content---------------->",filtered_content)
-        # print("filtered has right---------------->",has_rights)
     return has_rights , filtered_content
 
 
@@ -337,7 +336,8 @@ def check_access_rights(db_:Session, required_params, db_resource=None):
             filter_resource_content_get(db_resource,access_tags,required_permission, user_details)
     elif request_context["method"] == 'GET' and\
         request_context['endpoint'].startswith('/v2/autographa'):
-        has_rights , filtered_content  = \
+        if request_context['app'] == schema_auth.App.AG.value:
+            has_rights , filtered_content  = \
         filter_agmt_project_get(db_resource,access_tags,required_permission, user_details)
     else:
         filtered_content = None
@@ -526,8 +526,8 @@ class AuthHandler():
             raise GenericException(data["error"])
         return data
 
-#get all user details
-def get_all_kratos_users(rec_user_id=None):
+#get all or single user details
+def get_all_or_one_kratos_users(rec_user_id=None):
     """get all user info or a particular user details"""
     base_url = ADMIN_BASE_URL+"identities/"
 
@@ -601,7 +601,7 @@ def register_flow_fail(reg_response,email,user_role,reg_req):
     "An account with the same identifier (email, phone, username, ...) exists already."
         err_txt = reg_response["ui"]["messages"][0]["text"]
         if err_txt == err_msg:
-            kratos_users = get_all_kratos_users()
+            kratos_users = get_all_or_one_kratos_users()
 
             #update user role for exisiting user
             data = register_exist_update_user_role(kratos_users, email,
