@@ -237,8 +237,15 @@ class Translation(BaseModel):
 
 class StopWords(BaseModel):
     '''Response object for stop words'''
-    stopword: str = Field(..., example='और')
-    confidence: float = Field(..., example="0.8")
-    active : bool = Field(..., example="True")
+    stopword: str = Field(..., example="और")
+    stopwordType: str = Field(..., example="Auto generated")
+    confidence: float = Field(None, example=0.8)
+    active : bool = Field(..., example=True)
     metaData: dict = Field(None, example={
-        "type":'preposition'})
+        "type":'postposition'})
+
+class StopWordsType(Enum):
+    '''Types of stop-words based on how they are generated'''
+    SYSTEM = 'system defined'
+    USER = 'user defined'
+    AUTO = 'auto generated'
