@@ -41,7 +41,7 @@ def get_languages(db_: Session, language_code = None, language_name = None, sear
     if language_name:
         query = query.filter(func.lower(db_models.Language.language) == language_name.lower())
     if search_word:
-        search_pattern = re.sub(r'\s+', " & ", search_word)
+        search_pattern = " & ".join(re.findall(r'\w+', search_word))
         search_pattern += ":*"
         query = query.filter(text("to_tsvector(language_code || ' ' || language_name || ' ' || "+\
             "jsonb_to_tsvector('simple', metadata, '[\"string\", \"numeric\"]') || ' ')"+\

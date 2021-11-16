@@ -190,3 +190,22 @@ def test_searching():
         if lang['language'] == "Sinhala":
             found = True
     assert found    
+
+    # search word with special symbols in them
+    response = client.get(UNIT_URL+"?search_word=sri%20lanka(Asia)")
+    assert len(response.json()) > 0
+    found = False
+    for lang in response.json():
+        assert_positive_get(lang)
+        if lang['language'] == "Sinhala":
+            found = True
+    assert found    
+
+    response = client.get(UNIT_URL+"?search_word=sri-lanka-asia!")
+    assert len(response.json()) > 0
+    found = False
+    for lang in response.json():
+        assert_positive_get(lang)
+        if lang['language'] == "Sinhala":
+            found = True
+    assert found    
