@@ -276,8 +276,8 @@ def filter_resource_content_get(db_resource, access_tags, required_permission, u
                         if role in allowed_users and \
                                 not any(source == dic for dic in filtered_content):
                             filtered_content.append(source)
-    if len(filtered_content) > 0:
-        has_rights = True
+
+    has_rights = True
     return has_rights, filtered_content
 ##############################################################################################
 def filter_agmt_project_get(db_resource,access_tags,required_permission, user_details):
