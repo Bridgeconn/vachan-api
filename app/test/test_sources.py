@@ -494,7 +494,7 @@ def test_get_after_adding_data():
     #without auth
     response = client.get(UNIT_URL + "?content_type=commentary&version_abbreviation=TTT"+
         "&latest_revision=false",headers=headers)
-    assert len(response.json()) == 0
+    assert_not_available_content(response)
     #with auth
     response = client.get(UNIT_URL + "?content_type=commentary&version_abbreviation=TTT"+
         "&latest_revision=false",headers=headers_auth)
@@ -506,7 +506,7 @@ def test_get_after_adding_data():
     # filter with language
     #without auth
     response = client.get(UNIT_URL + "?language_code=hi&&version_abbreviation=TTT&latest_revision=false")
-    assert len(response.json()) == 0
+    assert_not_available_content(response)
     #with auth
     response = client.get(UNIT_URL + "?language_code=hi&&version_abbreviation=TTT"+
         "&latest_revision=false",headers=headers_auth)
@@ -693,7 +693,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Autographa
     headers_auth['app'] = AG
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert len(response.json()) == 0
+    assert_not_available_content(response)
     #APP : Vachan Online
     headers_auth['app'] = VACHAN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
@@ -704,7 +704,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert len(response.json()) == 0
+    assert_not_available_content(response)
 
     #Get with AgUser
     #default : API
@@ -732,7 +732,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert len(response.json()) == 0
+    assert_not_available_content(response)
 
     #Get with VachanUser
     #default : API
@@ -746,7 +746,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Autographa
     headers_auth['app'] = AG
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert len(response.json()) == 0
+    assert_not_available_content(response)
     #APP : Vachan Online
     headers_auth['app'] = VACHAN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
@@ -757,7 +757,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert len(response.json()) == 0
+    assert_not_available_content(response)
 
     #Get with VachanAdmin
     #default : API
@@ -774,7 +774,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Autographa
     headers_auth['app'] = AG
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert len(response.json()) == 0
+    assert_not_available_content(response)
     #APP : Vachan Online
     headers_auth['app'] = VACHAN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
@@ -804,7 +804,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Autographa
     headers_auth['app'] = AG
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert len(response.json()) == 0
+    assert_not_available_content(response)
     #APP : Vachan Online
     headers_auth['app'] = VACHAN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
@@ -815,7 +815,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert len(response.json()) == 0
+    assert_not_available_content(response)
 
     #Get with AgAdmin
     #default : API
@@ -843,7 +843,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert len(response.json()) == 0
+    assert_not_available_content(response)
 
     #Get with BcsDeveloper
     #default : API
@@ -860,7 +860,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Autographa
     headers_auth['app'] = AG
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert len(response.json()) == 0
+    assert_not_available_content(response)
     #APP : Vachan Online
     headers_auth['app'] = VACHAN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
@@ -871,7 +871,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert len(response.json()) == 0
+    assert_not_available_content(response)
 
     #Super Admin
     SA_user_data = {
