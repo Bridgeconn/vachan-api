@@ -178,7 +178,7 @@ def test_default_post_put_get():
     put_data = {
      "object": {
         "projectId":int(new_project['projectId']),
-        "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
+        "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
   }
 }  
 
@@ -403,7 +403,7 @@ def test_put_invalid():
     data = {
      "object": {
        "projectId": int(new_project['projectId']),
-        "uploadedBooks": "mat"
+        "uploadedUSFMs": "mat"
   }
 }
     executed1 = gql_request(query=PROJECT_EDIT_GLOBAL_QUERY,operation="mutation", variables=data)
@@ -412,7 +412,7 @@ def test_put_invalid():
     data = {
      "object": {
         "projectId": int(new_project['projectId']),
-    "uploadedBooks": ["The contents of matthew in text"]
+    "uploadedUSFMs": ["The contents of matthew in text"]
   }
 }
     executed1 = gql_request(query=PROJECT_EDIT_GLOBAL_QUERY,operation="mutation", variables=data)

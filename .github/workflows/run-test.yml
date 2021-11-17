@@ -40,4 +40,4 @@ jobs:
         run: |
           pip install -r requirements.txt
           cd app 
-          python -m pytest --disable-warnings -k "not agmt and not translation and not bibles and not auth"
+          python -m pytest --disable-warnings -k "not agmt and not translation and not bibles and not auth and not source_get_sentence"
