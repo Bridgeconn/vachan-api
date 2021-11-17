@@ -809,3 +809,29 @@ def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, ver
         'source_content':source_db_content
         }
     return response
+
+def extract_text(db_:Session, tables, books, skip=0, limit=100):
+    '''get all text field contents from the list of tables provided.
+    The text column would be determined based on the table type'''
+    sentence_list = []
+    for table in tables:
+        if table.contentType.contentType == db_models.ContentTypeName.BIBLE.value:
+            model_cls = db_models.dynamicTables[table.sourceName+'_cleaned']
+            query = db_.query(model_cls.refId.label('sentenceId'),
+                model_cls.ref_string.label('surrogateId'),
+                model_cls.verseText.label('sentence')).join(model_cls.book)
+        elif table.contentType.contentType == db_models.ContentTypeName.COMMENTARY.value:
+            model_cls = db_models.dynamicTables[table.sourceName]
+            query = db_.query(model_cls.commentaryId.label('sentenceId'),
+                model_cls.ref_string.label('surrogateId'),
+                model_cls.commentary.label('sentence')).join(model_cls.book)
+        else:
+            continue
+        if books is not None:
+            query = query.filter(
+                db_models.BibleBook.bookCode.in_([buk.lower() for buk in books]))
+        sentence_list += query.offset(skip).limit(limit).all()
+        if len(sentence_list) >= limit:
+            sentence_list = sentence_list[:limit]
+            break
+    return sentence_list

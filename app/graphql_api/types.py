@@ -481,7 +481,7 @@ class InputEditAGMTProject(graphene.InputObjectType):
     projectName = graphene.String(\
         description="example: Hindi Malayalam Gospels")
     selectedBooks = graphene.Field(InputSeclectedBooks)
-    uploadedBooks = graphene.List(graphene.String)
+    uploadedUSFMs = graphene.List(graphene.String)
     useDataForLearning = graphene.Boolean()
     stopwords = graphene.Field(Stopwords)
     punctuations = graphene.List(graphene.String,\

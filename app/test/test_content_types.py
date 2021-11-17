@@ -102,4 +102,4 @@ def test_post_incorrectvalue_contenttype():
     assert_input_validation_error(response)
 
     #delete id list
-    delete_user_identity(test_user_id)
+    delete_user_identity([test_user_id])

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Query, Body, Depends, Path , Request
 from sqlalchemy.orm import Session
 
 import schemas
+import schemas_nlp
 from dependencies import get_db, log
 from custom_exceptions import NotAvailableException, AlreadyExistsException
 from crud import structurals_crud, contents_crud
@@ -237,7 +238,6 @@ async def get_source(request: Request,content_type: str=Query(None, example="com
     license_code: schemas.LicenseCodePattern=Query(None,example="ISC"),
     metadata: schemas.MetaDataPattern=Query(None,
         example='{"otherName": "KJBC, King James Bible Commentaries"}'),
-    # access_tag:List[schemas.SourcePermisions]=Query(schemas.SourcePermisions.CONTENT),
     access_tag:List[schemas.SourcePermisions]=Query(None),
     active: bool = True, latest_revision: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
@@ -750,3 +750,45 @@ async def edit_biblevideo(request: Request,
     return {'message': "Bible videos updated successfully",
         "data": contents_crud.update_bible_videos(db_=db_, source_name=source_name,
         videos=videos, user_id=user_details['user_id'])}
+
+@router.get('/v2/sources/get-sentence', response_model=List[schemas_nlp.SentenceInput],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Sources"])
+async def extract_text_contents(request:Request, #pylint: disable=W0613
+    source_name:schemas.TableNamePattern=Query(None,example="en_TBP_1_bible"),
+    books:List[schemas.BookCodePattern]=Query(None,example='GEN'),
+    language_code:schemas.LangCodePattern=Query(None, example="hi"),
+    content_type:str=Query(None, example="commentary"),
+    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
+    user_details = Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
+    '''A generic API for all content type tables to get just the text contents of that table
+    that could be used for translation, as corpus for NLP operations like SW identification.
+    If source_name is provided, only that filter will be considered over content_type & language.'''
+    log.info('In extract_text_contents')
+    log.debug('source_name: %s, language_code: %s',source_name, language_code)
+    version_abbreviation = None
+    revision = None
+    if source_name:
+        parts = source_name.split('_')
+        language_code = parts[0]
+        version_abbreviation = parts[1]
+        revision = parts[2]
+        content_type = parts[3]
+    tables = await get_source(request=request, content_type=content_type,
+        version_abbreviation=version_abbreviation,
+        revision=revision,
+        language_code=language_code,
+        license_code=None, metadata=None,
+        access_tag = None,
+        active= True, latest_revision= True,
+        skip=0, limit=1000,
+        user_details=user_details, db_=db_)
+    # the projects sources or drafts where people are willing to share their data for learning
+    # could be used for text content extraction. But need to be able to filter projects based on
+    # use_data_for_learning flag and translation status(need to add a field in metadata for that).
+    # projects = projects_crud.get_agmt_projects(db_, source_language=language_code) +
+    #     projects_crud.get_agmt_projects(db_, target_language=language_code)
+    if len(tables) == 0:
+        raise NotAvailableException("No sources available for the requested name or language")
+    return contents_crud.extract_text(db_, tables, books, skip=skip, limit=limit)

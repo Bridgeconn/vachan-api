@@ -38,15 +38,6 @@ def db_transaction():
         trans.rollback()
         CONN.close()
 
-# #session fixture for access checks
-# @pytest.fixture(scope="session", autouse=True)
-# def create_user_session_run_at_start(request):
-#     print('<<<<<<<<<<<<<<<=============SESSION WISE CREATE USER FIXTURE RUN AT FIRST OF ALL TEST==============>>>>>>>>>>')
-
-#     def create_user_session_run_at_end():
-#             print('<<<<<<<<<<<<<<<=============SESSION ENDS==============>>>>>>>>>>')
-#     request.addfinalizer(create_user_session_run_at_end)
-
 #Users data with apps
 initial_test_users = {
             "AgAdmin": {

@@ -9,6 +9,7 @@ import db_models
 import schemas_nlp
 from crud import utils, nlp_crud
 from custom_exceptions import NotAvailableException, TypeException
+from authentication import get_all_or_one_kratos_users
 
 #pylint: disable=W0143,E1101
 ###################### AgMT Project Mangement ######################
@@ -40,45 +41,30 @@ def create_agmt_project(db_:Session, project, user_id=None):
     db_content2 = db_models.TranslationProjectUser(
         project_id=db_content.projectId,
         userId=user_id,
-        userRole="owner",
+        userRole="projectOwner",
         active=True)
     db_.add(db_content2)
-    db_.commit()
+    # db_.commit()
     return db_content
 
-def update_agmt_project_selected_book(db_, project_obj, new_books, user_id):
+def update_agmt_project_sentences(db_, project_obj, user_id):
     """bulk selected book update in update agmt project"""
-    bible_cls = db_models.dynamicTables[project_obj.selectedBooks.bible+"_cleaned"]
-    verse_query = db_.query(bible_cls)
-    for buk in project_obj.selectedBooks.books:
-        book = db_.query(db_models.BibleBook).filter(
-            db_models.BibleBook.bookCode == buk).first()
-        if not book:
-            raise NotAvailableException("Book, %s, not found in database" %buk)
-        new_books.append(buk)
-        refid_start = book.bookId * 1000000
-        refid_end = refid_start + 999999
-        verses = verse_query.filter(
-            bible_cls.refId >= refid_start, bible_cls.refId <= refid_end).all()
-        if len(verses) == 0:
-            raise NotAvailableException("Book, %s, is empty for %s"%(
-                buk, project_obj.selectedBooks.bible))
-        for verse in verses:
-            sent = utils.normalize_unicode(verse.verseText)
-            offsets = [0, len(sent)]
-            draft_row = db_models.TranslationDraft(
-                project_id=project_obj.projectId,
-                sentenceId=verse.refId,
-                surrogateId=buk+" "+str(verse.chapter)+":"+str(verse.verseNumber),
-                sentence=sent,
-                draft=sent,
-                draftMeta=[[offsets,offsets,"untranslated"]],
-                updatedUser=user_id)
-            db_.add(draft_row)
+    for sent in project_obj.sentenceList:
+        norm_sent = utils.normalize_unicode(sent.sentence)
+        offsets = [0, len(norm_sent)]
+        draft_row = db_models.TranslationDraft(
+            project_id=project_obj.projectId,
+            sentenceId=sent.sentenceId,
+            surrogateId=sent.surrogateId,
+            sentence=norm_sent,
+            draft=norm_sent,
+            draftMeta=[[offsets,offsets,"untranslated"]],
+            updatedUser=user_id)
+        db_.add(draft_row)
 
 def update_agmt_project_uploaded_book(db_,project_obj,new_books,user_id):
     """bulk uploaded book update in update agmt project"""
-    for usfm in project_obj.uploadedBooks:
+    for usfm in project_obj.uploadedUSFMs:
         usfm_json = utils.parse_usfm(usfm)
         book_code = usfm_json['book']['bookCode'].lower()
         book = db_.query(db_models.BibleBook).filter(
@@ -112,20 +98,15 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
         raise NotAvailableException("Project with id, %s, not found"%project_obj.projectId)
     new_books = []
     if project_obj.selectedBooks:
-        if not project_obj.selectedBooks.bible.endswith("_"+db_models.ContentTypeName.BIBLE.value):
-            raise TypeException("Operation only supported on Bible tables")
-        if not project_obj.selectedBooks.bible+"_cleaned" in db_models.dynamicTables:
-            raise NotAvailableException("Bible, %s, not found"%project_obj.selectedBooks.bible)
-        #bulk book add to project
-        update_agmt_project_selected_book(db_, project_obj,
-            new_books, user_id)
+        new_books += project_obj.selectedBooks.books
+    if project_obj.sentenceList:
+        update_agmt_project_sentences(db_, project_obj, user_id)
 
-    if project_obj.uploadedBooks:
-        #uploaded book add to project
+    if project_obj.uploadedUSFMs:
+        #uploaded usfm book add to project
         update_agmt_project_uploaded_book(db_,project_obj,new_books,user_id)
-
-    db_.commit()
-    db_.expire_all()
+    # db_.commit()
+    # db_.expire_all()
     if project_obj.projectName:
         project_row.projectName = project_obj.projectName
     if project_obj.active is not None:
@@ -144,8 +125,8 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
         project_row.metaData['books'] += new_books
         flag_modified(project_row, "metaData")
     db_.add(project_row)
-    db_.commit()
-    db_.refresh(project_row)
+    # db_.commit()
+    # db_.refresh(project_row)
     return project_row
 
 def get_agmt_projects(db_:Session, project_name=None, source_language=None, target_language=None,
@@ -181,15 +162,20 @@ def add_agmt_user(db_:Session, project_id, user_id, current_user=None):
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException("Project with id, %s, not found"%project_id)
+    get_all_or_one_kratos_users(user_id)
     db_content = db_models.TranslationProjectUser(
         project_id=project_id,
         userId=user_id,
-        userRole='member',
+        userRole='projectMember',
         active=True)
     db_.add(db_content)
     project_row.updatedUser = current_user
-    db_.commit()
-    return db_content
+    response = {
+        "db_content" : db_content,
+        "project" : project_row
+    }
+    # db_.commit()
+    return response
 
 def update_agmt_user(db_, user_obj, current_user=10101):
     '''Change role, active status or metadata of user in a project'''
@@ -207,8 +193,11 @@ def update_agmt_user(db_, user_obj, current_user=10101):
         user_row.active = user_obj.active
     user_row.project.updatedUser = current_user
     db_.add(user_row)
-    db_.commit()
-    return user_row
+    # db_.commit()
+    response = {
+        "project" : user_row
+    }
+    return response
 
 def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence_id_range,
     **kwargs):

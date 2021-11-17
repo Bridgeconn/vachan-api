@@ -51,7 +51,7 @@ def test_get_tokens():
 
     put_data = {
         "projectId": project_id,
-        "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
+        "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
     resp = client.put("/v2/autographa/projects", headers=headers, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
@@ -181,7 +181,7 @@ def test_save_translation():
 
     put_data = {
         "projectId": project_id,
-        "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
+        "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
     resp = client.put("/v2/autographa/projects", headers=headers, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
@@ -248,7 +248,7 @@ def test_save_translation_invalid():
 
     put_data = {
         "projectId": project_id,
-        "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
+        "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
     resp = client.put("/v2/autographa/projects", headers=headers, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
@@ -329,7 +329,7 @@ def test_drafts():
 
     put_data = {
         "projectId": project_id,
-        "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
+        "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
     resp = client.put("/v2/autographa/projects", headers=headers, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
@@ -377,7 +377,7 @@ def test_get_token_sentences():
 
     put_data = {
         "projectId": project_id,
-        "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
+        "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
     resp = client.put("/v2/autographa/projects", headers=headers, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
@@ -439,7 +439,7 @@ def test_get_sentence():
 
     put_data = {
         "projectId": project_id,
-        "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
+        "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
     resp = client.put("/v2/autographa/projects", headers=headers, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
@@ -497,7 +497,7 @@ def test_progress_n_suggestion():
 
     put_data = {
         "projectId": project_id,
-        "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
+        "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
     resp = client.put("/v2/autographa/projects", headers=headers, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
@@ -563,7 +563,7 @@ def test_get_versification():
 
     put_data = {
         "projectId": project_id,
-        "uploadedBooks":[bible_books['mat'], bible_books['mrk']]
+        "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
     resp = client.put("/v2/autographa/projects", headers=headers, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"

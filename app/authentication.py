@@ -57,10 +57,12 @@ access_rules = {
     },
     "translation-project":{ #default tag for all AG projects on cloud
         "create":["SuperAdmin", "AgAdmin", "AgUser"],
+        "create-user":["SuperAdmin", "AgAdmin", "projectOwner"],
         "edit-Settings":["SuperAdmin", "AgAdmin", "projectOwner"],
         "read-settings":['SuperAdmin', "AgAdmin", 'projectOwner', "projectMember"],
-        "edit-draft": ["SuperAdmin", "AgAdmin","projectOwner", "projectMember"],
-        "read-draft":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"]
+        "edit-draft": ["SuperAdmin", "AgAdmin", "projectOwner", "projectMember"],
+        "read-draft":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"],
+        "view-project":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"]
     },
     "research-use":{
         "read":["SuperAdmin", "BcsDeveloper"]
@@ -76,7 +78,7 @@ access_rules = {
     }
 }
 
-#get current user data
+#get current user data based on token
 def get_current_user_data(recieve_token):
     """get current user details"""
     user_details = {"user_id":"", "user_roles":""}
@@ -114,8 +116,9 @@ def project_owner(db_:Session, db_resource, user_id):
     '''checks if the user is the owner of the given project'''
     project_id = db_resource.projectId
     project_owners = db_.query(db_models.TranslationProjectUser.userId).filter(
-        db_models.TranslationProjectUser.projectId == project_id,
-        db_models.TranslationProjectUser.userRole == "owner").all()
+        db_models.TranslationProjectUser.project_id == project_id,#pylint: disable=comparison-with-callable
+        db_models.TranslationProjectUser.userRole == "projectOwner").all()
+    project_owners = [id for id, in project_owners]
     if user_id in project_owners:
         return True
     return False
@@ -125,7 +128,7 @@ def project_member(db_:Session, db_resource, user_id):
     project_id = db_resource.projectId
     project_owners = db_.query(db_models.TranslationProjectUser.userId).filter(
         db_models.TranslationProjectUser.projectId == project_id,
-        db_models.TranslationProjectUser.userRole == "member").all()
+        db_models.TranslationProjectUser.userRole == "projectMember").all()
     if user_id in project_owners:
         return True
     return False
@@ -170,7 +173,6 @@ def get_accesstags_permission(request_context, resource_type, db_, db_resource ,
             resource_type = None
         else:
             resource_type = schema_auth.ResourceType.CONTENT
-
     required_permission = api_permission_map(endpoint, request_context ,
         requesting_app, resource_type, user_details)
 
@@ -248,7 +250,6 @@ def filter_resource_content_get(db_resource, access_tags, required_permission, u
     """filter the content for get request for resource type content"""
     has_rights = False
     filtered_content = []
-
     if not 'error' in  user_details.keys():
         user_id = user_details['user_id'] #pylint: disable=W0612  #use in future
         user_roles = user_details['user_roles']
@@ -279,12 +280,43 @@ def filter_resource_content_get(db_resource, access_tags, required_permission, u
         has_rights = True
     return has_rights, filtered_content
 ##############################################################################################
+def filter_agmt_project_get(db_resource,access_tags,required_permission, user_details):
+    """filter the get for Agmt Prokect realted"""
+    has_rights = False
+    filtered_content = []
+    allowed_users = []
+    if not 'error' in  user_details.keys():
+        user_id = user_details['user_id']
+        user_roles = user_details['user_roles']
+    else:
+        user_id = None
+        user_roles = []
+
+    tag = access_tags[0]
+    if required_permission in access_rules[tag].keys():
+        allowed_users = access_rules[tag][required_permission]
+
+    if not user_id is None and len(user_roles) > 0 and len(allowed_users) > 0:
+        for role in user_roles:
+            if role in allowed_users:
+                filtered_content = db_resource
+
+        if len(filtered_content) == 0:
+            for project in db_resource:
+                project_user_obj = project.users
+                for user in project_user_obj:
+                    if user_id == user.userId and\
+                        user.userRole in allowed_users and \
+                            not any(project == dic for dic in filtered_content):
+                        filtered_content.append(project)
+
+    has_rights = True
+    return has_rights , filtered_content
+
 
 def check_access_rights(db_:Session, required_params, db_resource=None):
     """check access right"""
     request_context = required_params.get('request_context',None)
-    # user_id = required_params.get('user_',None)
-    # user_roles = required_params.get('user_roles',None)
     user_details = required_params.get('user_details',None)
     resource_type = required_params.get('resource_type',None)
     allowed_users = []
@@ -292,6 +324,7 @@ def check_access_rights(db_:Session, required_params, db_resource=None):
         get_accesstags_permission(request_context, resource_type, db_ , db_resource ,user_details)
     # print("Access Tag==>>>",access_tags)
     # print("permission==>>>",required_permission)
+    # print("resource type==>>>",resource_type)
     has_rights = False
     filtered_content = []
     # test function seperate permision check and filter for get of contents
@@ -299,6 +332,11 @@ def check_access_rights(db_:Session, required_params, db_resource=None):
             request_context["method"] == 'GET':
         has_rights , filtered_content  = \
             filter_resource_content_get(db_resource,access_tags,required_permission, user_details)
+    elif request_context["method"] == 'GET' and\
+        request_context['endpoint'].startswith('/v2/autographa'):
+        if request_context['app'] == schema_auth.App.AG.value:
+            has_rights , filtered_content  = \
+        filter_agmt_project_get(db_resource,access_tags,required_permission, user_details)
     else:
         filtered_content = None
         for tag in access_tags:
@@ -351,17 +389,15 @@ def verify_auth_decorator_params(kwargs):
     return required_params
 
 #decorator for authentication and access check
-def get_auth_access_check_decorator(func):
+def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
     """Decorator function for auth and access check for all routers"""
     @wraps(func)
-    async def wrapper(*args, **kwargs):#pylint: disable=too-many-branches
-        # print("inside decorator===>")
+    async def wrapper(*args, **kwargs):#pylint: disable=too-many-branches,too-many-statements
         db_resource =None
         verified = False
         required_params = verify_auth_decorator_params(kwargs)
         db_ = required_params["db_"]
-
-        if required_params['request_context']['endpoint'].startswith("/v2/user"):#pylint: disable=E1126
+        if required_params['request_context']['endpoint'].startswith("/v2/user"):#pylint: disable=E1126.too-many-nested-blocks
             verified , filtered_content = \
                 check_access_rights(db_, required_params, db_resource)
             if not verified:
@@ -388,12 +424,26 @@ def get_auth_access_check_decorator(func):
                     else:
                         db_resource = response['data']
                         if required_params['request_context']["method"] == 'POST':
-                            response['data'].createdUser = \
-                                required_params['user_details']["user_id"]
-                        if required_params['request_context']["method"] == 'PUT' :
-                            response['data'].updatedUser = \
-                                required_params['user_details']["user_id"]
+                            if isinstance(db_resource,dict) and \
+                                'project' in db_resource.keys():
+                                db_resource['project'].updatedUser = \
+                                   required_params['user_details']["user_id"]
+                                db_resource = db_resource['project']
+                                response['data'] = response['data']['db_content']
+                            else:
+                                response['data'].createdUser = \
+                                    required_params['user_details']["user_id"]
 
+                        if required_params['request_context']["method"] == 'PUT' :
+                            if isinstance(db_resource,dict) and \
+                                'project' in db_resource.keys():
+                                db_resource['project'].project.updatedUser = \
+                                    required_params['user_details']["user_id"]
+                                db_resource = db_resource['project'].project
+                                response['data'] = response['data']['project']
+                            else:
+                                response['data'].updatedUser = \
+                                    required_params['user_details']["user_id"]
                     verified , filtered_content = \
                         check_access_rights(db_, required_params, db_resource)
                     if not verified:
@@ -408,8 +458,6 @@ def get_auth_access_check_decorator(func):
                         db_resource.append(response['source_content'])
                         verified , filtered_content  = \
                             check_access_rights(db_, required_params, db_resource)
-                        # print("filtered content get===========>",filtered_content[0].sourceName)
-                        # print("filtered content get===========>",verified)
                         if verified and db_resource[0].sourceName == filtered_content[0].sourceName:
                             response = response['db_content']
                     else:
@@ -420,7 +468,6 @@ def get_auth_access_check_decorator(func):
                             response = filtered_content
                     if not verified:
                         raise PermisionException("Access Permission Denied for the URL")
-        # print("response===>",response['data'].__dict__)
         return response
     return wrapper
 
@@ -477,16 +524,23 @@ class AuthHandler():
             raise GenericException(data["error"])
         return data
 
-#get all user details
-def get_all_kratos_users():
-    """get all user info"""
+#get all or single user details
+def get_all_or_one_kratos_users(rec_user_id=None):
+    """get all user info or a particular user details"""
     base_url = ADMIN_BASE_URL+"identities/"
 
-    response = requests.get(base_url)
-    if response.status_code == 200:
-        user_data = json.loads(response.content)
+    if id is None:
+        response = requests.get(base_url)
+        if response.status_code == 200:
+            user_data = json.loads(response.content)
+        else:
+            raise UnAuthorizedException(detail=json.loads(response.content))
     else:
-        raise UnAuthorizedException(detail=json.loads(response.content))
+        response = requests.get(base_url+rec_user_id)
+        if response.status_code == 200:
+            user_data = json.loads(response.content)
+        else:
+            raise NotAvailableException("User does not exist")
     return user_data
 
 #User registration with credentials
@@ -545,7 +599,7 @@ def register_flow_fail(reg_response,email,user_role,reg_req):
     "An account with the same identifier (email, phone, username, ...) exists already."
         err_txt = reg_response["ui"]["messages"][0]["text"]
         if err_txt == err_msg:
-            kratos_users = get_all_kratos_users()
+            kratos_users = get_all_or_one_kratos_users()
 
             #update user role for exisiting user
             data = register_exist_update_user_role(kratos_users, email,
