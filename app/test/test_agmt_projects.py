@@ -50,6 +50,10 @@ def assert_positive_get(item):
 
 def check_post(data):
     '''creates a projects'''
+    headers_auth = {"contentType": "application/json",
+                "accept": "application/json",
+                "app":"Autographa"}
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     return response
 

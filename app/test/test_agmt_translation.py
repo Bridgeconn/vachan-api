@@ -5,10 +5,16 @@ from math import ceil, floor
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from .test_agmt_projects import bible_books, check_post as add_project
+from .conftest import initial_test_users
+from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,register,delete_user_identity
 
 
 UNIT_URL = '/v2/autographa/project'
 headers = {"contentType": "application/json", "accept": "application/json"}
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json",
+                "app":"Autographa"
+            }
 
 project_data = {
     "projectName": "Test agmt workflow",
@@ -41,6 +47,7 @@ def assert_positive_get_sentence(item):
 
 def test_get_tokens():
     '''Positive tests for tokenization process'''
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     resp = add_project(project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
@@ -53,64 +60,66 @@ def test_get_tokens():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/autographa/projects", headers=headers, json=put_data)
+    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # after adding books
-    get_response2 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id))
+    get_response2 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id),headers=headers_auth)
     assert get_response2.status_code == 200
     assert isinstance(get_response2.json(), list)
     for item in get_response2.json():
         assert_positive_get_tokens(item)
 
     # with book filter
-    get_response3 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+"&books=mat")
+    get_response3 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+"&books=mat"
+    ,headers=headers_auth)
     assert get_response3.status_code == 200
     assert len(get_response3.json()) < len(get_response2.json())
 
-    get_response4 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+"&books=mrk")
+    get_response4 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+"&books=mrk"
+    ,headers=headers_auth)
     assert get_response4.status_code == 200
     all_tokens = [item['token'] for item in get_response3.json() + get_response4.json()]
     assert len(get_response2.json()) == len(set(all_tokens))
 
     # with range filter
     get_response5 = client.get(UNIT_URL+'/tokens?project_id='+str(project_id)+
-        "&sentence_id_range=0&sentence_id_range=10")
-    print(get_response5.json())
+        "&sentence_id_range=0&sentence_id_range=10",headers=headers_auth)
+    # print(get_response5.json())
     assert_not_available_content(get_response5)
 
     get_response6 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        "&sentence_id_range=41000000&sentence_id_range=41999999")
+        "&sentence_id_range=41000000&sentence_id_range=41999999",headers=headers_auth)
     assert get_response6.status_code ==200
     assert get_response6.json() == get_response3.json()
 
     # with list filter
     get_response7 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        "&sentence_id_list=41000000")
+        "&sentence_id_list=41000000",headers=headers_auth)
     assert_not_available_content(get_response7)
 
     get_response7 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        "&sentence_id_list=41001001")
+        "&sentence_id_list=41001001",headers=headers_auth)
     assert get_response7.status_code == 200
     assert 0 < len(get_response7.json()) < 25
 
     # translation_memory flag
     get_response8 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        "&use_translation_memory=true")
+        "&use_translation_memory=true",headers=headers_auth)
     assert get_response8.json() == get_response2.json()
 
     get_response9 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        "&use_translation_memory=false")
+        "&use_translation_memory=false",headers=headers_auth)
     assert get_response9.status_code == 200
     assert len(get_response9.json()) > 0
 
     # include_phrases flag
     get_response10 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        "&include_phrases=true")
+        "&include_phrases=true",headers=headers_auth)
     assert get_response10.json() == get_response2.json()
 
     get_response11 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        "&include_phrases=false")
+        "&include_phrases=false",headers=headers_auth)
     assert get_response11.status_code == 200
     assert len(get_response11.json()) <= len(get_response10.json())
     for item in get_response11.json():
@@ -118,13 +127,13 @@ def test_get_tokens():
 
     # include_stopwords flag
     get_response12 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        "&include_stopwords=false")
+        "&include_stopwords=false",headers=headers_auth)
     assert get_response12.json() == get_response2.json()
     for item in get_response12.json():
         assert item['token'] not in sample_stopwords
 
     get_response13 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        "&include_stopwords=True&include_phrases=false")
+        "&include_stopwords=True&include_phrases=false",headers=headers_auth)
     all_tokens = [item['token'] for item in get_response13.json()]
     assert sample_stopwords[0] in all_tokens
 
@@ -136,41 +145,42 @@ def test_tokenization_invalid():
     project_id = resp.json()['data']['projectId']
 
     # non existant project
-    response = client.get(UNIT_URL+"/tokens?project_id="+str(project_id+1))
+    response = client.get(UNIT_URL+"/tokens?project_id="+str(project_id+1),headers=headers_auth)
     assert response.status_code == 404
     assert response.json()['details'] == "Project with id, %s, not found"%(project_id+1)
 
     #invalid book
-    response = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+"&books=mmm")
+    response = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+"&books=mmm"
+    ,headers=headers_auth)
     assert response.status_code == 404
     assert response.json()['details'] == 'Book, mmm, not in database'
 
     # only one value for range
     response = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        "&sentence_id_range=41000000")
+        "&sentence_id_range=41000000",headers=headers_auth)
     assert_input_validation_error(response)
 
     # incorrect value for range
     response = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        "&sentence_id_range=gen&sentence_id_range=num")
+        "&sentence_id_range=gen&sentence_id_range=num",headers=headers_auth)
     assert_input_validation_error(response)
 
     # incorrect value for id
     response = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        "&sentence_id_list=first")
+        "&sentence_id_list=first",headers=headers_auth)
     assert_input_validation_error(response)
 
     # incorrect value for flags
     response = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        "&include_stopwords=Few")
+        "&include_stopwords=Few",headers=headers_auth)
     assert_input_validation_error(response)
 
     response = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        "&include_phrases=10")
+        "&include_phrases=10",headers=headers_auth)
     assert_input_validation_error(response)
 
     response = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        "&use_translation_memory=always")
+        "&use_translation_memory=always",headers=headers_auth)
     assert_input_validation_error(response)
 
 def test_save_translation():
@@ -183,11 +193,11 @@ def test_save_translation():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/autographa/projects", headers=headers, json=put_data)
+    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        "&include_stopwords=true")
+        "&include_stopwords=true",headers=headers_auth)
     assert resp.status_code == 200
     all_tokens = resp.json()
 
@@ -200,7 +210,7 @@ def test_save_translation():
       }
     ]
     response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
-        headers=headers, json=post_obj_list)
+        headers=headers_auth, json=post_obj_list)
     assert response.status_code == 201
     assert response.json()['message'] == 'Token translations saved'
     assert response.json()['data'][0]['draft'].startswith("test translation")
@@ -217,7 +227,7 @@ def test_save_translation():
       }
     ]
     response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
-        headers=headers, json=post_obj_list)
+        headers=headers_auth, json=post_obj_list)
     assert response.status_code == 201
     assert response.json()['message'] == 'Token translations saved'
     for sent in response.json()['data']:
@@ -233,7 +243,7 @@ def test_save_translation():
         }
         post_obj_list.append(obj)
     response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
-        headers=headers, json=post_obj_list)
+        headers=headers_auth, json=post_obj_list)
     assert response.status_code == 201
     for sent in response.json()['data']:
         words = re.findall(r'\w+', sent['draft'])
@@ -250,11 +260,11 @@ def test_save_translation_invalid():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/autographa/projects", headers=headers, json=put_data)
+    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        "&include_stopwords=true")
+        "&include_stopwords=true",headers=headers_auth)
     assert resp.status_code == 200
     all_tokens = resp.json()
 
@@ -265,7 +275,7 @@ def test_save_translation_invalid():
         "translation": "sample translation"
     }
     response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id+1),
-        headers=headers, json=[obj])
+        headers=headers_auth, json=[obj])
     assert response.status_code == 404
     assert response.json()['details'] == 'Project with id, %s, not present'%(project_id+1)
 
@@ -275,7 +285,7 @@ def test_save_translation_invalid():
         "translation": "sample translation"
     }
     response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id+1),
-        headers=headers, json=[obj])
+        headers=headers_auth, json=[obj])
     assert_input_validation_error(response)
 
     # without occurences
@@ -284,7 +294,7 @@ def test_save_translation_invalid():
         "translation": "sample translation"
     }
     response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id+1),
-        headers=headers, json=[obj])
+        headers=headers_auth, json=[obj])
     assert_input_validation_error(response)
 
     # without translation
@@ -293,7 +303,7 @@ def test_save_translation_invalid():
         "occurrences": all_tokens[0]["occurrences"]
     }
     response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id+1),
-        headers=headers, json=[obj])
+        headers=headers_auth, json=[obj])
     assert_input_validation_error(response)
 
     # incorrect occurences
@@ -305,7 +315,7 @@ def test_save_translation_invalid():
         "translation": "sample translation"
     }
     response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
-        headers=headers, json=[obj])
+        headers=headers_auth, json=[obj])
     assert response.status_code ==404
     assert response.json()['details'] == "Sentence id, 0, not found for the selected project"
 
@@ -316,7 +326,7 @@ def test_save_translation_invalid():
         "translation": "sample translation"
     }
     response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
-        headers=headers, json=[obj])
+        headers=headers_auth, json=[obj])
     assert response.status_code == 500
     assert response.json()['details'] ==\
          'Token, %s, and its occurence, not matching'%(all_tokens[0]['token'])
@@ -331,7 +341,7 @@ def test_drafts():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/autographa/projects", headers=headers, json=put_data)
+    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
@@ -349,23 +359,23 @@ def test_drafts():
         }
         post_obj_list.append(obj)
     resp = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
-        headers=headers, json=post_obj_list)
+        headers=headers_auth, json=post_obj_list)
     assert resp.status_code == 201
     assert resp.json()['message'] == "Token translations saved"
 
-    response = client.get(UNIT_URL+'/draft?project_id='+str(project_id))
+    response = client.get(UNIT_URL+'/draft?project_id='+str(project_id),headers=headers_auth)
     assert response.status_code ==200
     assert isinstance(response.json(), list)
     assert "\\v 1 test test test" in response.json()[0]
 
     response = client.get(UNIT_URL+'/draft?project_id='+str(project_id)+
-        "&books=mat")
+        "&books=mat",headers=headers_auth)
     assert len(response.json()) == 1
     assert "\\id MAT" in response.json()[0]
 
     # To be added: proper tests for alignment json drafts
     response = client.get(UNIT_URL+'/draft?project_id='+str(project_id)+
-        "&output_format=alignment-json")
+        "&output_format=alignment-json",headers=headers_auth)
     assert response.status_code == 200
     assert isinstance(response.json(), dict)
 
@@ -379,7 +389,7 @@ def test_get_token_sentences():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/autographa/projects", headers=headers, json=put_data)
+    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get("/v2/autographa/project/tokens?project_id="+str(project_id))
@@ -389,7 +399,7 @@ def test_get_token_sentences():
 
     #before translating
     response = client.put('/v2/autographa/project/token-sentences?project_id='+
-        str(project_id)+'&token='+our_token, headers=headers,
+        str(project_id)+'&token='+our_token, headers=headers_auth,
         json=occurrences)
     assert response.status_code == 200
     for sent, occur in zip(response.json(), occurrences):
@@ -409,13 +419,13 @@ def test_get_token_sentences():
       }
     ]
     response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
-        headers=headers, json=post_obj_list)
+        headers=headers_auth, json=post_obj_list)
     assert response.status_code == 201
     assert response.json()['message'] == 'Token translations saved'
 
     # after translation
     response2 = client.put('/v2/autographa/project/token-sentences?project_id='+
-        str(project_id)+'&token='+our_token, headers=headers,
+        str(project_id)+'&token='+our_token, headers=headers_auth,
         json=occurrences)
     assert response2.status_code == 200
     for sent, occur in zip(response2.json(), occurrences):
@@ -434,19 +444,20 @@ def test_get_sentence():
     project_id = resp.json()['data']['projectId']
 
     # before adding books
-    response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id))
+    response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id)
+    ,headers=headers_auth)
     assert_not_available_content(response)
 
     put_data = {
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/autographa/projects", headers=headers, json=put_data)
+    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # before translation
     response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id)+
-        "&with_draft=True")
+        "&with_draft=True",headers=headers_auth)
     assert response.status_code ==200
     assert len(response.json()) > 1
     for item in response.json():
@@ -456,7 +467,7 @@ def test_get_sentence():
 
     # translate all tokens at once
     resp = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        "&include_stopwords=true")
+        "&include_stopwords=true",headers=headers_auth)
     assert resp.status_code == 200
     all_tokens = resp.json()
     post_obj_list = []
@@ -468,13 +479,13 @@ def test_get_sentence():
         }
         post_obj_list.append(obj)
     resp = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
-        headers=headers, json=post_obj_list)
+        headers=headers_auth, json=post_obj_list)
     assert resp.status_code == 201
     assert resp.json()['message'] == "Token translations saved"
 
     # after token translation
     response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id)+
-        "&with_draft=True")
+        "&with_draft=True",headers=headers_auth)
     assert response.status_code ==200
     for item in response.json():
         assert_positive_get_sentence(item)
@@ -489,7 +500,8 @@ def test_progress_n_suggestion():
     project_id = resp.json()['data']['projectId']
 
     # before adding books
-    response = client.get(UNIT_URL+"/progress?project_id="+str(project_id))
+    response = client.get(UNIT_URL+"/progress?project_id="+str(project_id)
+    ,headers=headers_auth)
     assert response.status_code ==200
     assert response.json()['confirmed'] == 0
     assert response.json()['untranslated'] == 0
@@ -499,11 +511,12 @@ def test_progress_n_suggestion():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/autographa/projects", headers=headers, json=put_data)
+    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # before translation
-    response = client.get(UNIT_URL+"/progress?project_id="+str(project_id))
+    response = client.get(UNIT_URL+"/progress?project_id="+str(project_id)
+    ,headers=headers_auth)
     assert response.status_code ==200
     assert response.json()['confirmed'] == 0
     assert response.json()['untranslated'] == 1
@@ -528,7 +541,7 @@ def test_progress_n_suggestion():
 
     # translate all tokens at once
     resp = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
-        "&include_stopwords=true")
+        "&include_stopwords=true",headers=headers_auth)
     assert resp.status_code == 200
     all_tokens = resp.json()
     post_obj_list = []
@@ -540,12 +553,13 @@ def test_progress_n_suggestion():
         }
         post_obj_list.append(obj)
     resp = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
-        headers=headers, json=post_obj_list)
+        headers=headers_auth, json=post_obj_list)
     assert resp.status_code == 201
     assert resp.json()['message'] == "Token translations saved"
 
     # after token translation
-    response = client.get(UNIT_URL+"/progress?project_id="+str(project_id))
+    response = client.get(UNIT_URL+"/progress?project_id="+str(project_id)
+    ,headers=headers_auth)
     assert response.status_code ==200
     assert ceil(response.json()['confirmed']) == 1
     assert floor(response.json()['untranslated']) == 0
@@ -557,7 +571,8 @@ def test_get_versification():
     project_id = resp.json()['data']['projectId']
 
     # before adding books
-    response = client.get(UNIT_URL+"/versification?project_id="+str(project_id))
+    response = client.get(UNIT_URL+"/versification?project_id="+str(project_id)
+    ,headers=headers_auth)
     for key in response.json():
         assert len(response.json()[key]) == 0
 
@@ -565,10 +580,11 @@ def test_get_versification():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/autographa/projects", headers=headers, json=put_data)
+    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
-    response = client.get(UNIT_URL+"/versification?project_id="+str(project_id))
+    response = client.get(UNIT_URL+"/versification?project_id="+str(project_id)
+    ,headers=headers_auth)
     found_mat = False
     found_mrk = False
     for book in response.json()['maxVerses']:

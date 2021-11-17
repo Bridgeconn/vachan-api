@@ -90,7 +90,12 @@ def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_
         args['stopwords'] = project_row.metaData['stopwords']
     if "punctuations" in project_row.metaData:
         args['punctuations'] = project_row.metaData['punctuations']
-    return get_generic_tokens( **args)
+    # return get_generic_tokens( **args)
+    response = {
+        'db_content':get_generic_tokens( **args),
+        'project_content':project_row
+        }
+    return response
 
 ###################### Token replacement translation ######################
 def replace_bulk_tokens_gloss_list(token_translations, updated_sentences):
@@ -179,14 +184,24 @@ def save_agmt_translations(db_, project_id, token_translations, return_drafts=Tr
     project_row.updatedUser = user_id
     db_.add_all(db_content)
     db_.add(project_row)
-    db_.commit()
+    # db_.commit()
     if use_data:
         add_to_translation_memory(db_, project_row.sourceLanguage, project_row.targetLanguage,
             gloss_list)
+    # if return_drafts:
+    #     result = set(db_content)
+    #     return sorted(result, key=lambda x: x.sentenceId)
+    # return None
     if return_drafts:
         result = set(db_content)
-        return sorted(result, key=lambda x: x.sentenceId)
-    return None
+        result =  sorted(result, key=lambda x: x.sentenceId)
+    else:    
+        result = None
+    response = {
+        'db_content':result,
+        'project_content':project_row
+        }
+    return response    
 
 ###################### Suggestions ######################
 suggestion_trie_in_mem = {}

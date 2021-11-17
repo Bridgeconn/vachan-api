@@ -126,10 +126,11 @@ def project_owner(db_:Session, db_resource, user_id):
 def project_member(db_:Session, db_resource, user_id):
     '''checks if the user is the memeber of the given project'''
     project_id = db_resource.projectId
-    project_owners = db_.query(db_models.TranslationProjectUser.userId).filter(
-        db_models.TranslationProjectUser.projectId == project_id,
+    project_members = db_.query(db_models.TranslationProjectUser.userId).filter(
+        db_models.TranslationProjectUser.project_id == project_id,
         db_models.TranslationProjectUser.userRole == "projectMember").all()
-    if user_id in project_owners:
+    project_members = [id for id, in project_members]    
+    if user_id in project_members:
         return True
     return False
 
@@ -295,12 +296,11 @@ def filter_agmt_project_get(db_resource,access_tags,required_permission, user_de
     tag = access_tags[0]
     if required_permission in access_rules[tag].keys():
         allowed_users = access_rules[tag][required_permission]
-
+    # print("user------>",user_details,"----->",allowed_users)
     if not user_id is None and len(user_roles) > 0 and len(allowed_users) > 0:
         for role in user_roles:
             if role in allowed_users:
                 filtered_content = db_resource
-
         if len(filtered_content) == 0:
             for project in db_resource:
                 project_user_obj = project.users
@@ -441,7 +441,18 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                                     required_params['user_details']["user_id"]
                                 db_resource = db_resource['project'].project
                                 response['data'] = response['data']['project']
-                            else:
+
+                            elif isinstance(db_resource,dict) and \
+                                'project_content' in db_resource.keys():
+                                if required_params['request_context']['app']\
+                                    == schema_auth.App.AG.value:
+                                    db_resource['project_content'].updatedUser = \
+                                        required_params['user_details']["user_id"]
+                                    db_resource = db_resource['project_content']
+                                    response['data'] = response['data']['db_content']
+                                else:
+                                    raise PermisionException("Access Permission Denied for the URL")  
+                            else :
                                 response['data'].updatedUser = \
                                     required_params['user_details']["user_id"]
                     verified , filtered_content = \
@@ -460,6 +471,17 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                             check_access_rights(db_, required_params, db_resource)
                         if verified and db_resource[0].sourceName == filtered_content[0].sourceName:
                             response = response['db_content']
+                    elif isinstance(response,dict) and \
+                        'project_content' in response.keys():
+                        db_resource = []
+                        db_resource.append(response['project_content'])
+                        verified , filtered_content  = \
+                            check_access_rights(db_, required_params, db_resource)
+                        if verified and len(filtered_content) > 0 and\
+                            db_resource[0].projectId == filtered_content[0].projectId:
+                            response = response['db_content']
+                        else:
+                            response = []
                     else:
                         db_resource = response
                         verified , filtered_content  = \

@@ -114,12 +114,13 @@ async def update_user(request: Request,user_obj:schemas_nlp.ProjectUser,#pylint:
 @router.get('/v2/autographa/project/tokens', response_model=List[schemas_nlp.Token],
     response_model_exclude_unset=True,
     status_code=200, tags=['Autographa-Translation'])
-def get_tokens(project_id:int=Query(...,example="1022004"),
+@get_auth_access_check_decorator
+async def get_tokens(request: Request, project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=(410010001, 41001999)),
     sentence_id_list:List[int]=Query(None, example=[41001001,41001002,41001003]),
     use_translation_memory:bool=True, include_phrases:bool=True, include_stopwords:bool=False,
-    db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Tokenize the source texts. Optional params books,
     sentence_id_range or sentence_id_list can be used to specify the source verses.
     If more than one of these filters are given, only one would be used
@@ -137,24 +138,26 @@ def get_tokens(project_id:int=Query(...,example="1022004"),
 
 @router.put('/v2/autographa/project/tokens', response_model=schemas_nlp.TranslateResponse,
     status_code=201, tags=['Autographa-Translation'])
-def apply_token_translations(project_id:int=Query(...,example="1022004"),
+@get_auth_access_check_decorator
+async def apply_token_translations(request: Request,project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
     token_translations:List[schemas_nlp.TokenUpdate]=Body(...), return_drafts:bool=True,
-    db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Updates drafts using the provided token translations and returns updated verses'''
     log.info('In apply_token_translations')
     log.debug('project_id: %s, token_translations:%s, ',project_id, token_translations)
     drafts = nlp_crud.save_agmt_translations(db_, project_id, token_translations, return_drafts,
-        user_id=10101)
+        user_id=user_details['user_id'])
     return {"message": "Token translations saved", "data":drafts}
 
 @router.get('/v2/autographa/project/token-translations', status_code=200,
     response_model=schemas_nlp.Translation,
     tags=['Autographa-Translation'])
-def get_token_translation(project_id:int=Query(...,example="1022004"),
+@get_auth_access_check_decorator
+async def get_token_translation(request: Request,project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
     token:str=Query(...,example="duck"),
     sentence_id:int=Query(..., example="41001001"),
     offset:List[int]=Query(..., max_items=2,min_items=2,example=[0,4]),
-    db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Get the current translation for specific tokens providing their occurence in source'''
     log.info('In get_token_translation')
     occurrences = [{"sentenceId":sentence_id, "offset":offset}]
@@ -164,11 +167,12 @@ def get_token_translation(project_id:int=Query(...,example="1022004"),
 @router.put('/v2/autographa/project/token-sentences', status_code=200,
     response_model = List[schemas_nlp.Sentence],
     tags=['Autographa-Translation'])
-def get_token_sentences(project_id:int=Query(...,example="1022004"),
+@get_auth_access_check_decorator
+async def get_token_sentences(request: Request,project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
     token:str=Query(...,example="duck"),
     occurrences:List[schemas_nlp.TokenOccurence]=Body(..., example=[
         {"sentenceId":41001001, "offset":[0,4]}]),
-    db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Pass in the occurence list of a token and get all sentences it is present in with draftMeta
     that allows easy highlight of token and translation'''
     log.info('In get_token_sentences')
@@ -176,12 +180,13 @@ def get_token_sentences(project_id:int=Query(...,example="1022004"),
     return projects_crud.get_agmt_source_per_token(db_, project_id, token, occurrences)
 
 @router.get('/v2/autographa/project/draft', status_code=200, tags=['Autographa-Translation'])
-def get_draft(project_id:int=Query(...,example="1022004"),
+@get_auth_access_check_decorator
+async def get_draft(request: Request,project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
     output_format:schemas_nlp.DraftFormats=Query(schemas_nlp.DraftFormats.USFM),
-    db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Obtains draft, as per current project status, in any of the formats:
     text for UI display, usfm for downloading, or alignment-json for project export'''
     log.info('In get_draft')
@@ -194,11 +199,12 @@ def get_draft(project_id:int=Query(...,example="1022004"),
 @router.get('/v2/autographa/project/sentences', status_code=200,
     response_model_exclude_unset=True,
     response_model=List[schemas_nlp.Sentence], tags=['Autographa-Translation'])
-def get_project_source(project_id:int=Query(...,example="1022004"),
+@get_auth_access_check_decorator
+async def get_project_source(request: Request,project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
-    with_draft:bool=False, db_:Session=Depends(get_db)):
+    with_draft:bool=False, user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Obtains source sentences or verses, as per the filters'''
     log.info('In get_source')
     log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s, with_draft:%s',
@@ -208,11 +214,12 @@ def get_project_source(project_id:int=Query(...,example="1022004"),
 
 @router.get('/v2/autographa/project/progress', status_code=200,
     response_model=schemas_nlp.Progress, tags=['Autographa-Translation'])
-def get_progress(project_id:int=Query(...,example="1022004"),
+@get_auth_access_check_decorator
+async def get_progress(request: Request,project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
-    db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Obtains source sentences or verses, as per the filters'''
     log.info('In get_progress')
     log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s',
@@ -222,8 +229,9 @@ def get_progress(project_id:int=Query(...,example="1022004"),
 
 @router.get('/v2/autographa/project/versification', status_code=200,
     response_model=schemas.Versification, tags=['Autographa-Translation'])
-def get_project_versification(project_id:int=Query(...,example="1022004"),
-    db_:Session=Depends(get_db)):
+@get_auth_access_check_decorator
+async def get_project_versification(request: Request,project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Obtains versification structure for source sentences or verses'''
     log.info('In get_project_versification')
     log.debug('project_id: %s', project_id)
