@@ -313,6 +313,9 @@ def get_agmt_source_versification(db_, project_id):
 def get_agmt_source_per_token(db_:Session, project_id, token, occurrences): #pylint: disable=unused-argument
     '''get sentences and drafts for the token, which splits the token & translation in metadraft
     allowing it to be easily identifiable and highlightable at UI'''
+    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    if not project_row:
+        raise NotAvailableException("Project with id, %s, not present"%project_id)
     sent_ids = [occur.sentenceId for occur in occurrences]
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id,
         sentence_id_list=sent_ids, with_draft=True)
@@ -325,7 +328,12 @@ def get_agmt_source_per_token(db_:Session, project_id, token, occurrences): #pyl
             draft.draftMeta.remove(mta)
         for mta in trans['replacement_meta']:
             draft.draftMeta.append(mta)
-    return draft_rows
+    # return draft_rows
+    response = {
+        'db_content':draft_rows,
+        'project_content':project_row
+        }
+    return response
 
 def pin_point_token_in_draft(occurrences, draft_rows):#pylint: disable=too-many-locals,too-many-branches
     '''find out token's aligned portion in draft'''

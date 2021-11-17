@@ -410,7 +410,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             if len(response) > 0:
                 #pylint: disable=E1126
                 if required_params['request_context']['method'] != 'GET':
-                    if isinstance(response['data'],dict) and \
+                    if "data" in response and isinstance(response['data'],dict) and \
                         'source_content' in response['data'].keys():
                         response['data']['source_content'].updatedUser = \
                             required_params['user_details']["user_id"]
@@ -421,7 +421,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                         response['message'] = message
                         response['data'] = db_content
                     else:
-                        db_resource = response['data']
+                        db_resource = response['data'] if "data" in response else response
                         if required_params['request_context']["method"] == 'POST':
                             if isinstance(db_resource,dict) and \
                                 'project' in db_resource.keys():
@@ -445,10 +445,14 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                                 'project_content' in db_resource.keys():
                                 if required_params['request_context']['app']\
                                     == schema_auth.App.AG.value:
-                                    db_resource['project_content'].updatedUser = \
-                                        required_params['user_details']["user_id"]
-                                    db_resource = db_resource['project_content']
-                                    response['data'] = response['data']['db_content']
+                                    if 'data' in response:
+                                        db_resource['project_content'].updatedUser = \
+                                            required_params['user_details']["user_id"]
+                                        db_resource = db_resource['project_content']
+                                        response['data'] = response['data']['db_content']
+                                    else:
+                                        db_resource = db_resource['project_content']
+                                        response = response['db_content']
                                 else:
                                     raise PermisionException("Access Permission Denied for the URL")  
                             else :
