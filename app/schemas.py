@@ -609,10 +609,10 @@ class BibleBookEdit(BaseModel):
 
 class Versification(BaseModel):
     '''Response object for bible versification'''
-    maxVerses: dict
-    mappedVerses: dict
-    excludedVerses: list
-    partialVerses: dict
+    maxVerses: dict = None
+    mappedVerses: dict = None
+    excludedVerses: list = None
+    partialVerses: dict = None
     class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True

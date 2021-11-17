@@ -352,8 +352,7 @@ def test_get_books_contenttype():
     # content_type
     #without auth
     response = client.get(UNIT_URL+source_name+'/books',headers=headers)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert_not_available_content(response)
 
     #with auth
     response = client.get(UNIT_URL+source_name+'/books',headers=headers_auth)
@@ -367,8 +366,7 @@ def test_get_books_contenttype():
 
     #without auth
     response = client.get(UNIT_URL+source_name+'/books?content_type=usfm')
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert_not_available_content(response)
 
     #with auth
     response = client.get(UNIT_URL+source_name+'/books?content_type=usfm',headers=headers_auth)
@@ -408,8 +406,7 @@ def test_get_books_contenttype():
 
     #without auth
     response = client.get(UNIT_URL+source_name+'/books?content_type=audio')
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert_not_available_content(response)
 
     #with auth
     response = client.get(UNIT_URL+source_name+'/books?content_type=audio',headers=headers_auth)
@@ -473,10 +470,10 @@ def test_get_books_versification():
     res, source_name = check_post(gospel_books_data)
     assert res.status_code == 201
 
-    #without auth
+    # #without auth
     response = client.get(UNIT_URL+source_name+'/versification')
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert response.json() == {'maxVerses': None, 'mappedVerses': None,
+        'excludedVerses': None, 'partialVerses': None}
     #with auth
     response = client.get(UNIT_URL+source_name+'/versification',headers=headers_auth)
     assert response.status_code == 200
@@ -503,8 +500,7 @@ def test_get_verses():
 
     #without auth
     response = client.get(UNIT_URL+source_name+'/verses')
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert_not_available_content(response)
     #with auth
     response = client.get(UNIT_URL+source_name+'/verses',headers=headers_auth)
     assert response.status_code == 200

@@ -269,18 +269,15 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
             headers_auth['app'] = Apps[num]
             if bible:
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert response.json() == {'maxVerses': None, 'mappedVerses': None,
+                'excludedVerses': None, 'partialVerses': None}
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
             else:    
                 response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
         print(f"Test passed -----> NO LOGIN")
 
         #Get with AgUser
@@ -289,18 +286,15 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
             headers_auth['app'] = Apps[num]
             if bible:
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert response.json() == {'maxVerses': None, 'mappedVerses': None,
+                'excludedVerses': None, 'partialVerses': None}
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
             else:
                 response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
         print(f"Test passed -----> AG USER")
 
         #Get with VachanUser
@@ -309,18 +303,15 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
             headers_auth['app'] = Apps[num]
             if bible:
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert response.json() == {'maxVerses': None, 'mappedVerses': None,
+                'excludedVerses': None, 'partialVerses': None}
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
             else:
                 response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
         print(f"Test passed -----> VACHAN USER")
 
         #Get with VachanAdmin
@@ -336,19 +327,17 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                     assert response2.status_code == 200
                     assert response3.status_code == 200
                 else:
-                    assert response1.status_code == 403
-                    assert response1.json()['error'] == 'Permision Denied'
-                    assert response2.status_code == 403
-                    assert response2.json()['error'] == 'Permision Denied'
-                    assert response3.status_code == 403
-                    assert response2.json()['error'] == 'Permision Denied'
+                    assert_not_available_content(response1)
+                    assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
+                        'excludedVerses': None, 'partialVerses': None}
+                    assert_not_available_content(response3)
+                    
             else:
                 response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
                 if headers_auth['app'] == API or headers_auth['app'] == VACHANADMIN:
                     assert response.status_code == 200
                 else:
-                    assert response.status_code == 403
-                    assert response.json()['error'] == 'Permision Denied'
+                    assert_not_available_content(response)
         print(f"Test passed -----> VACHAN ADMIN")
 
         #Get with API User
@@ -357,18 +346,15 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
             headers_auth['app'] = Apps[num]
             if bible:
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert response.json() == {'maxVerses': None, 'mappedVerses': None,
+                        'excludedVerses': None, 'partialVerses': None}
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
             else:
                 response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
         print(f"Test passed -----> API USER")
 
         #Get with AgAdmin
@@ -377,18 +363,15 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
             headers_auth['app'] = Apps[num]
             if bible:
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert response.json() == {'maxVerses': None, 'mappedVerses': None,
+                        'excludedVerses': None, 'partialVerses': None}
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
             else:
                 response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
         print(f"Test passed -----> AG ADMIN")
 
         #Get with SuperAdmin
@@ -404,19 +387,16 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                     assert response2.status_code == 200
                     assert response3.status_code == 200
                 else:
-                    assert response1.status_code == 403
-                    assert response1.json()['error'] == 'Permision Denied'
-                    assert response2.status_code == 403
-                    assert response2.json()['error'] == 'Permision Denied'
-                    assert response3.status_code == 403
-                    assert response2.json()['error'] == 'Permision Denied'
+                    assert_not_available_content(response1)
+                    assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
+                        'excludedVerses': None, 'partialVerses': None}
+                    assert_not_available_content(response3)
             else:
                 response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
                 if headers_auth['app'] == API or headers_auth['app'] == VACHANADMIN:
                     assert response.status_code == 200
                 else:
-                    assert response.status_code == 403
-                    assert response.json()['error'] == 'Permision Denied'
+                    assert_not_available_content(response)
         print(f"Test passed -----> SUPER ADMIN")
 
         #Get with Bcs Dev
@@ -432,19 +412,16 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                     assert response2.status_code == 200
                     assert response3.status_code == 200
                 else:
-                    assert response1.status_code == 403
-                    assert response1.json()['error'] == 'Permision Denied'
-                    assert response2.status_code == 403
-                    assert response2.json()['error'] == 'Permision Denied'
-                    assert response3.status_code == 403
-                    assert response2.json()['error'] == 'Permision Denied'
+                    assert_not_available_content(response1)
+                    assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
+                        'excludedVerses': None, 'partialVerses': None}
+                    assert_not_available_content(response3)
             else:
                 response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
                 if headers_auth['app'] == API:
                     assert response.status_code == 200
                 else:
-                    assert response.status_code == 403
-                    assert response.json()['error'] == 'Permision Denied'
+                    assert_not_available_content(response)
         print(f"Test passed -----> BCS DEVELOPER")
 
     #test for permissions -----------------------------------------------> open-access
@@ -464,19 +441,16 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response2.status_code == 200
                 assert response3.status_code == 200
             else:
-                assert response1.status_code == 403
-                assert response1.json()['error'] == 'Permision Denied'
-                assert response2.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
-                assert response3.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response1)
+                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
+                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
             if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
                 assert response.status_code == 200
             else:    
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
     print(f"Test passed -----> NO LOGIN")
 
     #Get with AgUser
@@ -493,20 +467,17 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response2.status_code == 200
                 assert response3.status_code == 200
             else:
-                assert response1.status_code == 403
-                assert response1.json()['error'] == 'Permision Denied'
-                assert response2.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
-                assert response3.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response1)
+                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
+                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
             if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
                 or headers_auth['app'] == AG:
                 assert response.status_code == 200
             else:    
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
     print(f"Test passed -----> AG USER")
 
     #Get with VachanUser
@@ -522,19 +493,16 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response2.status_code == 200
                 assert response3.status_code == 200
             else:
-                assert response1.status_code == 403
-                assert response1.json()['error'] == 'Permision Denied'
-                assert response2.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
-                assert response3.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response1)
+                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
+                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
             if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
                 assert response.status_code == 200
             else:    
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
     print(f"Test passed -----> VACHAN USER")
 
     #Get with VachanAdmin
@@ -551,20 +519,17 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response2.status_code == 200
                 assert response3.status_code == 200
             else:
-                assert response1.status_code == 403
-                assert response1.json()['error'] == 'Permision Denied'
-                assert response2.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
-                assert response3.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response1)
+                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
+                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
             if headers_auth['app'] == API or headers_auth['app'] == VACHANADMIN\
                 or headers_auth['app'] == VACHAN:
                 assert response.status_code == 200
             else:
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
     print(f"Test passed -----> VACHAN ADMIN")
 
     #Get with API User
@@ -580,19 +545,16 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response2.status_code == 200
                 assert response3.status_code == 200
             else:
-                assert response1.status_code == 403
-                assert response1.json()['error'] == 'Permision Denied'
-                assert response2.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
-                assert response3.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response1)
+                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
+                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
             if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
                 assert response.status_code == 200
             else:    
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
     print(f"Test passed -----> API USER")
 
     #Get with AgAdmin
@@ -609,20 +571,17 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response2.status_code == 200
                 assert response3.status_code == 200
             else:
-                assert response1.status_code == 403
-                assert response1.json()['error'] == 'Permision Denied'
-                assert response2.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
-                assert response3.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response1)
+                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
+                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
             if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
                 or headers_auth['app'] == AG:
                 assert response.status_code == 200
             else:    
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
     print(f"Test passed -----> AG ADMIN")
 
     #Get with SuperAdmin
@@ -654,19 +613,16 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response2.status_code == 200
                 assert response3.status_code == 200
             else:
-                assert response1.status_code == 403
-                assert response1.json()['error'] == 'Permision Denied'
-                assert response2.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
-                assert response3.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response1)
+                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
+                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
             if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
                 assert response.status_code == 200
             else:
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
     print(f"Test passed -----> BCS DEVELOPER")
 
     #test for permissions -----------------------------------------------> publishable
@@ -686,19 +642,16 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response2.status_code == 200
                 assert response3.status_code == 200
             else:
-                assert response1.status_code == 403
-                assert response1.json()['error'] == 'Permision Denied'
-                assert response2.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
-                assert response3.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response1)
+                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
+                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
             if headers_auth['app'] == VACHAN:
                 assert response.status_code == 200
             else:    
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
     print(f"Test passed -----> NO LOGIN")
 
     #Get with AgUser
@@ -715,20 +668,17 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response2.status_code == 200
                 assert response3.status_code == 200
             else:
-                assert response1.status_code == 403
-                assert response1.json()['error'] == 'Permision Denied'
-                assert response2.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
-                assert response3.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response1)
+                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
+                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
             if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
                 or headers_auth['app'] == API:
                 assert response.status_code == 200
             else:    
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
     print(f"Test passed -----> AG USER")
 
     #Get with VachanUser
@@ -744,19 +694,16 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response2.status_code == 200
                 assert response3.status_code == 200
             else:
-                assert response1.status_code == 403
-                assert response1.json()['error'] == 'Permision Denied'
-                assert response2.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
-                assert response3.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response1)
+                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
+                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
             if headers_auth['app'] == VACHAN or headers_auth['app'] == API:
                 assert response.status_code == 200
             else:    
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
     print(f"Test passed -----> VACHAN USER")
 
     #Get with VachanAdmin
@@ -773,20 +720,17 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response2.status_code == 200
                 assert response3.status_code == 200
             else:
-                assert response1.status_code == 403
-                assert response1.json()['error'] == 'Permision Denied'
-                assert response2.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
-                assert response3.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response1)
+                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
+                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
             if headers_auth['app'] == API or headers_auth['app'] == VACHANADMIN\
                 or headers_auth['app'] == VACHAN:
                 assert response.status_code == 200
             else:
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
     print(f"Test passed -----> VACHAN ADMIN")
 
     #Get with API User
@@ -802,19 +746,16 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response2.status_code == 200
                 assert response3.status_code == 200
             else:
-                assert response1.status_code == 403
-                assert response1.json()['error'] == 'Permision Denied'
-                assert response2.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
-                assert response3.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response1)
+                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
+                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
             if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
                 assert response.status_code == 200
             else:    
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
     print(f"Test passed -----> API USER")
 
     #Get with AgAdmin
@@ -831,20 +772,17 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response2.status_code == 200
                 assert response3.status_code == 200
             else:
-                assert response1.status_code == 403
-                assert response1.json()['error'] == 'Permision Denied'
-                assert response2.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
-                assert response3.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response1)
+                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
+                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
             if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
                 or headers_auth['app'] == API:
                 assert response.status_code == 200
             else:    
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
     print(f"Test passed -----> AG ADMIN")
 
     #Get with SuperAdmin
@@ -876,17 +814,14 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response2.status_code == 200
                 assert response3.status_code == 200
             else:
-                assert response1.status_code == 403
-                assert response1.json()['error'] == 'Permision Denied'
-                assert response2.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
-                assert response3.status_code == 403
-                assert response2.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response1)
+                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
+                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
             if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
                 assert response.status_code == 200
             else:
-                assert response.status_code == 403
-                assert response.json()['error'] == 'Permision Denied'
+                assert_not_available_content(response)
     print(f"Test passed -----> BCS DEVELOPER")

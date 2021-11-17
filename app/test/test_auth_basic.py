@@ -192,8 +192,6 @@ def test_login_register(create_user_fixture):
         "lastname": "ABC Test"
     }
     response = register(data,apptype=schema_auth.App.API.value)
-    print("respo---->",response.status_code)
-    print("respo---->",response.json())
     assert response.status_code == 400
     assert response.json()['error'] == "HTTP Error"
     assert response.json()['details'] == \

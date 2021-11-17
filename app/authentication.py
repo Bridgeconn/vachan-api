@@ -553,7 +553,7 @@ def get_all_or_one_kratos_users(rec_user_id=None):
     """get all user info or a particular user details"""
     base_url = ADMIN_BASE_URL+"identities/"
 
-    if id is None:
+    if rec_user_id is None:
         response = requests.get(base_url)
         if response.status_code == 200:
             user_data = json.loads(response.content)
@@ -678,7 +678,6 @@ def user_register_kratos(register_details,app_type):
         headers["Content-Type"] = "application/json"
         reg_req = requests.post(reg_flow_id,headers=headers,json=reg_data)
         reg_response = json.loads(reg_req.content)
-
         if reg_req.status_code == 200:
             data = register_check_success(reg_response)
 
