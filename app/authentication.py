@@ -420,7 +420,6 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                         response = {}
                         response['message'] = message
                         response['data'] = db_content
-
                     else:
                         db_resource = response['data']
                         if required_params['request_context']["method"] == 'POST':
@@ -469,8 +468,11 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                         db_resource.append(response['source_content'])
                         verified , filtered_content  = \
                             check_access_rights(db_, required_params, db_resource)
-                        if verified and db_resource[0].sourceName == filtered_content[0].sourceName:
+                        if verified and len(filtered_content) > 0 and \
+                            db_resource[0].sourceName == filtered_content[0].sourceName:
                             response = response['db_content']
+                        else:
+                            response = []
                     elif isinstance(response,dict) and \
                         'project_content' in response.keys():
                         db_resource = []
