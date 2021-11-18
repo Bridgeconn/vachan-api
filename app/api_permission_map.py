@@ -152,6 +152,14 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
         #         raise user_details['error']
         return permission
 
+    def switch_agmt_project_draft():
+        """agmt project draft"""
+        permission = None
+        if method == 'GET':
+            if requesting_app == schema_auth.App.AG:
+                permission = "read-draft"
+        return permission
+
     switcher = {
         "/v2/user/register" : switch_register,
         "/v2/user/login" : switch_login,
@@ -199,7 +207,7 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
 
         "/v2/autographa/project/token-sentences" : switch_agmt_project_tokens,
 
-        "/v2/autographa/project/draft" : switch_agmt_project,
+        "/v2/autographa/project/draft" : switch_agmt_project_draft,
 
         "/v2/autographa/project/sentences" : switch_agmt_project,
 

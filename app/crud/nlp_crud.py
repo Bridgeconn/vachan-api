@@ -195,13 +195,13 @@ def save_agmt_translations(db_, project_id, token_translations, return_drafts=Tr
     if return_drafts:
         result = set(db_content)
         result =  sorted(result, key=lambda x: x.sentenceId)
-    else:    
+    else:
         result = None
     response = {
         'db_content':result,
         'project_content':project_row
         }
-    return response    
+    return response
 
 ###################### Suggestions ######################
 suggestion_trie_in_mem = {}
@@ -939,10 +939,13 @@ def export_to_json(source_lang, target_lang, sentence_list, last_modified):
     return json_output
 
 #########################################################
-def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=None,
+def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=None,#pylint: disable=too-many-locals
     sentence_id_list=None, **kwargs):
     '''fetches all or selected source sentences from translation_sentences table'''
     with_draft= kwargs.get("with_draft",False)
+    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    if not project_row:
+        raise NotAvailableException("Project with id, %s, not found"%project_id)
     sentence_query = db_.query(db_models.TranslationDraft).filter(
         db_models.TranslationDraft.project_id == project_id)
     if books:
@@ -965,9 +968,15 @@ def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=No
             db_models.TranslationDraft.sentenceId.in_(sentence_id_list))
     draft_rows = sentence_query.order_by(db_models.TranslationDraft.sentenceId).all()
     if with_draft:
-        return draft_rows
-    result = []
-    for row in draft_rows:
-        obj = {"sentenceId": row.sentenceId, "surrogateId":row.surrogateId,"sentence":row.sentence}
-        result.append(obj)
-    return result
+        result =  draft_rows
+    else:
+        result = []
+        for row in draft_rows:
+            obj = {"sentenceId": row.sentenceId,
+                "surrogateId":row.surrogateId,"sentence":row.sentence}
+            result.append(obj)
+    response = {
+        'db_content':result,
+        'project_content':project_row
+        }
+    return response

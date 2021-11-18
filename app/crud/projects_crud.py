@@ -209,21 +209,28 @@ def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_list,
     	sentence_id_range, with_draft=True)
     if output_format == schemas_nlp.DraftFormats.USFM :
-        return nlp_crud.create_usfm(draft_rows)
-    if output_format == schemas_nlp.DraftFormats.JSON:
-        return nlp_crud.export_to_json(project_row.sourceLanguage,
+        draft_out = nlp_crud.create_usfm(draft_rows)
+    elif output_format == schemas_nlp.DraftFormats.JSON:
+        draft_out = nlp_crud.export_to_json(project_row.sourceLanguage,
             project_row.targetLanguage, draft_rows, None)
-    if output_format == schemas_nlp.DraftFormats.PRINT:
-        return nlp_crud.export_to_print(draft_rows)
-    raise TypeException("Unsupported output format: %s"%output_format)
+    elif output_format == schemas_nlp.DraftFormats.PRINT:
+        draft_out = nlp_crud.export_to_print(draft_rows)
+    else:
+        raise TypeException("Unsupported output format: %s"%output_format)
+    response = {
+        'db_content':draft_out,
+        'project_content':project_row
+        }
+    return response
 
-def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_range):
+def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_range):#pylint: disable=too-many-locals
     '''Calculate project translation progress in terms of how much of draft is translated'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException("Project with id, %s, not found"%project_id)
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_list,
     	sentence_id_range, with_draft=True)
+    draft_rows = draft_rows["db_content"]
     confirmed_length = 0
     suggestions_length = 0
     untranslated_length = 0
@@ -244,7 +251,12 @@ def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_r
     result = {"confirmed": confirmed_length/total_length,
         "suggestion": suggestions_length/total_length,
         "untranslated": untranslated_length/total_length}
-    return result
+    # return result
+    response = {
+        'db_content':result,
+        'project_content':project_row
+        }
+    return response
 
 def obtain_agmt_token_translation(db_, project_id, token, occurrences): # pylint: disable=unused-argument
     '''Get the current translation for specific tokens providing their occurence in source'''
@@ -262,7 +274,12 @@ def obtain_agmt_token_translation(db_, project_id, token, occurrences): # pylint
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, sentence_id_list=sentence_list,
         with_draft=True)
     translations = pin_point_token_in_draft(occurrences, draft_rows)
-    return translations
+    # return translations
+    response = {
+        'db_content':translations[0],
+        'project_content':project_row
+        }
+    return response
 
 def versification_check(row, prev_book_code, versification, prev_verse, prev_chapter):
     """versification check for agmt source versification"""
@@ -308,7 +325,12 @@ def get_agmt_source_versification(db_, project_id):
              versification_check(row, prev_book_code, versification, prev_verse, prev_chapter)
     if prev_book_code is not None:
         versification['maxVerses'][prev_book_code].append(prev_verse)
-    return versification
+    # return versification
+    response = {
+        'db_content':versification,
+        'project_content':project_row
+        }
+    return response
 
 def get_agmt_source_per_token(db_:Session, project_id, token, occurrences): #pylint: disable=unused-argument
     '''get sentences and drafts for the token, which splits the token & translation in metadraft

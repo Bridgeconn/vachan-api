@@ -1,6 +1,6 @@
 '''API endpoints for AgMT app'''
 
-from typing import List
+from typing import List, Union
 from fastapi import APIRouter, Query, Body, Depends, Request
 from sqlalchemy.orm import Session
 from starlette.datastructures import URL
@@ -120,7 +120,7 @@ async def get_tokens(request: Request, project_id:int=Query(...,example="1022004
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=(410010001, 41001999)),
     sentence_id_list:List[int]=Query(None, example=[41001001,41001002,41001003]),
     use_translation_memory:bool=True, include_phrases:bool=True, include_stopwords:bool=False,
-    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Tokenize the source texts. Optional params books,
     sentence_id_range or sentence_id_list can be used to specify the source verses.
     If more than one of these filters are given, only one would be used
@@ -162,7 +162,7 @@ async def get_token_translation(request: Request,project_id:int=Query(...,exampl
     log.info('In get_token_translation')
     occurrences = [{"sentenceId":sentence_id, "offset":offset}]
     log.debug('project_id: %s, token:%s, occurrences:%s',project_id, token, occurrences)
-    return projects_crud.obtain_agmt_token_translation(db_, project_id, token, occurrences)[0]
+    return projects_crud.obtain_agmt_token_translation(db_, project_id, token, occurrences)
 
 @router.put('/v2/autographa/project/token-sentences', status_code=200,
     response_model = List[schemas_nlp.Sentence],
@@ -213,7 +213,8 @@ async def get_project_source(request: Request,project_id:int=Query(...,example="
         with_draft=with_draft)
 
 @router.get('/v2/autographa/project/progress', status_code=200,
-    response_model=schemas_nlp.Progress, tags=['Autographa-Translation'])
+    response_model= Union[schemas_nlp.Progress,list[schemas_nlp.Progress]],
+    tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def get_progress(request: Request,project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
