@@ -1,5 +1,5 @@
 '''API endpoints related to content management'''
-from typing import List
+from typing import List, Union
 from fastapi import APIRouter, Query, Body, Depends, Path , Request
 from sqlalchemy.orm import Session
 
@@ -402,7 +402,7 @@ async def get_available_bible_book(request: Request,
         active=active, skip = skip, limit = limit)
 
 @router.get('/v2/bibles/{source_name}/versification',
-    response_model=schemas.Versification,
+    response_model= Union[schemas.Versification,list[schemas.Versification]],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
 @get_auth_access_check_decorator

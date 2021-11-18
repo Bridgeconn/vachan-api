@@ -271,8 +271,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
                 assert_not_available_content(response)
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
-                assert response.json() == {'maxVerses': None, 'mappedVerses': None,
-                'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response)
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
                 assert_not_available_content(response)
             else:    
@@ -288,8 +287,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
                 assert_not_available_content(response)
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
-                assert response.json() == {'maxVerses': None, 'mappedVerses': None,
-                'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response)
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
                 assert_not_available_content(response)
             else:
@@ -305,8 +303,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
                 assert_not_available_content(response)
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
-                assert response.json() == {'maxVerses': None, 'mappedVerses': None,
-                'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response)
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
                 assert_not_available_content(response)
             else:
@@ -328,8 +325,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                     assert response3.status_code == 200
                 else:
                     assert_not_available_content(response1)
-                    assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
-                        'excludedVerses': None, 'partialVerses': None}
+                    assert_not_available_content(response2)
                     assert_not_available_content(response3)
                     
             else:
@@ -348,8 +344,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
                 assert_not_available_content(response)
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
-                assert response.json() == {'maxVerses': None, 'mappedVerses': None,
-                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response)
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
                 assert_not_available_content(response)
             else:
@@ -365,8 +360,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
                 assert_not_available_content(response)
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
-                assert response.json() == {'maxVerses': None, 'mappedVerses': None,
-                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response)
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
                 assert_not_available_content(response)
             else:
@@ -388,8 +382,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                     assert response3.status_code == 200
                 else:
                     assert_not_available_content(response1)
-                    assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
-                        'excludedVerses': None, 'partialVerses': None}
+                    assert_not_available_content(response2)
                     assert_not_available_content(response3)
             else:
                 response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
@@ -413,8 +406,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                     assert response3.status_code == 200
                 else:
                     assert_not_available_content(response1)
-                    assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
-                        'excludedVerses': None, 'partialVerses': None}
+                    assert_not_available_content(response2)
                     assert_not_available_content(response3)
             else:
                 response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
@@ -442,8 +434,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response3.status_code == 200
             else:
                 assert_not_available_content(response1)
-                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
-                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response2)
                 assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
@@ -468,8 +459,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response3.status_code == 200
             else:
                 assert_not_available_content(response1)
-                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
-                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response2)
                 assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
@@ -494,8 +484,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response3.status_code == 200
             else:
                 assert_not_available_content(response1)
-                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
-                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response2)
                 assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
@@ -520,8 +509,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response3.status_code == 200
             else:
                 assert_not_available_content(response1)
-                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
-                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response2)
                 assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
@@ -546,8 +534,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response3.status_code == 200
             else:
                 assert_not_available_content(response1)
-                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
-                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response2)
                 assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
@@ -572,8 +559,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response3.status_code == 200
             else:
                 assert_not_available_content(response1)
-                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
-                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response2)
                 assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
@@ -614,8 +600,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response3.status_code == 200
             else:
                 assert_not_available_content(response1)
-                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
-                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response2)
                 assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
@@ -643,8 +628,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response3.status_code == 200
             else:
                 assert_not_available_content(response1)
-                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
-                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response2)
                 assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
@@ -669,8 +653,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response3.status_code == 200
             else:
                 assert_not_available_content(response1)
-                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
-                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response2)
                 assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
@@ -695,8 +678,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response3.status_code == 200
             else:
                 assert_not_available_content(response1)
-                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
-                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response2)
                 assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
@@ -721,8 +703,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response3.status_code == 200
             else:
                 assert_not_available_content(response1)
-                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
-                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response2)
                 assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
@@ -747,8 +728,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response3.status_code == 200
             else:
                 assert_not_available_content(response1)
-                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
-                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response2)
                 assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
@@ -773,8 +753,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response3.status_code == 200
             else:
                 assert_not_available_content(response1)
-                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
-                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response2)
                 assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
@@ -815,8 +794,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response3.status_code == 200
             else:
                 assert_not_available_content(response1)
-                assert response2.json() == {'maxVerses': None, 'mappedVerses': None,
-                        'excludedVerses': None, 'partialVerses': None}
+                assert_not_available_content(response2)
                 assert_not_available_content(response3)
         else:
             response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)

@@ -472,8 +472,7 @@ def test_get_books_versification():
 
     # #without auth
     response = client.get(UNIT_URL+source_name+'/versification')
-    assert response.json() == {'maxVerses': None, 'mappedVerses': None,
-        'excludedVerses': None, 'partialVerses': None}
+    assert_not_available_content(response)
     #with auth
     response = client.get(UNIT_URL+source_name+'/versification',headers=headers_auth)
     assert response.status_code == 200

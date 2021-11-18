@@ -296,7 +296,7 @@ def filter_agmt_project_get(db_resource,access_tags,required_permission, user_de
     tag = access_tags[0]
     if required_permission in access_rules[tag].keys():
         allowed_users = access_rules[tag][required_permission]
-    print("user------>",user_details,"----->",allowed_users)
+    # print("user------>",user_details,"----->",allowed_users)
     if not user_id is None and len(user_roles) > 0 and len(allowed_users) > 0:
         for role in user_roles:
             if role in allowed_users:
@@ -483,7 +483,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                         db_resource.append(response['project_content'])
                         verified , filtered_content  = \
                             check_access_rights(db_, required_params, db_resource)
-                        print("verified---->",verified,"-->",filtered_content)
+                        # print("verified---->",verified,"-->",filtered_content)
                         if verified and len(filtered_content) > 0 and\
                             db_resource[0].projectId == filtered_content[0].projectId:
                             response = response['db_content']
