@@ -235,19 +235,12 @@ class GlossUpdateResponse(BaseModel):
     message: str = Field(..., example="Added to glossary/Alignments used for learning")
     data: List[GlossOutput]
 
-# class Translation(BaseModel):
-#     '''Response of what is the current translation of a specific token in agmt'''
-#     token: str = Field(..., example="duck")
-#     translation: str = Field(..., example="താറാവ്")
-#     occurrence: TokenOccurence
-#     status: str = Field(..., example="confirmed")
-
 class Translation(BaseModel):
     '''Response of what is the current translation of a specific token in agmt'''
-    token: str = None
-    translation: str = None
-    occurrence: TokenOccurence = None
-    status: str = None
+    token: str = Field(..., example="duck")
+    translation: str = Field(..., example="താറാവ്")
+    occurrence: TokenOccurence
+    status: str = Field(..., example="confirmed")
 
 class StopWords(BaseModel):
     '''Response object for stop words'''

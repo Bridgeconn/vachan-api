@@ -273,6 +273,7 @@ def obtain_agmt_token_translation(db_, project_id, token, occurrences): # pylint
     sentence_list = [occur["sentenceId"] for occur in occurrences]
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, sentence_id_list=sentence_list,
         with_draft=True)
+    draft_rows = draft_rows["db_content"]
     translations = pin_point_token_in_draft(occurrences, draft_rows)
     # return translations
     response = {
