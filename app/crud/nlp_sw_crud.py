@@ -6,7 +6,6 @@ from sqlalchemy import func
 from custom_exceptions import NotAvailableException
 
 import db_models
-import schemas_nlp
 
 #Based on sqlalchemy
 #pylint: disable=W0102,E1101,W0143
@@ -34,20 +33,10 @@ def retrieve_stopwords(db_: Session, language_code, **kwargs):
     if not include_auto_generated:
         query = query.filter(db_models.StopWords.confidence >= 1)
     if only_active:
-        query = query.filter(db_models.StopWords.active == only_active)
-    query = query.offset(skip).limit(limit).all()
+        query = query.filter(db_models.StopWords.active == only_active)   
+    query_result = query.offset(skip).limit(limit).all()
     result = []
-    for row in query:
-        sw_type = ''
-        if row.confidence == 2:
-            sw_type = schemas_nlp.StopWordsType.SYSTEM.value
-        elif row.confidence == 1:
-            sw_type = schemas_nlp.StopWordsType.USER.value
-        else:
-            sw_type = schemas_nlp.StopWordsType.AUTO.value
-        conf_val = None
-        if row.confidence not in [1, 2]:
-            conf_val = row.confidence
-        result.append({"stopword": row.stopWord, "stopwordType": sw_type, "confidence": conf_val,
-        "active": row.active})
+    for row in query_result:
+        result.append({"stopword": row.stopWord, "confidence": row.confidence, "active": row.active,
+            "metaData": row.metaData})
     return result
