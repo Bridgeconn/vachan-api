@@ -208,6 +208,7 @@ def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence
         raise NotAvailableException("Project with id, %s, not found"%project_id)
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_list,
     	sentence_id_range, with_draft=True)
+    draft_rows = draft_rows['db_content']
     if output_format == schemas_nlp.DraftFormats.USFM :
         draft_out = nlp_crud.create_usfm(draft_rows)
     elif output_format == schemas_nlp.DraftFormats.JSON:
@@ -342,6 +343,7 @@ def get_agmt_source_per_token(db_:Session, project_id, token, occurrences): #pyl
     sent_ids = [occur.sentenceId for occur in occurrences]
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id,
         sentence_id_list=sent_ids, with_draft=True)
+    draft_rows = draft_rows['db_content']
     occur_list = []
     for occur in occurrences:
         occur_list.append(occur.__dict__)

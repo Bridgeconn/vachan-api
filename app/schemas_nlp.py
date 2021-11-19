@@ -185,18 +185,11 @@ class Suggestion(BaseModel):
         just get the data from object attributes'''
         orm_mode = True
 
-# class Progress(BaseModel):
-#     '''Response object for AgMT project progress'''
-#     confirmed: float = None
-#     suggestion: float = None
-#     untranslated: float = None
-
 class Progress(BaseModel):
     '''Response object for AgMT project progress'''
     confirmed: float
     suggestion: float
     untranslated: float
-    
 
 class IndexPair(BaseModel):
     '''Index pair showing alignment of soure token and target Token'''

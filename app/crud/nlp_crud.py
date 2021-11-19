@@ -82,6 +82,7 @@ def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_
     if not project_row:
         raise NotAvailableException("Project with id, %s, not found"%project_id)
     sentences = obtain_agmt_source(db_, project_id, books, sentence_id_range,sentence_id_list)
+    sentences = sentences['db_content']
     args = {"db_":db_, "src_language":project_row.sourceLanguage, "sentence_list":sentences,
         'trg_language':project_row.targetLanguage,
         "use_translation_memory":use_translation_memory, "include_phrases":include_phrases,
@@ -782,6 +783,7 @@ def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range,
         raise NotAvailableException("Project with id, %s, not found"%project_id)
     draft_rows = obtain_agmt_source(db_, project_id, books, sentence_id_range,sentence_id_list,
         with_draft=True)
+    draft_rows = draft_rows['db_content']
     if confirm_all:
         for row in draft_rows:
             for i, meta in enumerate(row.draftMeta):
