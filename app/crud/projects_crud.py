@@ -236,7 +236,7 @@ def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_r
     suggestions_length = 0
     untranslated_length = 0
     for row in draft_rows:
-        for segment in row.draftMeta: 
+        for segment in row.draftMeta:
             token_len = segment[0][1] - segment[0][0]
             if token_len <= 1:
                 continue #possibly spaces or punctuations
