@@ -33,7 +33,7 @@ def retrieve_stopwords(db_: Session, language_code, **kwargs):
     if not include_auto_generated:
         query = query.filter(db_models.StopWords.confidence >= 1)
     if only_active:
-        query = query.filter(db_models.StopWords.active == only_active)   
+        query = query.filter(db_models.StopWords.active == only_active)
     query_result = query.offset(skip).limit(limit).all()
     result = []
     for row in query_result:
