@@ -333,7 +333,7 @@ def add_alignments(source_language:schemas.LangCodePattern, target_language:sche
     return { "message": "Alignments used for learning", "data":tw_data }
 
 @router.get('/v2/lookup/stopwords/{language_code}', response_model=List[schemas_nlp.StopWords],
-    response_model_exclude_unset=True, status_code=200, tags=["Generic Translation"])
+    response_model_exclude_none=True, status_code=200, tags=["Generic Translation"])
 def get_stop_words(language_code:schemas.LangCodePattern=Path(...,example="hi"),
     include_system_defined:bool=True, include_user_defined:bool=True,
     include_auto_generated :bool=True, only_active:bool=True, skip: int=Query(0, ge=0),
