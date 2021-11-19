@@ -150,7 +150,7 @@ async def apply_token_translations(request: Request,project_id:int=Query(...,exa
     return {"message": "Token translations saved", "data":drafts}
 
 @router.get('/v2/autographa/project/token-translations', status_code=200,
-    response_model=Union[schemas_nlp.Translation,list[schemas_nlp.Translation]],
+    response_model=Union[schemas_nlp.Translation,list[schemas_nlp.Translation]],#pylint: disable=unsubscriptable-object
     tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def get_token_translation(request: Request,project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
@@ -213,7 +213,7 @@ async def get_project_source(request: Request,project_id:int=Query(...,example="
         with_draft=with_draft)
 
 @router.get('/v2/autographa/project/progress', status_code=200,
-    response_model= Union[schemas_nlp.Progress,list[schemas_nlp.Progress]],
+    response_model= Union[schemas_nlp.Progress,list[schemas_nlp.Progress]],#pylint: disable=unsubscriptable-object
     tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def get_progress(request: Request,project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
@@ -229,7 +229,7 @@ async def get_progress(request: Request,project_id:int=Query(...,example="102200
         sentence_id_list, sentence_id_range)
 
 @router.get('/v2/autographa/project/versification', status_code=200,
-    response_model= Union[schemas.Versification, list[schemas.Versification]],
+    response_model= Union[schemas.Versification, list[schemas.Versification]],#pylint: disable=unsubscriptable-object
     tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def get_project_versification(request: Request,project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
