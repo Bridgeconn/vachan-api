@@ -236,7 +236,7 @@ def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_r
     suggestions_length = 0
     untranslated_length = 0
     for row in draft_rows:
-        for segment in row.draftMeta:
+        for segment in row.draftMeta: 
             token_len = segment[0][1] - segment[0][0]
             if token_len <= 1:
                 continue #possibly spaces or punctuations
@@ -253,11 +253,11 @@ def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_r
         "suggestion": suggestions_length/total_length,
         "untranslated": untranslated_length/total_length}
     # return result
-    response = {
+    response_result = {
         'db_content':result,
         'project_content':project_row
         }
-    return response
+    return response_result
 
 def obtain_agmt_token_translation(db_, project_id, token, occurrences): # pylint: disable=unused-argument
     '''Get the current translation for specific tokens providing their occurence in source'''
