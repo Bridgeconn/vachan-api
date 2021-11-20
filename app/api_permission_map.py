@@ -14,12 +14,6 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
         source_name = request_context['path_params']['source_name']
     else:
         source_name = None
-    # source_contents_list = ['bibles','commentaries','dictionaries','infographics','biblevideos']
-    # endpoint_split_list = endpoint.split('/')
-    # if endpoint_split_list[2] in source_contents_list:
-    #     endpoint_source_name = endpoint_split_list[3]
-    # else:
-    #     endpoint_source_name = None
 
     #Methods related to swither
     def switch_register():
@@ -139,23 +133,31 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
         permission = None
         if method == 'GET':
             if requesting_app == schema_auth.App.AG:
-                permission = "refer-for-translation"
-            elif requesting_app == schema_auth.App.VACHAN:
-                permission = "view-on-web"
-            elif requesting_app == schema_auth.App.VACHANADMIN:
-                permission = "view-on-vachan-admin"
-            elif requesting_app is None:
-                permission = "read-via-api"
+                permission = "read-draft"
+            # elif requesting_app == schema_auth.App.VACHAN:
+            #     permission = "view-on-web"
+            # elif requesting_app == schema_auth.App.VACHANADMIN:
+            #     permission = "view-on-vachan-admin"
+            # elif requesting_app is None:
+            #     permission = "read-via-api"
         if method == 'PUT':
             if not 'error' in user_details.keys():
                 permission = "edit-draft"
             else:
                 raise user_details['error']
-        if method == 'POST':
-            if not 'error' in user_details.keys():
-                permission = "create"
-            else:
-                raise user_details['error']
+        # if method == 'POST':
+        #     if not 'error' in user_details.keys():
+        #         permission = "create"
+        #     else:
+        #         raise user_details['error']
+        return permission
+
+    def switch_agmt_project_draft():
+        """agmt project draft"""
+        permission = None
+        if method == 'GET':
+            if requesting_app == schema_auth.App.AG:
+                permission = "read-draft"
         return permission
 
     switcher = {
@@ -200,11 +202,12 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
         "/v2/autographa/project/user" : switch_agmt_project_user,
 
         "/v2/autographa/project/tokens" : switch_agmt_project_tokens,
+
         "/v2/autographa/project/token-translations" : switch_agmt_project_tokens,
 
         "/v2/autographa/project/token-sentences" : switch_agmt_project_tokens,
 
-        "/v2/autographa/project/draft" : switch_agmt_project,
+        "/v2/autographa/project/draft" : switch_agmt_project_draft,
 
         "/v2/autographa/project/sentences" : switch_agmt_project,
 

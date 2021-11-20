@@ -126,10 +126,11 @@ def project_owner(db_:Session, db_resource, user_id):
 def project_member(db_:Session, db_resource, user_id):
     '''checks if the user is the memeber of the given project'''
     project_id = db_resource.projectId
-    project_owners = db_.query(db_models.TranslationProjectUser.userId).filter(
-        db_models.TranslationProjectUser.projectId == project_id,
+    project_members = db_.query(db_models.TranslationProjectUser.userId).filter(
+        db_models.TranslationProjectUser.project_id == project_id,#pylint: disable=comparison-with-callable
         db_models.TranslationProjectUser.userRole == "projectMember").all()
-    if user_id in project_owners:
+    project_members = [id for id, in project_members]
+    if user_id in project_members:
         return True
     return False
 
@@ -295,12 +296,11 @@ def filter_agmt_project_get(db_resource,access_tags,required_permission, user_de
     tag = access_tags[0]
     if required_permission in access_rules[tag].keys():
         allowed_users = access_rules[tag][required_permission]
-
+    # print("user------>",user_details,"----->",allowed_users)
     if not user_id is None and len(user_roles) > 0 and len(allowed_users) > 0:
         for role in user_roles:
             if role in allowed_users:
                 filtered_content = db_resource
-
         if len(filtered_content) == 0:
             for project in db_resource:
                 project_user_obj = project.users
@@ -410,7 +410,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             if len(response) > 0:
                 #pylint: disable=E1126
                 if required_params['request_context']['method'] != 'GET':
-                    if isinstance(response['data'],dict) and \
+                    if "data" in response and isinstance(response['data'],dict) and \
                         'source_content' in response['data'].keys():
                         response['data']['source_content'].updatedUser = \
                             required_params['user_details']["user_id"]
@@ -420,9 +420,8 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                         response = {}
                         response['message'] = message
                         response['data'] = db_content
-
                     else:
-                        db_resource = response['data']
+                        db_resource = response['data'] if "data" in response else response
                         if required_params['request_context']["method"] == 'POST':
                             if isinstance(db_resource,dict) and \
                                 'project' in db_resource.keys():
@@ -441,7 +440,22 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                                     required_params['user_details']["user_id"]
                                 db_resource = db_resource['project'].project
                                 response['data'] = response['data']['project']
-                            else:
+
+                            elif isinstance(db_resource,dict) and \
+                                'project_content' in db_resource.keys():
+                                if required_params['request_context']['app']\
+                                    == schema_auth.App.AG.value:
+                                    if 'data' in response:
+                                        db_resource['project_content'].updatedUser = \
+                                            required_params['user_details']["user_id"]
+                                        db_resource = db_resource['project_content']
+                                        response['data'] = response['data']['db_content']
+                                    else:
+                                        db_resource = db_resource['project_content']
+                                        response = response['db_content']
+                                else:
+                                    raise PermisionException("Access Permission Denied for the URL")
+                            else :
                                 response['data'].updatedUser = \
                                     required_params['user_details']["user_id"]
                     verified , filtered_content = \
@@ -458,8 +472,23 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                         db_resource.append(response['source_content'])
                         verified , filtered_content  = \
                             check_access_rights(db_, required_params, db_resource)
-                        if verified and db_resource[0].sourceName == filtered_content[0].sourceName:
+                        if verified and len(filtered_content) > 0 and \
+                            db_resource[0].sourceName == filtered_content[0].sourceName:
                             response = response['db_content']
+                        else:
+                            response = []
+                    elif isinstance(response,dict) and \
+                        'project_content' in response.keys():
+                        db_resource = []
+                        db_resource.append(response['project_content'])
+                        verified , filtered_content  = \
+                            check_access_rights(db_, required_params, db_resource)
+                        # print("verified---->",verified,"-->",filtered_content)
+                        if verified and len(filtered_content) > 0 and\
+                            db_resource[0].projectId == filtered_content[0].projectId:
+                            response = response['db_content']
+                        else:
+                            response = []
                     else:
                         db_resource = response
                         verified , filtered_content  = \
@@ -529,7 +558,7 @@ def get_all_or_one_kratos_users(rec_user_id=None):
     """get all user info or a particular user details"""
     base_url = ADMIN_BASE_URL+"identities/"
 
-    if id is None:
+    if rec_user_id is None:
         response = requests.get(base_url)
         if response.status_code == 200:
             user_data = json.loads(response.content)
@@ -654,7 +683,6 @@ def user_register_kratos(register_details,app_type):
         headers["Content-Type"] = "application/json"
         reg_req = requests.post(reg_flow_id,headers=headers,json=reg_data)
         reg_response = json.loads(reg_req.content)
-
         if reg_req.status_code == 200:
             data = register_check_success(reg_response)
 
