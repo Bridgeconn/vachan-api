@@ -1,5 +1,29 @@
 version: '3.9'
 services:
+ kratos:
+  image: oryd/kratos:v0.7.0-alpha.1
+  ports:
+    - '4433:4433' # public
+    - '4434:4434' # admin
+  restart: unless-stopped
+  environment:
+    - DSN=${VACHAN_AUTH_DATABASE:-postgresql://kratos:secret@128.199.18.6:5433/kratos}
+    - LOG_LEVEL=trace
+  command: serve -c /etc/config/kratos/kratos.yml --dev --watch-courier
+  volumes:
+    # - type: volume
+    #   source: kratos-sqlite
+    #   target: /var/lib/sqlite
+    #   read_only: false
+    - type: bind
+      source: ./Kratos_config/email-password
+      target: /etc/config/kratos
+  expose:
+    - 4434
+    - 4433
+  networks:
+    - my-network
+
  vachan-db:
   image: postgres:12.7
   healthcheck:
@@ -44,13 +68,20 @@ services:
    - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
    - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
    - VACHAN_POSTGRES_PORT=5432
-   - VACHAN_TEST_MODE=True
+   - VACHAN_KRATOS_PUBLIC_URL=http://kratos:4433/
+   - VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
+   - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME}
+   - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD}
+   - VACHAN_TEST_MODE="False"
+   # - VACHAN_TEST_MODE=True
+
   volumes:
-   - ./app:/app/app
+   # - ./app:/app/app
    - ./logs:/app/logs
   restart: always
-  depends_on:
+  links:
    - vachan-db
+   # - kratos
   expose:
    - 8000
   networks:
@@ -77,3 +108,5 @@ services:
 
 networks:
  my-network:              
+volumes:
+  kratos-sqlite:
