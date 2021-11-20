@@ -244,7 +244,7 @@ class StopWordsType(Enum):
 class StopWords(BaseModel):
     '''Response object for stop words'''
     stopword: str = Field(..., example="और")
-    stopwordType: str = Field(None, example="Auto generated")
+    stopwordType: StopWordsType = Field(None, example="Auto generated")
     confidence: float = Field(None, example=0.8)
     active : bool = Field(..., example=True)
     metaData: dict = Field(None, example={
