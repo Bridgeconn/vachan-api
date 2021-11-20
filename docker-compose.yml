@@ -7,7 +7,7 @@ services:
     - '4434:4434' # admin
   restart: unless-stopped
   environment:
-    - DSN=${VACHAN_AUTH_DATABASE:-postgresql://kratos:secret@128.199.18.6:5433/kratos}
+    - DSN=${VACHAN_AUTH_DATABASE}
     - LOG_LEVEL=trace
   command: serve -c /etc/config/kratos/kratos.yml --dev --watch-courier
   volumes:
