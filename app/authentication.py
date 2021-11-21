@@ -10,11 +10,11 @@ from custom_exceptions import GenericException , PermisionException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
     UnprocessableException
 
-PUBLIC_BASE_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL"+"self-service/",
-                                    "http://127.0.0.1:4433/self-service/")
+PUBLIC_BASE_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL",
+                                    "http://127.0.0.1:4433/")+"self-service/"
 ADMIN_BASE_URL = os.environ.get("VACHAN_KRATOS_ADMIN_URL", "http://127.0.0.1:4434/")
-USER_SESSION_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL"+ "sessions/whoami",
-                                "http://127.0.0.1:4433/sessions/whoami")
+USER_SESSION_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL",
+                                "http://127.0.0.1:4433/")+ "sessions/whoami"
 SUPER_USER = os.environ.get("VACHAN_SUPER_USERNAME")
 SUPER_PASSWORD = os.environ.get("VACHAN_SUPER_PASSWORD")
 
