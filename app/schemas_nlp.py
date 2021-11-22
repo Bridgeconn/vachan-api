@@ -266,7 +266,7 @@ class StopWords(BaseModel):
 class StopWordUpdate(BaseModel):
     '''Import object for updating stopword info'''
     stopWord: str = Field(..., example="और")
-    active : bool = Field(..., example=True)
+    active : bool = Field(None, example=True)
     metaData: dict = Field(None, example={
         "type":'postposition'})
 
