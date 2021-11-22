@@ -49,7 +49,8 @@ services:
   networks:
    - my-network
   volumes: 
-   - ${VACHAN_POSTGRES_DATA_DIR:-./pgdata}:/var/lib/postgresql/data
+   # - ${VACHAN_POSTGRES_DATA_DIR:-./pgdata}:/var/lib/postgresql/data
+   - vachan-db-vol:/var/lib/postgresql/data
    - ./db/csvs:/csvs
    - ./db/seed_DB.sql:/docker-entrypoint-initdb.d/seed_DB.sql
 
@@ -73,11 +74,11 @@ services:
    - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME}
    - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD}
    - VACHAN_TEST_MODE="False"
-   # - VACHAN_TEST_MODE=True
+   - VACHAN_LOGGING_LEVEL=INFO
 
   volumes:
    # - ./app:/app/app
-   - ./logs:/app/logs
+   - logs-vol:/app/logs
   restart: always
   links:
    - vachan-db
@@ -103,10 +104,14 @@ services:
    timeout: 45s
    interval: 10s
    retries: 10
+  volumes:
+    - logs-vol:/var/log/nginx
   networks:
    - my-network
 
 networks:
  my-network:              
 volumes:
-  kratos-sqlite:
+  vachan-db-vol:
+  logs-vol:
+  # kratos-sqlite:
