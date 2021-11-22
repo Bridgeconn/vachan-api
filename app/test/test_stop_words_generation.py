@@ -8,7 +8,7 @@ headers = {"contentType": "application/json", "accept": "application/json"}
 
 def assert_positive_get_stopwords(item):
     '''Check for the properties in the normal return object'''
-    assert "stopword" in item
+    assert "stopWord" in item
     assert "stopwordType" in item
     if item["stopwordType"] == "auto generated":
         assert "confidence" in item
