@@ -37,6 +37,6 @@ def retrieve_stopwords(db_: Session, language_code, **kwargs):
     query_result = query.offset(skip).limit(limit).all()
     result = []
     for row in query_result:
-        result.append({"stopword": row.stopWord, "confidence": row.confidence, "active": row.active,
+        result.append({"stopWord": row.stopWord, "confidence": row.confidence, "active": row.active,
             "metaData": row.metaData})
     return result
