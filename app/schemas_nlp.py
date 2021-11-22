@@ -273,4 +273,4 @@ class StopWordUpdate(BaseModel):
 class StopWordUpdateResponse(BaseModel):
     '''Response object after updating metadata or active status'''
     message: str = Field(..., example="Stopword info updated successfully")
-    data: List[StopWords]
+    data: StopWords
