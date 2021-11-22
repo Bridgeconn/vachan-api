@@ -81,21 +81,14 @@ def test_update_stopword():
     response = client.put(UNIT_URL+'/hi?',headers=headers, json=update_obj1)
     assert response.status_code == 200
     assert_positive_update_stopwords(response.json())
-    for item in response.json()['data']:
-        assert_positive_get_stopwords(item)
+    assert_positive_get_stopwords(response.json()['data'])
     assert response.json()['message'] == "Stopword info updated successfully"
-    assert len(response.json()['data']) == 1
 
     response = client.put(UNIT_URL+'/hi?',headers=headers, json=update_obj2)
     assert response.status_code == 200
     assert_positive_update_stopwords(response.json())
-    for item in response.json()['data']:
-        assert_positive_get_stopwords(item)
+    assert_positive_get_stopwords(response.json()['data'])
     assert response.json()['message'] == "Stopword info updated successfully"
-    assert len(response.json()['data']) == 1
 
     response = client.put(UNIT_URL+'/hi?',headers=headers, json=update_wrong_obj)
-    assert response.status_code == 200
-    assert_positive_update_stopwords(response.json())
-    assert response.json()['message'] == "Couldn't update the provided data"
-    assert len(response.json()['data']) == 0
+    assert response.status_code == 404
