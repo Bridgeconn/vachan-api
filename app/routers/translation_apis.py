@@ -347,3 +347,14 @@ def get_stop_words(language_code:schemas.LangCodePattern=Path(...,example="hi"),
         include_system_defined=include_system_defined, include_user_defined=include_user_defined,
         include_auto_generated=include_auto_generated, only_active=only_active, skip=skip,
         limit=limit)
+
+@router.put('/v2/lookup/stopwords/{language_code}',
+    response_model=schemas_nlp.StopWordUpdateResponse, response_model_exclude_none=True,
+    status_code=200, tags=['Generic Translation'])
+def update_stop_words(language_code:schemas.LangCodePattern=Path(...,example="hi"),
+    sw_info:schemas_nlp.StopWordUpdate=Body(...),db_:Session=Depends(get_db)):
+    '''Api to update fields of a stopword in lookup table'''
+    log.info('In update_stop_words')
+    log.debug('language_code:%s, sw_info:%s',language_code, sw_info)
+    msg, sw_data = nlp_sw_crud.update_stopword_info(db_, language_code, sw_info)
+    return {"message": msg, "data":sw_data}
