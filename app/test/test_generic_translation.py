@@ -5,10 +5,13 @@ import csv
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from .test_agmt_translation import assert_positive_get_tokens, assert_positive_get_sentence
+from .conftest import initial_test_users
 
 UNIT_URL = '/v2/translation'
 headers = {"contentType": "application/json", "accept": "application/json"}
-
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json"
+            }
 
 sentences = [
     "Once upon a time, there was a test case.",
@@ -28,36 +31,55 @@ post_obj = {"sentence_list":[{
                 "prepositions":["इस"],
                 "postpositions":["के", "की", "है"]
             }}
-
 def test_tokenize():
     '''Positve tests for generic tokenization API'''
-    default_response = client.put(UNIT_URL+'/tokens?source_language=en', headers=headers,
-        json={"sentence_list":sentence_list}) 
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
+    default_response = client.put(UNIT_URL+'/tokens?source_language=en', headers=headers_auth,
+        json={"sentence_list":sentence_list})
     assert default_response.status_code == 200
     assert len(default_response.json()) >10 
     for item in default_response.json():
         assert_positive_get_tokens(item)
 
+    #without auth
     response = client.put(UNIT_URL+'/tokens?source_language=en&include_phrases=True',
-        headers=headers, json={"sentence_list":sentence_list}) 
+        headers=headers, json={"sentence_list":sentence_list})
+    assert response.json()['error'] == "Permision Denied"
+    assert response.status_code == 403
+    #with auth
+    response = client.put(UNIT_URL+'/tokens?source_language=en&include_phrases=True',
+        headers=headers_auth, json={"sentence_list":sentence_list})
     assert response.status_code == 200
     assert default_response.json() == response.json()  
 
     response = client.put(UNIT_URL+'/tokens?source_language=en',
-        headers=headers, json={"sentence_list":sentence_list[:3]}) 
+        headers=headers, json={"sentence_list":sentence_list[:3]})
+    #without auth
+    assert response.json()['error'] == "Permision Denied"
+    assert response.status_code == 403
+    #with auth
+    response = client.put(UNIT_URL+'/tokens?source_language=en',
+        headers=headers_auth, json={"sentence_list":sentence_list[:3]}) 
     assert response.status_code == 200
     for item in response.json():
         assert_positive_get_tokens(item)
     assert len(default_response.json()) > len(response.json())  
 
     # include_phrases flag
+    #without auth
     response = client.put(UNIT_URL+"/tokens?source_language=en"+
         "&include_phrases=true", headers=headers,
+        json={"sentence_list":sentence_list})
+    assert response.json()['error'] == "Permision Denied"
+    assert response.status_code == 403
+    #with auth
+    response = client.put(UNIT_URL+"/tokens?source_language=en"+
+        "&include_phrases=true", headers=headers_auth,
         json={"sentence_list":sentence_list})
     assert response.json() == default_response.json()
 
     response = client.put(UNIT_URL+"/tokens?source_language=en"+
-        "&include_phrases=false", headers=headers,
+        "&include_phrases=false", headers=headers_auth,
         json={"sentence_list":sentence_list})
     assert response.status_code == 200
     assert len(response.json()) <= len(default_response.json())
@@ -67,8 +89,15 @@ def test_tokenize():
 
     # include stopwords flag
     sample_stopwords = ["the", "is", "a"]
+    #without auth
     response = client.put(UNIT_URL+"/tokens?source_language=en"+
         "&include_stopwords=false", headers=headers,
+        json={"sentence_list":sentence_list})
+    assert response.json()['error'] == "Permision Denied"
+    assert response.status_code == 403
+    #with auth
+    response = client.put(UNIT_URL+"/tokens?source_language=en"+
+        "&include_stopwords=false", headers=headers_auth,
         json={"sentence_list":sentence_list})
     assert response.json() == default_response.json()
     for item in response.json():
@@ -76,14 +105,14 @@ def test_tokenize():
         assert item['token'] not in sample_stopwords
 
     response = client.put(UNIT_URL+"/tokens?source_language=en"+
-        "&include_stopwords=true", headers=headers,
+        "&include_stopwords=true", headers=headers_auth,
         json={"sentence_list":sentence_list})
     assert response.status_code == 200
     for item in response.json():
         assert_positive_get_tokens(item)
 
     response = client.put(UNIT_URL+"/tokens?source_language=en"+
-        "&include_stopwords=true&include_phrases=false", headers=headers,
+        "&include_stopwords=true&include_phrases=false", headers=headers_auth,
         json={"sentence_list":sentence_list})
     assert response.status_code == 200
     all_words = [item['token'] for item in response.json()]
@@ -96,7 +125,7 @@ def test_tokenize_with_diff_flags():
     '''Postive tests for tokenizing a single input sentence with varying parameters'''
     response = client.put(UNIT_URL+"/tokens?source_language=hi"+
         "&include_stopwords=true&include_phrases=false&use_translation_memory=false",
-        headers=headers, json=post_obj)
+        headers=headers_auth, json=post_obj)
     assert response.status_code == 200
     all_words = [item['token'] for item in response.json()]
     for word in sample_sent.split(): # covers all words in source
@@ -107,7 +136,7 @@ def test_tokenize_with_diff_flags():
 
     response = client.put(UNIT_URL+"/tokens?source_language=hi"+
         "&include_stopwords=true&include_phrases=true&use_translation_memory=false",
-        headers=headers, json=post_obj)
+        headers=headers_auth, json=post_obj)
     assert response.status_code == 200
     all_tokens = [item['token'] for item in response.json()]
     assert "इस प्रकार है" in all_tokens
@@ -115,7 +144,7 @@ def test_tokenize_with_diff_flags():
 
     response = client.put(UNIT_URL+"/tokens?source_language=hi"+
         "&include_stopwords=false&include_phrases=true&use_translation_memory=false",
-        headers=headers, json=post_obj)
+        headers=headers_auth, json=post_obj)
     assert response.status_code == 200
     all_tokens = [item['token'] for item in response.json()]
     # no independant stopwords are present
@@ -137,13 +166,13 @@ def test_tokenize_with_diff_flags():
 
     response = client.put(UNIT_URL+"/token-translate?source_language=hi"+
         "&target_language=en&use_data_for_learning=true",
-        headers=headers, json=trans_obj)
+        headers=headers_auth, json=trans_obj)
     assert response.status_code ==200
 
     # after a translation testing for use_translation_memory flag
     response = client.put(UNIT_URL+"/tokens?source_language=hi"+
         "&include_stopwords=true&include_phrases=true&use_translation_memory=true",
-        headers=headers, json=post_obj)
+        headers=headers_auth, json=post_obj)
     assert response.status_code == 200
     all_tokens = [item['token'] for item in response.json()]
     assert "यीशु मसीह" in all_tokens
@@ -151,7 +180,7 @@ def test_tokenize_with_diff_flags():
 
     response = client.put(UNIT_URL+"/tokens?source_language=hi"+
         "&use_translation_memory=true",
-        headers=headers, json=post_obj)
+        headers=headers_auth, json=post_obj)
     assert response.status_code == 200
     all_tokens = [item['token'] for item in response.json()]
     assert "यीशु मसीह" in all_tokens
@@ -159,7 +188,7 @@ def test_tokenize_with_diff_flags():
 
     response = client.put(UNIT_URL+"/tokens?source_language=hi"+
         "&use_translation_memory=false",
-        headers=headers, json=post_obj)
+        headers=headers_auth, json=post_obj)
     assert response.status_code == 200
     all_tokens = [item['token'] for item in response.json()]
     assert "यीशु मसीह" not in all_tokens
@@ -171,7 +200,7 @@ def test_token_translate():
     #tokenize
     resp = client.put(UNIT_URL+"/tokens?source_language=hi&use_translation_memory=false"+
         "&include_stopwords=true",
-        headers=headers, json=post_obj)
+        headers=headers_auth, json=post_obj)
     assert resp.status_code ==200
     all_tokens = resp.json()
     for tok in all_tokens:
@@ -188,7 +217,7 @@ def test_token_translate():
 
     response = client.put(UNIT_URL+"/token-translate?source_language=hi"+
         "&target_language=en&use_data_for_learning=false",
-        headers=headers, json=trans_obj)
+        headers=headers_auth, json=trans_obj)
     assert response.status_code ==200
     return_sent = response.json()['data'][0]
     assert_positive_get_sentence(return_sent)
@@ -204,7 +233,7 @@ def test_token_translate():
         trans_obj['token_translations'].append(obj)
     response = client.put(UNIT_URL+"/token-translate?source_language=hi"+
         "&target_language=en&use_data_for_learning=false",
-        headers=headers, json=trans_obj)
+        headers=headers_auth, json=trans_obj)
     assert response.status_code ==200
     return_sent = response.json()['data'][0]
     assert_positive_get_sentence(return_sent)
@@ -229,7 +258,7 @@ def test_token_translate():
       ]
     response = client.put(UNIT_URL+"/token-translate?source_language=hi"+
         "&target_language=en",
-        headers=headers, json=trans_obj)
+        headers=headers_auth, json=trans_obj)
     assert response.status_code ==200
     new_return_sent = response.json()['data'][0]
     assert "Jesus Christ" in new_return_sent['draft']
@@ -241,14 +270,17 @@ def test_draft_generation():
     verse_start = 41001001
     for i,sentence in enumerate(sentence_list):
         sentence['sentenceId'] = verse_start+i
-
-
+    #without auth
     response = client.put(UNIT_URL+'/draft?doc_type=usfm', headers=headers, json=sentence_list)
+    assert response.json()['error'] == "Permision Denied"
+    assert response.status_code == 403
+    #with auth
+    response = client.put(UNIT_URL+'/draft?doc_type=usfm', headers=headers_auth, json=sentence_list)
     assert response.status_code == 200
     assert "\\id MAT" in response.json()[0]
     assert sentence_list[0]['sentence'] in response.json()[0]
 
-    response = client.put(UNIT_URL+'/draft?doc_type=csv', headers=headers, json=sentence_list)
+    response = client.put(UNIT_URL+'/draft?doc_type=csv', headers=headers_auth, json=sentence_list)
     assert response.status_code == 200
     assert sentence_list[0]['sentence'] in response.json()
     lines = response.json().split('\n')
@@ -259,7 +291,7 @@ def test_draft_generation():
         parse_csv = False
     assert parse_csv
 
-    response = client.put(UNIT_URL+'/draft?doc_type=text', headers=headers, json=sentence_list)
+    response = client.put(UNIT_URL+'/draft?doc_type=text', headers=headers_auth, json=sentence_list)
     assert response.status_code == 200
     input_text = " ".join([sent['sentence'] for sent in sentence_list])
     assert input_text.strip() == response.json().strip()

@@ -64,6 +64,11 @@ access_rules = {
         "read-draft":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"],
         "view-project":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"]
     },
+    "generic-translation":{
+        "read":["registeredUser"],
+        "create":["registeredUser"],
+        "process":["registeredUser"]
+    },
     "research-use":{
         "read":["SuperAdmin", "BcsDeveloper"]
     },
@@ -142,6 +147,8 @@ def get_accesstags_basedon_resourcetype(resource_type, method, db_resource):
         access_tags = ['translation-project']
     elif resource_type == schema_auth.ResourceType.USER:
         access_tags = ['user']
+    elif resource_type == schema_auth.ResourceType.TRANSLATION:
+        access_tags = ['generic-translation']
     elif resource_type == schema_auth.ResourceType.CONTENT:
         access_tags = []
         if method != 'GET':
@@ -171,7 +178,7 @@ def get_accesstags_permission(request_context, resource_type, db_, db_resource ,
         elif endpoint.startswith('/v2/user'):
             resource_type = schema_auth.ResourceType.USER
         elif endpoint.startswith("/v2/translation"):
-            resource_type = None
+            resource_type = schema_auth.ResourceType.TRANSLATION
         else:
             resource_type = schema_auth.ResourceType.CONTENT
     required_permission = api_permission_map(endpoint, request_context ,
@@ -398,6 +405,13 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         required_params = verify_auth_decorator_params(kwargs)
         db_ = required_params["db_"]
         if required_params['request_context']['endpoint'].startswith("/v2/user"):#pylint: disable=E1126.too-many-nested-blocks
+            verified , filtered_content = \
+                check_access_rights(db_, required_params, db_resource)
+            if not verified:
+                raise PermisionException("Access Permission Denied for the URL")
+            #calling router functions
+            response = await func(*args, **kwargs)
+        elif required_params['request_context']['endpoint'].startswith("/v2/translation"):#pylint: disable=E1126.too-many-nested-blocks
             verified , filtered_content = \
                 check_access_rights(db_, required_params, db_resource)
             if not verified:

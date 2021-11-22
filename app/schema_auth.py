@@ -10,6 +10,7 @@ class ResourceType(str, Enum):
     CONTENT = "contents like bibles, commentaries, infographics, dictionary or videos"
     PROJECT = "Ag or translation project"
     USER = "all users in our system (Kratos)"
+    TRANSLATION = "generic translation apis"
 
 class App(str, Enum):
     '''Defined apps'''

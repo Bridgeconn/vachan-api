@@ -791,19 +791,26 @@ def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range,
                     row.draftMeta[i][2] = "confirmed"
                     flag_modified(row, 'draftMeta')
         # db_.add_all(draft_rows)
-        db_.commit()
-        return draft_rows
-    args = {"db_":db_, "sentence_list":draft_rows,
-        "source_lang":project_row.sourceLanguage.code,
-        "target_lang":project_row.targetLanguage.code}
-    if "stopwords" in project_row.metaData:
-        args['stop_words'] = project_row.metaData['stopwords']
-    if "punctuations" in project_row.metaData:
-        args['punctuations'] = project_row.metaData['punctuations']
-    updated_drafts = auto_translate(**args)
-    db_.add_all(updated_drafts)
-    db_.commit()
-    return updated_drafts
+        # db_.commit()
+        # return draft_rows
+        updated_drafts = draft_rows
+    else:
+        args = {"db_":db_, "sentence_list":draft_rows,
+            "source_lang":project_row.sourceLanguage.code,
+            "target_lang":project_row.targetLanguage.code}
+        if "stopwords" in project_row.metaData:
+            args['stop_words'] = project_row.metaData['stopwords']
+        if "punctuations" in project_row.metaData:
+            args['punctuations'] = project_row.metaData['punctuations']
+        updated_drafts = auto_translate(**args)
+        db_.add_all(updated_drafts)
+        # db_.commit()
+        # return updated_drafts
+    response = {
+        'db_content':updated_drafts,
+        'project_content':project_row
+        }
+    return response
 
 ###################### Export and download ######################
 def obtain_draft(sentence_list, doc_type):

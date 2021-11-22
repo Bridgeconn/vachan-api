@@ -242,11 +242,12 @@ async def get_project_versification(request: Request,project_id:int=Query(...,ex
 @router.put('/v2/autographa/project/suggestions', status_code=201,
     response_model=List[schemas_nlp.Sentence],
     tags=["Translation Suggestion"])
-def suggest_auto_translation(project_id:int=Query(...,example="1022004"),
+@get_auth_access_check_decorator
+async def suggest_auto_translation(request: Request,project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
-    confirm_all:bool=False, db_:Session=Depends(get_db)):
+    confirm_all:bool=False,user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Try to fill draft with suggestions. If confirm_all is set, will only change status of all
     "suggestion" to "confirmed" in the selected sentences and will not fill in new suggestion'''
     log.info('In suggest_translation')
@@ -260,12 +261,13 @@ def suggest_auto_translation(project_id:int=Query(...,example="1022004"),
 @router.put('/v2/translation/tokens', response_model=List[schemas_nlp.Token],
     response_model_exclude_unset=True,
     status_code=200, tags=['Generic Translation'])
-def tokenize(source_language:schemas.LangCodePattern=Query(...,example="hi"),
+@get_auth_access_check_decorator
+async def tokenize(request: Request,source_language:schemas.LangCodePattern=Query(...,example="hi"),#pylint: disable=unused-argument
     sentence_list:List[schemas_nlp.SentenceInput]=Body(...),
     target_language:schemas.LangCodePattern=Query(None,example="ml"),
     use_translation_memory:bool=True, include_phrases:bool=True, include_stopwords:bool=False,
     punctuations:List[str]=Body(None), stopwords:schemas_nlp.Stopwords=Body(None),
-    db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Tokenize any set of input sentences.
     Makes use of translation memory and stopwords for forming better phrase tokens.
     Flags use_translation_memory, include_phrases and include_stopwords can be
@@ -282,11 +284,13 @@ def tokenize(source_language:schemas.LangCodePattern=Query(...,example="hi"),
 
 @router.put('/v2/translation/token-translate', response_model=schemas_nlp.TranslateResponse,
     status_code=200, tags=['Generic Translation'])
-def token_replace(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
+@get_auth_access_check_decorator
+async def token_replace(request: Request,sentence_list:List[schemas_nlp.DraftInput]=Body(...),#pylint: disable=unused-argument
     token_translations:List[schemas_nlp.TokenUpdate]=Body(...),
     source_language:schemas.LangCodePattern=Query(...,example='hi'),
     target_language:schemas.LangCodePattern=Query(...,example='ml'),
-    use_data_for_learning:bool=True, db_:Session=Depends(get_db)):
+    use_data_for_learning:bool=True,
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Perform token replacement on provided sentences and
     returns obtained drafts and draft_meta'''
     log.info('In token_replace')
@@ -298,8 +302,10 @@ def token_replace(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     return {"message": "Tokens replaced with translations", "data": result}
 
 @router.put('/v2/translation/draft', status_code=200, tags=['Generic Translation'])
-def generate_draft(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
-    doc_type:schemas_nlp.TranslationDocumentType=Query(schemas_nlp.TranslationDocumentType.USFM)):
+@get_auth_access_check_decorator
+async def generate_draft(request: Request,sentence_list:List[schemas_nlp.DraftInput]=Body(...),#pylint: disable=unused-argument
+    doc_type:schemas_nlp.TranslationDocumentType=Query(schemas_nlp.TranslationDocumentType.USFM),
+    user_details =Depends(get_user_or_none)):#pylint: disable=unused-argument
     '''Converts the drafts in input sentences to following output formats:
     usfm, text, csv or alignment-json'''
     log.info('In generate_draft')
@@ -308,11 +314,13 @@ def generate_draft(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
 
 @router.put('/v2/translation/suggestions', response_model=List[schemas_nlp.Sentence],
     status_code=200, tags=["Translation Suggestion"])
-def suggest_translation(source_language:schemas.LangCodePattern=Query(...,example="hi"),
+@get_auth_access_check_decorator
+async def suggest_translation(request: Request,#pylint: disable=unused-argument
+    source_language:schemas.LangCodePattern=Query(...,example="hi"),
     target_language:schemas.LangCodePattern=Query(...,example="ml"),
     sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     punctuations:List[str]=Body(None), stopwords:schemas_nlp.Stopwords=Body(None),
-    db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Attempts to tokenize sentences and prepare draft with autogenerated suggestions
     If draft and draft_meta are provided indicating some portion of sentence is user translated,
     then it is left untouched.'''
@@ -324,12 +332,14 @@ def suggest_translation(source_language:schemas.LangCodePattern=Query(...,exampl
 
 @router.get('/v2/translation/gloss', response_model=schemas_nlp.GlossOutput,
     status_code=200, tags=["Translation Suggestion"])
-def get_glossary(source_language:schemas.LangCodePattern=Query(...,example="en"),
+@get_auth_access_check_decorator
+async def get_glossary(request: Request,#pylint: disable=unused-argument
+    source_language:schemas.LangCodePattern=Query(...,example="en"),
     target_language:schemas.LangCodePattern=Query(...,example="hi"),
     token:str=Query(...,example="duck"),
     context:str=Query(None,example="The duck swam in the lake"),
     token_offset:List[int]=Query(None,max_items=2,min_items=2,example=(4,8)),
-    db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Finds translation suggestions or gloss for one token in the given context'''
     log.info('In get_glossary')
     log.debug('source_language:%s, target_language:%s, token:%s, context:%s,\
@@ -340,9 +350,12 @@ def get_glossary(source_language:schemas.LangCodePattern=Query(...,example="en")
 
 @router.post('/v2/translation/learn/gloss', response_model=schemas_nlp.GlossUpdateResponse,
     status_code=201, tags=["Translation Suggestion"])
-def add_gloss(source_language:schemas.LangCodePattern=Query(...,example='en'),
+@get_auth_access_check_decorator
+async def add_gloss(request: Request,#pylint: disable=unused-argument
+    source_language:schemas.LangCodePattern=Query(...,example='en'),
     target_language:schemas.LangCodePattern=Query(..., example="hi"),
-    token_translations:List[schemas_nlp.GlossInput]=Body(...), db_:Session=Depends(get_db)):
+    token_translations:List[schemas_nlp.GlossInput]=Body(...),
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Load a list of predefined tokens and translations to improve tokenization and suggestion'''
     log.info('In add_gloss')
     log.debug('source_language:%s, target_language:%s, token_translations:%s',
@@ -353,12 +366,15 @@ def add_gloss(source_language:schemas.LangCodePattern=Query(...,example='en'),
 
 @router.post('/v2/translation/learn/alignment', response_model=schemas_nlp.GlossUpdateResponse,
     status_code=201, tags=["Translation Suggestion"])
-def add_alignments(source_language:schemas.LangCodePattern, target_language:schemas.LangCodePattern,
-    alignments:List[schemas_nlp.Alignment], db_:Session=Depends(get_db)):
+@get_auth_access_check_decorator
+async def add_alignments(request: Request,#pylint: disable=unused-argument
+    source_language:schemas.LangCodePattern, target_language:schemas.LangCodePattern,
+    alignments:List[schemas_nlp.Alignment],
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Prepares training data with alignments and update translation memory & suggestion models'''
     log.info('In add_alignments')
     log.debug('source_language:%s, target_language:%s, alignments:%s',
         source_language, target_language, alignments)
     tw_data = nlp_crud.alignments_to_trainingdata(db_,src_lang=source_language,
-    trg_lang=target_language, alignment_list=alignments, user_id=20202)
+    trg_lang=target_language, alignment_list=alignments, user_id=user_details['user_id'])
     return { "message": "Alignments used for learning", "data":tw_data }

@@ -160,6 +160,17 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
                 permission = "read-draft"
         return permission
 
+    def switch_translation():
+        """Translation related"""
+        permission = None
+        if method == 'GET':
+            permission = "read"
+        if method == 'POST':
+            permission = "create"
+        if method == 'PUT':
+            permission = "process"
+        return permission
+
     switcher = {
         "/v2/user/register" : switch_register,
         "/v2/user/login" : switch_login,
@@ -215,15 +226,16 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
 
         "/v2/autographa/project/versification" : switch_agmt_project,
 
-        "/v2/autographa/project/suggesions" : switch_agmt_project_tokens,
-        "/v2/translation/suggesions" : switch_agmt_project_tokens,
-        "/v2/translation/gloss" : switch_agmt_project_tokens,
-        "/v2/translation/learn/gloss" : switch_agmt_project_tokens,
-        "/v2/translation/learn/alignment" : switch_agmt_project_tokens,
+        "/v2/autographa/project/suggestions" : switch_agmt_project_tokens,
 
-        "/v2/translation/tokens" : switch_agmt_project_tokens,
-        "/v2/translation/token-translate" : switch_agmt_project_tokens,
-        "/v2/translation/draft" : switch_agmt_project_tokens,
+        "/v2/translation/suggestions" : switch_translation,
+        "/v2/translation/gloss" : switch_translation,
+        "/v2/translation/learn/gloss" : switch_translation,
+        "/v2/translation/learn/alignment" : switch_translation,
+
+        "/v2/translation/tokens" : switch_translation,
+        "/v2/translation/token-translate" : switch_translation,
+        "/v2/translation/draft" : switch_translation,
 
     }
     switch_func =  switcher.get(endpoint, message)
