@@ -262,3 +262,15 @@ class StopWords(BaseModel):
             if values['confidence'] in [1, 2]:
                 values['confidence'] = None
         return values
+
+class StopWordUpdate(BaseModel):
+    '''Import object for updating stopword info'''
+    stopWord: str = Field(..., example="और")
+    active : bool = Field(..., example=True)
+    metaData: dict = Field(None, example={
+        "type":'postposition'})
+
+class StopWordUpdateResponse(BaseModel):
+    '''Response object after updating metadata or active status'''
+    message: str = Field(..., example="Stopword info updated successfully")
+    data: List[StopWords]
