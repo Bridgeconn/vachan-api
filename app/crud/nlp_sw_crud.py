@@ -2,7 +2,7 @@
     to stop word identification'''
 
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, update
 from custom_exceptions import NotAvailableException
 
 import db_models
@@ -40,3 +40,30 @@ def retrieve_stopwords(db_: Session, language_code, **kwargs):
         result.append({"stopWord": row.stopWord, "confidence": row.confidence, "active": row.active,
             "metaData": row.metaData})
     return result
+
+def update_stopword_info(db_: Session, language_code, sw_json):
+    '''updates the given information of a stopword in db'''
+    query = db_.query(db_models.Language.languageId)
+    language_id = query.filter(func.lower(db_models.Language.code) == language_code.lower()).first()
+    if not language_id:
+        raise NotAvailableException("Language with code %s, not in database"%language_code)
+    language_id = language_id[0]
+    stopword = sw_json.stopWord
+    active_val = sw_json.active
+    metadata = sw_json.metaData
+    update_stmt = (update(db_models.StopWords).where(db_models.StopWords.stopWord == stopword,
+        db_models.StopWords.languageId == language_id).values(active=active_val, metaData=metadata))
+    result = db_.execute(update_stmt)
+    db_.commit()
+    query = db_.query(db_models.StopWords)
+    rows = query.filter(db_models.StopWords.stopWord == stopword,
+            db_models.StopWords.languageId == language_id).all()
+    data = []
+    for row in rows:
+        data.append({"stopWord": row.stopWord, "confidence": row.confidence, "active": row.active,
+            "metaData": row.metaData})
+    if result.rowcount > 0:
+        msg = "Stopword info updated successfully"
+    else:
+        msg = "Couldn't update the provided data"
+    return msg, data
