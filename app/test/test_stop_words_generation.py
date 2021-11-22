@@ -6,14 +6,18 @@ from . import assert_not_available_content
 UNIT_URL = '/v2/lookup/stopwords'
 headers = {"contentType": "application/json", "accept": "application/json"}
 
-obj = {
+update_obj1 = {
         "stopWord": "कहता",
         "active": False,
         "metaData": {
         "type": "verb"
      }
     }
-wrong_obj =  {
+update_obj2 = {
+        "stopWord": "गए",
+        "active": False,
+    }
+update_wrong_obj =  {
         "stopWord": "prayed",
         "active": False,
         "metaData": {
@@ -74,16 +78,24 @@ def test_get_notavailable_code():
 
 def test_update_stopword():
     '''Positve tests for update stopwords API'''
-    response = client.put(UNIT_URL+'/hi?',headers=headers, json=obj)
+    response = client.put(UNIT_URL+'/hi?',headers=headers, json=update_obj1)
     assert response.status_code == 200
     assert_positive_update_stopwords(response.json())
     for item in response.json()['data']:
         assert_positive_get_stopwords(item)
-    if response.json()['message'] == "Stopword info updated successfully":
-        assert len(response.json()['data']) == 1
+    assert response.json()['message'] == "Stopword info updated successfully"
+    assert len(response.json()['data']) == 1
 
-    response = client.put(UNIT_URL+'/hi?',headers=headers, json=wrong_obj)
+    response = client.put(UNIT_URL+'/hi?',headers=headers, json=update_obj2)
     assert response.status_code == 200
     assert_positive_update_stopwords(response.json())
-    if response.json()['message'] == "Couldn't update the provided data":
-        assert len(response.json()['data']) == 0
+    for item in response.json()['data']:
+        assert_positive_get_stopwords(item)
+    assert response.json()['message'] == "Stopword info updated successfully"
+    assert len(response.json()['data']) == 1
+
+    response = client.put(UNIT_URL+'/hi?',headers=headers, json=update_wrong_obj)
+    assert response.status_code == 200
+    assert_positive_update_stopwords(response.json())
+    assert response.json()['message'] == "Couldn't update the provided data"
+    assert len(response.json()['data']) == 0
