@@ -53,7 +53,7 @@ def update_stopword_info(db_: Session, language_code, sw_json):
     if sw_json.active is not None:
         value_dic["active"] = sw_json.active
     if sw_json.metaData is not None:
-        value_dic["metaData"] = sw_json.metaData   
+        value_dic["metaData"] = sw_json.metaData
     update_stmt = (update(db_models.StopWords).where(db_models.StopWords.stopWord == stopword,
         db_models.StopWords.languageId == language_id).values(value_dic))
     result = db_.execute(update_stmt)
