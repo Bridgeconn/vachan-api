@@ -356,5 +356,5 @@ def update_stop_words(language_code:schemas.LangCodePattern=Path(...,example="hi
     '''Api to update fields of a stopword in lookup table'''
     log.info('In update_stop_words')
     log.debug('language_code:%s, sw_info:%s',language_code, sw_info)
-    msg, sw_data = nlp_sw_crud.update_stopword_info(db_, language_code, sw_info)
-    return {"message": msg, "data":sw_data}
+    sw_data = nlp_sw_crud.update_stopword_info(db_, language_code, sw_info)
+    return { "message": "Stopword info updated successfully", "data":sw_data }
