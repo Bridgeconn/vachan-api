@@ -53,7 +53,7 @@ def register(data,apptype):
         assert isinstance(response.json()["registered_details"],dict)
         assert "id" in response.json()["registered_details"]
         assert "email" in response.json()["registered_details"]
-        assert "Permisions" in response.json()["registered_details"]
+        assert "Permissions" in response.json()["registered_details"]
         assert "token" in response.json()
         token =  response.json()['token']
         assert len(token) == 32
@@ -66,11 +66,11 @@ def register_role_appending(data,apptype):
     params = f"?app_type={apptype}"
     response = client.post(REGISTER_URL+params, headers=headers, json=data)
     if response.status_code == 200:
-        assert response.json()["message"] == "User Already Registered, New Permision updated"
+        assert response.json()["message"] == "User Already Registered, New Permission updated"
         assert isinstance(response.json()["registered_details"],dict)
         assert "id" in response.json()["registered_details"]
         assert "email" in response.json()["registered_details"]
-        assert "Permisions" in response.json()["registered_details"]
+        assert "Permissions" in response.json()["registered_details"]
         assert "token" in response.json()
         assert response.json()['token'] == 'null'
     return response
@@ -244,7 +244,7 @@ def test_optional_register_params(create_user_fixture):
         "lastname": "ABC Test"
     }
     response = register(data,apptype=schema_auth.App.API.value)
-    assert response.json()["registered_details"]["Permisions"] == \
+    assert response.json()["registered_details"]["Permissions"] == \
         [schema_auth.App.API.value]
     abc_id = response.json()["registered_details"]["id"]
 
@@ -296,7 +296,7 @@ def test_register_roles(create_user_fixture):
     }
     response1 = register(data_xyz1,apptype=schema_auth.App.VACHAN.value)
     xyz1_id = response1.json()["registered_details"]["id"]
-    assert response1.json()["registered_details"]["Permisions"] == \
+    assert response1.json()["registered_details"]["Permissions"] == \
             [schema_auth.App.VACHAN.value]
 
     data_xyz2 = {
@@ -307,7 +307,7 @@ def test_register_roles(create_user_fixture):
     }
     response2 = register(data_xyz2,apptype= schema_auth.App.AG.value)
     xyz2_id = response2.json()["registered_details"]["id"]
-    assert response2.json()["registered_details"]["Permisions"] == \
+    assert response2.json()["registered_details"]["Permissions"] == \
         [ schema_auth.App.AG.value]
     data_xyz3 = \
         {
@@ -318,7 +318,7 @@ def test_register_roles(create_user_fixture):
     }
     response3 = register(data_xyz3,apptype=schema_auth.App.API.value)
     xyz3_id = response3.json()["registered_details"]["id"]
-    assert response3.json()["registered_details"]["Permisions"] == [schema_auth.App.API.value]
+    assert response3.json()["registered_details"]["Permissions"] == [schema_auth.App.API.value]
 
     data_xyz4 = {
         "email": "xyz4@gmail.com",
@@ -328,7 +328,7 @@ def test_register_roles(create_user_fixture):
     }
     response4 = register(data_xyz4,apptype=schema_auth.App.VACHANADMIN.value)
     xyz4_id = response4.json()["registered_details"]["id"]
-    assert response4.json()["registered_details"]["Permisions"] == \
+    assert response4.json()["registered_details"]["Permissions"] == \
         [schema_auth.App.VACHANADMIN.value]
 
     #login check for users
@@ -371,7 +371,7 @@ def test_register_roles(create_user_fixture):
         "lastname": "Vachan role Test",
     }
     response1 = register_role_appending(data_xyz1,apptype=schema_auth.App.API.value)
-    assert response1.json()["registered_details"]["Permisions"] == \
+    assert response1.json()["registered_details"]["Permissions"] == \
         [schema_auth.App.VACHAN.value,schema_auth.App.API.value]
 
     # #role changed ag --> vachan
@@ -380,7 +380,7 @@ def test_register_roles(create_user_fixture):
         "password": "passwordxyz2@1"
     }
     response2 = register_role_appending(data_xyz2,apptype=schema_auth.App.VACHAN.value)
-    assert response2.json()["registered_details"]["Permisions"] ==\
+    assert response2.json()["registered_details"]["Permissions"] ==\
         [schema_auth.App.AG.value,schema_auth.App.VACHAN.value]
 
     #role changed none --> ag
@@ -389,7 +389,7 @@ def test_register_roles(create_user_fixture):
         "password": "passwordxyz3@1"
     }
     response3 = register_role_appending(data_xyz3,apptype=schema_auth.App.AG.value)
-    assert response3.json()["registered_details"]["Permisions"] ==\
+    assert response3.json()["registered_details"]["Permissions"] ==\
         [schema_auth.App.API.value,schema_auth.App.AG.value]
 
     #role changed Vachan Admin --> ag
@@ -398,7 +398,7 @@ def test_register_roles(create_user_fixture):
         "password": "passwordxyz4@1"
     }
     response4 = register_role_appending(data_xyz4,apptype=schema_auth.App.AG.value)
-    assert response4.json()["registered_details"]["Permisions"] == \
+    assert response4.json()["registered_details"]["Permissions"] == \
         [schema_auth.App.VACHANADMIN.value,schema_auth.App.AG.value]
 
     users_list = create_user_fixture
@@ -420,7 +420,7 @@ def test_role_assignment_superadmin(create_user_fixture):
     }
     response1 = register(user1,apptype=schema_auth.App.API.value)
     user1_id = response1.json()["registered_details"]["id"]
-    assert response1.json()["registered_details"]["Permisions"] == [schema_auth.App.API.value]
+    assert response1.json()["registered_details"]["Permissions"] == [schema_auth.App.API.value]
 
     user2 = {
         "email": "ag@gmail.com",
@@ -428,7 +428,7 @@ def test_role_assignment_superadmin(create_user_fixture):
     }
     response2 = register(user2,apptype=schema_auth.App.API.value)
     user2_id = response2.json()["registered_details"]["id"]
-    assert response2.json()["registered_details"]["Permisions"] == [schema_auth.App.API.value]
+    assert response2.json()["registered_details"]["Permissions"] == [schema_auth.App.API.value]
 
     #try to change user2 permision after login user1
     user1 = {
@@ -491,7 +491,7 @@ def test_token_expiry(create_user_fixture):
     }
     response2 = register(user,apptype=schema_auth.App.API.value)
     user_id = response2.json()["registered_details"]["id"]
-    assert response2.json()["registered_details"]["Permisions"] == [schema_auth.App.API.value]
+    assert response2.json()["registered_details"]["Permissions"] == [schema_auth.App.API.value]
 
     role_data = {
         "userid": user_id,

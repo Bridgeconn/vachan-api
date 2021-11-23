@@ -707,7 +707,7 @@ def test_created_user_can_only_edit():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     response1 = client.put(UNIT_URL+source_name+"/books", json=update_data, headers=headers_auth)
     assert response1.status_code == 403
-    assert response1.json()['error'] == 'Permision Denied'
+    assert response1.json()['error'] == 'Permission Denied'
 
 def test_get_access_with_user_roles_and_apps():
     """Test get filter from apps and with users having different permissions"""

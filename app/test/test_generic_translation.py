@@ -44,7 +44,7 @@ def test_tokenize():
     #without auth
     response = client.put(UNIT_URL+'/tokens?source_language=en&include_phrases=True',
         headers=headers, json={"sentence_list":sentence_list})
-    assert response.json()['error'] == "Permision Denied"
+    assert response.json()['error'] == "Permission Denied"
     assert response.status_code == 403
     #with auth
     response = client.put(UNIT_URL+'/tokens?source_language=en&include_phrases=True',
@@ -55,7 +55,7 @@ def test_tokenize():
     response = client.put(UNIT_URL+'/tokens?source_language=en',
         headers=headers, json={"sentence_list":sentence_list[:3]})
     #without auth
-    assert response.json()['error'] == "Permision Denied"
+    assert response.json()['error'] == "Permission Denied"
     assert response.status_code == 403
     #with auth
     response = client.put(UNIT_URL+'/tokens?source_language=en',
@@ -70,7 +70,7 @@ def test_tokenize():
     response = client.put(UNIT_URL+"/tokens?source_language=en"+
         "&include_phrases=true", headers=headers,
         json={"sentence_list":sentence_list})
-    assert response.json()['error'] == "Permision Denied"
+    assert response.json()['error'] == "Permission Denied"
     assert response.status_code == 403
     #with auth
     response = client.put(UNIT_URL+"/tokens?source_language=en"+
@@ -93,7 +93,7 @@ def test_tokenize():
     response = client.put(UNIT_URL+"/tokens?source_language=en"+
         "&include_stopwords=false", headers=headers,
         json={"sentence_list":sentence_list})
-    assert response.json()['error'] == "Permision Denied"
+    assert response.json()['error'] == "Permission Denied"
     assert response.status_code == 403
     #with auth
     response = client.put(UNIT_URL+"/tokens?source_language=en"+
@@ -272,7 +272,7 @@ def test_draft_generation():
         sentence['sentenceId'] = verse_start+i
     #without auth
     response = client.put(UNIT_URL+'/draft?doc_type=usfm', headers=headers, json=sentence_list)
-    assert response.json()['error'] == "Permision Denied"
+    assert response.json()['error'] == "Permission Denied"
     assert response.status_code == 403
     #with auth
     response = client.put(UNIT_URL+'/draft?doc_type=usfm', headers=headers_auth, json=sentence_list)

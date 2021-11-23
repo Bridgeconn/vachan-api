@@ -8,7 +8,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
-from custom_exceptions import GenericException,TypeException , PermisionException,\
+from custom_exceptions import GenericException,TypeException , PermissionException,\
     UnprocessableException,NotAvailableException, AlreadyExistsException,\
         UnAuthorizedException
 import db_models
@@ -107,8 +107,8 @@ async def type_exception_handler(request, exc: TypeException):
         content={"error": exc.name, "details" : exc.detail},
     )
 
-@app.exception_handler(PermisionException)
-async def permision_exception_handler(request, exc: PermisionException):
+@app.exception_handler(PermissionException)
+async def permision_exception_handler(request, exc: PermissionException):
     '''logs and returns error details'''
     log.error("Request URL:%s %s,  from : %s",
         request.method ,request.url.path, request.client.host)

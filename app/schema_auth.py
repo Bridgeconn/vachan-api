@@ -49,7 +49,7 @@ class RegistrationOut(BaseModel):
     """registration output"""
     id:str
     email:str
-    Permisions:List[App]
+    Permissions:List[App]
 
 class RegisterResponse(BaseModel):
     """Response object of registration"""

@@ -52,7 +52,7 @@ def check_post(data: dict):
     headers_auth['Authorization'] = "Bearer"+" "+ initial_test_users['APIUser']['token']
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert response.json()['error'] == 'Permission Denied'
 
     #try with vachanAdmin
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
@@ -346,7 +346,7 @@ def test_put_default():
     assert response.json()['message'] == "Source edited successfully"
     assert_positive_get(response.json()['data'])
     assert response.json()['data']['metaData'] == \
-        {'accessPermissions': [schemas.SourcePermisions.CONTENT], 'owner': 'new owner'}
+        {'accessPermissions': [schemas.SourcePermissions.CONTENT], 'owner': 'new owner'}
 
 def test_created_user_can_only_edit():
     """source edit can do by created user and Super Admin"""
@@ -402,7 +402,7 @@ def test_created_user_can_only_edit():
 
     response = client.put(UNIT_URL, headers=headers_auth, json=data_update)
     assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert response.json()['error'] == 'Permission Denied'
 
 def test_soft_delete():
     '''Soft delete is achived by updating the active flag to Fasle'''
