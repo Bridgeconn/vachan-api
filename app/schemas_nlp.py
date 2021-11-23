@@ -278,8 +278,6 @@ class StopWordUpdateResponse(BaseModel):
 class StopWordsAdd(BaseModel):
     '''Import object for adding new stopwords in db'''
     stopWord: str = Field(..., example="और")
-    confidence: float = Field(None, example=1)
-    active : bool = Field(..., example=True)
     metaData: dict = Field(None, example={
         "type":'postposition'})
 
