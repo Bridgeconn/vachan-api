@@ -25,16 +25,9 @@ update_wrong_obj =  {
      }
     }
 add_obj = [
-  {
-    "stopWord": "क्योंकि",
-    "metaData": {
-      "type": "preposition"
-    }
-  },
-  {
-   "stopWord": "ने",
-}
-
+  "और",
+  "के",
+  "उसका"
 ]
 
 def assert_positive_get_stopwords(item):
@@ -112,6 +105,9 @@ def test_add_stopword():
     assert_positive_update_stopwords(response.json())
     for item in response.json()['data']:
         assert_positive_get_stopwords(item)
+        assert item['confidence'] == 1
+        assert item['active'] is True
+        assert item['stopWord'] in add_obj
     assert len(response.json()['data']) <= len(add_obj)
     if not response.json()['data']:
         assert response.json()['message'] == "0 stopwords added successfully"
