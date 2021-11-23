@@ -274,3 +274,16 @@ class StopWordUpdateResponse(BaseModel):
     '''Response object after updating metadata or active status'''
     message: str = Field(..., example="Stopword info updated successfully")
     data: StopWords
+
+class StopWordsAdd(BaseModel):
+    '''Import object for adding new stopwords in db'''
+    stopWord: str = Field(..., example="और")
+    confidence: float = Field(None, example=1)
+    active : bool = Field(..., example=True)
+    metaData: dict = Field(None, example={
+        "type":'postposition'})
+
+class StopWordsAddResponse(BaseModel):
+    '''Response object after adding new stopwords in db'''
+    message: str = Field(..., example="Stopwords saved successfully")
+    data:List[StopWords] = None
