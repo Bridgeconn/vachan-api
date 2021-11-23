@@ -24,6 +24,25 @@ update_wrong_obj =  {
         "type": "verb"
      }
     }
+add_obj = [
+  {
+    "stopWord": "गए",
+    "confidence": 1,
+    "active": True,
+    "metaData": {
+      "type": "postposition"
+    }
+  },
+  {
+   "stopWord": "तू",
+    "confidence": 1,
+    "active": True,
+    "metaData": {
+      "type": "postposition"
+    }
+}
+
+]
 
 def assert_positive_get_stopwords(item):
     '''Check for the properties in the normal return object'''
@@ -92,3 +111,12 @@ def test_update_stopword():
 
     response = client.put(UNIT_URL+'/hi?',headers=headers, json=update_wrong_obj)
     assert response.status_code == 404
+
+def test_add_stopword():
+    '''Positve tests for add stopwords API'''
+    response = client.post(UNIT_URL+'/hi?',headers=headers, json=add_obj)
+    assert response.status_code == 200
+    assert_positive_update_stopwords(response.json())
+    for item in response.json()['data']:
+        assert_positive_get_stopwords(item)
+    assert len(add_obj) == len(response.json()['data'])   
