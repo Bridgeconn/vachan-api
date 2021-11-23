@@ -368,5 +368,5 @@ def add_stopwords(language_code:schemas.LangCodePattern=Path(...,example="hi"),
     '''Insert provided stopwords into db and returns added data'''
     log.info('In add_stopwords')
     log.debug('language_code:%s, stopwords_list:%s',language_code, stopwords_list)
-    result = nlp_sw_crud.add_stopwords(db_, language_code, stopwords_list, user_id=10101)
-    return {"message": "Stopwords saved successfully", "data": result}
+    msg, result = nlp_sw_crud.add_stopwords(db_, language_code, stopwords_list, user_id=10101)
+    return {"message": msg, "data": result}
