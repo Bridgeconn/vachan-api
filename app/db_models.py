@@ -402,6 +402,5 @@ class StopWords(Base): # pylint: disable=too-few-public-methods
     metaData = Column('metadata', JSON)
     active = Column('active', Boolean, default=True)
     createdUser = Column('created_user', Integer)
-    createTime = Column('created_at', DateTime, onupdate=func.now())
     updatedUser = Column('last_updated_user', Integer)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
