@@ -288,9 +288,10 @@ def filter_resource_content_get(db_resource, access_tags, required_permission, u
     has_rights = True
     return has_rights, filtered_content
 ##############################################################################################
-def filter_agmt_project_get(db_resource,access_tags,required_permission, user_details):
+def filter_agmt_project_get(db_resource,access_tags,required_permission, user_details,
+    request_context):
     """filter the get for Agmt Prokect realted"""
-    has_rights = False
+    has_rights = True
     filtered_content = []
     allowed_users = []
     if not 'error' in  user_details.keys():
@@ -316,8 +317,9 @@ def filter_agmt_project_get(db_resource,access_tags,required_permission, user_de
                         user.userRole in allowed_users and \
                             not any(project == dic for dic in filtered_content):
                         filtered_content.append(project)
-
-    has_rights = True
+    if request_context['endpoint'].startswith('/v2/autographa/project/') and\
+        len(filtered_content) == 0:
+        has_rights = False
     return has_rights , filtered_content
 
 
@@ -343,7 +345,8 @@ def check_access_rights(db_:Session, required_params, db_resource=None):
         request_context['endpoint'].startswith('/v2/autographa'):
         if request_context['app'] == schema_auth.App.AG.value:
             has_rights , filtered_content  = \
-        filter_agmt_project_get(db_resource,access_tags,required_permission, user_details)
+        filter_agmt_project_get(db_resource,access_tags,required_permission, user_details,
+            request_context)
     else:
         filtered_content = None
         for tag in access_tags:
