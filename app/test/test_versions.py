@@ -311,7 +311,7 @@ def test_put_version():
                 }
     response = client.put(UNIT_URL, headers=headers_auth2, json=data)
     assert response.status_code == 403
-    assert response.json()['error'] == "Permision Denied"
+    assert response.json()['error'] == "Permission Denied"
 
     delete_user_identity(test_user_id2)
 

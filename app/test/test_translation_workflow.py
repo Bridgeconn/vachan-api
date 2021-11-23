@@ -422,7 +422,7 @@ def test_end_to_end_translation():
     # # Suggestions
 
     resp = client.post(BASE_URL+"translation/learn/alignment?source_language="+ALIGNMENT_SRC+
-    	"&target_language="+ALIGNMENT_TRG, headers=headers, json=alignment_data)
+    	"&target_language="+ALIGNMENT_TRG, headers=headers_auth, json=alignment_data)
     assert resp.status_code == 201
     # print(resp)
     # print(resp.json())
@@ -430,7 +430,7 @@ def test_end_to_end_translation():
     # tokenize after adding token "परमेश्वर" via alignment
     resp = client.put(BASE_URL+"autographa/project/suggestions?project_id="+str(project_id)+
         "&sentence_id_list=42001001",
-    	headers=headers)
+    	headers=headers_auth)
     draft = resp.json()[0]['draft']
     assert "ദൈവം" in draft
     assert "പുത്രന്‍" in draft

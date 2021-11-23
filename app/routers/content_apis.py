@@ -238,7 +238,7 @@ async def get_source(request: Request,content_type: str=Query(None, example="com
     license_code: schemas.LicenseCodePattern=Query(None,example="ISC"),
     metadata: schemas.MetaDataPattern=Query(None,
         example='{"otherName": "KJBC, King James Bible Commentaries"}'),
-    access_tag:List[schemas.SourcePermisions]=Query(None),
+    access_tag:List[schemas.SourcePermissions]=Query(None),
     active: bool = True, latest_revision: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
@@ -284,7 +284,7 @@ async def add_source(request: Request, source_obj : schemas.SourceCreate = Body(
     if len(structurals_crud.get_sources(db_, source_name = source_name)) > 0:
         raise AlreadyExistsException("%s already present"%source_name)
     if 'content' not in source_obj.accessPermissions:
-        source_obj.accessPermissions.append(schemas.SourcePermisions.CONTENT)
+        source_obj.accessPermissions.append(schemas.SourcePermissions.CONTENT)
     source_obj.metaData['accessPermissions'] = source_obj.accessPermissions
     return {'message': "Source created successfully",
     "data": structurals_crud.create_source(db_=db_, source=source_obj, source_name=source_name,
@@ -307,7 +307,7 @@ async def edit_source(request: Request,source_obj: schemas.SourceEdit = Body(...
     if len(structurals_crud.get_sources(db_, source_name = source_obj.sourceName)) == 0:
         raise NotAvailableException("Source %s not found"%(source_obj.sourceName))
     if 'content' not in source_obj.accessPermissions:
-        source_obj.accessPermissions.append(schemas.SourcePermisions.CONTENT)
+        source_obj.accessPermissions.append(schemas.SourcePermissions.CONTENT)
     source_obj.metaData['accessPermissions'] = source_obj.accessPermissions
     return {'message': "Source edited successfully",
     "data": structurals_crud.update_source(db_=db_, source=source_obj,

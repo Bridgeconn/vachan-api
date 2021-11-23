@@ -573,17 +573,17 @@ def test_agmt_projects_access_rule():
     headers_auth["app"] = "API-user"
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert response.json()['error'] == 'Permission Denied'
     post_data["projectName"] = "Test project 3"
     headers_auth["app"] = "Vachan-online or vachan-app"
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert response.json()['error'] == 'Permission Denied'
     post_data["projectName"] = "Test project 4"
     headers_auth["app"] = "VachanAdmin"
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert response.json()['error'] == 'Permission Denied'
 
     #create project by not allowed users
     post_data["projectName"] = "Test project 5"
@@ -591,19 +591,19 @@ def test_agmt_projects_access_rule():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert response.json()['error'] == 'Permission Denied'
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert response.json()['error'] == 'Permission Denied'
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert response.json()['error'] == 'Permission Denied'
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert response.json()['error'] == 'Permission Denied'
 
     #Super Admin
     SA_user_data = {
@@ -662,7 +662,7 @@ def test_agmt_projects_access_rule():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
     response2 = client.put(UNIT_URL, headers=headers_auth, json=put_data)
     assert response2.status_code == 403
-    assert response2.json()['error'] == 'Permision Denied'
+    assert response2.json()['error'] == 'Permission Denied'
 
     #project user create
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
@@ -672,24 +672,24 @@ def test_agmt_projects_access_rule():
     response = client.post(USER_URL+'?project_id='+str(project1_id)+
         '&user_id='+str(new_user_id),headers=headers_auth)
     assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert response.json()['error'] == 'Permission Denied'
     headers_auth["app"] = "Vachan-online or vachan-app"
     response = client.post(USER_URL+'?project_id='+str(project1_id)+
         '&user_id='+str(new_user_id),headers=headers_auth)
     assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert response.json()['error'] == 'Permission Denied'
     headers_auth["app"] = "API-user"
     response = client.post(USER_URL+'?project_id='+str(project1_id)+
         '&user_id='+str(new_user_id),headers=headers_auth)
     assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert response.json()['error'] == 'Permission Denied'
     #add user by not owner
     headers_auth["app"] = "Autographa"
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
     response = client.post(USER_URL+'?project_id='+str(project1_id)+
         '&user_id='+str(new_user_id),headers=headers_auth)
     assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert response.json()['error'] == 'Permission Denied'
     #add from Autograpaha by allowed user
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     post_data["projectName"] = "Test project 8"
@@ -719,7 +719,7 @@ def test_agmt_projects_access_rule():
     update_data['metaData'] = meta
     response3 = client.put(USER_URL, headers=headers_auth, json=update_data)
     assert response3.status_code == 403
-    assert response3.json()['error'] == 'Permision Denied'
+    assert response3.json()['error'] == 'Permission Denied'
     #update with owner
     post_data['projectName'] = 'Test project 1'
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
@@ -769,15 +769,15 @@ def test_get_project_access_rules():
     headers_auth["app"] = "API-user"
     response = client.get(UNIT_URL,headers=headers_auth)
     assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert response.json()['error'] == 'Permission Denied'
     headers_auth["app"] = "Vachan-online or vachan-app"
     response = client.get(UNIT_URL,headers=headers_auth)
     assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert response.json()['error'] == 'Permission Denied'
     headers_auth["app"] = "VachanAdmin"
     response = client.get(UNIT_URL,headers=headers_auth)
     assert response.status_code == 403
-    assert response.json()['error'] == 'Permision Denied'
+    assert response.json()['error'] == 'Permission Denied'
 
     #get project from Autographa with not allowed users get empty result
     headers_auth["app"] = "Autographa"

@@ -12,7 +12,7 @@ import schema_auth
 from dependencies import log
 from custom_exceptions import GenericException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
-    UnprocessableException, PermisionException
+    UnprocessableException, PermissionException
 from api_permission_map import api_permission_map
 
 
@@ -63,6 +63,11 @@ access_rules = {
         "edit-draft": ["SuperAdmin", "AgAdmin", "projectOwner", "projectMember"],
         "read-draft":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"],
         "view-project":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"]
+    },
+    "generic-translation":{
+        "read":["registeredUser"],
+        "create":["registeredUser"],
+        "process":["registeredUser"]
     },
     "research-use":{
         "read":["SuperAdmin", "BcsDeveloper"]
@@ -142,6 +147,8 @@ def get_accesstags_basedon_resourcetype(resource_type, method, db_resource):
         access_tags = ['translation-project']
     elif resource_type == schema_auth.ResourceType.USER:
         access_tags = ['user']
+    elif resource_type == schema_auth.ResourceType.TRANSLATION:
+        access_tags = ['generic-translation']
     elif resource_type == schema_auth.ResourceType.CONTENT:
         access_tags = []
         if method != 'GET':
@@ -171,7 +178,7 @@ def get_accesstags_permission(request_context, resource_type, db_, db_resource ,
         elif endpoint.startswith('/v2/user'):
             resource_type = schema_auth.ResourceType.USER
         elif endpoint.startswith("/v2/translation"):
-            resource_type = None
+            resource_type = schema_auth.ResourceType.TRANSLATION
         else:
             resource_type = schema_auth.ResourceType.CONTENT
     required_permission = api_permission_map(endpoint, request_context ,
@@ -401,7 +408,14 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             verified , filtered_content = \
                 check_access_rights(db_, required_params, db_resource)
             if not verified:
-                raise PermisionException("Access Permission Denied for the URL")
+                raise PermissionException("Access Permission Denied for the URL")
+            #calling router functions
+            response = await func(*args, **kwargs)
+        elif required_params['request_context']['endpoint'].startswith("/v2/translation"):#pylint: disable=E1126.too-many-nested-blocks
+            verified , filtered_content = \
+                check_access_rights(db_, required_params, db_resource)
+            if not verified:
+                raise PermissionException("Access Permission Denied for the URL")
             #calling router functions
             response = await func(*args, **kwargs)
         else:
@@ -454,14 +468,15 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                                         db_resource = db_resource['project_content']
                                         response = response['db_content']
                                 else:
-                                    raise PermisionException("Access Permission Denied for the URL")
+                                    raise PermissionException(
+                                        "Access Permission Denied for the URL")
                             else :
                                 response['data'].updatedUser = \
                                     required_params['user_details']["user_id"]
                     verified , filtered_content = \
                         check_access_rights(db_, required_params, db_resource)
                     if not verified:
-                        raise PermisionException("Access Permission Denied for the URL")
+                        raise PermissionException("Access Permission Denied for the URL")
                     db_.commit()#pylint: disable=E1101
                     db_.refresh(db_resource)#pylint: disable=E1101
 
@@ -496,7 +511,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                         if not filtered_content is None:
                             response = filtered_content
                     if not verified:
-                        raise PermisionException("Access Permission Denied for the URL")
+                        raise PermissionException("Access Permission Denied for the URL")
         return response
     return wrapper
 
@@ -582,19 +597,19 @@ def register_check_success(reg_response):
             "id":reg_response["identity"]["id"],
             "email":reg_response["identity"]["traits"]["email"],
             "Name":str(name_path["first"]) + " " + str(name_path["last"]),
-            "Permisions": reg_response["identity"]["traits"]["userrole"]
+            "Permissions": reg_response["identity"]["traits"]["userrole"]
         },
         "token":reg_response["session_token"]
     }
 
-    user_permision = data["registered_details"]['Permisions']
+    user_permision = data["registered_details"]['Permissions']
     switcher = {
         schema_auth.AdminRoles.AGUSER.value : schema_auth.App.AG.value,
         schema_auth.AdminRoles.VACHANUSER.value : schema_auth.App.VACHAN.value,
         schema_auth.AdminRoles.VACHANADMIN.value : schema_auth.App.VACHANADMIN.value
             }
     user_role =  switcher.get(user_permision[0], schema_auth.App.API.value)
-    data["registered_details"]['Permisions'] = [user_role]
+    data["registered_details"]['Permissions'] = [user_role]
     return data
 
 def register_exist_update_user_role(kratos_users, email, user_role, reg_req, reg_response):
@@ -609,11 +624,11 @@ def register_exist_update_user_role(kratos_users, email, user_role, reg_req, reg
                 return_data = user_role_add(current_user_id,role_list)
                 if return_data["Success"]:
                     data={
-                        "message":"User Already Registered, New Permision updated",
+                        "message":"User Already Registered, New Permission updated",
                         "registered_details":{
                             "id":current_user_id,
                             "email":email,
-                            "Permisions": return_data["role_list"]
+                            "Permissions": return_data["role_list"]
                             }
                     }
             else:
@@ -633,7 +648,7 @@ def register_flow_fail(reg_response,email,user_role,reg_req):
             #update user role for exisiting user
             data = register_exist_update_user_role(kratos_users, email,
                 user_role, reg_req, reg_response)
-            user_permision = data["registered_details"]['Permisions']
+            user_permision = data["registered_details"]['Permissions']
             conv_permission = []
             for perm in user_permision:
                 switcher = {
@@ -643,7 +658,7 @@ def register_flow_fail(reg_response,email,user_role,reg_req):
                     }
                 role =  switcher.get(perm, schema_auth.App.API.value)
                 conv_permission.append(role)
-                data["registered_details"]['Permisions'] = conv_permission
+                data["registered_details"]['Permissions'] = conv_permission
         else:
             raise HTTPException(status_code=reg_req.status_code,\
                     detail=reg_response["ui"]["messages"][0]["text"])

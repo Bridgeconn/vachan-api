@@ -301,7 +301,7 @@ class VersionEdit(BaseModel):
             }
         }
 
-class SourcePermisions(str, Enum):
+class SourcePermissions(str, Enum):
     '''To specify source access permisions'''
     CONTENT = "content"
     OPENACCESS = "open-access"
@@ -319,7 +319,7 @@ class SourceCreate(BaseModel):
     revision: str = "1"
     year: int
     license: LicenseCodePattern = "CC-BY-SA"
-    accessPermissions : List[SourcePermisions] = [SourcePermisions.CONTENT]
+    accessPermissions : List[SourcePermissions] = [SourcePermissions.CONTENT]
     metaData: dict = {}
     class Config:
         '''display example value in API documentation'''
@@ -384,7 +384,7 @@ class SourceEdit(BaseModel):
     revision: str = None
     year: int = None
     license: LicenseCodePattern = None
-    accessPermissions : List[SourcePermisions] = [SourcePermisions.CONTENT]
+    accessPermissions : List[SourcePermissions] = [SourcePermissions.CONTENT]
     metaData: dict = {}
     active: bool = None
     class Config:
