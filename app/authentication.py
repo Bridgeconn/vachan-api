@@ -254,7 +254,7 @@ def role_check_has_right(db_, role, user_details, resource_type, db_resource, *a
     return has_rights
 
 ###############################################################################################
-def filter_resource_content_get(db_resource, access_tags, required_permission, user_details):
+def filter_resource_content_get(db_resource, request_context, required_permission, user_details):
     """filter the content for get request for resource type content"""
     has_rights = False
     filtered_content = []
@@ -284,8 +284,9 @@ def filter_resource_content_get(db_resource, access_tags, required_permission, u
                         if role in allowed_users and \
                                 not any(source == dic for dic in filtered_content):
                             filtered_content.append(source)
-
-    has_rights = True
+    if request_context['endpoint'] == "/v2/sources" or \
+        len(filtered_content) > 0:
+        has_rights = True
     return has_rights, filtered_content
 ##############################################################################################
 def filter_agmt_project_get(db_resource,access_tags,required_permission, user_details,
@@ -340,7 +341,8 @@ def check_access_rights(db_:Session, required_params, db_resource=None):
     if resource_type == schema_auth.ResourceType.CONTENT and \
             request_context["method"] == 'GET':
         has_rights , filtered_content  = \
-            filter_resource_content_get(db_resource,access_tags,required_permission, user_details)
+            filter_resource_content_get(db_resource,request_context,
+            required_permission, user_details)
     elif request_context["method"] == 'GET' and\
         request_context['endpoint'].startswith('/v2/autographa'):
         if request_context['app'] == schema_auth.App.AG.value:
@@ -493,8 +495,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                         if verified and len(filtered_content) > 0 and \
                             db_resource[0].sourceName == filtered_content[0].sourceName:
                             response = response['db_content']
-                        else:
-                            response = []
+
                     elif isinstance(response,dict) and \
                         'project_content' in response.keys():
                         db_resource = []

@@ -133,7 +133,8 @@ def test_get_after_data_upload():
     # search with first letter
     #without auth
     response = client.get(UNIT_URL+source_name+'?search_word=f')
-    assert_not_available_content(response)
+    assert response.status_code == 403
+    assert response.json()["error"] == "Permission Denied"
     #with auth
     response = client.get(UNIT_URL+source_name+'?search_word=f',headers=headers_auth)
     assert response.status_code == 200

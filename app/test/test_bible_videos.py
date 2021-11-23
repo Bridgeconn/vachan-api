@@ -170,7 +170,8 @@ def test_get_after_data_upload():
     #filter by book
     #without auth
     response = client.get(UNIT_URL+source_name+'?book_code=gen')
-    assert_not_available_content(response)
+    assert response.status_code == 403
+    assert response.json()["error"] == "Permission Denied"
     #with auth
     response = client.get(UNIT_URL+source_name+'?book_code=gen',headers=headers_auth)
     assert response.status_code == 200
@@ -182,7 +183,8 @@ def test_get_after_data_upload():
 
     # filter with title
     response = client.get(UNIT_URL+source_name+'?title=Overview:%20Matthew')
-    assert_not_available_content(response)
+    assert response.status_code == 403
+    assert response.json()["error"] == "Permission Denied"
     #with auth
     response = client.get(UNIT_URL+source_name+'?title=Overview:%20Matthew',headers=headers_auth)
     assert response.status_code == 200
