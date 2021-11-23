@@ -275,13 +275,7 @@ class StopWordUpdateResponse(BaseModel):
     message: str = Field(..., example="Stopword info updated successfully")
     data: StopWords
 
-class StopWordsAdd(BaseModel):
-    '''Import object for adding new stopwords in db'''
-    stopWord: str = Field(..., example="और")
-    metaData: dict = Field(None, example={
-        "type":'postposition'})
-
 class StopWordsAddResponse(BaseModel):
     '''Response object after adding new stopwords in db'''
-    message: str = Field(..., example="Stopwords saved successfully")
+    message: str = Field(..., example="3 stopwords added successfully")
     data:List[StopWords] = None

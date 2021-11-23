@@ -79,17 +79,16 @@ def add_stopwords(db_: Session, language_code, stopwords_list, user_id=None):
     if not language_id:
         raise NotAvailableException("Language with code %s, not in database"%language_code)
     db_content = []
-    for word_dic in stopwords_list:
-        word_dic.stopWord = utils.normalize_unicode(word_dic.stopWord)
+    for word in stopwords_list:
+        word = utils.normalize_unicode(word)
         args = {"languageId":language_id,
-                "stopWord": word_dic.stopWord,
+                "stopWord": word,
                 "confidence": 1,
                 "active": True,
-                "metaData": word_dic.metaData,
                 "createdUser": user_id}
         sw_row = db_.query(db_models.StopWords).filter(
                             db_models.StopWords.languageId == language_id,
-                            db_models.StopWords.stopWord == word_dic.stopWord).first()
+                            db_models.StopWords.stopWord == word).first()
         if sw_row:
             if sw_row.confidence == 2:
                 continue
@@ -99,12 +98,11 @@ def add_stopwords(db_: Session, language_code, stopwords_list, user_id=None):
                                 "updatedUser": user_id
                               }
                 update_stmt = (update(db_models.StopWords).where(db_models.StopWords.stopWord ==
-                        word_dic.stopWord, db_models.StopWords.languageId == language_id).values
-                        (update_args))
+                        word, db_models.StopWords.languageId == language_id).values(update_args))
                 result = db_.execute(update_stmt)
                 if result.rowcount == 1:
                     row = db_.query(db_models.StopWords).filter(db_models.StopWords.stopWord ==
-                        word_dic.stopWord, db_models.StopWords.languageId == language_id).first()
+                        word, db_models.StopWords.languageId == language_id).first()
                     db_content.append({"stopWord": row.stopWord, "confidence": row.confidence,
                      "active": row.active, "metaData": row.metaData})
         else:
@@ -113,9 +111,5 @@ def add_stopwords(db_: Session, language_code, stopwords_list, user_id=None):
             db_content.append({"stopWord": new_sw_row.stopWord, "confidence": new_sw_row.confidence,
             "active": new_sw_row.active, "metaData": new_sw_row.metaData})
     db_.commit()
-    # data = []
-    # for row in db_content:
-    #     data.append({"stopWord": row.stopWord, "confidence": row.confidence, "active": row.active,
-    #         "metaData": row.metaData})
     msg = f"{len(db_content)} stopwords added successfully"
     return msg, db_content

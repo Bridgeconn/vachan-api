@@ -363,7 +363,7 @@ def update_stop_words(language_code:schemas.LangCodePattern=Path(...,example="hi
     response_model=schemas_nlp.StopWordsAddResponse, response_model_exclude_none=True,
     status_code=200, tags=['Generic Translation'])
 def add_stopwords(language_code:schemas.LangCodePattern=Path(...,example="hi"),
-    stopwords_list:List[schemas_nlp.StopWordsAdd]=Body(...),
+    stopwords_list:List[str]=Body(..., example=["और", "के", "उसका"]),
      db_:Session=Depends(get_db)):
     '''Insert provided stopwords into db and returns added data'''
     log.info('In add_stopwords')
