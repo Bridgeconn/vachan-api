@@ -1,89 +1,5 @@
 version: '3.9'
 services:
- kratos-migrate:
-    image: oryd/kratos:v0.7.0-alpha.1
-    environment:
-      - DSN=postgres://kratos:secret@postgresd-test:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
-    volumes:
-      - type: volume
-        source: kratos-sqlite-test
-        target: /var/lib/sqlite
-        read_only: false
-      - type: bind
-        source: ./Kratos_config/email-password
-        target: /etc/config/kratos
-    command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
-    restart: on-failure
-    networks:
-      - my-test-network
-
- postgresd-test:
-    image: postgres:9.6
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_USER=kratos
-      - POSTGRES_PASSWORD=secret
-      - POSTGRES_DB=kratos
-      - POSTGRES_HOST_AUTH_METHOD=trust
-    networks:
-      - my-test-network
-
- kratos:
-  image: oryd/kratos:v0.7.0-alpha.1
-  ports:
-    - '4433:4433' # public
-    - '4434:4434' # admin
-  restart: unless-stopped
-  environment:
-    - DSN=postgres://kratos:secret@postgresd-test:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
-    - LOG_LEVEL=trace
-  command: serve -c /etc/config/kratos/kratos.yml --dev --watch-courier
-  volumes:
-    # - type: volume
-    #   source: kratos-sqlite
-    #   target: /var/lib/sqlite
-    #   read_only: false
-    - type: bind
-      source: ./Kratos_config/email-password
-      target: /etc/config/kratos
-  expose:
-    - 4434
-    - 4433
-  networks:
-    - my-test-network
-
- vachan-db-test:
-  image: postgres:12.7
-  healthcheck:
-   test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "postgres" ]
-   timeout: 45s
-   interval: 10s
-   retries: 10
-  restart: always
-  environment: 
-   - POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
-   - POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
-   - POSTGRES_DB=${VACHAN_POSTGRES_DATABASE:-vachan_test}
-   - POSTGRES_HOST_AUTH_METHOD=trust
-  logging:
-   options:
-    max-size: 10m
-    max-file: "3"
-  expose:
-   - 5432
-  ports:
-   # HOST:CONTAINER
-   - "5433:5432"
-  networks:
-   - my-test-network
-  volumes: 
-   # - ${VACHAN_POSTGRES_DATA_DIR:-./pgdata}:/var/lib/postgresql/data
-   - vachan-db-test-vol:/var/lib/postgresql/data
-   - ./db/csvs:/csvs
-   - ./db/seed_DB.sql:/docker-entrypoint-initdb.d/seed_DB.sql
-
-# vachan-api app
  vachan-api:
   build:
    context: .
@@ -100,21 +16,14 @@ services:
    - VACHAN_POSTGRES_PORT=5432
    - VACHAN_KRATOS_PUBLIC_URL=http://kratos:4433/
    - VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
-   - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME}
-   - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD}
+   - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME:-super@admin.com}
+   - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD:-Just4Complexity!}
    - VACHAN_TEST_MODE="False"
    - VACHAN_LOGGING_LEVEL=INFO
   command: python -m pytest
   volumes:
-   # - ./app:/app/app
    - logs-test-vol:/app/logs
   restart: "no"
-  links:
-   - vachan-db-test
-   - kratos
-  depends_on:
-   - kratos-migrate
-   - postgresd-test
   expose:
    - 8000
   networks:

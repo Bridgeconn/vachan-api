@@ -32,6 +32,8 @@ Is all goes well you should be able to get proper outputs at `http://localhost`,
 
 #### To run tests
 
+`docker-compose -f run-test-dependencies.yml up`
+
 `docker-compose -f run-tests.yml --build --force-recreate run vachan-api`
 
 #### To deploy on server
