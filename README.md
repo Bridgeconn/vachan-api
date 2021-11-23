@@ -20,11 +20,29 @@ Implemented Using
 
 ```git checkout version-2```
 
+#### To start app locally
+
 ```docker-compose up```
 or
 ```sudo -E docker-compose up```
 
-Refer the section below to configure environment variables as required. 
+Refer the section below to configure environment variables as required. Use build and other flags if there is code change.
+Is all goes well you should be able to get proper outputs at `http://localhost`, `http://localhost/docs`,
+`http://127.0.0.1:4434/identities` and connect to postgresDB at `localhost`, `5433`
+
+#### To run tests
+
+`docker-compose -f run-tests.yml --build --force-recreate run vachan-api`
+
+#### To deploy on server
+
+This would connect the app to the centrally hosted Kratos user DB.
+
+`docker-compose -f server-deploy.yml --build --force-recreate up`
+
+To start with a fresh DB, stop and remove containers and remove volume `vachan-db-vol`.
+To clear all old logs, similarly remove the volume `logs-vol`.
+To clear all user data, remove the volume `kratos-sqlite`, on local or on the central server.
 
 ## How to set up locally for development and testing
 
@@ -83,7 +101,6 @@ Edit the following contents appropriatetly and paste to the `.bashrc` file
   export VACHAN_LOGGING_LEVEL="WARNING"
   export VACHAN_KRATOS_ADMIN_URL="http://127.0.0.1:4434/"
   export VACHAN_KRATOS_PUBLIC_URL="http://127.0.0.1:4433/"
-  export VACHAN_TEST_MODE="False"
   export VACHAN_SUPER_USERNAME="<super-admin-emial-id>"
   export VACHAN_SUPER_PASSWORD="<a-strong-password>"
 ```
