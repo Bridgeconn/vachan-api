@@ -72,8 +72,8 @@ def update_stopword_info(db_: Session, language_code, sw_json):
 
 def add_stopwords(db_: Session, language_code, stopwords_list, user_id=None):
     '''insert given stopwords into look up table for a given language'''
-    query = db_.query(db_models.Language.languageId)
-    language_id = query.filter(func.lower(db_models.Language.code) == language_code.lower()).first()
+    language_id = db_.query(db_models.Language.languageId).filter(
+        func.lower(db_models.Language.code) == language_code.lower()).first()
     language_id = language_id[0]
     print("user_id", user_id)
     if not language_id:
@@ -83,8 +83,8 @@ def add_stopwords(db_: Session, language_code, stopwords_list, user_id=None):
         word_dic.stopWord = utils.normalize_unicode(word_dic.stopWord)
         args = {"languageId":language_id,
                 "stopWord": word_dic.stopWord,
-                "confidence":word_dic.confidence,
-                "active": word_dic.active,
+                "confidence": 1,
+                "active": True,
                 "metaData": word_dic.metaData,
                 "createdUser": user_id}
         sw_row = db_.query(db_models.StopWords).filter(
@@ -94,24 +94,28 @@ def add_stopwords(db_: Session, language_code, stopwords_list, user_id=None):
             if sw_row.confidence == 2:
                 continue
             if sw_row.confidence < 1:
-                update_args = {"confidence": word_dic.confidence,
-                                "updatedUser": user_id,
-                }
+                update_args = {"confidence": 1,
+                                "active" : True,
+                                "updatedUser": user_id
+                              }
                 update_stmt = (update(db_models.StopWords).where(db_models.StopWords.stopWord ==
                         word_dic.stopWord, db_models.StopWords.languageId == language_id).values
                         (update_args))
-                db_.execute(update_stmt)
-                row = db_.query(db_models.StopWords).filter(db_models.StopWords.stopWord ==
-                    word_dic.stopWord, db_models.StopWords.languageId == language_id).first()
-                db_content.append(row)
+                result = db_.execute(update_stmt)
+                if result.rowcount == 1:
+                    row = db_.query(db_models.StopWords).filter(db_models.StopWords.stopWord ==
+                        word_dic.stopWord, db_models.StopWords.languageId == language_id).first()
+                    db_content.append({"stopWord": row.stopWord, "confidence": row.confidence,
+                     "active": row.active, "metaData": row.metaData})
         else:
             new_sw_row = db_models.StopWords(**args)
             db_.add(new_sw_row)
-            db_content.append(new_sw_row)
-        db_.flush()
+            db_content.append({"stopWord": new_sw_row.stopWord, "confidence": new_sw_row.confidence,
+            "active": new_sw_row.active, "metaData": new_sw_row.metaData})
     db_.commit()
-    data = []
-    for row in db_content:
-        data.append({"stopWord": row.stopWord, "confidence": row.confidence, "active": row.active,
-            "metaData": row.metaData})
-    return data
+    # data = []
+    # for row in db_content:
+    #     data.append({"stopWord": row.stopWord, "confidence": row.confidence, "active": row.active,
+    #         "metaData": row.metaData})
+    msg = f"{len(db_content)} stopwords added successfully"
+    return msg, db_content
