@@ -468,7 +468,8 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                                         db_resource = db_resource['project_content']
                                         response = response['db_content']
                                 else:
-                                    raise PermissionException("Access Permission Denied for the URL")
+                                    raise PermissionException(
+                                        "Access Permission Denied for the URL")
                             else :
                                 response['data'].updatedUser = \
                                     required_params['user_details']["user_id"]
