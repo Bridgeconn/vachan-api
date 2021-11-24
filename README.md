@@ -27,7 +27,7 @@ or
 ```sudo -E docker-compose up```
 
 Refer the section below to configure environment variables as required. Use build and other flags if there is code change.
-Is all goes well you should be able to get proper outputs at `http://localhost`, `http://localhost/docs`,
+If all goes well you should be able to get proper outputs at `http://localhost`, `http://localhost/docs`,
 `http://127.0.0.1:4434/identities` and connect to postgresDB at `localhost`, `5433`
 
 #### To run tests
