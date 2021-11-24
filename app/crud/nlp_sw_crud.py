@@ -6,6 +6,7 @@ from sqlalchemy import func, update
 from custom_exceptions import NotAvailableException
 
 import db_models
+from crud import utils
 
 #Based on sqlalchemy
 #pylint: disable=W0102,E1101,W0143
@@ -68,3 +69,47 @@ def update_stopword_info(db_: Session, language_code, sw_json):
     data = {"stopWord": row.stopWord, "confidence": row.confidence, "active": row.active,
             "metaData": row.metaData}
     return data
+
+def add_stopwords(db_: Session, language_code, stopwords_list, user_id=None):
+    '''insert given stopwords into look up table for a given language'''
+    language_id = db_.query(db_models.Language.languageId).filter(
+        func.lower(db_models.Language.code) == language_code.lower()).first()
+    language_id = language_id[0]
+    print("user_id", user_id)
+    if not language_id:
+        raise NotAvailableException("Language with code %s, not in database"%language_code)
+    db_content = []
+    for word in stopwords_list:
+        word = utils.normalize_unicode(word)
+        args = {"languageId":language_id,
+                "stopWord": word,
+                "confidence": 1,
+                "active": True,
+                "createdUser": user_id}
+        sw_row = db_.query(db_models.StopWords).filter(
+                            db_models.StopWords.languageId == language_id,
+                            db_models.StopWords.stopWord == word).first()
+        if sw_row:
+            if sw_row.confidence == 2:
+                continue
+            if sw_row.confidence < 1:
+                update_args = {"confidence": 1,
+                                "active" : True,
+                                "updatedUser": user_id
+                              }
+                update_stmt = (update(db_models.StopWords).where(db_models.StopWords.stopWord ==
+                        word, db_models.StopWords.languageId == language_id).values(update_args))
+                result = db_.execute(update_stmt)
+                if result.rowcount == 1:
+                    row = db_.query(db_models.StopWords).filter(db_models.StopWords.stopWord ==
+                        word, db_models.StopWords.languageId == language_id).first()
+                    db_content.append({"stopWord": row.stopWord, "confidence": row.confidence,
+                     "active": row.active, "metaData": row.metaData})
+        else:
+            new_sw_row = db_models.StopWords(**args)
+            db_.add(new_sw_row)
+            db_content.append({"stopWord": new_sw_row.stopWord, "confidence": new_sw_row.confidence,
+            "active": new_sw_row.active, "metaData": new_sw_row.metaData})
+    db_.commit()
+    msg = f"{len(db_content)} stopwords added successfully"
+    return msg, db_content

@@ -358,3 +358,15 @@ def update_stop_words(language_code:schemas.LangCodePattern=Path(...,example="hi
     log.debug('language_code:%s, sw_info:%s',language_code, sw_info)
     sw_data = nlp_sw_crud.update_stopword_info(db_, language_code, sw_info)
     return { "message": "Stopword info updated successfully", "data":sw_data }
+
+@router.post('/v2/lookup/stopwords/{language_code}',
+    response_model=schemas_nlp.StopWordsAddResponse, response_model_exclude_none=True,
+    status_code=200, tags=['Generic Translation'])
+def add_stopwords(language_code:schemas.LangCodePattern=Path(...,example="hi"),
+    stopwords_list:List[str]=Body(..., example=["और", "के", "उसका"]),
+     db_:Session=Depends(get_db)):
+    '''Insert provided stopwords into db and returns added data'''
+    log.info('In add_stopwords')
+    log.debug('language_code:%s, stopwords_list:%s',language_code, stopwords_list)
+    msg, result = nlp_sw_crud.add_stopwords(db_, language_code, stopwords_list, user_id=10101)
+    return {"message": msg, "data": result}
