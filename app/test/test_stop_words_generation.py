@@ -50,28 +50,28 @@ def assert_positive_update_stopwords(out):
 
 def test_get_stop_words():
     '''Positve tests for get stopwords API'''
-    default_response = client.get(UNIT_URL+'/aa?', headers=headers)
+    default_response = client.get(UNIT_URL+'/hi?', headers=headers)
     assert default_response.status_code == 200
     assert isinstance(default_response.json(), list)
     for item in default_response.json():
         assert_positive_get_stopwords(item)
 
-    response = client.get(UNIT_URL+'/aa?include_system_defined=False', headers=headers)
+    response = client.get(UNIT_URL+'/hi?include_system_defined=False', headers=headers)
     assert response.status_code == 200
     sw_types = {sw_dic['stopwordType'] for sw_dic in response.json()}
     assert "system defined" not in sw_types
 
-    response = client.get(UNIT_URL+'/aa?include_user_defined=False', headers=headers)
+    response = client.get(UNIT_URL+'/hi?include_user_defined=False', headers=headers)
     assert response.status_code == 200
     sw_types = {sw_dic['stopwordType'] for sw_dic in response.json()}
     assert "user defined" not in sw_types
 
-    response = client.get(UNIT_URL+'/aa?include_auto_generated=False', headers=headers)
+    response = client.get(UNIT_URL+'/hi?include_auto_generated=False', headers=headers)
     assert response.status_code == 200
     sw_types = {sw_dic['stopwordType'] for sw_dic in response.json()}
     assert "auto generated" not in sw_types
 
-    response = client.get(UNIT_URL+'/aa?only_active=True', headers=headers)
+    response = client.get(UNIT_URL+'/hi?only_active=True', headers=headers)
     assert response.status_code == 200
     out = {sw_dic['active'] for sw_dic in response.json()}
     assert False not in out
@@ -83,19 +83,19 @@ def test_get_notavailable_code():
 
 def test_update_stopword():
     '''Positve tests for update stopwords API'''
-    response = client.put(UNIT_URL+'/aa?',headers=headers, json=update_obj1)
+    response = client.put(UNIT_URL+'/hi?',headers=headers, json=update_obj1)
     assert response.status_code == 200
     assert_positive_update_stopwords(response.json())
     assert_positive_get_stopwords(response.json()['data'])
     assert response.json()['message'] == "Stopword info updated successfully"
 
-    response = client.put(UNIT_URL+'/aa?',headers=headers, json=update_obj2)
+    response = client.put(UNIT_URL+'/hi?',headers=headers, json=update_obj2)
     assert response.status_code == 200
     assert_positive_update_stopwords(response.json())
     assert_positive_get_stopwords(response.json()['data'])
     assert response.json()['message'] == "Stopword info updated successfully"
 
-    response = client.put(UNIT_URL+'/aa?',headers=headers, json=update_wrong_obj)
+    response = client.put(UNIT_URL+'/hi?',headers=headers, json=update_wrong_obj)
     assert response.status_code == 404
 
 def test_add_stopword():
