@@ -9,7 +9,9 @@ services:
   environment:
     - DSN=${VACHAN_AUTH_DATABASE}
     - LOG_LEVEL=trace
-  command: serve -c /etc/config/kratos/kratos.yml --dev --watch-courier
+    - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS}
+    - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL}
+  command: serve -c /etc/config/kratos/kratos.yml --watch-courier
   volumes:
     # - type: volume
     #   source: kratos-sqlite
