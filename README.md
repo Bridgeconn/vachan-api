@@ -34,19 +34,19 @@ Is all goes well you should be able to get proper outputs at `http://localhost`,
 
 `docker-compose -f run-test-dependencies.yml up`
 
-`docker-compose -f run-tests.yml --build --force-recreate run vachan-api`
+`docker-compose -f run-tests.yml up --build --force-recreate`
 
 #### To deploy on server
 
 This would connect the app to the centrally hosted Kratos user DB.
 
-`docker-compose -f server-deploy.yml --build --force-recreate up`
+`docker-compose -f server-deploy.yml up --build --force-recreate`
 
 To start with a fresh DB, stop and remove containers and remove volume `vachan-db-vol`.
 To clear all old logs, similarly remove the volume `logs-vol`.
 To clear all user data, remove the volume `kratos-sqlite`, on local or on the central server.
 
-## How to set up locally for development and testing
+## How to set up locally for development and testing(without docker)
 
 ### Clone git repo
 
@@ -113,6 +113,17 @@ After editing .bashrc file they may need to run
 `source ~/.bashrc`
 
 to refresh the bashrc file or logout and login to refresh it
+
+### Install usfm-grammar
+
+Set up node and npm and install [usfm-grammar](https://www.npmjs.com/package/usfm-grammar) library globally
+
+`npm install -g usfm-grammar@2.2.0`
+
+
+### Set up a Kratos instance
+
+Refer instructions and use config files [here](./Kratos_config) and run a Kratos server on localhost
 
 ### Run the app
 
