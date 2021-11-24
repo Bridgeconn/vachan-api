@@ -39,6 +39,7 @@ Is all goes well you should be able to get proper outputs at `http://localhost`,
 #### To deploy on server
 
 This would connect the app to the centrally hosted Kratos user DB.
+Need to set VACHAN_AUTH_DATABASE as environment variable.
 
 `docker-compose -f server-deploy.yml up --build --force-recreate`
 
