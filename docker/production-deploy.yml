@@ -11,6 +11,7 @@ services:
     - LOG_LEVEL=trace
     - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS}
     - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL}
+    - SERVE_PUBLIC_BASE_URL=http://${VACHAN_DOMAIN:-kratos}:4433
   command: serve -c /etc/config/kratos/kratos.yml --watch-courier
   volumes:
     # - type: volume
@@ -59,8 +60,8 @@ services:
 # vachan-api app
  vachan-api:
   build:
-   context: .
-   dockerfile: Dockerfile
+   context: ../
+   dockerfile: ./docker/Dockerfile
   healthcheck:
    timeout: 45s
    interval: 10s
@@ -96,7 +97,7 @@ services:
    context: ./nginx
    dockerfile: Dockerfile
   environment:
-   domain: ""
+   - domain=${VACHAN_DOMAIN:-localhost}
   ports:
    - 80:80
    - 443:443
