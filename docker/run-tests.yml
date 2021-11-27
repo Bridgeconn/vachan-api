@@ -2,8 +2,8 @@ version: '3.9'
 services:
  vachan-api:
   build:
-   context: .
-   dockerfile: Dockerfile
+   context: ../
+   dockerfile: ./docker/Dockerfile
   healthcheck:
    timeout: 45s
    interval: 10s
