@@ -16,6 +16,7 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+      - run: cd docker
       - name: start dependencies
         run: docker-compose -f run-test-dependencies.yml up -d
       - name: test
