@@ -16,9 +16,8 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-      - run: cd docker
       - name: start dependencies
-        run: docker-compose -f run-test-dependencies.yml up -d
+        run: docker-compose -f docker/run-test-dependencies.yml up -d
       - name: test
-        run: docker-compose -f run-tests.yml run vachan-api  
+        run: docker-compose -f docker/run-tests.yml run vachan-api  
         
