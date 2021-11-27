@@ -14,11 +14,10 @@ Implemented Using
 
 ## Starting App with docker
 
-```git clone https://github.com/Bridgeconn/vachan-api.git```
+```git clone -b version-2 https://github.com/Bridgeconn/vachan-api.git```
 
-```cd vachan-api```
+```cd vachan-api/docker```
 
-```git checkout version-2```
 
 #### To start app locally
 
@@ -39,9 +38,11 @@ If all goes well you should be able to get proper outputs at `http://localhost`,
 #### To deploy on server
 
 This would connect the app to the centrally hosted Kratos user DB.
+(To start that DB, use the [this](./Kratos_congif/database.yml) docker-compose file.)
+
 Need to set VACHAN_AUTH_DATABASE, VACHAN_SUPPORT_EMAIL_CREDS and VACHAN_SUPPORT_EMAIL as environment variable along with other required values.
 
-`docker-compose -f server-deploy.yml up --build --force-recreate`
+`docker-compose -f production-deploy.yml up --build --force-recreate`
 
 To start with a fresh DB, stop and remove containers and remove volume `vachan-db-vol`.
 To clear all old logs, similarly remove the volume `logs-vol`.
