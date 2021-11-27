@@ -17,5 +17,3 @@ RUN npm --version
 RUN npm install -g usfm-grammar@2.2.0
 
 USER root
-
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
