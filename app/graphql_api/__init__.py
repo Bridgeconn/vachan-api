@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 import graphene
 from starlette.requests import Request
 from starlette.graphql import GraphQLApp
+from graphql.execution.executors.asyncio import AsyncioExecutor
 
 from graphql_api import queries, mutations
 from dependencies import get_db
@@ -10,7 +11,7 @@ from dependencies import get_db
 router = APIRouter()
 
 schema=graphene.Schema(query=queries.Query,mutation=mutations.VachanMutations)
-graphql_app = GraphQLApp(schema)
+graphql_app = GraphQLApp(schema , executor_class=AsyncioExecutor)
 
 @router.post('/graphql')
 async def single_endpoint(request: Request, db_session=Depends(get_db)):

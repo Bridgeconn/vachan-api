@@ -4,26 +4,12 @@ import graphene
 from crud import structurals_crud, contents_crud, projects_crud, nlp_crud
 from graphql_api import types, utils
 import schemas_nlp
+from routers import content_apis
+from authentication import get_user_or_none_graphql
 
 #Pylint error :- Query class have all resolver functions
 #pylint: disable=R0201
 #pylint: disable=too-many-arguments,too-many-public-methods
-# class Query(graphene.ObjectType):
-#     '''All defined queries'''
-#     languages = graphene.List(types.Language,
-#         description="Query languages in vachan-db",
-#         search_word=graphene.String(),
-#         language_name=graphene.String(), language_code=graphene.String(
-#             description="language code as per bcp47(usually 2 letter code)"),
-#         skip=graphene.Int(), limit=graphene.Int())
-#     def resolve_languages(self, info,
-#         search_word=None, language_code=None, language_name=None,
-#         skip=0, limit=100):
-#         '''resolver'''
-#         db_ = info.context["request"].db_session
-#         return structurals_crud.get_languages(db_, language_code=language_code,
-#             language_name=language_name, search_word=search_word,
-#             skip=skip, limit=limit)
 class Query(graphene.ObjectType):
     '''All defined queries'''
     languages = graphene.List(types.Language,
@@ -60,6 +46,9 @@ class Query(graphene.ObjectType):
         skip=0, limit=100):
         '''resolver'''
         db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = "/v2/contents"
         return structurals_crud.get_content_types(db_, content_type, skip, limit)
 
     licenses = graphene.List(types.License,
