@@ -6,7 +6,7 @@ from app import schema_auth
 
 client = TestClient(app)
 
-def gql_request(query, operation="query", variables=None):
+def gql_request(query, operation="query", variables=None, headers=None):
     '''common format for gql reqests with test db session in context'''
     url = '/graphql'
     post_body = {
@@ -14,7 +14,8 @@ def gql_request(query, operation="query", variables=None):
         "operation": operation,
         "variables": variables
     }
-    # headers = {"contentType": "application/json", "accept": "application/json"}
+    if headers is None:
+        headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(url, headers=headers, json=post_body)
     return response.json()
 

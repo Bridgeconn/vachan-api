@@ -8,8 +8,7 @@ from .conftest import initial_test_users
 
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json"}
-headers =  {"contentType": "application/json",
-                "accept": "application/json"}
+headers = {"contentType": "application/json", "accept": "application/json"}
 
 def test_get_default():
     '''positive test case, without optional params'''
@@ -44,7 +43,7 @@ def test_get_default():
   }
 }
     """
-    check_skip_limit_gql(query_check,"contentTypes")    
+    check_skip_limit_gql(query_check,"contentTypes")
 
 def test_get_notavailable_content_type():
     ''' request a not available content, Ensure there is not partial matching'''
@@ -80,10 +79,12 @@ def test_post_default():
         }
     """
     operation="mutation"
+    #Registered user can only add content type
     #without auth
     executed = gql_request(query=query, operation=operation, variables=variables)
-
-    executed = gql_request(query=query, operation=operation, variables=variables)
+    assert "errors" in executed.keys()
+    #with auth
+    executed = gql_request(query=query, operation=operation, variables=variables, headers=headers_auth)
     assert executed["data"]["addContentType"]["message"] == "Content type created successfully"
     assert isinstance(executed, Dict)
     data = executed["data"]["addContentType"]["data"]
@@ -110,7 +111,7 @@ def test_post_incorrectdatatype1():
         }
     """
     operation="mutation"
-    executed = gql_request(query=query, operation=operation, variables=variables)
+    executed = gql_request(query=query, operation=operation, variables=variables, headers=headers_auth)
     assert "errors" in executed.keys()
 
 def test_post_incorrectdatatype2():
@@ -132,7 +133,7 @@ def test_post_incorrectdatatype2():
         }
     """
     operation="mutation"
-    executed = gql_request(query=query, operation=operation, variables=variables)
+    executed = gql_request(query=query, operation=operation, variables=variables, headers=headers_auth)
     assert "errors" in executed.keys()
 
 def test_post_missingvalue_contenttype():
@@ -153,7 +154,7 @@ def test_post_missingvalue_contenttype():
         }
     """
     operation="mutation"
-    executed = gql_request(query=query, operation=operation, variables=variables)
+    executed = gql_request(query=query, operation=operation, variables=variables, headers=headers_auth)
     assert "errors" in executed.keys()
 
 def test_post_incorrectvalue_contenttype():
@@ -176,5 +177,5 @@ def test_post_incorrectvalue_contenttype():
         }
     """
     operation="mutation"
-    executed = gql_request(query=query, operation=operation, variables=variables)
+    executed = gql_request(query=query, operation=operation, variables=variables, headers=headers_auth)
     assert "errors" in executed.keys()
