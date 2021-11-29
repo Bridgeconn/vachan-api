@@ -116,6 +116,19 @@ async def get_user_or_none(token: str = Depends(optional_oauth2_scheme)):
     user_details = get_current_user_data(token)
     return user_details
 
+#Get user or none for graphql
+#get token for graphql requests
+def get_user_or_none_graphql(info):
+    """get token and user details for graphql"""
+    req = info.context["request"]
+    if 'Authorization' in req.headers:
+        token = req.headers['Authorization']
+        token = token.split(' ')[1]
+    else:
+        token = None
+    user_details = get_current_user_data(token)
+    return user_details, req
+
 #pylint: disable=unused-argument
 def project_owner(db_:Session, db_resource, user_id):
     '''checks if the user is the owner of the given project'''

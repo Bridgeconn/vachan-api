@@ -14,7 +14,7 @@ def gql_request(query, operation="query", variables=None):
         "operation": operation,
         "variables": variables
     }
-    headers = {"contentType": "application/json", "accept": "application/json"}
+    # headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(url, headers=headers, json=post_body)
     return response.json()
 
