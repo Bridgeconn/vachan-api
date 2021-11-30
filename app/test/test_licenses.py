@@ -3,21 +3,22 @@ from . import client, check_default_get
 from . import assert_input_validation_error, assert_not_available_content
 from .test_auth_basic import register,delete_user_identity,logout_user,\
     login,SUPER_PASSWORD,SUPER_USER
+from .conftest import initial_test_users
 
 UNIT_URL = '/v2/licenses'
 headers = {"contentType": "application/json", "accept": "application/json"}
 
 #create a normal user for this module test
-test_user_data = {
-        "email": "abc@gmail.com",
-        "password": "passwordabc@1"
-    }
-response = register(test_user_data,apptype='API-user')
-test_user_id = [response.json()["registered_details"]["id"]]
-test_user_token = response.json()["token"]
+# test_user_data = {
+#         "email": "abc@gmail.com",
+#         "password": "passwordabc@1"
+#     }
+# response = register(test_user_data,apptype='API-user')
+# test_user_id = [response.json()["registered_details"]["id"]]
+# initial_test_users['APIUser2']['token'] = response.json()["token"]
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
-                'Authorization': "Bearer"+" "+test_user_token
+                'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
 
 def assert_positive_get(item):
@@ -97,6 +98,7 @@ def test_get():
 
 def test_post():
     '''positive test case, checking for correct return object'''
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser2']['token']
     data = {
       "license": "A very very long license text",
       "name": "Test License version 1",
@@ -305,7 +307,5 @@ def test_put():
     assert resp1.status_code == 200
     assert len(resp1.json()) - len(resp2.json()) == 1
 
-    #delete id list
-    delete_user_identity(test_user_id)
 
     
