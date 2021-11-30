@@ -1034,10 +1034,31 @@ class UpdateUserRole(graphene.Mutation):
             (user_roles_args,schema_auth.UserRole)
         response = await auth_api.userrole(request=req, role_data = schema_model,
         user_details=user_details, db_=db_)
-        print("respo-------------------->",response)
-        # role_list = graphene.List(response["role_list"])
         message = response['message']
         return UpdateUserRole(message=message,role_list=response["role_list"])
+
+#User identity delete
+class DeleteIdentity(graphene.Mutation):
+    """Mutation class for delete identiy of user"""
+    class Arguments:#pylint: disable=too-few-public-methods,E1101
+        """Arguments declaration for the mutation"""
+        identity = types.UserIdentity()
+
+    message = graphene.String()
+#pylint: disable=R0201
+    async def mutate(self,info,identity):
+        '''resolve'''
+        db_ = info.context["request"].db_session
+        #Auth and access rules
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "DELETE"
+        req.scope['path'] = "/v2/user/delete-identity"
+        schema_model = utils.convert_graphene_obj_to_pydantic\
+            (identity,schema_auth.UserIdentity)
+        response = await auth_api.delete_user(request=req, user = schema_model,
+        user_details=user_details, db_=db_)
+        message = response
+        return DeleteIdentity(message= message)
 
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
@@ -1074,3 +1095,4 @@ class VachanMutations(graphene.ObjectType):
     add_alignment = AddAlignment.Field()
     register = Register.Field()
     update_userrole = UpdateUserRole.Field()
+    delete_identity = DeleteIdentity.Field()

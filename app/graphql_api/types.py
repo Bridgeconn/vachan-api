@@ -696,4 +696,6 @@ class UserroleInput(graphene.InputObjectType):
     userid = graphene.String(required=True)
     roles = graphene.List(AdminRoles)
 
-    
+class UserIdentity(graphene.InputObjectType):
+    """input for user identity delete"""
+    userid = graphene.String(required=True)
