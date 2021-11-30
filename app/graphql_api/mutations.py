@@ -1013,6 +1013,32 @@ class Register(graphene.Mutation):
         token = response['token'] if "token" in response else ""
         return Register(message=message,registered_details=register,token = token)
 
+#User Role update
+class UpdateUserRole(graphene.Mutation):
+    """Mutation class for Update User role"""
+    class Arguments:#pylint: disable=too-few-public-methods,E1101
+        """Arguments declaration for the mutation"""
+        user_roles_args = types.UserroleInput()
+
+    message = graphene.String()
+    role_list = graphene.List(types.AdminRoles)
+#pylint: disable=R0201
+    async def mutate(self,info,user_roles_args):
+        '''resolve'''
+        db_ = info.context["request"].db_session
+        #Auth and access rules
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = "/v2/user/userrole"
+        schema_model = utils.convert_graphene_obj_to_pydantic\
+            (user_roles_args,schema_auth.UserRole)
+        response = await auth_api.userrole(request=req, role_data = schema_model,
+        user_details=user_details, db_=db_)
+        print("respo-------------------->",response)
+        # role_list = graphene.List(response["role_list"])
+        message = response['message']
+        return UpdateUserRole(message=message,role_list=response["role_list"])
+
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
     '''All defined mutations'''
@@ -1047,3 +1073,4 @@ class VachanMutations(graphene.ObjectType):
     add_gloss = AddGloss.Field()
     add_alignment = AddAlignment.Field()
     register = Register.Field()
+    update_userrole = UpdateUserRole.Field()

@@ -680,3 +680,20 @@ class LoginResponse(graphene.ObjectType):
     """Login Response Object"""
     message = graphene.String()
     token = graphene.String()
+
+class AdminRoles(graphene.Enum):
+    '''Admin Roles'''
+    SUPERADMIN = 'SuperAdmin'
+    VACHANADMIN = 'VachanAdmin'
+    AGADMIN = 'AgAdmin'
+    AGUSER = 'AgUser'
+    VACHANUSER = 'VachanUser'
+    APIUSER = 'APIUser'
+    BCSDEV = 'BcsDeveloper'
+
+class UserroleInput(graphene.InputObjectType):
+    """input for user role update"""
+    userid = graphene.String(required=True)
+    roles = graphene.List(AdminRoles)
+
+    
