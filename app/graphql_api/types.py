@@ -655,3 +655,23 @@ class InputEditCommentary(graphene.InputObjectType):
     source_name = graphene.String(required=True,\
         description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
     commentary_data = graphene.List(CommentaryEditDict)
+
+class App(graphene.Enum):
+    '''available choices for permission'''
+    AG = "Autographa"
+    VACHAN = "Vachan-online or vachan-app"
+    VACHANADMIN = "VachanAdmin"
+    API = "API-user"
+
+class RegisterInput(graphene.InputObjectType):
+    """Register Input"""
+    email = graphene.String(required=True)
+    password = graphene.String(required=True)
+    firstname = graphene.String()
+    lastname = graphene.String()
+
+class RegisterResponse(graphene.ObjectType):
+    """Response object of Registration"""
+    id = graphene.String(required=True)
+    email = graphene.String(required=True)
+    permissions = graphene.List(App)

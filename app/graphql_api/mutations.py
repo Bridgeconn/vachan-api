@@ -3,7 +3,8 @@
 import graphene
 import schemas
 import schemas_nlp
-from routers import translation_apis , content_apis
+import schema_auth
+from routers import translation_apis , content_apis, auth_api
 from crud import structurals_crud,contents_crud,projects_crud,nlp_crud
 from graphql_api import types, utils
 from authentication import get_user_or_none_graphql
@@ -978,6 +979,40 @@ class AddAlignment(graphene.Mutation):
         message = "Added to Alignments"
         return AddAlignment(message=message,data=dict_content_list)
 
+######################### Authentication ############################
+#Register
+class Register(graphene.Mutation):
+    """Mutation class for Register User"""
+    class Arguments:#pylint: disable=too-few-public-methods,E1101
+        """Arguments declaration for the mutation"""
+        app_type = types.App(default_value = types.App.API)
+        registration_args = types.RegisterInput()
+
+    registered_details = graphene.Field(types.RegisterResponse)
+    message = graphene.String()
+    token  = graphene.String()
+#pylint: disable=R0201
+    async def mutate(self,info,registration_args,app_type):
+        '''resolve'''
+        db_ = info.context["request"].db_session
+        #Auth and access rules
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "POST"
+        req.scope['path'] = "/v2/user/register"
+        schema_model = utils.convert_graphene_obj_to_pydantic\
+            (registration_args,schema_auth.Registration)
+        response = await auth_api.register(request=req, register_details = schema_model,
+        user_details=user_details, db_=db_, app_type = app_type)
+        result = response['registered_details']
+        register = types.RegisterResponse(
+                id = result['id'],
+                email = result['email'],
+                permissions = result['Permissions']
+        )
+        message = response['message']
+        token = response['token'] if "token" in response else ""
+        return Register(message=message,registered_details=register,token = token)
+
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
     '''All defined mutations'''
@@ -1011,3 +1046,4 @@ class VachanMutations(graphene.ObjectType):
     #suggest_translation = TranslationSuggetion.Field()
     add_gloss = AddGloss.Field()
     add_alignment = AddAlignment.Field()
+    register = Register.Field()
