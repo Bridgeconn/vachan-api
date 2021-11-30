@@ -4,7 +4,7 @@ import graphene
 from crud import structurals_crud, contents_crud, projects_crud, nlp_crud
 from graphql_api import types, utils
 import schemas_nlp
-from routers import content_apis
+from routers import content_apis, auth_api
 from authentication import get_user_or_none_graphql
 
 #Pylint error :- Query class have all resolver functions
@@ -434,3 +434,16 @@ class Query(graphene.ObjectType):
                 for item in sentence_list]
         return nlp_crud.obtain_draft(new_list,
             doc_type=schemas_nlp.TranslationDocumentType.TEXT)
+
+    login = graphene.Field(types.LoginResponse,
+        description="Login User for getting Token",
+        user_email = graphene.String(required=True),
+        password = graphene.String(required=True))
+    def resolve_login(self, info, user_email , password):
+        """resolver"""
+        db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = "/v2/user/login"
+        return auth_api.login(user_email= user_email,password= password,
+            request= req ,user_details = user_details, db_= db_)

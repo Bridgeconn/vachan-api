@@ -731,9 +731,9 @@ def user_login_kratos(user_email,password):#pylint: disable=R1710
     if flow_res.status_code == 200:
         flow_res = json.loads(flow_res.content)
         flow_id = flow_res["ui"]["action"]
-
-        cred_data = {"password_identifier": user_email, "password": password.get_secret_value()
-                    , "method": "password"}
+        password = password.get_secret_value() if not isinstance(password, str) else password
+        cred_data = {"password_identifier": user_email,
+            "password": password, "method": "password"}
         login_req = requests.post(flow_id, json=cred_data)
         login_req_content = json.loads(login_req.content)
         if login_req.status_code == 200:

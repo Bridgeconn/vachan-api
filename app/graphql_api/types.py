@@ -675,3 +675,8 @@ class RegisterResponse(graphene.ObjectType):
     id = graphene.String(required=True)
     email = graphene.String(required=True)
     permissions = graphene.List(App)
+
+class LoginResponse(graphene.ObjectType):
+    """Login Response Object"""
+    message = graphene.String()
+    token = graphene.String()
