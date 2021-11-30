@@ -563,9 +563,10 @@ class AuthHandler():
 
         return user_details
 
-    def kratos_logout(self,auth:HTTPAuthorizationCredentials= Security(security)):
+#kratos Logout
+def kratos_logout(recieve_token):
         """logout function"""
-        recieve_token = auth.credentials
+        # recieve_token = auth.credentials
         payload = {"session_token": recieve_token}
         headers = {}
         headers["Accept"] = "application/json"

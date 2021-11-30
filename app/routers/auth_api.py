@@ -6,10 +6,10 @@ import schema_auth
 import schemas
 from dependencies import log , get_db
 from authentication import user_register_kratos,user_login_kratos,user_role_add ,\
-     delete_identity ,AuthHandler, get_auth_access_check_decorator , get_user_or_none
+     delete_identity , get_auth_access_check_decorator , get_user_or_none, kratos_logout
 
 router = APIRouter()
-auth_handler = AuthHandler()
+# auth_handler = AuthHandler()
 
 #Authentication apis
 @router.post('/v2/user/register',response_model=schema_auth.RegisterResponse,
@@ -46,11 +46,12 @@ async def login(user_email: str,password: types.SecretStr,
 responses={403: {"model": schemas.ErrorResponse},
 401: {"model": schemas.ErrorResponse}}
 ,tags=["Authentication"])
-def logout(message = Depends(auth_handler.kratos_logout)):
+def logout(token:str):
     '''Logout
     * Loging out will end the expiry of a token even if the time period not expired.
     * Successful login will return a token for user for a time period'''
     log.info('In User Logout')
+    message = kratos_logout(token)
     log.debug('logout:%s',message)
     return message
 

@@ -5,7 +5,7 @@ from crud import structurals_crud, contents_crud, projects_crud, nlp_crud
 from graphql_api import types, utils
 import schemas_nlp
 from routers import content_apis, auth_api
-from authentication import get_user_or_none_graphql
+from authentication import get_user_or_none_graphql, kratos_logout
 
 #Pylint error :- Query class have all resolver functions
 #pylint: disable=R0201
@@ -447,3 +447,13 @@ class Query(graphene.ObjectType):
         req.scope['path'] = "/v2/user/login"
         return auth_api.login(user_email= user_email,password= password,
             request= req ,user_details = user_details, db_= db_)
+
+    logout = graphene.String(
+        description="Logout user",
+        token = graphene.String(required=True))
+    def resolve_logout(self, info, token):
+        """resolve"""
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = "/v2/user/logout"
+        return kratos_logout(token)
