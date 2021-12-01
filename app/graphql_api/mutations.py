@@ -9,7 +9,7 @@ from crud import structurals_crud,contents_crud,projects_crud,nlp_crud
 from graphql_api import types, utils
 from authentication import get_user_or_none_graphql
 #Data classes and graphql classes have few methods
-#pylint: disable=E1101
+#pylint: disable=E1101,R1726
 ############ ADD NEW Language #################
 class AddLanguage(graphene.Mutation):
     """Mutation class for Add Language"""
