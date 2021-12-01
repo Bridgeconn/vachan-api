@@ -16,7 +16,7 @@ jobs:
         host: ${{ secrets.VACHAN_DO_HOST }}
         username: ${{ secrets.VACHAN_DO_USERNAME }}
         password: ${{ secrets.PASSWORD }}
-        # port: ${{ secrets.PORT }}
+        port: 22
         script: cd /home/kavitha/vachan-api |
           git pull origin version-2 |
           cd docker |
