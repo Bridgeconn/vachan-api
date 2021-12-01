@@ -17,9 +17,10 @@ jobs:
         username: ${{ secrets.VACHAN_DO_USERNAME }}
         password: ${{ secrets.PASSWORD }}
         port: 22
-        script: cd /home/kavitha/vachan-api |
-          git pull origin version-2 |
-          cd docker |
+        script: |
+          cd /home/kavitha/vachan-api
+          git pull origin version-2
+          cd docker
           sudo docker-compose --env-file prod.env -f production-deploy.yml up --force-recreate --build -d
 
 
