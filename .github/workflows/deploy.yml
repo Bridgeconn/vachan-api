@@ -15,7 +15,7 @@ jobs:
       with:
         host: ${{ secrets.VACHAN_DO_HOST }}
         username: ${{ secrets.VACHAN_DO_USERNAME }}
-        password: ${{ secrets.PASSWORD }}
+        key: ${{ secrets.SSH_KEY }}
         port: 22
         script: |
           cd /home/kavitha/vachan-api
