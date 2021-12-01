@@ -4,6 +4,7 @@ from pydantic import types
 from sqlalchemy.orm import Session
 import schema_auth
 import schemas
+from custom_exceptions import NotAvailableException
 from dependencies import log , get_db
 from authentication import user_register_kratos,user_login_kratos,user_role_add ,\
      delete_identity , get_auth_access_check_decorator , get_user_or_none, kratos_logout
@@ -46,13 +47,20 @@ async def login(user_email: str,password: types.SecretStr,
 responses={403: {"model": schemas.ErrorResponse},
 401: {"model": schemas.ErrorResponse}}
 ,tags=["Authentication"])
-def logout(token:str):
+def logout(request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+    db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Logout
     * Loging out will end the expiry of a token even if the time period not expired.
     * Successful login will return a token for user for a time period'''
     log.info('In User Logout')
-    message = kratos_logout(token)
-    log.debug('logout:%s',message)
+    if 'Authorization' in request.headers:
+        token = request.headers['Authorization']
+        token = token = token.split(' ')[1]
+        message = kratos_logout(token)
+        log.debug('logout:%s',message)
+    else:
+        raise NotAvailableException(
+        "The provided Session Token could not be found, is invalid, or otherwise malformed")
     return message
 
 @router.put('/v2/user/userrole',response_model=schema_auth.UseroleResponse,

@@ -3,9 +3,8 @@ import os
 import json
 from functools import wraps
 import requests
-from fastapi import HTTPException, Security , Depends
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer ,\
-    OAuth2PasswordBearer
+from fastapi import HTTPException, Depends
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 import db_models
 import schema_auth
@@ -534,57 +533,57 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
 
 ######################################### Auth Functions ####################
 
-#Class handles the session validation and logout
-class AuthHandler():
-    """Authentication class"""
-    security = HTTPBearer()
-    #pylint: disable=R0201
-    def kratos_session_validation(self,auth:HTTPAuthorizationCredentials = Security(security)):
-        """kratos session validity check"""
-        recieve_token = auth.credentials
-        user_details = {"user_id":"", "user_roles":""}
-        headers = {}
-        headers["Accept"] = "application/json"
-        headers["Authorization"] = f"Bearer {recieve_token}"
+# #Class handles the session validation and logout
+# class AuthHandler():#pylint: disable=too-few-public-methods
+#     """Authentication class"""
+#     security = HTTPBearer()
+#     #pylint: disable=R0201
+#     def kratos_session_validation(self,auth:HTTPAuthorizationCredentials = Security(security)):
+#         """kratos session validity check"""
+#         recieve_token = auth.credentials
+#         user_details = {"user_id":"", "user_roles":""}
+#         headers = {}
+#         headers["Accept"] = "application/json"
+#         headers["Authorization"] = f"Bearer {recieve_token}"
 
-        user_data = requests.get(USER_SESSION_URL, headers=headers)
-        data = json.loads(user_data.content)
+#         user_data = requests.get(USER_SESSION_URL, headers=headers)
+#         data = json.loads(user_data.content)
 
-        if user_data.status_code == 200:
-            user_details["user_id"] = data["identity"]["id"]
-            if "userrole" in data["identity"]["traits"]:
-                user_details["user_roles"] = data["identity"]["traits"]["userrole"]
+#         if user_data.status_code == 200:
+#             user_details["user_id"] = data["identity"]["id"]
+#             if "userrole" in data["identity"]["traits"]:
+#                 user_details["user_roles"] = data["identity"]["traits"]["userrole"]
 
-        elif user_data.status_code == 401:
-            raise UnAuthorizedException(detail=data["error"])
+#         elif user_data.status_code == 401:
+#             raise UnAuthorizedException(detail=data["error"])
 
-        elif user_data.status_code == 500:
-            raise GenericException(data["error"])
+#         elif user_data.status_code == 500:
+#             raise GenericException(data["error"])
 
-        return user_details
+#         return user_details
 
 #kratos Logout
 def kratos_logout(recieve_token):
-        """logout function"""
-        # recieve_token = auth.credentials
-        payload = {"session_token": recieve_token}
-        headers = {}
-        headers["Accept"] = "application/json"
-        headers["Content-Type"] = "application/json"
-        logout_url = PUBLIC_BASE_URL + "logout/api"
-        response = requests.delete(logout_url, headers=headers, json=payload)
-        if response.status_code == 204:
-            data = {"message":"Successfully Logged out"}
-        elif response.status_code == 400:
-            data = json.loads(response.content)
-        elif response.status_code == 403:
-            data = "The provided Session Token could not be found,"+\
-                 "is invalid, or otherwise malformed"
-            raise HTTPException(status_code=403, detail=data)
-        elif response.status_code == 500:
-            data = json.loads(response.content)
-            raise GenericException(data["error"])
-        return data
+    """logout function"""
+    # recieve_token = auth.credentials
+    payload = {"session_token": recieve_token}
+    headers = {}
+    headers["Accept"] = "application/json"
+    headers["Content-Type"] = "application/json"
+    logout_url = PUBLIC_BASE_URL + "logout/api"
+    response = requests.delete(logout_url, headers=headers, json=payload)
+    if response.status_code == 204:
+        data = {"message":"Successfully Logged out"}
+    elif response.status_code == 400:
+        data = json.loads(response.content)
+    elif response.status_code == 403:
+        data = "The provided Session Token could not be found,"+\
+                "is invalid, or otherwise malformed"
+        raise HTTPException(status_code=403, detail=data)
+    elif response.status_code == 500:
+        data = json.loads(response.content)
+        raise GenericException(data["error"])
+    return data
 
 #get all or single user details
 def get_all_or_one_kratos_users(rec_user_id=None):

@@ -120,9 +120,10 @@ def assign_roles(data,user_id,role_list):
 def logout_user(token):
     """logout a user"""
     headers = {"contentType": "application/json",
-                "accept": "application/json"
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+token
             }
-    response = client.get(LOGOUT_URL+"?token="+token, headers=headers)
+    response = client.get(LOGOUT_URL,headers=headers)
     return response
 
 #--------------------------------------------test starts--------------------------------------

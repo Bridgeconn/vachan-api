@@ -985,7 +985,7 @@ class Register(graphene.Mutation):
     """Mutation class for Register User"""
     class Arguments:#pylint: disable=too-few-public-methods,E1101
         """Arguments declaration for the mutation"""
-        app_type = types.App(default_value = types.App.API)
+        app_type = types.App(default_value=types.App.API.value)
         registration_args = types.RegisterInput()
 
     registered_details = graphene.Field(types.RegisterResponse)
@@ -1057,7 +1057,7 @@ class DeleteIdentity(graphene.Mutation):
             (identity,schema_auth.UserIdentity)
         response = await auth_api.delete_user(request=req, user = schema_model,
         user_details=user_details, db_=db_)
-        message = response
+        message = response["message"]
         return DeleteIdentity(message= message)
 
 ########## ALL MUTATIONS FOR API ########

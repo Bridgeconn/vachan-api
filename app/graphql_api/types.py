@@ -670,13 +670,13 @@ class RegisterInput(graphene.InputObjectType):
     firstname = graphene.String()
     lastname = graphene.String()
 
-class RegisterResponse(graphene.ObjectType):
+class RegisterResponse(graphene.ObjectType):#pylint: disable=too-few-public-methods
     """Response object of Registration"""
     id = graphene.String(required=True)
     email = graphene.String(required=True)
     permissions = graphene.List(App)
 
-class LoginResponse(graphene.ObjectType):
+class LoginResponse(graphene.ObjectType):#pylint: disable=too-few-public-methods
     """Login Response Object"""
     message = graphene.String()
     token = graphene.String()
