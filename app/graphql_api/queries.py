@@ -93,14 +93,16 @@ class Query(graphene.ObjectType):
         access_tag = graphene.List(types.SourcePermissions),
         active=graphene.Boolean(), latest_revision=graphene.Boolean(),
         skip=graphene.Int(), limit=graphene.Int())
-    def resolve_contents(self, info, content_type=None, version_abbreviation=None,
+    def resolve_contents(self, info, content_type=None, version_abbreviation=None,#pylint: disable=too-many-locals
         revision=None, language_code=None, license_code=None, active=True,
         latest_revision=True, skip=0, limit=100,metadata=None,
         access_tag= None):
         '''resolver'''
         if access_tag:
-            permission_list = [perm for perm in types.SourcePermissions.__enum__]
-            access_tag = [perm_tag for perm_tag in permission_list for tag in access_tag if tag == perm_tag.value]    
+            # permission_list = [perm for perm in types.SourcePermissions.__enum__]
+            permission_list = list(types.SourcePermissions.__enum__)#pylint: disable=no-member
+            access_tag = [perm_tag for perm_tag in permission_list for tag in
+                access_tag if tag == perm_tag.value]
         # print("------------------------------>>>",access_tag)
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
@@ -473,7 +475,7 @@ class Query(graphene.ObjectType):
 
     #Source Get-Sentence Extract Text Contents
     extract_text_contents = graphene.List(types.Sentence,
-        description="""A generic API for all content type tables to get just the text 
+        description="""A generic API for all content type tables to get just the text
         contents of that table that could be used for translation, as corpus for NLP 
         operations like SW identification.If source_name is provided, only that filter 
         will be considered over content_type & language""",

@@ -5,7 +5,7 @@ import schemas
 import schemas_nlp
 import schema_auth
 from routers import translation_apis , content_apis, auth_api
-from crud import structurals_crud,contents_crud,projects_crud,nlp_crud
+from crud import contents_crud,projects_crud,nlp_crud
 from graphql_api import types, utils
 from authentication import get_user_or_none_graphql
 #Data classes and graphql classes have few methods
