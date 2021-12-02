@@ -90,16 +90,27 @@ class Query(graphene.ObjectType):
         language_code=graphene.String(
             description="language code as per bcp47(usually 2 letter code)"),
         license_code=graphene.String(),
+        access_tag = graphene.List(types.SourcePermissions),
         active=graphene.Boolean(), latest_revision=graphene.Boolean(),
         skip=graphene.Int(), limit=graphene.Int())
     def resolve_contents(self, info, content_type=None, version_abbreviation=None,
         revision=None, language_code=None, license_code=None, active=True,
-        latest_revision=True, skip=0, limit=100):
+        latest_revision=True, skip=0, limit=100,metadata=None,
+        access_tag= None):
         '''resolver'''
+        if access_tag:
+            permission_list = [perm for perm in types.SourcePermissions.__enum__]
+            access_tag = [perm_tag for perm_tag in permission_list for tag in access_tag if tag == perm_tag.value]    
+        # print("------------------------------>>>",access_tag)
         db_ = info.context["request"].db_session
-        results =  structurals_crud.get_sources(db_, content_type, version_abbreviation,
-        revision=revision,language_code=language_code, license_code=license_code,
-        latest_revision=latest_revision,active=active, skip=skip, limit=limit)
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = "/v2/sources"
+        results = content_apis.get_source(request=req, content_type=content_type,
+        version_abbreviation=version_abbreviation, revision=revision, language_code=language_code
+        ,license_code=license_code, metadata=metadata, access_tag=access_tag, active=active,
+        latest_revision=latest_revision, skip=skip, limit=limit, user_details=user_details,
+        db_=db_)
         return results
 
     bible_books = graphene.List(types.BibleBook,

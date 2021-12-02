@@ -375,6 +375,14 @@ class InputEditVersion(graphene.InputObjectType):
     revision = graphene.Int()
     metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String")
 
+class SourcePermissions(graphene.Enum):
+    '''To specify source access permisions'''
+    CONTENT = "content"
+    OPENACCESS = "open-access"
+    PUBLISHABLE = "publishable"
+    DOWNLOADABLE = "downloadable"
+    DERIVABLE = "derivable"
+
 class InputAddSource(graphene.InputObjectType):
     """Add Source Input"""
     contentType  = graphene.String(required=True)
@@ -387,7 +395,11 @@ class InputAddSource(graphene.InputObjectType):
     year = graphene.Int(required=True)
     license = graphene.String(default_value = "CC-BY-SA",\
         description="pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
-    metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String")
+    accessPermissions = graphene.List(SourcePermissions,
+        default_value = [SourcePermissions.CONTENT.value])
+    metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String",
+        default_value = {})
+    active = graphene.Boolean(default_value = True)
 
 class InputEditSource(graphene.InputObjectType):
     """Edit Source Input"""
@@ -399,7 +411,10 @@ class InputEditSource(graphene.InputObjectType):
     revision = graphene.String(description="default: 1")
     year = graphene.Int()
     license = graphene.String(description="pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
-    metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String")
+    accessPermissions = graphene.List(SourcePermissions,
+        default_value = [SourcePermissions.CONTENT.value])
+    metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String",
+        default_value = {})
     active = graphene.Boolean()
 
 class InputBibleDict(graphene.InputObjectType):

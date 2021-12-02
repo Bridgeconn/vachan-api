@@ -238,14 +238,19 @@ class AddSource(graphene.Mutation):
     message = graphene.String()
     data = graphene.Field(types.Source)
 #pylint: disable=R0201
-    def mutate(self,info,source_arg):
+    async def mutate(self,info,source_arg):
         """resolve"""
         db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "POST"
+        req.scope['path'] = "/v2/sources"
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (source_arg,schemas.SourceCreate)
-        source_name = schema_model.language + "_" + schema_model.version + "_" +\
-            schema_model.revision + "_" + schema_model.contentType
-        result =structurals_crud.create_source(db_,schema_model,source_name,user_id = None)
+        # source_name = schema_model.language + "_" + schema_model.version + "_" +\
+        #     schema_model.revision + "_" + schema_model.contentType
+        response = await content_apis.add_source(request=req,source_obj=schema_model,
+        user_details=user_details, db_=db_)
+        result = response['data']
         source_var = types.Source(
             sourceName = result.sourceName,
             contentType = result.contentType,
@@ -256,7 +261,7 @@ class AddSource(graphene.Mutation):
             metaData = result.metaData,
             active = result.active
         )
-        message = "Source created successfully"
+        message = response['message']
         return AddSource(message=message,data=source_var)
 
 ########## Edit Sources ########
@@ -269,12 +274,18 @@ class EditSource(graphene.Mutation):
     message = graphene.String()
     data = graphene.Field(types.Source)
 #pylint: disable=R0201
-    def mutate(self,info,source_arg):
+    async def mutate(self,info,source_arg):
         """resolve"""
         db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = "/v2/sources"
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (source_arg,schemas.SourceEdit)
-        result =structurals_crud.update_source(db_,schema_model,user_id = None)
+        response = await content_apis.edit_source(request=req, source_obj=schema_model,
+        user_details=user_details, db_=db_)
+        result = response['data']
+        # result =structurals_crud.update_source(db_,schema_model,user_id = None)
         source_var = types.Source(
             sourceName = result.sourceName,
             contentType = result.contentType,
@@ -285,8 +296,8 @@ class EditSource(graphene.Mutation):
             metaData = result.metaData,
             active = result.active
         )
-        message = "Source edited successfully"
-        return AddSource(message=message,data=source_var)
+        message = response['message']
+        return EditSource(message=message,data=source_var)
 
 ########## Add Bible books ########
 class AddBible(graphene.Mutation):

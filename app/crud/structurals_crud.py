@@ -196,7 +196,6 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
     source_name = kwargs.get("source_name",None)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
-
     query = db_.query(db_models.Source)
     if content_type:
         query = query.filter(db_models.Source.contentType.has(contentType = content_type.strip()))
