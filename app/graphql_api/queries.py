@@ -470,3 +470,27 @@ class Query(graphene.ObjectType):
         response = auth_api.logout(request=req,
             user_details=user_details, db_=db_)
         return response["message"]
+
+    #Source Get-Sentence Extract Text Contents
+    extract_text_contents = graphene.List(types.Sentence,
+        description="""A generic API for all content type tables to get just the text 
+        contents of that table that could be used for translation, as corpus for NLP 
+        operations like SW identification.If source_name is provided, only that filter 
+        will be considered over content_type & language""",
+        source_name=graphene.String(required=True),
+        books = graphene.List(graphene.String,description="3 letter code like, gen, mat etc"),
+        language_code=graphene.String(
+                description="language code as per bcp47(usually 2 letter code)"),
+        content_type=graphene.String(),skip=graphene.Int(), limit=graphene.Int())
+    def resolve_extract_text_contents(self, info, source_name, books, language_code,
+        content_type, skip, limit):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = "/v2/sources/get-sentence"
+        response = content_apis.extract_text_contents(request=req,
+            source_name=source_name, books=books, language_code=language_code,
+            content_type=content_type, skip=skip, limit=limit,
+            user_details= user_details, db_=db_)
+        return response
