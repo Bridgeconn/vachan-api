@@ -112,7 +112,7 @@ def check_soft_delete(unit_url, check_post, data, delete_data , headers):
     get_response3 = client.get(unit_url+source_name+'?active=false',headers=headers)
     assert len(get_response3.json()) == len(delete_data)
 
-def check_skip_limit_gql(query,api_name):
+def check_skip_limit_gql(query,api_name,headers=None):
     '''All tests for the skip and limit parameter of an API endpoint graphql'''
 
    #checking skip and limit
@@ -123,11 +123,13 @@ def check_skip_limit_gql(query,api_name):
     var2 = {
   "skip": 1,
   "limit": 3
-}
-    executed = gql_request(query=query, operation="query", variables=var1)
+}   
+    if headers is None:
+        headers = {"contentType": "application/json", "accept": "application/json"}
+    executed = gql_request(query=query, operation="query", variables=var1,headers=headers)
     assert isinstance(executed, Dict)
     if len(executed["data"][api_name]) >1:
-        executed2 = gql_request(query=query, operation="query", variables=var2)
+        executed2 = gql_request(query=query, operation="query", variables=var2,headers=headers)
         assert isinstance(executed2, Dict)
         assert executed["data"][api_name][1] == executed2["data"][api_name][0]
         assert len(executed["data"][api_name]) <= 3
@@ -139,7 +141,7 @@ def check_skip_limit_gql(query,api_name):
   "limit": 10
 }
 
-    executed3 = gql_request(query=query, operation="query", variables=var3)
+    executed3 = gql_request(query=query, operation="query", variables=var3,headers=headers)
     assert_not_available_content_gql(executed3["data"][api_name])
 
     # skip should be an integer
@@ -147,8 +149,8 @@ def check_skip_limit_gql(query,api_name):
   "skip": "abc",
   "limit": 10
 }
-    query4 = gql_request(query=query, operation="query", variables=var4)
-    executed4 = gql_request(query4)
+    query4 = gql_request(query=query, operation="query", variables=var4,headers=headers)
+    executed4 = gql_request(query4,headers=headers)
     assert "errors" in executed4.keys()
 
     # skip should be a positive integer
@@ -156,15 +158,15 @@ def check_skip_limit_gql(query,api_name):
   "skip": -5,
   "limit": 10
 }
-    query5 = gql_request(query=query, operation="query", variables=var5)
-    executed5 = gql_request(query5)
+    query5 = gql_request(query=query, operation="query", variables=var5,headers=headers)
+    executed5 = gql_request(query5,headers=headers)
     assert "errors" in executed5.keys()
 
     var6 = {
   "skip": 0,
   "limit":0
 }
-    executed6 = gql_request(query=query, operation="query", variables=var6)
+    executed6 = gql_request(query=query, operation="query", variables=var6,headers=headers)
     assert isinstance(executed6, Dict)
     assert executed6["data"][api_name] == None
 
@@ -173,7 +175,7 @@ def check_skip_limit_gql(query,api_name):
   "skip": "abc",
   "limit": 10
 }
-    executed7 = gql_request(query=query, operation="query", variables=var7)
+    executed7 = gql_request(query=query, operation="query", variables=var7,headers=headers)
     assert "errors" in executed7.keys()
 
     # limit should be a positive integer
@@ -181,7 +183,7 @@ def check_skip_limit_gql(query,api_name):
   "skip": 0,
   "limit": -1
 }
-    executed8 = gql_request(query=query, operation="query", variables=var8)
+    executed8 = gql_request(query=query, operation="query", variables=var8,headers=headers)
     assert "errors" in executed8.keys()
 
 def assert_not_available_content_gql(item):

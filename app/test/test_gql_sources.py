@@ -1,5 +1,7 @@
 """Test cases for Sources in GQL"""
 from typing import Dict
+
+from app.graphql_api import types
 #pylint: disable=E0401
 from .test_sources import assert_positive_get
 from .test_gql_versions import GLOBAL_QUERY as version_query
@@ -8,6 +10,12 @@ from .test_gql_versions import check_post as version_add
 #pylint: disable=R0914
 #pylint: disable=R0915
 from . import check_skip_limit_gql, gql_request,assert_not_available_content_gql
+from .conftest import initial_test_users
+from . test_gql_auth_basic import login,SUPER_PASSWORD,SUPER_USER
+
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
+headers = {"contentType": "application/json", "accept": "application/json"}
 
 SOURCE_GLOBAL_VARIABLES = {
   "object": {
@@ -59,10 +67,17 @@ SOURCE_GLOBAL_QUERY = """
     }
     }
     """
+headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']    
 
 def check_post(query,variables):
     """positive post test"""
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    #without auth
     executed = gql_request(query=query,operation="mutation", variables=variables)
+    assert "errors" in executed
+    #with auth
+    executed = gql_request(query=query,operation="mutation", variables=variables,
+      headers=headers_auth)
     assert isinstance(executed, Dict)
     assert executed["data"]["addSource"]["message"] == "Source created successfully"
     item =executed["data"]["addSource"]["data"]
@@ -91,7 +106,7 @@ def test_post_default():
   }
 }
     """
-    check_skip_limit_gql(query_check,"contents")
+    check_skip_limit_gql(query_check,"contents",headers_auth)
 
 def test_post_wrong_version():
     '''Negative test with not available version or revision'''
@@ -116,7 +131,8 @@ def test_post_wrong_version():
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
     }
     }
-    executed1 = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables1)
+    executed1 = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables1,
+      headers=headers_auth)
     assert isinstance(executed1, Dict)
     assert "errors" in executed1.keys()
 
@@ -132,7 +148,8 @@ def test_post_wrong_version():
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
     }
     }
-    executed2 = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables2)
+    executed2 = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables2,
+      headers=headers_auth)
     assert isinstance(executed2, Dict)
     assert "errors" in executed2.keys()
 
@@ -161,7 +178,8 @@ def test_post_wrong_lang():
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
     }
     }
-    executed = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables)
+    executed = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables,
+      headers=headers_auth)
     assert isinstance(executed, Dict)
     assert "errors" in executed.keys()
 
@@ -186,7 +204,8 @@ def test_post_wrong_content():
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
     }
     }
-    executed = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables)
+    executed = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables,
+      headers=headers_auth)
     assert isinstance(executed, Dict)
     assert "errors" in executed.keys()
 
@@ -202,7 +221,8 @@ def test_post_wrong_content():
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
     }
     }
-    executed = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables2)
+    executed = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables2,
+      headers=headers_auth)
     assert isinstance(executed, Dict)
     assert "errors" in executed.keys()
 
@@ -219,7 +239,8 @@ def test_post_wrong_year():
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
     }
     }
-    executed = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables)
+    executed = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables,
+    headers=headers_auth)
     assert isinstance(executed, Dict)
     assert "errors" in executed.keys()
 
@@ -236,7 +257,8 @@ def test_post_wrong_metadata():
         "metaData": "{\"owner\"=\"someone\",\"access-key\"=\"123xyz\"}"
     }
     }
-    executed = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables)
+    executed = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables,
+      headers=headers_auth)
     assert isinstance(executed, Dict)
     assert "errors" in executed.keys()
 
@@ -253,7 +275,8 @@ def test_post_missing_mandatory_info():
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
     }
     }
-    executed = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables)
+    executed = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables,
+      headers=headers_auth)
     assert isinstance(executed, Dict)
     assert "errors" in executed.keys()
 
@@ -268,7 +291,8 @@ def test_post_missing_mandatory_info():
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
     }
     }
-    executed2 = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables2)
+    executed2 = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables2,
+      headers=headers_auth)
     assert isinstance(executed2, Dict)
     assert "errors" in executed2.keys()
 
@@ -283,7 +307,8 @@ def test_post_missing_mandatory_info():
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
     }
     }
-    executed3 = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables3)
+    executed3 = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables3,
+      headers=headers_auth)
     assert isinstance(executed3, Dict)
     assert "errors" in executed3.keys()
 
@@ -298,7 +323,8 @@ def test_post_missing_mandatory_info():
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
     }
     }
-    executed4 = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables4)
+    executed4 = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables4,
+      headers=headers_auth)
     assert isinstance(executed4, Dict)
     assert "errors" in executed4.keys()
 
@@ -343,7 +369,8 @@ def test_post_duplicate():
     }
     }
     check_post(SOURCE_GLOBAL_QUERY,variables)
-    executed = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables)
+    executed = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables,
+      headers=headers_auth)
     assert isinstance(executed, Dict)
     assert "errors" in executed.keys()
 
@@ -386,7 +413,7 @@ SOURCE_GET = """
 def test_get_empty():
     '''Test get before adding data to table. Usually done on freshly set up test DB.
     If the testing is done on a DB that already has some data, the response wont be empty.'''
-    executed = gql_request(query=SOURCE_GET)
+    executed = gql_request(query=SOURCE_GET,headers=headers_auth)
     assert isinstance(executed, Dict)
     if len(executed["data"]["contents"]) == 0:
         assert_not_available_content_gql(executed["data"]["contents"])
@@ -405,7 +432,7 @@ def test_get_wrong_values():
     }
     }
     """
-    executed = gql_request(query=get_query)
+    executed = gql_request(query=get_query,headers=headers_auth)
     assert isinstance(executed, Dict)
     assert "errors" in executed.keys()
 
@@ -420,7 +447,7 @@ def test_get_wrong_values():
     }
     }
     """
-    executed2 = gql_request(query=get_query2)
+    executed2 = gql_request(query=get_query2,headers=headers_auth)
     assert isinstance(executed2, Dict)
     assert "errors" in executed2.keys()
 
@@ -435,7 +462,7 @@ def test_get_wrong_values():
   }
 }
     """
-    executed3 = gql_request(query=get_query3)
+    executed3 = gql_request(query=get_query3,headers=headers_auth)
     assert isinstance(executed3, Dict)
     assert_not_available_content_gql(executed3["data"]["contents"])
 
@@ -475,7 +502,11 @@ def test_get_after_adding_data():
         variables["object"]['language'] = lang
         check_post(SOURCE_GLOBAL_QUERY,variables)
 
+    #without auth
     executed = gql_request(query=SOURCE_GET)
+    assert len(executed["data"]["contents"]) == 0
+    #with auth
+    executed = gql_request(query=SOURCE_GET,headers=headers_auth)
     assert isinstance(executed, Dict)
     assert len(executed["data"]["contents"]) > 0
     items = executed["data"]["contents"]
@@ -518,7 +549,7 @@ def test_get_after_adding_data():
   }
 }
     """
-    executed1 = gql_request(query=query1)
+    executed1 = gql_request(query=query1,headers=headers_auth)
     assert isinstance(executed1, Dict)
     assert len(executed1["data"]["contents"]) >= 3
     items = executed1["data"]["contents"]
@@ -561,7 +592,7 @@ def test_get_after_adding_data():
   }
 }
     """
-    executed2 = gql_request(query=query2)
+    executed2 = gql_request(query=query2,headers=headers_auth)
     assert isinstance(executed2, Dict)
     assert len(executed2["data"]["contents"]) >= 3
     items = executed2["data"]["contents"]
@@ -604,7 +635,7 @@ def test_get_after_adding_data():
   }
 }
     """
-    executed3 = gql_request(query=query3)
+    executed3 = gql_request(query=query3,headers=headers_auth)
     assert isinstance(executed3, Dict)
     assert len(executed3["data"]["contents"]) >= 3
     items = executed3["data"]["contents"]
@@ -647,7 +678,7 @@ def test_get_after_adding_data():
   }
 }
     """
-    executed4 = gql_request(query=query4)
+    executed4 = gql_request(query=query4,headers=headers_auth)
     assert isinstance(executed4, Dict)
     assert len(executed4["data"]["contents"]) >= 9
     items = executed4["data"]["contents"]
@@ -690,7 +721,7 @@ def test_get_after_adding_data():
   }
 }
     """
-    executed5 = gql_request(query=query5)
+    executed5 = gql_request(query=query5,headers=headers_auth)
     assert isinstance(executed5, Dict)
     assert len(executed5["data"]["contents"]) >= 3
     items = executed5["data"]["contents"]
@@ -733,7 +764,7 @@ def test_get_after_adding_data():
   }
 }
     """
-    executed6 = gql_request(query=query6)
+    executed6 = gql_request(query=query6,headers=headers_auth)
     assert isinstance(executed6, Dict)
     assert len(executed6["data"]["contents"]) >= 3
     items = executed6["data"]["contents"]
@@ -776,13 +807,78 @@ def test_get_after_adding_data():
   }
 }
 """
-    executed7 = gql_request(query=query7)
+    executed7 = gql_request(query=query7,headers=headers_auth)
     assert isinstance(executed7, Dict)
     assert len(executed7["data"]["contents"]) >= 3
     items = executed7["data"]["contents"]
     for item in items:
         assert_positive_get(item)
-    
+
+
+def test_get_source_filter_access_tag():
+    """filter source with access tags"""
+    #create source 
+    version_variable = {
+        "object": {
+        "versionAbbreviation": "TTT",
+        "versionName": "test version"
+    }
+    }
+    #Create a version
+    version_add(version_query,version_variable)
+    #create source
+    source_data = {
+  "object": {
+    "contentType": "infographic",
+    "version": "TTT",
+    "year": 2020,
+    "accessPermissions": [
+      "CONTENT"
+    ],
+  }
+}
+    source_data["object"]['language'] = 'hi'
+    check_post(SOURCE_GLOBAL_QUERY,source_data)
+
+    source_data["object"]['language'] = 'mr'
+    source_data["object"]['accessPermissions'] = ["OPENACCESS"]
+    check_post(SOURCE_GLOBAL_QUERY,source_data)
+
+    source_data["object"]['language'] = 'te'
+    source_data["object"]['accessPermissions'] = ["PUBLISHABLE"]
+    check_post(SOURCE_GLOBAL_QUERY,source_data)
+
+    get_qry = """
+      query get_source($obj:[SourcePermissions],$ver:String){
+  contents(accessTag:$obj,versionAbbreviation:$ver){
+    sourceName
+  }
+}
+    """
+    get_var = {
+    "obj": [
+    "CONTENT"
+  ],
+  "ver": "TTT"
+}
+    executed1 = gql_request(query=get_qry,variables=get_var, headers=headers_auth)
+    assert isinstance(executed1, Dict)
+    assert len(executed1["data"]["contents"]) >= 3
+
+    get_var["obj"] = ["OPENACCESS"]
+    executed2 = gql_request(query=get_qry,variables=get_var, headers=headers_auth)
+    assert isinstance(executed2, Dict)
+    assert len(executed2["data"]["contents"]) >= 1
+
+    get_var["obj"] = ["PUBLISHABLE"]
+    executed3 = gql_request(query=get_qry,variables=get_var, headers=headers_auth)
+    assert isinstance(executed3, Dict)
+    assert len(executed3["data"]["contents"]) >= 1
+
+    get_var["obj"] = ["PUBLISHABLE","OPENACCESS"]
+    executed4 = gql_request(query=get_qry,variables=get_var, headers=headers_auth,)
+    assert len(executed4["data"]["contents"]) == 0
+
 
 def test_put_default():
     '''Add some data and test updating them'''
@@ -851,7 +947,12 @@ def test_put_default():
     "revision": 2
   }
 }
+    #without auth
     executed = gql_request(query=up_query,operation="mutation", variables=up_variables)
+    assert "errors" in executed
+    #with auth
+    executed = gql_request(query=up_query,operation="mutation", variables=up_variables,
+      headers=headers_auth)
     assert isinstance(executed, Dict)
     assert executed["data"]["editSource"]["message"] == "Source edited successfully"
     item =executed["data"]["editSource"]["data"]
@@ -865,7 +966,8 @@ def test_put_default():
     "metaData": "{\"owner\":\"new owner\"}"
   }
 }
-    executed2 = gql_request(query=up_query,operation="mutation", variables=up_variables2)
+    executed2 = gql_request(query=up_query,operation="mutation", variables=up_variables2,
+      headers=headers_auth)
     assert isinstance(executed2, Dict)
     assert executed2["data"]["editSource"]["message"] == "Source edited successfully"
     item =executed2["data"]["editSource"]["data"]
@@ -887,7 +989,7 @@ def test_soft_delete():
         "contentType": "commentary",
         "version": "TTT",
         'language': 'ml',
-        "year": 2021,
+        "year": 2021
     }
     }
     executed = check_post(SOURCE_GLOBAL_QUERY,variables)
@@ -938,7 +1040,8 @@ def test_soft_delete():
     "active": False
   }
 }
-    executed2 = gql_request(query=up_query,operation="mutation", variables=up_variables)
+    executed2 = gql_request(query=up_query,operation="mutation", variables=up_variables,
+      headers=headers_auth)
     assert isinstance(executed2, Dict)
     assert executed2["data"]["editSource"]["message"] == "Source edited successfully"
     item =executed2["data"]["editSource"]["data"]
@@ -980,7 +1083,7 @@ def test_soft_delete():
   }
 }
     """
-    executed = gql_request(query=query1)
+    executed = gql_request(query=query1,headers=headers_auth)
     assert isinstance(executed, Dict)
     assert len(executed["data"]["contents"]) > 0
     items = executed["data"]["contents"]
@@ -989,3 +1092,405 @@ def test_soft_delete():
         assert not item["active"]
 #pylint: disable=C0302
     assert 'ml_TTT_1_commentary' in [item['sourceName'] for item in items]
+
+def test_created_user_can_only_edit():
+    """source edit can do by created user and Super Admin"""
+    SA_user_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(SA_user_data)
+    token =  response["data"]["login"]["token"]
+
+    headers_SA = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token
+                }
+
+    #create source 
+    version_variable = {
+        "object": {
+        "versionAbbreviation": "TTT",
+        "versionName": "test version"
+    }
+    }
+    #Create a version
+    version_add(version_query,version_variable)
+    #create source
+    executed = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", 
+      variables=SOURCE_GLOBAL_VARIABLES,headers=headers_SA)
+    assert isinstance(executed, Dict)
+    assert executed["data"]["addSource"]["message"] == "Source created successfully"
+    
+    #Edit with SA Created User
+    up_query="""
+        mutation editsource($object:InputEditSource){
+  editSource(sourceArg:$object){
+    message
+    data{
+      sourceName
+      contentType{
+        contentId
+        contentType
+      }
+      language{
+        languageId
+        language
+        code
+        scriptDirection
+        metaData
+      }
+      version{
+        versionId
+        versionAbbreviation
+        versionName
+        revision
+        metaData
+      }
+      year
+      license{
+        name
+        code
+        license
+        permissions
+        active
+      }
+      metaData
+      active
+    }
+  }
+}
+    """
+    up_variables={
+  "object": {
+    "sourceName": "hi_TTT_1_commentary",
+    "metaData": "{\"owner\":\"New One\",\"access-key\":\"123xyz\"}"
+  }
+}
+    #with auth
+    executed = gql_request(query=up_query,operation="mutation", variables=up_variables,
+      headers=headers_SA)
+    assert isinstance(executed, Dict)
+    assert executed["data"]["editSource"]["message"] == "Source edited successfully"
+
+    #Edit with Not created User
+    executed = gql_request(query=up_query,operation="mutation", variables=up_variables,
+      headers=headers_auth)
+    assert "errors" in executed
+
+def test_diffrernt_sources_with_app_and_roles():
+    """Test getting sources with users having different permissions and 
+    also from multiple apps"""
+    headers_auth = {"contentType": "application/json",
+                "accept": "application/json"
+            }
+    #app names
+    API = types.App.API
+    AG =  types.App.AG
+    VACHAN = types.App.VACHAN
+    VACHANADMIN = types.App.VACHANADMIN
+
+    #create sources for test with different access permissions
+    #content is default
+    #create source 
+    version_variable = {
+        "object": {
+        "versionAbbreviation": "TTT",
+        "versionName": "test version"
+    }
+    }
+    #Create a version
+    version_add(version_query,version_variable)
+    #create source
+    source_data = {
+  "object": {
+    "contentType": "commentary",
+    "language": "hi",
+    "version": "TTT",
+    "year": 2020,
+    "accessPermissions": [
+      "CONTENT"
+    ],
+  }
+}
+    resposne = check_post(SOURCE_GLOBAL_QUERY,source_data)
+    resp_data = resposne["data"]["addSource"]["data"]["metaData"]
+    assert resp_data["accessPermissions"] == [types.SourcePermissions.CONTENT.value]
+
+    #open-access
+    source_data["object"]["language"] = 'ml'
+    source_data["object"]["accessPermissions"] = ["OPENACCESS"]
+    resposne = check_post(SOURCE_GLOBAL_QUERY,source_data)
+    resp_data = resposne["data"]["addSource"]["data"]["metaData"]
+    assert resp_data["accessPermissions"] == \
+      [types.SourcePermissions.OPENACCESS.value , types.SourcePermissions.CONTENT.value]
+
+    #publishable
+    source_data["object"]["language"] = 'tn'
+    source_data["object"]["accessPermissions"] = ["PUBLISHABLE"]
+    resposne = check_post(SOURCE_GLOBAL_QUERY,source_data)
+    resp_data = resposne["data"]["addSource"]["data"]["metaData"]
+    assert resp_data["accessPermissions"] == \
+      [types.SourcePermissions.PUBLISHABLE.value , types.SourcePermissions.CONTENT.value]
+
+    #downloadable
+    source_data["object"]["language"] = 'af'
+    source_data["object"]["accessPermissions"] = ["DOWNLOADABLE"]
+    resposne = check_post(SOURCE_GLOBAL_QUERY,source_data)
+    resp_data = resposne["data"]["addSource"]["data"]["metaData"]
+    assert resp_data["accessPermissions"] == \
+      [types.SourcePermissions.DOWNLOADABLE.value , types.SourcePermissions.CONTENT.value]
+
+    #derivable
+    source_data["object"]["language"] = 'ak'
+    source_data["object"]["accessPermissions"] = ["DERIVABLE"]
+    resposne = check_post(SOURCE_GLOBAL_QUERY,source_data)
+    resp_data = resposne["data"]["addSource"]["data"]["metaData"]
+    assert resp_data["accessPermissions"] == \
+      [types.SourcePermissions.DERIVABLE.value , types.SourcePermissions.CONTENT.value]
+    
+    filter_qry = """
+      {
+  contents(versionAbbreviation:"TTT"){
+    metaData
+  }
+}
+    """
+    permission = types.SourcePermissions
+
+    #Get without Login
+    #default : API
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    resp_data = executed["data"]["contents"]
+    assert permission.OPENACCESS.value in resp_data[0]["metaData"]['accessPermissions']
+    #APP : Autographa
+    headers_auth['app'] = types.App.AG.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    assert len(executed["data"]["contents"]) == 0
+    #APP : Vachan Online
+    headers_auth['app'] = types.App.VACHAN.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    resp_data = executed["data"]["contents"]
+    assert len(resp_data) == 2
+    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    #APP : Vachan Admin
+    headers_auth['app'] = types.App.VACHANADMIN.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    assert len(executed["data"]["contents"]) == 0
+
+    #Get with AgUser
+    #default : API
+    headers_auth = {"contentType": "application/json","accept": "application/json"}
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    resp_data = executed["data"]["contents"]
+    assert len(resp_data) == 2
+    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    #APP : Autographa
+    headers_auth['app'] = types.App.AG.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    resp_data = executed["data"]["contents"]
+    assert len(resp_data) == 2
+    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    #APP : Vachan Online
+    headers_auth['app'] = types.App.VACHAN.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    resp_data = executed["data"]["contents"]
+    assert len(resp_data) == 2
+    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    #APP : Vachan Admin
+    headers_auth['app'] = types.App.VACHANADMIN.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    assert len(executed["data"]["contents"]) == 0    
+
+    #Get with VachanUser
+    #default : API
+    headers_auth = {"contentType": "application/json","accept": "application/json"}
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    resp_data = executed["data"]["contents"]
+    assert len(resp_data) == 2
+    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    #APP : Autographa
+    headers_auth['app'] = types.App.AG.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    assert len(executed["data"]["contents"]) == 0    
+    #APP : Vachan Online
+    headers_auth['app'] = types.App.VACHAN.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    resp_data = executed["data"]["contents"]
+    assert len(resp_data) == 2
+    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    #APP : Vachan Admin
+    headers_auth['app'] = types.App.VACHANADMIN.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    assert len(executed["data"]["contents"]) == 0    
+
+    #Get with VachanAdmin
+    #default : API
+    headers_auth = {"contentType": "application/json","accept": "application/json"}
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    resp_data = executed["data"]["contents"]
+    assert len(resp_data) == 5
+    assert permission.CONTENT.value in resp_data[0]['metaData']['accessPermissions']
+    assert permission.OPENACCESS.value in resp_data[1]['metaData']['accessPermissions']
+    assert permission.PUBLISHABLE.value in resp_data[2]['metaData']['accessPermissions']
+    assert permission.DOWNLOADABLE.value in resp_data[3]['metaData']['accessPermissions']
+    assert permission.DERIVABLE.value in resp_data[4]['metaData']['accessPermissions']
+    #APP : Autographa
+    headers_auth['app'] = types.App.AG.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    assert len(executed["data"]["contents"]) == 0    
+    #APP : Vachan Online
+    headers_auth['app'] = types.App.VACHAN.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    resp_data = executed["data"]["contents"]
+    assert len(resp_data) == 2
+    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    #APP : Vachan Admin
+    headers_auth['app'] = types.App.VACHANADMIN.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    resp_data = executed["data"]["contents"]
+    assert len(resp_data) == 5
+    assert permission.CONTENT.value in resp_data[0]['metaData']['accessPermissions']
+    assert permission.OPENACCESS.value in resp_data[1]['metaData']['accessPermissions']
+    assert permission.PUBLISHABLE.value in resp_data[2]['metaData']['accessPermissions']
+    assert permission.DOWNLOADABLE.value in resp_data[3]['metaData']['accessPermissions']
+    assert permission.DERIVABLE.value in resp_data[4]['metaData']['accessPermissions']
+
+    #Get with API-User
+    #default : API
+    headers_auth = {"contentType": "application/json","accept": "application/json"}
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    resp_data = executed["data"]["contents"]
+    assert len(resp_data) == 2
+    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    #APP : Autographa
+    headers_auth['app'] = types.App.AG.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    assert len(executed["data"]["contents"]) == 0    
+    #APP : Vachan Online
+    headers_auth['app'] = types.App.VACHAN.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    resp_data = executed["data"]["contents"]
+    assert len(resp_data) == 2
+    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    #APP : Vachan Admin
+    headers_auth['app'] = types.App.VACHANADMIN.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    assert len(executed["data"]["contents"]) == 0    
+
+    #Get with AgAdmin
+    #default : API
+    headers_auth = {"contentType": "application/json","accept": "application/json"}
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    resp_data = executed["data"]["contents"]
+    assert len(resp_data) == 2
+    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    #APP : Autographa
+    headers_auth['app'] = types.App.AG.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    resp_data = executed["data"]["contents"]
+    assert len(resp_data) == 2
+    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    #APP : Vachan Online
+    headers_auth['app'] = types.App.VACHAN.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    resp_data = executed["data"]["contents"]
+    assert len(resp_data) == 2
+    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    #APP : Vachan Admin
+    headers_auth['app'] = types.App.VACHANADMIN.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    assert len(executed["data"]["contents"]) == 0
+
+    #Get with BcsDeveloper
+    #default : API
+    headers_auth = {"contentType": "application/json","accept": "application/json"}
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    resp_data = executed["data"]["contents"]
+    assert len(resp_data) == 5
+    assert permission.CONTENT.value in resp_data[0]['metaData']['accessPermissions']
+    assert permission.OPENACCESS.value in resp_data[1]['metaData']['accessPermissions']
+    assert permission.PUBLISHABLE.value in resp_data[2]['metaData']['accessPermissions']
+    assert permission.DOWNLOADABLE.value in resp_data[3]['metaData']['accessPermissions']
+    assert permission.DERIVABLE.value in resp_data[4]['metaData']['accessPermissions']
+    #APP : Autographa
+    headers_auth['app'] = types.App.AG.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    assert len(executed["data"]["contents"]) == 0    
+    #APP : Vachan Online
+    headers_auth['app'] = types.App.VACHAN.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    resp_data = executed["data"]["contents"]
+    assert len(resp_data) == 2
+    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    #APP : Vachan Admin
+    headers_auth['app'] = types.App.VACHANADMIN.value
+    executed = gql_request(query=filter_qry, headers=headers_auth)
+    assert len(executed["data"]["contents"]) == 0
+
+    #Super Admin
+    SA_user_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(SA_user_data)
+    token =  response["data"]["login"]["token"]
+
+    headers_SA = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token
+                }
+
+    #Get with SA Admin
+    #default : API
+    executed = gql_request(query=filter_qry, headers=headers_SA)
+    resp_data = executed["data"]["contents"]
+    assert len(resp_data) == 5
+    assert permission.CONTENT.value in resp_data[0]['metaData']['accessPermissions']
+    assert permission.OPENACCESS.value in resp_data[1]['metaData']['accessPermissions']
+    assert permission.PUBLISHABLE.value in resp_data[2]['metaData']['accessPermissions']
+    assert permission.DOWNLOADABLE.value in resp_data[3]['metaData']['accessPermissions']
+    assert permission.DERIVABLE.value in resp_data[4]['metaData']['accessPermissions']
+    #APP : Autographa
+    headers_SA['app'] = types.App.AG.value
+    executed = gql_request(query=filter_qry, headers=headers_SA)
+    resp_data = executed["data"]["contents"]
+    assert len(resp_data) == 2
+    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    #APP : Vachan Online
+    headers_SA['app'] = types.App.VACHAN.value
+    executed = gql_request(query=filter_qry, headers=headers_SA)
+    resp_data = executed["data"]["contents"]
+    assert len(resp_data) == 2
+    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    #APP : Vachan Admin
+    headers_SA['app'] = types.App.VACHANADMIN.value
+    executed = gql_request(query=filter_qry, headers=headers_SA)
+    resp_data = executed["data"]["contents"]
+    assert len(resp_data) == 5
+    assert permission.CONTENT.value in resp_data[0]['metaData']['accessPermissions']
+    assert permission.OPENACCESS.value in resp_data[1]['metaData']['accessPermissions']
+    assert permission.PUBLISHABLE.value in resp_data[2]['metaData']['accessPermissions']
+    assert permission.DOWNLOADABLE.value in resp_data[3]['metaData']['accessPermissions']
+    assert permission.DERIVABLE.value in resp_data[4]['metaData']['accessPermissions']
