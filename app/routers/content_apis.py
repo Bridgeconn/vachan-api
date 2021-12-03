@@ -8,11 +8,11 @@ import schemas_nlp
 from dependencies import get_db, log
 from custom_exceptions import NotAvailableException, AlreadyExistsException
 from crud import structurals_crud, contents_crud
-from authentication import AuthHandler, get_auth_access_check_decorator ,\
+from authentication import get_auth_access_check_decorator ,\
     get_user_or_none
 
 router = APIRouter()
-auth_handler = AuthHandler()
+# auth_handler = AuthHandler()
 
 #pylint: disable=too-many-arguments,unused-argument
 ##### Content types #####

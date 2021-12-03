@@ -4,26 +4,12 @@ import graphene
 from crud import structurals_crud, contents_crud, projects_crud, nlp_crud
 from graphql_api import types, utils
 import schemas_nlp
+from routers import content_apis, auth_api
+from authentication import get_user_or_none_graphql
 
 #Pylint error :- Query class have all resolver functions
 #pylint: disable=R0201
 #pylint: disable=too-many-arguments,too-many-public-methods
-# class Query(graphene.ObjectType):
-#     '''All defined queries'''
-#     languages = graphene.List(types.Language,
-#         description="Query languages in vachan-db",
-#         search_word=graphene.String(),
-#         language_name=graphene.String(), language_code=graphene.String(
-#             description="language code as per bcp47(usually 2 letter code)"),
-#         skip=graphene.Int(), limit=graphene.Int())
-#     def resolve_languages(self, info,
-#         search_word=None, language_code=None, language_name=None,
-#         skip=0, limit=100):
-#         '''resolver'''
-#         db_ = info.context["request"].db_session
-#         return structurals_crud.get_languages(db_, language_code=language_code,
-#             language_name=language_name, search_word=search_word,
-#             skip=skip, limit=limit)
 class Query(graphene.ObjectType):
     '''All defined queries'''
     languages = graphene.List(types.Language,
@@ -37,20 +23,16 @@ class Query(graphene.ObjectType):
         skip=0, limit=100):
         '''resolver'''
         db_ = info.context["request"].db_session
-
-        # req = info.context["request"]
-        # token = req.headers['Authorization']
-        # token = token.split(' ')[1]
-        # user_details = get_current_user_data(token)
-        # print("token===>",token)
-        # print("token===>",req.headers['Authorization'])
-        # print("user_details===>",user_details)
-        # return content_apis.get_language(req,language_code,language_name,
-        # search_word,skip,limit,user_details,db_)
-
-        return structurals_crud.get_languages(db_, language_code=language_code,
-            language_name=language_name, search_word=search_word,
-            skip=skip, limit=limit)
+        user_details , req = get_user_or_none_graphql(info)
+        # configuring the request params
+        req.scope['method'] = "GET"
+        req.scope['path'] = "/v2/languages"
+        return content_apis.get_language(request=req, language_code=language_code,
+        language_name=language_name, search_word=search_word, skip=skip,
+        limit=limit, user_details=user_details, db_=db_)
+        # return structurals_crud.get_languages(db_, language_code=language_code,
+        #     language_name=language_name, search_word=search_word,
+        #     skip=skip, limit=limit)
 
     content_types = graphene.List(types.ContentType,
         description="Query supported content types in vachan-db",
@@ -60,7 +42,12 @@ class Query(graphene.ObjectType):
         skip=0, limit=100):
         '''resolver'''
         db_ = info.context["request"].db_session
-        return structurals_crud.get_content_types(db_, content_type, skip, limit)
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = "/v2/contents"
+        return content_apis.get_contents(request=req,content_type=content_type,skip=skip,
+            limit=limit,user_details=user_details,db_=db_)
+        # return structurals_crud.get_content_types(db_, content_type, skip, limit)
 
     licenses = graphene.List(types.License,
         description="Query uploaded licenses in vachan-db", license_code=graphene.String(),
@@ -71,19 +58,31 @@ class Query(graphene.ObjectType):
         skip=0, limit=100):
         '''resolver'''
         db_ = info.context["request"].db_session
-        return structurals_crud.get_licenses(db_, license_code, license_name, permission,
-        active, skip = skip, limit = limit)
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = "/v2/licenses"
+        return content_apis.get_license(request=req, license_code=license_code,
+        license_name=license_name,permission=permission, active=active, skip=skip,
+        limit=limit, user_details=user_details, db_=db_)
+        # return structurals_crud.get_licenses(db_, license_code, license_name, permission,
+        # active, skip = skip, limit = limit)
 
     versions = graphene.List(types.Version,
         description="Query defined versions in vachan-db", version_abbreviation=graphene.String(),
         version_name=graphene.String(), revision=graphene.Int(),
         skip=graphene.Int(), limit=graphene.Int())
     def resolve_versions(self, info, version_abbreviation=None, version_name=None,
-        revision=None, skip=0, limit=100):
+        revision=None, skip=0, limit=100, metadata=None):
         '''resolver'''
         db_ = info.context["request"].db_session
-        return structurals_crud.get_versions(db_, version_abbreviation,
-        version_name, revision, skip = skip, limit = limit)
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = "/v2/versions"
+        return content_apis.get_version(request=req, version_abbreviation=version_abbreviation,
+        version_name=version_name, revision=revision, skip=skip, limit=limit,
+        user_details=user_details, db_=db_,metadata=metadata)
+        # return structurals_crud.get_versions(db_, version_abbreviation,
+        # version_name, revision, skip = skip, limit = limit)
 
     contents = graphene.List(types.Source,
         description="Query added contents in vachan-db", content_type=graphene.String(),
@@ -435,3 +434,28 @@ class Query(graphene.ObjectType):
                 for item in sentence_list]
         return nlp_crud.obtain_draft(new_list,
             doc_type=schemas_nlp.TranslationDocumentType.TEXT)
+
+    login = graphene.Field(types.LoginResponse,
+        description="Login User for getting Token",
+        user_email = graphene.String(required=True),
+        password = graphene.String(required=True))
+    def resolve_login(self, info, user_email , password):
+        """resolver"""
+        db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = "/v2/user/login"
+        return auth_api.login(user_email= user_email,password= password,
+            request= req ,user_details = user_details, db_= db_)
+
+    logout = graphene.String(
+        description="Logout user")
+    def resolve_logout(self, info):
+        """resolve"""
+        db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = "/v2/user/logout"
+        response = auth_api.logout(request=req,
+            user_details=user_details, db_=db_)
+        return response["message"]

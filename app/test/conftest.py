@@ -81,6 +81,13 @@ initial_test_users = {
                 "token":"",
                 "test_user_id": "",
                 "app" : schema_auth.App.VACHANADMIN.value
+            },
+            "APIUser2":{
+                "user_email": "abctest@mail.test",
+                "password": "passwordtest@1",
+                "token":"",
+                "test_user_id": "",
+                "app" : schema_auth.App.API.value
             }
         }
 

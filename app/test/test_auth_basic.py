@@ -123,7 +123,7 @@ def logout_user(token):
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+token
             }
-    response = client.get(LOGOUT_URL, headers=headers)
+    response = client.get(LOGOUT_URL,headers=headers)
     return response
 
 #--------------------------------------------test starts--------------------------------------

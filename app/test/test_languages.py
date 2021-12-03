@@ -4,17 +4,18 @@ from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
 from .test_auth_basic import register,delete_user_identity,SUPER_USER,\
     SUPER_PASSWORD, login, logout_user
+from .conftest import initial_test_users
 
 UNIT_URL = '/v2/languages'
 
-#create a normal user for this module test
-test_user_data = {
-        "email": "abc@gmail.com",
-        "password": "passwordabc@1"
-    }
-response = register(test_user_data,apptype='API-user')
-test_user_id = [response.json()["registered_details"]["id"]]
-test_user_token = response.json()["token"]
+# #create a normal user for this module test
+# test_user_data = {
+#         "email": "abc@gmail.com",
+#         "password": "passwordabc@1"
+#     }
+# response = register(test_user_data,apptype='API-user')
+# test_user_id = [response.json()["registered_details"]["id"]]
+# initial_test_users['APIUser2']['token'] = response.json()["token"]
 
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
@@ -43,7 +44,7 @@ def test_get_language_code():
     #with registred user header
     headers_auth = {"contentType": "application/json",
                     "accept": "application/json",
-                    'Authorization': "Bearer"+" "+test_user_token
+                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
     response = client.get(UNIT_URL+'?language_code=hi',headers=headers_auth)
     assert response.status_code == 200
@@ -125,7 +126,7 @@ def test_post_default():
     #Add with Auth
     headers = {"contentType": "application/json",
                     "accept": "application/json",
-                    'Authorization': "Bearer"+" "+test_user_token
+                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
     response = client.post(UNIT_URL, headers=headers, json=data)        
     assert response.status_code == 201
@@ -148,7 +149,7 @@ def test_post_upper_case_code():
     #Add with Auth
     headers = {"contentType": "application/json",
                     "accept": "application/json",
-                    'Authorization': "Bearer"+" "+test_user_token
+                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
     response = client.post(UNIT_URL, headers=headers, json=data)        
     assert response.status_code == 201
@@ -170,7 +171,7 @@ def test_post_optional_script_direction():
     #Add with Auth
     headers = {"contentType": "application/json",
                     "accept": "application/json",
-                    'Authorization': "Bearer"+" "+test_user_token
+                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
     response = client.post(UNIT_URL, headers=headers, json=data)        
     assert response.status_code == 201
@@ -189,7 +190,7 @@ def test_post_incorrectdatatype1():
     #Add with Auth
     headers = {"contentType": "application/json",
                     "accept": "application/json",
-                    'Authorization': "Bearer"+" "+test_user_token
+                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }        
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
@@ -204,7 +205,7 @@ def test_post_incorrectdatatype2():
     #Add with Auth
     headers = {"contentType": "application/json",
                     "accept": "application/json",
-                    'Authorization': "Bearer"+" "+test_user_token
+                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
@@ -218,7 +219,7 @@ def test_post_missingvalue_language():
     #Add with Auth
     headers = {"contentType": "application/json",
                     "accept": "application/json",
-                    'Authorization': "Bearer"+" "+test_user_token
+                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
@@ -233,7 +234,7 @@ def test_put_languages():
     #Add with Auth
     headers_auth = {"contentType": "application/json",
                     "accept": "application/json",
-                    'Authorization': "Bearer"+" "+test_user_token
+                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 201
@@ -258,8 +259,8 @@ def test_put_languages():
     assert_positive_get(response.json()['data'])
     assert response.json()["data"]["language"] == "new-lang-test-edited"
 
-    #delete the user
-    delete_user_identity(test_user_id)
+    # #delete the user
+    # delete_user_identity(test_user_id)
 
     #edit without login
     headers = {"contentType": "application/json", "accept": "application/json"}

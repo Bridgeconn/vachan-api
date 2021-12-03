@@ -6,7 +6,7 @@ from unidecode import unidecode
 import requests
 
 from custom_exceptions import TypeException
-
+#pylint: disable=R1732
 def normalize_unicode(text, form="NFKC"):
     '''to normalize text contents before adding them to DB'''
     return unicodedata.normalize(form, text)

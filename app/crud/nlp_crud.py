@@ -21,7 +21,7 @@ from custom_exceptions import NotAvailableException, TypeException, GenericExcep
 from schemas_nlp import TranslationDocumentType
 
 #Based on sqlalchemy
-#pylint: disable=W0102,E1101,W0143
+#pylint: disable=W0102,E1101,W0143,C0206
 ###################### Tokenization ######################
 
 def get_generic_tokens_result(db_, trg_language, src_language, args):

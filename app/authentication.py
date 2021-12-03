@@ -3,9 +3,8 @@ import os
 import json
 from functools import wraps
 import requests
-from fastapi import HTTPException, Security , Depends
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer ,\
-    OAuth2PasswordBearer
+from fastapi import HTTPException, Depends
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 import db_models
 import schema_auth
@@ -115,6 +114,19 @@ async def get_user_or_none(token: str = Depends(optional_oauth2_scheme)):
     # print("token===>",token)
     user_details = get_current_user_data(token)
     return user_details
+
+#Get user or none for graphql
+#get token for graphql requests
+def get_user_or_none_graphql(info):
+    """get token and user details for graphql"""
+    req = info.context["request"]
+    if 'Authorization' in req.headers:
+        token = req.headers['Authorization']
+        token = token.split(' ')[1]
+    else:
+        token = None
+    user_details = get_current_user_data(token)
+    return user_details, req
 
 #pylint: disable=unused-argument
 def project_owner(db_:Session, db_resource, user_id):
@@ -521,56 +533,57 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
 
 ######################################### Auth Functions ####################
 
-#Class handles the session validation and logout
-class AuthHandler():
-    """Authentication class"""
-    security = HTTPBearer()
-    #pylint: disable=R0201
-    def kratos_session_validation(self,auth:HTTPAuthorizationCredentials = Security(security)):
-        """kratos session validity check"""
-        recieve_token = auth.credentials
-        user_details = {"user_id":"", "user_roles":""}
-        headers = {}
-        headers["Accept"] = "application/json"
-        headers["Authorization"] = f"Bearer {recieve_token}"
+# #Class handles the session validation and logout
+# class AuthHandler():#pylint: disable=too-few-public-methods
+#     """Authentication class"""
+#     security = HTTPBearer()
+#     #pylint: disable=R0201
+#     def kratos_session_validation(self,auth:HTTPAuthorizationCredentials = Security(security)):
+#         """kratos session validity check"""
+#         recieve_token = auth.credentials
+#         user_details = {"user_id":"", "user_roles":""}
+#         headers = {}
+#         headers["Accept"] = "application/json"
+#         headers["Authorization"] = f"Bearer {recieve_token}"
 
-        user_data = requests.get(USER_SESSION_URL, headers=headers)
-        data = json.loads(user_data.content)
+#         user_data = requests.get(USER_SESSION_URL, headers=headers)
+#         data = json.loads(user_data.content)
 
-        if user_data.status_code == 200:
-            user_details["user_id"] = data["identity"]["id"]
-            if "userrole" in data["identity"]["traits"]:
-                user_details["user_roles"] = data["identity"]["traits"]["userrole"]
+#         if user_data.status_code == 200:
+#             user_details["user_id"] = data["identity"]["id"]
+#             if "userrole" in data["identity"]["traits"]:
+#                 user_details["user_roles"] = data["identity"]["traits"]["userrole"]
 
-        elif user_data.status_code == 401:
-            raise UnAuthorizedException(detail=data["error"])
+#         elif user_data.status_code == 401:
+#             raise UnAuthorizedException(detail=data["error"])
 
-        elif user_data.status_code == 500:
-            raise GenericException(data["error"])
+#         elif user_data.status_code == 500:
+#             raise GenericException(data["error"])
 
-        return user_details
+#         return user_details
 
-    def kratos_logout(self,auth:HTTPAuthorizationCredentials= Security(security)):
-        """logout function"""
-        recieve_token = auth.credentials
-        payload = {"session_token": recieve_token}
-        headers = {}
-        headers["Accept"] = "application/json"
-        headers["Content-Type"] = "application/json"
-        logout_url = PUBLIC_BASE_URL + "logout/api"
-        response = requests.delete(logout_url, headers=headers, json=payload)
-        if response.status_code == 204:
-            data = {"message":"Successfully Logged out"}
-        elif response.status_code == 400:
-            data = json.loads(response.content)
-        elif response.status_code == 403:
-            data = "The provided Session Token could not be found,"+\
-                 "is invalid, or otherwise malformed"
-            raise HTTPException(status_code=403, detail=data)
-        elif response.status_code == 500:
-            data = json.loads(response.content)
-            raise GenericException(data["error"])
-        return data
+#kratos Logout
+def kratos_logout(recieve_token):
+    """logout function"""
+    # recieve_token = auth.credentials
+    payload = {"session_token": recieve_token}
+    headers = {}
+    headers["Accept"] = "application/json"
+    headers["Content-Type"] = "application/json"
+    logout_url = PUBLIC_BASE_URL + "logout/api"
+    response = requests.delete(logout_url, headers=headers, json=payload)
+    if response.status_code == 204:
+        data = {"message":"Successfully Logged out"}
+    elif response.status_code == 400:
+        data = json.loads(response.content)
+    elif response.status_code == 403:
+        data = "The provided Session Token could not be found,"+\
+                "is invalid, or otherwise malformed"
+        raise HTTPException(status_code=403, detail=data)
+    elif response.status_code == 500:
+        data = json.loads(response.content)
+        raise GenericException(data["error"])
+    return data
 
 #get all or single user details
 def get_all_or_one_kratos_users(rec_user_id=None):
@@ -718,9 +731,9 @@ def user_login_kratos(user_email,password):#pylint: disable=R1710
     if flow_res.status_code == 200:
         flow_res = json.loads(flow_res.content)
         flow_id = flow_res["ui"]["action"]
-
-        cred_data = {"password_identifier": user_email, "password": password.get_secret_value()
-                    , "method": "password"}
+        password = password.get_secret_value() if not isinstance(password, str) else password
+        cred_data = {"password_identifier": user_email,
+            "password": password, "method": "password"}
         login_req = requests.post(flow_id, json=cred_data)
         login_req_content = json.loads(login_req.content)
         if login_req.status_code == 200:
