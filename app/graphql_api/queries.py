@@ -138,8 +138,14 @@ class Query(graphene.ObjectType):
         verse=None, last_verse=None, active=True, skip=0, limit=100):
         '''resolver'''
         db_ = info.context["request"].db_session
-        return contents_crud.get_commentaries(db_, source_name, book_code, chapter, verse,
-            last_verse, active=active, skip = skip, limit = limit)
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = f"/v2/commentaries/{source_name}"
+        results = content_apis.get_commentary(request=req, source_name=source_name,
+        book_code=book_code, chapter=chapter, verse=verse, last_verse=last_verse,
+        active=active,skip=skip,limit=limit,user_details=user_details,
+        db_=db_)
+        return results
 
     dictionary_words = graphene.List(types.DictionaryWord,
         description="Query lexicons/dictionaries added in vachan-db",
@@ -150,8 +156,14 @@ class Query(graphene.ObjectType):
         active=True, skip=0, limit=100):
         '''resolver'''
         db_ = info.context["request"].db_session
-        return contents_crud.get_dictionary_words(db_, source_name, search_word,
-            exact_match=exact_match, active=active, skip=skip, limit=limit)
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = f"/v2/dictionaries/{source_name}"
+        results = content_apis.get_dictionary_word(request= req,
+            source_name= source_name, search_word= search_word,
+            exact_match= exact_match, active= active, skip= skip,
+            limit= limit, user_details = user_details, db_= db_)
+        return results
 
     infographics = graphene.List(types.Infographic,
         description="Query infographics in vachan-db", source_name=graphene.String(required=True),
@@ -162,8 +174,14 @@ class Query(graphene.ObjectType):
         skip=0, limit=100):
         '''resolver'''
         db_ = info.context["request"].db_session
-        return contents_crud.get_infographics(db_, source_name, book_code, title,
-         active=active, skip = skip, limit = limit)
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = f"/v2/infographics/{source_name}"
+        results = content_apis.get_infographic(request=req,
+            source_name=source_name, book_code= book_code,
+            title= title, active= active, skip= skip, limit= limit,
+            user_details = user_details, db_= db_)
+        return results
 
     bible_videos = graphene.List(types.BibleVideo,
         description="Query Bible Videos listed in vachan-db",
@@ -175,8 +193,14 @@ class Query(graphene.ObjectType):
         active=True, skip=0, limit=100):
         '''resolver'''
         db_ = info.context["request"].db_session
-        return contents_crud.get_bible_videos(db_, source_name, book_code, title, theme,
-        active=active, skip=skip, limit=limit)
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = f"/v2/biblevideos/{source_name}"
+        results = content_apis.get_biblevideo(request = req,
+            source_name =source_name, book_code = book_code,
+            title =title, theme = theme, skip = skip, limit = limit,
+            user_details =user_details, db_ = db_)
+        return results
 
     bible_contents = graphene.List(types.BibleContent,
         description="Query bible usfms, jsons and audios in vachan-db",
@@ -187,8 +211,13 @@ class Query(graphene.ObjectType):
         skip=0, limit=100):
         '''resolver'''
         db_ = info.context["request"].db_session
-        return contents_crud.get_available_bible_books(db_, source_name, book_code,
-            content_type="all", active=active, skip = skip, limit = limit)
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = f"/v2/bibles/{source_name}/books"
+        results = content_apis.get_available_bible_book(request= req,
+            source_name= source_name, book_code= book_code, active= active, 
+            skip= skip, limit= limit, user_details =user_details, db_= db_)
+        return results
 
     versification = graphene.Field(types.Versification,
         description="Query versification structure of a bible in vachan-db",
@@ -196,7 +225,12 @@ class Query(graphene.ObjectType):
     def resolve_versification(self, info, source_name):
         '''resolver'''
         db_ = info.context["request"].db_session
-        return contents_crud.get_bible_versification(db_, source_name)
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = f"/v2/bibles/{source_name}/versification"
+        results = content_apis.get_bible_versification(request=req,
+            source_name = source_name, user_details = user_details, db_=db_)
+        return results
 
     bible_verse = graphene.List(types.BibleVerse,
         description="Query verses of a bible in vachan-db",
@@ -209,9 +243,15 @@ class Query(graphene.ObjectType):
         last_verse=None, search_phrase=None, active=True, skip=0, limit=100):
         '''resolver'''
         db_ = info.context["request"].db_session
-        return contents_crud.get_bible_verses(db_, source_name, book_code, chapter, verse,
-            last_verse = last_verse, search_phrase = search_phrase,
-            active=active, skip = skip, limit = limit)
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = f"/v2/bibles/{source_name}/verses"
+        results = content_apis.get_bible_verse(request= req,
+            source_name= source_name, book_code= book_code,
+            chapter= chapter, verse= verse, last_verse= last_verse,
+            search_phrase= search_phrase, active= active, skip= skip,
+            limit= limit, user_details =user_details, db_= db_)
+        return results
 
     agmt_projects = graphene.List(types.TranslationProject,
         description="Query AutographaMT projects on vachan-db", project_name=graphene.String(),

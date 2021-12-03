@@ -309,18 +309,25 @@ class AddBible(graphene.Mutation):
     message = graphene.String()
     data = graphene.List(types.BibleContent)
 #pylint: disable=no-self-use
-    def mutate(self,info,bible_arg):
+    async def mutate(self,info,bible_arg):
         """resolve"""
-        db_ = info.context["request"].db_session
         source =bible_arg.source_name
+        db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "POST"
+        req.scope['path'] = f"/v2/bibles/{source}/books"
         books = bible_arg.books
         schema_list = []
         for item in books:
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schemas.BibleBookUpload)
             schema_list.append(schema_model)
-        result =contents_crud.upload_bible_books(db_=db_, source_name=source,
-        books=schema_list, user_id=None)
+        # result =contents_crud.upload_bible_books(db_=db_, source_name=source,
+        # books=schema_list, user_id=None)
+        response = await content_apis.add_bible_book(request= req,
+            source_name = source, books = schema_list, user_details =user_details,
+            db_ = db_)
+        result = response['data']
         bible_content_list = []
         for item in result:
             bible_var = types.BibleContent(
@@ -331,7 +338,7 @@ class AddBible(graphene.Mutation):
             active = item.active
             )
             bible_content_list.append(bible_var)
-        message = "Bible books uploaded and processed successfully"
+        message = response['message']
         return AddBible(message=message,data=bible_content_list)
 
 ########## Edit Bible books ########
@@ -344,18 +351,25 @@ class EditBible(graphene.Mutation):
     message = graphene.String()
     data = graphene.List(types.BibleContent)
     #pylint: disable=no-self-use
-    def mutate(self,info,bible_arg):
+    async def mutate(self,info,bible_arg):
         """resolve"""
-        db_ = info.context["request"].db_session
         source =bible_arg.source_name
+        db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = f"/v2/bibles/{source}/books"
         books = bible_arg.books
         schema_list = []
         for item in books:
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schemas.BibleBookEdit)
             schema_list.append(schema_model)
-        result =contents_crud.update_bible_books(db_=db_, source_name=source,
-        books=schema_list, user_id=None)
+        # result =contents_crud.update_bible_books(db_=db_, source_name=source,
+        # books=schema_list, user_id=None)
+        response = await content_apis.edit_bible_book(request= req,
+            source_name = source, books = schema_list, user_details =user_details,
+            db_ = db_)
+        result = response['data']
         bible_content_list = []
         for item in result:
             bible_var = types.BibleContent(
@@ -366,8 +380,8 @@ class EditBible(graphene.Mutation):
             active = item.active
             )
             bible_content_list.append(bible_var)
-        message = "Bible books updated successfully"
-        return AddBible(message=message,data=bible_content_list)
+        message = response['message']
+        return EditBible(message=message,data=bible_content_list)
 
 ########## Add Audio bible ########
 class AddAudioBible(graphene.Mutation):
@@ -379,18 +393,25 @@ class AddAudioBible(graphene.Mutation):
     message = graphene.String()
     data = graphene.List(types.AudioBible)
 #pylint: disable=R0201
-    def mutate(self,info,audio_bible_arg):
+    async def mutate(self,info,audio_bible_arg):
         """resolve"""
         db_ = info.context["request"].db_session
         source =audio_bible_arg.source_name
         audio_data = audio_bible_arg.audio_data
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "POST"
+        req.scope['path'] = f"/v2/bibles/{source}/audios"
         schema_list = []
         for item in audio_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schemas.AudioBibleUpload)
             schema_list.append(schema_model)
-        result =contents_crud.upload_bible_audios(db_=db_, source_name=source,
-        audios=schema_list, user_id=None)
+        # result =contents_crud.upload_bible_audios(db_=db_, source_name=source,
+        # audios=schema_list, user_id=None)
+        response = await content_apis.add_audio_bible(request=req,
+            source_name=source, audios=schema_list, user_details=user_details,
+            db_=db_)
+        result = response['data']
         audio_content_list = []
         for item in result:
             audio_var = types.AudioBible(
@@ -400,7 +421,7 @@ class AddAudioBible(graphene.Mutation):
             active = item.active
             )
             audio_content_list.append(audio_var)
-        message = "Bible audios details uploaded successfully"
+        message = response['message']
         return AddAudioBible(message=message,data=audio_content_list)
 
 ########## Edit Audio bible ########
@@ -413,18 +434,25 @@ class EditAudioBible(graphene.Mutation):
     message = graphene.String()
     data = graphene.List(types.AudioBible)
 #pylint: disable=no-self-use
-    def mutate(self,info,audio_bible_arg):
+    async def mutate(self,info,audio_bible_arg):
         """resolve"""
         db_ = info.context["request"].db_session
         source =audio_bible_arg.source_name
         audio_data = audio_bible_arg.audio_data
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = f"/v2/bibles/{source}/audios"
         schema_list = []
         for item in audio_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schemas.AudioBibleEdit)
             schema_list.append(schema_model)
-        result =contents_crud.update_bible_audios(db_=db_, source_name=source,
-        audios=schema_list, user_id=None)
+        # result =contents_crud.update_bible_audios(db_=db_, source_name=source,
+        # audios=schema_list, user_id=None)
+        response = await content_apis.edit_audio_bible(request=req,
+            source_name=source, audios=schema_list, user_details=user_details,
+            db_=db_)
+        result = response['data']
         audio_content_list = []
         for item in result:
             audio_var = types.AudioBible(
@@ -434,7 +462,7 @@ class EditAudioBible(graphene.Mutation):
             active = item.active
             )
             audio_content_list.append(audio_var)
-        message = "Bible audios details updated successfully"
+        message = response['message']
         return EditAudioBible(message=message,data=audio_content_list)
 
 ########## Add Commentaries ########
@@ -447,18 +475,25 @@ class AddCommentary(graphene.Mutation):
     message = graphene.String()
     data = graphene.List(types.Commentary)
 #pylint: disable=no-self-use
-    def mutate(self,info,comm_arg):
+    async def mutate(self,info,comm_arg):
         """resolve"""
         db_ = info.context["request"].db_session
         source =comm_arg.source_name
         comm_data = comm_arg.commentary_data
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "POST"
+        req.scope['path'] = f"/v2/commentaries/{source}"
         schema_list = []
         for item in comm_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schemas.CommentaryCreate)
             schema_list.append(schema_model)
-        result =contents_crud.upload_commentaries(db_=db_, source_name=source,
-        commentaries=schema_list, user_id=None)
+        # result =contents_crud.upload_commentaries(db_=db_, source_name=source,
+        # commentaries=schema_list, user_id=None)
+        response = await content_apis.add_commentary(request=req,
+            source_name=source,commentaries= schema_list,
+            user_details=user_details, db_=db_)
+        result = response['data']
         comm_content_list = []
         for item in result:
             comm_var = types.Commentary(
@@ -470,7 +505,7 @@ class AddCommentary(graphene.Mutation):
                 active = item.active
             )
             comm_content_list.append(comm_var)
-        message = "Commentaries added successfully"
+        message = response['message']
         return AddCommentary(message=message,data=comm_content_list)
 
 ########## Edit Commentaries #######
@@ -483,18 +518,25 @@ class EditCommentary(graphene.Mutation):
     message = graphene.String()
     data = graphene.List(types.Commentary)
 #pylint: disable=no-self-use
-    def mutate(self,info,comm_arg):
+    async def mutate(self,info,comm_arg):
         """resolve"""
         db_ = info.context["request"].db_session
         source =comm_arg.source_name
         comm_data = comm_arg.commentary_data
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = f"/v2/commentaries/{source}"
         schema_list = []
         for item in comm_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schemas.CommentaryEdit)
             schema_list.append(schema_model)
-        result =contents_crud.update_commentaries(db_=db_, source_name=source,
-        commentaries=schema_list, user_id=None)
+        # result =contents_crud.update_commentaries(db_=db_, source_name=source,
+        # commentaries=schema_list, user_id=None)
+        response = await content_apis.edit_commentary(request=req,
+            source_name=source,commentaries= schema_list,
+            user_details=user_details, db_=db_)
+        result = response['data']
         comm_content_list = []
         for item in result:
             comm_var = types.Commentary(
@@ -506,8 +548,8 @@ class EditCommentary(graphene.Mutation):
                 active = item.active
             )
             comm_content_list.append(comm_var)
-        message = "Commentaries updated successfully"
-        return AddCommentary(message=message,data=comm_content_list)
+        message = response['message']
+        return EditCommentary(message=message,data=comm_content_list)
 
 ##### AGMT PROJECT MANAGEMENT Create #######
 class CreateAGMTProject(graphene.Mutation):
@@ -629,18 +671,25 @@ class AddBibleVideo(graphene.Mutation):
     message = graphene.String()
     data = graphene.List(types.BibleVideo)
 #pylint: disable=no-self-use
-    def mutate(self,info,video_arg):
+    async def mutate(self,info,video_arg):
         """resolve"""
         db_ = info.context["request"].db_session
         source =video_arg.source_name
         video_data = video_arg.video_data
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "POST"
+        req.scope['path'] = f"/v2/biblevideos/{source}"
         schema_list = []
         for item in video_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schemas.BibleVideoUpload)
             schema_list.append(schema_model)
-        result =contents_crud.upload_bible_videos(db_=db_, source_name=source,
-        videos=schema_list, user_id=None)
+        # result =contents_crud.upload_bible_videos(db_=db_, source_name=source,
+        # videos=schema_list, user_id=None)
+        response = await content_apis.add_biblevideo(request=req,
+            source_name=source,videos= schema_list,
+            user_details=user_details, db_=db_)
+        result = response['data']
         video_content_list = []
         for item in result:
             comm_var = types.BibleVideo(
@@ -652,7 +701,7 @@ class AddBibleVideo(graphene.Mutation):
                 active = item.active
             )
             video_content_list.append(comm_var)
-        message = "Bible videos added successfully"
+        message = response['message']
         return AddBibleVideo(message=message,data=video_content_list)
 
 ########## Edit BibleVideo ########
@@ -665,18 +714,25 @@ class EditBibleVideo(graphene.Mutation):
     message = graphene.String()
     data = graphene.List(types.BibleVideo)
 #pylint: disable=no-self-use
-    def mutate(self,info,video_arg):
+    async def mutate(self,info,video_arg):
         """resolve"""
         db_ = info.context["request"].db_session
         source =video_arg.source_name
         video_data = video_arg.video_data
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = f"/v2/biblevideos/{source}"
         schema_list = []
         for item in video_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schemas.BibleVideoEdit)
             schema_list.append(schema_model)
-        result =contents_crud.update_bible_videos(db_=db_, source_name=source,
-        videos=schema_list, user_id=None)
+        # result =contents_crud.update_bible_videos(db_=db_, source_name=source,
+        # videos=schema_list, user_id=None)
+        response = await content_apis.edit_biblevideo(request=req,
+            source_name=source,videos= schema_list,
+            user_details=user_details, db_=db_)
+        result = response['data']
         video_content_list = []
         for item in result:
             comm_var = types.BibleVideo(
@@ -688,8 +744,8 @@ class EditBibleVideo(graphene.Mutation):
                 active = item.active
             )
             video_content_list.append(comm_var)
-        message = "Bible videos updated successfully"
-        return AddBibleVideo(message=message,data=video_content_list)
+        message = response['message']
+        return EditBibleVideo(message=message,data=video_content_list)
 
 ############# Add Dictionary ###############
 class AddDictionary(graphene.Mutation):
@@ -701,18 +757,25 @@ class AddDictionary(graphene.Mutation):
     message = graphene.String()
     data = graphene.List(types.DictionaryWord)
 #pylint: disable=no-self-use
-    def mutate(self,info,dict_arg):
+    async def mutate(self,info,dict_arg):
         """resolve"""
         db_ = info.context["request"].db_session
         source =dict_arg.source_name
         dict_data = dict_arg.word_list
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "POST"
+        req.scope['path'] = f"/v2/dictionaries/{source}"
         schema_list = []
         for item in dict_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schemas.DictionaryWordCreate)
             schema_list.append(schema_model)
-        result =contents_crud.upload_dictionary_words(db_=db_, source_name=source,
-        dictionary_words=schema_list, user_id=None)
+        # result =contents_crud.upload_dictionary_words(db_=db_, source_name=source,
+        # dictionary_words=schema_list, user_id=None)
+        response = await content_apis.add_dictionary_word(request=req,
+            source_name=source, dictionary_words= schema_list,
+            user_details=user_details, db_=db_)
+        result = response['data']
         dict_content_list = []
         for item in result:
             dict_var = types.DictionaryWord(
@@ -721,7 +784,7 @@ class AddDictionary(graphene.Mutation):
                 active = item.active
             )
             dict_content_list.append(dict_var)
-        message = "Dictionary words added successfully"
+        message = response['message']
         return AddDictionary(message=message,data=dict_content_list)
 
 ########## Edit Dictionary ########
@@ -734,18 +797,25 @@ class EditDictionary(graphene.Mutation):
     message = graphene.String()
     data = graphene.List(types.DictionaryWord)
 #pylint: disable=no-self-use
-    def mutate(self,info,dict_arg):
+    async def mutate(self,info,dict_arg):
         """resolve"""
         db_ = info.context["request"].db_session
         source =dict_arg.source_name
         dict_data = dict_arg.word_list
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = f"/v2/dictionaries/{source}"
         schema_list = []
         for item in dict_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schemas.DictionaryWordEdit)
             schema_list.append(schema_model)
-        result =contents_crud.update_dictionary_words(db_=db_, source_name=source,
-        dictionary_words=schema_list, user_id=None)
+        # result =contents_crud.update_dictionary_words(db_=db_, source_name=source,
+        # dictionary_words=schema_list, user_id=None)
+        response = await content_apis.edit_dictionary_word(request=req,
+            source_name=source, dictionary_words= schema_list,
+            user_details=user_details, db_=db_)
+        result = response['data']
         dict_content_list = []
         for item in result:
             dict_var = types.DictionaryWord(
@@ -754,7 +824,7 @@ class EditDictionary(graphene.Mutation):
                 active = item.active
             )
             dict_content_list.append(dict_var)
-        message = "Dictionary words updated successfully"
+        message = response['message']
         return EditDictionary(message=message,data=dict_content_list)
 
 ########## Add Infographics ########
@@ -767,18 +837,23 @@ class AddInfographic(graphene.Mutation):
     message = graphene.String()
     data = graphene.List(types.Infographic)
 #pylint: disable=no-self-use
-    def mutate(self,info,info_arg):
+    async def mutate(self,info,info_arg):
         """resolve"""
         db_ = info.context["request"].db_session
         source =info_arg.source_name
         dict_data = info_arg.data
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "POST"
+        req.scope['path'] = f"/v2/infographics/{source}"
         schema_list = []
         for item in dict_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schemas.InfographicCreate)
             schema_list.append(schema_model)
-        result =contents_crud.upload_infographics(db_=db_, source_name=source,
-        infographics=schema_list, user_id=None)
+        response = await content_apis.add_infographics(request=req,
+            source_name=source, infographics= schema_list,
+            user_details=user_details, db_=db_)
+        result = response['data']
         dict_content_list = []
         for item in result:
             dict_var = types.Infographic(
@@ -788,7 +863,7 @@ class AddInfographic(graphene.Mutation):
                 active = item.active
             )
             dict_content_list.append(dict_var)
-        message = "Infographics added successfully"
+        message = response['message']
         return AddInfographic(message=message,data=dict_content_list)
 
 ########## Edit Infographics ########
@@ -801,18 +876,25 @@ class EditInfographic(graphene.Mutation):
     message = graphene.String()
     data = graphene.List(types.Infographic)
 #pylint: disable=no-self-use
-    def mutate(self,info,info_arg):
+    async def mutate(self,info,info_arg):
         """resolve"""
         db_ = info.context["request"].db_session
         source =info_arg.source_name
         dict_data = info_arg.data
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = f"/v2/infographics/{source}"
         schema_list = []
         for item in dict_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schemas.InfographicEdit)
             schema_list.append(schema_model)
-        result =contents_crud.update_infographics(db_=db_, source_name=source,
-        infographics=schema_list, user_id=None)
+        # result =contents_crud.update_infographics(db_=db_, source_name=source,
+        # infographics=schema_list, user_id=None)
+        response = await content_apis.edit_infographics(request=req,
+            source_name=source, infographics= schema_list,
+            user_details=user_details, db_=db_)
+        result = response['data']
         dict_content_list = []
         for item in result:
             dict_var = types.Infographic(
@@ -822,7 +904,7 @@ class EditInfographic(graphene.Mutation):
                 active = item.active
             )
             dict_content_list.append(dict_var)
-        message = "Infographics updated successfully"
+        message = response['message']
         return EditInfographic(message=message,data=dict_content_list)
 
 ########## Autographa - Translation ########
