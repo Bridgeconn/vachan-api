@@ -1,4 +1,4 @@
-'''Test cases for versions related APIs'''
+'''Test cases for extract text related APIs'''
 from requests.api import head
 from . import client
 from . import assert_input_validation_error, assert_not_available_content

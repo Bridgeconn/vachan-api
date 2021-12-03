@@ -504,7 +504,8 @@ def test_get_after_adding_data():
 
     #without auth
     executed = gql_request(query=SOURCE_GET)
-    assert len(executed["data"]["contents"]) == 0
+    assert_not_available_content_gql(executed["data"]["contents"])
+
     #with auth
     executed = gql_request(query=SOURCE_GET,headers=headers_auth)
     assert isinstance(executed, Dict)
@@ -877,7 +878,7 @@ def test_get_source_filter_access_tag():
 
     get_var["obj"] = ["PUBLISHABLE","OPENACCESS"]
     executed4 = gql_request(query=get_qry,variables=get_var, headers=headers_auth,)
-    assert len(executed4["data"]["contents"]) == 0
+    assert_not_available_content_gql(executed4["data"]["contents"])
 
 
 def test_put_default():
@@ -1266,7 +1267,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Autographa
     headers_auth['app'] = types.App.AG.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
-    assert len(executed["data"]["contents"]) == 0
+    assert_not_available_content_gql(executed["data"]["contents"])
     #APP : Vachan Online
     headers_auth['app'] = types.App.VACHAN.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
@@ -1277,7 +1278,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Vachan Admin
     headers_auth['app'] = types.App.VACHANADMIN.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
-    assert len(executed["data"]["contents"]) == 0
+    assert_not_available_content_gql(executed["data"]["contents"])
 
     #Get with AgUser
     #default : API
@@ -1305,7 +1306,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Vachan Admin
     headers_auth['app'] = types.App.VACHANADMIN.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
-    assert len(executed["data"]["contents"]) == 0    
+    assert_not_available_content_gql(executed["data"]["contents"])
 
     #Get with VachanUser
     #default : API
@@ -1319,7 +1320,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Autographa
     headers_auth['app'] = types.App.AG.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
-    assert len(executed["data"]["contents"]) == 0    
+    assert_not_available_content_gql(executed["data"]["contents"])    
     #APP : Vachan Online
     headers_auth['app'] = types.App.VACHAN.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
@@ -1330,7 +1331,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Vachan Admin
     headers_auth['app'] = types.App.VACHANADMIN.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
-    assert len(executed["data"]["contents"]) == 0    
+    assert_not_available_content_gql(executed["data"]["contents"])    
 
     #Get with VachanAdmin
     #default : API
@@ -1347,7 +1348,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Autographa
     headers_auth['app'] = types.App.AG.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
-    assert len(executed["data"]["contents"]) == 0    
+    assert_not_available_content_gql(executed["data"]["contents"])    
     #APP : Vachan Online
     headers_auth['app'] = types.App.VACHAN.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
@@ -1378,7 +1379,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Autographa
     headers_auth['app'] = types.App.AG.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
-    assert len(executed["data"]["contents"]) == 0    
+    assert_not_available_content_gql(executed["data"]["contents"])    
     #APP : Vachan Online
     headers_auth['app'] = types.App.VACHAN.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
@@ -1389,7 +1390,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Vachan Admin
     headers_auth['app'] = types.App.VACHANADMIN.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
-    assert len(executed["data"]["contents"]) == 0    
+    assert_not_available_content_gql(executed["data"]["contents"])    
 
     #Get with AgAdmin
     #default : API
@@ -1434,7 +1435,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Autographa
     headers_auth['app'] = types.App.AG.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
-    assert len(executed["data"]["contents"]) == 0    
+    assert_not_available_content_gql(executed["data"]["contents"])    
     #APP : Vachan Online
     headers_auth['app'] = types.App.VACHAN.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
@@ -1445,7 +1446,7 @@ def test_diffrernt_sources_with_app_and_roles():
     #APP : Vachan Admin
     headers_auth['app'] = types.App.VACHANADMIN.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
-    assert len(executed["data"]["contents"]) == 0
+    assert_not_available_content_gql(executed["data"]["contents"])
 
     #Super Admin
     SA_user_data = {
