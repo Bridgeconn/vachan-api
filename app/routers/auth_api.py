@@ -1,23 +1,25 @@
 """router for authentication endpoints"""
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from pydantic import types
-
+from sqlalchemy.orm import Session
 import schema_auth
 import schemas
-from dependencies import log
+from custom_exceptions import NotAvailableException
+from dependencies import log , get_db
 from authentication import user_register_kratos,user_login_kratos,user_role_add ,\
-     verify_role_permision,delete_identity ,AuthHandler
-from custom_exceptions import PermisionException, NotAvailableException
+     delete_identity , get_auth_access_check_decorator , get_user_or_none, kratos_logout
 
 router = APIRouter()
-auth_handler = AuthHandler()
+# auth_handler = AuthHandler()
 
 #Authentication apis
 @router.post('/v2/user/register',response_model=schema_auth.RegisterResponse,
 responses={400: {"model": schemas.ErrorResponse}},
 status_code=201,tags=["Authentication"])
-def register(register_details:schema_auth.Registration,
-app_type: schema_auth.AppType=Query(schema_auth.AppType.NONE)):
+@get_auth_access_check_decorator
+async def register(register_details:schema_auth.Registration,request: Request,#pylint: disable=unused-argument
+app_type: schema_auth.App=Query(schema_auth.App.API),user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Registration for Users
     * user_email and password fiels are mandatory
     * App type will be None by default, App Type will decide \
@@ -25,40 +27,50 @@ app_type: schema_auth.AppType=Query(schema_auth.AppType.NONE)):
     * first and last name fields are optional'''
     log.info('In User Registration')
     log.debug('registration:%s',register_details)
-    data = user_register_kratos(register_details,app_type)
-    return data
+    return user_register_kratos(register_details,app_type)
 
 @router.get('/v2/user/login',response_model=schema_auth.LoginResponse,
 responses={401: {"model": schemas.ErrorResponse}}
 ,tags=["Authentication"])
-def login(user_email: str,password: types.SecretStr):
+@get_auth_access_check_decorator
+async def login(user_email: str,password: types.SecretStr,
+    request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+    db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Login for All Users
     * user_email and password fiels are mandatory
     * Successful login will return a token for user for a time period'''
     log.info('In User Login')
     log.debug('login:%s',user_email)
-    data = user_login_kratos(user_email,password)
-    return data
+    return user_login_kratos(user_email,password)
 
 @router.get('/v2/user/logout',response_model=schema_auth.LogoutResponse,
 responses={403: {"model": schemas.ErrorResponse},
 401: {"model": schemas.ErrorResponse}}
 ,tags=["Authentication"])
-def logout(message = Depends(auth_handler.kratos_logout)):
+def logout(request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+    db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Logout
     * Loging out will end the expiry of a token even if the time period not expired.
     * Successful login will return a token for user for a time period'''
     log.info('In User Logout')
-    log.debug('logout:%s',message)
+    if 'Authorization' in request.headers:
+        token = request.headers['Authorization']
+        token = token = token.split(' ')[1]
+        message = kratos_logout(token)
+        log.debug('logout:%s',message)
+    else:
+        raise NotAvailableException(
+        "The provided Session Token could not be found, is invalid, or otherwise malformed")
     return message
 
-@router.post('/v2/user/userrole',response_model=schema_auth.UseroleResponse,
+@router.put('/v2/user/userrole',response_model=schema_auth.UseroleResponse,
 responses={403: {"model": schemas.ErrorResponse},
 401: {"model": schemas.ErrorResponse},
 422: {"model": schemas.ErrorResponse}},
 status_code=201,tags=["Authentication"])
-def userrole(role_data:schema_auth.UserRole,
-permision = Depends(auth_handler.kratos_session_validation)):
+@get_auth_access_check_decorator
+async def userrole(role_data:schema_auth.UserRole,request: Request,#pylint: disable=unused-argument
+user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Update User Roles.
     * User roles should provide in an ARRAY
     * Array values will overwrite the exisitng array of roles
@@ -67,34 +79,21 @@ permision = Depends(auth_handler.kratos_session_validation)):
     * [VachanAdmin , AgAdmin , AgUser , VachanUser] '''
     log.info('In User Role')
     log.debug('userrole:%s',role_data)
-    verified = verify_role_permision(api_name="userRole",permision=permision)
-    if verified:
-        user_id = role_data.userid
-        role_list = role_data.roles
-        data=user_role_add(user_id,role_list)
-    else:
-        raise PermisionException("User have no permision to access API")
-    return data
+    user_id = role_data.userid
+    role_list = role_data.roles
+    return user_role_add(user_id,role_list)
 
 @router.delete('/v2/user/delete-identity',response_model=schema_auth.IdentityDeleteResponse,
 responses={404: {"model": schemas.ErrorResponse},
 401: {"model": schemas.ErrorResponse}},
 status_code=200,tags=["Authentication"])
-def delete_user(user:schema_auth.UserIdentity,
-permision = Depends(auth_handler.kratos_session_validation)):
+@get_auth_access_check_decorator
+async def delete_user(user:schema_auth.UserIdentity,request: Request,#pylint: disable=unused-argument
+user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Delete Identity
     * unique Identity key can be used to delete an exisiting identity'''
     log.info('In Identity Delete')
     log.debug('identity-delete:%s',user)
-    verified = verify_role_permision(api_name="delete_identity",permision=permision)
-    if verified:
-        response = delete_identity(user.userid)
-
-        if response.status_code == 404:
-            raise NotAvailableException("Unable to locate the resource")
-
-        user_id = user.userid
-        out =  {"message":"deleted identity %s"%user_id}
-    else:
-        raise PermisionException("User have no permision to access API")
-    return out
+    user_id = user.userid
+    delete_identity(user.userid)
+    return {"message":"deleted identity %s"%user_id}

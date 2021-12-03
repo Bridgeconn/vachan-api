@@ -5,10 +5,15 @@ from typing import Dict
 from . import gql_request,check_skip_limit_gql
 #pylint: disable=E0401
 from .test_languages import assert_positive_get
+from .conftest import initial_test_users
 
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
+headers = {"contentType": "application/json", "accept": "application/json"}
 
 def test_get_all_data():
     """test for get all data as per the following query"""
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
     default_get_query = """
         {
     languages{
@@ -20,12 +25,19 @@ def test_get_all_data():
     }
     }
     """
+    #without auth
     executed = gql_request(default_get_query)
     assert isinstance(executed, Dict)
     assert len(executed["data"]["languages"])>0
     assert isinstance(executed["data"]["languages"], list)
     for item in executed["data"]["languages"]:
         assert_positive_get(item)
+
+    #with auth
+    executed = gql_request(default_get_query,headers=headers_auth)
+    assert isinstance(executed, Dict)
+    assert len(executed["data"]["languages"])>0
+    assert isinstance(executed["data"]["languages"], list)
 
     query_check = """
            query languages($skip:Int, $limit:Int){
@@ -45,7 +57,7 @@ def test_get_one_language_with_argument():
     }
     }
     """
-    executed = gql_request(default_get_query)
+    executed = gql_request(default_get_query,headers=headers_auth)
     assert executed == {"data": {"languages": [{"language": "Afar"}]}}
 
 def test_get_by_code():
@@ -61,7 +73,7 @@ def test_get_by_code():
     }
     }
     """
-    executed = gql_request(query)
+    executed = gql_request(query, headers=headers_auth)
     assert isinstance(executed, Dict)
     assert len(executed["data"]["languages"])>0
     assert isinstance(executed["data"]["languages"], list)
@@ -82,7 +94,7 @@ def test_get_language_code_upper_case():
     }
     }
     """
-    executed = gql_request(query)
+    executed = gql_request(query, headers=headers_auth)
     assert isinstance(executed, Dict)
     assert len(executed["data"]["languages"])>0
     assert isinstance(executed["data"]["languages"], list)
@@ -103,7 +115,7 @@ def test_get_language_name_mixed_case():
     }
     }
     """
-    executed = gql_request(query)
+    executed = gql_request(query, headers=headers_auth)
     assert isinstance(executed, Dict)
     assert len(executed["data"]["languages"]) == 1
     assert isinstance(executed["data"]["languages"], list)
@@ -124,7 +136,7 @@ def test_get_multiple_params():
     }
     }
     """
-    executed = gql_request(query)
+    executed = gql_request(query, headers=headers_auth)
     assert isinstance(executed, Dict)
     assert len(executed["data"]["languages"]) == 1
     assert isinstance(executed["data"]["languages"], list)
@@ -144,7 +156,7 @@ def test_get_notavailable_language_code():
         }
     }
     """
-    executed = gql_request(query)
+    executed = gql_request(query, headers=headers_auth)
     assert isinstance(executed, Dict)
     assert len(executed["data"]["languages"]) == 0
 
@@ -159,7 +171,7 @@ def test_get_notavailable_language_name():
         }
     }
     """
-    executed = gql_request(query)
+    executed = gql_request(query, headers=headers_auth)
     assert isinstance(executed, Dict)
     assert len(executed["data"]["languages"]) == 0
 
@@ -174,7 +186,7 @@ def test_get_incorrectvalue_language_code():
         }
     }
     """
-    executed = gql_request(query)
+    executed = gql_request(query, headers=headers_auth)
     assert isinstance(executed, Dict)
     assert "errors" in executed.keys()
 
@@ -204,7 +216,13 @@ def test_post_default():
         }
     """
     operation="mutation"
+    #Registered user can only add content type
+    #without auth
     executed = gql_request(query=create_query, operation=operation, variables=variables)
+    assert "errors" in executed.keys()
+    #with auth
+    executed = gql_request(query=create_query, operation=operation, variables=variables,
+    headers=headers_auth)
     assert executed["data"]["addLanguage"]["message"] == "Language created successfully"
     item =executed["data"]["addLanguage"]["data"]
     assert_positive_get(item)
@@ -234,7 +252,8 @@ def test_post_upper_case_code():
         }
     """
     operation="mutation"
-    executed = gql_request(query=create_query, operation=operation, variables=variables)
+    executed = gql_request(query=create_query, operation=operation, variables=variables,
+    headers=headers_auth)
     assert executed["data"]["addLanguage"]["message"] == "Language created successfully"
     item =executed["data"]["addLanguage"]["data"]
     assert_positive_get(item)
@@ -263,7 +282,8 @@ def test_post_optional_script_direction():
         }
     """
     operation="mutation"
-    executed = gql_request(query=query, operation=operation, variables=variables)
+    executed = gql_request(query=query, operation=operation, variables=variables,
+    headers=headers_auth)
     assert executed["data"]["addLanguage"]["message"] == "Language created successfully"
     item =executed["data"]["addLanguage"]["data"]
     assert_positive_get(item)
@@ -292,7 +312,8 @@ def test_post_incorrectdatatype1():
         }
         """
     operation="mutation"
-    executed = gql_request(query=query, operation=operation, variables=variables)
+    executed = gql_request(query=query, operation=operation, variables=variables,
+    headers=headers_auth)
     assert "errors" in executed.keys()
 
 def test_post_incorrectdatatype2():
@@ -318,7 +339,8 @@ def test_post_incorrectdatatype2():
         }
         """
     operation="mutation"
-    executed = gql_request(query=query, operation=operation, variables=variables)
+    executed = gql_request(query=query, operation=operation, variables=variables,
+    headers=headers_auth)
     assert "errors" in executed.keys()
 
 def test_post_missingvalue_language():
@@ -343,7 +365,8 @@ def test_post_missingvalue_language():
         }
         """
     operation="mutation"
-    executed = gql_request(query=query, operation=operation, variables=variables)
+    executed = gql_request(query=query, operation=operation, variables=variables,
+    headers=headers_auth)
     assert "errors" in executed.keys()
 
 #### text search test #####
@@ -414,3 +437,88 @@ def test_searching():
         if item['language'] == "Sinhala":
             found = True
     assert found
+
+def test_put_languages():
+    """put test for languages"""
+    #create a new langauge
+    variables = {
+    "object": {
+        "language": "new-lang-test",
+        "code": "x-abc",
+        "scriptDirection": "left-to-right"
+        }
+    }
+    create_query = """
+        mutation create($object:InputAddLang!){
+        addLanguage(languageAddargs:$object){
+                message
+            data{
+            languageId
+            language
+            code
+            scriptDirection
+            metaData
+            }
+        }
+        }
+    """
+    operation="mutation"
+    #with auth
+    executed = gql_request(query=create_query, operation=operation, variables=variables,
+    headers=headers_auth)
+    assert executed["data"]["addLanguage"]["message"] == "Language created successfully"
+
+    #get language id
+    query = """
+            {
+    languages(languageCode:"x-abc"){
+        languageId
+    }
+    }
+    """
+    executed = gql_request(query, headers=headers_auth)
+    assert isinstance(executed, Dict)
+    assert len(executed["data"]["languages"])>0
+    item = executed["data"]["languages"]
+    language_id = item[0]['languageId']
+
+    #edit
+    up_qry = """
+    mutation edit($object:InputUpdateLang!){
+        updateLanguage(languageUpdateargs:$object){
+                message
+            data{
+            languageId
+            language
+            code
+            scriptDirection
+            metaData
+            }
+        }
+        }
+    """
+    up_variables = {
+    "object": {
+        "languageId":language_id,
+        "language": "new-lang-test-edited"
+        }
+    }
+    executed = gql_request(query=up_qry, operation=operation, variables=up_variables,
+    headers=headers_auth)
+    assert executed["data"]["updateLanguage"]["message"] == "Language edited successfully"
+    item =executed["data"]["updateLanguage"]["data"]
+    assert_positive_get(item)
+    assert item["language"] == up_variables["object"]["language"]
+
+    #edit without auth
+    executed = gql_request(query=up_qry, operation=operation, variables=up_variables)
+    assert "errors" in executed.keys()
+
+    #edit with not created user
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    executed = gql_request(query=up_qry, operation=operation, variables=up_variables,
+    headers=headers_auth)
+    assert "errors" in executed.keys()
+
+
+

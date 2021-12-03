@@ -44,11 +44,11 @@ class TypeException(Exception):
         self.detail = detail
         self.status_code = 415
 
-class PermisionException(Exception):
-    '''Format for permision error'''
+class PermissionException(Exception):
+    '''Format for permission error'''
     def __init__(self, detail: str):
         super().__init__()
-        self.name = "Permision Denied"
+        self.name = "Permission Denied"
         self.detail = detail
         self.status_code = 403
 

@@ -8,6 +8,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, Session
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.schema import Sequence
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from database import Base
@@ -43,8 +44,8 @@ class Language(Base): # pylint: disable=too-few-public-methods
     language = Column('language_name', String)
     scriptDirection = Column('script_direction', String)
     metaData = Column('metadata', JSON)
-    createdUser = Column('created_user', Integer)
-    updatedUser = Column('last_updated_user', Integer)
+    createdUser = Column('created_user', String)
+    updatedUser = Column('last_updated_user', String)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
 
 
@@ -59,8 +60,8 @@ class License(Base): # pylint: disable=too-few-public-methods
     permissions = Column('permissions', ARRAY(String))
     active = Column('active', Boolean)
     # metaData = Column('metadata', JSON)
-    createdUser = Column('created_user', Integer)
-    updatedUser = Column('last_updated_user', Integer)
+    createdUser = Column('created_user', String)
+    updatedUser = Column('last_updated_user', String)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
 
 class Version(Base): # pylint: disable=too-few-public-methods
@@ -72,6 +73,9 @@ class Version(Base): # pylint: disable=too-few-public-methods
     versionName = Column('version_description', String)
     revision = Column('revision', Integer)
     metaData = Column('metadata', JSON)
+    createdUser = Column('created_user', String)
+    updatedUser = Column('last_updated_user', String)
+    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
 
 class Source(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table sources in vachan DB(postgres)'''
@@ -90,9 +94,9 @@ class Source(Base): # pylint: disable=too-few-public-methods
     versionId = Column('version_id', Integer, ForeignKey('versions.version_id'))
     version = relationship('Version')
     active = Column('active', Boolean)
-    metaData = Column('metadata', JSON)
-    createdUser = Column('created_user', Integer)
-    updatedUser = Column('last_updated_user', Integer)
+    metaData = Column('metadata', JSONB)
+    createdUser = Column('created_user', String)
+    updatedUser = Column('last_updated_user', String)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
 
 class BibleBook(Base): # pylint: disable=too-few-public-methods
@@ -319,8 +323,8 @@ class TranslationProject(Base): # pylint: disable=too-few-public-methods
     documentFormat = Column('source_document_format', String)
     metaData = Column('metadata', JSON)
     active = Column('active', Boolean, default=True)
-    createdUser = Column('created_user', Integer)
-    updatedUser = Column('last_updated_user', Integer)
+    createdUser = Column('created_user', String)
+    updatedUser = Column('last_updated_user', String)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
 
 class TranslationDraft(Base): # pylint: disable=too-few-public-methods
@@ -341,7 +345,7 @@ class TranslationDraft(Base): # pylint: disable=too-few-public-methods
     sentence = Column('sentence', String)
     draft = Column('draft', String)
     draftMeta = Column('draft_metadata', JSON)
-    updatedUser = Column('last_updated_user', Integer)
+    updatedUser = Column('last_updated_user', String)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
 
 class TranslationMemory(Base):  # pylint: disable=too-few-public-methods

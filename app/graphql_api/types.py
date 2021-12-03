@@ -655,3 +655,47 @@ class InputEditCommentary(graphene.InputObjectType):
     source_name = graphene.String(required=True,\
         description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
     commentary_data = graphene.List(CommentaryEditDict)
+
+class App(graphene.Enum):
+    '''available choices for permission'''
+    AG = "Autographa"
+    VACHAN = "Vachan-online or vachan-app"
+    VACHANADMIN = "VachanAdmin"
+    API = "API-user"
+
+class RegisterInput(graphene.InputObjectType):
+    """Register Input"""
+    email = graphene.String(required=True)
+    password = graphene.String(required=True)
+    firstname = graphene.String()
+    lastname = graphene.String()
+
+class RegisterResponse(graphene.ObjectType):#pylint: disable=too-few-public-methods
+    """Response object of Registration"""
+    id = graphene.String(required=True)
+    email = graphene.String(required=True)
+    permissions = graphene.List(App)
+
+class LoginResponse(graphene.ObjectType):#pylint: disable=too-few-public-methods
+    """Login Response Object"""
+    message = graphene.String()
+    token = graphene.String()
+
+class AdminRoles(graphene.Enum):
+    '''Admin Roles'''
+    SUPERADMIN = 'SuperAdmin'
+    VACHANADMIN = 'VachanAdmin'
+    AGADMIN = 'AgAdmin'
+    AGUSER = 'AgUser'
+    VACHANUSER = 'VachanUser'
+    APIUSER = 'APIUser'
+    BCSDEV = 'BcsDeveloper'
+
+class UserroleInput(graphene.InputObjectType):
+    """input for user role update"""
+    userid = graphene.String(required=True)
+    roles = graphene.List(AdminRoles)
+
+class UserIdentity(graphene.InputObjectType):
+    """input for user identity delete"""
+    userid = graphene.String(required=True)
