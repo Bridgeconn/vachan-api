@@ -235,10 +235,47 @@ class Translation(BaseModel):
     occurrence: TokenOccurence
     status: str = Field(..., example="confirmed")
 
+class StopWordsType(Enum):
+    '''Types of stop-words based on how they are generated'''
+    SYSTEM = 'system defined'
+    USER = 'user defined'
+    AUTO = 'auto generated'
+
 class StopWords(BaseModel):
     '''Response object for stop words'''
-    stopword: str = Field(..., example='और')
-    confidence: float = Field(..., example="0.8")
-    active : bool = Field(..., example="True")
+    stopWord: str = Field(..., example="और")
+    stopwordType: StopWordsType = Field(None, example="Auto generated")
+    confidence: float = Field(None, example=0.8)
+    active : bool = Field(..., example=True)
     metaData: dict = Field(None, example={
-        "type":'preposition'})
+        "type":'postposition'})
+    @root_validator
+    def set_stopword_type(cls, values): # pylint: disable=R0201 disable=E0213
+        '''Set stopword type based on confidence score'''
+        if values['stopwordType'] is None:
+            if values['confidence'] == 2:
+                values['stopwordType'] = StopWordsType.SYSTEM.value
+            elif values['confidence'] == 1:
+                values['stopwordType'] = StopWordsType.USER.value
+            else:
+                values['stopwordType'] = StopWordsType.AUTO.value
+            if values['confidence'] in [1, 2]:
+                values['confidence'] = None
+        return values
+
+class StopWordUpdate(BaseModel):
+    '''Import object for updating stopword info'''
+    stopWord: str = Field(..., example="और")
+    active : bool = Field(None, example=True)
+    metaData: dict = Field(None, example={
+        "type":'postposition'})
+
+class StopWordUpdateResponse(BaseModel):
+    '''Response object after updating metadata or active status'''
+    message: str = Field(..., example="Stopword info updated successfully")
+    data: StopWords
+
+class StopWordsAddResponse(BaseModel):
+    '''Response object after adding new stopwords in db'''
+    message: str = Field(..., example="3 stopwords added successfully")
+    data:List[StopWords] = None

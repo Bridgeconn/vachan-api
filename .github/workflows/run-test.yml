@@ -16,28 +16,10 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-            python-version: '3.7.5' # Version range or exact version of a Python version to use, using SemVer's version range syntax
-            architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
-  
-      - name: Set up database
-        run: |
-          cd db
-          sudo apt-get install postgresql libpq-dev
-          sudo service postgresql start
-          sudo -u postgres psql -c "CREATE DATABASE vachan;"
-          sudo -u postgres psql vachan < /home/runner/work/vachan-api/vachan-api/db/seed_DB.sql
-          sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'secret';"
+      - name: start dependencies
+        working-directory: ./docker
+        run: docker-compose -f run-test-dependencies.yml up -d
+      - name: test
+        working-directory: ./docker
+        run: docker-compose -f run-tests.yml run vachan-api  
         
-      - name: change Python path
-        run: echo "PYTHONPATH=${PWD}/app" >> $GITHUB_ENV
-        
-      - name: add env testmode
-        run: echo "TEST_MODE=True" >> $GITHUB_ENV  
-        
-      - name: Set up App and run tests
-        run: |
-          pip install -r requirements.txt
-          cd app 
-          python -m pytest --disable-warnings -k "not agmt and not translation and not bibles and not auth and not source_get_sentence"
