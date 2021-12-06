@@ -10,6 +10,12 @@ from .test_infographics import assert_positive_get
 #pylint: disable=R0914
 #pylint: disable=R0915
 from . import gql_request,assert_not_available_content_gql,check_skip_limit_gql
+from .conftest import initial_test_users
+from . test_gql_auth_basic import login,SUPER_PASSWORD,SUPER_USER
+
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
+headers = {"contentType": "application/json", "accept": "application/json"}
 
 VERSION_VAR  = {
         "object": {
@@ -76,15 +82,22 @@ GET_INFOGRAPHIC = """
   }
 }
 """
-
+headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
 def check_post(query, variables):
     '''prior steps and post attempt, without checking the response'''
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     #add version
     version_add(version_query,VERSION_VAR)
     #add source
     src_executed = source_add(source_query,SOURCE_VAR)
     source_name = src_executed["data"]["addSource"]["data"]["sourceName"]
+    #without auth
     executed = gql_request(query=query,operation="mutation", variables=variables)
+    assert "errors" in executed
+    #with auth
+    executed = gql_request(query=query,operation="mutation", variables=variables,
+      headers=headers_auth)
+    assert not "errors" in executed
     return executed,source_name
 
 def post_infographic(variable):
@@ -124,10 +137,11 @@ def test_post_default():
   }
 }
     """
-    check_skip_limit_gql(query_check,"infographics")
+    check_skip_limit_gql(query_check,"infographics",headers=headers_auth)
 
     #duplicate test
-    executed = gql_request(ADD_INFOGRAPHIC,operation="mutation",variables=variable)
+    executed = gql_request(ADD_INFOGRAPHIC,operation="mutation",variables=variable,
+    headers=headers_auth)
     assert "errors" in executed.keys()
 
 def test_post_incorrect_data():
@@ -142,7 +156,8 @@ def test_post_incorrect_data():
         "infographicLink":"http://somewhere.com/something"}
   }
 }    
-    executed = gql_request(ADD_INFOGRAPHIC,operation="mutation",variables=variable)
+    executed = gql_request(ADD_INFOGRAPHIC,operation="mutation",variables=variable,
+      headers=headers_auth)
     assert "errors" in executed.keys()
 
     # data object with missing mandatory fields
@@ -154,7 +169,8 @@ def test_post_incorrect_data():
         "infographicLink":"http://somewhere.com/something"}]
   }
 }  
-    executed2 = gql_request(ADD_INFOGRAPHIC,operation="mutation",variables=variable2)
+    executed2 = gql_request(ADD_INFOGRAPHIC,operation="mutation",variables=variable2,
+      headers=headers_auth)
     assert "errors" in executed2.keys()
 
     variable3 = {
@@ -166,7 +182,8 @@ def test_post_incorrect_data():
     ]
   }
 }  
-    executed3 = gql_request(ADD_INFOGRAPHIC,operation="mutation",variables=variable3)
+    executed3 = gql_request(ADD_INFOGRAPHIC,operation="mutation",variables=variable3,
+      headers=headers_auth)
     assert "errors" in executed3.keys()
 
     # incorrect data values in fields
@@ -179,7 +196,8 @@ def test_post_incorrect_data():
     ]
   }
 }  
-    executed4 = gql_request(ADD_INFOGRAPHIC,operation="mutation",variables=variable4)
+    executed4 = gql_request(ADD_INFOGRAPHIC,operation="mutation",variables=variable4,
+      headers=headers_auth)
     assert "errors" in executed4.keys()
 
     variable5 = {
@@ -192,7 +210,8 @@ def test_post_incorrect_data():
     ]
   }
 }  
-    executed5 = gql_request(ADD_INFOGRAPHIC,operation="mutation",variables=variable5)
+    executed5 = gql_request(ADD_INFOGRAPHIC,operation="mutation",variables=variable5,
+      headers=headers_auth)
     assert "errors" in executed5.keys()
 
     #wrong source
@@ -205,7 +224,8 @@ def test_post_incorrect_data():
     ]
   }
 }  
-    executed6 = gql_request(ADD_INFOGRAPHIC,operation="mutation",variables=variable6)
+    executed6 = gql_request(ADD_INFOGRAPHIC,operation="mutation",variables=variable6,
+      headers=headers_auth)
     assert "errors" in executed6.keys()
 
 def test_get_after_data_upload():
@@ -241,26 +261,26 @@ def test_get_after_data_upload():
 }
     """
     query1 = query.replace("arg_text",'bookCode:"gen"')
-    executed1 = gql_request(query1)
+    executed1 = gql_request(query1,headers=headers_auth)
     assert len(executed1["data"]["infographics"]) == 3
 
     query2 = query.replace("arg_text",'bookCode:"exo"')
-    executed2 = gql_request(query2)
+    executed2 = gql_request(query2,headers=headers_auth)
     assert len(executed2["data"]["infographics"]) == 1
 
     # filter with title introductions
     query3 = query.replace("arg_text",'title:"creation"')
-    executed3 = gql_request(query3)
+    executed3 = gql_request(query3,headers=headers_auth)
     assert len(executed3["data"]["infographics"]) == 1
 
     # both title and book
     query4 = query.replace("arg_text",'bookCode:"gen",title:"Noah\'s Ark"')
-    executed3 = gql_request(query4)
+    executed3 = gql_request(query4,headers=headers_auth)
     assert len(executed3["data"]["infographics"]) == 1
 
     # not available
     query5 = query.replace("arg_text",'book_code:"mat"')
-    executed5 = gql_request(query5)
+    executed5 = gql_request(query5,headers=headers_auth)
     assert "errors" in executed5.keys()
 
 def test_get_incorrect_data():
@@ -272,7 +292,7 @@ def test_get_incorrect_data():
   }
 }
     """
-    executed = gql_request(query)
+    executed = gql_request(query,headers=headers_auth)
     assert "errors" in executed.keys()
 
     query0 = """
@@ -283,15 +303,15 @@ def test_get_incorrect_data():
 }
     """
     query1 = query0.replace("arg_text","book_code:60")
-    executed1 = gql_request(query1)
+    executed1 = gql_request(query1,headers=headers_auth)
     assert "errors" in executed1.keys()
 
     query2 = query0.replace("arg_text","book_code:mark")
-    executed2 = gql_request(query2)
+    executed2 = gql_request(query2,headers=headers_auth)
     assert "errors" in executed2.keys()
 
     query3 = query0.replace("arg_text","title:1")
-    executed3 = gql_request(query3)
+    executed3 = gql_request(query3,headers=headers_auth)
     assert "errors" in executed3.keys()
 
 def test_put_after_upload():
@@ -320,8 +340,13 @@ def test_put_after_upload():
         "infographicLink":"http://somewhereelse.com/something"}
     ]
   }
-}
+} 
+    #Without Auth
     executed = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=new_variable)
+    assert "errors" in executed
+    #with auth
+    executed = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=new_variable,
+      headers=headers_auth)
     assert executed["data"]["editInfographic"]["message"] == "Infographics updated successfully"
     assert len(executed["data"]["editInfographic"]["data"]) > 0
     for i,item in enumerate(executed["data"]["editInfographic"]["data"]):
@@ -343,7 +368,8 @@ def test_put_after_upload():
     ]
   }
 }
-    executed2 = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=variable2)
+    executed2 = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=variable2,
+      headers=headers_auth)
     assert "errors" in executed2.keys()
 
 def test_put_incorrect_data():
@@ -370,7 +396,8 @@ def test_put_incorrect_data():
         "infographicLink":"http://somewhere.com/something"}
   }
 }    
-    executed = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=variable)
+    executed = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=variable,
+      headers=headers_auth)
     assert "errors" in executed.keys()
 
     # data object with missing mandatory fields
@@ -382,7 +409,8 @@ def test_put_incorrect_data():
         "infographicLink":"http://somewhere.com/something"}]
   }
 }  
-    executed2 = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=variable2)
+    executed2 = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=variable2,
+      headers=headers_auth)
     assert "errors" in executed2.keys()
 
     variable3 = {
@@ -394,7 +422,8 @@ def test_put_incorrect_data():
     ]
   }
 }  
-    executed3 = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=variable3)
+    executed3 = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=variable3,
+      headers=headers_auth)
     assert "errors" in executed3.keys()
 
     # incorrect data values in fields
@@ -407,7 +436,8 @@ def test_put_incorrect_data():
     ]
   }
 }  
-    executed4 = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=variable4)
+    executed4 = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=variable4,
+      headers=headers_auth)
     assert "errors" in executed4.keys()
 
     variable5 = {
@@ -420,7 +450,8 @@ def test_put_incorrect_data():
     ]
   }
 }  
-    executed5 = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=variable5)
+    executed5 = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=variable5,
+      headers=headers_auth)
     assert "errors" in executed5.keys()
 
     #wrong source
@@ -433,7 +464,8 @@ def test_put_incorrect_data():
     ]
   }
 }  
-    executed6 = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=variable6)
+    executed6 = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=variable6,
+      headers=headers_auth)
     assert "errors" in executed6.keys()
 
 def test_soft_delete():
@@ -459,7 +491,7 @@ def test_soft_delete():
 } 
     post_infographic(variable=variable)
 
-    executed = gql_request(GET_INFOGRAPHIC)
+    executed = gql_request(GET_INFOGRAPHIC,headers=headers_auth)
     assert len(executed["data"]["infographics"]) == 6
 
     variable2 = {
@@ -471,6 +503,78 @@ def test_soft_delete():
     ]
   }
 } 
-    executed2 = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=variable2)
-    executed3 = gql_request(GET_INFOGRAPHIC)
+    executed2 = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=variable2,
+      headers=headers_auth)
+    executed3 = gql_request(GET_INFOGRAPHIC,headers=headers_auth)
     assert len(executed3["data"]["infographics"]) == 5
+
+def test_created_user_can_only_edit():
+    """only created user and SA can only edit"""
+    """source edit can do by created user and Super Admin"""
+    SA_user_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(SA_user_data)
+    token =  response["data"]["login"]["token"]
+
+    headers_SA = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token
+                }
+    
+    #add version
+    version_add(version_query,VERSION_VAR)
+    #add source
+    source_data = {
+  "object": {
+    "contentType": "infographic",
+    "language": "gu",
+    "version": "TTT",
+    "revision": "1",
+    "year": 2021
+  }
+}
+    executed = gql_request(query=source_query,operation="mutation", variables=source_data,
+      headers=headers_SA)
+    assert isinstance(executed, Dict)
+    assert executed["data"]["addSource"]["message"] == "Source created successfully"
+
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    #post data
+    #Create With SA
+    
+    variable = {
+  "object": {
+    "sourceName": "gu_TTT_1_infographic",
+    "data": [
+        {"bookCode":"mat", "title":"12 apostles",
+        "infographicLink":"http://somewhere.com/something"},
+        {"bookCode":"mat", "title":"miracles",
+        "infographicLink":"http://somewhere.com/something"}
+    ]
+  }
+} 
+    executed = gql_request(query=ADD_INFOGRAPHIC,operation="mutation", variables=variable,
+      headers=headers_SA)
+    assert executed["data"]["addInfographic"]["message"] == "Infographics added successfully"      
+
+    new_variable = {
+  "object": {
+    "sourceName": "gu_TTT_1_infographic",
+    "data": [
+        {"bookCode":"mat", "title":"12 apostles",
+        "infographicLink":"http://anotherplace.com/something"},
+        {"bookCode":"mat", "title":"miracles",
+        "infographicLink":"http://somewhereelse.com/something"}
+    ]
+  }
+} 
+    #Edit with SA created
+    executed = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=new_variable,
+      headers=headers_SA)
+    assert executed["data"]["editInfographic"]["message"] == "Infographics updated successfully"
+    #Edit with VA not created user
+    executed = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=new_variable,
+      headers=headers_auth)
+    assert "errors" in executed

@@ -316,6 +316,7 @@ class AddBible(graphene.Mutation):
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "POST"
         req.scope['path'] = f"/v2/bibles/{source}/books"
+        req.path_params["source_name"] = source
         books = bible_arg.books
         schema_list = []
         for item in books:
@@ -358,6 +359,7 @@ class EditBible(graphene.Mutation):
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
         req.scope['path'] = f"/v2/bibles/{source}/books"
+        req.path_params["source_name"] = source
         books = bible_arg.books
         schema_list = []
         for item in books:
@@ -401,6 +403,7 @@ class AddAudioBible(graphene.Mutation):
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "POST"
         req.scope['path'] = f"/v2/bibles/{source}/audios"
+        req.path_params["source_name"] = source
         schema_list = []
         for item in audio_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
@@ -442,6 +445,7 @@ class EditAudioBible(graphene.Mutation):
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
         req.scope['path'] = f"/v2/bibles/{source}/audios"
+        req.path_params["source_name"] = source
         schema_list = []
         for item in audio_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
@@ -483,6 +487,7 @@ class AddCommentary(graphene.Mutation):
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "POST"
         req.scope['path'] = f"/v2/commentaries/{source}"
+        req.path_params["source_name"] = source
         schema_list = []
         for item in comm_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
@@ -526,6 +531,7 @@ class EditCommentary(graphene.Mutation):
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
         req.scope['path'] = f"/v2/commentaries/{source}"
+        req.path_params["source_name"] = source
         schema_list = []
         for item in comm_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
@@ -679,6 +685,7 @@ class AddBibleVideo(graphene.Mutation):
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "POST"
         req.scope['path'] = f"/v2/biblevideos/{source}"
+        req.path_params["source_name"] = source
         schema_list = []
         for item in video_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
@@ -722,6 +729,7 @@ class EditBibleVideo(graphene.Mutation):
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
         req.scope['path'] = f"/v2/biblevideos/{source}"
+        req.path_params["source_name"] = source
         schema_list = []
         for item in video_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
@@ -765,6 +773,7 @@ class AddDictionary(graphene.Mutation):
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "POST"
         req.scope['path'] = f"/v2/dictionaries/{source}"
+        req.path_params["source_name"] = source
         schema_list = []
         for item in dict_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
@@ -805,6 +814,7 @@ class EditDictionary(graphene.Mutation):
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
         req.scope['path'] = f"/v2/dictionaries/{source}"
+        req.path_params["source_name"] = source
         schema_list = []
         for item in dict_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
@@ -845,6 +855,7 @@ class AddInfographic(graphene.Mutation):
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "POST"
         req.scope['path'] = f"/v2/infographics/{source}"
+        req.path_params["source_name"] = source
         schema_list = []
         for item in dict_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
@@ -884,6 +895,7 @@ class EditInfographic(graphene.Mutation):
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
         req.scope['path'] = f"/v2/infographics/{source}"
+        req.path_params["source_name"] = source
         schema_list = []
         for item in dict_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\

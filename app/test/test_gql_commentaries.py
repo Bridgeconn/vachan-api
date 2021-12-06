@@ -10,6 +10,12 @@ from .test_commentaries import assert_positive_get
 #pylint: disable=R0914
 #pylint: disable=R0915
 from . import gql_request,assert_not_available_content_gql,check_skip_limit_gql
+from .conftest import initial_test_users
+from . test_gql_auth_basic import login,SUPER_PASSWORD,SUPER_USER
+
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
+headers = {"contentType": "application/json", "accept": "application/json"}
 
 VERSION_VAR  = {
         "object": {
@@ -67,7 +73,7 @@ EDIT_COMMENTARY = """
   }
 }
 """
-
+headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
 def check_post(query, variables):
     '''prior steps and post attempt, without checking the response'''
     #add version
@@ -75,12 +81,19 @@ def check_post(query, variables):
     #add source
     src_executed = source_add(source_query,SOURCE_VAR)
     source_name = src_executed["data"]["addSource"]["data"]["sourceName"]
+    #without Auth
     executed = gql_request(query=query,operation="mutation", variables=variables)
+    assert "errors" in executed
+    #with auth
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    executed = gql_request(query=query,operation="mutation", variables=variables,
+      headers=headers_auth)
     return executed,source_name
 
 def post_comentary(variable):
     '''post data and check successfull or not'''
     executed , source_name = check_post(ADD_COMMENTARY,variable)
+    assert not "errors" in executed
     assert executed["data"]["addCommentary"]["message"] == "Commentaries added successfully"
     assert len(variable["object"]["commentaryData"]) ==\
        len(executed["data"]["addCommentary"]["data"])
@@ -119,7 +132,7 @@ def test_post_default():
 }
 
     """
-    check_skip_limit_gql(query_check,"commentaries")
+    check_skip_limit_gql(query_check,"commentaries", headers=headers_auth)
 
 def test_post_duplicate():
     '''Negative test to add two commentaries with same reference range'''
@@ -133,7 +146,8 @@ def test_post_duplicate():
     }
     }
     post_comentary(variable)
-    executed = gql_request(query=ADD_COMMENTARY,operation="mutation",variables=variable)
+    executed = gql_request(query=ADD_COMMENTARY,operation="mutation",variables=variable,
+      headers=headers_auth)
     assert "errors" in executed.keys()
 
 def test_post_incorrect_data():
@@ -148,7 +162,8 @@ def test_post_incorrect_data():
 
     }
     }
-    executed = gql_request(query=ADD_COMMENTARY,operation="mutation",variables=variable)
+    executed = gql_request(query=ADD_COMMENTARY,operation="mutation",variables=variable,
+      headers=headers_auth)
     assert "errors" in executed.keys()
 
     # data object with missing mandatory fields
@@ -161,7 +176,8 @@ def test_post_incorrect_data():
         ]
     }
     }
-    executed1 = gql_request(query=ADD_COMMENTARY,operation="mutation",variables=variable1)
+    executed1 = gql_request(query=ADD_COMMENTARY,operation="mutation",variables=variable1,
+      headers=headers_auth)
     assert "errors" in executed1.keys()
 
     variable2 = {
@@ -173,7 +189,8 @@ def test_post_incorrect_data():
         ]
     }
     }
-    executed2 = gql_request(query=ADD_COMMENTARY,operation="mutation",variables=variable2)
+    executed2 = gql_request(query=ADD_COMMENTARY,operation="mutation",variables=variable2,
+      headers=headers_auth)
     assert "errors" in executed2.keys()
 
     variable3 = {
@@ -185,7 +202,8 @@ def test_post_incorrect_data():
         ]
     }
     }
-    executed3 = gql_request(query=ADD_COMMENTARY,operation="mutation",variables=variable3)
+    executed3 = gql_request(query=ADD_COMMENTARY,operation="mutation",variables=variable3,
+      headers=headers_auth)
     assert "errors" in executed3.keys()
 
     # incorrect data values in fields
@@ -198,7 +216,8 @@ def test_post_incorrect_data():
         ]
     }
     }
-    executed4 = gql_request(query=ADD_COMMENTARY,operation="mutation",variables=variable4)
+    executed4 = gql_request(query=ADD_COMMENTARY,operation="mutation",variables=variable4,
+      headers=headers_auth)
     assert "errors" in executed4.keys()
 
     variable5 = {
@@ -210,7 +229,8 @@ def test_post_incorrect_data():
         ]
     }
     }
-    executed5 = gql_request(query=ADD_COMMENTARY,operation="mutation",variables=variable5)
+    executed5 = gql_request(query=ADD_COMMENTARY,operation="mutation",variables=variable5,
+      headers=headers_auth)
     assert "errors" in executed5.keys()
 
     variable6 = {
@@ -222,7 +242,8 @@ def test_post_incorrect_data():
         ]
     }
     }
-    executed6 = gql_request(query=ADD_COMMENTARY,operation="mutation",variables=variable6)
+    executed6 = gql_request(query=ADD_COMMENTARY,operation="mutation",variables=variable6,
+      headers=headers_auth)
     assert "errors" in executed6.keys()
 
     variable7 = {
@@ -234,7 +255,8 @@ def test_post_incorrect_data():
         ]
     }
     }
-    executed7 = gql_request(query=ADD_COMMENTARY,operation="mutation",variables=variable7)
+    executed7 = gql_request(query=ADD_COMMENTARY,operation="mutation",variables=variable7,
+      headers=headers_auth)
     assert "errors" in executed7.keys()
 
     #wrong source
@@ -247,7 +269,8 @@ def test_post_incorrect_data():
         ]
     }
     }
-    executed8 = gql_request(query=ADD_COMMENTARY,operation="mutation",variables=variable8)
+    executed8 = gql_request(query=ADD_COMMENTARY,operation="mutation",variables=variable8,
+      headers=headers_auth)
     assert "errors" in executed8.keys()
 
 def test_get_after_data_upload():
@@ -293,7 +316,10 @@ def test_get_after_data_upload():
   }
 }
     """
+    #get without auth
     executed1 = gql_request(query1)
+    assert "errors" in executed1
+    executed1 = gql_request(query1,headers=headers_auth)
     assert len(executed1["data"]["commentaries"]) == 6
 
     query2 = """
@@ -313,7 +339,7 @@ def test_get_after_data_upload():
   }
 }
     """
-    executed2 = gql_request(query2)
+    executed2 = gql_request(query2,headers=headers_auth)
     assert len(executed2["data"]["commentaries"]) == 5
 
     # all book introductions
@@ -334,7 +360,7 @@ def test_get_after_data_upload():
   }
 }
     """
-    executed3 = gql_request(query3)
+    executed3 = gql_request(query3,headers=headers_auth)
     assert len(executed3["data"]["commentaries"]) == 2
 
     # all chapter intros
@@ -355,7 +381,7 @@ def test_get_after_data_upload():
   }
 }
     """
-    executed4 = gql_request(query4)
+    executed4 = gql_request(query4,headers=headers_auth)
     assert len(executed4["data"]["commentaries"]) == 1
 
     # all commentaries associated with a verse
@@ -376,7 +402,7 @@ def test_get_after_data_upload():
   }
 }
     """
-    executed5 = gql_request(query5)
+    executed5 = gql_request(query5,headers=headers_auth)
     assert len(executed5["data"]["commentaries"]) == 1
 
     query6 = """
@@ -396,7 +422,7 @@ def test_get_after_data_upload():
   }
 }
     """
-    executed6 = gql_request(query6)
+    executed6 = gql_request(query6,headers=headers_auth)
     assert len(executed6["data"]["commentaries"]) == 2
 
     query7 = """
@@ -416,7 +442,7 @@ def test_get_after_data_upload():
   }
 }
     """
-    executed7 = gql_request(query7)
+    executed7 = gql_request(query7,headers=headers_auth)
     assert len(executed7["data"]["commentaries"]) == 3
 
     query8 = """
@@ -436,7 +462,7 @@ def test_get_after_data_upload():
   }
 }
     """
-    executed8 = gql_request(query8)
+    executed8 = gql_request(query8,headers=headers_auth)
     assert len(executed8["data"]["commentaries"]) == 2
 
     query9 = """
@@ -456,7 +482,7 @@ def test_get_after_data_upload():
   }
 }
     """
-    executed9 = gql_request(query9)
+    executed9 = gql_request(query9,headers=headers_auth)
     assert len(executed9["data"]["commentaries"]) == 2
 
     # commentaries for a verse range
@@ -478,7 +504,7 @@ def test_get_after_data_upload():
   }
 }
     """
-    executed10 = gql_request(query10)
+    executed10 = gql_request(query10,headers=headers_auth)
     assert len(executed10["data"]["commentaries"]) == 1
 
     query11 = """
@@ -498,7 +524,7 @@ def test_get_after_data_upload():
   }
 }
     """
-    executed11 = gql_request(query11)
+    executed11 = gql_request(query11,headers=headers_auth)
     assert len(executed11["data"]["commentaries"]) == 1
 
     # inclusive
@@ -519,7 +545,7 @@ def test_get_after_data_upload():
   }
 }
     """
-    executed12 = gql_request(query12)
+    executed12 = gql_request(query12,headers=headers_auth)
     assert len(executed12["data"]["commentaries"]) == 2
 
     # crossing boundary
@@ -540,7 +566,7 @@ def test_get_after_data_upload():
   }
 }
     """
-    executed13 = gql_request(query13)
+    executed13 = gql_request(query13,headers=headers_auth)
     assert len(executed13["data"]["commentaries"]) == 1
 
     # not available
@@ -561,7 +587,7 @@ def test_get_after_data_upload():
   }
 }
     """
-    executed14 = gql_request(query14)
+    executed14 = gql_request(query14,headers=headers_auth)
     assert_not_available_content_gql(executed14["data"]["commentaries"])
 
 def test_get_incorrect_data():
@@ -583,7 +609,7 @@ def test_get_incorrect_data():
   }
 }
     """
-    executed1 = gql_request(query=query1)
+    executed1 = gql_request(query=query1,headers=headers_auth)
     assert "errors" in executed1.keys()
 
     query2 = """
@@ -603,7 +629,7 @@ def test_get_incorrect_data():
   }
 }
     """
-    executed2 = gql_request(query=query2)
+    executed2 = gql_request(query=query2,headers=headers_auth)
     assert "errors" in executed2.keys()
 
     
@@ -625,7 +651,7 @@ def test_get_incorrect_data():
   }
 }
     """
-    executed4 = gql_request(query=query4)
+    executed4 = gql_request(query=query4,headers=headers_auth)
     assert "errors" in executed4.keys()
 
     query6 = """
@@ -645,7 +671,7 @@ def test_get_incorrect_data():
   }
 }
     """
-    executed6 = gql_request(query=query6)
+    executed6 = gql_request(query=query6,headers=headers_auth)
     assert "errors" in executed6.keys()
 
 def test_put_after_upload():
@@ -664,7 +690,12 @@ def test_put_after_upload():
     executed_post,source_name =  post_comentary(variable)
 
     #positive put
+    #Without Auth
     executed =  gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable)
+    assert "errors" in executed
+    #With Auth
+    executed =  gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable,
+      headers=headers_auth)
     for i,item in enumerate(executed["data"]["editCommentary"]["data"]):
         assert executed["data"]["editCommentary"]["data"][i]['commentary'] == \
           variable["object"]["commentaryData"][i]['commentary']
@@ -683,7 +714,8 @@ def test_put_after_upload():
 
     # not available PUT
     variable["object"]["commentaryData"][0]['chapter'] = 2
-    executed1 =  gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable)
+    executed1 =  gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable,
+      headers=headers_auth)
     assert "errors" in executed1.keys()
 
     variable2 = {
@@ -696,7 +728,8 @@ def test_put_after_upload():
     ]
     }
     }
-    executed2 =  gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable2)
+    executed2 =  gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable2,
+      headers=headers_auth)
     assert "errors" in executed2.keys()
 
 def test_put_incorrect_data():
@@ -723,7 +756,8 @@ def test_put_incorrect_data():
 
     }
     }
-    executed2 = gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable2)
+    executed2 = gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable2,
+      headers=headers_auth)
     assert "errors" in executed2.keys()
 
     # data object with missing mandatory fields
@@ -736,7 +770,8 @@ def test_put_incorrect_data():
         ]
     }
     }
-    executed3 = gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable3)
+    executed3 = gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable3,
+      headers=headers_auth)
     assert "errors" in executed3.keys()
 
     variable4 = {
@@ -748,7 +783,8 @@ def test_put_incorrect_data():
         ]
     }
     }
-    executed4 = gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable4)
+    executed4 = gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable4,
+      headers=headers_auth)
     assert "errors" in executed4.keys()
 
     # incorrect data values in fields
@@ -761,7 +797,8 @@ def test_put_incorrect_data():
         ]
     }
     }
-    executed5 = gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable5)
+    executed5 = gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable5,
+      headers=headers_auth)
     assert "errors" in executed5.keys()
 
     variable6 = {
@@ -773,7 +810,8 @@ def test_put_incorrect_data():
         ]
     }
     }
-    executed6 = gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable6)
+    executed6 = gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable6,
+      headers=headers_auth)
     assert "errors" in executed6.keys()
 
     variable7 = {
@@ -785,7 +823,8 @@ def test_put_incorrect_data():
         ]
     }
     }
-    executed7 = gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable7)
+    executed7 = gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable7,
+      headers=headers_auth)
     assert "errors" in executed7.keys()
 
     variable8 = {
@@ -797,7 +836,8 @@ def test_put_incorrect_data():
         ]
     }
     }
-    executed8 = gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable8)
+    executed8 = gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable8,
+      headers=headers_auth)
     assert "errors" in executed8.keys()
 
 def test_soft_delete():
@@ -823,7 +863,8 @@ def test_soft_delete():
         ]
     }
     }
-    executed = gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable2)
+    executed = gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable2,
+      headers=headers_auth)
 
     query1 = """
         {
@@ -842,5 +883,71 @@ def test_soft_delete():
   }
 }
     """
-    executed2 = gql_request(query1)
+    executed2 = gql_request(query1,headers=headers_auth)
     assert len(executed2["data"]["commentaries"]) == 1
+
+def test_created_user_can_only_edit():
+    """only created user and SA can only edit"""
+    """source edit can do by created user and Super Admin"""
+    SA_user_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(SA_user_data)
+    token =  response["data"]["login"]["token"]
+
+    headers_SA = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token
+                }
+    
+    #add version
+    version_add(version_query,VERSION_VAR)
+    #add source
+    source_data = {
+  "object": {
+    "contentType": "commentary",
+    "language": "gu",
+    "version": "TTT",
+    "revision": "1",
+    "year": 2021
+  }
+}
+    executed = gql_request(query=source_query,operation="mutation", variables=source_data,
+      headers=headers_SA)
+    assert isinstance(executed, Dict)
+    assert executed["data"]["addSource"]["message"] == "Source created successfully"
+
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    #post data
+    #Create With SA
+    variable = {
+    "object": {
+        "sourceName": "gu_TTT_1_commentary",
+        "commentaryData": [
+        {"bookCode":"mrk", "chapter":1, "verseStart":1,
+        "verseEnd":10, "commentary":"first verses of Mark"},
+        {"bookCode":"mrk","chapter":0, "commentary":"book intro to Mark"}
+        ]
+    }
+    }
+    executed = gql_request(query=ADD_COMMENTARY,operation="mutation", variables=variable,
+      headers=headers_SA)
+
+    variable2 = {
+    "object": {
+        "sourceName": "gu_TTT_1_commentary",
+        "commentaryData": [
+        {"bookCode":"mrk","chapter":0, "commentary":"book intro to Mark"}
+        ]
+    }
+    }
+    #Edit With SA
+    executed = gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable2,
+      headers=headers_SA)
+    assert executed["data"]["editCommentary"]["message"]==\
+      "Commentaries updated successfully"
+    #edit with VA not created User  
+    executed = gql_request(EDIT_COMMENTARY,operation="mutation",variables=variable2,
+      headers=headers_auth)
+    assert "errors" in executed

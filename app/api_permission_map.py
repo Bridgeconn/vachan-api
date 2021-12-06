@@ -5,7 +5,6 @@ import schema_auth
 #pylint: disable=too-many-locals,too-many-statements
 def api_permission_map(endpoint, request_context, requesting_app, resource, user_details):
     '''returns the required permission name as per the access rules'''
-
     message = "API's required permission not defined"
     method = request_context['method']
     # check sourcename is present or not
@@ -14,7 +13,6 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
         source_name = request_context['path_params']['source_name']
     else:
         source_name = None
-
     #Methods related to swither
     def switch_register():
         """register endpoint"""

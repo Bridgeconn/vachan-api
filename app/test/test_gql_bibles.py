@@ -14,6 +14,12 @@ from .test_gql_sources import check_post as source_add
 #pylint: disable=R0914
 #pylint: disable=R0915
 from . import check_skip_limit_gql, gql_request,assert_not_available_content_gql
+from .conftest import initial_test_users
+from . test_gql_auth_basic import login,SUPER_PASSWORD,SUPER_USER
+
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
+headers = {"contentType": "application/json", "accept": "application/json"}
 
 VERSION_VAR  = {
         "object": {
@@ -127,18 +133,31 @@ AUDIO_EDIT_QUERY = """
   }
 }
 """
+headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
 def check_post(query, variables,datatype="books"):
   '''prior steps and post attempt, without checking the response'''
+  headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
   if datatype is not "audio":
     #add version
     version_add(version_query,VERSION_VAR)
     #add source
     src_executed = source_add(source_query,SOURCE_VAR)
     table_name = src_executed["data"]["addSource"]["data"]["sourceName"]
+    #without auth
     executed = gql_request(query=query,operation="mutation", variables=variables)
+    assert "errors" in executed
+    executed = gql_request(query=query,operation="mutation", variables=variables,
+      headers=headers_auth)
+    assert not "errors" in executed
     return executed,table_name
   else:
+    #without auth
     executed = gql_request(query=query,operation="mutation", variables=variables)
+    assert "errors" in executed
+    #with auth
+    executed = gql_request(query=query,operation="mutation", variables=variables,
+      headers=headers_auth)
+    assert not "errors" in executed
     return executed
 
 def add_bible():
@@ -209,6 +228,7 @@ def add_audio():
   assert len(executed["data"]["addAudioBible"]["data"]) == 6
   for item in executed["data"]["addAudioBible"]["data"]:
     assert_positive_get_for_audio(item)
+  return executed  
       
 
 def test_post_default():
@@ -223,7 +243,7 @@ def test_post_default():
   }
 }
   """
-  check_skip_limit_gql(query_check,"bibleContents")
+  check_skip_limit_gql(query_check,"bibleContents",headers=headers_auth)
 
 def test_post_optional():
   '''Positive test fr post with optional JSON upload'''
@@ -258,7 +278,8 @@ def test_post_duplicate():
   }
   executed,table = check_post(BOOK_ADD_QUERY,variable)
   assert executed["data"]["addBibleBook"]["message"] == "Bible books uploaded and processed successfully"
-  executed2 = gql_request(BOOK_ADD_QUERY,operation="mutation",variables=variable)
+  executed2 = gql_request(BOOK_ADD_QUERY,operation="mutation",variables=variable,
+    headers=headers_auth)
   assert "errors" in executed2.keys()
 
 def test_post_incorrect_data():
@@ -272,7 +293,8 @@ def test_post_incorrect_data():
       
   }
   }
-  executed,table = check_post(BOOK_ADD_QUERY,variable)
+  executed = gql_request(query=BOOK_ADD_QUERY,operation="mutation", variables=variable,
+      headers=headers_auth)
   assert "errors" in executed.keys()
 
   #incorrect data value
@@ -284,7 +306,8 @@ def test_post_incorrect_data():
         
     }
 }
-  executed2 = gql_request(BOOK_ADD_QUERY,operation = "mutation",variables=variable2)
+  executed2 = gql_request(BOOK_ADD_QUERY,operation = "mutation",variables=variable2,
+    headers=headers_auth)
   assert "errors" in executed2.keys()
 
   #incorrect source 
@@ -296,7 +319,8 @@ def test_post_incorrect_data():
       ]
   }
   }
-  executed3 = gql_request(BOOK_ADD_QUERY,operation = "mutation",variables=variable3)
+  executed3 = gql_request(BOOK_ADD_QUERY,operation = "mutation",variables=variable3,
+    headers=headers_auth)
   assert "errors" in executed3.keys()
 
 def test_post_audio():
@@ -340,9 +364,11 @@ def test_post_audio():
   }
 }
   add_bible()
+  add_audio()
 
   #attempt duplicate
-  executed2 = gql_request(BOOK_ADD_QUERY,operation = "mutation",variables=variable)
+  executed2 = gql_request(AUDIO_ADD_QUERY,operation = "mutation",variables=variable,
+    headers=headers_auth)
   assert "errors" in executed2.keys()
 
   #incorrect data url
@@ -361,7 +387,8 @@ def test_post_audio():
   ]
     }
   }
-  executed3 = gql_request(BOOK_ADD_QUERY,operation = "mutation",variables=variable3)
+  executed3 = gql_request(AUDIO_ADD_QUERY,operation = "mutation",variables=variable3,
+    headers=headers_auth)
   assert "errors" in executed3.keys()
 
   #incorrect data book
@@ -380,7 +407,8 @@ def test_post_audio():
   ]
     }
   }
-  executed4 = gql_request(BOOK_ADD_QUERY,operation = "mutation",variables=variable4)
+  executed4 = gql_request(AUDIO_ADD_QUERY,operation = "mutation",variables=variable4,
+    headers=headers_auth)
   assert "errors" in executed4.keys()
 
   #incorrect data booklist
@@ -397,7 +425,8 @@ def test_post_audio():
   ]
     }
   }
-  executed5 = gql_request(BOOK_ADD_QUERY,operation = "mutation",variables=variable5)
+  executed5 = gql_request(BOOK_ADD_QUERY,operation = "mutation",variables=variable5,
+    headers=headers_auth)
   assert "errors" in executed5.keys()
 
 def test_put_books():
@@ -415,7 +444,12 @@ def test_put_books():
       ]
     }
   }
+  #without Auth
   executed2 = gql_request(BOOK_EDIT_QUERY,operation = "mutation",variables=variable2)
+  assert "errors" in executed2
+  #with auth
+  executed2 = gql_request(BOOK_EDIT_QUERY,operation = "mutation",variables=variable2,
+    headers=headers_auth)
   assert executed2["data"]["editBibleBook"]["message"] == "Bible books updated successfully"
   assert len(executed2["data"]["editBibleBook"]["data"]) == 1
   assert_positive_get_for_books(executed2["data"]["editBibleBook"]["data"][0])
@@ -435,7 +469,8 @@ def test_put_books():
     ]
   }
 }
-  executed3 = gql_request(BOOK_EDIT_QUERY,operation = "mutation",variables=variable3)
+  executed3 = gql_request(BOOK_EDIT_QUERY,operation = "mutation",variables=variable3,
+    headers=headers_auth)
   assert "errors" in executed3.keys()
 
   #to change status
@@ -451,7 +486,8 @@ def test_put_books():
     ]
   }
 }
-  executed4 = gql_request(BOOK_EDIT_QUERY,operation = "mutation",variables=variable4)
+  executed4 = gql_request(BOOK_EDIT_QUERY,operation = "mutation",variables=variable4,
+    headers=headers_auth)
   assert executed4["data"]["editBibleBook"]["message"] == "Bible books updated successfully"
   assert len(executed4["data"]["editBibleBook"]["data"]) == 1
   assert_positive_get_for_books(executed4["data"]["editBibleBook"]["data"][0])
@@ -471,7 +507,8 @@ def test_put_books():
     ]
   }
 }
-  executed5 = gql_request(BOOK_EDIT_QUERY,operation = "mutation",variables=variable5)
+  executed5 = gql_request(BOOK_EDIT_QUERY,operation = "mutation",variables=variable5,
+    headers=headers_auth)
   assert "errors" in executed5.keys()
 
 def test_put_audios():
@@ -492,7 +529,8 @@ def test_put_audios():
     }]
       }
     }
-  executed2 = gql_request(query=AUDIO_EDIT_QUERY,operation="mutation", variables=variable2)
+  executed2 = gql_request(query=AUDIO_EDIT_QUERY,operation="mutation", variables=variable2,
+    headers=headers_auth)
   assert executed2["data"]["editAudioBible"]["message"] == "Bible audios details updated successfully"
   assert executed2["data"]["editAudioBible"]["data"][0]["url"] == "https://www.somewhere.com/file_mat_new"
 
@@ -508,7 +546,8 @@ def test_put_audios():
     }]
       }
     }
-  executed3 = gql_request(query=AUDIO_EDIT_QUERY,operation="mutation", variables=variable3)
+  executed3 = gql_request(query=AUDIO_EDIT_QUERY,operation="mutation", variables=variable3,
+    headers=headers_auth)
   assert "errors" in executed3.keys()
 
   #invalid datas
@@ -524,7 +563,8 @@ def test_put_audios():
   }]
       }
     }
-  executed4 = gql_request(query=AUDIO_EDIT_QUERY,operation="mutation", variables=variable4)
+  executed4 = gql_request(query=AUDIO_EDIT_QUERY,operation="mutation", variables=variable4,
+    headers=headers_auth)
   assert "errors" in executed4.keys() 
 
   variable5 = {
@@ -539,7 +579,8 @@ def test_put_audios():
     }]
       }
     }
-  executed5 = gql_request(query=AUDIO_EDIT_QUERY,operation="mutation", variables=variable5)
+  executed5 = gql_request(query=AUDIO_EDIT_QUERY,operation="mutation", variables=variable5,
+    headers=headers_auth)
   assert "errors" in executed5.keys()
 
 def test_get_books_contenttype():
@@ -567,7 +608,7 @@ def test_get_books_contenttype():
     }
   }
   """
-  executed1 = gql_request(query=query1)
+  executed1 = gql_request(query=query1,headers=headers_auth)
   assert isinstance(executed1, Dict)
   assert len(executed1["data"]["bibleContents"]) > 0
   items = executed1["data"]["bibleContents"]
@@ -599,7 +640,7 @@ def test_get_books_contenttype():
   }
 }
   """
-  executed2 = gql_request(query=query2)
+  executed2 = gql_request(query=query2,headers=headers_auth)
   assert isinstance(executed2, Dict)
   assert len(executed2["data"]["bibleContents"]) > 0
   items = executed2["data"]["bibleContents"]
@@ -622,13 +663,13 @@ def test_get_books_contenttype():
   }
 }
   """
-  executed3 = gql_request(query=query3)
+  executed3 = gql_request(query=query3,headers=headers_auth)
   assert_not_available_content_gql(executed3["data"]["bibleContents"])
 
   #add audio
   add_audio()
 
-  executed5 = gql_request(query=query2)
+  executed5 = gql_request(query=query2,headers=headers_auth)
   assert isinstance(executed5, Dict)
   assert len(executed5["data"]["bibleContents"]) > 0
   items = executed5["data"]["bibleContents"]
@@ -637,7 +678,7 @@ def test_get_books_contenttype():
       assert "USFM"  in item
       assert "JSON"  in item
       assert "audio" in item
-      assert item["audio"] is not None
+      assert not item["audio"] is None
 
 def test_get_books_filter():
   '''add some usfm and audio data and test get api based on book_code and active filters '''
@@ -676,9 +717,9 @@ def test_get_books_filter():
   }
 }
   """  
-  executed1 = gql_request(query=query1)
-  executed2 = gql_request(query=query2)
-  executed3 = gql_request(query=query3)
+  executed1 = gql_request(query=query1,headers=headers_auth)
+  executed2 = gql_request(query=query2,headers=headers_auth)
+  executed3 = gql_request(query=query3,headers=headers_auth)
   assert len(executed1["data"]["bibleContents"]) == len(executed2["data"]["bibleContents"])
   assert_not_available_content_gql(executed3["data"]["bibleContents"])
 
@@ -696,7 +737,7 @@ def test_get_books_versification():
   }
 }
   """
-  executed1 = gql_request(query1)
+  executed1 = gql_request(query1,headers=headers_auth)
   assert len(executed1["data"]["versification"]["maxVerses"]) == 4
   assert executed1["data"]["versification"]["maxVerses"]['mat'][0] == 2
   assert executed1["data"]["versification"]["maxVerses"]['mrk'][0] == 2
@@ -705,7 +746,7 @@ def test_get_books_versification():
   #versification for books after adding audio
 
   add_audio()
-  executed3 = gql_request(query1)
+  executed3 = gql_request(query1,headers=headers_auth)
   assert len(executed1["data"]["versification"]["maxVerses"]) == \
     len(executed3["data"]["versification"]["maxVerses"])
 
@@ -729,7 +770,7 @@ def test_get_verses():
   }
 }
   """
-  executed1 = gql_request(query1)
+  executed1 = gql_request(query1,headers=headers_auth)
   assert len(executed1["data"]["bibleVerse"]) == 8
   for item in executed1["data"]["bibleVerse"]:
       assert_positive_get_for_verse(item)
@@ -742,7 +783,7 @@ def test_get_verses():
   }
 }
   """
-  executed2 = gql_request(query2)
+  executed2 = gql_request(query2,headers=headers_auth)
   assert len(executed2["data"]["bibleVerse"]) == 2
 
   query3 = """
@@ -753,7 +794,7 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"mat",chapter:1){
 }
 }
   """
-  executed3 = gql_request(query3)
+  executed3 = gql_request(query3,headers=headers_auth)
   assert len(executed3["data"]["bibleVerse"]) == 2
 
   query4 = """
@@ -764,7 +805,7 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"mat",chapter:1,verse:1){
 }
 }
   """
-  executed4 = gql_request(query4)
+  executed4 = gql_request(query4,headers=headers_auth)
   assert len(executed4["data"]["bibleVerse"]) == 1
 
   query5 = """
@@ -775,7 +816,7 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"mat",chapter:1,verse:1,lastVers
 }
 }
   """
-  executed5 = gql_request(query5)
+  executed5 = gql_request(query5,headers=headers_auth)
   assert len(executed5["data"]["bibleVerse"]) == 2
 
   query6 = """
@@ -786,7 +827,7 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"mat",chapter:1,verse:10){
 }
 }
   """
-  executed6 = gql_request(query6)
+  executed6 = gql_request(query6,headers=headers_auth)
   assert_not_available_content_gql(executed6["data"]["bibleVerse"])
 
   query7 = """
@@ -797,7 +838,7 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"act",chapter:2){
 }
 }
   """
-  executed7 = gql_request(query7)
+  executed7 = gql_request(query7,headers=headers_auth)
   assert_not_available_content_gql(executed7["data"]["bibleVerse"])
 
   # add audio
@@ -811,7 +852,7 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"rev",chapter:1,verse:10){
 }
 }
   """
-  executed8 = gql_request(query8)
+  executed8 = gql_request(query8,headers=headers_auth)
   assert_not_available_content_gql(executed8["data"]["bibleVerse"])
 
 def test_audio_delete():
@@ -833,7 +874,7 @@ bibleContents(sourceName:"gu_TTT_1_bible"){
 }
 }
   """
-  executed = gql_request(query)
+  executed = gql_request(query,headers=headers_auth)
   assert len(executed["data"]["bibleContents"]) == 8
   
   #delete one audio , but not book
@@ -851,8 +892,9 @@ bibleContents(sourceName:"gu_TTT_1_bible"){
     }]
       }
     }
-  executed1 = gql_request(AUDIO_EDIT_QUERY,operation="mutation",variables=variable1)
-  executed2 = gql_request(query)
+  executed1 = gql_request(AUDIO_EDIT_QUERY,operation="mutation",variables=variable1,
+    headers=headers_auth)
+  executed2 = gql_request(query,headers=headers_auth)
   assert len(executed2["data"]["bibleContents"]) == 8
   assert executed2["data"]["bibleContents"][0]["active"]
   assert not executed2["data"]["bibleContents"][0]["audio"]["active"]
@@ -891,7 +933,7 @@ editAudioBible(audioBibleArg:$object){
     }]
       }
     }
-  executed2 = gql_request(query2,operation="mutation",variables=variable2)
+  executed2 = gql_request(query2,operation="mutation",variables=variable2,headers=headers_auth)
   assert "errors" in executed2.keys()
 
 def test_book_delete():
@@ -906,7 +948,7 @@ def test_book_delete():
   }
 }
   """
-  executed = gql_request(query)
+  executed = gql_request(query,headers=headers_auth)
   assert len(executed["data"]["bibleContents"]) == 4
 
   #soft delete one book
@@ -962,9 +1004,11 @@ def test_book_delete():
       }]
         }
       }
-  executed2 = gql_request(query2,operation="mutation",variables=variable2)
-  executed1 = gql_request(BOOK_EDIT_QUERY,operation="mutation",variables=variable1)
-  executed3 = gql_request(query1)
+  executed2 = gql_request(query2,operation="mutation",variables=variable2,
+    headers=headers_auth)
+  executed1 = gql_request(BOOK_EDIT_QUERY,operation="mutation",variables=variable1,
+    headers=headers_auth)
+  executed3 = gql_request(query1,headers=headers_auth)
   assert len(executed3["data"]["bibleContents"]) == 3
 
   query4 = """
@@ -977,7 +1021,7 @@ def test_book_delete():
 }
   """
 
-  executed4 = gql_request(query4)
+  executed4 = gql_request(query4,headers=headers_auth)
   assert len(executed4["data"]["bibleContents"]) == 1
 
   #add audio 4 audio adding
@@ -993,5 +1037,78 @@ def test_book_delete():
 }
   """
 
-  executed5 = gql_request(query5)
+  executed5 = gql_request(query5,headers=headers_auth)
   assert len(executed5["data"]["bibleContents"]) == 8
+
+
+def test_created_user_can_only_edit():
+    """only created user and SA can only edit"""
+    """source edit can do by created user and Super Admin"""
+    SA_user_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(SA_user_data)
+    token =  response["data"]["login"]["token"]
+
+    headers_SA = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token
+                }
+    
+    #add version
+    version_add(version_query,VERSION_VAR)
+    #add source
+    source_data = {
+  "object": {
+    "contentType": "bible",
+    "language": "gu",
+    "version": "TTT",
+    "revision": "1",
+    "year": 2021
+  }
+}
+    executed = gql_request(query=source_query,operation="mutation", variables=source_data,
+      headers=headers_SA)
+    assert isinstance(executed, Dict)
+    assert executed["data"]["addSource"]["message"] == "Source created successfully"
+
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    #post data
+    #Create With SA
+
+    variable = {
+    "object": { 
+        "sourceName": "gu_TTT_1_bible",
+        "books": [
+        {"USFM":"\\id mat\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"},
+        {"USFM":"\\id mrk\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"},
+        {"USFM":"\\id luk\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"},
+        {"USFM":"\\id jhn\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"}
+]
+    }
+    }
+
+    executed = gql_request(query=BOOK_ADD_QUERY,operation="mutation", variables=variable,
+      headers=headers_SA)
+    assert executed["data"]["addBibleBook"]["message"] == "Bible books uploaded and processed successfully"
+
+    #update without specifying the book code
+    variable2 = {
+    "object": {
+      "sourceName": "gu_TTT_1_bible",
+      "books": [
+        {
+          "USFM": "\\id mat\n\\c 1\n\\p\n\\v 1 edited test verse one"
+        }
+      ]
+    }
+  }
+    #Edit with SA created user
+    executed2 = gql_request(BOOK_EDIT_QUERY,operation = "mutation",variables=variable2,
+      headers=headers_SA)
+    assert executed2["data"]["editBibleBook"]["message"] == "Bible books updated successfully"
+    #edit with VA not created user
+    executed2 = gql_request(BOOK_EDIT_QUERY,operation = "mutation",variables=variable2,
+      headers=headers_auth)
+    assert "errors" in executed2

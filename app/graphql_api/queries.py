@@ -141,6 +141,7 @@ class Query(graphene.ObjectType):
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
         req.scope['path'] = f"/v2/commentaries/{source_name}"
+        req.path_params["source_name"] = source_name
         results = content_apis.get_commentary(request=req, source_name=source_name,
         book_code=book_code, chapter=chapter, verse=verse, last_verse=last_verse,
         active=active,skip=skip,limit=limit,user_details=user_details,
@@ -159,10 +160,12 @@ class Query(graphene.ObjectType):
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
         req.scope['path'] = f"/v2/dictionaries/{source_name}"
+        req.path_params["source_name"] = source_name
         results = content_apis.get_dictionary_word(request= req,
             source_name= source_name, search_word= search_word,
             exact_match= exact_match, active= active, skip= skip,
-            limit= limit, user_details = user_details, db_= db_)
+            limit= limit, user_details = user_details, db_= db_,
+            details=None)
         return results
 
     infographics = graphene.List(types.Infographic,
@@ -177,6 +180,7 @@ class Query(graphene.ObjectType):
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
         req.scope['path'] = f"/v2/infographics/{source_name}"
+        req.path_params["source_name"] = source_name
         results = content_apis.get_infographic(request=req,
             source_name=source_name, book_code= book_code,
             title= title, active= active, skip= skip, limit= limit,
@@ -196,6 +200,7 @@ class Query(graphene.ObjectType):
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
         req.scope['path'] = f"/v2/biblevideos/{source_name}"
+        req.path_params["source_name"] = source_name
         results = content_apis.get_biblevideo(request = req,
             source_name =source_name, book_code = book_code,
             title =title, theme = theme, skip = skip, limit = limit,
@@ -214,9 +219,11 @@ class Query(graphene.ObjectType):
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
         req.scope['path'] = f"/v2/bibles/{source_name}/books"
+        req.path_params["source_name"] = source_name
         results = content_apis.get_available_bible_book(request= req,
             source_name= source_name, book_code= book_code, active= active, 
-            skip= skip, limit= limit, user_details =user_details, db_= db_)
+            skip= skip, limit= limit, user_details =user_details, db_= db_,
+            content_type = "all")
         return results
 
     versification = graphene.Field(types.Versification,
@@ -228,6 +235,7 @@ class Query(graphene.ObjectType):
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
         req.scope['path'] = f"/v2/bibles/{source_name}/versification"
+        req.path_params["source_name"] = source_name
         results = content_apis.get_bible_versification(request=req,
             source_name = source_name, user_details = user_details, db_=db_)
         return results
@@ -246,6 +254,7 @@ class Query(graphene.ObjectType):
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
         req.scope['path'] = f"/v2/bibles/{source_name}/verses"
+        req.path_params["source_name"] = source_name
         results = content_apis.get_bible_verse(request= req,
             source_name= source_name, book_code= book_code,
             chapter= chapter, verse= verse, last_verse= last_verse,
