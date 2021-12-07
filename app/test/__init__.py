@@ -893,3 +893,732 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response.status_code == 403
                 assert response.json()["error"] == "Permission Denied"
     print(f"Test passed -----> BCS DEVELOPER")
+
+###############################################################################################################
+def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, content_data, test_data, bible = False):
+    """checks for content api access based on user roles and apps"""
+    from .test_gql_sources import SOURCE_GLOBAL_QUERY
+    from .conftest import initial_test_users
+    from app.graphql_api import types
+    from . test_gql_auth_basic import login,SUPER_PASSWORD,SUPER_USER
+
+    headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
+    #create 5 sources for contents with 5 different permisions
+    language_list = ['en','ml','tn','ab','af']
+    permission_list = ["CONTENT","OPENACCESS","PUBLISHABLE","DOWNLOADABLE","DERIVABLE"]
+    permission_list_val = ["content","open-access","publishable","downloadable","derivable"]
+    sourcename_list = []
+
+    source_data = {
+  "object": {
+    "contentType": contenttype,
+    "language": "hi",
+    "version": "TTT",
+    "year": 2020,
+    "accessPermissions": [],
+  }
+}
+
+    #SuperAdmin login and token
+    SA_user_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(SA_user_data)
+    token =  response["data"]["login"]["token"]
+    SA_TOKEN = "Bearer"+" "+token
+
+    #create source and corresponsing contents
+    #source can only created by VA or SA
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    for num in range(5):
+        source_data["object"]["language"] = language_list[num]
+        source_data["object"]["accessPermissions"] = [permission_list[num]]
+        response = executed = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation",
+            variables=source_data, headers=headers_auth)
+        assert isinstance(executed, Dict)
+        assert executed["data"]["addSource"]["message"] == "Source created successfully"
+        source_name = response["data"]["addSource"]["data"]["sourceName"]
+        resp_data = response['data']["addSource"]["data"]['metaData']
+        assert permission_list_val[num]  in resp_data['accessPermissions']
+        sourcename_list.append(source_name)
+        # print("exec------>",source_name)
+
+        content_data["object"]["sourceName"] = source_name
+        executed = gql_request(query=content_qry,operation="mutation", variables=content_data,
+            headers=headers_auth)
+        assert not "errors" in executed
+
+    API = types.App.API.value
+    AG = types.App.AG.value
+    VACHAN = types.App.VACHAN.value
+    VACHANADMIN = types.App.VACHANADMIN.value
+    Apps = [ API,AG,VACHAN,VACHANADMIN]
+
+    #Get without Login headers=headers_auth
+    #permision -------------------------> content , downloadable , derivable
+    print("source respectivily for -------------------------> \
+        content(en) , downloadable(ab) , derivable(af)")
+    test_permissions_list  = ["en_TTT_1_" + contenttype , "ab_TTT_1_" + contenttype ,
+                                "af_TTT_1_" + contenttype]
+    for i in range(len(test_permissions_list)):
+        headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}  
+        print(f"permisioln source-------------------------> {test_permissions_list[i]}")
+        
+        for num in range(4):
+            headers_auth['app'] = Apps[num]
+            test_data["get_var"]["source"] = test_permissions_list[i]
+            if bible:
+                response = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+                response = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+                response = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+            else:
+                response = gql_request(query=test_data["get_query"],variables=test_data["get_var"],headers=headers_auth)
+                assert "errors" in response
+        print(f"Test passed -----> NO LOGIN")
+
+        #Get with AgUser
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+        for num in range(4):
+            headers_auth['app'] = Apps[num]
+            if bible:
+                response = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+                response = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+                response = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+            else:
+                response = gql_request(query=test_data["get_query"],variables=test_data["get_var"],headers=headers_auth)
+                assert "errors" in response
+        print(f"Test passed -----> AG USER")
+
+        #Get with VachanUser
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
+        for num in range(4):
+            headers_auth['app'] = Apps[num]
+            if bible:
+                response = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+                response = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+                response = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+            else:
+                response = gql_request(query=test_data["get_query"],variables=test_data["get_var"],headers=headers_auth)
+                assert "errors" in response
+        print(f"Test passed -----> VACHAN USER")
+
+        #Get with VachanAdmin
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+        for num in range(4):
+            headers_auth['app'] = Apps[num]
+            test_data["get_var"]["source"] = test_permissions_list[i]
+            if bible:
+                response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                if headers_auth['app'] == API or headers_auth['app'] == VACHANADMIN:
+                    assert not  "errors" in response1
+                    assert not "errors" in response2
+                    assert not "errors" in response3
+                else:
+                    assert "errors" in response1
+                    assert "errors" in response2
+                    assert "errors" in response3
+            else:
+                response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+                if headers_auth['app'] == API or headers_auth['app'] == VACHANADMIN:
+                    assert not "errors" in response
+                    assert len(response["data"]) > 0
+                else:
+                    assert "errors" in response
+        print(f"Test passed -----> VACHAN ADMIN")
+
+        #Get with API User
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+        for num in range(4):
+            headers_auth['app'] = Apps[num]
+            if bible:
+                response = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+                response = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+                response = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+                pass
+            else:
+                response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response    
+        print(f"Test passed -----> API USER")
+
+        #Get with AgAdmin
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+        for num in range(4):
+            headers_auth['app'] = Apps[num]
+            if bible:
+                response = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+                response = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+                response = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+                pass
+            else:
+                response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+        print(f"Test passed -----> AG ADMIN")
+
+        #Get with SuperAdmin
+        headers_auth['Authorization'] = SA_TOKEN
+        for num in range(4):
+            headers_auth['app'] = Apps[num]
+            if bible:
+                response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                if headers_auth['app'] == API or headers_auth['app'] == VACHANADMIN:
+                    assert not  "errors" in response1
+                    assert not "errors" in response2
+                    assert not "errors" in response3
+                else:
+                    assert "errors" in response1
+                    assert "errors" in response2
+                    assert "errors" in response3
+            else:
+                response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+                if headers_auth['app'] == API or headers_auth['app'] == VACHANADMIN:
+                    assert not "errors" in response
+                    assert len(response["data"]) > 0
+                else:
+                    assert "errors" in response
+
+        print(f"Test passed -----> SUPER ADMIN")
+
+        #Get with Bcs Dev
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
+        for num in range(4):
+            headers_auth['app'] = Apps[num]
+            if bible:
+                response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                if headers_auth['app'] == API:
+                    assert not  "errors" in response1
+                    assert not "errors" in response2
+                    assert not "errors" in response3
+                else:
+                    assert "errors" in response1
+                    assert "errors" in response2
+                    assert "errors" in response3
+            else:
+                response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+                if headers_auth['app'] == API:
+                    assert not "errors" in response
+                    assert len(response["data"]) > 0
+                else:
+                    assert "errors" in response
+                                    
+        print(f"Test passed -----> BCS DEVELOPER")
+
+    # #test for permissions -----------------------------------------------> open-access
+
+    print('permision -------------------------> open access')
+    headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
+    test_data["get_var"]["source"] = sourcename_list[1]
+    #No login
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert not  "errors" in response1
+                assert not "errors" in response2
+                assert not "errors" in response3
+            else:
+                assert "errors" in response1
+                assert "errors" in response2
+                assert "errors" in response3
+        else:
+            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert not "errors" in response
+                assert len(response["data"]) > 0
+            else:
+                assert "errors" in response
+    print(f"Test passed -----> NO LOGIN")
+
+    #Get with AgUser
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
+                or headers_auth['app'] == AG:
+                assert not  "errors" in response1
+                assert not "errors" in response2
+                assert not "errors" in response3
+            else:
+                assert "errors" in response1
+                assert "errors" in response2
+                assert "errors" in response3
+        else:
+            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
+                or headers_auth['app'] == AG:
+                assert not "errors" in response
+                assert len(response["data"]) > 0
+            else:
+                assert "errors" in response      
+    print(f"Test passed -----> AG USER")
+
+    #Get with VachanUser
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert not  "errors" in response1
+                assert not "errors" in response2
+                assert not "errors" in response3
+            else:
+                assert "errors" in response1
+                assert "errors" in response2
+                assert "errors" in response3
+        else:
+            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert not "errors" in response
+                assert len(response["data"]) > 0
+            else:
+                assert "errors" in response          
+    print(f"Test passed -----> VACHAN USER")
+
+    #Get with VachanAdmin
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHANADMIN\
+                or headers_auth['app'] == VACHAN:
+                assert not  "errors" in response1
+                assert not "errors" in response2
+                assert not "errors" in response3
+            else:
+                assert "errors" in response1
+                assert "errors" in response2
+                assert "errors" in response3
+        else:
+            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHANADMIN\
+                or headers_auth['app'] == VACHAN:
+                assert not "errors" in response
+                assert len(response["data"]) > 0
+            else:
+                assert "errors" in response          
+    print(f"Test passed -----> VACHAN ADMIN")
+
+    #Get with API User
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert not  "errors" in response1
+                assert not "errors" in response2
+                assert not "errors" in response3
+            else:
+                assert "errors" in response1
+                assert "errors" in response2
+                assert "errors" in response3
+        else:
+            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert not "errors" in response
+                assert len(response["data"]) > 0
+            else:
+                assert "errors" in response              
+    print(f"Test passed -----> API USER")
+
+    #Get with AgAdmin
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
+                or headers_auth['app'] == AG:
+                assert not  "errors" in response1
+                assert not "errors" in response2
+                assert not "errors" in response3
+            else:
+                assert "errors" in response1
+                assert "errors" in response2
+                assert "errors" in response3
+        else:
+            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
+                or headers_auth['app'] == AG:
+                assert not "errors" in response
+                assert len(response["data"]) > 0
+            else:
+                assert "errors" in response              
+    print(f"Test passed -----> AG ADMIN")
+
+    #Get with SuperAdmin
+    headers_auth['Authorization'] = SA_TOKEN
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            assert not  "errors" in response1
+            assert not "errors" in response2
+            assert not "errors" in response3        
+        else:
+            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+            assert not "errors" in response
+    print(f"Test passed -----> SUPER ADMIN")
+
+    #Get with Bcs Dev
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert not  "errors" in response1
+                assert not "errors" in response2
+                assert not "errors" in response3
+            else:
+                assert "errors" in response1
+                assert "errors" in response2
+                assert "errors" in response3
+        else:
+            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert not "errors" in response
+                assert len(response["data"]) > 0
+            else:
+                assert "errors" in response      
+    print(f"Test passed -----> BCS DEVELOPER")
+
+    # #test for permissions -----------------------------------------------> publishable
+
+    print('permision -------------------------> publishable')
+    headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
+    test_data["get_var"]["source"] = sourcename_list[2]
+    #No login
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == VACHAN:
+                assert not  "errors" in response1
+                assert not "errors" in response2
+                assert not "errors" in response3
+            else:
+                assert "errors" in response1
+                assert "errors" in response2
+                assert "errors" in response3
+        else:
+            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == VACHAN:
+                assert not "errors" in response
+                assert len(response["data"]) > 0
+            else:
+                assert "errors" in response          
+    print(f"Test passed -----> NO LOGIN")
+
+    #Get with AgUser
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
+                or headers_auth['app'] == API:
+                assert not  "errors" in response1
+                assert not "errors" in response2
+                assert not "errors" in response3
+            else:
+                assert "errors" in response1
+                assert "errors" in response2
+                assert "errors" in response3
+        else:
+            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
+                or headers_auth['app'] == API:
+                assert not "errors" in response
+                assert len(response["data"]) > 0
+            else:
+                assert "errors" in response              
+    print(f"Test passed -----> AG USER")
+
+    #Get with VachanUser
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == API:
+                assert not  "errors" in response1
+                assert not "errors" in response2
+                assert not "errors" in response3
+            else:
+                assert "errors" in response1
+                assert "errors" in response2
+                assert "errors" in response3
+        else:
+            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == API:
+                assert not "errors" in response
+                assert len(response["data"]) > 0
+            else:
+                assert "errors" in response        
+    print(f"Test passed -----> VACHAN USER")
+
+    #Get with VachanAdmin
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHANADMIN\
+                or headers_auth['app'] == VACHAN:
+                assert not  "errors" in response1
+                assert not "errors" in response2
+                assert not "errors" in response3
+            else:
+                assert "errors" in response1
+                assert "errors" in response2
+                assert "errors" in response3
+        else:
+            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHANADMIN\
+                or headers_auth['app'] == VACHAN:
+                assert not "errors" in response
+                assert len(response["data"]) > 0
+            else:
+                assert "errors" in response     
+    print(f"Test passed -----> VACHAN ADMIN")
+
+    #Get with API User
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert not  "errors" in response1
+                assert not "errors" in response2
+                assert not "errors" in response3
+            else:
+                assert "errors" in response1
+                assert "errors" in response2
+                assert "errors" in response3
+        else:
+            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert not "errors" in response
+                assert len(response["data"]) > 0
+            else:
+                assert "errors" in response         
+    print(f"Test passed -----> API USER")
+
+    #Get with AgAdmin
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
+                or headers_auth['app'] == API:
+                assert not  "errors" in response1
+                assert not "errors" in response2
+                assert not "errors" in response3
+            else:
+                assert "errors" in response1
+                assert "errors" in response2
+                assert "errors" in response3
+        else:
+            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
+                or headers_auth['app'] == API:
+                assert not "errors" in response
+                assert len(response["data"]) > 0
+            else:
+                assert "errors" in response     
+    print(f"Test passed -----> AG ADMIN")
+
+    #Get with SuperAdmin
+    headers_auth['Authorization'] = SA_TOKEN
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            assert not  "errors" in response1
+            assert not "errors" in response2
+            assert not "errors" in response3
+        else:    
+            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+            assert not "errors" in response
+    print(f"Test passed -----> SUPER ADMIN")
+
+    #Get with Bcs Dev
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert not  "errors" in response1
+                assert not "errors" in response2
+                assert not "errors" in response3
+            else:
+                assert "errors" in response1
+                assert "errors" in response2
+                assert "errors" in response3
+        else:
+            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
+                assert not "errors" in response
+                assert len(response["data"]) > 0
+            else:
+                assert "errors" in response         
+    print(f"Test passed -----> BCS DEVELOPER")

@@ -9,7 +9,8 @@ from .test_infographics import assert_positive_get
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
-from . import gql_request,assert_not_available_content_gql,check_skip_limit_gql
+from . import gql_request,contetapi_get_accessrule_checks_app_userroles_gql,\
+  check_skip_limit_gql
 from .conftest import initial_test_users
 from . test_gql_auth_basic import login,SUPER_PASSWORD,SUPER_USER
 
@@ -109,7 +110,6 @@ def post_infographic(variable):
     for item in executed["data"]["addInfographic"]["data"]:
         assert_positive_get(item)   
     return executed,source_name
-
 
 def test_post_default():
     '''Positive test to upload Infographic'''
@@ -578,3 +578,42 @@ def test_created_user_can_only_edit():
     executed = gql_request(EDIT_INFOGRAPHIC,operation="mutation",variables=new_variable,
       headers=headers_auth)
     assert "errors" in executed
+
+def test_get_access_with_user_roles_and_apps():
+    """Test get filter from apps and with users having different permissions"""
+    # #add version
+    version_add(version_query,VERSION_VAR)
+
+    content_data = {
+  "object": {
+    "sourceName": "ur_TTT_1_infographic",
+    "data": [
+        {'bookCode':'gen', 'title':"creation", "infographicLink":"http://somewhere.com/something"},
+        {'bookCode':'gen', 'title':"abraham's family",
+        "infographicLink":"http://somewhere.com/something"},
+        {'bookCode':'exo', 'title':"Isarel's travel routes",
+        "infographicLink":"http://somewhere.com/something"},
+        {'bookCode':'rev', 'title':"the Gods reveals himself in new testament",
+        "infographicLink":"http://somewhere.com/something"},
+    ]
+  }
+}
+
+    get_query = """
+      query get_infographics($source:String!){
+  infographics(sourceName:$source){
+   title
+  }
+}
+    """
+    get_var = {
+      "source": "gu_TTT_1_commentary"
+    }
+
+    content_qry = ADD_INFOGRAPHIC
+    test_data = {"get_query": get_query,
+          "get_var": get_var
+        }
+
+    contetapi_get_accessrule_checks_app_userroles_gql("infographic",content_qry, content_data , 
+      test_data , bible=False)

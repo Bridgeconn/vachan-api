@@ -9,7 +9,8 @@ from .test_bible_videos import assert_positive_get
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
-from . import gql_request,assert_not_available_content_gql,check_skip_limit_gql
+from . import gql_request,assert_not_available_content_gql,check_skip_limit_gql,\
+  contetapi_get_accessrule_checks_app_userroles_gql
 from .conftest import initial_test_users
 from . test_gql_auth_basic import login,SUPER_PASSWORD,SUPER_USER
 
@@ -626,3 +627,39 @@ def test_created_user_can_only_edit():
     executed = gql_request(EDIT_BIBLEVIDEO,operation="mutation",variables=new_var,
       headers=headers_auth)
     assert "errors" in executed
+
+def test_get_access_with_user_roles_and_apps():
+    """Test get filter from apps and with users having different permissions"""
+    # #add version
+    version_add(version_query,VERSION_VAR)
+
+    content_data = {
+  "object": {
+    "sourceName": "mr_TTT_1_biblevideo",
+    "videoData": [
+        {'title':'Overview: Genesis', 'theme': 'Old testament', 'description':"brief description",
+            'books': ['gen'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Exodus', 'theme': 'Old testament', 'description':"brief description",
+            'books': ['exo'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+    ]
+  }
+}
+
+    get_query = """
+      query get_bible_videos($source:String!){
+  bibleVideos(sourceName:$source){
+   title
+  }
+}
+    """
+    get_var = {
+      "source": "gu_TTT_1_commentary"
+    }
+
+    content_qry = ADD_BIBLEVIDEO
+    test_data = {"get_query": get_query,
+          "get_var": get_var
+        }
+
+    contetapi_get_accessrule_checks_app_userroles_gql("biblevideo",content_qry, content_data , 
+      test_data , bible=False)

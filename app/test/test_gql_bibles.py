@@ -13,7 +13,8 @@ from .test_gql_sources import check_post as source_add
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
-from . import check_skip_limit_gql, gql_request,assert_not_available_content_gql
+from . import check_skip_limit_gql, gql_request,assert_not_available_content_gql,\
+  contetapi_get_accessrule_checks_app_userroles_gql
 from .conftest import initial_test_users
 from . test_gql_auth_basic import login,SUPER_PASSWORD,SUPER_USER
 
@@ -1112,3 +1113,59 @@ def test_created_user_can_only_edit():
     executed2 = gql_request(BOOK_EDIT_QUERY,operation = "mutation",variables=variable2,
       headers=headers_auth)
     assert "errors" in executed2
+
+def test_get_access_with_user_roles_and_apps():
+    """Test get filter from apps and with users having different permissions"""
+    # #add version
+    version_add(version_query,VERSION_VAR)
+
+    content_data = {
+    "object": {
+        "sourceName": "gu_TTT_1_bible",
+        "books": [
+        {"USFM":"\\id mat\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"},
+        {"USFM":"\\id mrk\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"},
+        {"USFM":"\\id luk\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"},
+        {"USFM":"\\id jhn\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"}
+]
+    }
+    }
+
+    get_query_book = """
+      query get_bibles($source:String!){
+  bibleContents(sourceName:$source){
+   book{
+      bookId
+    }
+    USFM
+  }
+}
+    """
+    get_var = {
+      "source": "gu_TTT_1_commentary"
+    }
+
+    get_query_versification = """
+       query get_versification($source:String!){
+  versification(sourceName:$source){
+   maxVerses
+  }
+}
+    """
+    get_query_verses = """
+       query get_verses($source:String!){
+  bibleVerse(sourceName:$source){
+   verseText
+  }
+}
+    """
+
+    content_qry = BOOK_ADD_QUERY
+    test_data = {"books":{"get_query": get_query_book},
+                 "versification":{"get_query": get_query_versification},
+                  "verses":{"get_query": get_query_verses},
+                "get_var": get_var  
+        }
+
+    contetapi_get_accessrule_checks_app_userroles_gql("bible",content_qry, content_data , 
+      test_data , bible=True)
