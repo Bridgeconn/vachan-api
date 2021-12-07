@@ -88,6 +88,13 @@ initial_test_users = {
                 "token":"",
                 "test_user_id": "",
                 "app" : schema_auth.App.API.value
+            },
+            "AgUser2":{
+                "user_email": "agtest2@mail.test",
+                "password": "passwordtest@1",
+                "token":"",
+                "test_user_id": "",
+                "app" : schema_auth.App.AG.value
             }
         }
 

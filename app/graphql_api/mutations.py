@@ -5,11 +5,11 @@ import schemas
 import schemas_nlp
 import schema_auth
 from routers import translation_apis , content_apis, auth_api
-from crud import contents_crud,projects_crud,nlp_crud
+from crud import projects_crud,nlp_crud
 from graphql_api import types, utils
 from authentication import get_user_or_none_graphql
 #Data classes and graphql classes have few methods
-#pylint: disable=E1101,R1726
+#pylint: disable=E1101,R1726,too-many-locals
 ############ ADD NEW Language #################
 class AddLanguage(graphene.Mutation):
     """Mutation class for Add Language"""
@@ -567,13 +567,17 @@ class CreateAGMTProject(graphene.Mutation):
     message = graphene.String()
     data = graphene.Field(types.TranslationProject)
 #pylint: disable=no-self-use
-    def mutate(self,info,project_arg):
+    async def mutate(self,info,project_arg):
         """resolve"""
         db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "POST"
+        req.scope['path'] = "/v2/autographa/projects"
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (project_arg,schemas_nlp.TranslationProjectCreate)
-
-        result = projects_crud.create_agmt_project(db_=db_,project=schema_model,user_id=10101)
+        response = await translation_apis.create_project(request=req,
+        project_obj=schema_model,user_details=user_details,db_=db_)
+        result = response['data']
         comm = types.TranslationProject(
             projectId = result.projectId,
             projectName = result.projectName,
@@ -584,7 +588,7 @@ class CreateAGMTProject(graphene.Mutation):
             metaData = result.metaData,
             active = result.active
         )
-        message = "Project created successfully"
+        message = response['message']
         return CreateAGMTProject(message = message, data = comm)
 
 ##### AGMT PROJECT MANAGEMENT EDIT #######
@@ -597,19 +601,19 @@ class EditAGMTProject(graphene.Mutation):
     message = graphene.String()
     data = graphene.Field(types.TranslationProject)
 #pylint: disable=no-self-use
-    def mutate(self,info,project_arg):
+    async def mutate(self,info,project_arg):
         """resolve"""
         db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
         req = info.context['request']
         req.scope['method'] = "PUT"
         req.scope['path'] = "/v2/autographa/projects"
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (project_arg,schemas_nlp.TranslationProjectEdit)
 
-        result = translation_apis.update_project(
-            request=req,
-            project_obj=schema_model,
-            db_=db_)
+        result = await translation_apis.update_project(
+            request=req, project_obj=schema_model, 
+            user_details= user_details, db_=db_)
         message = result["message"]
         comm = result["data"]
         return EditAGMTProject(message = message, data = comm)
@@ -624,13 +628,19 @@ class AGMTUserCreate(graphene.Mutation):
     message = graphene.String()
     data = graphene.Field(types.ProjectUser)
 #pylint: disable=no-self-use
-    def mutate(self,info,user_arg):
+    async def mutate(self,info,user_arg):
         """resolve"""
         db_ = info.context["request"].db_session
         project_id = user_arg.project_id
         user_id = user_arg.user_id
-        result = projects_crud.add_agmt_user(db_=db_,project_id=\
-            project_id,user_id=user_id,current_user=None)
+        user_details , req = get_user_or_none_graphql(info)
+        req = info.context['request']
+        req.scope['method'] = "POST"
+        req.scope['path'] = "/v2/autographa/project/user"
+        response = await translation_apis.add_user(request=req,
+            project_id=project_id, user_id=user_id,
+            user_details=user_details, db_=db_)
+        result = response['data']
         comm = types.ProjectUser(
             project_id = result.project_id,
             userId = result.userId,
@@ -638,7 +648,7 @@ class AGMTUserCreate(graphene.Mutation):
             metaData = result.metaData,
             active = result.active
         )
-        message = "User added in project successfully"
+        message = response['message']
         return AGMTUserCreate(message = message, data = comm)
 
 ##### AGMT project user Edit #######
@@ -651,12 +661,18 @@ class AGMTUserEdit(graphene.Mutation):
     message = graphene.String()
     data = graphene.Field(types.ProjectUser)
 #pylint: disable=no-self-use
-    def mutate(self,info,user_arg):
+    async def mutate(self,info,user_arg):
         """resolve"""
         db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req = info.context['request']
+        req.scope['method'] = "PUT"
+        req.scope['path'] = "/v2/autographa/project/user"
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (user_arg,schemas_nlp.ProjectUser)
-        result = projects_crud.update_agmt_user(db_=db_,user_obj = schema_model ,current_user=10101)
+        response = await translation_apis.update_user(request=req,
+            user_obj=schema_model, user_details=user_details, db_=db_)
+        result = response['data']
         comm = types.ProjectUser(
             project_id = result.project_id,
             userId = result.userId,
@@ -664,7 +680,7 @@ class AGMTUserEdit(graphene.Mutation):
             metaData = result.metaData,
             active = result.active
         )
-        message = "User updated in project successfully"
+        message = response['message']
         return AGMTUserEdit(message = message, data = comm)
 
 ########## Add BibleVideo ########

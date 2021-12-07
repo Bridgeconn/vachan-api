@@ -182,7 +182,7 @@ class TranslationDocumentType(graphene.Enum):
 class ProjectUser(graphene.ObjectType):#pylint: disable=too-few-public-methods
     '''Input object for AgMT user update'''
     project_id = graphene.ID()
-    userId = graphene.Int()
+    userId = graphene.String()
     userRole = graphene.String()
     metaData = Metadata()
     active = graphene.Boolean()
@@ -506,12 +506,12 @@ class InputEditAGMTProject(graphene.InputObjectType):
 class AGMTUserCreateInput(graphene.InputObjectType):
     """input of AGMT user create"""
     project_id = graphene.Int(required=True)
-    user_id = graphene.Int(required=True)
+    user_id = graphene.String(required=True)
 
 class AGMTUserEditInput(graphene.InputObjectType):
     """input of AGMT user Edit"""
     project_id = graphene.Int(required=True)
-    userId = graphene.Int(required=True)
+    userId = graphene.String(required=True)
     userRole = graphene.String()
     metaData = graphene.JSONString()
     active = graphene.Boolean()

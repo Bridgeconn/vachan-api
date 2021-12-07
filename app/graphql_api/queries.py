@@ -1,10 +1,10 @@
 '''GraphQL queries and mutations'''
 
 import graphene
-from crud import structurals_crud, contents_crud, projects_crud, nlp_crud
+from crud import structurals_crud, projects_crud, nlp_crud
 from graphql_api import types, utils
 import schemas_nlp
-from routers import content_apis, auth_api
+from routers import content_apis, auth_api, translation_apis
 from authentication import get_user_or_none_graphql
 
 #Pylint error :- Query class have all resolver functions
@@ -204,7 +204,7 @@ class Query(graphene.ObjectType):
         results = content_apis.get_biblevideo(request = req,
             source_name =source_name, book_code = book_code,
             title =title, theme = theme, skip = skip, limit = limit,
-            user_details =user_details, db_ = db_)
+            user_details =user_details, db_ = db_, active=active)
         return results
 
     bible_contents = graphene.List(types.BibleContent,
@@ -221,7 +221,7 @@ class Query(graphene.ObjectType):
         req.scope['path'] = f"/v2/bibles/{source_name}/books"
         req.path_params["source_name"] = source_name
         results = content_apis.get_available_bible_book(request= req,
-            source_name= source_name, book_code= book_code, active= active, 
+            source_name= source_name, book_code= book_code, active= active,
             skip= skip, limit= limit, user_details =user_details, db_= db_,
             content_type = "all")
         return results
@@ -275,8 +275,14 @@ class Query(graphene.ObjectType):
         skip=0, limit=100):
         '''resolver'''
         db_ = info.context["request"].db_session
-        return projects_crud.get_agmt_projects(db_, project_name, source_language, target_language,
-            active=active, user_id=user_id, skip=skip, limit=limit)
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = "/v2/autographa/projects"
+        results = translation_apis.get_projects(request= req,
+            project_name=project_name, source_language=source_language,
+            target_language=target_language, active=active, user_id=user_id,
+            skip= skip, limit= limit, user_details =user_details, db_=db_)
+        return results
 
     agmt_project_tokens = graphene.List(types.Token,
         description="Tokenize specified portions of source in an AgMT project",
