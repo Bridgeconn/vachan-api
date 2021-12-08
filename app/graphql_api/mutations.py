@@ -946,20 +946,27 @@ class AgmtTokenApply(graphene.Mutation):
     message = graphene.String()
     data = graphene.List(types.Sentence)
 #pylint: disable=no-self-use
-    def mutate(self,info,token_arg):
+    async def mutate(self,info,token_arg):
         """resolve"""
         db_ = info.context["request"].db_session
         project_id = token_arg.project_id
         return_drafts = token_arg.return_drafts
         token = token_arg.token
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = "/v2/autographa/project/tokens"
 
         schema_list = []
         for item in token:
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schemas_nlp.TokenUpdate)
             schema_list.append(schema_model)
-        result = nlp_crud.save_agmt_translations(db_=db_,project_id=project_id,\
-            token_translations = schema_list,return_drafts = return_drafts,user_id=None)
+        # result = nlp_crud.save_agmt_translations(db_=db_,project_id=project_id,\
+        #     token_translations = schema_list,return_drafts = return_drafts,user_id=None)
+        response = await translation_apis.apply_token_translations(request= req,
+        project_id=project_id, token_translations=schema_list,
+        return_drafts=return_drafts, user_details = user_details, db_= db_)
+        result = response['data']
         dict_content_list = []
         for item in result:
             comm = types.Sentence(
@@ -969,7 +976,7 @@ class AgmtTokenApply(graphene.Mutation):
             draftMeta = item.draftMeta
             )
             dict_content_list.append(comm)
-        message = "Token translations saved"
+        message = response['message']
         return AgmtTokenApply(message=message,data=dict_content_list)
 
 #### Translation Suggetions ##########
