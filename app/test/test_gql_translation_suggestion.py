@@ -1,7 +1,5 @@
 """Test cases for translation suggetions in GQL"""
-import copy
 import json
-from typing import Dict
 #pylint: disable=E0401
 #pylint: disable=E0611
 #pylint: disable=R0914
@@ -10,6 +8,12 @@ from . import  gql_request,assert_not_available_content_gql,check_skip_limit_gql
 from .test_gql_bibles import add_bible
 from .test_translation_suggestions import align_data,assert_positive_get_suggetion
 from .test_gql_generic_translation import sentence_list
+from .conftest import initial_test_users
+
+headers = {"contentType": "application/json", "accept": "application/json"}
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json"
+            }
 
 def assert_positive_get_tokens_gql(item):
     '''common tests for a token response object'''
@@ -74,7 +78,7 @@ query_tokenize = """
 
 def test_learn_n_suggest():
     '''Positive tests for adding knowledge and getting suggestions'''
-
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
     # add dictionary
     var = {
   "object": {
@@ -83,7 +87,12 @@ def test_learn_n_suggest():
     "data": tokens_trans 
   }
 }
+    #Without Auth
     executed = gql_request(Add_Gloss,operation="mutation",variables=var)
+    assert "errors" in executed
+    #With Auth
+    executed = gql_request(Add_Gloss,operation="mutation",variables=var,
+      headers=headers_auth)
     assert executed["data"]["addGloss"]["message"] == "Added to glossary"
 
     # check if suggestions are given in token list
@@ -95,7 +104,12 @@ def test_learn_n_suggest():
   "sw":False,
   "tm":True
 }
+    #Without Auth
     def_executed = gql_request(query_tokenize,operation="query",variables=var)
+    assert "errors" in def_executed
+    #With Auth
+    def_executed = gql_request(query_tokenize,operation="query",variables=var,
+      headers=headers_auth)
     assert len(def_executed["data"]["tokenize"]) > 10
     found_testcase = False
     found_tested = False 
@@ -120,8 +134,13 @@ def test_learn_n_suggest():
     "targetLanguage": "ml",
     "data": align_data
   }
-}
+} 
+    #Without Auth
     executed1 = gql_request(Add_Alignment,operation="mutation",variables=var1)
+    assert "errors" in executed1
+    #With Auth
+    executed1 = gql_request(Add_Alignment,operation="mutation",variables=var1,
+      headers=headers_auth)
     assert executed1["data"]["addAlignment"]["message"] == "Added to Alignments"
     found_lower_developer = False
     for item in executed1["data"]["addAlignment"]['data']:
@@ -130,7 +149,8 @@ def test_learn_n_suggest():
     assert found_lower_developer
 
     # try tokenizing again
-    def_executed1 = gql_request(query_tokenize,operation="query",variables=var)
+    def_executed1 = gql_request(query_tokenize,operation="query",variables=var,
+      headers=headers_auth)
     found_atestcase  = False
     found_lower_developer = False
     for item in def_executed1["data"]["tokenize"]:
@@ -161,7 +181,12 @@ def test_learn_n_suggest():
  	 "trg": "ml",
   "token": "test"
 }
+    #Without Auth
     executed3 = gql_request(query_get_gloss,operation="query",variables=var3)
+    assert "errors" in executed3
+    #With Auth
+    executed3 = gql_request(query_get_gloss,operation="query",variables=var3,
+      headers=headers_auth)
     assert isinstance(executed3["data"]["gloss"], dict)
     assert len(executed3["data"]["gloss"]['translations']) > 0
     assert_positive_get_suggetion(executed3["data"]["gloss"])
@@ -177,7 +202,8 @@ def test_learn_n_suggest():
  	 "trg": "ml",
   "token": "a test case"
 }
-    executed4 = gql_request(query_get_gloss,operation="query",variables=var4)
+    executed4 = gql_request(query_get_gloss,operation="query",variables=var4,
+      headers=headers_auth)
     assert isinstance(executed4["data"]["gloss"], dict)
     assert len(executed4["data"]["gloss"]['translations']) > 0
     assert_positive_get_suggetion(executed4["data"]["gloss"])
@@ -197,7 +223,8 @@ def test_learn_n_suggest():
  	 "trg": "ml",
   "token": "happy"
 }
-    executed5 = gql_request(query_get_gloss,operation="query",variables=var4)
+    executed5 = gql_request(query_get_gloss,operation="query",variables=var4,
+      headers=headers_auth)
     assert isinstance(executed5["data"]["gloss"], dict)
     assert len(executed5["data"]["gloss"]['translations']) > 0
     assert_positive_get_suggetion(executed5["data"]["gloss"])
@@ -222,7 +249,8 @@ def test_learn_n_suggest():
   "context":"the happy user went home"
 
 }
-    executed6 = gql_request(query_get_gloss,operation="query",variables=var6)
+    executed6 = gql_request(query_get_gloss,operation="query",variables=var6,
+      headers=headers_auth)
     assert isinstance(executed6["data"]["gloss"], dict)
     assert len(executed6["data"]["gloss"]['translations']) > 0
     assert_positive_get_suggetion(executed6["data"]["gloss"])
@@ -247,7 +275,8 @@ def test_learn_n_suggest():
   "context":"now user is not happy"
 
 }
-    executed7 = gql_request(query_get_gloss,operation="query",variables=var7)
+    executed7 = gql_request(query_get_gloss,operation="query",variables=var7,
+      headers=headers_auth)
     assert isinstance(executed7["data"]["gloss"], dict)
     assert len(executed7["data"]["gloss"]['translations']) > 0
     assert_positive_get_suggetion(executed7["data"]["gloss"])
@@ -290,17 +319,22 @@ $punctuations:[String],$stopwords:Stopwords){
   convertToText(sentenceList:$sentence)
 }
     """
-
-    executed_sug = gql_request(suggest_translation_query,operation="query",variables=var_suggest)
+    print("ACCESS RULES NOT ADDED .... ERROR NEED TO CHECK -----------------------------------------------")
+    # headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    # #Without Auth
+    # executed_sug = gql_request(suggest_translation_query,operation="query",variables=var_suggest)
+    # assert "errors" in executed_sug
+    #With Auth
+    executed_sug = gql_request(suggest_translation_query,operation="query",variables=var_suggest,
+      headers=headers_auth)
     input = executed_sug["data"]["suggestTranslation"]
     for item in input:
       item["draftMeta"] = json.dumps(item["draftMeta"])
 
-    var_text = {
+    var_text = {  
   "sentence": input
 }
-    
-    draft = gql_request(query_text,operation="query",variables=var_text)
+    draft = gql_request(query_text,operation="query",variables=var_text,headers=headers_auth)
     assert "ഒരു ടെസ്റ്റ് കേസ്." in draft["data"]["convertToText"]
     assert "ടെസ്റ്റ് കേസ് ടെസ്റ്റ് ചെയ്തു" in draft["data"]["convertToText"] or "ടെസ്റ്റ് കേസ് ടെസ്റ്റഡ്" in draft["data"]["convertToText"]
     assert "ടെവെലപ്പര്‍" in draft["data"]["convertToText"]

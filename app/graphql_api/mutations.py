@@ -1,6 +1,7 @@
 '''GraphQL queries and mutations'''
 #pylint: disable=too-many-lines
 import graphene
+from sqlalchemy.sql.functions import user
 import schemas
 import schemas_nlp
 import schema_auth
@@ -989,7 +990,7 @@ class AutoTranslationSuggetion(graphene.Mutation):
 
     Output = graphene.List(types.Sentence)
 #pylint: disable=no-self-use
-    def mutate(self,info,translation_arg):
+    async def mutate(self,info,translation_arg):
         """resolve"""
         db_ = info.context["request"].db_session
         project_id  = translation_arg.project_id
@@ -997,10 +998,17 @@ class AutoTranslationSuggetion(graphene.Mutation):
         sentence_id_list = translation_arg.sentence_id_list
         sentence_id_range = translation_arg.sentence_id_range
         confirm_all = translation_arg.confirm_all
-
-        result =nlp_crud.agmt_suggest_translations(db_=db_,project_id=project_id,books=books,\
-            sentence_id_list=sentence_id_list,sentence_id_range=sentence_id_range,\
-            confirm_all=confirm_all)
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT" 
+        req.scope['path'] = "/v2/autographa/project/suggestions"
+        # result =nlp_crud.agmt_suggest_translations(db_=db_,project_id=project_id,books=books,\
+        #     sentence_id_list=sentence_id_list,sentence_id_range=sentence_id_range,\
+        #     confirm_all=confirm_all)
+        response = await translation_apis.suggest_auto_translation(request=req,
+            project_id=project_id, books=books, sentence_id_list=sentence_id_list,
+            sentence_id_range=sentence_id_range,confirm_all=confirm_all,
+            user_details=user_details,db_=db_)
+        result = response
 
         dict_content_list = []
         for item in result:
@@ -1023,19 +1031,25 @@ class AddGloss(graphene.Mutation):
     message = graphene.String()
     data = graphene.List(types.Gloss)
 #pylint: disable=no-self-use
-    def mutate(self,info,gloss_arg):
+    async def mutate(self,info,gloss_arg):
         """resolve"""
         db_ = info.context["request"].db_session
         source_language = gloss_arg.source_language
         target_language =gloss_arg.target_language
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "POST"
+        req.scope['path'] = "/v2/translation/learn/gloss"
         schema_list = []
         for item in gloss_arg.data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schemas_nlp.GlossInput)
             schema_list.append(schema_model)
 
-        result =nlp_crud.add_to_translation_memory(db_=db_,src_lang=source_language,\
-           trg_lang=target_language,gloss_list=schema_list)
+        response = await translation_apis.add_gloss(request=req,
+            source_language=source_language,target_language=target_language,
+            token_translations=schema_list,user_details=user_details,
+            db_=db_)
+        result = response['data']   
 
         dict_content_list = []
         for item in result:
@@ -1057,7 +1071,7 @@ class AddGloss(graphene.Mutation):
             )
 
             dict_content_list.append(dict_var)
-        message = "Added to glossary"
+        message = response['message']
         return AddGloss(message=message,data=dict_content_list)
 
 ############### Add Alignment
@@ -1070,19 +1084,26 @@ class AddAlignment(graphene.Mutation):
     message = graphene.String()
     data = graphene.List(types.Gloss)
 #pylint: disable=no-self-use
-    def mutate(self,info,alignment_arg):
+    async def mutate(self,info,alignment_arg):
         """resolve"""
         db_ = info.context["request"].db_session
         source_language = alignment_arg.source_language
         target_language =alignment_arg.target_language
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "POST"
+        req.scope['path'] = "/v2/translation/learn/alignment"
         schema_list = []
         for item in alignment_arg.data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schemas_nlp.Alignment)
             schema_list.append(schema_model)
 
-        result =nlp_crud.alignments_to_trainingdata(db_=db_,src_lang=source_language,\
-            trg_lang=target_language,alignment_list=schema_list,user_id=20202)
+        # result =nlp_crud.alignments_to_trainingdata(db_=db_,src_lang=source_language,\
+        #     trg_lang=target_language,alignment_list=schema_list,user_id=20202)
+        response = await translation_apis.add_alignments(request=req,
+            source_language=source_language,target_language=target_language,
+            alignments=schema_list,user_details=user_details,db_=db_)
+        result = response['data']
 
         dict_content_list = []
         for item in result:

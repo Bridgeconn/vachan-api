@@ -358,11 +358,19 @@ class Query(graphene.ObjectType):
             punctuations=None, stopwords=None):
         '''resolver'''
         db_ = info.context["request"].db_session
-        result =  nlp_crud.auto_translate(db_=db_,sentence_list=sentence_list,source_lang=\
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = "/v2/translation/suggestions"
+        results =  nlp_crud.auto_translate(db_=db_,sentence_list=sentence_list,source_lang=\
             source_language,target_lang=target_language,punctuations=punctuations,\
                 stop_words=stopwords)
+
+        # results = translation_apis.suggest_translation(request=req,
+        #     source_language=source_language,target_language=target_language,
+        #     sentence_list=sentence_list,punctuations=punctuations,stopwords=stopwords,
+        #     user_details=user_details, db_=db_)
         content_list = []
-        for item in result:
+        for item in results:
             content = {
             "sentenceId":item.sentenceId,
             "sentence":item.sentence,
@@ -469,8 +477,15 @@ class Query(graphene.ObjectType):
         token_offset=None):
         '''resolver'''
         db_ = info.context["request"].db_session
-        return nlp_crud.glossary(db_, source_language, target_language, token,
-        context=context,token_offset=token_offset)
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = "/v2/translation/gloss"
+        # return nlp_crud.glossary(db_, source_language, target_language, token,
+        # context=context,token_offset=token_offset)
+        results = translation_apis.get_glossary(request=req, source_language=source_language,
+            target_language=target_language,token=token, context=context, token_offset=token_offset,
+            user_details=user_details, db_=db_)
+        return results
 
     tokenize = graphene.List(types.Token,
         description='Tokenize a set of sentences',
@@ -487,9 +502,18 @@ class Query(graphene.ObjectType):
             include_stopwords=False, punctuations=None, stopwords=None):
         '''resolver'''
         db_ = info.context["request"].db_session
-        return nlp_crud.get_generic_tokens(db_, source_language, sentence_list, target_language,
-            punctuations= punctuations, stopwords=stopwords, include_phrases = include_phrases,
-            use_translation_memory=use_translation_memory, include_stopwords=include_stopwords)
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = "/v2/translation/tokens"
+        # return nlp_crud.get_generic_tokens(db_, source_language, sentence_list, target_language,
+        #     punctuations= punctuations, stopwords=stopwords, include_phrases = include_phrases,
+        #     use_translation_memory=use_translation_memory, include_stopwords=include_stopwords)
+        results = translation_apis.tokenize(request=req, source_language=source_language,
+            sentence_list=sentence_list, target_language=target_language,
+            use_translation_memory = use_translation_memory, include_phrases=include_phrases,
+            include_stopwords=include_stopwords, punctuations=punctuations, stopwords=stopwords,
+            user_details=user_details, db_=db_)
+        return results
 
     translate_token = graphene.List(types.Sentence,
         description='replace provided tokens with translation in the input sentences',
@@ -504,53 +528,89 @@ class Query(graphene.ObjectType):
         token_translations, use_data_for_learning=True):
         '''resolver'''
         db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = "/v2/translation/token-translate"
         new_sent_list = [ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
                 for item in sentence_list]
         new_token_list =[ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.TokenUpdate)
                 for item in token_translations]
-        return nlp_crud.replace_bulk_tokens(db_, new_sent_list, new_token_list, source_language,
-            target_language, use_data_for_learning=use_data_for_learning)
+        # return nlp_crud.replace_bulk_tokens(db_, new_sent_list, new_token_list, source_language,
+        #     target_language, use_data_for_learning=use_data_for_learning)
+        results = translation_apis.token_replace(request=req, sentence_list=new_sent_list,
+            token_translations= new_token_list, source_language=source_language,
+            target_language=target_language, use_data_for_learning=use_data_for_learning,
+            user_details=user_details,db_=db_)
+        return results
 
 
     convert_to_usfm = graphene.List(graphene.String,
         description="Converts drafts to usfm",
         sentence_list=graphene.List(types.SentenceInput, required=True))
-    def resolve_convert_to_usfm(self, _, sentence_list):
+    def resolve_convert_to_usfm(self, info, sentence_list):
         '''resolver'''
+        # db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = "/v2/translation/draft"
         new_list = [ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
                 for item in sentence_list]
-        return nlp_crud.obtain_draft(new_list,
-            doc_type=schemas_nlp.TranslationDocumentType.USFM)
+        # return nlp_crud.obtain_draft(new_list,
+        #     doc_type=schemas_nlp.TranslationDocumentType.USFM)
+        results = translation_apis.generate_draft(request=req, sentence_list=new_list,
+            doc_type=schemas_nlp.TranslationDocumentType.USFM,user_details=user_details)
+        return results
 
     convert_to_alignment = graphene.Field(types.Metadata,
         description="Converts sentences and drafts to alignment-json",
         sentence_list=graphene.List(types.SentenceInput, required=True))
-    def resolve_convert_to_alignment(self, _, sentence_list):
+    def resolve_convert_to_alignment(self, info, sentence_list):
         '''resolver'''
+        # db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = "/v2/translation/draft"
         new_list = [ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
                 for item in sentence_list]
-        return nlp_crud.obtain_draft(new_list,
-            doc_type=schemas_nlp.TranslationDocumentType.JSON)
+        # return nlp_crud.obtain_draft(new_list,
+        #     doc_type=schemas_nlp.TranslationDocumentType.JSON)
+        results = translation_apis.generate_draft(request=req, sentence_list=new_list,
+            doc_type=schemas_nlp.TranslationDocumentType.JSON, user_details=user_details)
+        return results
 
     convert_to_csv = graphene.String(
         description="Converts sentences and drafts to CSV format",
         sentence_list=graphene.List(types.SentenceInput, required=True))
-    def resolve_convert_to_csv(self, _, sentence_list):
+    def resolve_convert_to_csv(self, info, sentence_list):
         '''resolver'''
+        # db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = "/v2/translation/draft"
         new_list = [ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
                 for item in sentence_list]
-        return nlp_crud.obtain_draft(new_list,
-            doc_type=schemas_nlp.TranslationDocumentType.CSV)
+        # return nlp_crud.obtain_draft(new_list,
+        #     doc_type=schemas_nlp.TranslationDocumentType.CSV)
+        results = translation_apis.generate_draft(request=req, sentence_list=new_list,
+            doc_type=schemas_nlp.TranslationDocumentType.CSV,user_details=user_details)
+        return results
 
     convert_to_text = graphene.String(
         description="Converts drafts to alignment-json",
         sentence_list=graphene.List(types.SentenceInput, required=True))
-    def resolve_convert_to_text(self, _, sentence_list):
+    def resolve_convert_to_text(self, info, sentence_list):
         '''resolver'''
+        # db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = "/v2/translation/draft"
         new_list = [ utils.convert_graphene_obj_to_pydantic(item, schemas_nlp.DraftInput)
                 for item in sentence_list]
-        return nlp_crud.obtain_draft(new_list,
-            doc_type=schemas_nlp.TranslationDocumentType.TEXT)
+        # return nlp_crud.obtain_draft(new_list,
+        #     doc_type=schemas_nlp.TranslationDocumentType.TEXT)
+        results = translation_apis.generate_draft(request=req, sentence_list=new_list,
+            doc_type=schemas_nlp.TranslationDocumentType.TEXT,user_details=user_details)
+        return results
 
     login = graphene.Field(types.LoginResponse,
         description="Login User for getting Token",
