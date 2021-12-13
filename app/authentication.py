@@ -68,6 +68,11 @@ access_rules = {
         "create":["registeredUser"],
         "process":["registeredUser"]
     },
+    "lookup-content":{
+        "read":["registeredUser"],
+        "create":["registeredUser"],
+        "edit":["registeredUser"]
+    },
     "research-use":{
         "read":["SuperAdmin", "BcsDeveloper"]
     },
@@ -151,7 +156,7 @@ def project_member(db_:Session, db_resource, user_id):
         return True
     return False
 
-def get_accesstags_basedon_resourcetype(resource_type, method, db_resource):
+def get_accesstags_basedon_resourcetype(resource_type, method, db_resource):#pylint: disable=too-many-branches
     """check the type of resource and provide access tags"""
     if resource_type == schema_auth.ResourceType.METACONTENT:
         access_tags = ["meta-content","open-access"]
@@ -161,6 +166,8 @@ def get_accesstags_basedon_resourcetype(resource_type, method, db_resource):
         access_tags = ['user']
     elif resource_type == schema_auth.ResourceType.TRANSLATION:
         access_tags = ['generic-translation']
+    elif resource_type == schema_auth.ResourceType.LOOKUP:
+        access_tags = ['lookup-content']
     elif resource_type == schema_auth.ResourceType.CONTENT:
         access_tags = []
         if method != 'GET':
@@ -191,6 +198,8 @@ def get_accesstags_permission(request_context, resource_type, db_, db_resource ,
             resource_type = schema_auth.ResourceType.USER
         elif endpoint.startswith("/v2/translation"):
             resource_type = schema_auth.ResourceType.TRANSLATION
+        elif endpoint.startswith("/v2/lookup"):
+            resource_type = schema_auth.ResourceType.LOOKUP
         else:
             resource_type = schema_auth.ResourceType.CONTENT
     required_permission = api_permission_map(endpoint, request_context ,

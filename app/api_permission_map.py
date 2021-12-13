@@ -169,6 +169,17 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
             permission = "process"
         return permission
 
+    def switch_lookup():
+        """lookup related"""
+        permission = None
+        if method == 'GET':
+            permission = "read"
+        if method == 'POST':
+            permission = "create"
+        if method == 'PUT':
+            permission = "edit"
+        return permission
+
     switcher = {
         "/v2/user/register" : switch_register,
         "/v2/user/login" : switch_login,
@@ -188,7 +199,7 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
 
         "/v2/sources/get-sentence" : switch_contents,
 
-        "/v2/lookup/bible/books" : switch_contents,
+        "/v2/lookup/bible/books" : switch_lookup,
 
         f"/v2/bibles/{source_name}/books" : switch_contents,
 

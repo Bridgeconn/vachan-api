@@ -1,7 +1,6 @@
 '''GraphQL queries and mutations'''
 
 import graphene
-from crud import structurals_crud
 from graphql_api import types, utils
 import schemas_nlp
 from routers import content_apis, auth_api, translation_apis
@@ -124,8 +123,13 @@ class Query(graphene.ObjectType):
         book_code=None, skip=0, limit=100):
         '''resolver'''
         db_ = info.context["request"].db_session
-        return structurals_crud.get_bible_books(db_, book_id=book_id,
-            book_code=book_code, book_name=book_name, skip=skip, limit=limit)
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = "/v2/lookup/bible/books"
+        results = content_apis.get_bible_book(request=req,book_id=book_id,
+            book_code=book_code,book_name=book_name,user_details=user_details,
+            skip=skip, limit=limit, db_=db_)
+        return results
 
     commentaries = graphene.List(types.Commentary,
         description="Query commentaries added in vachan-db",
