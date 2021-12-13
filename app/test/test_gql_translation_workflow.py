@@ -234,7 +234,6 @@ def test_end_to_end_translation():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     executed_auto_sugg = gql_request(query_auto_suggest,operation="mutation",variables=var_auto_sugg,
       headers=headers_auth)
-    print("ex-------------------->",executed_auto_sugg)  
     draft = executed_auto_sugg["data"]["suggestAgmtAutoTranslation"][0]['draft']
     assert "ദൈവം" in draft
     assert "പുത്രന്‍" in draft

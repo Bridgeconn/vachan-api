@@ -241,6 +241,12 @@ class Suggestion(graphene.ObjectType):#pylint: disable=too-few-public-methods
     suggestion = graphene.String()
     score = graphene.Float()
 
+class ExtractSentenceResposne(graphene.ObjectType):#pylint: disable=too-few-public-methods
+    '''Resposne for Extract text sentence'''
+    sentenceId = graphene.String()
+    surrogateId = graphene.String()
+    sentence = graphene.String()
+
 ###################### Input Types ###############################
 
 class SentenceInput(graphene.InputObjectType):

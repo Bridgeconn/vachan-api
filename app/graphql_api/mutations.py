@@ -1,12 +1,10 @@
 '''GraphQL queries and mutations'''
 #pylint: disable=too-many-lines
 import graphene
-from sqlalchemy.sql.functions import user
 import schemas
 import schemas_nlp
 import schema_auth
 from routers import translation_apis , content_apis, auth_api
-from crud import projects_crud,nlp_crud
 from graphql_api import types, utils
 from authentication import get_user_or_none_graphql
 #Data classes and graphql classes have few methods
@@ -613,7 +611,7 @@ class EditAGMTProject(graphene.Mutation):
             (project_arg,schemas_nlp.TranslationProjectEdit)
 
         result = await translation_apis.update_project(
-            request=req, project_obj=schema_model, 
+            request=req, project_obj=schema_model,
             user_details= user_details, db_=db_)
         message = result["message"]
         comm = result["data"]
@@ -999,7 +997,7 @@ class AutoTranslationSuggetion(graphene.Mutation):
         sentence_id_range = translation_arg.sentence_id_range
         confirm_all = translation_arg.confirm_all
         user_details , req = get_user_or_none_graphql(info)
-        req.scope['method'] = "PUT" 
+        req.scope['method'] = "PUT"
         req.scope['path'] = "/v2/autographa/project/suggestions"
         # result =nlp_crud.agmt_suggest_translations(db_=db_,project_id=project_id,books=books,\
         #     sentence_id_list=sentence_id_list,sentence_id_range=sentence_id_range,\
@@ -1049,7 +1047,7 @@ class AddGloss(graphene.Mutation):
             source_language=source_language,target_language=target_language,
             token_translations=schema_list,user_details=user_details,
             db_=db_)
-        result = response['data']   
+        result = response['data']
 
         dict_content_list = []
         for item in result:

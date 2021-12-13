@@ -1,7 +1,7 @@
 '''GraphQL queries and mutations'''
 
 import graphene
-from crud import structurals_crud, projects_crud, nlp_crud
+from crud import structurals_crud
 from graphql_api import types, utils
 import schemas_nlp
 from routers import content_apis, auth_api, translation_apis
@@ -305,9 +305,6 @@ class Query(graphene.ObjectType):
         use_translation_memory=use_translation_memory, include_phrases=include_phrases,
         include_stopwords=include_stopwords, user_details = user_details, db_= db_)
         return results
-        # return nlp_crud.get_agmt_tokens(db_, project_id, books, sentence_id_range, sentence_id_list,
-        #     use_translation_memory=use_translation_memory,
-        #     include_phrases=include_phrases, include_stopwords=include_stopwords)
 
     agmt_project_token_translation = graphene.Field(types.TokenTranslation,
         description="Query the translation done for a token in an AgMT project",
@@ -317,7 +314,7 @@ class Query(graphene.ObjectType):
     def resolve_agmt_project_token_translation(self, info, project_id, sentence_id, offset):
         '''resolver'''
         db_ = info.context["request"].db_session
-        occurrences = [{"sentenceId":sentence_id, "offset":offset}]
+        # occurrences = [{"sentenceId":sentence_id, "offset":offset}]
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
         req.scope['path'] = "/v2/autographa/project/token-translations"
@@ -354,21 +351,20 @@ class Query(graphene.ObjectType):
         sentence_list=graphene.List(types.SentenceInput, required=True),
         punctuations=graphene.List(graphene.String),
         stopwords=graphene.Argument(types.Stopwords))
-    def resolve_suggest_translation(self, info, source_language, sentence_list, target_language,
-            punctuations=None, stopwords=None):
+    async def resolve_suggest_translation(self, info, source_language,
+        sentence_list, target_language, punctuations=None, stopwords=None):
         '''resolver'''
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
         req.scope['path'] = "/v2/translation/suggestions"
-        results =  nlp_crud.auto_translate(db_=db_,sentence_list=sentence_list,source_lang=\
-            source_language,target_lang=target_language,punctuations=punctuations,\
-                stop_words=stopwords)
-
-        # results = translation_apis.suggest_translation(request=req,
-        #     source_language=source_language,target_language=target_language,
-        #     sentence_list=sentence_list,punctuations=punctuations,stopwords=stopwords,
-        #     user_details=user_details, db_=db_)
+        # results =  nlp_crud.auto_translate(db_=db_,sentence_list=sentence_list,source_lang=\
+        #     source_language,target_lang=target_language,punctuations=punctuations,\
+        #         stop_words=stopwords)
+        results = await translation_apis.suggest_translation(request=req,
+            source_language=source_language,target_language=target_language,
+            sentence_list=sentence_list,punctuations=punctuations,stopwords=stopwords,
+            user_details=user_details, db_=db_)
         content_list = []
         for item in results:
             content = {
@@ -460,7 +456,7 @@ class Query(graphene.ObjectType):
         # return projects_crud.obtain_agmt_progress(db_, project_id, books,
         #     sentence_id_list, sentence_id_range)
         results = translation_apis.get_progress(request= req,project_id=project_id,
-            books=books,sentence_id_list=sentence_id_list, 
+            books=books,sentence_id_list=sentence_id_list,
             sentence_id_range=sentence_id_range, user_details =user_details, db_=db_)
         return results
 
@@ -524,7 +520,7 @@ class Query(graphene.ObjectType):
         sentence_list=graphene.List(types.SentenceInput, required=True),
         token_translations=graphene.List(types.TokenUpdate, required=True),
         use_data_for_learning=graphene.Boolean())
-    def resolve_translate_token(self, info, source_language, target_language, sentence_list,
+    async def resolve_translate_token(self, info, source_language, target_language, sentence_list,
         token_translations, use_data_for_learning=True):
         '''resolver'''
         db_ = info.context["request"].db_session
@@ -537,11 +533,11 @@ class Query(graphene.ObjectType):
                 for item in token_translations]
         # return nlp_crud.replace_bulk_tokens(db_, new_sent_list, new_token_list, source_language,
         #     target_language, use_data_for_learning=use_data_for_learning)
-        results = translation_apis.token_replace(request=req, sentence_list=new_sent_list,
+        results = await translation_apis.token_replace(request=req, sentence_list=new_sent_list,
             token_translations= new_token_list, source_language=source_language,
             target_language=target_language, use_data_for_learning=use_data_for_learning,
             user_details=user_details,db_=db_)
-        return results
+        return results["data"]
 
 
     convert_to_usfm = graphene.List(graphene.String,
@@ -638,24 +634,24 @@ class Query(graphene.ObjectType):
         return response["message"]
 
     #Source Get-Sentence Extract Text Contents
-    extract_text_contents = graphene.List(types.Sentence,
+    extract_text_contents = graphene.List(types.ExtractSentenceResposne,
         description="""A generic API for all content type tables to get just the text
         contents of that table that could be used for translation, as corpus for NLP 
         operations like SW identification.If source_name is provided, only that filter 
         will be considered over content_type & language""",
-        source_name=graphene.String(required=True),
+        source_name=graphene.String(),
         books = graphene.List(graphene.String,description="3 letter code like, gen, mat etc"),
         language_code=graphene.String(
                 description="language code as per bcp47(usually 2 letter code)"),
         content_type=graphene.String(),skip=graphene.Int(), limit=graphene.Int())
-    def resolve_extract_text_contents(self, info, source_name, books, language_code,
-        content_type, skip, limit):
+    async def resolve_extract_text_contents(self, info, source_name=None,
+        books=None, language_code=None, content_type=None, skip=0, limit=100):
         """resolve"""
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
         req.scope['path'] = "/v2/sources/get-sentence"
-        response = content_apis.extract_text_contents(request=req,
+        response = await content_apis.extract_text_contents(request=req,
             source_name=source_name, books=books, language_code=language_code,
             content_type=content_type, skip=skip, limit=limit,
             user_details= user_details, db_=db_)

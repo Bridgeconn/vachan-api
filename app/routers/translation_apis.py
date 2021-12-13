@@ -31,7 +31,7 @@ async def get_projects(request: Request,#pylint: disable=unused-argument
     log.debug('project_name: %s, source_language:%s, target_language:%s,\
         active:%s, user_id:%s',project_name, source_language, target_language, active, user_id)
     return projects_crud.get_agmt_projects(db_, project_name, source_language, target_language,
-        active=active, user_id=user_id, skip=skip, limit=limit)    
+        active=active, user_id=user_id, skip=skip, limit=limit)
 
 @router.post('/v2/autographa/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse,

@@ -250,11 +250,15 @@ def test_tokenize_with_diff_flags():
 
 def test_token_translate():
     '''Positive tests to apply token translationa nd obtain drafts'''
+    headers_auth = {"contentType": "application/json",
+                "accept": "application/json"
+            }
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
     #tokenize
     var = {
   "src": "hi",
   "sent_list": [{
-                "sentenceId":1, 
+                "sentenceId":1,
                 "sentence":sample_sent}],
             "stopwords":{
                 "prepositions":["इस"],
@@ -269,8 +273,7 @@ def test_token_translate():
     all_tokens = executed["data"]["tokenize"]
     for tok in all_tokens:
         assert_positive_get_tokens_gql(tok)
-        assert tok != "यीशु मसीह"      
-
+        assert tok != "यीशु मसीह"
     # translate one token
     post_obj={
   "src": "hi",
@@ -290,55 +293,55 @@ def test_token_translate():
           "translation": "test"}
       ]
     post_obj["udl"] = False
-    # # executed = gql_request(query_translate_tkn,operation="query",variables=post_obj,
-    # #   headers=headers_auth)
-    # return_sent = executed["data"]["translateToken"][0]
-    # assert_positive_get_sentence(return_sent)
-    # assert return_sent['draft'].startswith("test")
-    # assert return_sent['draftMeta'][0][2] == "confirmed"
-    # assert return_sent['draftMeta'][1][2] == "untranslated"
-    # assert len(return_sent['draftMeta']) == 2
+    executed = gql_request(query_translate_tkn,operation="query",variables=post_obj,
+      headers=headers_auth)
+    return_sent = executed["data"]["translateToken"][0]
+    assert_positive_get_sentence(return_sent)
+    assert return_sent['draft'].startswith("test")
+    assert return_sent['draftMeta'][0][2] == "confirmed"
+    assert return_sent['draftMeta'][1][2] == "untranslated"
+    assert len(return_sent['draftMeta']) == 2
 
     # translate all tokens
-    # post_obj["udl"] = False
-    # post_obj["tkn_tran"]= []
-    # for tok in all_tokens:
-    #     obj = {"token": tok['token'], "occurrences":tok["occurrences"], "translation":"test"}
-    #     post_obj['tkn_tran'].append(obj)
+    post_obj["udl"] = False
+    post_obj["tkn_tran"]= []
+    for tok in all_tokens:
+        obj = {"token": tok['token'], "occurrences":tok["occurrences"], "translation":"test"}
+        post_obj['tkn_tran'].append(obj)
         
-    # executed2 = gql_request(query_translate_tkn,operation="query",variables=post_obj,
-    #   headers=headers_auth)
-    # return_sent = executed2["data"]["translateToken"][0]
-    # assert_positive_get_sentence(return_sent)
-    # words_in_draft = re.findall(r'\w+',return_sent['draft'])
-    # for word in words_in_draft:
-    #     assert word == 'test'
-    # for meta in return_sent['draftMeta']:
-    #     if meta[0][1] - meta[0][0] > 1: # all non space and non-punct parts of input
-    #         assert meta[2] == "confirmed"
+    executed2 = gql_request(query_translate_tkn,operation="query",variables=post_obj,
+      headers=headers_auth)
+    return_sent = executed2["data"]["translateToken"][0]
+    assert_positive_get_sentence(return_sent)
+    words_in_draft = re.findall(r'\w+',return_sent['draft'])
+    for word in words_in_draft:
+        assert word == 'test'
+    for meta in return_sent['draftMeta']:
+        if meta[0][1] - meta[0][0] > 1: # all non space and non-punct parts of input
+            assert meta[2] == "confirmed"
 
-    # # make a translation for a token not in token list
-    # # it combines & re-translates 2 already translated tokens
-    # # and use data for learning
-    # return_sent_obj = copy.deepcopy(return_sent)
-    # return_sent_obj["draftMeta"] = json.dumps(return_sent["draftMeta"])
-    # post_obj["sent_list"] = [return_sent_obj]
-    # post_obj["udl"] = True
-    # post_obj['tkn_tran'] = [
-    #     { "token": "यीशु मसीह",
-    #       "occurrences": [
-    #         { "sentenceId": 1,
-    #           "offset": [31,40]}
-    #       ],
-    #       "translation": "Jesus Christ"}
-    #   ]
+    # make a translation for a token not in token list
+    # it combines & re-translates 2 already translated tokens
+    # and use data for learning
+    return_sent_obj = copy.deepcopy(return_sent)
+    return_sent_obj["draftMeta"] = json.dumps(return_sent["draftMeta"])
+    post_obj["sent_list"] = [return_sent_obj]
+    post_obj["udl"] = True
+    post_obj['tkn_tran'] = [
+        { "token": "यीशु मसीह",
+          "occurrences": [
+            { "sentenceId": 1,
+              "offset": [31,40]}
+          ],
+          "translation": "Jesus Christ"}
+      ]
 
-    # executed3 = gql_request(query_translate_tkn,operation="query",variables=post_obj,
-    #   headers=headers_auth)
-    # new_return_sent = executed3["data"]["translateToken"][0]
-    # assert "Jesus Christ" in new_return_sent['draft']
-    # # combined two segments to one
-    # assert len(new_return_sent['draftMeta']) == len(return_sent['draftMeta']) -2
+    executed3 = gql_request(query_translate_tkn,operation="query",variables=post_obj,
+      headers=headers_auth)
+    new_return_sent = executed3["data"]["translateToken"][0]
+    assert "Jesus Christ" in new_return_sent['draft']
+    # combined two segments to one
+    assert len(new_return_sent['draftMeta']) == len(return_sent['draftMeta']) -2
 
 def test_draft_generation():
     '''tests conversion of sentence list to differnt draft formats'''

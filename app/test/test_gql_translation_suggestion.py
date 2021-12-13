@@ -319,12 +319,11 @@ $punctuations:[String],$stopwords:Stopwords){
   convertToText(sentenceList:$sentence)
 }
     """
-    print("ACCESS RULES NOT ADDED .... ERROR NEED TO CHECK -----------------------------------------------")
-    # headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    # #Without Auth
-    # executed_sug = gql_request(suggest_translation_query,operation="query",variables=var_suggest)
-    # assert "errors" in executed_sug
-    #With Auth
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    #Without Auth
+    executed_sug = gql_request(suggest_translation_query,operation="query",variables=var_suggest)
+    assert "errors" in executed_sug
+    # With Auth
     executed_sug = gql_request(suggest_translation_query,operation="query",variables=var_suggest,
       headers=headers_auth)
     input = executed_sug["data"]["suggestTranslation"]
@@ -339,4 +338,3 @@ $punctuations:[String],$stopwords:Stopwords){
     assert "ടെസ്റ്റ് കേസ് ടെസ്റ്റ് ചെയ്തു" in draft["data"]["convertToText"] or "ടെസ്റ്റ് കേസ് ടെസ്റ്റഡ്" in draft["data"]["convertToText"]
     assert "ടെവെലപ്പര്‍" in draft["data"]["convertToText"]
     assert "ഇത് ആണ്  sad story of a poor ടെസ്റ്റ് " in draft["data"]["convertToText"]
-
