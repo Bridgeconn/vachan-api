@@ -13,7 +13,7 @@ from custom_exceptions import GenericException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
     UnprocessableException, PermissionException
 from api_permission_map import api_permission_map
-
+from schema_auth import AdminRoles
 
 PUBLIC_BASE_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL",
                                     "http://127.0.0.1:4433/")+"self-service/"
@@ -815,8 +815,9 @@ def create_super_user():
     if response.status_code == 200:
         identity_data = json.loads(response.content)
         for identity in identity_data:
-            if SUPER_USER ==  identity["traits"]["email"]:
+            if AdminRoles.SUPERADMIN.value in identity["traits"]["userrole"]:
                 found = True
+                break
     else:
         raise HTTPException(status_code=401, detail=json.loads(response.content))
 
@@ -830,7 +831,7 @@ def create_super_user():
                         "traits.name.first": "Super",
                         "traits.name.last": "Admin",
                         "password": SUPER_PASSWORD,
-                        "traits.userrole":"SuperAdmin",
+                        "traits.userrole":AdminRoles.SUPERADMIN.value,
                         "method": "password"}
             headers = {}
             headers["Accept"] = "application/json"

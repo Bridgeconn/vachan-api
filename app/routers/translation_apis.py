@@ -1,14 +1,14 @@
 '''API endpoints for AgMT app'''
 
 from typing import List
-from fastapi import APIRouter, Query, Body, Depends, Request
+from fastapi import APIRouter, Query, Body, Depends, Request, Path
 from sqlalchemy.orm import Session
 from starlette.datastructures import URL
 
 from dependencies import get_db, log
 import schemas
 import schemas_nlp
-from crud import nlp_crud, projects_crud
+from crud import nlp_crud, projects_crud, nlp_sw_crud
 from custom_exceptions import GenericException
 from routers import content_apis
 from authentication import get_user_or_none,get_auth_access_check_decorator
@@ -378,3 +378,42 @@ async def add_alignments(request: Request,#pylint: disable=unused-argument
     tw_data = nlp_crud.alignments_to_trainingdata(db_,src_lang=source_language,
     trg_lang=target_language, alignment_list=alignments, user_id=user_details['user_id'])
     return { "message": "Alignments used for learning", "data":tw_data }
+
+@router.get('/v2/lookup/stopwords/{language_code}', response_model=List[schemas_nlp.StopWords],
+    response_model_exclude_none=True, status_code=200, tags=["Generic Translation"])
+def get_stop_words(language_code:schemas.LangCodePattern=Path(...,example="hi"),
+    include_system_defined:bool=True, include_user_defined:bool=True,
+    include_auto_generated :bool=True, only_active:bool=True, skip: int=Query(0, ge=0),
+    limit: int=Query(100, ge=0), db_:Session=Depends(get_db)):
+    '''Api to retreive stopwords from lookup table'''
+    log.info('In get_stop_words')
+    log.debug('language_code:%s, include_system_defined:%s, include_user_defined:%s, \
+        include_auto_generated:%s ,only_active:%s',language_code, include_system_defined,
+        include_user_defined, include_auto_generated, only_active)
+    return nlp_sw_crud.retrieve_stopwords(db_, language_code,
+        include_system_defined=include_system_defined, include_user_defined=include_user_defined,
+        include_auto_generated=include_auto_generated, only_active=only_active, skip=skip,
+        limit=limit)
+
+@router.put('/v2/lookup/stopwords/{language_code}',
+    response_model=schemas_nlp.StopWordUpdateResponse, response_model_exclude_none=True,
+    status_code=200, tags=['Generic Translation'])
+def update_stop_words(language_code:schemas.LangCodePattern=Path(...,example="hi"),
+    sw_info:schemas_nlp.StopWordUpdate=Body(...),db_:Session=Depends(get_db)):
+    '''Api to update fields of a stopword in lookup table'''
+    log.info('In update_stop_words')
+    log.debug('language_code:%s, sw_info:%s',language_code, sw_info)
+    sw_data = nlp_sw_crud.update_stopword_info(db_, language_code, sw_info)
+    return { "message": "Stopword info updated successfully", "data":sw_data }
+
+@router.post('/v2/lookup/stopwords/{language_code}',
+    response_model=schemas_nlp.StopWordsAddResponse, response_model_exclude_none=True,
+    status_code=200, tags=['Generic Translation'])
+def add_stopwords(language_code:schemas.LangCodePattern=Path(...,example="hi"),
+    stopwords_list:List[str]=Body(..., example=["और", "के", "उसका"]),
+     db_:Session=Depends(get_db)):
+    '''Insert provided stopwords into db and returns added data'''
+    log.info('In add_stopwords')
+    log.debug('language_code:%s, stopwords_list:%s',language_code, stopwords_list)
+    msg, result = nlp_sw_crud.add_stopwords(db_, language_code, stopwords_list, user_id=10101)
+    return {"message": msg, "data": result}
