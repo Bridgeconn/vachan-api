@@ -279,3 +279,34 @@ class StopWordsAddResponse(BaseModel):
     '''Response object after adding new stopwords in db'''
     message: str = Field(..., example="3 stopwords added successfully")
     data:List[StopWords] = None
+
+class StopWordsGenerateResponse(BaseModel):
+    '''Response object of auto-generate stopword API'''
+    message: str = Field(..., example="Generating stop words in background")
+    data:dict = Field(..., example={
+        "jobId":100000,
+        "status": "created"})
+
+class JobStatus(Enum):
+    '''Types of job status'''
+    CREATED = 'created'
+    STARTED = 'started'
+    IN_PROGRESS = 'in progress'
+    PENDING = 'pending'
+    ERROR = 'error'
+    FINISHED = 'finished'
+
+class JobCreateResponse(BaseModel):
+    '''Response object of job create api'''
+    message: str = Field(..., example="Job created successfully")
+    data: dict = Field(..., example={
+        "jobId":100000,
+        "status": "created"})
+
+class JobSWOut(BaseModel):
+    '''Response object for job'''
+    jobId: int = Field(..., example=100000)
+    status: str = Field(..., example="finished")
+    message: str = Field(..., example="Automatically generated stopwords for the given language")
+    languageCode : LangCodePattern =Field(None,example='hi')
+    data:List[StopWords] = None
