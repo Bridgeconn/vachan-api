@@ -178,3 +178,17 @@ ALTER SEQUENCE public.stopwords_look_up_sw_id_seq RESTART WITH 100000;
 
 \COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM PROGRAM 'awk FNR-1 ./csvs/stop_words/*.csv | cat' csv NULL AS 'NULL'
 
+
+CREATE TABLE public.jobs(
+    job_id SERIAL PRIMARY KEY,
+    user_id int,
+    created_time timestamp with time zone DEFAULT NOW(),
+    start_time timestamp with time zone DEFAULT NOW(),	
+    end_time timestamp with time zone DEFAULT NOW(),
+    status text, 
+    output jsonb NULL, 
+    UNIQUE(job_id, user_id)
+); 
+
+ALTER SEQUENCE public.jobs_job_id_seq RESTART WITH 100000;
+
