@@ -36,7 +36,14 @@ def get_commentaries(db_:Session, *args,**kwargs):
             last_verse = verse
         query = query.filter(model_cls.verseStart <= verse, model_cls.verseEnd >= last_verse)
     query = query.filter(model_cls.active == active)
-    return query.offset(skip).limit(limit).all()
+    # return query.offset(skip).limit(limit).all()
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    response = {
+        'db_content':query.offset(skip).limit(limit).all(),
+        'source_content':source_db_content
+        }
+    return response
 
 def upload_commentaries(db_: Session, source_name, commentaries, user_id=None):
     '''Adds rows to the commentary table specified by source_name'''
@@ -67,11 +74,16 @@ def upload_commentaries(db_: Session, source_name, commentaries, user_id=None):
             active=item.active)
         db_content.append(row)
     db_.add_all(db_content)
-    db_.commit()
+    # db_.commit()
     db_.expire_all()
     source_db_content.updatedUser = user_id
-    db_.commit()
-    return db_content
+    # db_.commit()
+    # return db_content
+    response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+    }
+    return response
 
 def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
     '''Update rows, that matches book, chapter and verse range fields in the commentary table
@@ -107,13 +119,18 @@ def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
             row.active = item.active
         db_.flush()
         db_content.append(row)
-    db_.commit()
+    # db_.commit()
     source_db_content.updatedUser = user_id
-    db_.commit()
-    db_.refresh(source_db_content)
-    return db_content
+    # db_.commit()
+    # db_.refresh(source_db_content)
+    response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+    }
+    # return db_content
+    return response
 
-def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):
+def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):#pylint: disable=too-many-locals
     '''Fetches rows of dictionary from the table specified by source_name'''
     details = kwargs.get("details",None)
     exact_match = kwargs.get("exact_match",False)
@@ -140,7 +157,14 @@ def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):
             query = query.filter(model_cls.details.op('->>')(key) == det[key])
     query = query.filter(model_cls.active == active)
     res = query.offset(skip).limit(limit).all()
-    return res
+    # return res
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    response = {
+        'db_content':res,
+        'source_content':source_db_content
+        }
+    return response
 
 def upload_dictionary_words(db_: Session, source_name, dictionary_words, user_id=None):
     '''Adds rows to the dictionary table specified by source_name'''
@@ -159,11 +183,16 @@ def upload_dictionary_words(db_: Session, source_name, dictionary_words, user_id
             active = item.active)
         db_content.append(row)
     db_.add_all(db_content)
-    db_.commit()
+    # db_.commit()
     db_.expire_all()
     source_db_content.updatedUser = user_id
-    db_.commit()
-    return db_content
+    # db_.commit()
+    # return db_content
+    response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+        }
+    return response
 
 def update_dictionary_words(db_: Session, source_name, dictionary_words, user_id=None):
     '''Update rows, that matches the word field in the dictionary table specified by source_name'''
@@ -186,11 +215,16 @@ def update_dictionary_words(db_: Session, source_name, dictionary_words, user_id
             row.active = item.active
         db_.flush()
         db_content.append(row)
-    db_.commit()
+    # db_.commit()
     source_db_content.updatedUser = user_id
-    db_.commit()
-    db_.refresh(source_db_content)
-    return db_content
+    # db_.commit()
+    # db_.refresh(source_db_content)
+    # return db_content
+    response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+        }
+    return response
 
 def get_infographics(db_:Session, source_name, book_code=None, title=None,**kwargs):
     '''Fetches rows of infographics from the table specified by source_name'''
@@ -208,7 +242,14 @@ def get_infographics(db_:Session, source_name, book_code=None, title=None,**kwar
     if title:
         query = query.filter(model_cls.title == utils.normalize_unicode(title.strip()))
     query = query.filter(model_cls.active == active)
-    return query.offset(skip).limit(limit).all()
+    # return query.offset(skip).limit(limit).all()
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    response = {
+        'db_content':query.offset(skip).limit(limit).all(),
+        'source_content':source_db_content
+        }
+    return response
 
 def upload_infographics(db_: Session, source_name, infographics, user_id=None):
     '''Adds rows to the infographics table specified by source_name'''
@@ -236,11 +277,16 @@ def upload_infographics(db_: Session, source_name, infographics, user_id=None):
             active=item.active)
         db_content.append(row)
     db_.add_all(db_content)
-    db_.commit()
+    # db_.commit()
     db_.expire_all()
     source_db_content.updatedUser = user_id
-    db_.commit()
-    return db_content
+    # db_.commit()
+    # return db_content
+    response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+        }
+    return response
 
 def update_infographics(db_: Session, source_name, infographics, user_id=None):
     '''Update rows, that matches book, and title in the infographic table
@@ -275,11 +321,16 @@ def update_infographics(db_: Session, source_name, infographics, user_id=None):
             row.active = item.active
         db_.flush()
         db_content.append(row)
-    db_.commit()
+    # db_.commit()
     source_db_content.updatedUser = user_id
-    db_.commit()
-    db_.refresh(source_db_content)
-    return db_content
+    # db_.commit()
+    # db_.refresh(source_db_content)
+    # return db_content
+    response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+        }
+    return response
 
 def get_bible_videos(db_:Session, source_name, book_code=None, title=None, theme=None,**kwargs):
     '''fetches rows of bible videos as per provided source_name and filters'''
@@ -299,9 +350,14 @@ def get_bible_videos(db_:Session, source_name, book_code=None, title=None, theme
     if theme:
         query = query.filter(model_cls.theme == utils.normalize_unicode(theme.strip()))
     query = query.filter(model_cls.active == active)
-    return query.offset(skip).limit(limit).all()
-
-
+    # return query.offset(skip).limit(limit).all()
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    response = {
+        'db_content':query.offset(skip).limit(limit).all(),
+        'source_content':source_db_content
+        }
+    return response
 
 def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
     '''Adds rows to the bible videos table specified by source_name'''
@@ -329,11 +385,16 @@ def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
             videoLink = item.videoLink)
         db_content.append(row)
     db_.add_all(db_content)
-    db_.commit()
+    # db_.commit()
     db_.expire_all()
     source_db_content.updatedUser = user_id
-    db_.commit()
-    return db_content
+    # db_.commit()
+    # return db_content
+    response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+        }
+    return response
 
 def update_bible_videos(db_: Session, source_name, videos, user_id=None):
     '''Update rows, that matches title in the bible videos table
@@ -372,13 +433,18 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
             row.videoLink = item.videoLink
         db_.flush()
         db_content.append(row)
-    db_.commit()
+    # db_.commit()
     source_db_content.updatedUser = user_id
-    db_.commit()
-    db_.refresh(source_db_content)
-    return db_content
+    # db_.commit()
+    # db_.refresh(source_db_content)
+    # return db_content
+    response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+        }
+    return response
 
-def upload_bible_books(db_: Session, source_name, books, user_id=None):
+def upload_bible_books(db_: Session, source_name, books, user_id=None):#pylint: disable=too-many-locals
     '''Adds rows to the bible table and corresponding bible_cleaned specified by source_name'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
@@ -417,8 +483,13 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None):
     db_.add_all(db_content)
     db_.add_all(db_content2)
     source_db_content.updatedUser = user_id
-    db_.commit()
-    return db_content
+    # db_.commit()
+    response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+    }
+    # return db_content
+    return response
 
 def upload_bible_books_checks(db_, item, source_name, db_content):
     """checks for uploaded bible books"""
@@ -490,8 +561,14 @@ def update_bible_books(db_: Session, source_name, books, user_id=None):
             row.active = item.active
         db_.flush()
         db_content.append(row)
-        update_bible_books_cleaned(db_,source_name,books,source_db_content,user_id)
-        return db_content
+        source_db_content = update_bible_books_cleaned\
+            (db_,source_name,books,source_db_content,user_id)
+        response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+        }
+        # return db_content
+        return response
 
 def update_bible_books_cleaned(db_,source_name,books,source_db_content,user_id):
     """update bible cleaned table"""
@@ -520,9 +597,11 @@ def update_bible_books_cleaned(db_,source_name,books,source_db_content,user_id):
                 model_cls_2.book_id == book.bookId).all()
             for row in rows:
                 row.active = item.active
-    db_.commit()
+    # db_.commit()
+    # source_db_content.updatedUser = user_id
     source_db_content.updatedUser = user_id
-    db_.commit()
+    return source_db_content
+    # db_.commit()
 
 def upload_bible_audios(db_:Session, source_name, audios, user_id=None):
     '''Add audio bible related contents to _bible_audio table'''
@@ -559,8 +638,13 @@ def upload_bible_audios(db_:Session, source_name, audios, user_id=None):
     db_.add_all(db_content)
     db_.add_all(db_content2)
     source_db_content.updatedUser = user_id
-    db_.commit()
-    return db_content
+    # db_.commit()
+    response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+    }
+    # return db_content
+    return response
 
 def update_bible_audios(db_: Session, source_name, audios, user_id=None):
     '''Update any details of a bible Auido row.
@@ -592,8 +676,13 @@ def update_bible_audios(db_: Session, source_name, audios, user_id=None):
                 row.active = item.active
             db_content.append(row)
     source_db_content.updatedUser = user_id
-    db_.commit()
-    return db_content
+    # db_.commit()
+    # return db_content
+    response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+        }
+    return response
 
 def get_bible_versification(db_, source_name):
     '''select the reference list from bible_cleaned table'''
@@ -625,7 +714,14 @@ def get_bible_versification(db_, source_name):
         prev_verse = row.verseNumber
     if prev_book_code is not None:
         versification['maxVerses'][prev_book_code].append(prev_verse)
-    return versification
+    # return versification
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    response = {
+        'db_content':versification,
+        'source_content':source_db_content
+        }
+    return response
 
 
 def get_available_bible_books(db_, source_name, book_code=None, content_type=None,
@@ -662,9 +758,16 @@ def get_available_bible_books(db_, source_name, book_code=None, content_type=Non
     if not fetched:
         fetched = query.filter(model_cls.active == active).offset(skip).limit(limit).all()
     results = [res.__dict__ for res in fetched]
-    return results
+    # return results
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    response = {
+        'db_content':results,
+        'source_content':source_db_content
+        }
+    return response
 
-def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, verse=None,
+def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, verse=None,#pylint: disable=too-many-locals
     **kwargs):
     '''queries the bible cleaned table for verses'''
     last_verse = kwargs.get("last_verse",None)
@@ -698,7 +801,14 @@ def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, ver
                 "verseNumber":res.verseNumber}
         ref_combined['reference'] = ref
         ref_combined_results.append(ref_combined)
-    return ref_combined_results
+    # return ref_combined_results
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    response = {
+        'db_content':ref_combined_results,
+        'source_content':source_db_content
+        }
+    return response
 
 def extract_text(db_:Session, tables, books, skip=0, limit=100):
     '''get all text field contents from the list of tables provided.

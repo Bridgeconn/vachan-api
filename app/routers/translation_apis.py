@@ -3,6 +3,7 @@
 from typing import List
 from fastapi import APIRouter, Query, Body, Depends, Request, Path, BackgroundTasks
 from sqlalchemy.orm import Session
+from starlette.datastructures import URL
 
 
 from dependencies import get_db, log
@@ -11,17 +12,21 @@ import schemas_nlp
 from crud import nlp_crud, projects_crud, nlp_sw_crud
 from custom_exceptions import GenericException
 from routers import content_apis
+from authentication import get_user_or_none,get_auth_access_check_decorator
 
 router = APIRouter()
 #pylint: disable=too-many-arguments
 ############## Autographa Projects ##########################
 @router.get('/v2/autographa/projects', response_model=List[schemas_nlp.TranslationProject],
     status_code=200, tags=['Autographa-Project management'])
-def get_projects(project_name:str=Query(None,example="Hindi-Bilaspuri Gospels"),
+@get_auth_access_check_decorator
+async def get_projects(request: Request,#pylint: disable=unused-argument
+    project_name:str=Query(None,example="Hindi-Bilaspuri Gospels"),
     source_language:schemas.LangCodePattern=Query(None,example='en'),
     target_language:schemas.LangCodePattern=Query(None,example='ml'),
-    active:bool=True, user_id:int=Query(None),
-    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_:Session=Depends(get_db)):
+    active:bool=True, user_id:str=Query(None),
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Fetches the list of proejct and their details'''
     log.info('In get_projects')
     log.debug('project_name: %s, source_language:%s, target_language:%s,\
@@ -32,18 +37,23 @@ def get_projects(project_name:str=Query(None,example="Hindi-Bilaspuri Gospels"),
 @router.post('/v2/autographa/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse,
     tags=['Autographa-Project management'])
-def create_project(project_obj:schemas_nlp.TranslationProjectCreate, db_:Session=Depends(get_db)):
+@get_auth_access_check_decorator
+async def create_project(request: Request,#pylint: disable=unused-argument
+    project_obj:schemas_nlp.TranslationProjectCreate,
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Creates a new autographa MT project'''
     log.info('In create_project')
     log.debug('project_obj: %s',project_obj)
     return {'message': "Project created successfully",
-        "data": projects_crud.create_agmt_project(db_=db_, project=project_obj, user_id=10101)}
+        "data": projects_crud.create_agmt_project(db_=db_, project=project_obj,
+            user_id=user_details['user_id'])}
 
 @router.put('/v2/autographa/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse,
     tags=['Autographa-Project management'])
-def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectEdit,
-    db_:Session=Depends(get_db)):
+@get_auth_access_check_decorator
+async def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectEdit,
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Adds more books to a autographa MT project's source. Delete or activate project.'''
     log.info('In update_project')
     log.debug('project_obj: %s',project_obj)
@@ -52,13 +62,17 @@ def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectE
         books_param_list = ""
         for buk in project_obj.selectedBooks.books:
             books_param_list += "&books=%s"%(buk)
-        response = content_apis.extract_text_contents(
+
+        request.scope['method'] = 'GET'
+        request._url = URL('/v2/sources')#pylint: disable=protected-access
+        response = await content_apis.extract_text_contents(
             request=request,
             source_name=project_obj.selectedBooks.bible,
             books=project_obj.selectedBooks.books,
             language_code=None,
             content_type='bible',
             skip=0, limit=100000,
+            user_details = user_details,
             db_=db_)
         if "error" in response:
             raise GenericException(response['error'])
@@ -70,36 +84,44 @@ def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectE
         else:
             project_obj.sentenceList = sentences
     return {'message': "Project updated successfully",
-        "data": projects_crud.update_agmt_project(db_, project_obj, user_id=10101)}
+        "data": projects_crud.update_agmt_project(db_, project_obj,
+            user_id=user_details['user_id'])}
 
 @router.post('/v2/autographa/project/user', status_code=201,
     response_model=schemas_nlp.UserUpdateResponse, tags=['Autographa-Project management'])
-def add_user(project_id:int, user_id:int, db_:Session=Depends(get_db)):
+@get_auth_access_check_decorator
+async def add_user(request: Request,project_id:int, user_id:str,#pylint: disable=unused-argument
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Adds new user to a project.'''
     log.info('In add_user')
     log.debug('project_id: %s, user_id:%s',project_id, user_id)
     return {'message': "User added to project successfully",
-        "data": projects_crud.add_agmt_user(db_, project_id, user_id, current_user=10101)}
+        "data": projects_crud.add_agmt_user(db_, project_id, user_id,
+            current_user=user_details['user_id'])}
 
 @router.put('/v2/autographa/project/user', status_code=201,
     response_model=schemas_nlp.UserUpdateResponse, tags=['Autographa-Project management'])
-def update_user(user_obj:schemas_nlp.ProjectUser, db_:Session=Depends(get_db)):
+@get_auth_access_check_decorator
+async def update_user(request: Request,user_obj:schemas_nlp.ProjectUser,#pylint: disable=unused-argument
+    user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):
     '''Changes role, metadata or active status of user of a project.'''
     log.info('In update_user')
     log.debug('user_obj:%s',user_obj)
     return {'message': "User updated in project successfully",
-        "data": projects_crud.update_agmt_user(db_, user_obj, current_user=10101)}
+        "data": projects_crud.update_agmt_user(db_, user_obj,
+            current_user=user_details['user_id'])}
 
 ############## Autographa Translations ##########################
 @router.get('/v2/autographa/project/tokens', response_model=List[schemas_nlp.Token],
     response_model_exclude_unset=True,
     status_code=200, tags=['Autographa-Translation'])
-def get_tokens(project_id:int=Query(...,example="1022004"),
+@get_auth_access_check_decorator
+async def get_tokens(request: Request, project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=(410010001, 41001999)),
     sentence_id_list:List[int]=Query(None, example=[41001001,41001002,41001003]),
     use_translation_memory:bool=True, include_phrases:bool=True, include_stopwords:bool=False,
-    db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Tokenize the source texts. Optional params books,
     sentence_id_range or sentence_id_list can be used to specify the source verses.
     If more than one of these filters are given, only one would be used
@@ -117,38 +139,41 @@ def get_tokens(project_id:int=Query(...,example="1022004"),
 
 @router.put('/v2/autographa/project/tokens', response_model=schemas_nlp.TranslateResponse,
     status_code=201, tags=['Autographa-Translation'])
-def apply_token_translations(project_id:int=Query(...,example="1022004"),
+@get_auth_access_check_decorator
+async def apply_token_translations(request: Request,project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
     token_translations:List[schemas_nlp.TokenUpdate]=Body(...), return_drafts:bool=True,
-    db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Updates drafts using the provided token translations and returns updated verses'''
     log.info('In apply_token_translations')
     log.debug('project_id: %s, token_translations:%s, ',project_id, token_translations)
     drafts = nlp_crud.save_agmt_translations(db_, project_id, token_translations, return_drafts,
-        user_id=10101)
+        user_id=user_details['user_id'])
     return {"message": "Token translations saved", "data":drafts}
 
 @router.get('/v2/autographa/project/token-translations', status_code=200,
-    response_model=schemas_nlp.Translation,
+    response_model= schemas_nlp.Translation,
     tags=['Autographa-Translation'])
-def get_token_translation(project_id:int=Query(...,example="1022004"),
+@get_auth_access_check_decorator
+async def get_token_translation(request: Request,project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
     token:str=Query(...,example="duck"),
     sentence_id:int=Query(..., example="41001001"),
     offset:List[int]=Query(..., max_items=2,min_items=2,example=[0,4]),
-    db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Get the current translation for specific tokens providing their occurence in source'''
     log.info('In get_token_translation')
     occurrences = [{"sentenceId":sentence_id, "offset":offset}]
     log.debug('project_id: %s, token:%s, occurrences:%s',project_id, token, occurrences)
-    return projects_crud.obtain_agmt_token_translation(db_, project_id, token, occurrences)[0]
+    return projects_crud.obtain_agmt_token_translation(db_, project_id, token, occurrences)
 
 @router.put('/v2/autographa/project/token-sentences', status_code=200,
     response_model = List[schemas_nlp.Sentence],
     tags=['Autographa-Translation'])
-def get_token_sentences(project_id:int=Query(...,example="1022004"),
+@get_auth_access_check_decorator
+async def get_token_sentences(request: Request,project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
     token:str=Query(...,example="duck"),
     occurrences:List[schemas_nlp.TokenOccurence]=Body(..., example=[
         {"sentenceId":41001001, "offset":[0,4]}]),
-    db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Pass in the occurence list of a token and get all sentences it is present in with draftMeta
     that allows easy highlight of token and translation'''
     log.info('In get_token_sentences')
@@ -156,12 +181,13 @@ def get_token_sentences(project_id:int=Query(...,example="1022004"),
     return projects_crud.get_agmt_source_per_token(db_, project_id, token, occurrences)
 
 @router.get('/v2/autographa/project/draft', status_code=200, tags=['Autographa-Translation'])
-def get_draft(project_id:int=Query(...,example="1022004"),
+@get_auth_access_check_decorator
+async def get_draft(request: Request,project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
     output_format:schemas_nlp.DraftFormats=Query(schemas_nlp.DraftFormats.USFM),
-    db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Obtains draft, as per current project status, in any of the formats:
     text for UI display, usfm for downloading, or alignment-json for project export'''
     log.info('In get_draft')
@@ -174,11 +200,12 @@ def get_draft(project_id:int=Query(...,example="1022004"),
 @router.get('/v2/autographa/project/sentences', status_code=200,
     response_model_exclude_unset=True,
     response_model=List[schemas_nlp.Sentence], tags=['Autographa-Translation'])
-def get_project_source(project_id:int=Query(...,example="1022004"),
+@get_auth_access_check_decorator
+async def get_project_source(request: Request,project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
-    with_draft:bool=False, db_:Session=Depends(get_db)):
+    with_draft:bool=False, user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Obtains source sentences or verses, as per the filters'''
     log.info('In get_source')
     log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s, with_draft:%s',
@@ -187,12 +214,14 @@ def get_project_source(project_id:int=Query(...,example="1022004"),
         with_draft=with_draft)
 
 @router.get('/v2/autographa/project/progress', status_code=200,
-    response_model=schemas_nlp.Progress, tags=['Autographa-Translation'])
-def get_progress(project_id:int=Query(...,example="1022004"),
+    response_model= schemas_nlp.Progress,
+    tags=['Autographa-Translation'])
+@get_auth_access_check_decorator
+async def get_progress(request: Request,project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
-    db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Obtains source sentences or verses, as per the filters'''
     log.info('In get_progress')
     log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s',
@@ -201,9 +230,11 @@ def get_progress(project_id:int=Query(...,example="1022004"),
         sentence_id_list, sentence_id_range)
 
 @router.get('/v2/autographa/project/versification', status_code=200,
-    response_model=schemas.Versification, tags=['Autographa-Translation'])
-def get_project_versification(project_id:int=Query(...,example="1022004"),
-    db_:Session=Depends(get_db)):
+    response_model= schemas.Versification,
+    tags=['Autographa-Translation'])
+@get_auth_access_check_decorator
+async def get_project_versification(request: Request,project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Obtains versification structure for source sentences or verses'''
     log.info('In get_project_versification')
     log.debug('project_id: %s', project_id)
@@ -212,11 +243,12 @@ def get_project_versification(project_id:int=Query(...,example="1022004"),
 @router.put('/v2/autographa/project/suggestions', status_code=201,
     response_model=List[schemas_nlp.Sentence],
     tags=["Translation Suggestion"])
-def suggest_auto_translation(project_id:int=Query(...,example="1022004"),
+@get_auth_access_check_decorator
+async def suggest_auto_translation(request: Request,project_id:int=Query(...,example="1022004"),#pylint: disable=unused-argument
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
-    confirm_all:bool=False, db_:Session=Depends(get_db)):
+    confirm_all:bool=False,user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Try to fill draft with suggestions. If confirm_all is set, will only change status of all
     "suggestion" to "confirmed" in the selected sentences and will not fill in new suggestion'''
     log.info('In suggest_translation')
@@ -230,12 +262,13 @@ def suggest_auto_translation(project_id:int=Query(...,example="1022004"),
 @router.put('/v2/translation/tokens', response_model=List[schemas_nlp.Token],
     response_model_exclude_unset=True,
     status_code=200, tags=['Generic Translation'])
-def tokenize(source_language:schemas.LangCodePattern=Query(...,example="hi"),
+@get_auth_access_check_decorator
+async def tokenize(request: Request,source_language:schemas.LangCodePattern=Query(...,example="hi"),#pylint: disable=unused-argument
     sentence_list:List[schemas_nlp.SentenceInput]=Body(...),
     target_language:schemas.LangCodePattern=Query(None,example="ml"),
     use_translation_memory:bool=True, include_phrases:bool=True, include_stopwords:bool=False,
     punctuations:List[str]=Body(None), stopwords:schemas_nlp.Stopwords=Body(None),
-    db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Tokenize any set of input sentences.
     Makes use of translation memory and stopwords for forming better phrase tokens.
     Flags use_translation_memory, include_phrases and include_stopwords can be
@@ -252,11 +285,13 @@ def tokenize(source_language:schemas.LangCodePattern=Query(...,example="hi"),
 
 @router.put('/v2/translation/token-translate', response_model=schemas_nlp.TranslateResponse,
     status_code=200, tags=['Generic Translation'])
-def token_replace(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
+@get_auth_access_check_decorator
+async def token_replace(request: Request,sentence_list:List[schemas_nlp.DraftInput]=Body(...),#pylint: disable=unused-argument
     token_translations:List[schemas_nlp.TokenUpdate]=Body(...),
     source_language:schemas.LangCodePattern=Query(...,example='hi'),
     target_language:schemas.LangCodePattern=Query(...,example='ml'),
-    use_data_for_learning:bool=True, db_:Session=Depends(get_db)):
+    use_data_for_learning:bool=True,
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Perform token replacement on provided sentences and
     returns obtained drafts and draft_meta'''
     log.info('In token_replace')
@@ -268,8 +303,10 @@ def token_replace(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     return {"message": "Tokens replaced with translations", "data": result}
 
 @router.put('/v2/translation/draft', status_code=200, tags=['Generic Translation'])
-def generate_draft(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
-    doc_type:schemas_nlp.TranslationDocumentType=Query(schemas_nlp.TranslationDocumentType.USFM)):
+@get_auth_access_check_decorator
+async def generate_draft(request: Request,sentence_list:List[schemas_nlp.DraftInput]=Body(...),#pylint: disable=unused-argument
+    doc_type:schemas_nlp.TranslationDocumentType=Query(schemas_nlp.TranslationDocumentType.USFM),
+    user_details =Depends(get_user_or_none)):#pylint: disable=unused-argument
     '''Converts the drafts in input sentences to following output formats:
     usfm, text, csv or alignment-json'''
     log.info('In generate_draft')
@@ -278,11 +315,13 @@ def generate_draft(sentence_list:List[schemas_nlp.DraftInput]=Body(...),
 
 @router.put('/v2/translation/suggestions', response_model=List[schemas_nlp.Sentence],
     status_code=200, tags=["Translation Suggestion"])
-def suggest_translation(source_language:schemas.LangCodePattern=Query(...,example="hi"),
+@get_auth_access_check_decorator
+async def suggest_translation(request: Request,#pylint: disable=unused-argument
+    source_language:schemas.LangCodePattern=Query(...,example="hi"),
     target_language:schemas.LangCodePattern=Query(...,example="ml"),
     sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     punctuations:List[str]=Body(None), stopwords:schemas_nlp.Stopwords=Body(None),
-    db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Attempts to tokenize sentences and prepare draft with autogenerated suggestions
     If draft and draft_meta are provided indicating some portion of sentence is user translated,
     then it is left untouched.'''
@@ -294,12 +333,14 @@ def suggest_translation(source_language:schemas.LangCodePattern=Query(...,exampl
 
 @router.get('/v2/translation/gloss', response_model=schemas_nlp.GlossOutput,
     status_code=200, tags=["Translation Suggestion"])
-def get_glossary(source_language:schemas.LangCodePattern=Query(...,example="en"),
+@get_auth_access_check_decorator
+async def get_glossary(request: Request,#pylint: disable=unused-argument
+    source_language:schemas.LangCodePattern=Query(...,example="en"),
     target_language:schemas.LangCodePattern=Query(...,example="hi"),
     token:str=Query(...,example="duck"),
     context:str=Query(None,example="The duck swam in the lake"),
     token_offset:List[int]=Query(None,max_items=2,min_items=2,example=(4,8)),
-    db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Finds translation suggestions or gloss for one token in the given context'''
     log.info('In get_glossary')
     log.debug('source_language:%s, target_language:%s, token:%s, context:%s,\
@@ -310,9 +351,12 @@ def get_glossary(source_language:schemas.LangCodePattern=Query(...,example="en")
 
 @router.post('/v2/translation/learn/gloss', response_model=schemas_nlp.GlossUpdateResponse,
     status_code=201, tags=["Translation Suggestion"])
-def add_gloss(source_language:schemas.LangCodePattern=Query(...,example='en'),
+@get_auth_access_check_decorator
+async def add_gloss(request: Request,#pylint: disable=unused-argument
+    source_language:schemas.LangCodePattern=Query(...,example='en'),
     target_language:schemas.LangCodePattern=Query(..., example="hi"),
-    token_translations:List[schemas_nlp.GlossInput]=Body(...), db_:Session=Depends(get_db)):
+    token_translations:List[schemas_nlp.GlossInput]=Body(...),
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):#pylint: disable=unused-argument
     '''Load a list of predefined tokens and translations to improve tokenization and suggestion'''
     log.info('In add_gloss')
     log.debug('source_language:%s, target_language:%s, token_translations:%s',
@@ -323,14 +367,17 @@ def add_gloss(source_language:schemas.LangCodePattern=Query(...,example='en'),
 
 @router.post('/v2/translation/learn/alignment', response_model=schemas_nlp.GlossUpdateResponse,
     status_code=201, tags=["Translation Suggestion"])
-def add_alignments(source_language:schemas.LangCodePattern, target_language:schemas.LangCodePattern,
-    alignments:List[schemas_nlp.Alignment], db_:Session=Depends(get_db)):
+@get_auth_access_check_decorator
+async def add_alignments(request: Request,#pylint: disable=unused-argument
+    source_language:schemas.LangCodePattern, target_language:schemas.LangCodePattern,
+    alignments:List[schemas_nlp.Alignment],
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Prepares training data with alignments and update translation memory & suggestion models'''
     log.info('In add_alignments')
     log.debug('source_language:%s, target_language:%s, alignments:%s',
         source_language, target_language, alignments)
     tw_data = nlp_crud.alignments_to_trainingdata(db_,src_lang=source_language,
-    trg_lang=target_language, alignment_list=alignments, user_id=20202)
+    trg_lang=target_language, alignment_list=alignments, user_id=user_details['user_id'])
     return { "message": "Alignments used for learning", "data":tw_data }
 
 @router.get('/v2/lookup/stopwords/{language_code}', response_model=List[schemas_nlp.StopWords],

@@ -26,8 +26,8 @@ def create_content_type(db_: Session, content: schemas.ContentTypeCreate):
     '''Adds a row to content_types table'''
     db_content = db_models.ContentType(contentType = content.contentType)
     db_.add(db_content)
-    db_.commit()
-    db_.refresh(db_content)
+    # db_.commit()
+    # db_.refresh(db_content)
     return db_content
 
 def get_languages(db_: Session, language_code = None, language_name = None, search_word=None,
@@ -64,8 +64,8 @@ def create_language(db_: Session, lang: schemas.LanguageCreate, user_id=None):
         createdUser= user_id,
         updatedUser=user_id)
     db_.add(db_content)
-    db_.commit()
-    db_.refresh(db_content)
+    # db_.commit()
+    # db_.refresh(db_content)
     return db_content
 
 def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
@@ -85,8 +85,8 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
         db_content.metaData = lang.metaData
         flag_modified(db_content, "metaData")
     db_content.updatedUser = user_id
-    db_.commit()
-    db_.refresh(db_content)
+    # db_.commit()
+    # db_.refresh(db_content)
     return db_content
 
 def get_licenses(db_: Session, license_code = None, license_name = None,
@@ -112,8 +112,8 @@ def create_license(db_: Session, license_obj: schemas.LicenseCreate, user_id=Non
         active=True,
         createdUser=user_id)
     db_.add(db_content)
-    db_.commit()
-    db_.refresh(db_content)
+    # db_.commit()
+    # db_.refresh(db_content)
     return db_content
 
 def update_license(db_: Session, license_obj: schemas.LicenseEdit, user_id=None):
@@ -131,8 +131,8 @@ def update_license(db_: Session, license_obj: schemas.LicenseEdit, user_id=None)
     if license_obj.active is not None:
         db_content.active = license_obj.active
     db_content.updatedUser = user_id
-    db_.commit()
-    db_.refresh(db_content)
+    # db_.commit()
+    # db_.refresh(db_content)
     return db_content
 
 def get_versions(db_: Session, version_abbr = None, version_name = None, revision = None,
@@ -156,19 +156,20 @@ def get_versions(db_: Session, version_abbr = None, version_name = None, revisio
         query = query.filter(db_models.Version.versionId == version_id)
     return query.offset(skip).limit(limit).all()
 
-def create_version(db_: Session, version: schemas.VersionCreate):
+def create_version(db_: Session, version: schemas.VersionCreate,user_id=None):
     '''Adds a row to versions table'''
     db_content = db_models.Version(
         versionAbbreviation = version.versionAbbreviation.upper().strip(),
         versionName = utils.normalize_unicode(version.versionName.strip()),
         revision = version.revision,
-        metaData = version.metaData)
+        metaData = version.metaData,
+        createdUser=user_id)
     db_.add(db_content)
-    db_.commit()
-    db_.refresh(db_content)
+    # db_.commit()
+    # db_.refresh(db_content)
     return db_content
 
-def update_version(db_: Session, version: schemas.VersionEdit):
+def update_version(db_: Session, version: schemas.VersionEdit, user_id=None):
     '''changes one or more fields of versions, selected via version id'''
     db_content = db_.query(db_models.Version).get(version.versionId)
     if version.versionAbbreviation:
@@ -179,16 +180,18 @@ def update_version(db_: Session, version: schemas.VersionEdit):
         db_content.revision = version.revision
     if version.metaData:
         db_content.metaData = version.metaData
-    db_.commit()
-    db_.refresh(db_content)
+    db_content.updatedUser = user_id
+    # db_.commit()
+    # db_.refresh(db_content)
     return db_content
 
-def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches
+def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks
     content_type=None, version_abbreviation=None, revision=None, language_code=None,
     **kwargs):
     '''Fetches the rows of sources table'''
     license_abbreviation = kwargs.get("license_abbreviation",None)
     metadata = kwargs.get("metadata",None)
+    access_tags = kwargs.get("access_tag",None)
     latest_revision = kwargs.get("latest_revision",True)
     active = kwargs.get("active",True)
     source_name = kwargs.get("source_name",None)
@@ -218,12 +221,15 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches
         query = query.filter(db_models.Source.active == False) #pylint: disable=singleton-comparison
     if source_name:
         query = query.filter(db_models.Source.sourceName == source_name)
+    if access_tags:
+        query = query.filter(db_models.Source.metaData.contains(
+            {"accessPermissions":[tag.value for tag in access_tags]}))
 
     res = query.join(db_models.Version).order_by(db_models.Version.revision.desc()
         ).offset(skip).limit(limit).all()
     if not latest_revision or revision:
         return res
-
+    # print("res=============>",res)
     # sub_qry = query.join(db_models.Version, func.max(db_models.Version.revision).label(
     #     "latest_rev")).group_by(
     #     db_models.Source.contentId, db_models.Source.languageId,
@@ -238,7 +244,7 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches
     # Filtering out the latest versions here from the query result.
     # Had tried to include that into the query, but it seemed very difficult.
     latest_res = []
-    for res_item in res:
+    for res_item in res:#pylint: disable=too-many-nested-blocks
         exculde = False
         x_parts = res_item.sourceName.split('_')
         for latest_item in latest_res:
@@ -251,7 +257,7 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches
             latest_res.append(res_item)
     return latest_res
 
-def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_id = None):
+def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_id):
     '''Adds a row to sources table'''
     content_type = db_.query(db_models.ContentType).filter(
         db_models.ContentType.contentType == source.contentType.strip()).first()
@@ -290,7 +296,7 @@ def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_
         metaData = source.metaData,
         active = True)
     if user_id:
-        db_content.created_user = user_id
+        db_content.createdUser = user_id
     db_.add(db_content)
     db_models.create_dynamic_table(source_name, table_name, content_type.contentType)
     db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine, checkfirst=True)
@@ -302,8 +308,8 @@ def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_
             bind=engine, checkfirst=True)
         log.warning("User %s, creates a new table %s", user_id, db_content.sourceName+'_audio')
     log.warning("User %s, creates a new table %s", user_id, db_content.sourceName)
-    db_.commit()
-    db_.refresh(db_content)
+    # db_.commit()
+    # db_.refresh(db_content)
     return db_content
 
 def update_source_sourcename(db_, source, db_content):
@@ -356,8 +362,8 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
         db_content.active = source.active
     if user_id:
         db_content.updatedUser = user_id
-    db_.commit()
-    db_.refresh(db_content)
+    # db_.commit()
+    # db_.refresh(db_content)
     db_models.dynamicTables[db_content.sourceName] = db_models.dynamicTables[source.sourceName]
     return db_content
 

@@ -9,6 +9,7 @@ import db_models
 import schemas_nlp
 from crud import utils, nlp_crud
 from custom_exceptions import NotAvailableException, TypeException
+from authentication import get_all_or_one_kratos_users
 
 #pylint: disable=W0143,E1101
 ###################### AgMT Project Mangement ######################
@@ -40,10 +41,10 @@ def create_agmt_project(db_:Session, project, user_id=None):
     db_content2 = db_models.TranslationProjectUser(
         project_id=db_content.projectId,
         userId=user_id,
-        userRole="owner",
+        userRole="projectOwner",
         active=True)
     db_.add(db_content2)
-    db_.commit()
+    # db_.commit()
     return db_content
 
 def update_agmt_project_sentences(db_, project_obj, user_id):
@@ -104,9 +105,8 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
     if project_obj.uploadedUSFMs:
         #uploaded usfm book add to project
         update_agmt_project_uploaded_book(db_,project_obj,new_books,user_id)
-
-    db_.commit()
-    db_.expire_all()
+    # db_.commit()
+    # db_.expire_all()
     if project_obj.projectName:
         project_row.projectName = project_obj.projectName
     if project_obj.active is not None:
@@ -125,8 +125,8 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
         project_row.metaData['books'] += new_books
         flag_modified(project_row, "metaData")
     db_.add(project_row)
-    db_.commit()
-    db_.refresh(project_row)
+    # db_.commit()
+    # db_.refresh(project_row)
     return project_row
 
 def get_agmt_projects(db_:Session, project_name=None, source_language=None, target_language=None,
@@ -162,15 +162,20 @@ def add_agmt_user(db_:Session, project_id, user_id, current_user=None):
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException("Project with id, %s, not found"%project_id)
+    get_all_or_one_kratos_users(user_id)
     db_content = db_models.TranslationProjectUser(
         project_id=project_id,
         userId=user_id,
-        userRole='member',
+        userRole='projectMember',
         active=True)
     db_.add(db_content)
     project_row.updatedUser = current_user
-    db_.commit()
-    return db_content
+    response = {
+        "db_content" : db_content,
+        "project" : project_row
+    }
+    # db_.commit()
+    return response
 
 def update_agmt_user(db_, user_obj, current_user=10101):
     '''Change role, active status or metadata of user in a project'''
@@ -188,8 +193,11 @@ def update_agmt_user(db_, user_obj, current_user=10101):
         user_row.active = user_obj.active
     user_row.project.updatedUser = current_user
     db_.add(user_row)
-    db_.commit()
-    return user_row
+    # db_.commit()
+    response = {
+        "project" : user_row
+    }
+    return response
 
 def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence_id_range,
     **kwargs):
@@ -200,22 +208,30 @@ def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence
         raise NotAvailableException("Project with id, %s, not found"%project_id)
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_list,
     	sentence_id_range, with_draft=True)
+    draft_rows = draft_rows['db_content']
     if output_format == schemas_nlp.DraftFormats.USFM :
-        return nlp_crud.create_usfm(draft_rows)
-    if output_format == schemas_nlp.DraftFormats.JSON:
-        return nlp_crud.export_to_json(project_row.sourceLanguage,
+        draft_out = nlp_crud.create_usfm(draft_rows)
+    elif output_format == schemas_nlp.DraftFormats.JSON:
+        draft_out = nlp_crud.export_to_json(project_row.sourceLanguage,
             project_row.targetLanguage, draft_rows, None)
-    if output_format == schemas_nlp.DraftFormats.PRINT:
-        return nlp_crud.export_to_print(draft_rows)
-    raise TypeException("Unsupported output format: %s"%output_format)
+    elif output_format == schemas_nlp.DraftFormats.PRINT:
+        draft_out = nlp_crud.export_to_print(draft_rows)
+    else:
+        raise TypeException("Unsupported output format: %s"%output_format)
+    response = {
+        'db_content':draft_out,
+        'project_content':project_row
+        }
+    return response
 
-def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_range):
+def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_range):#pylint: disable=too-many-locals
     '''Calculate project translation progress in terms of how much of draft is translated'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException("Project with id, %s, not found"%project_id)
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_list,
     	sentence_id_range, with_draft=True)
+    draft_rows = draft_rows["db_content"]
     confirmed_length = 0
     suggestions_length = 0
     untranslated_length = 0
@@ -236,7 +252,12 @@ def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_r
     result = {"confirmed": confirmed_length/total_length,
         "suggestion": suggestions_length/total_length,
         "untranslated": untranslated_length/total_length}
-    return result
+    # return result
+    response_result = {
+        'db_content':result,
+        'project_content':project_row
+        }
+    return response_result
 
 def obtain_agmt_token_translation(db_, project_id, token, occurrences): # pylint: disable=unused-argument
     '''Get the current translation for specific tokens providing their occurence in source'''
@@ -253,8 +274,14 @@ def obtain_agmt_token_translation(db_, project_id, token, occurrences): # pylint
     sentence_list = [occur["sentenceId"] for occur in occurrences]
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, sentence_id_list=sentence_list,
         with_draft=True)
+    draft_rows = draft_rows["db_content"]
     translations = pin_point_token_in_draft(occurrences, draft_rows)
-    return translations
+    # return translations
+    response = {
+        'db_content':translations[0],
+        'project_content':project_row
+        }
+    return response
 
 def versification_check(row, prev_book_code, versification, prev_verse, prev_chapter):
     """versification check for agmt source versification"""
@@ -300,14 +327,23 @@ def get_agmt_source_versification(db_, project_id):
              versification_check(row, prev_book_code, versification, prev_verse, prev_chapter)
     if prev_book_code is not None:
         versification['maxVerses'][prev_book_code].append(prev_verse)
-    return versification
+    # return versification
+    response = {
+        'db_content':versification,
+        'project_content':project_row
+        }
+    return response
 
 def get_agmt_source_per_token(db_:Session, project_id, token, occurrences): #pylint: disable=unused-argument
     '''get sentences and drafts for the token, which splits the token & translation in metadraft
     allowing it to be easily identifiable and highlightable at UI'''
+    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    if not project_row:
+        raise NotAvailableException("Project with id, %s, not present"%project_id)
     sent_ids = [occur.sentenceId for occur in occurrences]
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id,
         sentence_id_list=sent_ids, with_draft=True)
+    draft_rows = draft_rows['db_content']
     occur_list = []
     for occur in occurrences:
         occur_list.append(occur.__dict__)
@@ -317,7 +353,12 @@ def get_agmt_source_per_token(db_:Session, project_id, token, occurrences): #pyl
             draft.draftMeta.remove(mta)
         for mta in trans['replacement_meta']:
             draft.draftMeta.append(mta)
-    return draft_rows
+    # return draft_rows
+    response = {
+        'db_content':draft_rows,
+        'project_content':project_row
+        }
+    return response
 
 def pin_point_token_in_draft(occurrences, draft_rows):#pylint: disable=too-many-locals,too-many-branches
     '''find out token's aligned portion in draft'''

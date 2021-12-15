@@ -21,7 +21,7 @@ from custom_exceptions import NotAvailableException, TypeException, GenericExcep
 from schemas_nlp import TranslationDocumentType
 
 #Based on sqlalchemy
-#pylint: disable=W0102,E1101,W0143
+#pylint: disable=W0102,E1101,W0143,C0206
 ###################### Tokenization ######################
 
 def get_generic_tokens_result(db_, trg_language, src_language, args):
@@ -82,6 +82,7 @@ def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_
     if not project_row:
         raise NotAvailableException("Project with id, %s, not found"%project_id)
     sentences = obtain_agmt_source(db_, project_id, books, sentence_id_range,sentence_id_list)
+    sentences = sentences['db_content']
     args = {"db_":db_, "src_language":project_row.sourceLanguage, "sentence_list":sentences,
         'trg_language':project_row.targetLanguage,
         "use_translation_memory":use_translation_memory, "include_phrases":include_phrases,
@@ -90,7 +91,12 @@ def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_
         args['stopwords'] = project_row.metaData['stopwords']
     if "punctuations" in project_row.metaData:
         args['punctuations'] = project_row.metaData['punctuations']
-    return get_generic_tokens( **args)
+    # return get_generic_tokens( **args)
+    response = {
+        'db_content':get_generic_tokens( **args),
+        'project_content':project_row
+        }
+    return response
 
 ###################### Token replacement translation ######################
 def replace_bulk_tokens_gloss_list(token_translations, updated_sentences):
@@ -179,14 +185,24 @@ def save_agmt_translations(db_, project_id, token_translations, return_drafts=Tr
     project_row.updatedUser = user_id
     db_.add_all(db_content)
     db_.add(project_row)
-    db_.commit()
+    # db_.commit()
     if use_data:
         add_to_translation_memory(db_, project_row.sourceLanguage, project_row.targetLanguage,
             gloss_list)
+    # if return_drafts:
+    #     result = set(db_content)
+    #     return sorted(result, key=lambda x: x.sentenceId)
+    # return None
     if return_drafts:
         result = set(db_content)
-        return sorted(result, key=lambda x: x.sentenceId)
-    return None
+        result =  sorted(result, key=lambda x: x.sentenceId)
+    else:
+        result = None
+    response = {
+        'db_content':result,
+        'project_content':project_row
+        }
+    return response
 
 ###################### Suggestions ######################
 suggestion_trie_in_mem = {}
@@ -767,6 +783,7 @@ def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range,
         raise NotAvailableException("Project with id, %s, not found"%project_id)
     draft_rows = obtain_agmt_source(db_, project_id, books, sentence_id_range,sentence_id_list,
         with_draft=True)
+    draft_rows = draft_rows['db_content']
     if confirm_all:
         for row in draft_rows:
             for i, meta in enumerate(row.draftMeta):
@@ -774,19 +791,26 @@ def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range,
                     row.draftMeta[i][2] = "confirmed"
                     flag_modified(row, 'draftMeta')
         # db_.add_all(draft_rows)
-        db_.commit()
-        return draft_rows
-    args = {"db_":db_, "sentence_list":draft_rows,
-        "source_lang":project_row.sourceLanguage.code,
-        "target_lang":project_row.targetLanguage.code}
-    if "stopwords" in project_row.metaData:
-        args['stop_words'] = project_row.metaData['stopwords']
-    if "punctuations" in project_row.metaData:
-        args['punctuations'] = project_row.metaData['punctuations']
-    updated_drafts = auto_translate(**args)
-    db_.add_all(updated_drafts)
-    db_.commit()
-    return updated_drafts
+        # db_.commit()
+        # return draft_rows
+        updated_drafts = draft_rows
+    else:
+        args = {"db_":db_, "sentence_list":draft_rows,
+            "source_lang":project_row.sourceLanguage.code,
+            "target_lang":project_row.targetLanguage.code}
+        if "stopwords" in project_row.metaData:
+            args['stop_words'] = project_row.metaData['stopwords']
+        if "punctuations" in project_row.metaData:
+            args['punctuations'] = project_row.metaData['punctuations']
+        updated_drafts = auto_translate(**args)
+        db_.add_all(updated_drafts)
+        # db_.commit()
+        # return updated_drafts
+    response = {
+        'db_content':updated_drafts,
+        'project_content':project_row
+        }
+    return response
 
 ###################### Export and download ######################
 def obtain_draft(sentence_list, doc_type):
@@ -924,10 +948,13 @@ def export_to_json(source_lang, target_lang, sentence_list, last_modified):
     return json_output
 
 #########################################################
-def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=None,
+def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=None,#pylint: disable=too-many-locals
     sentence_id_list=None, **kwargs):
     '''fetches all or selected source sentences from translation_sentences table'''
     with_draft= kwargs.get("with_draft",False)
+    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    if not project_row:
+        raise NotAvailableException("Project with id, %s, not found"%project_id)
     sentence_query = db_.query(db_models.TranslationDraft).filter(
         db_models.TranslationDraft.project_id == project_id)
     if books:
@@ -950,9 +977,15 @@ def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=No
             db_models.TranslationDraft.sentenceId.in_(sentence_id_list))
     draft_rows = sentence_query.order_by(db_models.TranslationDraft.sentenceId).all()
     if with_draft:
-        return draft_rows
-    result = []
-    for row in draft_rows:
-        obj = {"sentenceId": row.sentenceId, "surrogateId":row.surrogateId,"sentence":row.sentence}
-        result.append(obj)
-    return result
+        result =  draft_rows
+    else:
+        result = []
+        for row in draft_rows:
+            obj = {"sentenceId": row.sentenceId,
+                "surrogateId":row.surrogateId,"sentence":row.sentence}
+            result.append(obj)
+    response = {
+        'db_content':result,
+        'project_content':project_row
+        }
+    return response

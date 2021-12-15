@@ -4,10 +4,15 @@ from typing import Dict
 from . import  gql_request,assert_not_available_content_gql,check_skip_limit_gql
 #pylint: disable=E0401
 from .test_content_types import assert_positive_get
+from .conftest import initial_test_users
 
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
+headers = {"contentType": "application/json", "accept": "application/json"}
 
 def test_get_default():
     '''positive test case, without optional params'''
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
     query = """
             {
     contentTypes{
@@ -25,6 +30,12 @@ def test_get_default():
             item["contentId"] = int(item["contentId"])
         assert_positive_get(item)
 
+    #with auth
+    executed = gql_request(query,headers=headers_auth)
+    assert isinstance(executed, Dict)
+    assert len(executed["data"]["contentTypes"])>0
+    assert isinstance(executed["data"]["contentTypes"], list)
+
     query_check = """
           query contentTypes($skip:Int, $limit:Int){
   contentTypes(skip:$skip,limit:$limit){
@@ -32,7 +43,7 @@ def test_get_default():
   }
 }
     """
-    check_skip_limit_gql(query_check,"contentTypes")    
+    check_skip_limit_gql(query_check,"contentTypes")
 
 def test_get_notavailable_content_type():
     ''' request a not available content, Ensure there is not partial matching'''
@@ -50,6 +61,7 @@ def test_get_notavailable_content_type():
 
 def test_post_default():
     '''positive test case, checking for correct return object'''
+
     variables = {
     "object": {
         "contentType": "altbible"
@@ -67,7 +79,12 @@ def test_post_default():
         }
     """
     operation="mutation"
+    #Registered user can only add content type
+    #without auth
     executed = gql_request(query=query, operation=operation, variables=variables)
+    assert "errors" in executed.keys()
+    #with auth
+    executed = gql_request(query=query, operation=operation, variables=variables, headers=headers_auth)
     assert executed["data"]["addContentType"]["message"] == "Content type created successfully"
     assert isinstance(executed, Dict)
     data = executed["data"]["addContentType"]["data"]
@@ -94,7 +111,7 @@ def test_post_incorrectdatatype1():
         }
     """
     operation="mutation"
-    executed = gql_request(query=query, operation=operation, variables=variables)
+    executed = gql_request(query=query, operation=operation, variables=variables, headers=headers_auth)
     assert "errors" in executed.keys()
 
 def test_post_incorrectdatatype2():
@@ -116,7 +133,7 @@ def test_post_incorrectdatatype2():
         }
     """
     operation="mutation"
-    executed = gql_request(query=query, operation=operation, variables=variables)
+    executed = gql_request(query=query, operation=operation, variables=variables, headers=headers_auth)
     assert "errors" in executed.keys()
 
 def test_post_missingvalue_contenttype():
@@ -137,7 +154,7 @@ def test_post_missingvalue_contenttype():
         }
     """
     operation="mutation"
-    executed = gql_request(query=query, operation=operation, variables=variables)
+    executed = gql_request(query=query, operation=operation, variables=variables, headers=headers_auth)
     assert "errors" in executed.keys()
 
 def test_post_incorrectvalue_contenttype():
@@ -160,5 +177,5 @@ def test_post_incorrectvalue_contenttype():
         }
     """
     operation="mutation"
-    executed = gql_request(query=query, operation=operation, variables=variables)
+    executed = gql_request(query=query, operation=operation, variables=variables, headers=headers_auth)
     assert "errors" in executed.keys()

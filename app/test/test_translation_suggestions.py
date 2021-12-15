@@ -3,10 +3,13 @@ from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from .test_agmt_translation import assert_positive_get_tokens, assert_positive_get_sentence
 from .test_generic_translation import sentence_list, sample_sent
+from .conftest import initial_test_users
 
 UNIT_URL = '/v2/translation'
 headers = {"contentType": "application/json", "accept": "application/json"}
-
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json"
+            }
 
 tokens_trans = [
     {"token":"test", "translations":["ടെസ്റ്റ്"]},
@@ -58,14 +61,28 @@ def test_learn_n_suggest():
     '''Positive tests for adding knowledge and getting suggestions'''
 
     # add dictionary
+    #without auth
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
     response = client.post(UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
         headers=headers, json=tokens_trans)
+    assert response.json()['error'] == "Permission Denied"
+    assert response.status_code == 403
+    #with auth
+    response = client.post(UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
+        headers=headers_auth, json=tokens_trans)
     assert response.status_code == 201
     assert response.json()['message'] == "Added to glossary"
 
     # check if suggestions are given in token list
+    #without auth
     token_response = client.put(UNIT_URL+'/tokens?source_language=en&target_language=ml',
-        headers=headers, json={"sentence_list":sentence_list}) 
+        headers=headers, json={"sentence_list":sentence_list})
+    assert token_response.json()['error'] == "Permission Denied"
+    assert token_response.status_code == 403
+    #with auth another registered user
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+    token_response = client.put(UNIT_URL+'/tokens?source_language=en&target_language=ml',
+        headers=headers_auth, json={"sentence_list":sentence_list})    
     assert token_response.status_code == 200
     assert len(token_response.json()) >10
     found_testcase = False
@@ -87,6 +104,11 @@ def test_learn_n_suggest():
     # add alignmnet
     response = client.post(UNIT_URL+'/learn/alignment?source_language=en&target_language=ml',
         headers=headers, json=align_data)
+    assert response.json()['error'] == "Permission Denied"
+    assert response.status_code == 403
+    #with auth
+    response = client.post(UNIT_URL+'/learn/alignment?source_language=en&target_language=ml',
+        headers=headers_auth, json=align_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Alignments used for learning"
     found_lower_developer = False
@@ -97,7 +119,12 @@ def test_learn_n_suggest():
 
     # try tokenizing again
     token_response = client.put(UNIT_URL+'/tokens?source_language=en&target_language=ml',
-        headers=headers, json={"sentence_list":sentence_list}) 
+        headers=headers, json={"sentence_list":sentence_list})
+    assert token_response.json()['error'] == "Permission Denied"
+    assert token_response.status_code == 403
+    #with auth
+    token_response = client.put(UNIT_URL+'/tokens?source_language=en&target_language=ml',
+        headers=headers_auth, json={"sentence_list":sentence_list})
     assert token_response.status_code == 200
     found_atestcase  = False
     found_lower_developer = False
@@ -115,7 +142,13 @@ def test_learn_n_suggest():
     # get gloss
 
     # only a dict entry not in draft or alignment
-    response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test')
+    response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
+    headers=headers)
+    assert response.json()['error'] == "Permission Denied"
+    assert response.status_code == 403
+    #with auth
+    response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
+    headers=headers_auth)
     assert response.status_code ==200
     assert isinstance(response.json(), dict)
     assert len(response.json()['translations']) > 0
@@ -128,7 +161,12 @@ def test_learn_n_suggest():
 
     # learnt from alignment
     response = client.get(UNIT_URL+
-        '/gloss?source_language=en&target_language=ml&token=a%20test%20case')
+        '/gloss?source_language=en&target_language=ml&token=a%20test%20case',headers=headers)
+    assert response.json()['error'] == "Permission Denied"
+    assert response.status_code == 403
+    #with auth
+    response = client.get(UNIT_URL+
+        '/gloss?source_language=en&target_language=ml&token=a%20test%20case',headers=headers_auth)
     assert response.status_code ==200
     assert_positive_get_suggetion(response.json())
     found_atestcase = False
@@ -142,7 +180,13 @@ def test_learn_n_suggest():
     sense2 = "സന്തോഷവാന്‍ ആയ"
 
     #no context
-    response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy')
+    response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy',
+    headers=headers)
+    assert response.json()['error'] == "Permission Denied"
+    assert response.status_code == 403
+    #with auth
+    response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy',
+    headers=headers_auth)
     assert response.status_code ==200
     assert_positive_get_suggetion(response.json())
     found_sense1 = False
@@ -161,7 +205,7 @@ def test_learn_n_suggest():
 
     # context 1
     response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy'+
-        '&context=the%20happy%20user%20went%20home')
+        '&context=the%20happy%20user%20went%20home',headers=headers_auth)
     assert response.status_code ==200
     assert_positive_get_suggetion(response.json())
     found_sense1 = False
@@ -180,7 +224,7 @@ def test_learn_n_suggest():
 
     # context 2
     response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy'+
-        '&context=now%20user%20is%20not%20happy')
+        '&context=now%20user%20is%20not%20happy',headers=headers_auth)
     assert response.status_code ==200
     assert_positive_get_suggetion(response.json())
     found_sense1 = False
@@ -200,10 +244,17 @@ def test_learn_n_suggest():
     sentence_list[0]['sentence'] = "This his wish "+sentence_list[0]['sentence']
     response = client.put(UNIT_URL+'/suggestions?source_language=en&target_language=ml',
         headers=headers, json={"sentence_list":sentence_list})
-    draft = client.put(UNIT_URL+'/draft?doc_type=text', headers=headers, json=response.json())
+    assert response.json()['error'] == "Permission Denied"
+    assert response.status_code == 403
+    #with auth
+    response = client.put(UNIT_URL+'/suggestions?source_language=en&target_language=ml',
+        headers=headers_auth, json={"sentence_list":sentence_list})
+    draft = client.put(UNIT_URL+'/draft?doc_type=text', headers=headers_auth, json=response.json())
     draft = draft.json()
     assert "ഒരു ടെസ്റ്റ് കേസ്." in draft
     assert "ടെസ്റ്റ് കേസ് ടെസ്റ്റ് ചെയ്തു" in draft or "ടെസ്റ്റ് കേസ് ടെസ്റ്റഡ്" in draft
     assert "ടെവെലപ്പര്‍" in draft
     assert "ഇത് ആണ്  sad story of a poor ടെസ്റ്റ് " in draft
+
+
     

@@ -21,9 +21,9 @@ CREATE TABLE public.languages (
     script_direction text,
     metadata jsonb,
     created_at timestamp with time zone DEFAULT NOW(),
-    created_user int NULL,
+    created_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
-    last_updated_user int NULL
+    last_updated_user text NULL
 );
 
 ALTER SEQUENCE public.languages_language_id_seq RESTART WITH 100000;
@@ -46,9 +46,9 @@ CREATE TABLE public.licenses (
     license_text text NOT NULL,
     permissions text[],
     created_at timestamp with time zone DEFAULT NOW(),
-    created_user int NULL,
+    created_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
-    last_updated_user int NULL,
+    last_updated_user text NULL,
     active boolean DEFAULT true NOT NULL,
     metadata jsonb NULL
 );
@@ -63,6 +63,10 @@ CREATE TABLE public.versions (
     version_description text NOT NULL,
     revision integer DEFAULT 1,
     metadata jsonb,
+    created_at timestamp with time zone DEFAULT NOW(),
+    created_user text NULL,
+    last_updated_at  timestamp with time zone DEFAULT NOW(),
+    last_updated_user text NULL,
     UNIQUE(version_code, revision)
 );
 
@@ -78,9 +82,9 @@ CREATE TABLE public.sources (
     language_id int NOT NULL REFERENCES languages(language_id) ON DELETE CASCADE,
     version_id int NOT NULL REFERENCES versions(version_id) ON DELETE CASCADE,
     created_at timestamp with time zone DEFAULT NOW(),
-    created_user int NULL,
+    created_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
-    last_updated_user int NULL,
+    last_updated_user text NULL,
     active boolean DEFAULT true NOT NULL,
     metadata jsonb NULL
 );
@@ -105,9 +109,9 @@ CREATE TABLE public.translation_projects(
     source_document_format text DEFAULT 'Bible USFM',
     active boolean default true,
     metadata jsonb,
-    created_user int,
+    created_user text NULL,
     created_at timestamp with time zone DEFAULT NOW(),
-    last_updated_user int,
+    last_updated_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
     UNIQUE(project_name, created_user)
 );
@@ -122,7 +126,7 @@ CREATE TABLE public.translation_sentences(
     sentence text,
     draft text,
     draft_metadata jsonb,
-    last_updated_user int NULL,
+    last_updated_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
     UNIQUE(project_id, sentence_id)
 );
@@ -150,8 +154,8 @@ ALTER SEQUENCE public.translation_memory_token_id_seq RESTART WITH 100000;
 CREATE TABLE public.translation_project_users(
     project_user_id SERIAL PRIMARY KEY,
     project_id int REFERENCES translation_projects(project_id),
-    user_id int,
-    user_role text default 'member',
+    user_id text NULL,
+    user_role text default 'projectMember',
     metadata jsonb,
     active boolean default true,
     UNIQUE(project_id, user_id)

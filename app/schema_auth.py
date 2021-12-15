@@ -1,18 +1,23 @@
 """schema for auth related"""
-
 from enum import Enum
 from typing import List
 from pydantic import BaseModel
 from pydantic import types
 
+class ResourceType(str, Enum):
+    '''Classify DB resources for defineing access rights on them'''
+    METACONTENT = "meta contents like licences, languages, versions or content types"
+    CONTENT = "contents like bibles, commentaries, infographics, dictionary or videos"
+    PROJECT = "Ag or translation project"
+    USER = "all users in our system (Kratos)"
+    TRANSLATION = "generic translation apis"
 
-#pylint: disable=R0903
-class AppType(str, Enum):
-    '''user role based on app'''
-    AGUSER = 'AgUser'
-    VACHANUSER = 'VachanUser'
-    NONE = 'None'
-
+class App(str, Enum):
+    '''Defined apps'''
+    AG = "Autographa"
+    VACHAN = "Vachan-online or vachan-app"
+    VACHANADMIN = "VachanAdmin"
+    API = "API-user"
 
 class Registration(BaseModel):
     """kratos registration input"""
@@ -28,6 +33,8 @@ class AdminRoles(str, Enum):
     AGADMIN = 'AgAdmin'
     AGUSER = 'AgUser'
     VACHANUSER = 'VachanUser'
+    APIUSER = 'APIUser'
+    BCSDEV = 'BcsDeveloper'
 
 class UserRole(BaseModel):
     """kratos user role input"""
@@ -42,7 +49,7 @@ class RegistrationOut(BaseModel):
     """registration output"""
     id:str
     email:str
-    Permisions:List[AppType]
+    Permissions:List[App]
 
 class RegisterResponse(BaseModel):
     """Response object of registration"""

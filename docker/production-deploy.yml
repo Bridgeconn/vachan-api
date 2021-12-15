@@ -9,7 +9,10 @@ services:
   environment:
     - DSN=${VACHAN_AUTH_DATABASE}
     - LOG_LEVEL=trace
-  command: serve -c /etc/config/kratos/kratos.yml --dev --watch-courier
+    - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS}
+    - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL}
+    - SERVE_PUBLIC_BASE_URL=http://${VACHAN_DOMAIN:-kratos}:4433
+  command: serve -c /etc/config/kratos/kratos.yml --watch-courier
   volumes:
     # - type: volume
     #   source: kratos-sqlite
@@ -49,15 +52,16 @@ services:
   networks:
    - my-network
   volumes: 
-   - ${VACHAN_POSTGRES_DATA_DIR:-./pgdata}:/var/lib/postgresql/data
-   - ./db/csvs:/csvs
-   - ./db/seed_DB.sql:/docker-entrypoint-initdb.d/seed_DB.sql
+   # - ${VACHAN_POSTGRES_DATA_DIR:-./pgdata}:/var/lib/postgresql/data
+   - vachan-db-vol:/var/lib/postgresql/data
+   - ../db/csvs:/csvs
+   - ../db/seed_DB.sql:/docker-entrypoint-initdb.d/seed_DB.sql
 
 # vachan-api app
  vachan-api:
   build:
-   context: .
-   dockerfile: Dockerfile
+   context: ../
+   dockerfile: ./docker/Dockerfile
   healthcheck:
    timeout: 45s
    interval: 10s
@@ -73,11 +77,11 @@ services:
    - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME}
    - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD}
    - VACHAN_TEST_MODE="False"
-   # - VACHAN_TEST_MODE=True
-
+   - VACHAN_LOGGING_LEVEL=INFO
+  command: uvicorn main:app --host 0.0.0.0 --port 8000
   volumes:
    # - ./app:/app/app
-   - ./logs:/app/logs
+   - logs-vol:/app/logs
   restart: always
   links:
    - vachan-db
@@ -93,7 +97,7 @@ services:
    context: ./nginx
    dockerfile: Dockerfile
   environment:
-   domain: ""
+   - domain=${VACHAN_DOMAIN:-localhost}
   ports:
    - 80:80
    - 443:443
@@ -103,10 +107,14 @@ services:
    timeout: 45s
    interval: 10s
    retries: 10
+  volumes:
+    - logs-vol:/var/log/nginx
   networks:
    - my-network
 
 networks:
  my-network:              
 volumes:
-  kratos-sqlite:
+  vachan-db-vol:
+  logs-vol:
+  # kratos-sqlite:
