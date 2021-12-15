@@ -390,7 +390,6 @@ class TranslationProjectUser(Base): # pylint: disable=too-few-public-methods
     metaData = Column('metadata', JSON)
     active = Column('active', Boolean)
 
-
 class StopWords(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table stopwords_look_up in vachan DB '''
     __tablename__ = 'stopwords_look_up'
@@ -404,3 +403,14 @@ class StopWords(Base): # pylint: disable=too-few-public-methods
     createdUser = Column('created_user', Integer)
     updatedUser = Column('last_updated_user', Integer)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+
+class Jobs(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table jobs in vachan DB '''
+    __tablename__ = 'jobs'
+
+    jobId = Column('job_id', Integer, primary_key=True, autoincrement=True)
+    userId = Column('user_id', Integer)
+    status = Column('status', String)
+    output = Column('output', JSON)
+    startTime = Column('start_time', DateTime)
+    endTime = Column('end_time', DateTime)
