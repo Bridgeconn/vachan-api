@@ -187,7 +187,7 @@ def test_end_to_end_translation():
   "object": {
     "projectId": project_id,
     "userId": NEW_USER_ID,
-    "userRole": "test role",
+    "userRole": "projectMember",
 	"metaData": "{\"somekey\":\"value\"}"
   }
 }
@@ -199,7 +199,10 @@ def test_end_to_end_translation():
 
     executed_user_get = gql_request(query=PROJECT_GET_GLOBAL_QUERY,
       headers=headers_auth)
-    assert len(executed_user_get["data"]["agmtProjects"][0]["users"]) > 0
+    for get_project in  executed_user_get["data"]["agmtProjects"]:
+      if int(get_project["projectId"]) == int(project_id):
+        updated_project = get_project
+    assert len(updated_project["users"]) > 0
 
     # # Suggestions
     var_align = {
