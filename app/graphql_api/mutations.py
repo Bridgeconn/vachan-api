@@ -7,6 +7,7 @@ import schema_auth
 from routers import translation_apis , content_apis, auth_api
 from graphql_api import types, utils
 from authentication import get_user_or_none_graphql
+from dependencies import log
 #Data classes and graphql classes have few methods
 #pylint: disable=E1101,R1726,too-many-locals
 ############ ADD NEW Language #################
@@ -21,6 +22,7 @@ class AddLanguage(graphene.Mutation):
 #pylint: disable=R0201
     async def mutate(self,info,language_addargs):
         '''resolve'''
+        log.info('In GraphQL Add Language')
         db_ = info.context["request"].db_session
         #Auth and access rules
         user_details , req = get_user_or_none_graphql(info)
@@ -54,6 +56,7 @@ class UpdateLanguage(graphene.Mutation):
 #pylint: disable=R0201
     async def mutate(self,info,language_updateargs):
         """resolver"""
+        log.info('In GraphQL Update Language')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
@@ -85,6 +88,7 @@ class CreateContentTypes(graphene.Mutation):
 #pylint: disable=R0201
     async def mutate(self,info,content_type):
         """resolver"""
+        log.info('In GraphQL Add Content Type')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "POST"
@@ -114,6 +118,7 @@ class AddLicense(graphene.Mutation):
 #pylint: disable=R0201
     async def mutate(self,info,license_args):
         '''resolve'''
+        log.info('In GraphQL Add Licenses')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "POST"
@@ -146,6 +151,7 @@ class EditLicense(graphene.Mutation):
 #pylint: disable=R0201
     async def mutate(self,info,license_args):
         '''resolve'''
+        log.info('In GraphQL Update Licenses')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
@@ -177,6 +183,7 @@ class AddVersion(graphene.Mutation):
 #pylint: disable=R0201
     async def mutate(self,info,version_arg):
         """resolve"""
+        log.info('In GraphQL Add Versions')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "POST"
@@ -208,6 +215,7 @@ class EditVersion(graphene.Mutation):
 #pylint: disable=R0201
     async def mutate(self,info,version_arg):
         """resolve"""
+        log.info('In GraphQL Edit Versions')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
@@ -239,6 +247,7 @@ class AddSource(graphene.Mutation):
 #pylint: disable=R0201
     async def mutate(self,info,source_arg):
         """resolve"""
+        log.info('In GraphQL Add Source')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "POST"
@@ -275,6 +284,7 @@ class EditSource(graphene.Mutation):
 #pylint: disable=R0201
     async def mutate(self,info,source_arg):
         """resolve"""
+        log.info('In GraphQL Edit Sources')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
@@ -310,6 +320,7 @@ class AddBible(graphene.Mutation):
 #pylint: disable=no-self-use
     async def mutate(self,info,bible_arg):
         """resolve"""
+        log.info('In GraphQL Add Bible books')
         source =bible_arg.source_name
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
@@ -353,6 +364,7 @@ class EditBible(graphene.Mutation):
     #pylint: disable=no-self-use
     async def mutate(self,info,bible_arg):
         """resolve"""
+        log.info('In GraphQL Edit Bible Books')
         source =bible_arg.source_name
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
@@ -396,6 +408,7 @@ class AddAudioBible(graphene.Mutation):
 #pylint: disable=R0201
     async def mutate(self,info,audio_bible_arg):
         """resolve"""
+        log.info('In GraphQL Add Audio Bible')
         db_ = info.context["request"].db_session
         source =audio_bible_arg.source_name
         audio_data = audio_bible_arg.audio_data
@@ -438,6 +451,7 @@ class EditAudioBible(graphene.Mutation):
 #pylint: disable=no-self-use
     async def mutate(self,info,audio_bible_arg):
         """resolve"""
+        log.info('In GraphQL Edit Audio Bible')
         db_ = info.context["request"].db_session
         source =audio_bible_arg.source_name
         audio_data = audio_bible_arg.audio_data
@@ -480,6 +494,7 @@ class AddCommentary(graphene.Mutation):
 #pylint: disable=no-self-use
     async def mutate(self,info,comm_arg):
         """resolve"""
+        log.info('In GraphQL Add Commentaries')
         db_ = info.context["request"].db_session
         source =comm_arg.source_name
         comm_data = comm_arg.commentary_data
@@ -524,6 +539,7 @@ class EditCommentary(graphene.Mutation):
 #pylint: disable=no-self-use
     async def mutate(self,info,comm_arg):
         """resolve"""
+        log.info('In GraphQL Edit Commentaries')
         db_ = info.context["request"].db_session
         source =comm_arg.source_name
         comm_data = comm_arg.commentary_data
@@ -568,6 +584,7 @@ class CreateAGMTProject(graphene.Mutation):
 #pylint: disable=no-self-use
     async def mutate(self,info,project_arg):
         """resolve"""
+        log.info('In GraphQL Add AGMT Project')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "POST"
@@ -602,6 +619,7 @@ class EditAGMTProject(graphene.Mutation):
 #pylint: disable=no-self-use
     async def mutate(self,info,project_arg):
         """resolve"""
+        log.info('In GraphQL Edit AGMT Project')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req = info.context['request']
@@ -629,6 +647,7 @@ class AGMTUserCreate(graphene.Mutation):
 #pylint: disable=no-self-use
     async def mutate(self,info,user_arg):
         """resolve"""
+        log.info('In GraphQL Add AGMT User')
         db_ = info.context["request"].db_session
         project_id = user_arg.project_id
         user_id = user_arg.user_id
@@ -662,6 +681,7 @@ class AGMTUserEdit(graphene.Mutation):
 #pylint: disable=no-self-use
     async def mutate(self,info,user_arg):
         """resolve"""
+        log.info('In GraphQL Edit AGMT User')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req = info.context['request']
@@ -694,6 +714,7 @@ class AddBibleVideo(graphene.Mutation):
 #pylint: disable=no-self-use
     async def mutate(self,info,video_arg):
         """resolve"""
+        log.info('In GraphQL Add Bible Video')
         db_ = info.context["request"].db_session
         source =video_arg.source_name
         video_data = video_arg.video_data
@@ -738,6 +759,7 @@ class EditBibleVideo(graphene.Mutation):
 #pylint: disable=no-self-use
     async def mutate(self,info,video_arg):
         """resolve"""
+        log.info('In GraphQL Edit Bible Video')
         db_ = info.context["request"].db_session
         source =video_arg.source_name
         video_data = video_arg.video_data
@@ -782,6 +804,7 @@ class AddDictionary(graphene.Mutation):
 #pylint: disable=no-self-use
     async def mutate(self,info,dict_arg):
         """resolve"""
+        log.info('In GraphQL Add Dictionary')
         db_ = info.context["request"].db_session
         source =dict_arg.source_name
         dict_data = dict_arg.word_list
@@ -823,6 +846,7 @@ class EditDictionary(graphene.Mutation):
 #pylint: disable=no-self-use
     async def mutate(self,info,dict_arg):
         """resolve"""
+        log.info('In GraphQL Edit Dictionary')
         db_ = info.context["request"].db_session
         source =dict_arg.source_name
         dict_data = dict_arg.word_list
@@ -864,6 +888,7 @@ class AddInfographic(graphene.Mutation):
 #pylint: disable=no-self-use
     async def mutate(self,info,info_arg):
         """resolve"""
+        log.info('In GraphQL Add Infographics')
         db_ = info.context["request"].db_session
         source =info_arg.source_name
         dict_data = info_arg.data
@@ -904,6 +929,7 @@ class EditInfographic(graphene.Mutation):
 #pylint: disable=no-self-use
     async def mutate(self,info,info_arg):
         """resolve"""
+        log.info('In GraphQL Edit Infographics')
         db_ = info.context["request"].db_session
         source =info_arg.source_name
         dict_data = info_arg.data
@@ -947,6 +973,7 @@ class AgmtTokenApply(graphene.Mutation):
 #pylint: disable=no-self-use
     async def mutate(self,info,token_arg):
         """resolve"""
+        log.info('In GraphQL Apply Tokens')
         db_ = info.context["request"].db_session
         project_id = token_arg.project_id
         return_drafts = token_arg.return_drafts
@@ -990,6 +1017,7 @@ class AutoTranslationSuggetion(graphene.Mutation):
 #pylint: disable=no-self-use
     async def mutate(self,info,translation_arg):
         """resolve"""
+        log.info('In GraphQL Translation Auto Suggestions')
         db_ = info.context["request"].db_session
         project_id  = translation_arg.project_id
         books = translation_arg.books
@@ -1031,6 +1059,7 @@ class AddGloss(graphene.Mutation):
 #pylint: disable=no-self-use
     async def mutate(self,info,gloss_arg):
         """resolve"""
+        log.info('In GraphQL Add Gloss')
         db_ = info.context["request"].db_session
         source_language = gloss_arg.source_language
         target_language =gloss_arg.target_language
@@ -1084,6 +1113,7 @@ class AddAlignment(graphene.Mutation):
 #pylint: disable=no-self-use
     async def mutate(self,info,alignment_arg):
         """resolve"""
+        log.info('In GraphQL Add Alignment')
         db_ = info.context["request"].db_session
         source_language = alignment_arg.source_language
         target_language =alignment_arg.target_language
@@ -1141,6 +1171,7 @@ class Register(graphene.Mutation):
 #pylint: disable=R0201
     async def mutate(self,info,registration_args,app_type):
         '''resolve'''
+        log.info('In GraphQL Register User')
         db_ = info.context["request"].db_session
         #Auth and access rules
         user_details , req = get_user_or_none_graphql(info)
@@ -1172,6 +1203,7 @@ class UpdateUserRole(graphene.Mutation):
 #pylint: disable=R0201
     async def mutate(self,info,user_roles_args):
         '''resolve'''
+        log.info('In GraphQL User Role Update')
         db_ = info.context["request"].db_session
         #Auth and access rules
         user_details , req = get_user_or_none_graphql(info)
@@ -1195,6 +1227,7 @@ class DeleteIdentity(graphene.Mutation):
 #pylint: disable=R0201
     async def mutate(self,info,identity):
         '''resolve'''
+        log.info('In GraphQL Identity Delete')
         db_ = info.context["request"].db_session
         #Auth and access rules
         user_details , req = get_user_or_none_graphql(info)

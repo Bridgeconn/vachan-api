@@ -356,16 +356,21 @@ def check_access_rights(db_:Session, required_params, db_resource=None):
     # print("Access Tag==>>>",access_tags)
     # print("permission==>>>",required_permission)
     # print("resource type==>>>",resource_type)
+    log.info('In Access Right check')
+    log.debug('AccessTag: %s, permission: %s, resource_type: %s',
+        access_tags, required_permission, resource_type)
     has_rights = False
     filtered_content = []
     # test function seperate permision check and filter for get of contents
     if resource_type == schema_auth.ResourceType.CONTENT and \
             request_context["method"] == 'GET':
+        log.info('In Access Right check Filter Contents')
         has_rights , filtered_content  = \
             filter_resource_content_get(db_resource,request_context,
             required_permission, user_details)
     elif request_context["method"] == 'GET' and\
         request_context['endpoint'].startswith('/v2/autographa'):
+        log.info('In Access Right check GET Autographa')
         if request_context['app'] == schema_auth.App.AG.value:
             has_rights , filtered_content  = \
         filter_agmt_project_get(db_resource,access_tags,required_permission, user_details,
@@ -375,17 +380,19 @@ def check_access_rights(db_:Session, required_params, db_resource=None):
         for tag in access_tags:
             if required_permission in access_rules[tag].keys():
                 allowed_users = access_rules[tag][required_permission]
+            log.info('In Access Rigt --> role check')
+            log.debug('allowed_users: %s',allowed_users)
             # print("Allowed User ==>>>>",allowed_users)
             if len(allowed_users) > 0:
                 for role in allowed_users:
                     has_rights = role_check_has_right(db_, role, user_details, resource_type,
                         db_resource,request_context)
-                    # has_rights = role_check_has_right(db_, role, user_roles, resource_type,
-                    #     db_resource, user_id)
                     if has_rights:
                         break
                 if has_rights:
                     break
+    log.info('In Access Rigt --> has right resposne')
+    log.debug('has right: %s',has_rights)
     return has_rights , filtered_content
 
 #####decorator function for auth and access rules ######
@@ -395,8 +402,6 @@ def verify_auth_decorator_params(kwargs):
             "request_context":"",
             "db_":"",
             "user_details":"",
-            # "user_id":"",
-            # "user_roles":"",
             "resource_type":""
         }
     for param in required_params:
@@ -405,9 +410,6 @@ def verify_auth_decorator_params(kwargs):
         else:
             required_params[param] = None
 
-    # if 'user_details' in kwargs.keys() and isinstance(kwargs['user_details'],dict):
-    #     required_params['user_id'] = kwargs['user_details']["user_id"]
-    #     required_params['user_roles'] = kwargs['user_details']['user_roles']
     if 'request' in kwargs.keys():
         request_context = {}
         request = kwargs['request']
@@ -431,6 +433,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         required_params = verify_auth_decorator_params(kwargs)
         db_ = required_params["db_"]
         if required_params['request_context']['endpoint'].startswith("/v2/user"):#pylint: disable=E1126.too-many-nested-blocks
+            log.info('In Auth Decorator - User Specific')
             verified , filtered_content = \
                 check_access_rights(db_, required_params, db_resource)
             if not verified:
@@ -438,6 +441,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             #calling router functions
             response = await func(*args, **kwargs)
         elif required_params['request_context']['endpoint'].startswith("/v2/translation"):#pylint: disable=E1126.too-many-nested-blocks
+            log.info('In Auth Decorator - Translation Specific')
             verified , filtered_content = \
                 check_access_rights(db_, required_params, db_resource)
             if not verified:
@@ -452,6 +456,9 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                 if required_params['request_context']['method'] != 'GET':
                     if "data" in response and isinstance(response['data'],dict) and \
                         'source_content' in response['data'].keys():
+                        log.info('In Auth Decorator - Source Related')
+                        log.debug('Requested User: %s',
+                            required_params['user_details']["user_id"])
                         response['data']['source_content'].updatedUser = \
                             required_params['user_details']["user_id"]
                         db_resource = response['data']['source_content']
@@ -465,6 +472,9 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                         if required_params['request_context']["method"] == 'POST':
                             if isinstance(db_resource,dict) and \
                                 'project' in db_resource.keys():
+                                log.info('In Auth Decorator POST- Project Related')
+                                log.debug('Requested User: %s',
+                                    required_params['user_details']["user_id"])
                                 db_resource['project'].updatedUser = \
                                    required_params['user_details']["user_id"]
                                 db_resource = db_resource['project']
@@ -476,6 +486,9 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                         if required_params['request_context']["method"] == 'PUT' :
                             if isinstance(db_resource,dict) and \
                                 'project' in db_resource.keys():
+                                log.info('In Auth Decorator PUT - Project Related')
+                                log.debug('Requested User: %s',
+                                    required_params['user_details']["user_id"])
                                 db_resource['project'].project.updatedUser = \
                                     required_params['user_details']["user_id"]
                                 db_resource = db_resource['project'].project
@@ -486,6 +499,9 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                                 if required_params['request_context']['app']\
                                     == schema_auth.App.AG.value:
                                     if 'data' in response:
+                                        log.info('In Auth Decorator - Project Content')
+                                        log.debug('Requested User: %s',
+                                            required_params['user_details']["user_id"])
                                         db_resource['project_content'].updatedUser = \
                                             required_params['user_details']["user_id"]
                                         db_resource = db_resource['project_content']
@@ -497,6 +513,9 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                                     raise PermissionException(
                                         "Access Permission Denied for the URL")
                             else :
+                                log.info('In Auth Decorator - General POST OR PUT')
+                                log.debug('Requested User: %s',
+                                    required_params['user_details']["user_id"])
                                 response['data'].updatedUser = \
                                     required_params['user_details']["user_id"]
                     verified , filtered_content = \
@@ -509,6 +528,9 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                 elif required_params['request_context']['method'] == 'GET':
                     if isinstance(response,dict) and \
                         'source_content' in response.keys():
+                        log.info('In Auth Decorator - Source GET')
+                        log.debug('Requested User: %s',
+                            required_params['user_details']["user_id"])
                         db_resource = []
                         db_resource.append(response['source_content'])
                         verified , filtered_content  = \
@@ -520,6 +542,9 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                     elif isinstance(response,dict) and \
                         'project_content' in response.keys():
                         db_resource = []
+                        log.info('In Auth Decorator - Project Content GET')
+                        log.debug('Requested User: %s',
+                            required_params['user_details']["user_id"])
                         db_resource.append(response['project_content'])
                         verified , filtered_content  = \
                             check_access_rights(db_, required_params, db_resource)
@@ -531,6 +556,9 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                             response = []
                     else:
                         db_resource = response
+                        log.info('In Auth Decorator - General GET')
+                        log.debug('Requested User: %s',
+                            required_params['user_details']["user_id"])
                         verified , filtered_content  = \
                             check_access_rights(db_, required_params, db_resource)
                         if not filtered_content is None:

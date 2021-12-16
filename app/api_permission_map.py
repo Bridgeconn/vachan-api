@@ -1,6 +1,7 @@
 '''returns the required permission name as per the access rules'''
 #pylint: disable=E0401
 import schema_auth
+from dependencies import log
 
 #pylint: disable=too-many-locals,too-many-statements
 def api_permission_map(endpoint, request_context, requesting_app, resource, user_details):
@@ -247,6 +248,8 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
         "/v2/translation/draft" : switch_translation,
 
     }
+    log.info('In API Permission Mapping')
+    log.debug('Endpoint: %s, Method: %s',endpoint, method)
     switch_func =  switcher.get(endpoint, message)
     if isinstance(switch_func,str):
         raise Exception(message)

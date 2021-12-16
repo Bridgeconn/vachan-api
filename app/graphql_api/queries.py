@@ -5,6 +5,7 @@ from graphql_api import types, utils
 import schemas_nlp
 from routers import content_apis, auth_api, translation_apis
 from authentication import get_user_or_none_graphql
+from dependencies import log
 
 #Pylint error :- Query class have all resolver functions
 #pylint: disable=R0201
@@ -21,6 +22,7 @@ class Query(graphene.ObjectType):
         search_word=None, language_code=None, language_name=None,
         skip=0, limit=100):
         '''resolver'''
+        log.info('In GraphQL Get Language')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         # configuring the request params
@@ -40,6 +42,7 @@ class Query(graphene.ObjectType):
     def resolve_content_types(self, info, content_type=None,
         skip=0, limit=100):
         '''resolver'''
+        log.info('In GraphQL Get Content Types')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -56,6 +59,7 @@ class Query(graphene.ObjectType):
         permission=None, active=True,
         skip=0, limit=100):
         '''resolver'''
+        log.info('In GraphQL Get Content Licesnes')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -73,6 +77,7 @@ class Query(graphene.ObjectType):
     def resolve_versions(self, info, version_abbreviation=None, version_name=None,
         revision=None, skip=0, limit=100, metadata=None):
         '''resolver'''
+        log.info('In GraphQL Get Content versions')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -97,6 +102,7 @@ class Query(graphene.ObjectType):
         latest_revision=True, skip=0, limit=100,metadata=None,
         access_tag= None):
         '''resolver'''
+        log.info('In GraphQL Get Contents(Sources)')
         if access_tag:
             # permission_list = [perm for perm in types.SourcePermissions.__enum__]
             permission_list = list(types.SourcePermissions.__enum__)#pylint: disable=no-member
@@ -122,6 +128,7 @@ class Query(graphene.ObjectType):
     def resolve_bible_books(self, info, book_id=None, book_name=None,
         book_code=None, skip=0, limit=100):
         '''resolver'''
+        log.info('In GraphQL Get Bible Books')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -141,6 +148,7 @@ class Query(graphene.ObjectType):
     def resolve_commentaries(self, info, source_name, book_code=None, chapter=None,
         verse=None, last_verse=None, active=True, skip=0, limit=100):
         '''resolver'''
+        log.info('In GraphQL Get Commentaries')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -160,6 +168,7 @@ class Query(graphene.ObjectType):
     def resolve_dictionary_words(self, info, source_name, search_word=None, exact_match=False,
         active=True, skip=0, limit=100):
         '''resolver'''
+        log.info('In GraphQL Get Dictionaries')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -180,6 +189,7 @@ class Query(graphene.ObjectType):
     def resolve_infographics(self, info, source_name, book_code=None, title=None, active=True,
         skip=0, limit=100):
         '''resolver'''
+        log.info('In GraphQL Get Infographics')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -200,6 +210,7 @@ class Query(graphene.ObjectType):
     def resolve_bible_videos(self, info, source_name, book_code=None, title=None, theme=None,
         active=True, skip=0, limit=100):
         '''resolver'''
+        log.info('In GraphQL Get Bible Videos')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -219,6 +230,7 @@ class Query(graphene.ObjectType):
     def resolve_bible_contents(self, info, source_name, book_code=None, active=True,
         skip=0, limit=100):
         '''resolver'''
+        log.info('In GraphQL Get Bible Contents')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -235,6 +247,7 @@ class Query(graphene.ObjectType):
         source_name=graphene.String(required=True))
     def resolve_versification(self, info, source_name):
         '''resolver'''
+        log.info('In GraphQL Get Versification')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -254,6 +267,7 @@ class Query(graphene.ObjectType):
     def resolve_bible_verse(self, info, source_name, book_code=None, chapter=None, verse=None,
         last_verse=None, search_phrase=None, active=True, skip=0, limit=100):
         '''resolver'''
+        log.info('In GraphQL Get Bible Verses')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -278,6 +292,7 @@ class Query(graphene.ObjectType):
         source_language=None, target_language=None, user_id=None, active=True,
         skip=0, limit=100):
         '''resolver'''
+        log.info('In GraphQL Get Agmt Projects')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -300,6 +315,7 @@ class Query(graphene.ObjectType):
         sentence_id_list=None, use_translation_memory=True, include_phrases=True,
         include_stopwords=False):
         '''resolver'''
+        log.info('In GraphQL Get AGMT Project Tokens')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -317,6 +333,7 @@ class Query(graphene.ObjectType):
         description="Requires exactly two numbers"))
     def resolve_agmt_project_token_translation(self, info, project_id, sentence_id, offset):
         '''resolver'''
+        log.info('In GraphQL AGMT Project Token Translations')
         db_ = info.context["request"].db_session
         # occurrences = [{"sentenceId":sentence_id, "offset":offset}]
         user_details , req = get_user_or_none_graphql(info)
@@ -336,6 +353,7 @@ class Query(graphene.ObjectType):
         occurrences = graphene.List(types.TokenOccurenceInput,required=True))
     def resolve_agmt_project_token_sentences(self, info, project_id, token, occurrences):
         '''resolver'''
+        log.info('In GraphQL Get AGMT Token Sentence')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -358,6 +376,7 @@ class Query(graphene.ObjectType):
     async def resolve_suggest_translation(self, info, source_language,
         sentence_list, target_language, punctuations=None, stopwords=None):
         '''resolver'''
+        log.info('In GraphQL Get Suggest Translation')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
@@ -390,6 +409,7 @@ class Query(graphene.ObjectType):
     def resolve_agmt_draft_usfm(self, info, project_id, books=None, sentence_id_list=None,
         sentence_id_range=None):
         '''resolver'''
+        log.info('In GraphQL Get AGMT Draft USFM')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -411,6 +431,7 @@ class Query(graphene.ObjectType):
     def resolve_agmt_export_alignment(self, info, project_id, books=None, sentence_id_list=None,
         sentence_id_range=None):
         '''resolver'''
+        log.info('In GraphQL Get AGMT Alignment')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -432,6 +453,7 @@ class Query(graphene.ObjectType):
     def resolve_agmt_project_source(self, info, project_id, books=None, sentence_id_list=None,
         sentence_id_range=None):
         '''resolver'''
+        log.info('In GraphQL Get AGMT Project Source')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -453,6 +475,7 @@ class Query(graphene.ObjectType):
     def resolve_agmt_project_progress(self, info, project_id, books=None, sentence_id_list=None,
         sentence_id_range=None):
         '''resolver'''
+        log.info('In GraphQL Get AGMT Project Progress')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -476,6 +499,7 @@ class Query(graphene.ObjectType):
     def resolve_gloss(self, info, source_language, target_language, token, context=None,
         token_offset=None):
         '''resolver'''
+        log.info('In GraphQL Get Gloss')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -501,6 +525,7 @@ class Query(graphene.ObjectType):
             use_translation_memory=True, include_phrases=True,
             include_stopwords=False, punctuations=None, stopwords=None):
         '''resolver'''
+        log.info('In GraphQL Tokenize')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
@@ -527,6 +552,7 @@ class Query(graphene.ObjectType):
     async def resolve_translate_token(self, info, source_language, target_language, sentence_list,
         token_translations, use_data_for_learning=True):
         '''resolver'''
+        log.info('In GraphQL Translate Token')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
@@ -549,6 +575,7 @@ class Query(graphene.ObjectType):
         sentence_list=graphene.List(types.SentenceInput, required=True))
     def resolve_convert_to_usfm(self, info, sentence_list):
         '''resolver'''
+        log.info('In GraphQL Convert to USFM')
         # db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
@@ -566,6 +593,7 @@ class Query(graphene.ObjectType):
         sentence_list=graphene.List(types.SentenceInput, required=True))
     def resolve_convert_to_alignment(self, info, sentence_list):
         '''resolver'''
+        log.info('In GraphQL Convert to Alignment')
         # db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
@@ -583,6 +611,7 @@ class Query(graphene.ObjectType):
         sentence_list=graphene.List(types.SentenceInput, required=True))
     def resolve_convert_to_csv(self, info, sentence_list):
         '''resolver'''
+        log.info('In GraphQL Convert to CSV')
         # db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
@@ -600,6 +629,7 @@ class Query(graphene.ObjectType):
         sentence_list=graphene.List(types.SentenceInput, required=True))
     def resolve_convert_to_text(self, info, sentence_list):
         '''resolver'''
+        log.info('In GraphQL Get Convert to Text')
         # db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
@@ -618,6 +648,7 @@ class Query(graphene.ObjectType):
         password = graphene.String(required=True))
     def resolve_login(self, info, user_email , password):
         """resolver"""
+        log.info('In GraphQL User Login')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -629,6 +660,7 @@ class Query(graphene.ObjectType):
         description="Logout user")
     def resolve_logout(self, info):
         """resolve"""
+        log.info('In GraphQL User Logout')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
@@ -651,6 +683,7 @@ class Query(graphene.ObjectType):
     async def resolve_extract_text_contents(self, info, source_name=None,
         books=None, language_code=None, content_type=None, skip=0, limit=100):
         """resolve"""
+        log.info('In GraphQL Extract Text contents')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
