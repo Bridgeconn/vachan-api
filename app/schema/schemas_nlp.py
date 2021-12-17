@@ -3,8 +3,7 @@ from typing import List, Tuple
 from enum import Enum
 from pydantic import BaseModel, Field, constr, root_validator
 
-from schemas import LangCodePattern, BookCodePattern, TableNamePattern
-from schemas import LanguageResponse
+from schema.schemas import LangCodePattern, BookCodePattern, TableNamePattern,LanguageResponse
 
 
 #pylint: disable=too-few-public-methods

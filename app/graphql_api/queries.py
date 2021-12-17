@@ -2,9 +2,9 @@
 
 import graphene
 from graphql_api import types, utils
-import schemas_nlp
+from schema import schemas_nlp
 from routers import content_apis, auth_api, translation_apis
-from authentication import get_user_or_none_graphql
+from auth.authentication import get_user_or_none_graphql
 from dependencies import log
 
 #Pylint error :- Query class have all resolver functions

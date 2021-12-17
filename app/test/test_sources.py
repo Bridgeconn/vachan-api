@@ -1,5 +1,5 @@
 '''Test cases for versions related APIs'''
-from app import schema_auth, schemas
+from app.schema import schemas, schema_auth
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get

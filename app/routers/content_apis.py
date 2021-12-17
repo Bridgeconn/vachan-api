@@ -3,12 +3,11 @@ from typing import List
 from fastapi import APIRouter, Query, Body, Depends, Path , Request
 from sqlalchemy.orm import Session
 
-import schemas
-import schemas_nlp
+from schema import schemas,schemas_nlp
 from dependencies import get_db, log
 from custom_exceptions import NotAvailableException, AlreadyExistsException
 from crud import structurals_crud, contents_crud
-from authentication import get_auth_access_check_decorator ,\
+from auth.authentication import get_auth_access_check_decorator ,\
     get_user_or_none
 
 router = APIRouter()

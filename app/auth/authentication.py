@@ -7,13 +7,13 @@ from fastapi import HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 import db_models
-import schema_auth
+from auth.api_permission_map import api_permission_map
+from schema import schema_auth
 from dependencies import log
 from custom_exceptions import GenericException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
     UnprocessableException, PermissionException
-from api_permission_map import api_permission_map
-from schema_auth import AdminRoles
+# from schema.schema_auth import AdminRoles
 
 PUBLIC_BASE_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL",
                                     "http://127.0.0.1:4433/")+"self-service/"
@@ -852,7 +852,7 @@ def create_super_user():
     if response.status_code == 200:
         identity_data = json.loads(response.content)
         for identity in identity_data:
-            if AdminRoles.SUPERADMIN.value in identity["traits"]["userrole"]:
+            if schema_auth.AdminRoles.SUPERADMIN.value in identity["traits"]["userrole"]:
                 found = True
                 break
     else:
@@ -868,7 +868,7 @@ def create_super_user():
                         "traits.name.first": "Super",
                         "traits.name.last": "Admin",
                         "password": SUPER_PASSWORD,
-                        "traits.userrole":AdminRoles.SUPERADMIN.value,
+                        "traits.userrole":schema_auth.AdminRoles.SUPERADMIN.value,
                         "method": "password"}
             headers = {}
             headers["Accept"] = "application/json"

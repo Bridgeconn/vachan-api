@@ -1,6 +1,6 @@
 '''returns the required permission name as per the access rules'''
 #pylint: disable=E0401
-import schema_auth
+from schema import schema_auth
 from dependencies import log
 
 #pylint: disable=too-many-locals,too-many-statements

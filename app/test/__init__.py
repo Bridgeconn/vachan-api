@@ -2,7 +2,7 @@
 from typing import Dict
 from fastapi.testclient import TestClient
 from app.main import app
-from app import schema_auth
+from app.schema import schema_auth
 
 client = TestClient(app)
 

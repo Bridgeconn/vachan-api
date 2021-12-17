@@ -9,7 +9,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
 
 import db_models
-import schemas
+from schema import schemas
 from crud import utils
 from custom_exceptions import NotAvailableException, TypeException
 from database import engine

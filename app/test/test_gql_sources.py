@@ -1253,17 +1253,41 @@ def test_diffrernt_sources_with_app_and_roles():
     filter_qry = """
       {
   contents(versionAbbreviation:"TTT"){
+    sourceName
     metaData
   }
 }
     """
     permission = types.SourcePermissions
 
+    def check_resp_permission(response,check_list):
+        """function to check permission in response"""
+        db_perm_list = []
+        for i in range(len(response)):
+            temp_list = response[i]["metaData"]['accessPermissions']
+            db_perm_list = db_perm_list + list(set(temp_list)-set(db_perm_list))
+        for item in check_list:
+            assert item in db_perm_list
+        # check based on source
+        for item in response:
+            if item["sourceName"] == "hi_TTT_1_commentary":
+                assert permission.CONTENT.value in item['metaData']['accessPermissions']
+            elif item["sourceName"] == "ml_TTT_1_commentary":
+                assert permission.OPENACCESS.value in item['metaData']['accessPermissions']
+            elif item["sourceName"] == "tn_TTT_1_commentary":
+                assert permission.PUBLISHABLE.value in item['metaData']['accessPermissions']
+            elif item["sourceName"] == "af_TTT_1_commentary":
+                assert permission.DOWNLOADABLE.value in item['metaData']['accessPermissions']
+            elif item["sourceName"] == "ak_TTT_1_commentary":
+                assert permission.DERIVABLE.value in item['metaData']['accessPermissions']
+
     #Get without Login
     #default : API
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
-    assert permission.OPENACCESS.value in resp_data[0]["metaData"]['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[0]["metaData"]['accessPermissions']
+    check_list = [permission.OPENACCESS.value]
+    check_resp_permission(resp_data,check_list)
     #APP : Autographa
     headers_auth['app'] = types.App.AG.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
@@ -1273,8 +1297,10 @@ def test_diffrernt_sources_with_app_and_roles():
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
-    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
-    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    # assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
+    check_resp_permission(resp_data,check_list)
     #APP : Vachan Admin
     headers_auth['app'] = types.App.VACHANADMIN.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
@@ -1287,22 +1313,28 @@ def test_diffrernt_sources_with_app_and_roles():
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
-    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
-    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    # assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
+    check_resp_permission(resp_data,check_list)
     #APP : Autographa
     headers_auth['app'] = types.App.AG.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
-    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
-    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    # assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
+    check_resp_permission(resp_data,check_list)
     #APP : Vachan Online
     headers_auth['app'] = types.App.VACHAN.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
-    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
-    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    # assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
+    check_resp_permission(resp_data,check_list)
     #APP : Vachan Admin
     headers_auth['app'] = types.App.VACHANADMIN.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
@@ -1315,8 +1347,10 @@ def test_diffrernt_sources_with_app_and_roles():
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
-    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
-    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    # assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
+    check_resp_permission(resp_data,check_list)
     #APP : Autographa
     headers_auth['app'] = types.App.AG.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
@@ -1326,8 +1360,10 @@ def test_diffrernt_sources_with_app_and_roles():
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
-    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
-    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    # assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
+    check_resp_permission(resp_data,check_list)
     #APP : Vachan Admin
     headers_auth['app'] = types.App.VACHANADMIN.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
@@ -1340,11 +1376,14 @@ def test_diffrernt_sources_with_app_and_roles():
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 5
-    assert permission.CONTENT.value in resp_data[0]['metaData']['accessPermissions']
-    assert permission.OPENACCESS.value in resp_data[1]['metaData']['accessPermissions']
-    assert permission.PUBLISHABLE.value in resp_data[2]['metaData']['accessPermissions']
-    assert permission.DOWNLOADABLE.value in resp_data[3]['metaData']['accessPermissions']
-    assert permission.DERIVABLE.value in resp_data[4]['metaData']['accessPermissions']
+    # assert permission.CONTENT.value in resp_data[0]['metaData']['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[1]['metaData']['accessPermissions']
+    # assert permission.PUBLISHABLE.value in resp_data[2]['metaData']['accessPermissions']
+    # assert permission.DOWNLOADABLE.value in resp_data[3]['metaData']['accessPermissions']
+    # assert permission.DERIVABLE.value in resp_data[4]['metaData']['accessPermissions']
+    check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value,permission.CONTENT.value,
+      permission.DOWNLOADABLE.value, permission.DERIVABLE.value]
+    check_resp_permission(resp_data,check_list)
     #APP : Autographa
     headers_auth['app'] = types.App.AG.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
@@ -1354,18 +1393,23 @@ def test_diffrernt_sources_with_app_and_roles():
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
-    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
-    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    # assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
+    check_resp_permission(resp_data,check_list)
     #APP : Vachan Admin
     headers_auth['app'] = types.App.VACHANADMIN.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 5
-    assert permission.CONTENT.value in resp_data[0]['metaData']['accessPermissions']
-    assert permission.OPENACCESS.value in resp_data[1]['metaData']['accessPermissions']
-    assert permission.PUBLISHABLE.value in resp_data[2]['metaData']['accessPermissions']
-    assert permission.DOWNLOADABLE.value in resp_data[3]['metaData']['accessPermissions']
-    assert permission.DERIVABLE.value in resp_data[4]['metaData']['accessPermissions']
+    # assert permission.CONTENT.value in resp_data[0]['metaData']['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[1]['metaData']['accessPermissions']
+    # assert permission.PUBLISHABLE.value in resp_data[2]['metaData']['accessPermissions']
+    # assert permission.DOWNLOADABLE.value in resp_data[3]['metaData']['accessPermissions']
+    # assert permission.DERIVABLE.value in resp_data[4]['metaData']['accessPermissions']
+    check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value,permission.CONTENT.value,
+      permission.DOWNLOADABLE.value, permission.DERIVABLE.value]
+    check_resp_permission(resp_data,check_list)
 
     #Get with API-User
     #default : API
@@ -1374,8 +1418,10 @@ def test_diffrernt_sources_with_app_and_roles():
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
-    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
-    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    # assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
+    check_resp_permission(resp_data,check_list)
     #APP : Autographa
     headers_auth['app'] = types.App.AG.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
@@ -1385,8 +1431,10 @@ def test_diffrernt_sources_with_app_and_roles():
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
-    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
-    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    # assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
+    check_resp_permission(resp_data,check_list)
     #APP : Vachan Admin
     headers_auth['app'] = types.App.VACHANADMIN.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
@@ -1399,22 +1447,28 @@ def test_diffrernt_sources_with_app_and_roles():
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
-    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
-    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    # assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
+    check_resp_permission(resp_data,check_list)
     #APP : Autographa
     headers_auth['app'] = types.App.AG.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
-    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
-    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    # assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
+    check_resp_permission(resp_data,check_list)
     #APP : Vachan Online
     headers_auth['app'] = types.App.VACHAN.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
-    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
-    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    # assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
+    check_resp_permission(resp_data,check_list)
     #APP : Vachan Admin
     headers_auth['app'] = types.App.VACHANADMIN.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
@@ -1427,11 +1481,14 @@ def test_diffrernt_sources_with_app_and_roles():
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 5
-    assert permission.CONTENT.value in resp_data[0]['metaData']['accessPermissions']
-    assert permission.OPENACCESS.value in resp_data[1]['metaData']['accessPermissions']
-    assert permission.PUBLISHABLE.value in resp_data[2]['metaData']['accessPermissions']
-    assert permission.DOWNLOADABLE.value in resp_data[3]['metaData']['accessPermissions']
-    assert permission.DERIVABLE.value in resp_data[4]['metaData']['accessPermissions']
+    # assert permission.CONTENT.value in resp_data[0]['metaData']['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[1]['metaData']['accessPermissions']
+    # assert permission.PUBLISHABLE.value in resp_data[2]['metaData']['accessPermissions']
+    # assert permission.DOWNLOADABLE.value in resp_data[3]['metaData']['accessPermissions']
+    # assert permission.DERIVABLE.value in resp_data[4]['metaData']['accessPermissions']
+    check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value,permission.CONTENT.value,
+      permission.DOWNLOADABLE.value, permission.DERIVABLE.value]
+    check_resp_permission(resp_data,check_list)
     #APP : Autographa
     headers_auth['app'] = types.App.AG.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
@@ -1441,8 +1498,10 @@ def test_diffrernt_sources_with_app_and_roles():
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
-    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
-    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    # assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
+    check_resp_permission(resp_data,check_list)
     #APP : Vachan Admin
     headers_auth['app'] = types.App.VACHANADMIN.value
     executed = gql_request(query=filter_qry, headers=headers_auth)
@@ -1466,32 +1525,42 @@ def test_diffrernt_sources_with_app_and_roles():
     executed = gql_request(query=filter_qry, headers=headers_SA)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 5
-    assert permission.CONTENT.value in resp_data[0]['metaData']['accessPermissions']
-    assert permission.OPENACCESS.value in resp_data[1]['metaData']['accessPermissions']
-    assert permission.PUBLISHABLE.value in resp_data[2]['metaData']['accessPermissions']
-    assert permission.DOWNLOADABLE.value in resp_data[3]['metaData']['accessPermissions']
-    assert permission.DERIVABLE.value in resp_data[4]['metaData']['accessPermissions']
+    # assert permission.CONTENT.value in resp_data[0]['metaData']['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[1]['metaData']['accessPermissions']
+    # assert permission.PUBLISHABLE.value in resp_data[2]['metaData']['accessPermissions']
+    # assert permission.DOWNLOADABLE.value in resp_data[3]['metaData']['accessPermissions']
+    # assert permission.DERIVABLE.value in resp_data[4]['metaData']['accessPermissions']
+    check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value,permission.CONTENT.value,
+      permission.DOWNLOADABLE.value, permission.DERIVABLE.value]
+    check_resp_permission(resp_data,check_list)
     #APP : Autographa
     headers_SA['app'] = types.App.AG.value
     executed = gql_request(query=filter_qry, headers=headers_SA)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
-    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
-    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    # assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
+    check_resp_permission(resp_data,check_list)
     #APP : Vachan Online
     headers_SA['app'] = types.App.VACHAN.value
     executed = gql_request(query=filter_qry, headers=headers_SA)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
-    assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
-    assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[0]['metaData']['accessPermissions']
+    # assert permission.PUBLISHABLE.value in resp_data[1]['metaData']['accessPermissions']
+    check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
+    check_resp_permission(resp_data,check_list)
     #APP : Vachan Admin
     headers_SA['app'] = types.App.VACHANADMIN.value
     executed = gql_request(query=filter_qry, headers=headers_SA)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 5
-    assert permission.CONTENT.value in resp_data[0]['metaData']['accessPermissions']
-    assert permission.OPENACCESS.value in resp_data[1]['metaData']['accessPermissions']
-    assert permission.PUBLISHABLE.value in resp_data[2]['metaData']['accessPermissions']
-    assert permission.DOWNLOADABLE.value in resp_data[3]['metaData']['accessPermissions']
-    assert permission.DERIVABLE.value in resp_data[4]['metaData']['accessPermissions']
+    # assert permission.CONTENT.value in resp_data[0]['metaData']['accessPermissions']
+    # assert permission.OPENACCESS.value in resp_data[1]['metaData']['accessPermissions']
+    # assert permission.PUBLISHABLE.value in resp_data[2]['metaData']['accessPermissions']
+    # assert permission.DOWNLOADABLE.value in resp_data[3]['metaData']['accessPermissions']
+    # assert permission.DERIVABLE.value in resp_data[4]['metaData']['accessPermissions']
+    check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value,permission.CONTENT.value,
+      permission.DOWNLOADABLE.value, permission.DERIVABLE.value]
+    check_resp_permission(resp_data,check_list)

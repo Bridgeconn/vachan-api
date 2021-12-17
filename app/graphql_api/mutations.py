@@ -1,12 +1,10 @@
 '''GraphQL queries and mutations'''
 #pylint: disable=too-many-lines
 import graphene
-import schemas
-import schemas_nlp
-import schema_auth
+from schema import schemas, schemas_nlp, schema_auth
 from routers import translation_apis , content_apis, auth_api
 from graphql_api import types, utils
-from authentication import get_user_or_none_graphql
+from auth.authentication import get_user_or_none_graphql
 from dependencies import log
 #Data classes and graphql classes have few methods
 #pylint: disable=E1101,R1726,too-many-locals

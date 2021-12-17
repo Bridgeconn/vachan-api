@@ -14,10 +14,10 @@ from custom_exceptions import GenericException,TypeException , PermissionExcepti
 import db_models
 from database import engine
 from dependencies import get_db, log
-from schemas import NormalResponse
+from schema.schemas import NormalResponse
 from routers import content_apis, translation_apis, auth_api
 from graphql_api import router as gql_router
-from authentication import create_super_user
+from auth.authentication import create_super_user
 
 #create super user
 if os.environ.get("VACHAN_TEST_MODE", "False") != 'True':

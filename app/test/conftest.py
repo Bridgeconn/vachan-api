@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.main import app, get_db, log
 from app.database import SQLALCHEMY_DATABASE_URL
-from app import schema_auth
+from app.schema import schema_auth
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 Session = sessionmaker()
