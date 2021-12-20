@@ -815,7 +815,7 @@ def create_super_user():
     if response.status_code == 200:
         identity_data = json.loads(response.content)
         for identity in identity_data:
-            if AdminRoles.SUPERADMIN.value in identity["traits"]["userrole"]:
+            if schema_auth.AdminRoles.SUPERADMIN.value in identity["traits"]["userrole"]:
                 found = True
                 break
     else:
