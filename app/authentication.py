@@ -831,7 +831,7 @@ def create_super_user():
                         "traits.name.first": "Super",
                         "traits.name.last": "Admin",
                         "password": SUPER_PASSWORD,
-                        "traits.userrole":AdminRoles.SUPERADMIN.value,
+                        "traits.userrole":schema_auth.AdminRoles.SUPERADMIN.value,
                         "method": "password"}
             headers = {}
             headers["Accept"] = "application/json"
