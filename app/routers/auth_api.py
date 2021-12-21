@@ -6,10 +6,9 @@ from schema import schema_auth, schemas
 from custom_exceptions import NotAvailableException
 from dependencies import log , get_db
 from auth.authentication import user_register_kratos,user_login_kratos,user_role_add ,\
-     delete_identity , get_auth_access_check_decorator , get_user_or_none, kratos_logout
+    delete_identity , get_auth_access_check_decorator , get_user_or_none, kratos_logout
 
 router = APIRouter()
-# auth_handler = AuthHandler()
 
 #Authentication apis
 @router.post('/v2/user/register',response_model=schema_auth.RegisterResponse,

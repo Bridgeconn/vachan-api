@@ -10,7 +10,6 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL)
 Session = sessionmaker()
 CONN = None
 
-
 def override_get_db():
     '''To use a separate transaction for test sessions which can then be rolled back'''
     global CONN #pylint: disable=W0603
@@ -33,6 +32,7 @@ def db_transaction():
         CONN = engine.connect()
         trans = CONN.begin()
         yield CONN
+
     finally:
         log.warning("TESTING: Rolls back database transaction")
         trans.rollback()
@@ -141,3 +141,4 @@ def create_user_session_run_at_start():
             delete_list.append(current_user["test_user_id"])
         delete_user_identity(delete_list)
         print("Session fixture for create user END------------------>")
+

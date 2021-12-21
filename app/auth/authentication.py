@@ -23,69 +23,7 @@ USER_SESSION_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL",
 SUPER_USER = os.environ.get("VACHAN_SUPER_USERNAME")
 SUPER_PASSWORD = os.environ.get("VACHAN_SUPER_PASSWORD")
 
-access_rules = {
-    "meta-content":{
-        "create": ["registeredUser"],
-        "edit":["SuperAdmin", "resourceCreatedUser"],
-        "read-via-api":["noAuthRequired"],
-        "view-on-web":["noAuthRequired"],
-        "refer-for-translation": ["registeredUser"],
-    },
-    "content":{  # default tag for all sources in the sources table ie bibles, commentaries, videos
-        "read-via-api":["SuperAdmin", "VachanAdmin", "BcsDeveloper"],
-        "read-via-vachanadmin":["SuperAdmin", "VachanAdmin"],
-        "create": ["SuperAdmin", "VachanAdmin"],
-        "edit": ["SuperAdmin", "resourceCreatedUser"]
-    },
-    "open-access":{
-        "read-via-api":["noAuthRequired"],
-        "view-on-web":["noAuthRequired"],
-        "refer-for-translation": ["SuperAdmin", "AgAdmin", "AgUser"],
-        "translate":["SuperAdmin", "AgAdmin", "AgUser"]
-    },
-    "publishable":{
-        "read-via-api":["registeredUser"],
-        "view-on-web":["noAuthRequired"],
-        "refer-for-translation":["SuperAdmin", "AgAdmin", "AgUser"]
-    },
-    "downloadable":{
-        "download-n-save":["SuperAdmin", "VachanAdmin", "VachanUser"]
-    },
-    "derivable":{
-        "translate":["SuperAdmin", "AgAdmin", "AgUser"]
-    },
-    "translation-project":{ #default tag for all AG projects on cloud
-        "create":["SuperAdmin", "AgAdmin", "AgUser"],
-        "create-user":["SuperAdmin", "AgAdmin", "projectOwner"],
-        "edit-Settings":["SuperAdmin", "AgAdmin", "projectOwner"],
-        "read-settings":['SuperAdmin', "AgAdmin", 'projectOwner', "projectMember"],
-        "edit-draft": ["SuperAdmin", "AgAdmin", "projectOwner", "projectMember"],
-        "read-draft":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"],
-        "view-project":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"]
-    },
-    "generic-translation":{
-        "read":["registeredUser"],
-        "create":["registeredUser"],
-        "process":["registeredUser"]
-    },
-    "lookup-content":{
-        "read":["registeredUser"],
-        "create":["registeredUser"],
-        "edit":["registeredUser"]
-    },
-    "research-use":{
-        "read":["SuperAdmin", "BcsDeveloper"]
-    },
-    "user":{ #default tag for all users in our system(Kratos)
-        "create":["noAuthRequired"],
-        "edit-role":["SuperAdmin"],
-       "edit-data":["SuperAdmin", "createdUser"],
-        "view-profile":["SuperAdmin", "createdUser"],
-       "login":['noAuthRequired'],
-        'logout':["createdUser"],
-        "detele/deactivate":["SuperAdmin"]
-    }
-}
+ACCESS_RULES = None
 
 #get current user data based on token
 def get_current_user_data(recieve_token):
@@ -293,8 +231,8 @@ def filter_resource_content_get(db_resource, request_context, required_permissio
 
     for source in db_resource:#pylint: disable=too-many-nested-blocks
         for tag in source.metaData['accessPermissions']:
-            if required_permission in access_rules[tag].keys():
-                allowed_users = access_rules[tag][required_permission]
+            if required_permission in ACCESS_RULES[tag].keys():
+                allowed_users = ACCESS_RULES[tag][required_permission]
                 # print("ALLOWED USERS PERMISIONS=====>",tag,":=>",allowed_users)
                 role = "noAuthRequired"
                 if role in allowed_users and \
@@ -324,8 +262,8 @@ def filter_agmt_project_get(db_resource,access_tags,required_permission, user_de
         user_roles = []
 
     tag = access_tags[0]
-    if required_permission in access_rules[tag].keys():
-        allowed_users = access_rules[tag][required_permission]
+    if required_permission in ACCESS_RULES[tag].keys():
+        allowed_users = ACCESS_RULES[tag][required_permission]
     # print("user------>",user_details,"----->",allowed_users)
     if not user_id is None and len(user_roles) > 0 and len(allowed_users) > 0:
         for role in user_roles:
@@ -378,8 +316,8 @@ def check_access_rights(db_:Session, required_params, db_resource=None):
     else:
         filtered_content = None
         for tag in access_tags:
-            if required_permission in access_rules[tag].keys():
-                allowed_users = access_rules[tag][required_permission]
+            if required_permission in ACCESS_RULES[tag].keys():
+                allowed_users = ACCESS_RULES[tag][required_permission]
             log.info('In Access Rigt --> role check')
             log.debug('allowed_users: %s',allowed_users)
             # print("Allowed User ==>>>>",allowed_users)
@@ -842,6 +780,17 @@ def user_role_add(user_id,roles_list):
             raise GenericException("User Role not updated properly.Check details provided")
     else:
         raise GenericException(response.content)
+
+#Initialize JSON access rules
+def initialize_accessrules():
+    """Function to read JSON file with access rules"""
+    global ACCESS_RULES#pylint: disable=W0603
+    if ACCESS_RULES is None:
+        with open('auth/access_rules.json','r') as file:
+            ACCESS_RULES = json.load(file)
+            log.warning("Startup event to read Access Rules")
+            log.warning(ACCESS_RULES)
+    return ACCESS_RULES
 
 #Create Super User
 def create_super_user():
