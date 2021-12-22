@@ -17,6 +17,7 @@ from schema.schemas import NormalResponse
 from routers import content_apis, translation_apis, auth_api
 from graphql_api import router as gql_router
 from auth.authentication import create_super_user,initialize_accessrules
+from auth.api_permission_map import initialize_apipermissions
 
 #create super user
 if os.environ.get("VACHAN_TEST_MODE", "False") != 'True':
@@ -33,8 +34,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-#read JSON on startup
+#read JSON and api permissions on startup
 initialize_accessrules()
+initialize_apipermissions()
 
 ######### Error Handling ##############
 @app.exception_handler(Exception)
