@@ -1,6 +1,7 @@
 '''returns the required permission name as per the access rules'''
 #pylint: disable=E0401
 import csv
+import re
 from schema import schema_auth
 from dependencies import log
 
@@ -17,21 +18,33 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
         source_name = request_context['path_params']['source_name']
     else:
         source_name = None
-    
-    if requesting_app == schema_auth.App.AG:
-        print("matched------------------->",schema_auth.App.AG)
-    print("requesting_app--->",requesting_app)
 
     #Finding permission from table
-    filtered_table = []
+    filtered_table = []    
     for i in range(1,len(APIPERMISSIONTABLE)):
-        if endpoint == APIPERMISSIONTABLE[i][schema_auth.TableHeading.ENDPOINT.value] and \
+        #checks for dynamic endpoints
+        endpoint_csv = APIPERMISSIONTABLE[i][schema_auth.TableHeading.ENDPOINT.value]
+        resp = re.findall(r'(?<=\{).+?(?=\})',endpoint_csv)
+        if len(resp)>0:
+            temp_endpoint = endpoint_csv.replace(resp[0],'')
+            if resp[0] == 'source_name':
+                temp_endpoint = temp_endpoint.format(source_name)
+            endpoint_csv = temp_endpoint
+        #checks for permission filter
+        if endpoint == endpoint_csv and \
             method == APIPERMISSIONTABLE[i][schema_auth.TableHeading.METHOD.value]:
             requestapp_status = True
             resourcetype_status = True
 
             if not APIPERMISSIONTABLE[i][schema_auth.TableHeading.REQUESTAPP.value] == 'None':
-                if not requesting_app == APIPERMISSIONTABLE[i][schema_auth.TableHeading.REQUESTAPP.value]:
+                switcher = {
+                    'AG' : schema_auth.App.AG,
+                    'VACHAN':schema_auth.App.VACHAN,
+                    'VACHANADMIN':schema_auth.App.VACHANADMIN   
+                }
+                requestapp_csv =  switcher.get(APIPERMISSIONTABLE[i][schema_auth.TableHeading.REQUESTAPP.value]
+                    , schema_auth.App.API)
+                if not requesting_app == requestapp_csv:
                     requestapp_status = False
             if APIPERMISSIONTABLE[i][schema_auth.TableHeading.USERNEEDED.value] == "True":
                 if 'error' in user_details.keys():
@@ -41,7 +54,10 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
                     resourcetype_status = False
             if requestapp_status and resourcetype_status:
                 filtered_table.append(APIPERMISSIONTABLE[i])
-    print("filtered-------------->",filtered_table)
+    # print("filtered-------------->",filtered_table)
+    if len(filtered_table) == 1:
+        permission = filtered_table[0][schema_auth.TableHeading.PERMISSION.value]
+    return permission
 
 #Initialize CSV Permissions
 def initialize_apipermissions():
