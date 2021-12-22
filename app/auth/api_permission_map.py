@@ -1,11 +1,11 @@
 '''returns the required permission name as per the access rules'''
 #pylint: disable=E0401
-import schema_auth
+from schema import schema_auth
+from dependencies import log
 
 #pylint: disable=too-many-locals,too-many-statements
 def api_permission_map(endpoint, request_context, requesting_app, resource, user_details):
     '''returns the required permission name as per the access rules'''
-
     message = "API's required permission not defined"
     method = request_context['method']
     # check sourcename is present or not
@@ -14,7 +14,6 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
         source_name = request_context['path_params']['source_name']
     else:
         source_name = None
-
     #Methods related to swither
     def switch_register():
         """register endpoint"""
@@ -171,6 +170,17 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
             permission = "process"
         return permission
 
+    def switch_lookup():
+        """lookup related"""
+        permission = None
+        if method == 'GET':
+            permission = "read"
+        if method == 'POST':
+            permission = "create"
+        if method == 'PUT':
+            permission = "edit"
+        return permission
+
     switcher = {
         "/v2/user/register" : switch_register,
         "/v2/user/login" : switch_login,
@@ -190,7 +200,7 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
 
         "/v2/sources/get-sentence" : switch_contents,
 
-        "/v2/lookup/bible/books" : switch_contents,
+        "/v2/lookup/bible/books" : switch_lookup,
 
         f"/v2/bibles/{source_name}/books" : switch_contents,
 
@@ -238,8 +248,12 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
         "/v2/translation/draft" : switch_translation,
 
     }
+    log.info('In API Permission Mapping')
+    log.debug('Endpoint: %s, Method: %s',endpoint, method)
     switch_func =  switcher.get(endpoint, message)
     if isinstance(switch_func,str):
+        log.error("Request URL:%s %s,  from : %s",
+                method ,endpoint, request_context['host'])
         raise Exception(message)
 
     permission = switch_func()

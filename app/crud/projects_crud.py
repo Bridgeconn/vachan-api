@@ -6,10 +6,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
 import db_models
-import schemas_nlp
+from schema import schemas_nlp
 from crud import utils, nlp_crud
 from custom_exceptions import NotAvailableException, TypeException
-from authentication import get_all_or_one_kratos_users
+from auth.authentication import get_all_or_one_kratos_users
 
 #pylint: disable=W0143,E1101
 ###################### AgMT Project Mangement ######################

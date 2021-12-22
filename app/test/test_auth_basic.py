@@ -3,7 +3,7 @@ import os
 import pytest
 from urllib.parse import quote
 
-from app import schema_auth
+from app.schema import schema_auth
 from . import assert_input_validation_error, client
 
 LOGIN_URL = '/v2/user/login'

@@ -3,10 +3,7 @@ import re
 import csv
 import copy
 import json
-from typing import Dict
 #pylint: disable=E0401
-from .test_gql_agmt_projects import check_post as create_agmtproject
-from .test_gql_agmt_projects import PROJECT_CREATE_GLOBAL_QUERY,bible_books,PROJECT_EDIT_GLOBAL_QUERY
 from .test_agmt_translation import assert_positive_get_sentence
 from .test_generic_translation import sentence_list,sentences,sample_sent
 from .test_gql_agmt_translation import assert_positive_get_tokens_gql
@@ -14,7 +11,13 @@ from .test_gql_agmt_translation import assert_positive_get_tokens_gql
 #pylint: disable=R0914
 #pylint: disable=R0915
 from . import gql_request,assert_not_available_content_gql
+from .conftest import initial_test_users
 
+headers = {"contentType": "application/json", "accept": "application/json"}
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json"
+            }
+headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
 query_translate_tkn = """
         query tokentranslate($src:String!,$trg:String!,$udl:Boolean,$sent_list:[SentenceInput]!
 ,$tkn_tran:[TokenUpdate]!){
@@ -45,7 +48,7 @@ query_tokenize = """
 
 def test_tokenize():
     '''Positve tests for generic tokenization API'''
-    
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
     var = {
   "src": "en",
   "sent_list": sentence_list,
@@ -53,7 +56,12 @@ def test_tokenize():
   "sw":False,
   "tm":False
 }
+    #Without Auth
     def_executed = gql_request(query_tokenize,operation="query",variables=var)
+    assert "errors" in def_executed
+    #With Auth
+    def_executed = gql_request(query_tokenize,operation="query",variables=var,
+      headers=headers_auth)
     assert len(def_executed["data"]["tokenize"]) > 10
     for item in def_executed["data"]["tokenize"]:
         assert_positive_get_tokens_gql(item)
@@ -65,7 +73,8 @@ def test_tokenize():
   "sw":False,
   "tm":False
 }
-    executed = gql_request(query_tokenize,operation="query",variables=var1)
+    executed = gql_request(query_tokenize,operation="query",variables=var1,
+      headers=headers_auth)
     assert len(def_executed["data"]["tokenize"]) == \
         len(executed["data"]["tokenize"])
 
@@ -76,7 +85,8 @@ def test_tokenize():
   "sw":False,
   "tm":False
 }
-    executed2 = gql_request(query_tokenize,operation="query",variables=var2)
+    executed2 = gql_request(query_tokenize,operation="query",variables=var2,
+      headers=headers_auth)
     for item in def_executed["data"]["tokenize"]:
         assert_positive_get_tokens_gql(item)
     assert len(def_executed["data"]["tokenize"]) > len(executed2["data"]["tokenize"])
@@ -89,7 +99,8 @@ def test_tokenize():
   "sw":False,
   "tm":False
 }
-    executed3 = gql_request(query_tokenize,operation="query",variables=var3)
+    executed3 = gql_request(query_tokenize,operation="query",variables=var3,
+      headers=headers_auth)
     assert len(executed3["data"]["tokenize"]) <= \
         len(def_executed["data"]["tokenize"])
     for item in executed3["data"]["tokenize"]:
@@ -105,7 +116,8 @@ def test_tokenize():
   "sw":False,
   "tm":False
 }
-    executed4 = gql_request(query_tokenize,operation="query",variables=var4)
+    executed4 = gql_request(query_tokenize,operation="query",variables=var4,
+      headers=headers_auth)
     for item in executed4["data"]["tokenize"]:
         assert_positive_get_tokens_gql(item)
         assert item['token'] not in sample_stopwords
@@ -117,7 +129,8 @@ def test_tokenize():
   "sw":True,
   "tm":False
 }
-    executed5 = gql_request(query_tokenize,operation="query",variables=var5)
+    executed5 = gql_request(query_tokenize,operation="query",variables=var5,
+      headers=headers_auth)
     for item in executed5["data"]["tokenize"]:
         assert_positive_get_tokens_gql(item)
 
@@ -128,7 +141,8 @@ def test_tokenize():
   "sw":True,
   "tm":False
 }
-    executed6 = gql_request(query_tokenize,operation="query",variables=var6)
+    executed6 = gql_request(query_tokenize,operation="query",variables=var6,
+      headers=headers_auth)
     all_words = [item['token'] for item in executed6["data"]["tokenize"]]
     for swd in sample_stopwords:
         assert swd in all_words
@@ -155,7 +169,8 @@ def test_tokenize_with_diff_flags():
                 "postpositions":["के", "की", "है"]
             }}
 
-    executed = gql_request(query_tokenize,operation="query",variables=var)
+    executed = gql_request(query_tokenize,operation="query",variables=var,  
+      headers=headers_auth)
     all_words = [item['token'] for item in executed["data"]["tokenize"]]
     for word in sample_sent.split(): # covers all words in source
         assert word in all_words
@@ -164,14 +179,16 @@ def test_tokenize_with_diff_flags():
         assert " " not in word
 
     var["phrase"] = True
-    executed1 = gql_request(query_tokenize,operation="query",variables=var)
+    executed1 = gql_request(query_tokenize,operation="query",variables=var,
+      headers=headers_auth)
     all_tokens = [item['token'] for item in executed1["data"]["tokenize"]]
     assert "इस प्रकार है" in all_tokens
     assert "इब्राहीम के" in all_tokens
 
     var["phrase"] = True
     var["sw"] = False
-    executed2 = gql_request(query_tokenize,operation="query",variables=var)
+    executed2 = gql_request(query_tokenize,operation="query",variables=var,
+      headers=headers_auth)
     all_tokens = [item['token'] for item in executed2["data"]["tokenize"]]
     # no independant stopwords are present
     for swd in var_stopword["stopwords"]['prepositions'] + \
@@ -201,14 +218,18 @@ def test_tokenize_with_diff_flags():
           "translation": "Jesus Christ"}
       ]
 }
-
+    #Without Auth
     executed3 = gql_request(query_translate_tkn,operation="query",variables=post_obj)
+    assert "errors" in executed3
+    #With Auth
+    executed3 = gql_request(query_translate_tkn,operation="query",variables=post_obj,
+      headers=headers_auth)
 
     # after a translation testing for use_translation_memory flag
     var["phrase"] = True
     var["sw"] = True
     var["tm"] = True
-    executed4 = gql_request(query_tokenize,operation="query",variables=var)
+    executed4 = gql_request(query_tokenize,operation="query",variables=var,headers=headers_auth)
     all_tokens = [item['token'] for item in executed4["data"]["tokenize"]]
     assert "यीशु मसीह" in all_tokens
     assert "की" in all_tokens
@@ -216,24 +237,28 @@ def test_tokenize_with_diff_flags():
     var["phrase"] = True
     var["sw"] = False
     var["tm"] = True
-    executed5 = gql_request(query_tokenize,operation="query",variables=var)
+    executed5 = gql_request(query_tokenize,operation="query",variables=var,headers=headers_auth)
     all_tokens = [item['token'] for item in executed5["data"]["tokenize"]]
     assert "यीशु मसीह" in all_tokens
     assert "की" not in all_tokens
 
     var["tm"] = False
-    executed6 = gql_request(query_tokenize,operation="query",variables=var)
+    executed6 = gql_request(query_tokenize,operation="query",variables=var,headers=headers_auth)
     all_tokens = [item['token'] for item in executed6["data"]["tokenize"]]
     assert "यीशु मसीह" not in all_tokens
     assert "यीशु" in all_tokens
 
 def test_token_translate():
     '''Positive tests to apply token translationa nd obtain drafts'''
+    headers_auth = {"contentType": "application/json",
+                "accept": "application/json"
+            }
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
     #tokenize
     var = {
   "src": "hi",
   "sent_list": [{
-                "sentenceId":1, 
+                "sentenceId":1,
                 "sentence":sample_sent}],
             "stopwords":{
                 "prepositions":["इस"],
@@ -243,12 +268,12 @@ def test_token_translate():
   "sw":True,
   "tm":False
 }
-    executed = gql_request(query_tokenize,operation="query",variables=var)
+    executed = gql_request(query_tokenize,operation="query",variables=var,
+      headers=headers_auth)
     all_tokens = executed["data"]["tokenize"]
     for tok in all_tokens:
         assert_positive_get_tokens_gql(tok)
-        assert tok != "यीशु मसीह"      
-
+        assert tok != "यीशु मसीह"
     # translate one token
     post_obj={
   "src": "hi",
@@ -267,8 +292,9 @@ def test_token_translate():
           "occurrences": [all_tokens[0]['occurrences'][0]],
           "translation": "test"}
       ]
-    post_obj["udl"] = False  
-    executed = gql_request(query_translate_tkn,operation="query",variables=post_obj)
+    post_obj["udl"] = False
+    executed = gql_request(query_translate_tkn,operation="query",variables=post_obj,
+      headers=headers_auth)
     return_sent = executed["data"]["translateToken"][0]
     assert_positive_get_sentence(return_sent)
     assert return_sent['draft'].startswith("test")
@@ -283,7 +309,8 @@ def test_token_translate():
         obj = {"token": tok['token'], "occurrences":tok["occurrences"], "translation":"test"}
         post_obj['tkn_tran'].append(obj)
         
-    executed2 = gql_request(query_translate_tkn,operation="query",variables=post_obj)
+    executed2 = gql_request(query_translate_tkn,operation="query",variables=post_obj,
+      headers=headers_auth)
     return_sent = executed2["data"]["translateToken"][0]
     assert_positive_get_sentence(return_sent)
     words_in_draft = re.findall(r'\w+',return_sent['draft'])
@@ -309,7 +336,8 @@ def test_token_translate():
           "translation": "Jesus Christ"}
       ]
 
-    executed3 = gql_request(query_translate_tkn,operation="query",variables=post_obj)
+    executed3 = gql_request(query_translate_tkn,operation="query",variables=post_obj,
+      headers=headers_auth)
     new_return_sent = executed3["data"]["translateToken"][0]
     assert "Jesus Christ" in new_return_sent['draft']
     # combined two segments to one
@@ -329,8 +357,11 @@ def test_draft_generation():
     var = {
         "sentence": sentence_list 
     }
-
+    #Without Auth
     executed = gql_request(query_usfm,operation="query",variables=var)
+    assert "errors" in executed
+    executed = gql_request(query_usfm,operation="query",variables=var,
+      headers=headers_auth)
     assert "\\id MAT" in executed["data"]["convertToUsfm"][0]
     assert sentence_list[0]['sentence'] in executed["data"]["convertToUsfm"][0]
 
@@ -339,7 +370,12 @@ def test_draft_generation():
   convertToCsv(sentenceList:$sentence)
 }
     """
+    #Without Auth
     executed1 = gql_request(query_csv,operation="query",variables=var)
+    assert "errors" in executed1
+    #With Auth
+    executed1 = gql_request(query_csv,operation="query",variables=var,
+      headers=headers_auth)
     assert sentence_list[0]['sentence'] in executed1["data"]["convertToCsv"]
     lines = executed1["data"]["convertToCsv"][0].split('\n')
     parse_csv = True
@@ -354,7 +390,12 @@ def test_draft_generation():
   convertToText(sentenceList:$sentence)
 }
     """
+    #Without Auth
     executed1 = gql_request(query_text,operation="query",variables=var)
+    assert "errors" in executed1
+    #With Auth
+    executed1 = gql_request(query_text,operation="query",variables=var,
+      headers=headers_auth)
     input_text = " ".join([sent['sentence'] for sent in sentence_list])
     assert input_text.strip() == executed1["data"]["convertToText"].strip()
 
@@ -374,7 +415,12 @@ def test_draft_generation():
   }
 ]
 }
+    #Without Auth
     executed2 = gql_request(query_alignment,operation="query",variables=var_align)
+    assert "errors" in executed2
+    #With auth
+    executed2 = gql_request(query_alignment,operation="query",variables=var_align,
+      headers=headers_auth)
     assert len(executed2["data"]["convertToAlignment"]) > 0
     assert "metadata" in executed2["data"]["convertToAlignment"].keys()
     assert "segments" in executed2["data"]["convertToAlignment"].keys()

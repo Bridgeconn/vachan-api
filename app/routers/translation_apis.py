@@ -6,12 +6,11 @@ from sqlalchemy.orm import Session
 from starlette.datastructures import URL
 
 from dependencies import get_db, log
-import schemas
-import schemas_nlp
+from schema import schemas, schemas_nlp
 from crud import nlp_crud, projects_crud, nlp_sw_crud
 from custom_exceptions import GenericException
 from routers import content_apis
-from authentication import get_user_or_none,get_auth_access_check_decorator
+from auth.authentication import get_user_or_none,get_auth_access_check_decorator
 
 router = APIRouter()
 #pylint: disable=too-many-arguments

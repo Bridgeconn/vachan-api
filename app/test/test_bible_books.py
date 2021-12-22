@@ -2,10 +2,14 @@
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
-
+from .conftest import initial_test_users
 UNIT_URL = '/v2/lookup/bible/books'
 
+headers = {"contentType": "application/json", "accept": "application/json"}
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
 
+headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
     assert "bookId" in item
@@ -15,12 +19,17 @@ def assert_positive_get(item):
 
 def test_get_default():
     '''positive test case, without optional params'''
-    headers = {"contentType": "application/json", "accept": "application/json"}
-    check_default_get(UNIT_URL, headers, assert_positive_get)
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
+    check_default_get(UNIT_URL, headers_auth, assert_positive_get)
 
 def test_get_book_code():
     '''positive test case, with one optional params, code'''
+    #Without Auth
     response = client.get(UNIT_URL+'?book_code=psa')
+    assert response.status_code == 403
+    assert response.json()["error"] == "Permission Denied"
+    #With Auth
+    response = client.get(UNIT_URL+'?book_code=psa',headers=headers_auth)
     assert response.status_code == 200
     assert isinstance( response.json(), list)
     assert len(response.json()) == 1
@@ -29,7 +38,12 @@ def test_get_book_code():
 
 def test_get_book_code_upper_case():
     '''positive test case, with one optional params, code in upper case'''
+    #Without Auth
     response = client.get(UNIT_URL+'?book_code=PSA')
+    assert response.status_code == 403
+    assert response.json()["error"] == "Permission Denied"
+    #With Auth
+    response = client.get(UNIT_URL+'?book_code=PSA',headers=headers_auth)
     assert response.status_code == 200
     assert isinstance( response.json(), list)
     assert len(response.json()) == 1
@@ -38,7 +52,12 @@ def test_get_book_code_upper_case():
 
 def test_get_book_name():
     '''positive test case, with one optional params, name'''
+    #Without Auth
     response = client.get(UNIT_URL+'?book_name=genesis')
+    assert response.status_code == 403
+    assert response.json()["error"] == "Permission Denied"
+    #With Auth
+    response = client.get(UNIT_URL+'?book_name=genesis',headers=headers_auth)
     assert response.status_code == 200
     assert isinstance( response.json(), list)
     assert len(response.json()) == 1
@@ -47,7 +66,7 @@ def test_get_book_name():
 
 def test_get_book_name_mixed_case():
     '''positive test case, with one optional params, name, with first letter capital'''
-    response = client.get(UNIT_URL+'?book_name=Matthew')
+    response = client.get(UNIT_URL+'?book_name=Matthew',headers=headers_auth)
     assert response.status_code == 200
     assert isinstance( response.json(), list)
     assert len(response.json()) == 1
@@ -56,7 +75,7 @@ def test_get_book_name_mixed_case():
 
 def test_get_multiple_params():
     '''positive test case, with two optional params'''
-    response = client.get(UNIT_URL+'?book_name=1%20Samuel&book_code=1sa')
+    response = client.get(UNIT_URL+'?book_name=1%20Samuel&book_code=1sa',headers=headers_auth)
     assert response.status_code == 200
     assert isinstance( response.json(), list)
     assert len(response.json()) == 1
@@ -66,18 +85,18 @@ def test_get_multiple_params():
 
 def test_get_notavailable_code():
     ''' request a not available book, with code'''
-    response = client.get(UNIT_URL+"?book_code=abc")
+    response = client.get(UNIT_URL+"?book_code=abc",headers=headers_auth)
     assert_not_available_content(response)
 
 def test_get_notavailable_name():
     ''' request a not available book, with book name'''
-    response = client.get(UNIT_URL+"?book_name=OT")
+    response = client.get(UNIT_URL+"?book_name=OT",headers=headers_auth)
     assert_not_available_content(response)
 
 def test_get_incorrectvalue_book_code():
     '''book code should be as per defined pattern'''
-    response = client.get(UNIT_URL+"?book_code=110")
+    response = client.get(UNIT_URL+"?book_code=110",headers=headers_auth)
     assert_input_validation_error(response)
 
-    response = client.get(UNIT_URL+"?book_code='abcd'")
+    response = client.get(UNIT_URL+"?book_code='abcd'",headers=headers_auth)
     assert_input_validation_error(response)

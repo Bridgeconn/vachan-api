@@ -7,17 +7,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-
 from custom_exceptions import GenericException,TypeException , PermissionException,\
     UnprocessableException,NotAvailableException, AlreadyExistsException,\
         UnAuthorizedException
 import db_models
 from database import engine
 from dependencies import get_db, log
-from schemas import NormalResponse
+from schema.schemas import NormalResponse
 from routers import content_apis, translation_apis, auth_api
 from graphql_api import router as gql_router
-from authentication import create_super_user
+from auth.authentication import create_super_user,initialize_accessrules
 
 #create super user
 if os.environ.get("VACHAN_TEST_MODE", "False") != 'True':
@@ -25,6 +24,7 @@ if os.environ.get("VACHAN_TEST_MODE", "False") != 'True':
     create_super_user()
 
 app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -32,6 +32,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+#read JSON on startup
+initialize_accessrules()
 
 ######### Error Handling ##############
 @app.exception_handler(Exception)
