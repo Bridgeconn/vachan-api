@@ -18,7 +18,7 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         port: 22
         script: |
-          cd /home/kavitha/vachan-api
+          cd /home/gitautodeploy/vachan-api
           git pull origin version-2
           cd docker
           docker-compose --env-file prod.env -f production-deploy.yml up --force-recreate --build -d
