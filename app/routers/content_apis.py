@@ -230,7 +230,7 @@ async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...
     response_model=List[schemas.SourceResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Sources"])
-@get_auth_access_check_decorator
+# @get_auth_access_check_decorator
 async def get_source(request: Request,content_type: str=Query(None, example="commentary"),
     version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
     revision: int=Query(None, example=1),
@@ -241,7 +241,8 @@ async def get_source(request: Request,content_type: str=Query(None, example="com
     access_tag:List[schemas.SourcePermissions]=Query(None),
     active: bool = True, latest_revision: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
-    user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
+    user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
     '''Fetches all sources and their details.
     * optional query parameters can be used to filter the result set
     * If revision is not explictly set or latest_revision is not set to False,
@@ -565,14 +566,13 @@ async def edit_commentary(request: Request,
     response_model=List[schemas.DictionaryWordResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Dictionaries"])
-@get_auth_access_check_decorator
+# @get_auth_access_check_decorator
 async def get_dictionary_word(request: Request,
     source_name: schemas.TableNamePattern=Path(...,example="en_TW_1_dictionary"),
     search_word: str=Query(None, example="Adam"),
     exact_match: bool=False, word_list_only: bool=False,
     details: schemas.MetaDataPattern=Query(None, example='{"type":"person"}'), active: bool=True,
-    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
-    user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
     '''fetches list of dictionary words and all available details about them.
     Using the searchIndex appropriately, it is possible to get
     * All words starting with a letter

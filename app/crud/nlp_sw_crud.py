@@ -15,6 +15,8 @@ import db_models
 import schemas_nlp
 from crud import utils
 from routers import content_apis
+from dependencies import log
+
 
 #Based on sqlalchemy
 #pylint: disable=W0102,E1101,W0143
@@ -131,23 +133,27 @@ def clean_text(text):
     text = re.sub(r'\n|\s\s+', ' ', text)
     return text.lower().strip()
 
-def get_data(db_, request, language_code, sentence_list, **kwargs):
+async def get_data(db_, request, language_code, sentence_list, **kwargs):
     '''Collecting data for stopword generation'''
     sentences = []
     if sentence_list:
         sentences += [item.sentence for item in sentence_list]
     use_server_data = kwargs.get("use_server_data", True)
     if use_server_data:
-        server_data = content_apis.extract_text_contents(
+        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        server_data = await content_apis.extract_text_contents(
             request=request, #pylint: disable=W0613
             source_name=None,
             books=None,
             language_code=language_code,
             content_type=None,
             skip=0, limit=100000,
+            user_details=None,
             db_=db_)
         if server_data:
-            sentences += [item[2] for item in server_data]
+            print(server_data)
+            if "error" not in server_data:
+                sentences += [item[2] for item in server_data]
     return sentences
 
 def find_knee(sentences):
@@ -260,7 +266,7 @@ def update_job(db_, job_id, user_id, update_args):
     db_.commit()
 
 
-def generate_stopwords(db_: Session, request: Request, *args, user_id=None,  **kwargs):
+async def generate_stopwords(db_: Session, request: Request, *args, user_id=None,  **kwargs):
     '''Automatically generate stopwords for given language'''
     msg = ''
     language_code = args[0]
@@ -284,7 +290,8 @@ def generate_stopwords(db_: Session, request: Request, *args, user_id=None,  **k
         update_job(db_, job_id, user_id, update_args)
         raise NotAvailableException("Language with code %s, not in database"%language_code)
     language_id = language_id[0]
-    sentences = get_data(db_, request, language_code, sentence_list, **kwargs)
+    sentences = await get_data(db_, request, language_code, sentence_list, **kwargs)
+    print(">>>>>>>>>>>>>>>>>>",len(sentences))
     if len(sentences) < 1000:
         # raise UnprocessableException("Not enough data to generate stopwords")
         msg = "Not enough data to generate stopwords"

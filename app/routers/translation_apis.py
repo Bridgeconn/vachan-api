@@ -422,7 +422,7 @@ def add_stopwords(language_code:schemas.LangCodePattern=Path(...,example="hi"),
 @router.post('/v2/translation/stopwords/generate',
     response_model=schemas_nlp.StopWordsGenerateResponse, response_model_exclude_none=True,
     status_code=200, tags=['Generic Translation'])
-def generate_stopwords(request: Request, background_tasks: BackgroundTasks,
+async def generate_stopwords(request: Request, background_tasks: BackgroundTasks,
     language_code:schemas.LangCodePattern=Query(...,example="bi"),
     use_server_data:bool=True, gl_lang_code:schemas.LangCodePattern=Query(None,example="hi"),
     sentence_list:List[schemas_nlp.SentenceInput]=Body(None), db_:Session=Depends(get_db)):

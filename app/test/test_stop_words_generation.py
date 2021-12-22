@@ -60,7 +60,7 @@ def assert_positive_get_stopwords(item):
 
 def test_get_default():
     '''positive test case, without optional params'''
-    check_default_get(UNIT_URL+'/hi', assert_positive_get_stopwords)
+    check_default_get(UNIT_URL+'/hi', headers, assert_positive_get_stopwords)
 
 def assert_positive_response(out):
     '''Check the properties in the update response'''
@@ -192,7 +192,7 @@ def get_job_status(job_id):
     assert_positive_response_job(response.json())
     return response
 
-def test_ggenerate_stopwords():
+def test_generate_stopwords():
     '''Positve tests for generate stopwords API'''
     version_data = {
         "versionAbbreviation": "XYZ",
@@ -216,7 +216,8 @@ def test_ggenerate_stopwords():
         if book.endswith('usfm'):
             book_data = open('test/resources/' + book, 'r').read()
             data.append({"USFM":book_data})
-    client.post('/v2/bibles/'+table_name+'/books', headers=headers, json=data)
+    response = client.post('/v2/bibles/'+table_name+'/books', headers=headers, json=data)
+    print("///////////////////////",response.json()['message'])
 
     source_data = {
         "contentType": "dictionary",
