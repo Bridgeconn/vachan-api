@@ -1,28 +1,38 @@
 '''GraphQL queries and mutations'''
+#pylint: disable=too-many-lines
 import graphene
 import schemas
 import schemas_nlp
-from routers import translation_apis
+import schema_auth
+from routers import translation_apis , content_apis, auth_api
 from crud import structurals_crud,contents_crud,projects_crud,nlp_crud
 from graphql_api import types, utils
+from authentication import get_user_or_none_graphql
 #Data classes and graphql classes have few methods
-
+#pylint: disable=E1101,R1726
 ############ ADD NEW Language #################
 class AddLanguage(graphene.Mutation):
     """Mutation class for Add Language"""
-    class Arguments:#pylint: disable=too-few-public-methods
+    class Arguments:#pylint: disable=too-few-public-methods,E1101
         """Arguments declaration for the mutation"""
         language_addargs = types.InputAddLang(required=True)
 
     data = graphene.Field(types.Language)
     message = graphene.String()
 #pylint: disable=R0201
-    def mutate(self,info,language_addargs):
+    async def mutate(self,info,language_addargs):
         '''resolve'''
         db_ = info.context["request"].db_session
+        #Auth and access rules
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "POST"
+        req.scope['path'] = "/v2/languages"
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (language_addargs,schemas.LanguageCreate)
-        result =structurals_crud.create_language(db_,lang=schema_model)
+        response = await content_apis.add_language(request=req, lang_obj = schema_model,
+        user_details=user_details, db_=db_)
+        # result =structurals_crud.create_language(db_,lang=schema_model)
+        result = response['data']
         language = types.Language(
                 languageId = result.languageId,
                 language = result.language,
@@ -30,8 +40,8 @@ class AddLanguage(graphene.Mutation):
                 scriptDirection = result.scriptDirection,
                 metaData = result.metaData
         )
-        message = "Language created successfully"
-        return UpdateLanguage(message=message,data=language)
+        message = response['message']
+        return AddLanguage(message=message,data=language)
 
 ############### Update Language ##############
 class UpdateLanguage(graphene.Mutation):
@@ -43,12 +53,17 @@ class UpdateLanguage(graphene.Mutation):
     data = graphene.Field(types.Language)
     message = graphene.String()
 #pylint: disable=R0201
-    def mutate(self,info,language_updateargs):
+    async def mutate(self,info,language_updateargs):
         """resolver"""
         db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = "/v2/languages"
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (language_updateargs,schemas.LanguageEdit)
-        result = structurals_crud.update_language(db_,lang=schema_model)
+        response = await content_apis.edit_language(request=req, lang_obj = schema_model,
+            user_details=user_details, db_=db_)
+        result = response['data']
         language = types.Language(
                 languageId = result.languageId,
                 language = result.language,
@@ -56,7 +71,7 @@ class UpdateLanguage(graphene.Mutation):
                 scriptDirection = result.scriptDirection,
                 metaData = result.metaData
         )
-        message = "Language edited successfully"
+        message = response['message']
         return UpdateLanguage(message=message,data=language)
 
 ############# Add Contents Type ###############
@@ -69,18 +84,23 @@ class CreateContentTypes(graphene.Mutation):
     data = graphene.Field(types.ContentType)
     message = graphene.String()
 #pylint: disable=R0201
-    def mutate(self,info,content_type):
+    async def mutate(self,info,content_type):
         """resolver"""
         db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "POST"
+        req.scope['path'] = "/v2/contents"
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (content_type,schemas.ContentTypeCreate)
-        result = structurals_crud.create_content_type(db_,content=schema_model)
+        response = await content_apis.add_contents(request=req,content=schema_model,
+        user_details=user_details, db_=db_)
+        result = response['data']
         content_type = types.ContentType(
             contentId = result.contentId,
             contentType = result.contentType
         )
-        return CreateContentTypes(message = "Content type created successfully"\
-            ,data = content_type)
+        message =response['message']
+        return CreateContentTypes(message = message, data = content_type)
 
 ########## Add License ########
 #pylint: disable=too-few-public-methods
@@ -93,12 +113,17 @@ class AddLicense(graphene.Mutation):
     message = graphene.String()
     data = graphene.Field(types.License)
 #pylint: disable=R0201
-    def mutate(self,info,license_args):
+    async def mutate(self,info,license_args):
         '''resolve'''
         db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "POST"
+        req.scope['path'] = "/v2/licenses"
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (license_args,schemas.LicenseCreate)
-        result =structurals_crud.create_license(db_,schema_model,user_id=None)
+        response = await content_apis.add_license(request=req,license_obj=schema_model,
+        user_details=user_details,db_=db_)
+        result = response["data"]
         license_var = types.License(
             name = result.name,
             code = result.code,
@@ -106,7 +131,7 @@ class AddLicense(graphene.Mutation):
             permissions = result.permissions,
             active = result.active
         )
-        message = "License uploaded successfully"
+        message = response['message']
         return AddLicense(message=message,data=license_var)
 
 ########## Edit License ########
@@ -120,12 +145,17 @@ class EditLicense(graphene.Mutation):
     message = graphene.String()
     data = graphene.Field(types.License)
 #pylint: disable=R0201
-    def mutate(self,info,license_args):
+    async def mutate(self,info,license_args):
         '''resolve'''
         db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = "/v2/licenses"
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (license_args,schemas.LicenseEdit)
-        result =structurals_crud.update_license(db_,schema_model,user_id=None)
+        response =await content_apis.edit_license(request=req,license_obj=schema_model,
+            user_details=user_details, db_=db_)
+        result = response['data']
         license_var = types.License(
             name = result.name,
             code = result.code,
@@ -133,7 +163,7 @@ class EditLicense(graphene.Mutation):
             permissions = result.permissions,
             active = result.active
         )
-        message = "License edited successfully"
+        message = response['message']
         return AddLicense(message=message,data=license_var)
 
 ########## Add Version ########
@@ -146,12 +176,17 @@ class AddVersion(graphene.Mutation):
     message = graphene.String()
     data = graphene.Field(types.Version)
 #pylint: disable=R0201
-    def mutate(self,info,version_arg):
+    async def mutate(self,info,version_arg):
         """resolve"""
         db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "POST"
+        req.scope['path'] = "/v2/versions"
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (version_arg,schemas.VersionCreate)
-        result =structurals_crud.create_version(db_,schema_model)
+        response = await content_apis.add_version(request=req, version_obj=schema_model,
+            user_details=user_details, db_=db_)
+        result =response['data']
         version_var = types.Version(
             versionId = result.versionId,
             versionAbbreviation = result.versionAbbreviation,
@@ -159,7 +194,7 @@ class AddVersion(graphene.Mutation):
             revision = result.revision,
             metaData = result.metaData
         )
-        message = "Version created successfully"
+        message = response['message']
         return AddVersion(message=message,data=version_var)
 
 ########## Edit Version ########
@@ -172,12 +207,17 @@ class EditVersion(graphene.Mutation):
     message = graphene.String()
     data = graphene.Field(types.Version)
 #pylint: disable=R0201
-    def mutate(self,info,version_arg):
+    async def mutate(self,info,version_arg):
         """resolve"""
         db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = "/v2/versions"
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (version_arg,schemas.VersionEdit)
-        result =structurals_crud.update_version(db_,schema_model)
+        response = await content_apis.edit_version(request=req, ver_obj=schema_model,
+            user_details=user_details, db_=db_)
+        result = response['data']
         version_var = types.Version(
             versionId = result.versionId,
             versionAbbreviation = result.versionAbbreviation,
@@ -185,7 +225,7 @@ class EditVersion(graphene.Mutation):
             revision = result.revision,
             metaData = result.metaData
         )
-        message = "Version edited successfully"
+        message = response['message']
         return EditVersion(message=message,data=version_var)
 
 ########## Add Source ########
@@ -939,6 +979,87 @@ class AddAlignment(graphene.Mutation):
         message = "Added to Alignments"
         return AddAlignment(message=message,data=dict_content_list)
 
+######################### Authentication ############################
+#Register
+class Register(graphene.Mutation):
+    """Mutation class for Register User"""
+    class Arguments:#pylint: disable=too-few-public-methods,E1101
+        """Arguments declaration for the mutation"""
+        app_type = types.App(default_value=types.App.API.value)
+        registration_args = types.RegisterInput()
+
+    registered_details = graphene.Field(types.RegisterResponse)
+    message = graphene.String()
+    token  = graphene.String()
+#pylint: disable=R0201
+    async def mutate(self,info,registration_args,app_type):
+        '''resolve'''
+        db_ = info.context["request"].db_session
+        #Auth and access rules
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "POST"
+        req.scope['path'] = "/v2/user/register"
+        schema_model = utils.convert_graphene_obj_to_pydantic\
+            (registration_args,schema_auth.Registration)
+        response = await auth_api.register(request=req, register_details = schema_model,
+        user_details=user_details, db_=db_, app_type = app_type)
+        result = response['registered_details']
+        register = types.RegisterResponse(
+                id = result['id'],
+                email = result['email'],
+                permissions = result['Permissions']
+        )
+        message = response['message']
+        token = response['token'] if "token" in response else ""
+        return Register(message=message,registered_details=register,token = token)
+
+#User Role update
+class UpdateUserRole(graphene.Mutation):
+    """Mutation class for Update User role"""
+    class Arguments:#pylint: disable=too-few-public-methods,E1101
+        """Arguments declaration for the mutation"""
+        user_roles_args = types.UserroleInput()
+
+    message = graphene.String()
+    role_list = graphene.List(types.AdminRoles)
+#pylint: disable=R0201
+    async def mutate(self,info,user_roles_args):
+        '''resolve'''
+        db_ = info.context["request"].db_session
+        #Auth and access rules
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = "/v2/user/userrole"
+        schema_model = utils.convert_graphene_obj_to_pydantic\
+            (user_roles_args,schema_auth.UserRole)
+        response = await auth_api.userrole(request=req, role_data = schema_model,
+        user_details=user_details, db_=db_)
+        message = response['message']
+        return UpdateUserRole(message=message,role_list=response["role_list"])
+
+#User identity delete
+class DeleteIdentity(graphene.Mutation):
+    """Mutation class for delete identiy of user"""
+    class Arguments:#pylint: disable=too-few-public-methods,E1101
+        """Arguments declaration for the mutation"""
+        identity = types.UserIdentity()
+
+    message = graphene.String()
+#pylint: disable=R0201
+    async def mutate(self,info,identity):
+        '''resolve'''
+        db_ = info.context["request"].db_session
+        #Auth and access rules
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "DELETE"
+        req.scope['path'] = "/v2/user/delete-identity"
+        schema_model = utils.convert_graphene_obj_to_pydantic\
+            (identity,schema_auth.UserIdentity)
+        response = await auth_api.delete_user(request=req, user = schema_model,
+        user_details=user_details, db_=db_)
+        message = response["message"]
+        return DeleteIdentity(message= message)
+
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
     '''All defined mutations'''
@@ -972,3 +1093,6 @@ class VachanMutations(graphene.ObjectType):
     #suggest_translation = TranslationSuggetion.Field()
     add_gloss = AddGloss.Field()
     add_alignment = AddAlignment.Field()
+    register = Register.Field()
+    update_userrole = UpdateUserRole.Field()
+    delete_identity = DeleteIdentity.Field()

@@ -6,9 +6,15 @@ from .test_licenses import assert_positive_get
 #pylint: disable=R0914
 #pylint: disable=R0915
 from . import check_skip_limit_gql, gql_request,assert_not_available_content_gql
+from .conftest import initial_test_users
+
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
+headers = {"contentType": "application/json", "accept": "application/json"}
 
 def test_get():
     '''positive test case, without optional params'''
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
     query = """
         {
     licenses{
@@ -20,12 +26,19 @@ def test_get():
     }
     }
     """
+    #without auht
     executed = gql_request(query)
     assert isinstance(executed, Dict)
     assert len(executed["data"]["licenses"])>0
     assert isinstance(executed["data"]["licenses"], list)
     for item in executed["data"]["licenses"]:
         assert_positive_get(item)
+
+    #with auth
+    executed = gql_request(query,headers=headers_auth)
+    assert isinstance(executed, Dict)
+    assert len(executed["data"]["licenses"])>0
+    assert isinstance(executed["data"]["licenses"], list)
 
     # '''positive test case, with one optional params, code'''
     query2 = """
@@ -39,7 +52,7 @@ def test_get():
     }
     }
     """
-    executed2 = gql_request(query2)
+    executed2 = gql_request(query2,headers=headers_auth)
     assert isinstance(executed2, Dict)
     assert len(executed2["data"]["licenses"]) == 1
     assert isinstance(executed2["data"]["licenses"], list)
@@ -80,7 +93,7 @@ def test_get():
     }
     }
     """
-    executed4 = gql_request(query4)
+    executed4 = gql_request(query4,headers=headers_auth)
     assert isinstance(executed4, Dict)
     assert len(executed4["data"]["licenses"]) == 1
     assert isinstance(executed4["data"]["licenses"], list)
@@ -154,7 +167,7 @@ def test_get():
     }
     }
     """
-    executed8 = gql_request(query8)
+    executed8 = gql_request(query8,headers=headers_auth)
     assert isinstance(executed8, Dict)
     item = executed8["data"]["licenses"]
     assert_not_available_content_gql(item)
@@ -171,7 +184,7 @@ def test_get():
     }
     }
     """
-    executed9 = gql_request(query9)
+    executed9 = gql_request(query9,headers=headers_auth)
     assert isinstance(executed9, Dict)
     item = executed9["data"]["licenses"]
     assert_not_available_content_gql(item)
@@ -188,7 +201,7 @@ def test_get():
     }
     }
     """
-    executed10 = gql_request(query10)
+    executed10 = gql_request(query10,headers=headers_auth)
     assert isinstance(executed10, Dict)
     assert "errors" in executed10.keys()
 
@@ -229,7 +242,12 @@ def test_post():
     }
     """
     operation="mutation"
+    #Registered user can only add content type
+    #without auth
     executed = gql_request(query=query, operation=operation, variables=variables)
+    assert "errors" in executed.keys()
+    #with auth
+    executed = gql_request(query=query, operation=operation, variables=variables,headers=headers_auth)
     assert isinstance(executed, Dict)
     assert executed["data"]["addLicense"]["message"] == "License uploaded successfully"
     item =executed["data"]["addLicense"]["data"]
@@ -260,7 +278,8 @@ def test_post_casesensitive():
     }
     """
     operation="mutation"
-    executed1 = gql_request(query=query1, operation=operation, variables=variables1)
+    executed1 = gql_request(query=query1, operation=operation, variables=variables1,
+    headers=headers_auth)
     assert isinstance(executed1, Dict)
     assert executed1["data"]["addLicense"]["message"] == "License uploaded successfully"
     item =executed1["data"]["addLicense"]["data"]
@@ -292,7 +311,8 @@ def test_post_mandatory():
     }
     }
     operation="mutation"
-    executed = gql_request(query=query, operation=operation, variables=variables)
+    executed = gql_request(query=query, operation=operation, variables=variables,
+    headers=headers_auth)
     assert isinstance(executed, Dict)
     assert "errors" in executed.keys()
 
@@ -312,7 +332,8 @@ def test_post_mandatory():
         "name": "Test License version 4"
     }
     }
-    executed3 = gql_request(query=query, operation=operation, variables=variables3)
+    executed3 = gql_request(query=query, operation=operation, variables=variables3,
+    headers=headers_auth)
     assert isinstance(executed3, Dict)
     assert "errors" in executed3.keys()
 
@@ -324,7 +345,8 @@ def test_post_mandatory():
         "name": "new name"
     }
     }
-    executed4 = gql_request(query=query, operation=operation, variables=variables4)
+    executed4 = gql_request(query=query, operation=operation, variables=variables4,
+    headers=headers_auth)
     assert isinstance(executed4, Dict)
     assert "errors" in executed4.keys()
 
@@ -335,7 +357,8 @@ def test_post_mandatory():
       "name": "new name"
     }
     }
-    executed5 = gql_request(query=query, operation=operation, variables=variables5)
+    executed5 = gql_request(query=query, operation=operation, variables=variables5,
+    headers=headers_auth)
     assert isinstance(executed5, Dict)
     assert "errors" in executed5.keys()
 
@@ -348,7 +371,8 @@ def test_post_mandatory():
       "permissions": ["regular"]
     }
     }
-    executed6 = gql_request(query=query, operation=operation, variables=variables6)
+    executed6 = gql_request(query=query, operation=operation, variables=variables6,
+    headers=headers_auth)
     assert isinstance(executed6, Dict)
     assert "errors" in executed6.keys()
 
@@ -377,7 +401,8 @@ def test_put():
     }
     """
     operation="mutation"
-    executed = gql_request(query=query, operation=operation, variables=variables)
+    executed = gql_request(query=query, operation=operation, variables=variables,
+    headers=headers_auth)
     assert isinstance(executed, Dict)
     assert executed["data"]["addLicense"]["message"] == "License uploaded successfully"
     item =executed["data"]["addLicense"]["data"]
@@ -405,7 +430,12 @@ def test_put():
         }
         }
     """
+    #without auth
     up_executed = gql_request(query=up_query, operation=operation, variables=up_variable)
+    assert "errors" in up_executed.keys()
+    #with auth
+    up_executed = gql_request(query=up_query, operation=operation, variables=up_variable,
+    headers=headers_auth)
     assert isinstance(up_executed, Dict)
     assert up_executed["data"]["editLicense"]["message"] == "License edited successfully"
     assert up_executed["data"]["editLicense"]["data"]["name"] == "New name for test license"
@@ -416,7 +446,8 @@ def test_put():
         "license":"A different text"
         }
     }
-    up_executed2 = gql_request(query=up_query, operation=operation, variables=up_variable2)
+    up_executed2 = gql_request(query=up_query, operation=operation, variables=up_variable2,
+    headers=headers_auth)
     assert isinstance(up_executed2, Dict)
     assert up_executed2["data"]["editLicense"]["message"] == "License edited successfully"
     assert up_executed2["data"]["editLicense"]["data"]["license"] == "A different text"
@@ -427,18 +458,27 @@ def test_put():
         "permissions":["patent","private"]
         }
     }
-    up_executed3 = gql_request(query=up_query, operation=operation, variables=up_variable3)
+    up_executed3 = gql_request(query=up_query, operation=operation, variables=up_variable3,
+    headers=headers_auth)
     assert isinstance(up_executed3, Dict)
     assert up_executed3["data"]["editLicense"]["message"] == "License edited successfully"
     assert up_executed3["data"]["editLicense"]["data"]["permissions"] == ["patent","private"]
 
+    #edit with different user otherthan created
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    up_executed3 = gql_request(query=up_query, operation=operation, variables=up_variable3,
+    headers=headers_auth)
+    assert "errors" in up_executed3.keys()
+
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
     # unavailable code
     up_variable4 = {
     "object": {
         "code": "LIC-12"
         }
     }
-    up_executed4 = gql_request(query=up_query, operation=operation, variables=up_variable4)
+    up_executed4 = gql_request(query=up_query, operation=operation, variables=up_variable4,
+    headers=headers_auth)
     assert isinstance(up_executed4, Dict)
     assert "errors" in up_executed4.keys()
 
@@ -449,7 +489,8 @@ def test_put():
         "active":False
         }
     }
-    up_executed5 = gql_request(query=up_query, operation=operation, variables=up_variable5)
+    up_executed5 = gql_request(query=up_query, operation=operation, variables=up_variable5,
+    headers=headers_auth)
     assert isinstance(up_executed5, Dict)
     assert "errors" in up_executed5.keys()
 
@@ -465,7 +506,8 @@ def test_put():
     }
     }
     """
-    rd_executed = gql_request(query_read)
+    rd_executed = gql_request(query_read,
+    headers=headers_auth)
     assert isinstance(rd_executed, Dict)
     assert len(rd_executed["data"]["licenses"])<=3
     assert isinstance(rd_executed["data"]["licenses"], list)
@@ -476,7 +518,8 @@ def test_put():
         "active":False
         }
     }
-    up_executed6 = gql_request(query=up_query, operation=operation, variables=up_variable6)
+    up_executed6 = gql_request(query=up_query, operation=operation, variables=up_variable6,
+    headers=headers_auth)
     assert isinstance(up_executed6, Dict)
     assert "errors" not in up_executed6.keys()
 
@@ -491,6 +534,7 @@ def test_put():
     }
     }
     """
-    rd_executed2 = gql_request(query_read2)
+    rd_executed2 = gql_request(query_read2,
+    headers=headers_auth)
     assert isinstance(rd_executed2, Dict)
     assert len(rd_executed["data"]["licenses"]) - len(rd_executed2["data"]["licenses"]) == 1

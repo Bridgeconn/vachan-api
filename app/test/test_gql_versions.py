@@ -7,6 +7,11 @@ from .test_versions import assert_positive_get
 #pylint: disable=R0914
 #pylint: disable=R0915
 from . import  check_skip_limit_gql, gql_request,assert_not_available_content_gql
+from .conftest import initial_test_users
+
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
+headers = {"contentType": "application/json", "accept": "application/json"}
 
 GLOBAL_VARIABLES = {
     "object": {
@@ -34,10 +39,17 @@ GLOBAL_QUERY = """
 
 def check_post(query, variables):
     """common for check post"""
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+    #without auth
     executed = gql_request(query=query,operation="mutation", variables=variables)
+    assert "errors" in executed.keys()
+    #with auth
+    executed = gql_request(query=query,operation="mutation", variables=variables,
+    headers=headers_auth)
     assert isinstance(executed, Dict)
     assert executed["data"]["addVersion"]["message"] == "Version created successfully"
     item =executed["data"]["addVersion"]["data"]
+    # print("Created Version Data ============>",item)
     item["versionId"] = int(item["versionId"])
     assert_positive_get(item)
     assert item["versionAbbreviation"] == variables["object"]["versionAbbreviation"]
@@ -45,7 +57,8 @@ def check_post(query, variables):
 
 def assert_error_check(query, variables):
     """common error check"""
-    executed = gql_request(query=query,operation="mutation", variables=variables)
+    executed = gql_request(query=query,operation="mutation", variables=variables,
+    headers=headers_auth)
     assert "errors" in executed.keys()
 
 def test_post_default():
@@ -93,7 +106,8 @@ def test_post_multiple_with_same_abbr():
 def test_post_multiple_with_same_abbr_negative():
     '''Negative test to add two version, with same abbr and revision'''
     check_post(GLOBAL_QUERY,GLOBAL_VARIABLES)
-    executed2 =  gql_request(query=GLOBAL_QUERY,operation="mutation", variables=GLOBAL_VARIABLES)
+    executed2 =  gql_request(query=GLOBAL_QUERY,operation="mutation", variables=GLOBAL_VARIABLES,
+    headers=headers_auth)
     assert isinstance(executed2, Dict)
     assert "errors" in executed2.keys()
 
@@ -195,7 +209,7 @@ QUERY_GET = """
 def test_get():
     '''Test get before adding data to table. Usually run on new test DB on local or github.
     If the testing is done on a DB that already has data(staging), the response wont be empty.'''
-    executed =  gql_request(query=QUERY_GET)
+    executed =  gql_request(query=QUERY_GET,headers=headers_auth)
     if len(executed["data"]["versions"]) == 0:
         assert_not_available_content_gql(executed["data"]["versions"])
 
@@ -212,7 +226,7 @@ def test_get_wrong_abbr():
     }
     }
     """
-    executed =  gql_request(query=query)
+    executed =  gql_request(query=query,headers=headers_auth)
     assert_not_available_content_gql(executed["data"]["versions"])
 
     query2 = """
@@ -242,7 +256,7 @@ def test_get_wrong_revision():
     }
     }
     """
-    executed =  gql_request(query=query)
+    executed =  gql_request(query=query,headers=headers_auth)
     assert "errors" in executed.keys()
 
 def test_get_after_adding_data():
@@ -269,14 +283,45 @@ def test_get_after_adding_data():
     variables2["object"]["revision"] = 2
     check_post(GLOBAL_QUERY,variables2)
 
-    executed_get = gql_request(QUERY_GET)
+    #get added versions
+    query_get_version_added = """
+        query get_version($VAbb:String){
+        versions(versionAbbreviation:$VAbb){
+    versionId
+    versionAbbreviation
+    versionName
+    revision
+    metaData
+  }
+}
+    """ 
+    get_version_var = {
+    "VAbb": "AAA"
+    }
+
+    executed_get = gql_request(query_get_version_added,variables=get_version_var,
+    headers=headers_auth)
     assert isinstance(executed_get, Dict)
-    assert len(executed_get["data"]["versions"]) == 4
+    assert len(executed_get["data"]["versions"]) == 2
     items =executed_get["data"]["versions"]
     for item in items:
         if 'versionId' in item:
             item["versionId"] = int(item["versionId"])
             assert_positive_get(item)
+
+    get_version_var = {
+    "VAbb": "BBB"
+    }
+
+    executed_get = gql_request(query_get_version_added,variables=get_version_var,
+    headers=headers_auth)
+    assert isinstance(executed_get, Dict)
+    assert len(executed_get["data"]["versions"]) == 2
+    items =executed_get["data"]["versions"]
+    for item in items:
+        if 'versionId' in item:
+            item["versionId"] = int(item["versionId"])
+            assert_positive_get(item)        
 
     #get test after successfull creation
     # filter with abbr
@@ -380,7 +425,7 @@ def test_get_after_adding_data():
     }
     }
     """
-    executed5 = gql_request(query5)
+    executed5 = gql_request(query5,headers=headers_auth)
     assert isinstance(executed5, Dict)
     assert len(executed5["data"]["versions"]) == 1
     items =executed5["data"]["versions"]
@@ -391,3 +436,52 @@ def test_get_after_adding_data():
         assert item["versionAbbreviation"] == "CCC"
         assert item["revision"] == 1
         assert item['metaData']['owner'] == "myself"
+
+def test_put_versions():
+    """test for put versions"""
+    #create version
+    variables = {
+    "object": {
+       'versionAbbreviation': "AAA",
+        'versionName': 'test name A',
+        'revision': 1
+    }
+    }
+    executed = check_post(GLOBAL_QUERY,variables)
+    item =executed["data"]["addVersion"]["data"]
+    versionId = int(item["versionId"])
+
+    up_query = """
+    mutation editversion($object:InputEditVersion){
+    editVersion(versionArg:$object){
+        message
+        data{
+        versionId
+        versionAbbreviation
+        versionName
+        revision
+        metaData
+        }
+    }
+    }
+    """
+    up_var = {
+    "object": {
+        "versionId" : versionId,
+        "versionAbbreviation": "AAA",
+        "versionName": "AAA version to test edited"
+    }
+    }
+
+    executed = gql_request(query=up_query,operation="mutation", variables=up_var,
+    headers=headers_auth)
+    assert isinstance(executed, Dict)
+    assert executed["data"]["editVersion"]["message"] == "Version edited successfully"
+    item =executed["data"]["editVersion"]["data"]
+    assert item['versionName'] == up_var["object"]['versionName']
+
+    #edit with not owner
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    executed = gql_request(query=up_query,operation="mutation", variables=up_var,
+    headers=headers_auth)
+    assert "errors" in executed.keys()

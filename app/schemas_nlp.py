@@ -26,8 +26,8 @@ class Stopwords(BaseModel):
 class ProjectUser(BaseModel):
     '''Input object for AgMT user update'''
     project_id: int
-    userId: int
-    userRole: str = Field(None, example='owner')
+    userId: str
+    userRole: str = Field(None, example='projectOwner')
     metaData: dict = Field(None, example={
         "lastProject":100002, "lastFilter":{"book":"mat","chapter":28}})
     active: bool =None

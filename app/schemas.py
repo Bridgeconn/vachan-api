@@ -301,6 +301,13 @@ class VersionEdit(BaseModel):
             }
         }
 
+class SourcePermissions(str, Enum):
+    '''To specify source access permisions'''
+    CONTENT = "content"
+    OPENACCESS = "open-access"
+    PUBLISHABLE = "publishable"
+    DOWNLOADABLE = "downloadable"
+    DERIVABLE = "derivable"
 
 TableNamePattern = constr(regex=r"^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\w+_[a-z]+$")
 
@@ -312,7 +319,8 @@ class SourceCreate(BaseModel):
     revision: str = "1"
     year: int
     license: LicenseCodePattern = "CC-BY-SA"
-    metaData: dict = None
+    accessPermissions : List[SourcePermissions] = [SourcePermissions.CONTENT]
+    metaData: dict = {}
     class Config:
         '''display example value in API documentation'''
         schema_extra = {
@@ -323,6 +331,7 @@ class SourceCreate(BaseModel):
                 "revision": 1,
                 "year": 2020,
                 "license": "ISC",
+                "accessPermissions" : ["content"],
                 "metaData": {"otherName": "KJBC, King James Bible Commentaries"}
             }
         }
@@ -375,7 +384,8 @@ class SourceEdit(BaseModel):
     revision: str = None
     year: int = None
     license: LicenseCodePattern = None
-    metaData: dict = None
+    accessPermissions : List[SourcePermissions] = [SourcePermissions.CONTENT]
+    metaData: dict = {}
     active: bool = None
     class Config:
         '''display example value in API documentation'''
@@ -387,6 +397,7 @@ class SourceEdit(BaseModel):
                 "revision": 1,
                 "year": 2020,
                 "license": "ISC",
+                "accessPermissions" : ["content"],
                 "metaData": {"otherName": "KJBC, King James Bible Commentaries"},
                 "active": False
             }
