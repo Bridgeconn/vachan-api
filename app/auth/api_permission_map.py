@@ -252,6 +252,8 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
     log.debug('Endpoint: %s, Method: %s',endpoint, method)
     switch_func =  switcher.get(endpoint, message)
     if isinstance(switch_func,str):
+        log.error("Request URL:%s %s,  from : %s",
+                method ,endpoint, request_context['host'])
         raise Exception(message)
 
     permission = switch_func()

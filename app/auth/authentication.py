@@ -354,6 +354,7 @@ def verify_auth_decorator_params(kwargs):
         request_context['method'] = request.method
         request_context['endpoint'] = request.url.path
         request_context['path_params'] = request.path_params
+        request_context['host'] = request.client.host
         if 'app' in request.headers:
             request_context['app'] = request.headers['app']
         else:
@@ -375,6 +376,9 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             verified , filtered_content = \
                 check_access_rights(db_, required_params, db_resource)
             if not verified:
+                log.error("Request URL:%s %s,  from : %s",
+                required_params['request_context']['method'] ,
+                required_params['request_context']['endpoint'], required_params['request_context']['host'])
                 raise PermissionException("Access Permission Denied for the URL")
             #calling router functions
             response = await func(*args, **kwargs)
@@ -383,6 +387,9 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             verified , filtered_content = \
                 check_access_rights(db_, required_params, db_resource)
             if not verified:
+                log.error("Request URL:%s %s,  from : %s",
+                required_params['request_context']['method'] ,
+                required_params['request_context']['endpoint'], required_params['request_context']['host'])
                 raise PermissionException("Access Permission Denied for the URL")
             #calling router functions
             response = await func(*args, **kwargs)
@@ -448,6 +455,11 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                                         db_resource = db_resource['project_content']
                                         response = response['db_content']
                                 else:
+                                    log.error("Request URL:%s %s,  from : %s, by : %s",
+                                        required_params['request_context']['method'] ,
+                                        required_params['request_context']['endpoint'],
+                                        required_params['request_context']['host'],
+                                        required_params['user_details']["user_id"])
                                     raise PermissionException(
                                         "Access Permission Denied for the URL")
                             else :
@@ -459,6 +471,11 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                     verified , filtered_content = \
                         check_access_rights(db_, required_params, db_resource)
                     if not verified:
+                        log.error("Request URL:%s %s,  from : %s, by : %s",
+                                        required_params['request_context']['method'] ,
+                                        required_params['request_context']['endpoint'],
+                                        required_params['request_context']['host'],
+                                        required_params['user_details']["user_id"])
                         raise PermissionException("Access Permission Denied for the URL")
                     db_.commit()#pylint: disable=E1101
                     db_.refresh(db_resource)#pylint: disable=E1101
@@ -500,8 +517,13 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                         verified , filtered_content  = \
                             check_access_rights(db_, required_params, db_resource)
                         if not filtered_content is None:
-                            response = filtered_content
+                            response = filtered_content             
                     if not verified:
+                        log.error("Request URL:%s %s,  from : %s, by : %s",
+                                        required_params['request_context']['method'] ,
+                                        required_params['request_context']['endpoint'],
+                                        required_params['request_context']['host'],
+                                        required_params['user_details']["user_id"])
                         raise PermissionException("Access Permission Denied for the URL")
         return response
     return wrapper
@@ -553,7 +575,7 @@ def kratos_logout(recieve_token):
         data = json.loads(response.content)
     elif response.status_code == 403:
         data = "The provided Session Token could not be found,"+\
-                "is invalid, or otherwise malformed"
+                "is invalid, or otherwise malformed"        
         raise HTTPException(status_code=403, detail=data)
     elif response.status_code == 500:
         data = json.loads(response.content)
