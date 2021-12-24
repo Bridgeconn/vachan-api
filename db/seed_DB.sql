@@ -170,9 +170,9 @@ CREATE TABLE public.stopwords_look_up(
     stopword text,
     confidence float, 
     created_at timestamp with time zone DEFAULT NOW(),	
-    created_user int, 
+    created_user text NULL, 
     last_updated_at timestamp with time zone DEFAULT NOW(),
-    last_updated_user int, 
+    last_updated_user text NULL, 
     active boolean, 
     metadata jsonb NULL, 
     UNIQUE(language_id, stopword)
@@ -185,7 +185,7 @@ ALTER SEQUENCE public.stopwords_look_up_sw_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.jobs(
     job_id SERIAL PRIMARY KEY,
-    user_id int,
+    user_id text NULL,
     created_time timestamp with time zone DEFAULT NOW(),
     start_time timestamp with time zone DEFAULT NOW(),	
     end_time timestamp with time zone DEFAULT NOW(),
