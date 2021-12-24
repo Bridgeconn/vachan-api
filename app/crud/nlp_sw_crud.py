@@ -1,7 +1,6 @@
 ''' Place to define all data processing and Database CRUD operations related
     to stop word identification'''
 import re
-import string
 import operator
 from datetime import datetime
 from nltk import FreqDist
@@ -15,7 +14,6 @@ import db_models
 import schemas_nlp
 from crud import utils
 from routers import content_apis
-from dependencies import log
 
 
 #Based on sqlalchemy
@@ -126,10 +124,8 @@ def add_stopwords(db_: Session, language_code, stopwords_list, user_id=None):
 
 def clean_text(text):
     '''Cleaning text by removing punctuations, extra spaces'''
-    text = re.sub('[“”]', '"', text)
-    text = re.sub('[‘’]', "'", text)
-    text = re.sub('।', '', text)
-    text = text.translate(str.maketrans('', '', string.punctuation))
+    punctuations = utils.punctuations()
+    text = re.sub(r'['+"".join(punctuations)+']', '', text)
     text = re.sub(r'\n|\s\s+', ' ', text)
     return text.lower().strip()
 
@@ -140,7 +136,6 @@ async def get_data(db_, request, language_code, sentence_list, **kwargs):
         sentences += [item.sentence for item in sentence_list]
     use_server_data = kwargs.get("use_server_data", True)
     if use_server_data:
-        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
         server_data = await content_apis.extract_text_contents(
             request=request, #pylint: disable=W0613
             source_name=None,
@@ -151,7 +146,6 @@ async def get_data(db_, request, language_code, sentence_list, **kwargs):
             user_details=None,
             db_=db_)
         if server_data:
-            print(server_data)
             if "error" not in server_data:
                 sentences += [item[2] for item in server_data]
     return sentences
@@ -172,13 +166,13 @@ def find_knee(sentences):
         sw_scored.append((word, score))
     return sw_scored
 
-def filter_translation_words(db_, gl_lang_code, stopwords):
+async def filter_translation_words(db_, request, gl_lang_code, stopwords):
     '''Filter the translation words from generated stopwords using tws of gl'''
-    tw_lookup = {'hi': 'hi_TTT_1_dictionary', 'ml': 'ml_XYZ_1_dictionary', 'te':
-        'te_XYZ_1_dictionary', 'kan': 'kan_XYZ_1_dictionary', 'ta': 'ta_XYZ_1_dictionary',
-        'mr': 'mr_XYZ_1_dictionary', 'pa': 'pa_XYZ_1_dictionary', 'as': 'as_XYZ_1_dictionary',
-        'gu': 'gu_XYZ_1_dictionary', 'ur': 'ur_XYZ_1_dictionary', 'or': 'or_XYZ_1_dictionary',
-        'bn': 'bn_XYZ_1_dictionary'}
+    tw_lookup = {'hi': 'hi_TW_1_dictionary', 'ml': 'ml_TW_1_dictionary', 'te':
+        'te_TW_1_dictionary', 'kan': 'kan_TW_1_dictionary', 'ta': 'ta_TW_1_dictionary',
+        'mr': 'mr_TW_1_dictionary', 'pa': 'pa_TW_1_dictionary', 'as': 'as_TW_1_dictionary',
+        'gu': 'gu_TW_1_dictionary', 'ur': 'ur_TW_1_dictionary', 'or': 'or_TW_1_dictionary',
+        'bn': 'bn_TW_1_dictionary'}
     query = db_.query(db_models.Language.languageId)
     gl_id = query.filter(func.lower(db_models.Language.code) == gl_lang_code.lower()).first()
     if not gl_id:
@@ -186,12 +180,14 @@ def filter_translation_words(db_, gl_lang_code, stopwords):
                 %gl_lang_code)
     gl_id = gl_id[0]
     source_name = tw_lookup[gl_lang_code]
-    response = content_apis.get_dictionary_word(
+    response = await content_apis.get_dictionary_word(
+        request=request, #pylint: disable=W0613
         source_name=source_name,
         search_word =None,
         details=None,
         active=True,
         skip=0, limit=100000,
+        user_details=None,
         db_=db_)
     if response:
         translation_words = [row.word for row in response]
@@ -223,16 +219,17 @@ def add_generated_sws(db_, language_id, stopwords, user_id):
             db_.add(new_sw_row)
     db_.commit()
 
-def extract_stopwords(db_, language_id, language_code, gl_lang_code, user_id, *args):
+async def extract_stopwords(db_, request, language_id, language_code, gl_lang_code, *args):
     '''Extract stopwords from available data and stores in db'''
-    sentences = args[0]
+    user_id = args[0]
+    sentences = args[1]
     msg = ''
     result = []
     stopwords = find_knee(sentences)
     if gl_lang_code is None:
         msg = "Stopwords identified out of limited resources. Manual verification recommended"
     else:
-        stopwords = filter_translation_words(db_, gl_lang_code, stopwords)
+        stopwords = await filter_translation_words(db_, request, gl_lang_code, stopwords)
     result = []
     if stopwords:
         add_generated_sws(db_, language_id, stopwords, user_id)
@@ -242,7 +239,7 @@ def extract_stopwords(db_, language_id, language_code, gl_lang_code, user_id, *a
         if msg == '':
             msg = "Automatically generated stopwords for the given language"
     update_args = {
-                    "status" : "finished",
+                    "status" : schemas_nlp.JobStatus.FINISHED.value,
                     "endTime": datetime.now(),
                     "output": {"message": msg, "language": language_code,"data": result}
                   }
@@ -291,7 +288,6 @@ async def generate_stopwords(db_: Session, request: Request, *args, user_id=None
         raise NotAvailableException("Language with code %s, not in database"%language_code)
     language_id = language_id[0]
     sentences = await get_data(db_, request, language_code, sentence_list, **kwargs)
-    print(">>>>>>>>>>>>>>>>>>",len(sentences))
     if len(sentences) < 1000:
         # raise UnprocessableException("Not enough data to generate stopwords")
         msg = "Not enough data to generate stopwords"
@@ -306,9 +302,9 @@ async def generate_stopwords(db_: Session, request: Request, *args, user_id=None
                         "output": {"message": '', "language": language_code,"data": None}
                       }
         update_job(db_, job_id, user_id, update_args)
-        update_args = extract_stopwords(db_, language_id, language_code, gl_lang_code,
-                                        user_id, sentences)
-    update_job(db_, job_id, user_id, update_args)
+        update_args = await extract_stopwords(db_, request, language_id, language_code,
+                                 gl_lang_code, user_id, sentences)
+        update_job(db_, job_id, user_id, update_args)
 
 
 def check_job_status(db_: Session, job_id):
@@ -325,11 +321,17 @@ def check_job_status(db_: Session, job_id):
         msg = "Job is terminated with an error"
     result = []
     if query_result.status == schemas_nlp.JobStatus.FINISHED.value:
-        result =  {'jobId':job_id, 'status': query_result.status, 'message':
-        query_result.output['message'], 'languageCode':query_result.output['language'],
-        'data': query_result.output['data']}
+        # result =  {'jobId':job_id, 'status': query_result.status, 'message':
+        # query_result.output['message'], 'languageCode':query_result.output['language'],
+        # 'data': query_result.output['data']}
+        msg = query_result.output['message']
+        del query_result.output['message']
+        result =  {'message': msg, 'data': {'jobId':job_id, 'status': query_result.status,
+                 'output': query_result.output}}
     else:
-        result =  {'jobId':job_id, 'status': query_result.status, 'message': msg,
-        'languageCode':None, 'data': None}
+        # result =  {'jobId':job_id, 'status': query_result.status, 'message': msg,
+        # 'languageCode':None, 'data': None}
+        result =  {'message': msg, 'data': {'jobId':job_id, 'status': query_result.status,
+                   'output': None}}
     return result
     
