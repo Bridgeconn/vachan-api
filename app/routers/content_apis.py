@@ -204,7 +204,7 @@ async def add_version(request: Request, version_obj : schemas.VersionCreate = Bo
             version_obj.versionAbbreviation, version_obj.revision))
     return {'message': "Version created successfully",
         "data": structurals_crud.create_version(db_=db_, version=version_obj,
-        user_id=user_details['user_id'])}
+        user_id=10101)}
 
 @router.put('/v2/versions', response_model=schemas.VersionUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -572,7 +572,8 @@ async def get_dictionary_word(request: Request,
     search_word: str=Query(None, example="Adam"),
     exact_match: bool=False, word_list_only: bool=False,
     details: schemas.MetaDataPattern=Query(None, example='{"type":"person"}'), active: bool=True,
-    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0), db_: Session=Depends(get_db)):
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
+    user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
     '''fetches list of dictionary words and all available details about them.
     Using the searchIndex appropriately, it is possible to get
     * All words starting with a letter
@@ -760,8 +761,7 @@ async def extract_text_contents(request:Request, #pylint: disable=W0613
     language_code:schemas.LangCodePattern=Query(None, example="hi"),
     content_type:str=Query(None, example="commentary"),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
-    user_details = Depends(get_user_or_none),
-    db_: Session = Depends(get_db)):
+    user_details = Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''A generic API for all content type tables to get just the text contents of that table
     that could be used for translation, as corpus for NLP operations like SW identification.
     If source_name is provided, only that filter will be considered over content_type & language.'''
