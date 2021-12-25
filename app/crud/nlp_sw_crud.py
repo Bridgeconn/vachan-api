@@ -83,7 +83,6 @@ def add_stopwords(db_: Session, language_code, stopwords_list, user_id=None):
     language_id = db_.query(db_models.Language.languageId).filter(
         func.lower(db_models.Language.code) == language_code.lower()).first()
     language_id = language_id[0]
-    print("user_id", user_id)
     if not language_id:
         raise NotAvailableException("Language with code %s, not in database"%language_code)
     db_content = []
@@ -134,7 +133,7 @@ async def get_data(db_, request, language_code, sentence_list, **kwargs):
     sentences = []
     if sentence_list:
         sentences += [item.sentence for item in sentence_list]
-    use_server_data = kwargs.get("use_server_data", True)
+    use_server_data = kwargs.get("use_server_data")
     if use_server_data:
         server_data = await content_apis.extract_text_contents(
             request=request, #pylint: disable=W0613
@@ -190,7 +189,7 @@ async def filter_translation_words(db_, request, gl_lang_code, stopwords):
         user_details=None,
         db_=db_)
     if response:
-        translation_words = [row.word for row in response]
+        translation_words = [row.word for row in response['db_content']]
         translation_words = [item.strip() for item in translation_words if item.strip()!='']
         stopwords = [item for item in stopwords if item[0] not in translation_words]
     return stopwords
@@ -304,7 +303,7 @@ async def generate_stopwords(db_: Session, request: Request, *args, user_id=None
         update_job(db_, job_id, user_id, update_args)
         update_args = await extract_stopwords(db_, request, language_id, language_code,
                                  gl_lang_code, user_id, sentences)
-        update_job(db_, job_id, user_id, update_args)
+    update_job(db_, job_id, user_id, update_args)
 
 
 def check_job_status(db_: Session, job_id):
@@ -321,16 +320,11 @@ def check_job_status(db_: Session, job_id):
         msg = "Job is terminated with an error"
     result = []
     if query_result.status == schemas_nlp.JobStatus.FINISHED.value:
-        # result =  {'jobId':job_id, 'status': query_result.status, 'message':
-        # query_result.output['message'], 'languageCode':query_result.output['language'],
-        # 'data': query_result.output['data']}
         msg = query_result.output['message']
         del query_result.output['message']
         result =  {'message': msg, 'data': {'jobId':job_id, 'status': query_result.status,
                  'output': query_result.output}}
     else:
-        # result =  {'jobId':job_id, 'status': query_result.status, 'message': msg,
-        # 'languageCode':None, 'data': None}
         result =  {'message': msg, 'data': {'jobId':job_id, 'status': query_result.status,
                    'output': None}}
     return result
