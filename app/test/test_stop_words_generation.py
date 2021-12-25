@@ -1,19 +1,17 @@
 '''Tests the translation APIs that do need projects available in DB'''
-import os
 import json
 from . import client
 from . import check_default_get
 from . import assert_not_available_content
-from .test_versions import check_post as add_version
-from .test_sources import check_post as add_source
-# from .test_bibles import check_post as add_bible
+from .conftest import initial_test_users
 
 
 UNIT_URL = '/v2/lookup/stopwords'
-GENERATE_URL = '/v2/translation/stopwords'
+GER_URL = '/v2/translation/stopwords'
 JOBS_URL = '/v2/jobs'
 
 headers = {"contentType": "application/json", "accept": "application/json"}
+headers_auth = {"contentType": "application/json", "accept": "application/json"}
 
 update_obj1 = {
         "stopWord": "कहता",
@@ -67,12 +65,6 @@ def assert_positive_response(out):
     assert "message" in out
     assert "data" in out
 
-def assert_positive_response_job(out):
-    '''Check the fields in the job status response'''
-    assert "jobId" in out
-    assert "status" in out
-    assert "message" in out
-
 def test_get_stop_words():
     '''Positve tests for get stopwords API'''
     default_response = client.get(UNIT_URL+'/hi?', headers=headers)
@@ -109,13 +101,13 @@ def test_get_notavailable_code():
 def test_update_stopword():
     '''Positve tests for update stopwords API'''
     response = client.put(UNIT_URL+'/hi?',headers=headers, json=update_obj1)
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert_positive_response(response.json())
     assert_positive_get_stopwords(response.json()['data'])
     assert response.json()['message'] == "Stopword info updated successfully"
 
     response = client.put(UNIT_URL+'/hi?',headers=headers, json=update_obj2)
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert_positive_response(response.json())
     assert_positive_get_stopwords(response.json()['data'])
     assert response.json()['message'] == "Stopword info updated successfully"
@@ -126,7 +118,7 @@ def test_update_stopword():
 def test_add_stopword():
     '''Positve tests for add stopwords API'''
     response = client.post(UNIT_URL+'/aa?',headers=headers, json=add_obj)
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert_positive_response(response.json())
     for item in response.json()['data']:
         assert_positive_get_stopwords(item)
@@ -136,13 +128,13 @@ def test_add_stopword():
     assert len(response.json()['data']) == len(add_obj)
 
     response = client.post(UNIT_URL+'/aa?',headers=headers, json=["asd"])
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert_positive_response(response.json())
     assert not response.json()['data']
     assert response.json()['message'] == "0 stopwords added successfully"
 
     response = client.post(UNIT_URL+'/aa?',headers=headers, json=["hty"])
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert_positive_response(response.json())
     assert response.json()['data']
     assert response.json()['data'][0]['stopWord'] == "hty"
@@ -152,13 +144,13 @@ def test_add_stopword():
 
 
     response = client.post(UNIT_URL+'/hi?',headers=headers, json=["की"])
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert_positive_response(response.json())
     assert not response.json()['data']
     assert response.json()['message'] == "0 stopwords added successfully"
 
     response = client.post(UNIT_URL+'/hi?',headers=headers, json=["चुनाव"])
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert_positive_response(response.json())
     assert response.json()['data']
     assert response.json()['data'][0]['stopWord'] == "चुनाव"
@@ -169,117 +161,157 @@ def test_add_stopword():
 def test_create_job():
     '''Positve tests for create job API'''
     response = client.post(JOBS_URL,headers=headers)
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert_positive_response(response.json())
     assert "jobId" in response.json()['data']
     assert "status" in response.json()['data']
-    assert response.json()['data']['status'] == 'created'
+    assert response.json()['data']['status'] == 'job created'
 
 def test_check_job_status():
     '''Positve tests for checking job status API'''
     response = client.post(JOBS_URL,headers=headers)
+    assert response.status_code == 201
     job_id = response.json()['data']['jobId']
     response = client.get(JOBS_URL+'/?job_id='+str(job_id),headers=headers)
     assert response.status_code == 200
-    assert_positive_response_job(response.json())
-    if response.json()['status'] == 'finished':
-        assert 'data' in response.json()
+    assert_positive_response(response.json())
+    assert "jobId" in response.json()['data']
+    assert "status" in response.json()['data']
+    if response.json()['data']['status'] == 'job finished':
+        assert 'output' in response.json()['data']
 
 def get_job_status(job_id):
     '''Retrieve status of a job'''
     response = client.get(JOBS_URL+'/?job_id='+str(job_id),headers=headers)
     assert response.status_code == 200
-    assert_positive_response_job(response.json())
+    assert_positive_response(response.json())
+    assert "jobId" in response.json()['data']
+    assert "status" in response.json()['data']
     return response
 
-def test_generate_stopwords():
-    '''Positve tests for generate stopwords API'''
+def assert_positive_sw_out(item):
+    '''Check for the properties in output of sw job'''
+    assert "stopWord" in item
+    assert "confidence" in item
+    assert isinstance(item["confidence"], float)
+    assert "active" in item
+
+def add_version():
+    '''adds version in db'''
     version_data = {
-        "versionAbbreviation": "XYZ",
+        "versionAbbreviation": "TW",
         "versionName": "test version",
     }
-    result = add_version(version_data)
-    print(result)
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    result = client.post('/v2/versions', headers=headers_auth, json=version_data)
+    assert result.status_code == 201
+
+def add_bible_source():
+    '''creates bible source'''
     src_data = {
     "contentType": "bible",
     "language": "hi",
-    "version": "XYZ",
+    "version": "TW",
     "revision": 1,
     "year": 2020,
     "license": "CC-BY-SA",
     "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
-    source = add_source(src_data)
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    source = client.post('/v2/sources', headers=headers_auth, json=src_data)
+    assert source.status_code == 201
     table_name = source.json()['data']['sourceName']
-    data = []
-    for book in os.listdir('test/resources/'):
-        if book.endswith('usfm'):
-            book_data = open('test/resources/' + book, 'r').read()
-            data.append({"USFM":book_data})
-    response = client.post('/v2/bibles/'+table_name+'/books', headers=headers, json=data)
-    print("///////////////////////",response.json()['message'])
+    return table_name
 
+def add_dict_source():
+    '''creates dictionary source'''
     source_data = {
         "contentType": "dictionary",
         "language": "hi",
-        "version": "XYZ",
+        "version": "TW",
         "revision": 1,
         "year": 2000
     }
-    source = add_source(source_data)
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    source = client.post('/v2/sources', headers=headers_auth, json=source_data)
+    assert source.status_code == 201
     table_name = source.json()['data']['sourceName']
-    data = json.load(open('test/resources/hindi.json'))
-    client.post('/v2/dictionaries/'+table_name, headers=headers, json=data)
-    # res, table = add_bible(data)
+    return table_name
 
-    response = client.post(GENERATE_URL+'/generate?language_code=hi',headers=headers)
-    assert response.status_code == 200
+def add_bible_books(table_name):
+    '''uploads bible books in db'''
+    data = []
+    input_files = ['41-MAT.usfm', '42-MRK.usfm', '43-LUK.usfm']
+    for book in input_files:
+        book_data = open('test/resources/' + book, 'r').read()
+        data.append({"USFM":book_data})
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    response = client.post('/v2/bibles/'+table_name+'/books', headers=headers_auth, json=data)
+    assert response.status_code == 201
+    assert response.json()["message"] == "Bible books uploaded and processed successfully"
+
+def add_tw_dict(table_name):
+    '''uploads tw dictionary'''
+    data = json.load(open('test/resources/hindi.json'))
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    response = client.post('/v2/dictionaries/'+table_name, headers=headers_auth, json=data)
+    assert response.status_code == 201
+
+def test_generate_stopwords():
+    '''Positve tests for generate stopwords API'''
+    add_version()
+    table_name = add_bible_source()
+    add_bible_books(table_name)
+
+    table_name = add_dict_source()
+    add_tw_dict(table_name)
+
+    response = client.post(GER_URL+'/generate?language_code=hi',headers=headers)
+    assert response.status_code == 201
     assert_positive_response(response.json())
     assert "jobId" in response.json()['data']
     assert "status" in response.json()['data']
     job_response = get_job_status(response.json()['data']['jobId'])
-    assert job_response.json()['status'] == 'finished'
-    assert 'data' in job_response.json()
-    for item in job_response.json()['data']:
-        assert_positive_get_stopwords(item)
-        assert item['stopwordType'] == "auto generated"
+    assert job_response.json()['data']['status'] == 'job finished'
+    assert 'output' in job_response.json()['data']
+    for item in job_response.json()['data']['output']['data']:
+        assert_positive_sw_out(item)
     assert job_response.json()['message'] == "Stopwords identified out of limited resources. Manual verification recommended"
 
-    response = client.post(GENERATE_URL+'/generate?language_code=hi&use_server_data=false',
+    response = client.post(GER_URL+'/generate?language_code=hi&use_server_data=False',
                 headers=headers, json=sentence_list)
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert_positive_response(response.json())
     assert "jobId" in response.json()['data']
     assert "status" in response.json()['data']
     job_response = get_job_status(response.json()['data']['jobId'])
-    assert job_response.json()['status'] == 'finished'
+    assert job_response.json()['data']['status'] == 'job finished'
     assert job_response.json()['message'] == "Not enough data to generate stopwords"
 
-    response = client.post(GENERATE_URL+'/generate?language_code=hi',headers=headers,
+    response = client.post(GER_URL+'/generate?language_code=hi',headers=headers,
              json=sentence_list)
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert_positive_response(response.json())
     assert "jobId" in response.json()['data']
     assert "status" in response.json()['data']
     job_response1 = get_job_status(response.json()['data']['jobId'])
-    assert job_response1.json()['status'] == 'finished'
-    assert 'data' in job_response1.json()
-    for item in job_response1.json()['data']:
-        assert_positive_get_stopwords(item)
-        assert item['stopwordType'] == "auto generated"
+    assert job_response1.json()['data']['status'] == 'job finished'
+    assert 'output' in job_response1.json()['data']
+    for item in job_response1.json()['data']['output']['data']:
+        assert_positive_sw_out(item)
     assert job_response1.json()['message'] == "Stopwords identified out of limited resources. Manual verification recommended"
 
-    response = client.post(GENERATE_URL+'/generate?language_code=hi&gl_lang_code=hi',
+    response = client.post(GER_URL+'/generate?language_code=hi&gl_lang_code=hi',
         headers=headers, json=sentence_list)
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert_positive_response(response.json())
     assert "jobId" in response.json()['data']
     assert "status" in response.json()['data']
     job_response2 = get_job_status(response.json()['data']['jobId'])
-    assert job_response2.json()['status'] == 'finished'
-    assert 'data' in job_response2.json()
-    for item in job_response2.json()['data']:
-        assert_positive_get_stopwords(item)
-        assert item['stopwordType'] == "auto generated"
-    assert len(job_response2.json()['data']) < len(job_response1.json()['data'])
+    assert job_response2.json()['data']['status'] == 'job finished'
+    assert 'output' in job_response2.json()['data']
+    for item in job_response2.json()['data']['output']['data']:
+        assert_positive_sw_out(item)
+    assert len(job_response2.json()['data']['output']['data']) < len(job_response1.json()
+                                                            ['data']['output']['data'])
     assert job_response2.json()['message'] == "Automatically generated stopwords for the given language"
