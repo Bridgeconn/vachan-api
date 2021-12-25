@@ -280,13 +280,6 @@ class StopWordsAddResponse(BaseModel):
     message: str = Field(..., example="3 stopwords added successfully")
     data:List[StopWords] = None
 
-class StopWordsGenerateResponse(BaseModel):
-    '''Response object of auto-generate stopword API'''
-    message: str = Field(..., example="Generating stop words in background")
-    data:dict = Field(..., example={
-        "jobId":100000,
-        "status": "job created"})
-
 class Job(BaseModel):
     '''Response objects of Job'''
     jobId: int = Field(..., example=100000)
@@ -302,6 +295,11 @@ class Job(BaseModel):
                    }
                 }]
         })
+
+class StopWordsGenerateResponse(BaseModel):
+    '''Response object of auto-generate stopword API'''
+    message: str = Field(..., example="Generating stop words in background")
+    data: Job
 
 class JobStatus(Enum):
     '''Types of job status'''
