@@ -50,7 +50,13 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
                 if 'error' in user_details.keys():
                     raise user_details['error']
             if not APIPERMISSIONTABLE[i][schema_auth.TableHeading.RESOURCETYPE.value] == 'None':
-                if not resource.name == APIPERMISSIONTABLE[i][schema_auth.TableHeading.REQUESTAPP.value]:
+                switcher = {
+                    'CONTENT' : schema_auth.ResourceType.CONTENT,
+                    'PROJECT':schema_auth.ResourceType.PROJECT
+                }
+                resource_csv =  switcher.get(APIPERMISSIONTABLE[i][schema_auth.TableHeading.RESOURCETYPE.value],
+                    None)
+                if not resource == resource_csv:
                     resourcetype_status = False
             if requestapp_status and resourcetype_status:
                 filtered_table.append(APIPERMISSIONTABLE[i])

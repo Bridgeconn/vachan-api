@@ -65,8 +65,8 @@ def test_learn_n_suggest():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
     response = client.post(UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
         headers=headers, json=tokens_trans)
-    assert response.json()['error'] == "Permission Denied"
-    assert response.status_code == 403
+    assert response.json()['error'] == "Authentication Error"
+    assert response.status_code == 401
     #with auth
     response = client.post(UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
         headers=headers_auth, json=tokens_trans)
@@ -77,8 +77,8 @@ def test_learn_n_suggest():
     #without auth
     token_response = client.put(UNIT_URL+'/tokens?source_language=en&target_language=ml',
         headers=headers, json={"sentence_list":sentence_list})
-    assert token_response.json()['error'] == "Permission Denied"
-    assert token_response.status_code == 403
+    assert token_response.json()['error'] == "Authentication Error"
+    assert token_response.status_code == 401
     #with auth another registered user
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
     token_response = client.put(UNIT_URL+'/tokens?source_language=en&target_language=ml',
@@ -104,8 +104,8 @@ def test_learn_n_suggest():
     # add alignmnet
     response = client.post(UNIT_URL+'/learn/alignment?source_language=en&target_language=ml',
         headers=headers, json=align_data)
-    assert response.json()['error'] == "Permission Denied"
-    assert response.status_code == 403
+    assert response.json()['error'] == "Authentication Error"
+    assert response.status_code == 401
     #with auth
     response = client.post(UNIT_URL+'/learn/alignment?source_language=en&target_language=ml',
         headers=headers_auth, json=align_data)
@@ -120,8 +120,8 @@ def test_learn_n_suggest():
     # try tokenizing again
     token_response = client.put(UNIT_URL+'/tokens?source_language=en&target_language=ml',
         headers=headers, json={"sentence_list":sentence_list})
-    assert token_response.json()['error'] == "Permission Denied"
-    assert token_response.status_code == 403
+    assert token_response.json()['error'] == "Authentication Error"
+    assert token_response.status_code == 401
     #with auth
     token_response = client.put(UNIT_URL+'/tokens?source_language=en&target_language=ml',
         headers=headers_auth, json={"sentence_list":sentence_list})
@@ -144,8 +144,8 @@ def test_learn_n_suggest():
     # only a dict entry not in draft or alignment
     response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
     headers=headers)
-    assert response.json()['error'] == "Permission Denied"
-    assert response.status_code == 403
+    assert response.json()['error'] == "Authentication Error"
+    assert response.status_code == 401
     #with auth
     response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
     headers=headers_auth)
@@ -162,8 +162,8 @@ def test_learn_n_suggest():
     # learnt from alignment
     response = client.get(UNIT_URL+
         '/gloss?source_language=en&target_language=ml&token=a%20test%20case',headers=headers)
-    assert response.json()['error'] == "Permission Denied"
-    assert response.status_code == 403
+    assert response.json()['error'] == "Authentication Error"
+    assert response.status_code == 401
     #with auth
     response = client.get(UNIT_URL+
         '/gloss?source_language=en&target_language=ml&token=a%20test%20case',headers=headers_auth)
@@ -182,8 +182,8 @@ def test_learn_n_suggest():
     #no context
     response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy',
     headers=headers)
-    assert response.json()['error'] == "Permission Denied"
-    assert response.status_code == 403
+    assert response.json()['error'] == "Authentication Error"
+    assert response.status_code == 401
     #with auth
     response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy',
     headers=headers_auth)
@@ -244,8 +244,8 @@ def test_learn_n_suggest():
     sentence_list[0]['sentence'] = "This his wish "+sentence_list[0]['sentence']
     response = client.put(UNIT_URL+'/suggestions?source_language=en&target_language=ml',
         headers=headers, json={"sentence_list":sentence_list})
-    assert response.json()['error'] == "Permission Denied"
-    assert response.status_code == 403
+    assert response.json()['error'] == "Authentication Error"
+    assert response.status_code == 401
     #with auth
     response = client.put(UNIT_URL+'/suggestions?source_language=en&target_language=ml',
         headers=headers_auth, json={"sentence_list":sentence_list})
