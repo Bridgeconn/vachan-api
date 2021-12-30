@@ -2,15 +2,13 @@
 from fastapi import APIRouter, Depends, Query, Request
 from pydantic import types
 from sqlalchemy.orm import Session
-import schema_auth
-import schemas
+from schema import schema_auth, schemas
 from custom_exceptions import NotAvailableException
 from dependencies import log , get_db
-from authentication import user_register_kratos,user_login_kratos,user_role_add ,\
-     delete_identity , get_auth_access_check_decorator , get_user_or_none, kratos_logout
+from auth.authentication import user_register_kratos,user_login_kratos,user_role_add ,\
+    delete_identity , get_auth_access_check_decorator , get_user_or_none, kratos_logout
 
 router = APIRouter()
-# auth_handler = AuthHandler()
 
 #Authentication apis
 @router.post('/v2/user/register',response_model=schema_auth.RegisterResponse,

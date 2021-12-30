@@ -182,7 +182,7 @@ class TranslationDocumentType(graphene.Enum):
 class ProjectUser(graphene.ObjectType):#pylint: disable=too-few-public-methods
     '''Input object for AgMT user update'''
     project_id = graphene.ID()
-    userId = graphene.Int()
+    userId = graphene.String()
     userRole = graphene.String()
     metaData = Metadata()
     active = graphene.Boolean()
@@ -240,6 +240,12 @@ class Suggestion(graphene.ObjectType):#pylint: disable=too-few-public-methods
     '''Response object for suggestion'''
     suggestion = graphene.String()
     score = graphene.Float()
+
+class ExtractSentenceResposne(graphene.ObjectType):#pylint: disable=too-few-public-methods
+    '''Resposne for Extract text sentence'''
+    sentenceId = graphene.String()
+    surrogateId = graphene.String()
+    sentence = graphene.String()
 
 ###################### Input Types ###############################
 
@@ -375,6 +381,14 @@ class InputEditVersion(graphene.InputObjectType):
     revision = graphene.Int()
     metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String")
 
+class SourcePermissions(graphene.Enum):
+    '''To specify source access permisions'''
+    CONTENT = "content"
+    OPENACCESS = "open-access"
+    PUBLISHABLE = "publishable"
+    DOWNLOADABLE = "downloadable"
+    DERIVABLE = "derivable"
+
 class InputAddSource(graphene.InputObjectType):
     """Add Source Input"""
     contentType  = graphene.String(required=True)
@@ -387,7 +401,11 @@ class InputAddSource(graphene.InputObjectType):
     year = graphene.Int(required=True)
     license = graphene.String(default_value = "CC-BY-SA",\
         description="pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
-    metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String")
+    accessPermissions = graphene.List(SourcePermissions,
+        default_value = [SourcePermissions.CONTENT.value])#pylint: disable=no-member
+    metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String",
+        default_value = {})
+    active = graphene.Boolean(default_value = True)
 
 class InputEditSource(graphene.InputObjectType):
     """Edit Source Input"""
@@ -399,7 +417,10 @@ class InputEditSource(graphene.InputObjectType):
     revision = graphene.String(description="default: 1")
     year = graphene.Int()
     license = graphene.String(description="pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
-    metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String")
+    accessPermissions = graphene.List(SourcePermissions,
+        default_value = [SourcePermissions.CONTENT.value])#pylint: disable=no-member
+    metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String",
+        default_value = {})
     active = graphene.Boolean()
 
 class InputBibleDict(graphene.InputObjectType):
@@ -491,12 +512,12 @@ class InputEditAGMTProject(graphene.InputObjectType):
 class AGMTUserCreateInput(graphene.InputObjectType):
     """input of AGMT user create"""
     project_id = graphene.Int(required=True)
-    user_id = graphene.Int(required=True)
+    user_id = graphene.String(required=True)
 
 class AGMTUserEditInput(graphene.InputObjectType):
     """input of AGMT user Edit"""
     project_id = graphene.Int(required=True)
-    userId = graphene.Int(required=True)
+    userId = graphene.String(required=True)
     userRole = graphene.String()
     metaData = graphene.JSONString()
     active = graphene.Boolean()

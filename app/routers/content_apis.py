@@ -3,12 +3,11 @@ from typing import List
 from fastapi import APIRouter, Query, Body, Depends, Path , Request
 from sqlalchemy.orm import Session
 
-import schemas
-import schemas_nlp
+from schema import schemas,schemas_nlp
 from dependencies import get_db, log
 from custom_exceptions import NotAvailableException, AlreadyExistsException
 from crud import structurals_crud, contents_crud
-from authentication import get_auth_access_check_decorator ,\
+from auth.authentication import get_auth_access_check_decorator ,\
     get_user_or_none
 
 router = APIRouter()
@@ -319,9 +318,10 @@ async def edit_source(request: Request,source_obj: schemas.SourceEdit = Body(...
     response_model=List[schemas.BibleBook],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Lookups"])
-def get_bible_book(book_id: int=Query(None, example=67),
+@get_auth_access_check_decorator
+async def get_bible_book(request: Request,book_id: int=Query(None, example=67),
     book_code: schemas.BookCodePattern=Query(None,example='rev'),
-    book_name: str=Query(None, example="Revelation"),
+    book_name: str=Query(None, example="Revelation"),user_details =Depends(get_user_or_none),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
     ''' returns the list of book ids, codes and names.
     * optional query parameters can be used to filter the result set

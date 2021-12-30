@@ -4,12 +4,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.main import app, get_db, log
 from app.database import SQLALCHEMY_DATABASE_URL
-from app import schema_auth
+from app.schema import schema_auth
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 Session = sessionmaker()
 CONN = None
-
 
 def override_get_db():
     '''To use a separate transaction for test sessions which can then be rolled back'''
@@ -33,6 +32,7 @@ def db_transaction():
         CONN = engine.connect()
         trans = CONN.begin()
         yield CONN
+
     finally:
         log.warning("TESTING: Rolls back database transaction")
         trans.rollback()
@@ -88,6 +88,13 @@ initial_test_users = {
                 "token":"",
                 "test_user_id": "",
                 "app" : schema_auth.App.API.value
+            },
+            "AgUser2":{
+                "user_email": "agtest2@mail.test",
+                "password": "passwordtest@1",
+                "token":"",
+                "test_user_id": "",
+                "app" : schema_auth.App.AG.value
             }
         }
 
@@ -134,3 +141,4 @@ def create_user_session_run_at_start():
             delete_list.append(current_user["test_user_id"])
         delete_user_identity(delete_list)
         print("Session fixture for create user END------------------>")
+

@@ -7,13 +7,13 @@ from fastapi import HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 import db_models
-import schema_auth
+from auth.api_permission_map import api_permission_map
+from schema import schema_auth
 from dependencies import log
 from custom_exceptions import GenericException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
     UnprocessableException, PermissionException
-from api_permission_map import api_permission_map
-from schema_auth import AdminRoles
+# from schema.schema_auth import AdminRoles
 
 PUBLIC_BASE_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL",
                                     "http://127.0.0.1:4433/")+"self-service/"
@@ -23,64 +23,7 @@ USER_SESSION_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL",
 SUPER_USER = os.environ.get("VACHAN_SUPER_USERNAME")
 SUPER_PASSWORD = os.environ.get("VACHAN_SUPER_PASSWORD")
 
-access_rules = {
-    "meta-content":{
-        "create": ["registeredUser"],
-        "edit":["SuperAdmin", "resourceCreatedUser"],
-        "read-via-api":["noAuthRequired"],
-        "view-on-web":["noAuthRequired"],
-        "refer-for-translation": ["registeredUser"],
-    },
-    "content":{  # default tag for all sources in the sources table ie bibles, commentaries, videos
-        "read-via-api":["SuperAdmin", "VachanAdmin", "BcsDeveloper"],
-        "read-via-vachanadmin":["SuperAdmin", "VachanAdmin"],
-        "create": ["SuperAdmin", "VachanAdmin"],
-        "edit": ["SuperAdmin", "resourceCreatedUser"]
-    },
-    "open-access":{
-        "read-via-api":["noAuthRequired"],
-        "view-on-web":["noAuthRequired"],
-        "refer-for-translation": ["SuperAdmin", "AgAdmin", "AgUser"],
-        "translate":["SuperAdmin", "AgAdmin", "AgUser"]
-    },
-    "publishable":{
-        "read-via-api":["registeredUser"],
-        "view-on-web":["noAuthRequired"],
-        "refer-for-translation":["SuperAdmin", "AgAdmin", "AgUser"]
-    },
-    "downloadable":{
-        "download-n-save":["SuperAdmin", "VachanAdmin", "VachanUser"]
-    },
-    "derivable":{
-        "translate":["SuperAdmin", "AgAdmin", "AgUser"]
-    },
-    "translation-project":{ #default tag for all AG projects on cloud
-        "create":["SuperAdmin", "AgAdmin", "AgUser"],
-        "create-user":["SuperAdmin", "AgAdmin", "projectOwner"],
-        "edit-Settings":["SuperAdmin", "AgAdmin", "projectOwner"],
-        "read-settings":['SuperAdmin', "AgAdmin", 'projectOwner', "projectMember"],
-        "edit-draft": ["SuperAdmin", "AgAdmin", "projectOwner", "projectMember"],
-        "read-draft":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"],
-        "view-project":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"]
-    },
-    "generic-translation":{
-        "read":["registeredUser"],
-        "create":["registeredUser"],
-        "process":["registeredUser"]
-    },
-    "research-use":{
-        "read":["SuperAdmin", "BcsDeveloper"]
-    },
-    "user":{ #default tag for all users in our system(Kratos)
-        "create":["noAuthRequired"],
-        "edit-role":["SuperAdmin"],
-       "edit-data":["SuperAdmin", "createdUser"],
-        "view-profile":["SuperAdmin", "createdUser"],
-       "login":['noAuthRequired'],
-        'logout':["createdUser"],
-        "detele/deactivate":["SuperAdmin"]
-    }
-}
+ACCESS_RULES = None
 
 #get current user data based on token
 def get_current_user_data(recieve_token):
@@ -151,7 +94,7 @@ def project_member(db_:Session, db_resource, user_id):
         return True
     return False
 
-def get_accesstags_basedon_resourcetype(resource_type, method, db_resource):
+def get_accesstags_basedon_resourcetype(resource_type, method, db_resource):#pylint: disable=too-many-branches
     """check the type of resource and provide access tags"""
     if resource_type == schema_auth.ResourceType.METACONTENT:
         access_tags = ["meta-content","open-access"]
@@ -161,6 +104,8 @@ def get_accesstags_basedon_resourcetype(resource_type, method, db_resource):
         access_tags = ['user']
     elif resource_type == schema_auth.ResourceType.TRANSLATION:
         access_tags = ['generic-translation']
+    elif resource_type == schema_auth.ResourceType.LOOKUP:
+        access_tags = ['lookup-content']
     elif resource_type == schema_auth.ResourceType.CONTENT:
         access_tags = []
         if method != 'GET':
@@ -191,6 +136,8 @@ def get_accesstags_permission(request_context, resource_type, db_, db_resource ,
             resource_type = schema_auth.ResourceType.USER
         elif endpoint.startswith("/v2/translation"):
             resource_type = schema_auth.ResourceType.TRANSLATION
+        elif endpoint.startswith("/v2/lookup"):
+            resource_type = schema_auth.ResourceType.LOOKUP
         else:
             resource_type = schema_auth.ResourceType.CONTENT
     required_permission = api_permission_map(endpoint, request_context ,
@@ -284,8 +231,8 @@ def filter_resource_content_get(db_resource, request_context, required_permissio
 
     for source in db_resource:#pylint: disable=too-many-nested-blocks
         for tag in source.metaData['accessPermissions']:
-            if required_permission in access_rules[tag].keys():
-                allowed_users = access_rules[tag][required_permission]
+            if required_permission in ACCESS_RULES[tag].keys():
+                allowed_users = ACCESS_RULES[tag][required_permission]
                 # print("ALLOWED USERS PERMISIONS=====>",tag,":=>",allowed_users)
                 role = "noAuthRequired"
                 if role in allowed_users and \
@@ -315,8 +262,8 @@ def filter_agmt_project_get(db_resource,access_tags,required_permission, user_de
         user_roles = []
 
     tag = access_tags[0]
-    if required_permission in access_rules[tag].keys():
-        allowed_users = access_rules[tag][required_permission]
+    if required_permission in ACCESS_RULES[tag].keys():
+        allowed_users = ACCESS_RULES[tag][required_permission]
     # print("user------>",user_details,"----->",allowed_users)
     if not user_id is None and len(user_roles) > 0 and len(allowed_users) > 0:
         for role in user_roles:
@@ -347,16 +294,21 @@ def check_access_rights(db_:Session, required_params, db_resource=None):
     # print("Access Tag==>>>",access_tags)
     # print("permission==>>>",required_permission)
     # print("resource type==>>>",resource_type)
+    log.info('In Access Right check')
+    log.debug('AccessTag: %s, permission: %s, resource_type: %s',
+        access_tags, required_permission, resource_type)
     has_rights = False
     filtered_content = []
     # test function seperate permision check and filter for get of contents
     if resource_type == schema_auth.ResourceType.CONTENT and \
             request_context["method"] == 'GET':
+        log.info('In Access Right check Filter Contents')
         has_rights , filtered_content  = \
             filter_resource_content_get(db_resource,request_context,
             required_permission, user_details)
     elif request_context["method"] == 'GET' and\
         request_context['endpoint'].startswith('/v2/autographa'):
+        log.info('In Access Right check GET Autographa')
         if request_context['app'] == schema_auth.App.AG.value:
             has_rights , filtered_content  = \
         filter_agmt_project_get(db_resource,access_tags,required_permission, user_details,
@@ -364,19 +316,21 @@ def check_access_rights(db_:Session, required_params, db_resource=None):
     else:
         filtered_content = None
         for tag in access_tags:
-            if required_permission in access_rules[tag].keys():
-                allowed_users = access_rules[tag][required_permission]
+            if required_permission in ACCESS_RULES[tag].keys():
+                allowed_users = ACCESS_RULES[tag][required_permission]
+            log.info('In Access Rigt --> role check')
+            log.debug('allowed_users: %s',allowed_users)
             # print("Allowed User ==>>>>",allowed_users)
             if len(allowed_users) > 0:
                 for role in allowed_users:
                     has_rights = role_check_has_right(db_, role, user_details, resource_type,
                         db_resource,request_context)
-                    # has_rights = role_check_has_right(db_, role, user_roles, resource_type,
-                    #     db_resource, user_id)
                     if has_rights:
                         break
                 if has_rights:
                     break
+    log.info('In Access Rigt --> has right resposne')
+    log.debug('has right: %s',has_rights)
     return has_rights , filtered_content
 
 #####decorator function for auth and access rules ######
@@ -386,8 +340,6 @@ def verify_auth_decorator_params(kwargs):
             "request_context":"",
             "db_":"",
             "user_details":"",
-            # "user_id":"",
-            # "user_roles":"",
             "resource_type":""
         }
     for param in required_params:
@@ -396,15 +348,13 @@ def verify_auth_decorator_params(kwargs):
         else:
             required_params[param] = None
 
-    # if 'user_details' in kwargs.keys() and isinstance(kwargs['user_details'],dict):
-    #     required_params['user_id'] = kwargs['user_details']["user_id"]
-    #     required_params['user_roles'] = kwargs['user_details']['user_roles']
     if 'request' in kwargs.keys():
         request_context = {}
         request = kwargs['request']
         request_context['method'] = request.method
         request_context['endpoint'] = request.url.path
         request_context['path_params'] = request.path_params
+        request_context['host'] = request.client.host
         if 'app' in request.headers:
             request_context['app'] = request.headers['app']
         else:
@@ -421,17 +371,27 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         verified = False
         required_params = verify_auth_decorator_params(kwargs)
         db_ = required_params["db_"]
-        if required_params['request_context']['endpoint'].startswith("/v2/user"):#pylint: disable=E1126.too-many-nested-blocks
+        if required_params['request_context']['endpoint'].startswith("/v2/user"):#pylint: disable=E1126,too-many-nested-blocks
+            log.info('In Auth Decorator - User Specific')
             verified , filtered_content = \
                 check_access_rights(db_, required_params, db_resource)
             if not verified:
+                log.error("Request URL:%s %s,  from : %s",
+                required_params['request_context']['method'] ,#pylint: disable=E1126
+                required_params['request_context']['endpoint'],#pylint: disable=E1126
+                required_params['request_context']['host'])#pylint: disable=E1126
                 raise PermissionException("Access Permission Denied for the URL")
             #calling router functions
             response = await func(*args, **kwargs)
-        elif required_params['request_context']['endpoint'].startswith("/v2/translation"):#pylint: disable=E1126.too-many-nested-blocks
+        elif required_params['request_context']['endpoint'].startswith("/v2/translation"):#pylint: disable=E1126,too-many-nested-blocks
+            log.info('In Auth Decorator - Translation Specific')
             verified , filtered_content = \
                 check_access_rights(db_, required_params, db_resource)
             if not verified:
+                log.error("Request URL:%s %s,  from : %s",
+                required_params['request_context']['method'] ,#pylint: disable=E1126
+                required_params['request_context']['endpoint'],#pylint: disable=E1126
+                required_params['request_context']['host'])#pylint: disable=E1126
                 raise PermissionException("Access Permission Denied for the URL")
             #calling router functions
             response = await func(*args, **kwargs)
@@ -443,6 +403,9 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                 if required_params['request_context']['method'] != 'GET':
                     if "data" in response and isinstance(response['data'],dict) and \
                         'source_content' in response['data'].keys():
+                        log.info('In Auth Decorator - Source Related')
+                        log.debug('Requested User: %s',
+                            required_params['user_details']["user_id"])
                         response['data']['source_content'].updatedUser = \
                             required_params['user_details']["user_id"]
                         db_resource = response['data']['source_content']
@@ -456,6 +419,9 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                         if required_params['request_context']["method"] == 'POST':
                             if isinstance(db_resource,dict) and \
                                 'project' in db_resource.keys():
+                                log.info('In Auth Decorator POST- Project Related')
+                                log.debug('Requested User: %s',
+                                    required_params['user_details']["user_id"])
                                 db_resource['project'].updatedUser = \
                                    required_params['user_details']["user_id"]
                                 db_resource = db_resource['project']
@@ -467,6 +433,9 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                         if required_params['request_context']["method"] == 'PUT' :
                             if isinstance(db_resource,dict) and \
                                 'project' in db_resource.keys():
+                                log.info('In Auth Decorator PUT - Project Related')
+                                log.debug('Requested User: %s',
+                                    required_params['user_details']["user_id"])
                                 db_resource['project'].project.updatedUser = \
                                     required_params['user_details']["user_id"]
                                 db_resource = db_resource['project'].project
@@ -477,6 +446,9 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                                 if required_params['request_context']['app']\
                                     == schema_auth.App.AG.value:
                                     if 'data' in response:
+                                        log.info('In Auth Decorator - Project Content')
+                                        log.debug('Requested User: %s',
+                                            required_params['user_details']["user_id"])
                                         db_resource['project_content'].updatedUser = \
                                             required_params['user_details']["user_id"]
                                         db_resource = db_resource['project_content']
@@ -485,14 +457,27 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                                         db_resource = db_resource['project_content']
                                         response = response['db_content']
                                 else:
+                                    log.error("Request URL:%s %s,  from : %s, by : %s",
+                                        required_params['request_context']['method'] ,
+                                        required_params['request_context']['endpoint'],
+                                        required_params['request_context']['host'],
+                                        required_params['user_details']["user_id"])
                                     raise PermissionException(
                                         "Access Permission Denied for the URL")
                             else :
+                                log.info('In Auth Decorator - General POST OR PUT')
+                                log.debug('Requested User: %s',
+                                    required_params['user_details']["user_id"])
                                 response['data'].updatedUser = \
                                     required_params['user_details']["user_id"]
                     verified , filtered_content = \
                         check_access_rights(db_, required_params, db_resource)
                     if not verified:
+                        log.error("Request URL:%s %s,  from : %s, by : %s",
+                                        required_params['request_context']['method'] ,
+                                        required_params['request_context']['endpoint'],
+                                        required_params['request_context']['host'],
+                                        required_params['user_details']["user_id"])
                         raise PermissionException("Access Permission Denied for the URL")
                     db_.commit()#pylint: disable=E1101
                     db_.refresh(db_resource)#pylint: disable=E1101
@@ -500,6 +485,9 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                 elif required_params['request_context']['method'] == 'GET':
                     if isinstance(response,dict) and \
                         'source_content' in response.keys():
+                        log.info('In Auth Decorator - Source GET')
+                        log.debug('Requested User: %s',
+                            required_params['user_details']["user_id"])
                         db_resource = []
                         db_resource.append(response['source_content'])
                         verified , filtered_content  = \
@@ -511,6 +499,9 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                     elif isinstance(response,dict) and \
                         'project_content' in response.keys():
                         db_resource = []
+                        log.info('In Auth Decorator - Project Content GET')
+                        log.debug('Requested User: %s',
+                            required_params['user_details']["user_id"])
                         db_resource.append(response['project_content'])
                         verified , filtered_content  = \
                             check_access_rights(db_, required_params, db_resource)
@@ -522,11 +513,19 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                             response = []
                     else:
                         db_resource = response
+                        log.info('In Auth Decorator - General GET')
+                        log.debug('Requested User: %s',
+                            required_params['user_details']["user_id"])
                         verified , filtered_content  = \
                             check_access_rights(db_, required_params, db_resource)
                         if not filtered_content is None:
                             response = filtered_content
                     if not verified:
+                        log.error("Request URL:%s %s,  from : %s, by : %s",
+                            required_params['request_context']['method'] ,
+                            required_params['request_context']['endpoint'],
+                            required_params['request_context']['host'],
+                            required_params['user_details']["user_id"])
                         raise PermissionException("Access Permission Denied for the URL")
         return response
     return wrapper
@@ -805,6 +804,17 @@ def user_role_add(user_id,roles_list):
             raise GenericException("User Role not updated properly.Check details provided")
     else:
         raise GenericException(response.content)
+
+#Initialize JSON access rules
+def initialize_accessrules():
+    """Function to read JSON file with access rules"""
+    global ACCESS_RULES#pylint: disable=W0603
+    if ACCESS_RULES is None:
+        with open('auth/access_rules.json','r') as file:
+            ACCESS_RULES = json.load(file)
+            log.warning("Startup event to read Access Rules")
+            log.warning(ACCESS_RULES)
+    return ACCESS_RULES
 
 #Create Super User
 def create_super_user():
