@@ -1,0 +1,63 @@
+{
+    "meta-content":{
+        "create": ["registeredUser"],
+        "edit":["SuperAdmin", "resourceCreatedUser"],
+        "read-via-api":["noAuthRequired"],
+        "view-on-web":["noAuthRequired"],
+        "refer-for-translation": ["registeredUser"]
+    },
+    "content":{
+        "read-via-api":["SuperAdmin", "VachanAdmin", "BcsDeveloper"],
+        "read-via-vachanadmin":["SuperAdmin", "VachanAdmin"],
+        "create": ["SuperAdmin", "VachanAdmin"],
+        "edit": ["SuperAdmin", "resourceCreatedUser"]
+    },
+    "open-access":{
+        "read-via-api":["noAuthRequired"],
+        "view-on-web":["noAuthRequired"],
+        "refer-for-translation": ["SuperAdmin", "AgAdmin", "AgUser"],
+        "translate":["SuperAdmin", "AgAdmin", "AgUser"]
+    },
+    "publishable":{
+        "read-via-api":["registeredUser"],
+        "view-on-web":["noAuthRequired"],
+        "refer-for-translation":["SuperAdmin", "AgAdmin", "AgUser"]
+    },
+    "downloadable":{
+        "download-n-save":["SuperAdmin", "VachanAdmin", "VachanUser"]
+    },
+    "derivable":{
+        "translate":["SuperAdmin", "AgAdmin", "AgUser"]
+    },
+    "translation-project":{
+        "create":["SuperAdmin", "AgAdmin", "AgUser"],
+        "create-user":["SuperAdmin", "AgAdmin", "projectOwner"],
+        "edit-Settings":["SuperAdmin", "AgAdmin", "projectOwner"],
+        "read-settings":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember"],
+        "edit-draft": ["SuperAdmin", "AgAdmin", "projectOwner", "projectMember"],
+        "read-draft":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"],
+        "view-project":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"]
+    },
+    "generic-translation":{
+        "read":["registeredUser"],
+        "create":["registeredUser"],
+        "process":["registeredUser"]
+    },
+    "lookup-content":{
+        "read":["registeredUser"],
+        "create":["registeredUser"],
+        "edit":["registeredUser"]
+    },
+    "research-use":{
+        "read":["SuperAdmin", "BcsDeveloper"]
+    },
+    "user":{
+        "create":["noAuthRequired"],
+        "edit-role":["SuperAdmin"],
+       "edit-data":["SuperAdmin", "createdUser"],
+        "view-profile":["SuperAdmin", "createdUser"],
+       "login":["noAuthRequired"],
+        "logout":["createdUser"],
+        "detele/deactivate":["SuperAdmin"]
+    }
+}

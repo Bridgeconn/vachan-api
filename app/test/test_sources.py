@@ -1,5 +1,5 @@
 '''Test cases for versions related APIs'''
-from app import schema_auth, schemas
+from app.schema import schemas, schema_auth
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
@@ -618,7 +618,6 @@ def test_get_source_filter_access_tag():
     assert response6.status_code == 200
     assert len(response6.json()) == 1
     
-        
 
 def test_diffrernt_sources_with_app_and_roles():
     """Test getting sources with users having different permissions and 
@@ -683,13 +682,36 @@ def test_diffrernt_sources_with_app_and_roles():
     resp_data = response.json()['data']['metaData']
     assert ['derivable', 'content'] == resp_data['accessPermissions']
 
+    def check_resp_permission(response,check_list):
+        """function to check permission in response"""
+        db_perm_list = []
+        for i in range(len(response.json())):
+            temp_list = response.json()[i]['metaData']['accessPermissions']
+            db_perm_list = db_perm_list + list(set(temp_list)-set(db_perm_list))
+        for item in check_list:
+            assert item in db_perm_list
+        # check based on source
+        for item in response.json():
+            if item["sourceName"] == "hi_TTT_1_commentary":
+                assert "content" in item['metaData']['accessPermissions']
+            elif item["sourceName"] == "ml_TTT_1_commentary":
+                assert "open-access" in item['metaData']['accessPermissions']
+            elif item["sourceName"] == "tn_TTT_1_commentary":
+                assert "publishable" in item['metaData']['accessPermissions']
+            elif item["sourceName"] == "af_TTT_1_commentary":
+                assert "downloadable" in item['metaData']['accessPermissions']
+            elif item["sourceName"] == "ak_TTT_1_commentary":
+                assert "derivable" in item['metaData']['accessPermissions']            
+
     #Get without Login
     #default : API
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
     resp_data = response.json()[0]['metaData']
-    assert 'open-access' in resp_data['accessPermissions']
+    # assert 'open-access' in resp_data['accessPermissions']
+    check_list = ["open-access"]
+    check_resp_permission(response, check_list)
     #APP : Autographa
     headers_auth['app'] = AG
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
@@ -699,8 +721,10 @@ def test_diffrernt_sources_with_app_and_roles():
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
-    assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
-    assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
+    # assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    # assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
+    check_list = ['open-access','publishable']
+    check_resp_permission(response, check_list)
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
@@ -713,22 +737,28 @@ def test_diffrernt_sources_with_app_and_roles():
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
-    assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
-    assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    # assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
+    # assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    check_list = ['open-access','publishable']
+    check_resp_permission(response, check_list)
     #APP : Autographa
     headers_auth['app'] = AG
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
-    assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
-    assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    # assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
+    # assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    check_list = ['open-access','publishable']
+    check_resp_permission(response, check_list)
     #APP : Vachan Online
     headers_auth['app'] = VACHAN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
-    assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
-    assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    # assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
+    # assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    check_list = ['open-access','publishable']
+    check_resp_permission(response, check_list)
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
@@ -741,8 +771,10 @@ def test_diffrernt_sources_with_app_and_roles():
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
-    assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
-    assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    # assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
+    # assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    check_list = ['open-access','publishable']
+    check_resp_permission(response, check_list)
     #APP : Autographa
     headers_auth['app'] = AG
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
@@ -752,8 +784,10 @@ def test_diffrernt_sources_with_app_and_roles():
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
-    assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
-    assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    # assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
+    # assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    check_list = ['open-access','publishable']
+    check_resp_permission(response, check_list)
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
@@ -766,11 +800,13 @@ def test_diffrernt_sources_with_app_and_roles():
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 5
-    assert 'content' in response.json()[0]['metaData']['accessPermissions']
-    assert 'open-access' in response.json()[1]['metaData']['accessPermissions']
-    assert 'publishable' in response.json()[2]['metaData']['accessPermissions']
-    assert 'downloadable' in response.json()[3]['metaData']['accessPermissions']
-    assert 'derivable' in response.json()[4]['metaData']['accessPermissions']
+    # assert 'content' in response.json()[0]['metaData']['accessPermissions']
+    # assert 'open-access' in response.json()[1]['metaData']['accessPermissions']
+    # assert 'publishable' in response.json()[2]['metaData']['accessPermissions']
+    # assert 'downloadable' in response.json()[3]['metaData']['accessPermissions']
+    # assert 'derivable' in response.json()[4]['metaData']['accessPermissions']
+    check_list = ['open-access','publishable','downloadable','derivable','content']
+    check_resp_permission(response, check_list)
     #APP : Autographa
     headers_auth['app'] = AG
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
@@ -780,17 +816,21 @@ def test_diffrernt_sources_with_app_and_roles():
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
-    assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
-    assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    # assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
+    # assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    check_list = ['open-access','publishable']
+    check_resp_permission(response, check_list)
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert len(response.json()) == 5
-    assert 'content' in response.json()[0]['metaData']['accessPermissions']
-    assert 'open-access' in response.json()[1]['metaData']['accessPermissions']
-    assert 'publishable' in response.json()[2]['metaData']['accessPermissions']
-    assert 'downloadable' in response.json()[3]['metaData']['accessPermissions']
-    assert 'derivable' in response.json()[4]['metaData']['accessPermissions']
+    # assert 'content' in response.json()[0]['metaData']['accessPermissions']
+    # assert 'open-access' in response.json()[1]['metaData']['accessPermissions']
+    # assert 'publishable' in response.json()[2]['metaData']['accessPermissions']
+    # assert 'downloadable' in response.json()[3]['metaData']['accessPermissions']
+    # assert 'derivable' in response.json()[4]['metaData']['accessPermissions']
+    check_list = ['open-access','publishable','downloadable','derivable','content']
+    check_resp_permission(response, check_list)
 
     #Get with API-User
     #default : API
@@ -799,8 +839,10 @@ def test_diffrernt_sources_with_app_and_roles():
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
-    assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
-    assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    # assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
+    # assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    check_list = ['open-access','publishable']
+    check_resp_permission(response, check_list)
     #APP : Autographa
     headers_auth['app'] = AG
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
@@ -810,8 +852,10 @@ def test_diffrernt_sources_with_app_and_roles():
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
-    assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
-    assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    # assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
+    # assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    check_list = ['open-access','publishable']
+    check_resp_permission(response, check_list)
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
@@ -824,22 +868,28 @@ def test_diffrernt_sources_with_app_and_roles():
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
-    assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
-    assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    # assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
+    # assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    check_list = ['open-access','publishable']
+    check_resp_permission(response, check_list)
     #APP : Autographa
     headers_auth['app'] = AG
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
-    assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
-    assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    # assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
+    # assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    check_list = ['open-access','publishable']
+    check_resp_permission(response, check_list)
     #APP : Vachan Online
     headers_auth['app'] = VACHAN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
-    assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
-    assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    # assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
+    # assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    check_list = ['open-access','publishable']
+    check_resp_permission(response, check_list)
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
@@ -852,11 +902,13 @@ def test_diffrernt_sources_with_app_and_roles():
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 5
-    assert 'content' in response.json()[0]['metaData']['accessPermissions']
-    assert 'open-access' in response.json()[1]['metaData']['accessPermissions']
-    assert 'publishable' in response.json()[2]['metaData']['accessPermissions']
-    assert 'downloadable' in response.json()[3]['metaData']['accessPermissions']
-    assert 'derivable' in response.json()[4]['metaData']['accessPermissions']
+    # assert 'content' in response.json()[0]['metaData']['accessPermissions']
+    # assert 'open-access' in response.json()[1]['metaData']['accessPermissions']
+    # assert 'publishable' in response.json()[2]['metaData']['accessPermissions']
+    # assert 'downloadable' in response.json()[3]['metaData']['accessPermissions']
+    # assert 'derivable' in response.json()[4]['metaData']['accessPermissions']
+    check_list = ['open-access','publishable','downloadable','derivable','content']
+    check_resp_permission(response, check_list)
     #APP : Autographa
     headers_auth['app'] = AG
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
@@ -866,8 +918,10 @@ def test_diffrernt_sources_with_app_and_roles():
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
-    assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
-    assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    # assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
+    # assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    check_list = ['open-access','publishable']
+    check_resp_permission(response, check_list)
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
@@ -889,32 +943,40 @@ def test_diffrernt_sources_with_app_and_roles():
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 5
-    assert 'content' in response.json()[0]['metaData']['accessPermissions']
-    assert 'open-access' in response.json()[1]['metaData']['accessPermissions']
-    assert 'publishable' in response.json()[2]['metaData']['accessPermissions']
-    assert 'downloadable' in response.json()[3]['metaData']['accessPermissions']
-    assert 'derivable' in response.json()[4]['metaData']['accessPermissions']
+    # assert 'content' in response.json()[0]['metaData']['accessPermissions']
+    # assert 'open-access' in response.json()[1]['metaData']['accessPermissions']
+    # assert 'publishable' in response.json()[2]['metaData']['accessPermissions']
+    # assert 'downloadable' in response.json()[3]['metaData']['accessPermissions']
+    # assert 'derivable' in response.json()[4]['metaData']['accessPermissions']
+    check_list = ['open-access','publishable','downloadable','derivable','content']
+    check_resp_permission(response, check_list)
     #APP : Autographa
     headers_auth['app'] = AG
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
-    assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
-    assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    # assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
+    # assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    check_list = ['open-access','publishable']
+    check_resp_permission(response, check_list)
     #APP : Vachan Online
     headers_auth['app'] = VACHAN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
-    assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
-    assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    # assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
+    # assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
+    check_list = ['open-access','publishable']
+    check_resp_permission(response, check_list)
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 5
-    assert 'content' in response.json()[0]['metaData']['accessPermissions']
-    assert 'open-access' in response.json()[1]['metaData']['accessPermissions']
-    assert 'publishable' in response.json()[2]['metaData']['accessPermissions']
-    assert 'downloadable' in response.json()[3]['metaData']['accessPermissions']
-    assert 'derivable' in response.json()[4]['metaData']['accessPermissions']
+    # assert 'content' in response.json()[0]['metaData']['accessPermissions']
+    # assert 'open-access' in response.json()[1]['metaData']['accessPermissions']
+    # assert 'publishable' in response.json()[2]['metaData']['accessPermissions']
+    # assert 'downloadable' in response.json()[3]['metaData']['accessPermissions']
+    # assert 'derivable' in response.json()[4]['metaData']['accessPermissions']
+    check_list = ['open-access','publishable','downloadable','derivable','content']
+    check_resp_permission(response, check_list)

@@ -58,7 +58,8 @@ def assert_positive_get_stopwords(item):
 
 def test_get_default():
     '''positive test case, without optional params'''
-    check_default_get(UNIT_URL+'/hi', headers, assert_positive_get_stopwords)
+    check_default_get(UNIT_URL+'/hi', headers=headers,assert_positive_get=
+        assert_positive_get_stopwords)
 
 def assert_positive_response(out):
     '''Check the properties in the update response'''

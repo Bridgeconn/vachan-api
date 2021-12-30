@@ -15,6 +15,7 @@ from .test_gql_agmt_projects import PROJECT_CREATE_GLOBAL_QUERY,USER_CREATE_GLOB
     USER_EDIT_GLOBAL_QUERY,PROJECT_GET_GLOBAL_QUERY
 from .test_gql_agmt_translation import APPLY_TOKEN
 from .test_gql_translation_suggestion import Add_Alignment
+from .conftest import initial_test_users
 
 # have a bible source to be used
 source_name = "hi_XYZ_1_bible" # pylint: disable=C0103
@@ -35,6 +36,9 @@ src_var={
     "language": "hi",
     "version": "XYZ",
     "revision": "1",
+    "accessPermissions": [
+            "CONTENT","OPENACCESS"
+        ],
     "year": 2020,
     "license": "CC-BY-SA",
     "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
@@ -86,11 +90,9 @@ gospel_books_data_manual = [
          "JSON":"{\n\"book\":{\n\"bookCode\":\"JHN\"\n},\n\"chapters\":[\n{\n\"chapterNumber\":\"1\",\n\"contents\":[\n{\n\"p\":null\n},\n{\n\"verseNumber\":\"1\",\n\"verseText\":\"testverseone\",\n\"contents\":[\n\"testverseone\"\n]\n},\n{\n\"verseNumber\":\"2\",\n\"verseText\":\"testversetwo\",\n\"contents\":[\n\"testversetwo\"\n]\n}\n]\n}\n],\n\"_messages\":{\n\"_warnings\":[\n\"Emptylinespresent.\",\n\"Bookcodeisinlowercase.\"\n]\n}\n}"}
 ]
 
-NEW_USER_ID = 20202
-
-
 def test_end_to_end_translation():
     '''happy path test for AGMT translation workflow'''
+    NEW_USER_ID = initial_test_users['AgUser']['test_user_id']
     #create version
     version_add(version_query,version_variable)
     #create source
@@ -105,11 +107,18 @@ def test_end_to_end_translation():
     "books":gospel_books_data_manual
 }
     }
-    executed_bible = gql_request(BOOK_ADD_QUERY,operation="mutation",variables=post_data_bible)
+    headers_auth = {"contentType": "application/json",
+                "accept": "application/json",
+                "app":"Autographa"
+            }
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    executed_bible = gql_request(BOOK_ADD_QUERY,operation="mutation",variables=post_data_bible,
+      headers=headers_auth)
     assert len(executed_bible["data"]["addBibleBook"]["data"]) == 4
     assert executed_bible["data"]["addBibleBook"]["message"] == "Bible books uploaded and processed successfully"
     
     #create project
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     executed_project = create_agmt_project(PROJECT_CREATE_GLOBAL_QUERY,project_post_data)
     project_id =  executed_project["data"]["createAgmtProject"]["data"]["projectId"]
 
@@ -125,7 +134,7 @@ def test_end_to_end_translation():
   }
 }
     executed_prj_upd = gql_request(query=PROJECT_EDIT_GLOBAL_QUERY,operation="mutation",\
-         variables=project_update_data)
+         variables=project_update_data,headers=headers_auth)
     assert executed_prj_upd["data"]["editAgmtProject"]["message"] == "Project updated successfully"
 
     # tokenize
@@ -145,7 +154,7 @@ def test_end_to_end_translation():
     var ={
 "projectid": project_id
 }
-    get_resp = gql_request(token_get_query,operation="query",variables=var)
+    get_resp = gql_request(token_get_query,operation="query",variables=var,headers=headers_auth)
     for item in get_resp["data"]["agmtProjectTokens"]:
       assert_positive_get_tokens_gql(item)
 
@@ -158,7 +167,8 @@ def test_end_to_end_translation():
   }
 }
 
-    executed_tokenize = gql_request(APPLY_TOKEN,operation="mutation",variables=post_token_list)
+    executed_tokenize = gql_request(APPLY_TOKEN,operation="mutation",variables=post_token_list,
+      headers=headers_auth)
     assert executed_tokenize["data"]["applyAgmtTokenTranslation"]["message"] == "Token translations saved"
 
     # Additional user add and update
@@ -168,25 +178,31 @@ def test_end_to_end_translation():
     "userId": NEW_USER_ID
   }
 }
-    executed_user_create = gql_request(USER_CREATE_GLOBAL_QUERY,operation="mutation",variables=user_data)
+    executed_user_create = gql_request(USER_CREATE_GLOBAL_QUERY,operation="mutation",variables=user_data,
+      headers=headers_auth)
     assert executed_user_create["data"]["createAgmtProjectUser"]["message"]\
-         == "User added in project successfully"
+         == "User added to project successfully"
 
     user_up_data = {
   "object": {
     "projectId": project_id,
     "userId": NEW_USER_ID,
-    "userRole": "test role",
+    "userRole": "projectMember",
 	"metaData": "{\"somekey\":\"value\"}"
   }
 }
     
-    executed_up_user = gql_request(USER_EDIT_GLOBAL_QUERY,operation="mutation",variables=user_up_data)
+    executed_up_user = gql_request(USER_EDIT_GLOBAL_QUERY,operation="mutation",variables=user_up_data,
+      headers=headers_auth)
     assert executed_up_user["data"]["editAgmtProjectUser"]["message"] == \
         "User updated in project successfully"
 
-    executed_user_get = gql_request(query=PROJECT_GET_GLOBAL_QUERY)
-    assert len(executed_user_get["data"]["agmtProjects"][0]["users"]) > 0
+    executed_user_get = gql_request(query=PROJECT_GET_GLOBAL_QUERY,
+      headers=headers_auth)
+    for get_project in  executed_user_get["data"]["agmtProjects"]:
+      if int(get_project["projectId"]) == int(project_id):
+        updated_project = get_project
+    assert len(updated_project["users"]) > 0
 
     # # Suggestions
     var_align = {
@@ -196,7 +212,8 @@ def test_end_to_end_translation():
     "data": alignment_data
   }
 }
-    executed_align = gql_request(Add_Alignment,operation="mutation",variables=var_align)
+    executed_align = gql_request(Add_Alignment,operation="mutation",variables=var_align,
+      headers=headers_auth)
     assert executed_align["data"]["addAlignment"]["message"] == "Added to Alignments"
 
     # tokenize after adding token "परमेश्वर" via alignment
@@ -213,10 +230,13 @@ def test_end_to_end_translation():
     var_auto_sugg = {
   "object": {
     "projectId": project_id,
-    "sentenceIdList": 42001001
+    "sentenceIdList": 42001001,
+    "confirmAll": False
   }
 }
-    executed_auto_sugg = gql_request(query_auto_suggest,operation="mutation",variables=var_auto_sugg)
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    executed_auto_sugg = gql_request(query_auto_suggest,operation="mutation",variables=var_auto_sugg,
+      headers=headers_auth)
     draft = executed_auto_sugg["data"]["suggestAgmtAutoTranslation"][0]['draft']
     assert "ദൈവം" in draft
     assert "പുത്രന്‍" in draft

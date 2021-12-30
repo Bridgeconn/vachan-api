@@ -11,6 +11,7 @@ class ResourceType(str, Enum):
     PROJECT = "Ag or translation project"
     USER = "all users in our system (Kratos)"
     TRANSLATION = "generic translation apis"
+    LOOKUP = "Lookup contents"
 
 class App(str, Enum):
     '''Defined apps'''

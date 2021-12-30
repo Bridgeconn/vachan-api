@@ -1,4 +1,4 @@
-'''Test cases for versions related APIs'''
+'''Test cases for extract text related APIs'''
 from requests.api import head
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
@@ -6,7 +6,7 @@ from . import check_default_get
 from .test_versions import check_post as add_version
 from .test_sources import check_post as add_source
 from .test_bibles import gospel_books_data
-from .conftest import initial_test_users
+from .conftest import initial_test_users 
 
 UNIT_URL = 'v2/sources/'
 SENT_URL = UNIT_URL+ "get-sentence"
