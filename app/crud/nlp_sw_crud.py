@@ -11,7 +11,7 @@ from fastapi import Request
 from custom_exceptions import NotAvailableException
 
 import db_models
-import schemas_nlp
+from schema import schemas_nlp
 from crud import utils
 from routers import content_apis
 
