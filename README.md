@@ -10,45 +10,26 @@ Implemented Using
 - Python 3.7.5
 - Fastapi framework
 - Postgresql Database
-- DGraph Database
+- Ory Kratos
+- Usfm-grammar node library
 
-## Starting App with docker
+## Start App (with docker)
 
 ```git clone -b version-2 https://github.com/Bridgeconn/vachan-api.git```
 
 ```cd vachan-api/docker```
 
-
-#### To start app locally
-
 ```docker-compose up```
 or
 ```sudo -E docker-compose up```
 
-Refer the section below to configure environment variables as required. Use build and other flags if there is code change.
+Set environment variables VACHAN_SUPER_USERNAME, VACHAN_SUPER_PASSWORD. Use `--build` and `--force-recreate` flags if there has been code change. Refer [the detailed usage guide](./docs/docker-guide.md#to-start-app-locally) and [section on environments variables](#set-up-environmental-variables), for more information.
+
 If all goes well you should be able to get proper outputs at `http://localhost`, `http://localhost/docs`,
 `http://127.0.0.1:4434/identities` and connect to postgresDB at `localhost`, `5433`
 
-#### To run tests
 
-`docker-compose -f run-test-dependencies.yml up`
-
-`docker-compose -f run-tests.yml up --build --force-recreate`
-
-#### To deploy on server
-
-This would connect the app to the centrally hosted Kratos user DB.
-(To start that DB, use the [this](./Kratos_congif/database.yml) docker-compose file.)
-
-Need to set VACHAN_AUTH_DATABASE, VACHAN_SUPPORT_EMAIL_CREDS and VACHAN_SUPPORT_EMAIL as environment variable along with other required values.
-
-`docker-compose -f production-deploy.yml up --build --force-recreate`
-
-To start with a fresh DB, stop and remove containers and remove volume `vachan-db-vol`.
-To clear all old logs, similarly remove the volume `logs-vol`.
-To clear all user data, remove the volume `kratos-sqlite`, on local or on the central server.
-
-## How to set up locally for development and testing(without docker)
+## Set up locally for development and testing(without docker)
 
 ### Clone git repo
 
@@ -126,6 +107,13 @@ Set up node and npm and install [usfm-grammar](https://www.npmjs.com/package/usf
 ### Set up a Kratos instance
 
 Refer instructions and use config files [here](./Kratos_config) and run a Kratos server on localhost
+
+```
+cd docker/Kratos_config
+docker-compose -f quickstart.yml up 
+```
+
+Refer [detailed guide for docker usage](./docs/docker-guide.md) for more details.
 
 ### Run the app
 
