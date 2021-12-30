@@ -1,9 +1,10 @@
 '''API endpoints for AgMT app'''
 
 from typing import List
-from fastapi import APIRouter, Query, Body, Depends, Request, Path
+from fastapi import APIRouter, Query, Body, Depends, Request, Path, BackgroundTasks
 from sqlalchemy.orm import Session
 from starlette.datastructures import URL
+
 
 from dependencies import get_db, log
 import schemas
@@ -380,7 +381,7 @@ async def add_alignments(request: Request,#pylint: disable=unused-argument
     return { "message": "Alignments used for learning", "data":tw_data }
 
 @router.get('/v2/lookup/stopwords/{language_code}', response_model=List[schemas_nlp.StopWords],
-    response_model_exclude_none=True, status_code=200, tags=["Generic Translation"])
+    response_model_exclude_none=True, status_code=200, tags=["Lookups"])
 def get_stop_words(language_code:schemas.LangCodePattern=Path(...,example="hi"),
     include_system_defined:bool=True, include_user_defined:bool=True,
     include_auto_generated :bool=True, only_active:bool=True, skip: int=Query(0, ge=0),
@@ -397,7 +398,7 @@ def get_stop_words(language_code:schemas.LangCodePattern=Path(...,example="hi"),
 
 @router.put('/v2/lookup/stopwords/{language_code}',
     response_model=schemas_nlp.StopWordUpdateResponse, response_model_exclude_none=True,
-    status_code=200, tags=['Generic Translation'])
+    status_code=201, tags=['Lookups'])
 def update_stop_words(language_code:schemas.LangCodePattern=Path(...,example="hi"),
     sw_info:schemas_nlp.StopWordUpdate=Body(...),db_:Session=Depends(get_db)):
     '''Api to update fields of a stopword in lookup table'''
@@ -408,12 +409,56 @@ def update_stop_words(language_code:schemas.LangCodePattern=Path(...,example="hi
 
 @router.post('/v2/lookup/stopwords/{language_code}',
     response_model=schemas_nlp.StopWordsAddResponse, response_model_exclude_none=True,
-    status_code=200, tags=['Generic Translation'])
+    status_code=201, tags=['Lookups'])
 def add_stopwords(language_code:schemas.LangCodePattern=Path(...,example="hi"),
     stopwords_list:List[str]=Body(..., example=["और", "के", "उसका"]),
      db_:Session=Depends(get_db)):
     '''Insert provided stopwords into db and returns added data'''
     log.info('In add_stopwords')
     log.debug('language_code:%s, stopwords_list:%s',language_code, stopwords_list)
-    msg, result = nlp_sw_crud.add_stopwords(db_, language_code, stopwords_list, user_id=10101)
+    msg, result = nlp_sw_crud.add_stopwords(db_, language_code, stopwords_list, user_id='10101')
     return {"message": msg, "data": result}
+
+@router.post('/v2/translation/stopwords/generate',
+    response_model=schemas_nlp.StopWordsGenerateResponse, response_model_exclude_none=True,
+    status_code=201, tags=['Lookups'])
+async def generate_stopwords(request: Request, background_tasks: BackgroundTasks,
+    language_code:schemas.LangCodePattern=Query(...,example="bi"),
+    use_server_data:bool=True, gl_lang_code:schemas.LangCodePattern=Query(None,example="hi"),
+    sentence_list:List[schemas_nlp.SentenceInput]=Body(None), db_:Session=Depends(get_db)):
+    '''Auto generate stop words for a given language'''
+    log.info('In generate_stopwords')
+    log.debug('language_code:%s, use_server_data:%s, gl_lang_code:%s, sentence_list:%s',
+        language_code, use_server_data, gl_lang_code, sentence_list)
+
+    job_info = create_job(
+            request=request, #pylint: disable=W0613
+            db_=db_)
+    job_id = job_info['data']['jobId']
+    background_tasks.add_task(nlp_sw_crud.generate_stopwords, db_, request, language_code,
+        gl_lang_code, sentence_list, job_id, use_server_data=use_server_data,
+        user_id='10101')
+    msg = "Generating stop words in background"
+    data = {"jobId": job_info['data']['jobId'], "status": job_info['data']['status']}
+    return {"message": msg, "data": data}
+
+#################### Jobs ####################
+
+@router.post('/v2/jobs', response_model=schemas_nlp.JobCreateResponse, status_code=201,
+    tags=['Jobs'])
+def create_job(request:Request, #pylint: disable=W0613
+                db_:Session=Depends(get_db)):
+    '''Creates a new job'''
+    log.info('In create_job')
+    job_info = nlp_sw_crud.create_job(db_=db_, user_id='10101')
+    return {'message': "Job created successfully",
+        "data": {"jobId": job_info.jobId, "status": job_info.status}}
+
+@router.get('/v2/jobs', response_model=schemas_nlp.JobStatusResponse,
+    response_model_exclude_none=True, status_code=200, tags=['Jobs'])
+def check_job_status(job_id:int=Query(...,example="100000"),db_:Session=Depends(get_db)):
+    '''Checking the status of a job'''
+    log.info('In check_job_status')
+    log.debug('job_id:%s', job_id)
+    result = nlp_sw_crud.check_job_status(db_, job_id)
+    return result

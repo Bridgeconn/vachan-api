@@ -279,3 +279,43 @@ class StopWordsAddResponse(BaseModel):
     '''Response object after adding new stopwords in db'''
     message: str = Field(..., example="3 stopwords added successfully")
     data:List[StopWords] = None
+
+class Job(BaseModel):
+    '''Response objects of Job'''
+    jobId: int = Field(..., example=100000)
+    status: str = Field(..., example="job created")
+    output: dict = Field(None, example={
+        'language':'hi',
+        'data': [{"stopWord": "और",
+                  "stopwordType": "auto generated",
+                  "confidence": 0.8,
+                  "active": True,
+                  "metaData": {
+                         "type": "postposition"
+                   }
+                }]
+        })
+
+class StopWordsGenerateResponse(BaseModel):
+    '''Response object of auto-generate stopword API'''
+    message: str = Field(..., example="Generating stop words in background")
+    data: Job
+
+class JobStatus(Enum):
+    '''Types of job status'''
+    CREATED = 'job created'
+    STARTED = 'job started'
+    IN_PROGRESS = 'job in progress'
+    PENDING = 'job pending'
+    ERROR = 'job error'
+    FINISHED = 'job finished'
+
+class JobCreateResponse(BaseModel):
+    '''Response object of job create api'''
+    message: str = Field(..., example="Job created successfully")
+    data: Job
+
+class JobStatusResponse(BaseModel):
+    '''Response object for job'''
+    message: str = Field(..., example="Automatically generated stopwords for the given language")
+    data: Job
