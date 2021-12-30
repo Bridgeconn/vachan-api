@@ -229,7 +229,7 @@ async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...
     response_model=List[schemas.SourceResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Sources"])
-# @get_auth_access_check_decorator
+@get_auth_access_check_decorator
 async def get_source(request: Request,content_type: str=Query(None, example="commentary"),
     version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
     revision: int=Query(None, example=1),
@@ -566,7 +566,7 @@ async def edit_commentary(request: Request,
     response_model=List[schemas.DictionaryWordResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Dictionaries"])
-# @get_auth_access_check_decorator
+@get_auth_access_check_decorator
 async def get_dictionary_word(request: Request,
     source_name: schemas.TableNamePattern=Path(...,example="en_TW_1_dictionary"),
     search_word: str=Query(None, example="Adam"),
