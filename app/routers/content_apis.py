@@ -204,7 +204,7 @@ async def add_version(request: Request, version_obj : schemas.VersionCreate = Bo
             version_obj.versionAbbreviation, version_obj.revision))
     return {'message': "Version created successfully",
         "data": structurals_crud.create_version(db_=db_, version=version_obj,
-        user_id=user_details['user_id'])}
+        user_id=10101)}
 
 @router.put('/v2/versions', response_model=schemas.VersionUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -230,7 +230,7 @@ async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...
     response_model=List[schemas.SourceResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Sources"])
-@get_auth_access_check_decorator
+# @get_auth_access_check_decorator
 async def get_source(request: Request,content_type: str=Query(None, example="commentary"),
     version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
     revision: int=Query(None, example=1),
@@ -241,7 +241,8 @@ async def get_source(request: Request,content_type: str=Query(None, example="com
     access_tag:List[schemas.SourcePermissions]=Query(None),
     active: bool = True, latest_revision: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
-    user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
+    user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
     '''Fetches all sources and their details.
     * optional query parameters can be used to filter the result set
     * If revision is not explictly set or latest_revision is not set to False,
@@ -565,7 +566,7 @@ async def edit_commentary(request: Request,
     response_model=List[schemas.DictionaryWordResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Dictionaries"])
-@get_auth_access_check_decorator
+# @get_auth_access_check_decorator
 async def get_dictionary_word(request: Request,
     source_name: schemas.TableNamePattern=Path(...,example="en_TW_1_dictionary"),
     search_word: str=Query(None, example="Adam"),
@@ -760,8 +761,7 @@ async def extract_text_contents(request:Request, #pylint: disable=W0613
     language_code:schemas.LangCodePattern=Query(None, example="hi"),
     content_type:str=Query(None, example="commentary"),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
-    user_details = Depends(get_user_or_none),
-    db_: Session = Depends(get_db)):
+    user_details = Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''A generic API for all content type tables to get just the text contents of that table
     that could be used for translation, as corpus for NLP operations like SW identification.
     If source_name is provided, only that filter will be considered over content_type & language.'''
