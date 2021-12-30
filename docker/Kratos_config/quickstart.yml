@@ -11,7 +11,7 @@ services:
         target: /var/lib/sqlite
         read_only: false
       - type: bind
-        source: ./contrib/quickstart/kratos/email-password
+        source: ./email-password
         target: /etc/config/kratos
     command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
     restart: on-failure
@@ -36,6 +36,10 @@ services:
       - '4434:4434' # admin
     restart: unless-stopped
     environment:
+      - SERVE_PUBLIC_BASE_URL=http://127.0.0.1:4433/
+      - SERVE_PUBLIC_ADMIN_URL=http://127.0.0.1:4434/
+      - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS:-smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true}
+      - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL:-EMAIL_ADDRESS@bridgeconn.com}
       - DSN=postgres://kratos:secret@postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
       - LOG_LEVEL=trace
     command: serve -c /etc/config/kratos/kratos.yml --dev --watch-courier
@@ -45,7 +49,7 @@ services:
         target: /var/lib/sqlite
         read_only: false
       - type: bind
-        source: ./contrib/quickstart/kratos/email-password
+        source: ./email-password
         target: /etc/config/kratos
     networks:
       - intranet
@@ -61,7 +65,7 @@ services:
   postgresd:
     image: postgres:9.6
     ports:
-      - "5432:5432"
+      - "5435:5432"
     environment:
       - POSTGRES_USER=kratos
       - POSTGRES_PASSWORD=secret
