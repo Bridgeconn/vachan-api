@@ -381,10 +381,13 @@ async def add_alignments(request: Request,#pylint: disable=unused-argument
 
 @router.get('/v2/lookup/stopwords/{language_code}', response_model=List[schemas_nlp.StopWords],
     response_model_exclude_none=True, status_code=200, tags=["Lookups"])
-def get_stop_words(language_code:schemas.LangCodePattern=Path(...,example="hi"),
+@get_auth_access_check_decorator
+async def get_stop_words(request: Request,#pylint: disable=unused-argument
+    language_code:schemas.LangCodePattern=Path(...,example="hi"),
     include_system_defined:bool=True, include_user_defined:bool=True,
     include_auto_generated :bool=True, only_active:bool=True, skip: int=Query(0, ge=0),
-    limit: int=Query(100, ge=0), db_:Session=Depends(get_db)):
+    limit: int=Query(100, ge=0),
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Api to retreive stopwords from lookup table'''
     log.info('In get_stop_words')
     log.debug('language_code:%s, include_system_defined:%s, include_user_defined:%s, \
@@ -398,29 +401,37 @@ def get_stop_words(language_code:schemas.LangCodePattern=Path(...,example="hi"),
 @router.put('/v2/lookup/stopwords/{language_code}',
     response_model=schemas_nlp.StopWordUpdateResponse, response_model_exclude_none=True,
     status_code=201, tags=['Lookups'])
-def update_stop_words(language_code:schemas.LangCodePattern=Path(...,example="hi"),
-    sw_info:schemas_nlp.StopWordUpdate=Body(...),db_:Session=Depends(get_db)):
+@get_auth_access_check_decorator
+async def update_stop_words(request: Request,#pylint: disable=unused-argument
+    language_code:schemas.LangCodePattern=Path(...,example="hi"),
+    sw_info:schemas_nlp.StopWordUpdate=Body(...),
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Api to update fields of a stopword in lookup table'''
     log.info('In update_stop_words')
     log.debug('language_code:%s, sw_info:%s',language_code, sw_info)
-    sw_data = nlp_sw_crud.update_stopword_info(db_, language_code, sw_info)
+    sw_data = nlp_sw_crud.update_stopword_info(db_, language_code, sw_info,user_details['user_id'])
     return { "message": "Stopword info updated successfully", "data":sw_data }
 
 @router.post('/v2/lookup/stopwords/{language_code}',
     response_model=schemas_nlp.StopWordsAddResponse, response_model_exclude_none=True,
     status_code=201, tags=['Lookups'])
-def add_stopwords(language_code:schemas.LangCodePattern=Path(...,example="hi"),
+@get_auth_access_check_decorator
+async def add_stopwords(request: Request,#pylint: disable=unused-argument
+    language_code:schemas.LangCodePattern=Path(...,example="hi"),
     stopwords_list:List[str]=Body(..., example=["और", "के", "उसका"]),
-     db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Insert provided stopwords into db and returns added data'''
     log.info('In add_stopwords')
     log.debug('language_code:%s, stopwords_list:%s',language_code, stopwords_list)
-    msg, result = nlp_sw_crud.add_stopwords(db_, language_code, stopwords_list, user_id='10101')
+    result = nlp_sw_crud.add_stopwords(db_, language_code, stopwords_list,
+        user_id=user_details['user_id'])
+    msg = f"{len(result)} stopwords added successfully"
     return {"message": msg, "data": result}
 
 @router.post('/v2/translation/stopwords/generate',
     response_model=schemas_nlp.StopWordsGenerateResponse, response_model_exclude_none=True,
     status_code=201, tags=['Lookups'])
+@get_auth_access_check_decorator
 async def generate_stopwords(request: Request, background_tasks: BackgroundTasks,
     language_code:schemas.LangCodePattern=Query(...,example="bi"),
     use_server_data:bool=True, gl_lang_code:schemas.LangCodePattern=Query(None,example="hi"),
@@ -456,7 +467,8 @@ def create_job(request:Request, #pylint: disable=W0613
 
 @router.get('/v2/jobs', response_model=schemas_nlp.JobStatusResponse,
     response_model_exclude_none=True, status_code=200, tags=['Jobs'])
-def check_job_status(job_id:int=Query(...,example="100000"),db_:Session=Depends(get_db)):
+def check_job_status(request: Request,#pylint: disable=unused-argument
+    job_id:int=Query(...,example="100000"),db_:Session=Depends(get_db)):
     '''Checking the status of a job'''
     log.info('In check_job_status')
     log.debug('job_id:%s', job_id)

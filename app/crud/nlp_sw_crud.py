@@ -44,13 +44,9 @@ def retrieve_stopwords(db_: Session, language_code, **kwargs):
     if only_active:
         query = query.filter(db_models.StopWords.active == only_active)
     query_result = query.offset(skip).limit(limit).all()
-    result = []
-    for row in query_result:
-        result.append({"stopWord": row.stopWord, "confidence": row.confidence, "active": row.active,
-            "metaData": row.metaData})
-    return result
+    return query_result
 
-def update_stopword_info(db_: Session, language_code, sw_json):
+def update_stopword_info(db_: Session, language_code, sw_json, user_id=None):
     '''updates the given information of a stopword in db'''
     data = {}
     query = db_.query(db_models.Language.languageId)
@@ -64,19 +60,18 @@ def update_stopword_info(db_: Session, language_code, sw_json):
         value_dic["active"] = sw_json.active
     if sw_json.metaData is not None:
         value_dic["metaData"] = sw_json.metaData
+    value_dic['updatedUser'] = user_id
     update_stmt = (update(db_models.StopWords).where(db_models.StopWords.stopWord == stopword,
         db_models.StopWords.languageId == language_id).values(value_dic))
     result = db_.execute(update_stmt)
-    db_.commit()
+    db_.flush()
     if result.rowcount == 0:
         raise NotAvailableException("Language with code %s, does not have stopword %s \
             in database"%(language_code,stopword))
     query = db_.query(db_models.StopWords)
     row = query.filter(db_models.StopWords.stopWord == stopword,
             db_models.StopWords.languageId == language_id).first()
-    data = {"stopWord": row.stopWord, "confidence": row.confidence, "active": row.active,
-            "metaData": row.metaData}
-    return data
+    return row
 
 def add_stopwords(db_: Session, language_code, stopwords_list, user_id=None):
     '''insert given stopwords into look up table for a given language'''
@@ -110,16 +105,13 @@ def add_stopwords(db_: Session, language_code, stopwords_list, user_id=None):
                 if result.rowcount == 1:
                     row = db_.query(db_models.StopWords).filter(db_models.StopWords.stopWord ==
                         word, db_models.StopWords.languageId == language_id).first()
-                    db_content.append({"stopWord": row.stopWord, "confidence": row.confidence,
-                     "active": row.active, "metaData": row.metaData})
+                    db_content.append(row)
         else:
             new_sw_row = db_models.StopWords(**args)
             db_.add(new_sw_row)
-            db_content.append({"stopWord": new_sw_row.stopWord, "confidence": new_sw_row.confidence,
-            "active": new_sw_row.active, "metaData": new_sw_row.metaData})
-    db_.commit()
-    msg = f"{len(db_content)} stopwords added successfully"
-    return msg, db_content
+            db_content.append(new_sw_row)
+    # db_.commit()
+    return db_content
 
 def clean_text(text):
     '''Cleaning text by removing punctuations, extra spaces'''

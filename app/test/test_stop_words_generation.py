@@ -103,24 +103,28 @@ def test_get_notavailable_code():
 
 def test_update_stopword():
     '''Positve tests for update stopwords API'''
-    response = client.put(UNIT_URL+'/hi?',headers=headers, json=update_obj1)
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+
+    response = client.put(UNIT_URL+'/hi?',headers=headers_auth, json=update_obj1)
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert_positive_get_stopwords(response.json()['data'])
     assert response.json()['message'] == "Stopword info updated successfully"
 
-    response = client.put(UNIT_URL+'/hi?',headers=headers, json=update_obj2)
+    response = client.put(UNIT_URL+'/hi?',headers=headers_auth, json=update_obj2)
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert_positive_get_stopwords(response.json()['data'])
     assert response.json()['message'] == "Stopword info updated successfully"
 
-    response = client.put(UNIT_URL+'/hi?',headers=headers, json=update_wrong_obj)
+    response = client.put(UNIT_URL+'/hi?',headers=headers_auth, json=update_wrong_obj)
     assert response.status_code == 404
 
 def test_add_stopword():
     '''Positve tests for add stopwords API'''
-    response = client.post(UNIT_URL+'/aa?',headers=headers, json=add_obj)
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+
+    response = client.post(UNIT_URL+'/aa?',headers=headers_auth, json=add_obj)
     assert response.status_code == 201
     assert_positive_response(response.json())
     for item in response.json()['data']:
@@ -130,13 +134,13 @@ def test_add_stopword():
         assert item['stopWord'] in add_obj
     assert len(response.json()['data']) == len(add_obj)
 
-    response = client.post(UNIT_URL+'/aa?',headers=headers, json=["asd"])
+    response = client.post(UNIT_URL+'/aa?',headers=headers_auth, json=["asd"])
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert not response.json()['data']
     assert response.json()['message'] == "0 stopwords added successfully"
 
-    response = client.post(UNIT_URL+'/aa?',headers=headers, json=["hty"])
+    response = client.post(UNIT_URL+'/aa?',headers=headers_auth, json=["hty"])
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert response.json()['data']
@@ -146,13 +150,13 @@ def test_add_stopword():
     assert len(response.json()['data']) == 1
 
 
-    response = client.post(UNIT_URL+'/hi?',headers=headers, json=["की"])
+    response = client.post(UNIT_URL+'/hi?',headers=headers_auth, json=["की"])
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert not response.json()['data']
     assert response.json()['message'] == "0 stopwords added successfully"
 
-    response = client.post(UNIT_URL+'/hi?',headers=headers, json=["चुनाव"])
+    response = client.post(UNIT_URL+'/hi?',headers=headers_auth, json=["चुनाव"])
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert response.json()['data']

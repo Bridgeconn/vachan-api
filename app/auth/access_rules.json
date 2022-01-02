@@ -44,7 +44,7 @@
         "process":["registeredUser"]
     },
     "lookup-content":{
-        "read":["registeredUser"],
+        "read":["noAuthRequired"],
         "create":["registeredUser"],
         "edit":["registeredUser"]
     },
