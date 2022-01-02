@@ -112,3 +112,4 @@ Endpoints,Method,RequestApp,UserNeeded,ResourceType,Permission
 /v2/translation/tokens,PUT,None,True,None,process
 /v2/translation/token-translate,PUT,None,True,None,process
 /v2/translation/draft,PUT,None,True,None,process
+/v2/translation/stopwords/generate,POST,None,False,None,read

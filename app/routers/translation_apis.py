@@ -424,6 +424,7 @@ def add_stopwords(language_code:schemas.LangCodePattern=Path(...,example="hi"),
 async def generate_stopwords(request: Request, background_tasks: BackgroundTasks,
     language_code:schemas.LangCodePattern=Query(...,example="bi"),
     use_server_data:bool=True, gl_lang_code:schemas.LangCodePattern=Query(None,example="hi"),
+    user_details =Depends(get_user_or_none),
     sentence_list:List[schemas_nlp.SentenceInput]=Body(None), db_:Session=Depends(get_db)):
     '''Auto generate stop words for a given language'''
     log.info('In generate_stopwords')
@@ -436,7 +437,7 @@ async def generate_stopwords(request: Request, background_tasks: BackgroundTasks
     job_id = job_info['data']['jobId']
     background_tasks.add_task(nlp_sw_crud.generate_stopwords, db_, request, language_code,
         gl_lang_code, sentence_list, job_id, use_server_data=use_server_data,
-        user_id='10101')
+        user_details=user_details)
     msg = "Generating stop words in background"
     data = {"jobId": job_info['data']['jobId'], "status": job_info['data']['status']}
     return {"message": msg, "data": data}

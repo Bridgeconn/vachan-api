@@ -142,7 +142,7 @@ async def get_data(db_, request, language_code, sentence_list, **kwargs):
             language_code=language_code,
             content_type=None,
             skip=0, limit=100000,
-            user_details=None,
+            user_details=kwargs.get('user_details'),
             db_=db_)
         if server_data:
             if "error" not in server_data:
@@ -165,7 +165,7 @@ def find_knee(sentences):
         sw_scored.append((word, score))
     return sw_scored
 
-async def filter_translation_words(db_, request, gl_lang_code, stopwords):
+async def filter_translation_words(db_, request, gl_lang_code, stopwords, user_details=None):
     '''Filter the translation words from generated stopwords using tws of gl'''
     tw_lookup = {'hi': 'hi_TW_1_dictionary', 'ml': 'ml_TW_1_dictionary', 'te':
         'te_TW_1_dictionary', 'kan': 'kan_TW_1_dictionary', 'ta': 'ta_TW_1_dictionary',
@@ -186,7 +186,7 @@ async def filter_translation_words(db_, request, gl_lang_code, stopwords):
         details=None,
         active=True,
         skip=0, limit=100000,
-        user_details=None,
+        user_details=user_details,
         db_=db_)
     if response:
         translation_words = [row.word for row in response['db_content']]
@@ -220,7 +220,7 @@ def add_generated_sws(db_, language_id, stopwords, user_id):
 
 async def extract_stopwords(db_, request, language_id, language_code, gl_lang_code, *args):
     '''Extract stopwords from available data and stores in db'''
-    user_id = args[0]
+    user_details = args[0]
     sentences = args[1]
     msg = ''
     result = []
@@ -228,10 +228,11 @@ async def extract_stopwords(db_, request, language_id, language_code, gl_lang_co
     if gl_lang_code is None:
         msg = "Stopwords identified out of limited resources. Manual verification recommended"
     else:
-        stopwords = await filter_translation_words(db_, request, gl_lang_code, stopwords)
+        stopwords = await filter_translation_words(db_, request, gl_lang_code, stopwords,
+            user_details)
     result = []
     if stopwords:
-        add_generated_sws(db_, language_id, stopwords, user_id)
+        add_generated_sws(db_, language_id, stopwords, user_details['user_id'])
         for item in stopwords:
             result.append({"stopWord": item[0], "confidence": item[1], "active": True,
                 "metaData": None})
@@ -256,19 +257,29 @@ def create_job(db_, user_id):
 
 def update_job(db_, job_id, user_id, update_args):
     '''Updates the fields of an already existing job in db'''
-    update_stmt = (update(db_models.Jobs).where(db_models.Jobs.jobId == job_id,
-        db_models.Jobs.userId == user_id).values(update_args))
-    db_.execute(update_stmt)
+    # job_entry = (update(db_models.Jobs).where(db_models.Jobs.jobId == job_id,
+    #     db_models.Jobs.userId == user_id).values(update_args))
+    query = db_.query(db_models.Jobs)
+    job_entry = query.filter(db_models.Jobs.jobId == job_id).first()
+    job_entry.status = update_args['status']
+    if "output" in update_args:
+        job_entry.output = update_args['output']
+    if "endTime" in update_args:
+        job_entry.endTime = update_args['endTime']
+    # db_.add(job_entry)
     db_.commit()
 
 
-async def generate_stopwords(db_: Session, request: Request, *args, user_id=None,  **kwargs):
+async def generate_stopwords(db_: Session, request: Request, *args, user_details=None,  **kwargs):
     '''Automatically generate stopwords for given language'''
     msg = ''
     language_code = args[0]
     gl_lang_code = args[1]
     sentence_list = args[2]
     job_id = args[3]
+    user_id = None
+    if user_details is not None:
+        user_id = user_details['user_id']
     update_args = {
                     "status" : schemas_nlp.JobStatus.STARTED.value,
                     "startTime": datetime.now()
@@ -286,6 +297,7 @@ async def generate_stopwords(db_: Session, request: Request, *args, user_id=None
         update_job(db_, job_id, user_id, update_args)
         raise NotAvailableException("Language with code %s, not in database"%language_code)
     language_id = language_id[0]
+    kwargs['user_details'] = user_details
     sentences = await get_data(db_, request, language_code, sentence_list, **kwargs)
     if len(sentences) < 1000:
         # raise UnprocessableException("Not enough data to generate stopwords")
@@ -302,8 +314,10 @@ async def generate_stopwords(db_: Session, request: Request, *args, user_id=None
                       }
         update_job(db_, job_id, user_id, update_args)
         update_args = await extract_stopwords(db_, request, language_id, language_code,
-                                 gl_lang_code, user_id, sentences)
+                                 gl_lang_code, user_details, sentences)
     update_job(db_, job_id, user_id, update_args)
+    query = db_.query(db_models.Jobs)
+    query_result = query.filter(db_models.Jobs.jobId == job_id).first()
 
 
 def check_job_status(db_: Session, job_id):

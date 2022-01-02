@@ -1,5 +1,7 @@
 '''Tests the translation APIs that do need projects available in DB'''
 import json
+import time
+from app.main import log
 from . import client
 from . import check_default_get
 from . import assert_not_available_content
@@ -266,13 +268,20 @@ def test_generate_stopwords():
 
     table_name = add_dict_source()
     add_tw_dict(table_name)
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
 
-    response = client.post(GER_URL+'/generate?language_code=hi',headers=headers)
+    response = client.post(GER_URL+'/generate?language_code=hi',headers=headers_auth)
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert "jobId" in response.json()['data']
     assert "status" in response.json()['data']
-    job_response = get_job_status(response.json()['data']['jobId'])
+    for i in range(10):
+        job_response = get_job_status(response.json()['data']['jobId'])
+        status = job_response.json()['data']['status']
+        if status == 'job finished':
+            break
+        log.info("sleeping for a minute in SW generate test")
+        time.sleep(60)
     assert job_response.json()['data']['status'] == 'job finished'
     assert 'output' in job_response.json()['data']
     for item in job_response.json()['data']['output']['data']:
@@ -280,22 +289,35 @@ def test_generate_stopwords():
     assert job_response.json()['message'] == "Stopwords identified out of limited resources. Manual verification recommended"
 
     response = client.post(GER_URL+'/generate?language_code=hi&use_server_data=False',
-                headers=headers, json=sentence_list)
+                headers=headers_auth, json=sentence_list)
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert "jobId" in response.json()['data']
     assert "status" in response.json()['data']
-    job_response = get_job_status(response.json()['data']['jobId'])
+    job_id = response.json()['data']['jobId']
+    for i in range(5):
+        job_response = get_job_status(job_id)
+        status = job_response.json()['data']['status']
+        if status == 'job finished':
+            break
+        log.info("sleeping for a minute in SW generate test")
+        time.sleep(60)
     assert job_response.json()['data']['status'] == 'job finished'
     assert job_response.json()['message'] == "Not enough data to generate stopwords"
 
-    response = client.post(GER_URL+'/generate?language_code=hi',headers=headers,
+    response = client.post(GER_URL+'/generate?language_code=hi',headers=headers_auth,
              json=sentence_list)
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert "jobId" in response.json()['data']
     assert "status" in response.json()['data']
-    job_response1 = get_job_status(response.json()['data']['jobId'])
+    for i in range(10):
+        job_response1 = get_job_status(response.json()['data']['jobId'])
+        status = job_response1.json()['data']['status']
+        if status == 'job finished':
+            break
+        log.info("sleeping for a minute in SW generate test")
+        time.sleep(60)
     assert job_response1.json()['data']['status'] == 'job finished'
     assert 'output' in job_response1.json()['data']
     for item in job_response1.json()['data']['output']['data']:
@@ -303,12 +325,18 @@ def test_generate_stopwords():
     assert job_response1.json()['message'] == "Stopwords identified out of limited resources. Manual verification recommended"
 
     response = client.post(GER_URL+'/generate?language_code=hi&gl_lang_code=hi',
-        headers=headers, json=sentence_list)
+        headers=headers_auth, json=sentence_list)
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert "jobId" in response.json()['data']
     assert "status" in response.json()['data']
-    job_response2 = get_job_status(response.json()['data']['jobId'])
+    for i in range(10):
+        job_response2 = get_job_status(response.json()['data']['jobId'])
+        status = job_response2.json()['data']['status']
+        if status == 'job finished':
+            break
+        log.info("sleeping for a minute in SW generate test")
+        time.sleep(60)
     assert job_response2.json()['data']['status'] == 'job finished'
     assert 'output' in job_response2.json()['data']
     for item in job_response2.json()['data']['output']['data']:
