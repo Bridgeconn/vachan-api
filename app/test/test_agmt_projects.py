@@ -559,7 +559,7 @@ def test_agmt_projects_access_rule():
     "targetLanguageCode": "ml"
     }
     response = client.post(UNIT_URL, headers=headers, json=post_data)
-    assert response.status_code == 403
+    assert response.status_code == 401
     assert 'error' in response.json()
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)

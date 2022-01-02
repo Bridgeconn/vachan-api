@@ -358,7 +358,7 @@ def verify_auth_decorator_params(kwargs):
         if 'app' in request.headers:
             request_context['app'] = request.headers['app']
         else:
-            request_context['app'] = None
+            request_context['app'] = schema_auth.App.API
         required_params['request_context'] = request_context
     return required_params
 

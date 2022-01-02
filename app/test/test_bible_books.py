@@ -26,8 +26,8 @@ def test_get_book_code():
     '''positive test case, with one optional params, code'''
     #Without Auth
     response = client.get(UNIT_URL+'?book_code=psa')
-    assert response.status_code == 403
-    assert response.json()["error"] == "Permission Denied"
+    assert response.status_code == 401
+    assert response.json()["error"] == "Authentication Error"
     #With Auth
     response = client.get(UNIT_URL+'?book_code=psa',headers=headers_auth)
     assert response.status_code == 200
@@ -40,8 +40,8 @@ def test_get_book_code_upper_case():
     '''positive test case, with one optional params, code in upper case'''
     #Without Auth
     response = client.get(UNIT_URL+'?book_code=PSA')
-    assert response.status_code == 403
-    assert response.json()["error"] == "Permission Denied"
+    assert response.status_code == 401
+    assert response.json()["error"] == "Authentication Error"
     #With Auth
     response = client.get(UNIT_URL+'?book_code=PSA',headers=headers_auth)
     assert response.status_code == 200
@@ -54,8 +54,8 @@ def test_get_book_name():
     '''positive test case, with one optional params, name'''
     #Without Auth
     response = client.get(UNIT_URL+'?book_name=genesis')
-    assert response.status_code == 403
-    assert response.json()["error"] == "Permission Denied"
+    assert response.status_code == 401
+    assert response.json()["error"] == "Authentication Error"
     #With Auth
     response = client.get(UNIT_URL+'?book_name=genesis',headers=headers_auth)
     assert response.status_code == 200
