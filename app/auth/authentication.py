@@ -115,7 +115,8 @@ def search_api_permission_map(endpoint, method, client_app, path_params={}):
             # print("url matched")
             if row[1] == method:
                 # print("method matched")
-                # print(row[2], client_app.value)
+                # print(row[2])
+                # print(client_app.value)
                 if row[2] == "None" or row[2] == client_app.value:
                     # print("app matched")
                     res = row[4]
@@ -174,15 +175,15 @@ def check_right(user_details, required_rights, resp_obj=None, db_=None):
             return True
         if "registeredUser" in required_rights and user_details["user_id"] is not None:
             return True
-        print("user_details:", user_details)
+        # print("user_details:", user_details)
         for role in user_details['user_roles']:
             if role in required_rights:
                 return True
         if resp_obj is not None and db_ is not None:
-            print("resp_obj:", resp_obj.__dict__)
+            # print("resp_obj:", resp_obj.__dict__)
             if "resourceCreatedUser" in required_rights and \
                 user_details['user_id'] == resp_obj.createdUser:
-                print("matched created user")
+                # print("matched created user")
                 return True
             if "projectOwner" in required_rights and \
                 is_project_owner(db_, resp_obj, user_details['user_id']):
@@ -238,6 +239,8 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             if check_right(user_details, required_rights, response['data'], db_):
                 db_.commit()
             else:
+                if user_details['user_id'] is None:
+                    raise UnAuthorizedException("Access token not provided or user not recognized.")
                 raise PermissionException("Access Permission Denied for the URL")
         elif isinstance(response, list):
             filtered_response = []
