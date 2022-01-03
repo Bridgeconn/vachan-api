@@ -3,7 +3,7 @@ Endpoints,Method,RequestApp,UserNeeded,ResourceType,Permission
 /v2/user/login,GET,None,False,None,login
 /v2/user/logout,GET,None,False,None,logout
 /v2/user/userrole,PUT,None,True,None,edit-role
-/v2/user/delete-identity,DELETE,None,True,None,detele/deactivate
+/v2/user/delete-identity,DELETE,None,True,None,delete/deactivate
 /v2/contents,GET,AG,False,None,refer-for-translation
 /v2/contents,GET,VACHAN,False,None,view-on-web
 /v2/contents,GET,VACHANADMIN,False,None,read-via-vachanadmin

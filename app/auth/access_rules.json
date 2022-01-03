@@ -58,6 +58,6 @@
         "view-profile":["SuperAdmin", "createdUser"],
        "login":["noAuthRequired"],
         "logout":["createdUser"],
-        "detele/deactivate":["SuperAdmin"]
+        "delete/deactivate":["SuperAdmin"]
     }
 }

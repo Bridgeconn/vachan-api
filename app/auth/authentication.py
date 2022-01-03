@@ -126,6 +126,7 @@ def search_api_permission_map(endpoint, method, client_app, path_params={}):
     if len(res_perm_list) == 0:
         log.error("No permisions map found for:(%s, %s, %s)"%(endpoint, method, client_app))
         raise GenericException("API-Permission map not defined for the request!")
+    # print(res_perm_list)
     return res_perm_list
 
 def get_access_tag(db_, resource_type, path_params={}, resource=None):
@@ -222,16 +223,17 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         Authenticated = check_right(user_details, required_rights)    
         print("Authenticated:", Authenticated)
 
-        # if len(required_rights) > 0 
-        #     and not Authenticated:
-        #     # neither falls in get sources nor in object specific
-        #     raise UnAuthorizedException("You do not have access to the URL")
+        if (schema_auth.ResourceType.USER in [tup[0] for tup in required_permissions] 
+            and not Authenticated):
+                if user_details['user_id'] is None:
+                    raise UnAuthorizedException("Access token not provided or user not recognized")
+                raise PermissionException("Access Permission Denied for the URL")
 
         ###### Executing the API function #######
         response = await func(*args, **kwargs)
         #########################################
 
-        # All role based auths checked and appoved if applicable
+        # All no-auth and role based cases checked and appoved if applicable
         if Authenticated:
             db_.commit()
         # Resource(item) specific checks
@@ -445,6 +447,8 @@ def delete_identity(user_id):
     response = requests.delete(base_url)
     if response.status_code == 404:
         raise NotAvailableException("Unable to locate the resource")
+    log.warning(response)
+    log.warning(response.content)
     return response
 
 #user role add
@@ -504,13 +508,11 @@ def user_role_add(user_id,roles_list):
 #Create Super User
 def create_super_user():
     """function to create super user on startup"""
-    print("in here to create SA")
     super_user_url = ADMIN_BASE_URL+ "identities"
     found = False
     response = requests.get(super_user_url)
     if response.status_code == 200:
         identity_data = json.loads(response.content)
-        print("identities:", identity_data)
         for identity in identity_data:
             if schema_auth.AdminRoles.SUPERADMIN.value in identity["traits"]["userrole"]:
                 found = True
