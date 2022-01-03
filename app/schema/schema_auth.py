@@ -18,7 +18,7 @@ class App(str, Enum):
     AG = "Autographa"
     VACHAN = "Vachan-online or vachan-app"
     VACHANADMIN = "VachanAdmin"
-    API = "API"
+    API = "API-user"
 
 class Registration(BaseModel):
     """kratos registration input"""
