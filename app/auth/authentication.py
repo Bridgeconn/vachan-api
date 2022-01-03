@@ -95,7 +95,7 @@ def api_resourcetype_map(endpoint, path_params={}):
         resource_type = schema_auth.ResourceType.TRANSLATION
     elif endpoint.startswith("/v2/lookup"):
         resource_type = schema_auth.ResourceType.LOOKUP
-    elif endpoint.startswith("/v2/sources") or "sourceName" in path_params:
+    elif endpoint.startswith("/v2/sources") or "source_name" in path_params:
         resource_type = schema_auth.ResourceType.CONTENT
     else:
         raise GenericException("Resource Type of API not defined")
@@ -110,15 +110,18 @@ def search_api_permission_map(endpoint, method, client_app, path_params={}):
     for row in APIPERMISSIONTABLE:
         table_url = row[0]
         for key in path_params:
-            table_url = req_url.replace(key, "*")
+            table_url = req_url.replace("{"+key+"}", "*")
+        # print("path_params:", path_params)
+        # print("table_url:", table_url)
+        # print("req_url:", req_url)
         if table_url == req_url:
-            # print("url matched")
+            print("url matched")
             if row[1] == method:
-                # print("method matched")
+                print("method matched")
                 # print(row[2])
                 # print(client_app.value)
                 if row[2] == "None" or row[2] == client_app.value:
-                    # print("app matched")
+                    print("app matched")
                     res = row[4]
                     if res == 'None':
                         res = api_resourcetype_map(req_url, path_params)
@@ -126,7 +129,7 @@ def search_api_permission_map(endpoint, method, client_app, path_params={}):
     if len(res_perm_list) == 0:
         log.error("No permisions map found for:(%s, %s, %s)"%(endpoint, method, client_app))
         raise GenericException("API-Permission map not defined for the request!")
-    # print(res_perm_list)
+    print(res_perm_list)
     return res_perm_list
 
 def get_access_tag(db_, resource_type, path_params={}, resource=None):
@@ -142,8 +145,10 @@ def get_access_tag(db_, resource_type, path_params={}, resource=None):
         return resource_tag_map[resource_type]
     if "source_name" in path_params:
         db_entry = db_.query(db_models.Source.metaData['accessPermissions']).filter(
-            db_models.Source.sourceName == source_name).first()
+            db_models.Source.sourceName == path_params['source_name']).first()
         return db_entry[0]
+    elif resource_type == schema_auth.ResourceType.CONTENT:
+        return ['content']
     if resource:
         return resource.metaData['accessPermissions']
     return []
@@ -171,7 +176,6 @@ def is_project_member(db_:Session, db_resource, user_id):
     return False
 
 def check_right(user_details, required_rights, resp_obj=None, db_=None):
-        # print(user_details, required_rights)
         if "noAuthRequired" in required_rights:
             return True
         if "registeredUser" in required_rights and user_details["user_id"] is not None:
@@ -181,7 +185,8 @@ def check_right(user_details, required_rights, resp_obj=None, db_=None):
             if role in required_rights:
                 return True
         if resp_obj is not None and db_ is not None:
-            # print("resp_obj:", resp_obj.__dict__)
+            print("user_details:", user_details)
+            print("resp_obj:", resp_obj.__dict__)
             if "resourceCreatedUser" in required_rights and \
                 user_details['user_id'] == resp_obj.createdUser:
                 # print("matched created user")
@@ -225,6 +230,8 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
 
         if (schema_auth.ResourceType.USER in [tup[0] for tup in required_permissions] 
             and not Authenticated):
+                '''Need to raise error before function execution, as we cannot delay db commit 
+                like we do in other cases as changes happen in Kratos db, not app db'''
                 if user_details['user_id'] is None:
                     raise UnAuthorizedException("Access token not provided or user not recognized")
                 raise PermissionException("Access Permission Denied for the URL")
@@ -232,24 +239,48 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         ###### Executing the API function #######
         response = await func(*args, **kwargs)
         #########################################
+        
+        if isinstance(response, dict) and "data" in response:
+            obj = response['data']
+            if (isinstance(response['data'], dict) and 
+                "source_content" in response['data'] and 
+                "db_content" in response['data']):
+                obj = response['data']['source_content']
+                response['data'] = response['data']['db_content']
+                print("updated response:", response)
+          
 
-        # All no-auth and role based cases checked and appoved if applicable
+
         if Authenticated:
+            # All no-auth and role based cases checked and appoved if applicable
             db_.commit()
-        # Resource(item) specific checks
-        elif isinstance(response, dict) and "data" in response:
-            if check_right(user_details, required_rights, response['data'], db_):
+        elif isinstance(response, dict):
+            # Resource(item) specific checks
+            if check_right(user_details, required_rights, obj, db_):
                 db_.commit()
             else:
                 if user_details['user_id'] is None:
                     raise UnAuthorizedException("Access token not provided or user not recognized.")
                 raise PermissionException("Access Permission Denied for the URL")
         elif isinstance(response, list):
+            print("response before filtering:", response)
             filtered_response = []
             for item in response:
-                if check_right(user_details, required_rights, item, db_):
+                required_rights_thisitem = required_rights
+                for resourceType, permission in required_permissions:
+                    access_tags = get_access_tag(db_, resourceType, path_params, item)
+                    for tag in access_tags:
+                        if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
+                            required_rights_thisitem += ACCESS_RULES[tag][permission]
+                    print("required_rights_thisitem:", required_rights_thisitem)
+                if check_right(user_details, required_rights_thisitem, item, db_):
                     filtered_response.append(item)
             response = filtered_response
+        else:
+            log.error("Unable to Authenticate")
+            if user_details['user_id'] is None:
+                raise UnAuthorizedException("Access token not provided or user not recognized.")
+            raise PermissionException("Access Permission Denied for the URL")
         print("returning response:", response)
         return response
     return wrapper
@@ -413,9 +444,13 @@ def user_register_kratos(register_details,app_type):
         reg_response = json.loads(reg_req.content)
         if reg_req.status_code == 200:
             data = register_check_success(reg_response)
-
         elif reg_req.status_code == 400:
             data = register_flow_fail(reg_response,email,user_role,reg_req)
+        else:
+            log.error("Unexpected response from Kratos")
+            log.error(reg_req.status_code)
+            log.error(reg_req.json())
+            raise GenericException("Got unexpected response from Kratos")
     return data
 
 
