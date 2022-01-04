@@ -172,7 +172,7 @@ def add_agmt_user(db_:Session, project_id, user_id, current_user=None):
     project_row.updatedUser = current_user
     response = {
         "db_content" : db_content,
-        "project" : project_row
+        "project_content" : project_row
     }
     # db_.commit()
     return response
@@ -194,10 +194,7 @@ def update_agmt_user(db_, user_obj, current_user=10101):
     user_row.project.updatedUser = current_user
     db_.add(user_row)
     # db_.commit()
-    response = {
-        "project" : user_row
-    }
-    return response
+    return user_row
 
 def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence_id_range,
     **kwargs):
