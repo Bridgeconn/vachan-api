@@ -1,21 +1,12 @@
 '''Test cases for licenses related APIs'''
 from . import client, check_default_get
 from . import assert_input_validation_error, assert_not_available_content
-from .test_auth_basic import register,delete_user_identity,logout_user,\
-    login,SUPER_PASSWORD,SUPER_USER
+from .test_auth_basic import logout_user,login,SUPER_PASSWORD,SUPER_USER
 from .conftest import initial_test_users
 
 UNIT_URL = '/v2/licenses'
 headers = {"contentType": "application/json", "accept": "application/json"}
 
-#create a normal user for this module test
-# test_user_data = {
-#         "email": "abc@gmail.com",
-#         "password": "passwordabc@1"
-#     }
-# response = register(test_user_data,apptype='API-user')
-# test_user_id = [response.json()["registered_details"]["id"]]
-# initial_test_users['APIUser2']['token'] = response.json()["token"]
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
@@ -239,23 +230,13 @@ def test_put():
     assert response.json()['message'] == "License edited successfully"
     assert response.json()['data']['license'] == "A different text"
 
-    #Try to edit with different user
-    test_user_data2 = {
-        "email": "abc2@gmail.com",
-        "password": "passwordabc@2"
-    }
-    response = register(test_user_data2,apptype='API-user')
-    test_user_id2 = [response.json()["registered_details"]["id"]]
-    test_user_token2 = response.json()["token"]
     headers_auth2 = {"contentType": "application/json",
                 "accept": "application/json",
-                'Authorization': "Bearer"+" "+test_user_token2
+                'Authorization': "Bearer"+" "+initial_test_users['APIUser']['token']
             }
     response = client.put(UNIT_URL, json=update_data, headers=headers_auth2)
     assert response.status_code == 403
     assert response.json()['error'] == "Permission Denied"
-
-    delete_user_identity(test_user_id2)
 
     #try to edit with super admin
     data_admin   = {

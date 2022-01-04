@@ -2,20 +2,10 @@
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
-from .test_auth_basic import register,delete_user_identity,SUPER_USER,\
-    SUPER_PASSWORD, login, logout_user
+from .test_auth_basic import SUPER_USER,SUPER_PASSWORD, login, logout_user
 from .conftest import initial_test_users
 
 UNIT_URL = '/v2/languages'
-
-# #create a normal user for this module test
-# test_user_data = {
-#         "email": "abc@gmail.com",
-#         "password": "passwordabc@1"
-#     }
-# response = register(test_user_data,apptype='API-user')
-# test_user_id = [response.json()["registered_details"]["id"]]
-# initial_test_users['APIUser2']['token'] = response.json()["token"]
 
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
@@ -269,23 +259,14 @@ def test_put_languages():
     assert response.json()['error'] == "Authentication Error"
 
     #create a new user and edit the previous user created content
-    test_user_data2 = {
-        "email": "abc2@gmail.com",
-        "password": "passwordabc@2"
-    }
-    response = register(test_user_data2, apptype='API-user')
-    test_user_id2 = [response.json()["registered_details"]["id"]]
-    test_user_token2 = response.json()["token"]
+    
     headers_auth2 = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+test_user_token2
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+initial_test_users['APIUser']['token']
             }
     response = client.put(UNIT_URL, headers=headers_auth2, json=data)
     assert response.status_code == 403
     assert response.json()['error'] == "Permission Denied"
-
-    #delete the user
-    delete_user_identity(test_user_id2)
 
     #super admin can edit the content
     data_admin   = {

@@ -6,7 +6,7 @@ from .test_bibles import check_post as add_bible, gospel_books_data
 from .test_sources import check_post as add_source
 from .test_versions import check_post as add_version
 from .conftest import initial_test_users
-from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,register,delete_user_identity
+from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER
 
 UNIT_URL = '/v2/autographa/projects' 
 USER_URL = '/v2/autographa/project/user'
@@ -836,17 +836,18 @@ def test_get_project_access_rules():
         assert proj['projectName'] in ["Test project 4","Test project 3","Test project 2"]
 
    #A new Aguser requesting for all projecrts
-    test_ag_user_data = {
-        "email": "testaguser@test.com",
-        "password": "passwordag@1"
-    }
-    response = register(test_ag_user_data, apptype='Autographa')
-    ag_user_id = [response.json()["registered_details"]["id"]]
-    ag_user_token = response.json()["token"]
+    # test_ag_user_data = {
+    #     "email": "testaguser@test.com",
+    #     "password": "passwordag@1"
+    # }
+    # response = register(test_ag_user_data, apptype='Autographa')
+    # ag_user_id = [response.json()["registered_details"]["id"]]
+    # ag_user_token = response.json()["token"]
 
     #get projects where user have no projects result is []
     headers_auth["app"] = "Autographa"
-    headers_auth['Authorization'] = "Bearer"+" "+ag_user_token
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser2']['token']
+    # headers_auth['Authorization'] = "Bearer"+" "+ag_user_token
     response = client.get(UNIT_URL,headers=headers_auth)
     assert len(response.json()) == 0
-    delete_user_identity(ag_user_id)
+    # delete_user_identity(ag_user_id)
