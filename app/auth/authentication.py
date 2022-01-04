@@ -105,31 +105,34 @@ def api_resourcetype_map(endpoint, path_params={}):
 def search_api_permission_map(endpoint, method, client_app, path_params={}):
     res_perm_list = []
     req_url = endpoint
+    # print("endpoint:", endpoint)
     for key in path_params:
         req_url = req_url.replace(path_params[key], "*")
     for row in APIPERMISSIONTABLE:
         table_url = row[0]
         for key in path_params:
-            table_url = req_url.replace("{"+key+"}", "*")
+            table_url = table_url.replace("{"+key+"}", "*")
         # print("path_params:", path_params)
         # print("table_url:", table_url)
         # print("req_url:", req_url)
         if table_url == req_url:
-            print("url matched")
+            # print("url matched")
             if row[1] == method:
-                print("method matched")
-                # print(row[2])
+                # print("method matched")
                 # print(client_app.value)
-                if row[2] == "None" or row[2] == client_app.value:
-                    print("app matched")
+                if row[2] == "None" or row[2] == client_app:
+                    # print("row:", row)
+                    # print("client_app:", client_app) 
+                    # print("url, method and app matched")
                     res = row[4]
                     if res == 'None':
                         res = api_resourcetype_map(req_url, path_params)
                     res_perm_list.append((res, row[5]))
     if len(res_perm_list) == 0:
+        print("No permisions map found for:(%s, %s, %s)"%(endpoint, method, client_app))
         log.error("No permisions map found for:(%s, %s, %s)"%(endpoint, method, client_app))
         raise GenericException("API-Permission map not defined for the request!")
-    print(res_perm_list)
+    # print("res_perm_list:", res_perm_list)
     return res_perm_list
 
 def get_access_tag(db_, resource_type, path_params={}, resource=None):
@@ -146,8 +149,9 @@ def get_access_tag(db_, resource_type, path_params={}, resource=None):
     if "source_name" in path_params:
         db_entry = db_.query(db_models.Source.metaData['accessPermissions']).filter(
             db_models.Source.sourceName == path_params['source_name']).first()
-        return db_entry[0]
-    elif resource_type == schema_auth.ResourceType.CONTENT:
+        if db_entry is not None:
+            return db_entry[0]
+    if resource_type == schema_auth.ResourceType.CONTENT:
         return ['content']
     if resource:
         return resource.metaData['accessPermissions']
@@ -185,8 +189,8 @@ def check_right(user_details, required_rights, resp_obj=None, db_=None):
             if role in required_rights:
                 return True
         if resp_obj is not None and db_ is not None:
-            print("user_details:", user_details)
-            print("resp_obj:", resp_obj.__dict__)
+            # print("user_details:", user_details)
+            # print("resp_obj:", resp_obj.__dict__)
             if "resourceCreatedUser" in required_rights and \
                 user_details['user_id'] == resp_obj.createdUser:
                 # print("matched created user")
@@ -213,7 +217,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         if 'app' in request.headers:
             client_app = request.headers['app']
         else:
-            client_app = schema_auth.App.API
+            client_app = schema_auth.App.API.value
         required_permissions = search_api_permission_map(
             endpoint, method, client_app, path_params)
 
@@ -239,22 +243,22 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         ###### Executing the API function #######
         response = await func(*args, **kwargs)
         #########################################
+        obj = None
+        if isinstance(response, dict):
+            if "source_content" in response:
+                obj = response['source_content']
+                response = response['db_content']
+            elif "data" in response:
+                if isinstance(response['data'], dict) and "source_content" in response['data']:
+                    obj = response['data']['source_content']
+                    response['data'] = response['data']['db_content']
+                else:
+                    obj = response['data']
         
-        if isinstance(response, dict) and "data" in response:
-            obj = response['data']
-            if (isinstance(response['data'], dict) and 
-                "source_content" in response['data'] and 
-                "db_content" in response['data']):
-                obj = response['data']['source_content']
-                response['data'] = response['data']['db_content']
-                print("updated response:", response)
-          
-
-
         if Authenticated:
             # All no-auth and role based cases checked and appoved if applicable
             db_.commit()
-        elif isinstance(response, dict):
+        elif isinstance(response, dict) and obj is not None:
             # Resource(item) specific checks
             if check_right(user_details, required_rights, obj, db_):
                 db_.commit()
@@ -262,7 +266,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                 if user_details['user_id'] is None:
                     raise UnAuthorizedException("Access token not provided or user not recognized.")
                 raise PermissionException("Access Permission Denied for the URL")
-        elif isinstance(response, list):
+        elif isinstance(response, list) and obj is None:
             print("response before filtering:", response)
             filtered_response = []
             for item in response:
@@ -482,8 +486,8 @@ def delete_identity(user_id):
     response = requests.delete(base_url)
     if response.status_code == 404:
         raise NotAvailableException("Unable to locate the resource")
-    log.warning(response)
-    log.warning(response.content)
+    # log.warning(response)
+    # log.warning(response.content)
     return response
 
 #user role add
