@@ -352,8 +352,8 @@ def test_get_books_contenttype():
     # content_type
     #without auth   
     response = client.get(UNIT_URL+source_name+'/books',headers=headers)
-    assert response.status_code == 403
-    assert response.json()["error"] == "Permission Denied"
+    assert response.status_code == 401
+    assert response.json()["error"] == "Authentication Error"
 
     #with auth
     response = client.get(UNIT_URL+source_name+'/books',headers=headers_auth)
@@ -367,8 +367,8 @@ def test_get_books_contenttype():
 
     #without auth
     response = client.get(UNIT_URL+source_name+'/books?content_type=usfm')
-    assert response.status_code == 403
-    assert response.json()["error"] == "Permission Denied"
+    assert response.status_code == 401
+    assert response.json()["error"] == "Authentication Error"
 
     #with auth
     response = client.get(UNIT_URL+source_name+'/books?content_type=usfm',headers=headers_auth)
@@ -408,8 +408,8 @@ def test_get_books_contenttype():
 
     #without auth
     response = client.get(UNIT_URL+source_name+'/books?content_type=audio')
-    assert response.status_code == 403
-    assert response.json()["error"] == "Permission Denied"
+    assert response.status_code == 401
+    assert response.json()["error"] == "Authentication Error"
 
     #with auth
     response = client.get(UNIT_URL+source_name+'/books?content_type=audio',headers=headers_auth)
@@ -475,8 +475,8 @@ def test_get_books_versification():
 
     # #without auth
     response = client.get(UNIT_URL+source_name+'/versification')
-    assert response.status_code == 403
-    assert response.json()["error"] == "Permission Denied"
+    assert response.status_code == 401
+    assert response.json()["error"] == "Authentication Error"
     #with auth
     response = client.get(UNIT_URL+source_name+'/versification',headers=headers_auth)
     assert response.status_code == 200
@@ -503,8 +503,8 @@ def test_get_verses():
 
     #without auth
     response = client.get(UNIT_URL+source_name+'/verses')
-    assert response.status_code == 403
-    assert response.json()["error"] == "Permission Denied"
+    assert response.status_code == 401
+    assert response.json()["error"] == "Authentication Error"
     #with auth
     response = client.get(UNIT_URL+source_name+'/verses',headers=headers_auth)
     assert response.status_code == 200
