@@ -10,7 +10,7 @@ from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,register,delete_us
 
 UNIT_URL = '/v2/autographa/projects' 
 USER_URL = '/v2/autographa/project/user'
-headers = {"contentType": "application/json", "accept": "application/json"}
+headers = {"contentType": "application/json", "accept": "application/json", "app":"Autographa"}
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
                 "app":"Autographa"

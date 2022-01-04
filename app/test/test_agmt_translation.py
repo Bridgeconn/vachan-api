@@ -65,11 +65,11 @@ def test_get_tokens():
 
     # after adding books
     #without auth
-    get_response2 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id))
-    assert get_response2.json()['error'] == 'Permission Denied'
+    get_response2 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id), headers=headers)
+    assert get_response2.json()['error'] == 'Authentication Error'
     get_response2 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id),headers=headers)
-    assert get_response2.status_code == 403
-    assert get_response2.json()['error'] == 'Permission Denied'
+    assert get_response2.status_code == 401
+    assert get_response2.json()['error'] == 'Authentication Error'
     #with auth
     get_response2 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id),headers=headers_auth)
     assert get_response2.status_code == 200
@@ -243,8 +243,8 @@ def test_save_translation():
 
     #Without auth
     response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
-    json=post_obj_list)
-    assert response.json()['error'] == 'Permission Denied'
+    json=post_obj_list, headers=headers)
+    assert response.json()['error'] == 'Authentication Error'
 
     # all tokens at once
     post_obj_list = []
@@ -388,12 +388,12 @@ def test_drafts():
 
     #Without Auth
     response = client.get(UNIT_URL+'/draft?project_id='+str(project_id)+
-        "&books=mat")
-    assert response.json()['error'] == 'Permission Denied'
+        "&books=mat", headers=headers)
+    assert response.json()['error'] == 'Authentication Error'
     response = client.get(UNIT_URL+'/draft?project_id='+str(project_id)+
         "&books=mat",headers=headers)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
 
     # To be added: proper tests for alignment json drafts
     response = client.get(UNIT_URL+'/draft?project_id='+str(project_id)+
@@ -523,12 +523,12 @@ def test_get_sentence():
 
     #without auth        
     response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id)+
-        "&with_draft=True")
-    assert response.json()['error'] == 'Permission Denied'
+        "&with_draft=True", headers=headers)
+    assert response.json()['error'] == 'Authentication Error'
     response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id)+
         "&with_draft=True",headers=headers)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
 
 def test_progress_n_suggestion():
     '''tests for project progress API of AgMT'''
@@ -602,12 +602,12 @@ def test_progress_n_suggestion():
     assert floor(response.json()['untranslated']) == 0
 
     #Without Auth
-    response = client.get(UNIT_URL+"/progress?project_id="+str(project_id))
-    assert response.json()['error'] == 'Permission Denied'
+    response = client.get(UNIT_URL+"/progress?project_id="+str(project_id), headers=headers)
+    assert response.json()['error'] == 'Authentication Error'
     response = client.get(UNIT_URL+"/progress?project_id="+str(project_id)
     ,headers=headers)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
 
 def test_get_versification():
     '''Positive test for agmt sentence/draft fetch API'''
@@ -640,13 +640,13 @@ def test_get_versification():
     assert found_mat and found_mrk
 
     #without auth
-    response = client.get(UNIT_URL+"/versification?project_id="+str(project_id))
-    assert response.json()['error'] == 'Permission Denied'
+    response = client.get(UNIT_URL+"/versification?project_id="+str(project_id), headers=headers)
+    assert response.json()['error'] == 'Authentication Error'
     #without auth but from Autographa
     response = client.get(UNIT_URL+"/versification?project_id="+str(project_id)
     ,headers=headers)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
 
 #Project translation Access Rules based tests
 def test_agmt_translation_access_rule_app():
@@ -671,8 +671,8 @@ def test_agmt_translation_access_rule_app():
     #without auth and from Autographa
     resp = client.get("/v2/autographa/project/tokens?project_id="+str(project_id)
         ,headers=headers)
-    assert resp.status_code == 403
-    assert resp.json()['error'] == 'Permission Denied'
+    assert resp.status_code == 401
+    assert resp.json()['error'] == 'Authentication Error'
     #With Auth and From Autographa
     resp = client.get("/v2/autographa/project/tokens?project_id="+str(project_id)
         ,headers=headers_auth)
@@ -716,8 +716,8 @@ def test_agmt_translation_access_rule_app():
     response = client.get(UNIT_URL+"/token-translations?project_id="+str(project_id)+
         "&token="+all_tokens[0]['token']+"&sentence_id=41001001&offset=0&offset=4",
         headers=headers, json=post_obj_list)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
     #Without Auth and not from Autographa
     response = client.get(UNIT_URL+"/token-translations?project_id="+str(project_id)+
         "&token="+all_tokens[0]['token']+"&sentence_id=41001001&offset=0&offset=4",
@@ -749,8 +749,8 @@ def test_agmt_translation_access_rule_app():
     #Without Auth and From Autographa
     response = client.get(UNIT_URL+'/draft?project_id='+str(project_id)+
         "&output_format=alignment-json",headers=headers)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
     #Without Auth and not From Autographa
     response = client.get(UNIT_URL+'/draft?project_id='+str(project_id)+
         "&output_format=alignment-json")
@@ -764,8 +764,8 @@ def test_agmt_translation_access_rule_app():
     #Without Auth and From Autographa
     response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id)+
         "&with_draft=True",headers=headers)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
     #Without Auth and not From Autographa
     response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id)+
         "&with_draft=True")
@@ -779,8 +779,8 @@ def test_agmt_translation_access_rule_app():
     #Without Auth and From Autographa
     response = client.get(UNIT_URL+"/progress?project_id="+str(project_id),
     headers=headers)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
     #Without Auth and not From Autographa
     response = client.get(UNIT_URL+"/progress?project_id="+str(project_id))
     assert response.status_code == 403
@@ -793,8 +793,8 @@ def test_agmt_translation_access_rule_app():
     #Without Auth and From Autographa
     response = client.get(UNIT_URL+"/versification?project_id="+str(project_id)
     ,headers=headers)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
     #Without Auth and not From Autographa
     response = client.get(UNIT_URL+"/versification?project_id="+str(project_id))
     assert response.status_code == 403

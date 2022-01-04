@@ -18,7 +18,7 @@ from . test_gql_auth_basic import login,SUPER_PASSWORD,SUPER_USER
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
                 "app":"Autographa"}
-headers = {"contentType": "application/json", "accept": "application/json"}
+headers = {"contentType": "application/json", "accept": "application/json", "app":"Autographa"}
 
 PROJECT_CREATE_GLOBAL_QUERY = """
     mutation createproject($object:InputCreateAGMTProject){
@@ -182,7 +182,7 @@ agmtProjects(projectName:"Test project 1"){
 }"""
   #without auth
   executed = gql_request(query=get_non_exisitng_project)
-  assert_not_available_content_gql(executed["data"]["agmtProjects"])
+  assert "errors" in executed
   #with auth
   executed = gql_request(query=get_non_exisitng_project,headers=headers_auth)
   assert_not_available_content_gql(executed["data"]["agmtProjects"])
