@@ -83,8 +83,8 @@ Endpoints,Method,RequestApp,UserNeeded,ResourceType,Permission
 /v2/autographa/projects,GET,VachanAdmin,False,None,view-on-vachan-admin
 /v2/autographa/projects,GET,API-user,False,None,read-via-api
 /v2/autographa/projects,POST,Autographa,True,None,create
-/v2/autographa/projects,PUT,Autographa,True,CONTENT,translate
-/v2/autographa/projects,PUT,Autographa,True,PROJECT,edit-Settings
+/v2/autographa/projects,PUT,Autographa,True,"contents like bibles, commentaries, infographics, dictionary or videos",translate
+/v2/autographa/projects,PUT,Autographa,True,Ag or translation project,edit-Settings
 /v2/autographa/project/user,POST,Autographa,True,None,create-user
 /v2/autographa/project/user,PUT,Autographa,True,None,edit-Settings
 /v2/autographa/project/tokens,GET,Autographa,False,None,read-draft
