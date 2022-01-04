@@ -56,7 +56,7 @@ def test_get_book_code():
   "code": "psa"
 }
     executed = gql_request(query=query_book_code,variables=var)
-    assert "errors" in executed
+    assert "errors" not in executed
     #With Auth
     executed = gql_request(query=query_book_code,headers=headers_auth,variables=var)
     data = executed["data"]["bibleBooks"]
@@ -69,7 +69,7 @@ def test_get_book_code_upper_case():
   "code": "PSA"
 }
     executed = gql_request(query=query_book_code,variables=var)
-    assert "errors" in executed
+    assert "errors" not in executed
     #With Auth
     executed = gql_request(query=query_book_code,headers=headers_auth,variables=var)
     data = executed["data"]["bibleBooks"]
@@ -92,7 +92,7 @@ def test_get_book_name():
   "name": "genesis"
 }
     executed = gql_request(query=query_book_name,variables=var)
-    assert "errors" in executed
+    assert "errors" not in executed
     #With Auth
     executed = gql_request(query=query_book_name,headers=headers_auth,variables=var)
     data = executed["data"]["bibleBooks"]
@@ -105,7 +105,7 @@ def test_get_book_name_mixed_case():
   "name": "Matthew"
 }
     executed = gql_request(query=query_book_name,variables=var)
-    assert "errors" in executed
+    assert "errors" not in executed
     #With Auth
     executed = gql_request(query=query_book_name,headers=headers_auth,variables=var)
     data = executed["data"]["bibleBooks"]
@@ -129,7 +129,7 @@ def test_get_multiple_params():
   "code": "1sa"
 }
     executed = gql_request(query=query_book_mul_params,variables=var)
-    assert "errors" in executed
+    assert "errors" not in executed
     #With Auth
     executed = gql_request(query=query_book_mul_params,headers=headers_auth,variables=var)
     data = executed["data"]["bibleBooks"]
