@@ -83,15 +83,24 @@ Endpoints,Method,RequestApp,UserNeeded,ResourceType,Permission
 /v2/autographa/projects,GET,VachanAdmin,False,None,view-on-vachan-admin
 /v2/autographa/projects,GET,API-user,False,None,read-via-api
 /v2/autographa/projects,POST,Autographa,True,None,create
+/v2/autographa/projects,POST,None,True,None,nil
 /v2/autographa/projects,PUT,Autographa,True,"contents like bibles, commentaries, infographics, dictionary or videos",translate
 /v2/autographa/projects,PUT,Autographa,True,Ag or translation project,edit-Settings
+/v2/autographa/projects,PUT,None,True,None,nil
 /v2/autographa/project/user,POST,Autographa,True,None,create-user
+/v2/autographa/project/user,POST,None,True,None,nil
 /v2/autographa/project/user,PUT,Autographa,True,None,edit-Settings
+/v2/autographa/project/user,PUT,None,True,None,nil
 /v2/autographa/project/tokens,GET,Autographa,False,None,read-draft
-/v2/autographa/project/tokens,PUT,None,True,None,edit-draft
+/v2/autographa/project/tokens,GET,None,False,None,nil
+/v2/autographa/project/tokens,PUT,Autographa,False,None,edit-draft
+/v2/autographa/project/tokens,PUT,None,True,None,nil
 /v2/autographa/project/token-translations,GET,Autographa,False,None,read-draft
-/v2/autographa/project/token-sentences,PUT,None,True,None,edit-draft
+/v2/autographa/project/token-translations,GET,None,False,None,nil
+/v2/autographa/project/token-sentences,PUT,Autographa,True,None,edit-draft
+/v2/autographa/project/token-sentences,PUT,None,True,None,nil
 /v2/autographa/project/draft,GET,Autographa,False,None,read-draft
+/v2/autographa/project/draft,GET,None,False,None,nil
 /v2/autographa/project/sentences,GET,Autographa,False,None,view-project
 /v2/autographa/project/sentences,GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/autographa/project/sentences,GET,VachanAdmin,False,None,view-on-vachan-admin
