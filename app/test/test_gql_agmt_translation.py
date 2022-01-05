@@ -18,7 +18,7 @@ from . test_gql_auth_basic import login,SUPER_PASSWORD,SUPER_USER
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
                 "app":types.App.AG.value}
-headers = {"contentType": "application/json", "accept": "application/json"}
+headers = {"contentType": "application/json", "accept": "application/json", "app":types.App.AG.value}
 
 def assert_positive_get_tokens_gql(item):
     '''common tests for a token response object'''

@@ -41,3 +41,5 @@ Unidecode==1.2.0
 urllib3==1.26.6
 uvicorn==0.14.0
 wrapt==1.12.1
+python-multipart==0.0.5
+
