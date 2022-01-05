@@ -1,5 +1,6 @@
 """router for authentication endpoints"""
 from fastapi import APIRouter, Depends, Query, Request
+from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import types
 from sqlalchemy.orm import Session
 from schema import schema_auth, schemas
@@ -7,12 +8,12 @@ from custom_exceptions import NotAvailableException
 from dependencies import log , get_db
 from auth.authentication import user_register_kratos,user_login_kratos,user_role_add ,\
     delete_identity , get_auth_access_check_decorator , get_user_or_none, kratos_logout
-from fastapi.security import OAuth2PasswordRequestForm    
 
 router = APIRouter()
 
 @router.post("/token")
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+async def form_login(form_data: OAuth2PasswordRequestForm = Depends()):
+    '''An additional login option using form input'''
     user = user_login_kratos(form_data.username,form_data.password)
     return {"access_token": user["token"], "token_type": "bearer"}
 
