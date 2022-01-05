@@ -43,12 +43,11 @@ def retrieve_stopwords(db_: Session, language_code, **kwargs):
         query = query.filter(db_models.StopWords.confidence >= 1)
     if only_active:
         query = query.filter(db_models.StopWords.active == only_active)
-    query_result = query.offset(skip).limit(limit).all()
+    query_result =[item.__dict__ for item in query.offset(skip).limit(limit).all()]
     return query_result
 
 def update_stopword_info(db_: Session, language_code, sw_json, user_id=None):
     '''updates the given information of a stopword in db'''
-    data = {}
     query = db_.query(db_models.Language.languageId)
     language_id = query.filter(func.lower(db_models.Language.code) == language_code.lower()).first()
     if not language_id:
@@ -71,7 +70,7 @@ def update_stopword_info(db_: Session, language_code, sw_json, user_id=None):
     query = db_.query(db_models.StopWords)
     row = query.filter(db_models.StopWords.stopWord == stopword,
             db_models.StopWords.languageId == language_id).first()
-    return row
+    return row.__dict__
 
 def add_stopwords(db_: Session, language_code, stopwords_list, user_id=None):
     '''insert given stopwords into look up table for a given language'''
@@ -105,12 +104,12 @@ def add_stopwords(db_: Session, language_code, stopwords_list, user_id=None):
                 if result.rowcount == 1:
                     row = db_.query(db_models.StopWords).filter(db_models.StopWords.stopWord ==
                         word, db_models.StopWords.languageId == language_id).first()
-                    db_content.append(row)
+                    db_content.append(row.__dict__)
         else:
             new_sw_row = db_models.StopWords(**args)
             db_.add(new_sw_row)
-            db_content.append(new_sw_row)
-    # db_.commit()
+            db_content.append(new_sw_row.__dict__)
+    db_.flush()
     return db_content
 
 def clean_text(text):
@@ -181,7 +180,7 @@ async def filter_translation_words(db_, request, gl_lang_code, stopwords, user_d
         user_details=user_details,
         db_=db_)
     if response:
-        translation_words = [row.word for row in response['db_content']]
+        translation_words = [row.word for row in response]
         translation_words = [item.strip() for item in translation_words if item.strip()!='']
         stopwords = [item for item in stopwords if item[0] not in translation_words]
     return stopwords
@@ -208,7 +207,8 @@ def add_generated_sws(db_, language_id, stopwords, user_id):
         else:
             new_sw_row = db_models.StopWords(**args)
             db_.add(new_sw_row)
-    db_.commit()
+    db_.flush()
+
 
 async def extract_stopwords(db_, request, language_id, language_code, gl_lang_code, *args):
     '''Extract stopwords from available data and stores in db'''
@@ -244,7 +244,7 @@ def create_job(db_, user_id):
         status=schemas_nlp.JobStatus.CREATED.value
         )
     db_.add(db_content)
-    db_.commit()
+    db_.flush()
     return db_content
 
 def update_job(db_, job_id, user_id, update_args):
@@ -258,8 +258,9 @@ def update_job(db_, job_id, user_id, update_args):
         job_entry.output = update_args['output']
     if "endTime" in update_args:
         job_entry.endTime = update_args['endTime']
+    job_entry.updatedUser = user_id
     # db_.add(job_entry)
-    db_.commit()
+    db_.flush()
 
 
 async def generate_stopwords(db_: Session, request: Request, *args, user_details=None,  **kwargs):
@@ -308,8 +309,6 @@ async def generate_stopwords(db_: Session, request: Request, *args, user_details
         update_args = await extract_stopwords(db_, request, language_id, language_code,
                                  gl_lang_code, user_details, sentences)
     update_job(db_, job_id, user_id, update_args)
-    query = db_.query(db_models.Jobs)
-    query_result = query.filter(db_models.Jobs.jobId == job_id).first()
 
 
 def check_job_status(db_: Session, job_id):

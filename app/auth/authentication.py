@@ -136,6 +136,7 @@ def search_api_permission_map(endpoint, method, client_app, path_params={}):
     return res_perm_list
 
 def get_access_tag(db_, resource_type, path_params={}, resource=None):
+    '''obtain access tag based on resource-url direct link or value stored in DB'''
     resource_tag_map = {
         schema_auth.ResourceType.USER: ['user'],
         schema_auth.ResourceType.PROJECT: ['translation-project'],
@@ -159,11 +160,7 @@ def get_access_tag(db_, resource_type, path_params={}, resource=None):
 
 def is_project_owner(db_:Session, db_resource, user_id):
     '''checks if the user is the owner of the given project'''
-    try:
-        project_id = db_resource.projectId
-    except Exception as exe:
-        log.info(exe)
-        project_id = db_resource.project_id
+    project_id = db_resource.projectId
     project_owners = db_.query(db_models.TranslationProjectUser.userId).filter(
         db_models.TranslationProjectUser.project_id == project_id,#pylint: disable=comparison-with-callable
         db_models.TranslationProjectUser.userRole == "projectOwner").all()
@@ -174,11 +171,7 @@ def is_project_owner(db_:Session, db_resource, user_id):
 
 def is_project_member(db_:Session, db_resource, user_id):
     '''checks if the user is the memeber of the given project'''
-    try:
-        project_id = db_resource.projectId
-    except Exception as exe:
-        log.info(exe)
-        project_id = db_resource.project_id
+    project_id = db_resource.projectId
     project_members = db_.query(db_models.TranslationProjectUser.userId).filter(
         db_models.TranslationProjectUser.project_id == project_id,#pylint: disable=comparison-with-callable
         db_models.TranslationProjectUser.userRole == "projectMember").all()
@@ -259,7 +252,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         response = await func(*args, **kwargs)
         #########################################
         obj = None
-        print("Actual response:", response)
+        # print("Actual response:", response)
         if isinstance(response, dict):
             if "db_content" in response:
                 if "source_content" in response:

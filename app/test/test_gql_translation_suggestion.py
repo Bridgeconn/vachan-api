@@ -159,7 +159,7 @@ def test_learn_n_suggest():
             assert "ഒരു ടെസ്റ്റ് കേസ്" in item['translationSuggestions']
             found_atestcase = True
         if item['token'] == 'developer':
-            assert item['translationSuggestions']['ടെവെലപ്പര്‍'] == 1
+            assert item['translationSuggestions']['ടെവെലപ്പര്‍'] >= 1
             found_lower_developer = True
     assert found_atestcase
     assert found_lower_developer

@@ -94,8 +94,8 @@ def test_get_poisitive():
 
 	# filtering with various params
 	resp = client.get(SENT_URL, headers=headers)
-	assert resp.status_code == 403
-	assert resp.json()['error'] == 'Permission Denied'
+	assert resp.status_code == 401
+	assert resp.json()['error'] == 'Authentication Error'
 	#with auth
 	resp = client.get(SENT_URL, headers=headers_auth)
 	assert resp.status_code == 200
@@ -105,8 +105,8 @@ def test_get_poisitive():
 
 	#without auth
 	resp = client.get(SENT_URL+"?language_code=hi", headers=headers)
-	assert resp.status_code == 403
-	assert resp.json()['error'] == 'Permission Denied'
+	assert resp.status_code == 401
+	assert resp.json()['error'] == 'Authentication Error'
 	#with auth
 	resp = client.get(SENT_URL+"?language_code=hi", headers=headers_auth)
 	assert resp.status_code == 200

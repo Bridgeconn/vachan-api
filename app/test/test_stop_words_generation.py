@@ -2,6 +2,7 @@
 import json
 import time
 from app.main import log
+from app.schema import schema_auth
 from . import client
 from . import check_default_get
 from . import assert_not_available_content
@@ -210,6 +211,7 @@ def add_version():
         "versionName": "test version",
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    headers_auth['app'] = schema_auth.App.VACHANADMIN.value
     result = client.post('/v2/versions', headers=headers_auth, json=version_data)
     assert result.status_code == 201
 
