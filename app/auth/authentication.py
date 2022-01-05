@@ -48,7 +48,7 @@ def get_current_user_data(recieve_token):
     return user_details
 
 #optional authentication with token or none
-optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth", auto_error=False)
+optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 async def get_user_or_none(token: str = Depends(optional_oauth2_scheme)):
     """optional auth for getting token of logined user not raise error if no auth"""
     # print("token===>",token)

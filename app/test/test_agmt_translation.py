@@ -6,7 +6,7 @@ from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from .test_agmt_projects import bible_books, check_post as add_project
 from .conftest import initial_test_users
-from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,register,delete_user_identity
+from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER
 
 
 UNIT_URL = '/v2/autographa/project'
@@ -846,14 +846,6 @@ def test_agmt_translation_access_permissions():
     assert response.json()['message'] == "Login Succesfull"
     test_SA_token = response.json()["token"]
 
-    test_ag_user_data = {
-        "email": "testaguser@test.com",
-        "password": "passwordag@1"
-    }
-    response = register(test_ag_user_data, apptype='Autographa')
-    ag_user_id = [response.json()["registered_details"]["id"]]
-    ag_user_token = response.json()["token"]
-
     #PUT Permission in agmt translations
     #"SuperAdmin", "AgAdmin", "projectOwner", "projectMember"
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
@@ -868,8 +860,8 @@ def test_agmt_translation_access_permissions():
     assert response.status_code == 201
     assert response.json()['message'] == 'Token translations saved'
 
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser2']['token']
     #PUT with Aguser not a member
-    headers_auth['Authorization'] = "Bearer"+" "+ag_user_token
     response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
         headers=headers_auth, json=post_obj_list)
     assert response.status_code == 403
@@ -884,12 +876,12 @@ def test_agmt_translation_access_permissions():
     #Add AgUser as memeber to projects
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     response = client.post('/v2/autographa/project/user'+'?project_id='+str(project_id)+
-        '&user_id='+str(ag_user_id[0]),headers=headers_auth)
+        '&user_id='+str(initial_test_users['AgUser2']["test_user_id"]),headers=headers_auth)
     assert response.status_code == 201
     assert response.json()['message'] == "User added to project successfully"
 
     #After adding as member PUT
-    headers_auth['Authorization'] = "Bearer"+" "+ag_user_token
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser2']['token']
     response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
         headers=headers_auth, json=post_obj_list)
     assert response.status_code == 201
@@ -903,7 +895,7 @@ def test_agmt_translation_access_permissions():
     #"SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"
     token_list = []
     token_list.append(test_SA_token)
-    token_list.append(ag_user_token)
+    token_list.append(initial_test_users['AgUser2']['token'])
     token_list.append(initial_test_users['AgAdmin']['token'])
     token_list.append(initial_test_users['BcsDev']['token'])
     token_list.append(initial_test_users['AgAdmin']['token'])
@@ -942,8 +934,6 @@ def test_agmt_translation_access_permissions():
         ,headers=headers_auth)
         assert response.status_code ==200
         assert len(response.json()) > 0
-
-    delete_user_identity(ag_user_id)
 
     #Not getting Content
     #Aguser is not member of project
