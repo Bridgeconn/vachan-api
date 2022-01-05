@@ -127,7 +127,7 @@ def search_api_permission_map(endpoint, method, client_app, path_params={}):
                     res = row[4]
                     if res == 'None':
                         res = api_resourcetype_map(req_url, path_params)
-                    res_perm_list.append((res, row[5]))
+                    res_perm_list.append((res, row[5], row[3]))
     if len(res_perm_list) == 0:
         print("No permisions map found for:(%s, %s, %s)"%(endpoint, method, client_app))
         log.error("No permisions map found for:(%s, %s, %s)"%(endpoint, method, client_app))
@@ -197,18 +197,22 @@ def check_right(user_details, required_rights, resp_obj=None, db_=None):
             if role in required_rights:
                 return True
         if resp_obj is not None and db_ is not None:
-            print("user_details:", user_details)
-            print("resp_obj:", resp_obj.__dict__)
-            if "resourceCreatedUser" in required_rights and \
-                user_details['user_id'] == resp_obj.createdUser:
-                print("matched created user")
-                return True
-            if "projectOwner" in required_rights and \
-                is_project_owner(db_, resp_obj, user_details['user_id']):
-                return True
-            if "projectMember" in required_rights and \
-                is_project_member(db_, resp_obj, user_details['user_id']):
-                return True
+            try:
+                print("user_details:", user_details)
+                print("resp_obj:", resp_obj.__dict__)
+                if "resourceCreatedUser" in required_rights and \
+                    user_details['user_id'] == resp_obj.createdUser:
+                    print("matched created user")
+                    return True
+                if "projectOwner" in required_rights and \
+                    is_project_owner(db_, resp_obj, user_details['user_id']):
+                    return True
+                if "projectMember" in required_rights and \
+                    is_project_member(db_, resp_obj, user_details['user_id']):
+                    return True
+            except Exception as exe:
+                log.warning("Error in check right")
+                log.warning(exe)
         return False
 
 
@@ -230,11 +234,14 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             endpoint, method, client_app, path_params)
 
         required_rights = []
-        for resourceType, permission in required_permissions:
+        filteringRequired = False
+        for resourceType, permission, filtering in required_permissions:
             access_tags = get_access_tag(db_, resourceType, path_params)
             for tag in access_tags:
                 if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
                     required_rights += ACCESS_RULES[tag][permission]
+            if filtering=="True":
+                filteringRequired = True
 
         print("required_rights:", required_rights)
         Authenticated = check_right(user_details, required_rights)    
@@ -272,21 +279,23 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         
         if Authenticated:
             # All no-auth and role based cases checked and appoved if applicable
-            db_.commit()
+            if db_:
+                db_.commit() 
         elif obj is not None:
             # Resource(item) specific checks
             if check_right(user_details, required_rights, obj, db_):
-                db_.commit()
+                if db_:
+                    db_.commit() 
             else:
                 if user_details['user_id'] is None:
                     raise UnAuthorizedException("Access token not provided or user not recognized.")
                 raise PermissionException("Access Permission Denied for the URL")
-        elif isinstance(response, list) and obj is None:
+        elif isinstance(response, list) and filteringRequired:
             print("response before filtering:", response)
             filtered_response = []
             for item in response:
                 required_rights_thisitem = required_rights.copy()
-                for resourceType, permission in required_permissions:
+                for resourceType, permission, filtering in required_permissions:
                     access_tags = get_access_tag(db_, resourceType, path_params, item)
                     print("access_tags:", access_tags)
                     for tag in access_tags:
