@@ -74,7 +74,7 @@ hashers:
     key_length: 16
 
 session:
-  lifespan: 10m
+  lifespan: 60m
 
 identity:
   default_schema_url: file:///etc/config/kratos/identity.schema.json

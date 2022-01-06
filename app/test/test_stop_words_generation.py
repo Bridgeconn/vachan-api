@@ -1,5 +1,8 @@
 '''Tests the translation APIs that do need projects available in DB'''
 import json
+import time
+from app.main import log
+from app.schema import schema_auth
 from . import client
 from . import check_default_get
 from . import assert_not_available_content
@@ -101,24 +104,28 @@ def test_get_notavailable_code():
 
 def test_update_stopword():
     '''Positve tests for update stopwords API'''
-    response = client.put(UNIT_URL+'/hi?',headers=headers, json=update_obj1)
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+
+    response = client.put(UNIT_URL+'/hi?',headers=headers_auth, json=update_obj1)
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert_positive_get_stopwords(response.json()['data'])
     assert response.json()['message'] == "Stopword info updated successfully"
 
-    response = client.put(UNIT_URL+'/hi?',headers=headers, json=update_obj2)
+    response = client.put(UNIT_URL+'/hi?',headers=headers_auth, json=update_obj2)
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert_positive_get_stopwords(response.json()['data'])
     assert response.json()['message'] == "Stopword info updated successfully"
 
-    response = client.put(UNIT_URL+'/hi?',headers=headers, json=update_wrong_obj)
+    response = client.put(UNIT_URL+'/hi?',headers=headers_auth, json=update_wrong_obj)
     assert response.status_code == 404
 
 def test_add_stopword():
     '''Positve tests for add stopwords API'''
-    response = client.post(UNIT_URL+'/aa?',headers=headers, json=add_obj)
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+
+    response = client.post(UNIT_URL+'/aa?',headers=headers_auth, json=add_obj)
     assert response.status_code == 201
     assert_positive_response(response.json())
     for item in response.json()['data']:
@@ -128,13 +135,13 @@ def test_add_stopword():
         assert item['stopWord'] in add_obj
     assert len(response.json()['data']) == len(add_obj)
 
-    response = client.post(UNIT_URL+'/aa?',headers=headers, json=["asd"])
+    response = client.post(UNIT_URL+'/aa?',headers=headers_auth, json=["asd"])
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert not response.json()['data']
     assert response.json()['message'] == "0 stopwords added successfully"
 
-    response = client.post(UNIT_URL+'/aa?',headers=headers, json=["hty"])
+    response = client.post(UNIT_URL+'/aa?',headers=headers_auth, json=["hty"])
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert response.json()['data']
@@ -144,13 +151,13 @@ def test_add_stopword():
     assert len(response.json()['data']) == 1
 
 
-    response = client.post(UNIT_URL+'/hi?',headers=headers, json=["की"])
+    response = client.post(UNIT_URL+'/hi?',headers=headers_auth, json=["की"])
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert not response.json()['data']
     assert response.json()['message'] == "0 stopwords added successfully"
 
-    response = client.post(UNIT_URL+'/hi?',headers=headers, json=["चुनाव"])
+    response = client.post(UNIT_URL+'/hi?',headers=headers_auth, json=["चुनाव"])
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert response.json()['data']
@@ -204,6 +211,7 @@ def add_version():
         "versionName": "test version",
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    headers_auth['app'] = schema_auth.App.VACHANADMIN.value
     result = client.post('/v2/versions', headers=headers_auth, json=version_data)
     assert result.status_code == 201
 
@@ -266,13 +274,20 @@ def test_generate_stopwords():
 
     table_name = add_dict_source()
     add_tw_dict(table_name)
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
 
-    response = client.post(GER_URL+'/generate?language_code=hi',headers=headers)
+    response = client.post(GER_URL+'/generate?language_code=hi',headers=headers_auth)
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert "jobId" in response.json()['data']
     assert "status" in response.json()['data']
-    job_response = get_job_status(response.json()['data']['jobId'])
+    for i in range(10):
+        job_response = get_job_status(response.json()['data']['jobId'])
+        status = job_response.json()['data']['status']
+        if status == 'job finished':
+            break
+        log.info("sleeping for a minute in SW generate test")
+        time.sleep(60)
     assert job_response.json()['data']['status'] == 'job finished'
     assert 'output' in job_response.json()['data']
     for item in job_response.json()['data']['output']['data']:
@@ -280,22 +295,35 @@ def test_generate_stopwords():
     assert job_response.json()['message'] == "Stopwords identified out of limited resources. Manual verification recommended"
 
     response = client.post(GER_URL+'/generate?language_code=hi&use_server_data=False',
-                headers=headers, json=sentence_list)
+                headers=headers_auth, json=sentence_list)
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert "jobId" in response.json()['data']
     assert "status" in response.json()['data']
-    job_response = get_job_status(response.json()['data']['jobId'])
+    job_id = response.json()['data']['jobId']
+    for i in range(5):
+        job_response = get_job_status(job_id)
+        status = job_response.json()['data']['status']
+        if status == 'job finished':
+            break
+        log.info("sleeping for a minute in SW generate test")
+        time.sleep(60)
     assert job_response.json()['data']['status'] == 'job finished'
     assert job_response.json()['message'] == "Not enough data to generate stopwords"
 
-    response = client.post(GER_URL+'/generate?language_code=hi',headers=headers,
+    response = client.post(GER_URL+'/generate?language_code=hi',headers=headers_auth,
              json=sentence_list)
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert "jobId" in response.json()['data']
     assert "status" in response.json()['data']
-    job_response1 = get_job_status(response.json()['data']['jobId'])
+    for i in range(10):
+        job_response1 = get_job_status(response.json()['data']['jobId'])
+        status = job_response1.json()['data']['status']
+        if status == 'job finished':
+            break
+        log.info("sleeping for a minute in SW generate test")
+        time.sleep(60)
     assert job_response1.json()['data']['status'] == 'job finished'
     assert 'output' in job_response1.json()['data']
     for item in job_response1.json()['data']['output']['data']:
@@ -303,12 +331,18 @@ def test_generate_stopwords():
     assert job_response1.json()['message'] == "Stopwords identified out of limited resources. Manual verification recommended"
 
     response = client.post(GER_URL+'/generate?language_code=hi&gl_lang_code=hi',
-        headers=headers, json=sentence_list)
+        headers=headers_auth, json=sentence_list)
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert "jobId" in response.json()['data']
     assert "status" in response.json()['data']
-    job_response2 = get_job_status(response.json()['data']['jobId'])
+    for i in range(10):
+        job_response2 = get_job_status(response.json()['data']['jobId'])
+        status = job_response2.json()['data']['status']
+        if status == 'job finished':
+            break
+        log.info("sleeping for a minute in SW generate test")
+        time.sleep(60)
     assert job_response2.json()['data']['status'] == 'job finished'
     assert 'output' in job_response2.json()['data']
     for item in job_response2.json()['data']['output']['data']:

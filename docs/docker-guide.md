@@ -169,4 +169,5 @@ To run the app and tests locally during development, you need to have only the K
 
 4. Error related to super user not created or not found might be related to un successfull setting up of Kratos containers or DB connection
 
-
+5. To remove users in Kratos
+> While developing on local system, if you are running Kratos with quickstart.yml, stop the execution with `ctrl+c` and also do `docker-compose -f quickstart.yml down`. Then, after getting message on terminal that all containers have been removed(not just stopped), restart Kratos with `docker-compose -f quickstart.yml up`

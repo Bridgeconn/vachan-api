@@ -272,18 +272,18 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
             headers_auth['app'] = Apps[num]
             if bible:
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()["error"] == "Permission Denied"
+                assert response.status_code == 401
+                assert response.json()["error"] == "Authentication Error"
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()["error"] == "Permission Denied"
+                assert response.status_code == 401
+                assert response.json()["error"] == "Authentication Error"
                 response = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()["error"] == "Permission Denied"
+                assert response.status_code == 401
+                assert response.json()["error"] == "Authentication Error"
             else:    
                 response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()["error"] == "Permission Denied"
+                assert response.status_code == 401
+                assert response.json()["error"] == "Authentication Error"
         print(f"Test passed -----> NO LOGIN")
 
         #Get with AgUser
@@ -467,19 +467,19 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response2.status_code == 200
                 assert response3.status_code == 200
             else:
-                assert response1.status_code == 403
-                assert response1.json()["error"] == "Permission Denied"
-                assert response2.status_code == 403
-                assert response2.json()["error"] == "Permission Denied"
-                assert response3.status_code == 403
-                assert response3.json()["error"] == "Permission Denied"
+                assert response1.status_code == 401
+                assert response1.json()["error"] == "Authentication Error"
+                assert response2.status_code == 401
+                assert response2.json()["error"] == "Authentication Error"
+                assert response3.status_code == 401
+                assert response3.json()["error"] == "Authentication Error"
         else:
             response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
             if headers_auth['app'] == API or headers_auth['app'] == VACHAN:
                 assert response.status_code == 200
             else:    
-                assert response.status_code == 403
-                assert response.json()["error"] == "Permission Denied"
+                assert response.status_code == 401
+                assert response.json()["error"] == "Authentication Error"
     print(f"Test passed -----> NO LOGIN")
 
     #Get with AgUser
@@ -689,19 +689,19 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response2.status_code == 200
                 assert response3.status_code == 200
             else:
-                assert response1.status_code == 403
-                assert response1.json()["error"] == "Permission Denied"
-                assert response2.status_code == 403
-                assert response2.json()["error"] == "Permission Denied"
-                assert response3.status_code == 403
-                assert response3.json()["error"] == "Permission Denied"
+                assert response1.status_code == 401
+                assert response1.json()["error"] == "Authentication Error"
+                assert response2.status_code == 401
+                assert response2.json()["error"] == "Authentication Error"
+                assert response3.status_code == 401
+                assert response3.json()["error"] == "Authentication Error"
         else:
             response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
             if headers_auth['app'] == VACHAN:
                 assert response.status_code == 200
             else:    
-                assert response.status_code == 403
-                assert response.json()["error"] == "Permission Denied"
+                assert response.status_code == 401
+                assert response.json()["error"] == "Authentication Error"
     print(f"Test passed -----> NO LOGIN")
 
     #Get with AgUser

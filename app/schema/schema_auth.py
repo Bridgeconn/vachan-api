@@ -80,4 +80,12 @@ class UseroleResponse(BaseModel):
 class IdentityDeleteResponse(BaseModel):
     """user identity delete response"""
     message:str
-        
+
+class TableHeading(int, Enum):
+    """Heading of permission table"""
+    ENDPOINT = 0
+    METHOD = 1
+    REQUESTAPP = 2
+    USERNEEDED = 3
+    RESOURCETYPE = 4
+    PERMISSION = 5

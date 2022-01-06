@@ -91,7 +91,8 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
                 permission = "view-on-web"
             elif requesting_app == schema_auth.App.VACHANADMIN:
                 permission = "view-on-vachan-admin"
-            elif requesting_app is None:
+            elif requesting_app is None or \
+                requesting_app == schema_auth.App.API:
                 permission = "read-via-api"
         if method == 'POST':
             if requesting_app == schema_auth.App.AG:
@@ -245,15 +246,13 @@ def api_permission_map(endpoint, request_context, requesting_app, resource, user
 
         "/v2/translation/tokens" : switch_translation,
         "/v2/translation/token-translate" : switch_translation,
-        "/v2/translation/draft" : switch_translation,
+        "/v2/translation/draft"  : switch_translation,
 
     }
     log.info('In API Permission Mapping')
     log.debug('Endpoint: %s, Method: %s',endpoint, method)
     switch_func =  switcher.get(endpoint, message)
     if isinstance(switch_func,str):
-        log.error("Request URL:%s %s,  from : %s",
-                method ,endpoint, request_context['host'])
         raise Exception(message)
 
     permission = switch_func()

@@ -6,7 +6,7 @@ from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from .test_agmt_projects import bible_books, check_post as add_project
 from .conftest import initial_test_users
-from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,register,delete_user_identity
+from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER
 
 
 UNIT_URL = '/v2/autographa/project'
@@ -65,11 +65,11 @@ def test_get_tokens():
 
     # after adding books
     #without auth
-    get_response2 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id))
-    assert get_response2.json()['error'] == 'Permission Denied'
+    get_response2 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id), headers=headers)
+    assert get_response2.json()['error'] == 'Authentication Error'
     get_response2 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id),headers=headers)
-    assert get_response2.status_code == 403
-    assert get_response2.json()['error'] == 'Permission Denied'
+    assert get_response2.status_code == 401
+    assert get_response2.json()['error'] == 'Authentication Error'
     #with auth
     get_response2 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id),headers=headers_auth)
     assert get_response2.status_code == 200
@@ -243,8 +243,8 @@ def test_save_translation():
 
     #Without auth
     response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
-    json=post_obj_list)
-    assert response.json()['error'] == 'Permission Denied'
+    json=post_obj_list, headers=headers)
+    assert response.json()['error'] == 'Authentication Error'
 
     # all tokens at once
     post_obj_list = []
@@ -388,12 +388,12 @@ def test_drafts():
 
     #Without Auth
     response = client.get(UNIT_URL+'/draft?project_id='+str(project_id)+
-        "&books=mat")
-    assert response.json()['error'] == 'Permission Denied'
+        "&books=mat", headers=headers)
+    assert response.json()['error'] == 'Authentication Error'
     response = client.get(UNIT_URL+'/draft?project_id='+str(project_id)+
         "&books=mat",headers=headers)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
 
     # To be added: proper tests for alignment json drafts
     response = client.get(UNIT_URL+'/draft?project_id='+str(project_id)+
@@ -523,12 +523,12 @@ def test_get_sentence():
 
     #without auth        
     response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id)+
-        "&with_draft=True")
-    assert response.json()['error'] == 'Permission Denied'
+        "&with_draft=True", headers=headers)
+    assert response.json()['error'] == 'Authentication Error'
     response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id)+
         "&with_draft=True",headers=headers)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
 
 def test_progress_n_suggestion():
     '''tests for project progress API of AgMT'''
@@ -602,12 +602,12 @@ def test_progress_n_suggestion():
     assert floor(response.json()['untranslated']) == 0
 
     #Without Auth
-    response = client.get(UNIT_URL+"/progress?project_id="+str(project_id))
-    assert response.json()['error'] == 'Permission Denied'
+    response = client.get(UNIT_URL+"/progress?project_id="+str(project_id), headers=headers)
+    assert response.json()['error'] == 'Authentication Error'
     response = client.get(UNIT_URL+"/progress?project_id="+str(project_id)
     ,headers=headers)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
 
 def test_get_versification():
     '''Positive test for agmt sentence/draft fetch API'''
@@ -640,13 +640,13 @@ def test_get_versification():
     assert found_mat and found_mrk
 
     #without auth
-    response = client.get(UNIT_URL+"/versification?project_id="+str(project_id))
-    assert response.json()['error'] == 'Permission Denied'
+    response = client.get(UNIT_URL+"/versification?project_id="+str(project_id), headers=headers)
+    assert response.json()['error'] == 'Authentication Error'
     #without auth but from Autographa
     response = client.get(UNIT_URL+"/versification?project_id="+str(project_id)
     ,headers=headers)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
 
 #Project translation Access Rules based tests
 def test_agmt_translation_access_rule_app():
@@ -671,8 +671,8 @@ def test_agmt_translation_access_rule_app():
     #without auth and from Autographa
     resp = client.get("/v2/autographa/project/tokens?project_id="+str(project_id)
         ,headers=headers)
-    assert resp.status_code == 403
-    assert resp.json()['error'] == 'Permission Denied'
+    assert resp.status_code == 401
+    assert resp.json()['error'] == 'Authentication Error'
     #With Auth and From Autographa
     resp = client.get("/v2/autographa/project/tokens?project_id="+str(project_id)
         ,headers=headers_auth)
@@ -716,8 +716,8 @@ def test_agmt_translation_access_rule_app():
     response = client.get(UNIT_URL+"/token-translations?project_id="+str(project_id)+
         "&token="+all_tokens[0]['token']+"&sentence_id=41001001&offset=0&offset=4",
         headers=headers, json=post_obj_list)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
     #Without Auth and not from Autographa
     response = client.get(UNIT_URL+"/token-translations?project_id="+str(project_id)+
         "&token="+all_tokens[0]['token']+"&sentence_id=41001001&offset=0&offset=4",
@@ -749,8 +749,8 @@ def test_agmt_translation_access_rule_app():
     #Without Auth and From Autographa
     response = client.get(UNIT_URL+'/draft?project_id='+str(project_id)+
         "&output_format=alignment-json",headers=headers)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
     #Without Auth and not From Autographa
     response = client.get(UNIT_URL+'/draft?project_id='+str(project_id)+
         "&output_format=alignment-json")
@@ -764,8 +764,8 @@ def test_agmt_translation_access_rule_app():
     #Without Auth and From Autographa
     response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id)+
         "&with_draft=True",headers=headers)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
     #Without Auth and not From Autographa
     response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id)+
         "&with_draft=True")
@@ -779,8 +779,8 @@ def test_agmt_translation_access_rule_app():
     #Without Auth and From Autographa
     response = client.get(UNIT_URL+"/progress?project_id="+str(project_id),
     headers=headers)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
     #Without Auth and not From Autographa
     response = client.get(UNIT_URL+"/progress?project_id="+str(project_id))
     assert response.status_code == 403
@@ -793,8 +793,8 @@ def test_agmt_translation_access_rule_app():
     #Without Auth and From Autographa
     response = client.get(UNIT_URL+"/versification?project_id="+str(project_id)
     ,headers=headers)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
     #Without Auth and not From Autographa
     response = client.get(UNIT_URL+"/versification?project_id="+str(project_id))
     assert response.status_code == 403
@@ -846,14 +846,6 @@ def test_agmt_translation_access_permissions():
     assert response.json()['message'] == "Login Succesfull"
     test_SA_token = response.json()["token"]
 
-    test_ag_user_data = {
-        "email": "testaguser@test.com",
-        "password": "passwordag@1"
-    }
-    response = register(test_ag_user_data, apptype='Autographa')
-    ag_user_id = [response.json()["registered_details"]["id"]]
-    ag_user_token = response.json()["token"]
-
     #PUT Permission in agmt translations
     #"SuperAdmin", "AgAdmin", "projectOwner", "projectMember"
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
@@ -868,8 +860,8 @@ def test_agmt_translation_access_permissions():
     assert response.status_code == 201
     assert response.json()['message'] == 'Token translations saved'
 
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser2']['token']
     #PUT with Aguser not a member
-    headers_auth['Authorization'] = "Bearer"+" "+ag_user_token
     response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
         headers=headers_auth, json=post_obj_list)
     assert response.status_code == 403
@@ -884,12 +876,12 @@ def test_agmt_translation_access_permissions():
     #Add AgUser as memeber to projects
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     response = client.post('/v2/autographa/project/user'+'?project_id='+str(project_id)+
-        '&user_id='+str(ag_user_id[0]),headers=headers_auth)
+        '&user_id='+str(initial_test_users['AgUser2']["test_user_id"]),headers=headers_auth)
     assert response.status_code == 201
     assert response.json()['message'] == "User added to project successfully"
 
     #After adding as member PUT
-    headers_auth['Authorization'] = "Bearer"+" "+ag_user_token
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser2']['token']
     response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
         headers=headers_auth, json=post_obj_list)
     assert response.status_code == 201
@@ -903,7 +895,7 @@ def test_agmt_translation_access_permissions():
     #"SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"
     token_list = []
     token_list.append(test_SA_token)
-    token_list.append(ag_user_token)
+    token_list.append(initial_test_users['AgUser2']['token'])
     token_list.append(initial_test_users['AgAdmin']['token'])
     token_list.append(initial_test_users['BcsDev']['token'])
     token_list.append(initial_test_users['AgAdmin']['token'])
@@ -942,8 +934,6 @@ def test_agmt_translation_access_permissions():
         ,headers=headers_auth)
         assert response.status_code ==200
         assert len(response.json()) > 0
-
-    delete_user_identity(ag_user_id)
 
     #Not getting Content
     #Aguser is not member of project

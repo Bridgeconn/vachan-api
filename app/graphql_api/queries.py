@@ -356,7 +356,7 @@ class Query(graphene.ObjectType):
         log.info('In GraphQL Get AGMT Token Sentence')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
-        req.scope['method'] = "GET"
+        req.scope['method'] = "PUT"
         req.scope['path'] = "/v2/autographa/project/token-sentences"
         # return projects_crud.get_agmt_source_per_token(db_,project_id,token,occurrences)
         results = translation_apis.get_token_sentences(request=req, project_id=project_id,

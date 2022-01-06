@@ -203,7 +203,7 @@ async def add_version(request: Request, version_obj : schemas.VersionCreate = Bo
             version_obj.versionAbbreviation, version_obj.revision))
     return {'message': "Version created successfully",
         "data": structurals_crud.create_version(db_=db_, version=version_obj,
-        user_id=10101)}
+        user_id=user_details['user_id'])}
 
 @router.put('/v2/versions', response_model=schemas.VersionUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
