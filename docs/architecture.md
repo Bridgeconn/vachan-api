@@ -31,6 +31,16 @@ This section talks briefly about various important directories and files. It wou
 * Make log entries
 * Includes all API endpoints, defined in routers, to `app`.
 
+### app/auth
+User management and acess management
+
+* Access rules. Follows an approach of attribute-based-access-control(ABAC). The rules are defined in the following pattern. 
+```
+Attibute/acess-tag -> permission/operation -> requiredRights
+```
+They are easily configuarable as per the changes in our bussiness rules and policies.
+* Mapping from API endpoints to their corresponding permissions/operations. This is also easily configurable.
+* Code implementing our ABAC logics for access management and Kratos API access for user management
 
 ### app/crud/
 
@@ -39,7 +49,7 @@ This section talks briefly about various important directories and files. It wou
 * Three sub modules
 > * structuals: which contain operations related to the predefined tables that make up the DB structure like Content_types, Languages, Licenses, versions, sources and bible_book_loopup
 > * contents: which contain operations related to the content carrying dynamically created tables like bible, commentary, infographic, biblevideo, dictionary etc
-> * nlp: which contain tables and operations related to AgMT stuff like tokenization, draft generartion, alignment, model building etc
+> * nlp: which contain tables and operations related to AgMT stuff like tokenization, draft generartion, alignment, model building, stopwords etc. The module is sub-divided into multiple files to limit per file size.
 
 ### app/schemas
 
@@ -59,7 +69,8 @@ Contains all input output objects schema definitions, used by pydantic for input
 ### app/graphql_apis
 
 * Defines types, queries and mutations corresponding to all the REST APIs operations
-* Uses same crud functions as REST
+* Uses same router functions as REST
+* Tweaks the request to point to the corresponding REST API, so that the same auth and acess rules can be applied here as well
 * Converts the own types to the app/schemas for validation and uniformity in working with the ORM
 
 ![component diagram](./images/Vachan-apiv2components.png)
