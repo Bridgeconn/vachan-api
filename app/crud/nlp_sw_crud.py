@@ -11,6 +11,7 @@ from fastapi import Request
 from custom_exceptions import NotAvailableException
 
 import db_models
+from dependencies import log
 from schema import schemas_nlp
 from crud import utils
 from routers import content_apis
@@ -293,9 +294,9 @@ async def generate_stopwords(db_: Session, request: Request, *args, user_details
     sentences = []
     try:
         sentences = await get_data(db_, request, language_code, sentence_list, **kwargs)
-    except Exception as exe:
+    except Exception as exe: #pylint: disable=W0703
         log.error("Error in getting sentences for SW generation")
-        log.error(exe)
+        log.error(str(exe))
 
     if len(sentences) < 1000:
         # raise UnprocessableException("Not enough data to generate stopwords")
@@ -314,7 +315,7 @@ async def generate_stopwords(db_: Session, request: Request, *args, user_details
         try:
             update_args = await extract_stopwords(db_, request, language_id, language_code,
                                      gl_lang_code, user_details, sentences)
-        except Exception as exe:
+        except Exception as exe: #pylint: disable=W0703
             update_args = {
                         "status" : schemas_nlp.JobStatus.FINISHED.value,
                         "endTime": datetime.now(),
