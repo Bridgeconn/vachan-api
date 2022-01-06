@@ -1238,6 +1238,65 @@ class DeleteIdentity(graphene.Mutation):
         message = response["message"]
         return DeleteIdentity(message= message)
 
+########## STOPWORDS ########
+class AddStopwords(graphene.Mutation):
+    """Mutation class for Add SW"""
+    class Arguments:
+        """Arguments declaration for the mutation"""
+        language_code = graphene.String(required=True,
+            description="Example : hi")
+        sw_list = graphene.List(graphene.String,
+            description="Expecting a list [ और,के, उसका ]")
+
+    message = graphene.String()
+    data = graphene.List(types.SWResponse)
+#pylint: disable=R0201
+    async def mutate(self,info,sw_list,language_code):
+        '''resolve'''
+        log.info('In GraphQL Add StopWords')
+        db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "POST"
+        req.scope['path'] = f"/v2/lookup/stopwords/{language_code}"
+        req.path_params["language_code"] = language_code
+        response = await translation_apis.add_stopwords(request=req,
+            language_code=language_code, stopwords_list=sw_list,user_details=user_details,
+            db_=db_)
+        # type checks
+        result = response["data"]
+        for res in result:
+            res = utils.swtype_converison(res)
+        message = response['message']
+        return AddStopwords(message=message,data=result)
+
+class EditStopwords(graphene.Mutation):
+    """Mutation class for Update StopWords"""
+    class Arguments:
+        """Arguments declaration for the mutation"""
+        language_code = graphene.String(required=True,
+            description="Example : hi")
+        sw_data = types.StopWordUpdateInput()
+
+    message = graphene.String()
+    data = graphene.Field(types.SWResponse)
+#pylint: disable=R0201
+    async def mutate(self,info,sw_data,language_code):
+        '''resolve'''
+        log.info('In GraphQL Add StopWords')
+        db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = f"/v2/lookup/stopwords/{language_code}"
+        req.path_params["language_code"] = language_code
+        response = await translation_apis.update_stop_words(request=req,
+            language_code=language_code,sw_info=sw_data,user_details=user_details,
+            db_=db_)
+        # type checks
+        result = response["data"]
+        result = utils.swtype_converison(result)
+        message = response['message']
+        return EditStopwords(message=message,data=result)
+
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
     '''All defined mutations'''
@@ -1274,3 +1333,5 @@ class VachanMutations(graphene.ObjectType):
     register = Register.Field()
     update_userrole = UpdateUserRole.Field()
     delete_identity = DeleteIdentity.Field()
+    add_stopword = AddStopwords.Field()
+    update_stopword = EditStopwords.Field()

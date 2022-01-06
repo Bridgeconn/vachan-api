@@ -720,3 +720,17 @@ class UserroleInput(graphene.InputObjectType):
 class UserIdentity(graphene.InputObjectType):
     """input for user identity delete"""
     userid = graphene.String(required=True)
+
+class SWResponse(graphene.ObjectType):#pylint: disable=too-few-public-methods
+    '''Return object of SW'''
+    stopWord = graphene.String()
+    stopwordType = graphene.String()
+    confidence = graphene.Float()
+    metaData = graphene.JSONString()
+    active = graphene.Boolean()
+
+class StopWordUpdateInput(graphene.InputObjectType):
+    """SW update Input"""
+    stopWord = graphene.String(required=True)
+    active = graphene.Boolean(default_value = True)
+    metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String")
