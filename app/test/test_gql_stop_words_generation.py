@@ -293,71 +293,71 @@ def get_job_status(job_id):
     assert "status" in response["data"]["jobStatus"]['data']
     return response["data"]["jobStatus"]
 
-def test_generate_stopwords():
-    '''Positve tests for generate stopwords API'''
-    add_version()
-    table_name = add_bible_source()
-    add_bible_books(table_name)
+# def test_generate_stopwords():
+#     '''Positve tests for generate stopwords API'''
+#     add_version()
+#     table_name = add_bible_source()
+#     add_bible_books(table_name)
 
-    table_name = add_dict_source()
-    add_tw_dict(table_name)
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+#     table_name = add_dict_source()
+#     add_tw_dict(table_name)
+#     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
 
-    var_gen = {
-  "lang_code": "hi"
-}
-    QRY_GEN = """
-        mutation generatesw($lang_code:String!){
-  generateStopword(languageCode:$lang_code){
-    message
-    data{
-      jobId
-      status
-      output
-    }
-  }
-}
-    """
-    executed = gql_request(QRY_GEN,headers=headers_auth,variables=var_gen)
-    assert "message" in executed["data"]["generateStopword"]
-    assert "data" in executed["data"]["generateStopword"]
-    assert "jobId" in executed["data"]["generateStopword"]['data']
-    assert "status" in executed["data"]["generateStopword"]['data']
-    for i in range(10):
-        job_response1 = get_job_status(executed["data"]["generateStopword"]['data']['jobId'])
-        status = job_response1['data']['status']
-        if status == 'job finished':
-            break
-        log.info("sleeping for a minute in SW generate test")
-        time.sleep(60)
-    assert job_response1['data']['status'] == 'job finished'
-    assert 'output' in job_response1['data']
-    for item in job_response1['data']['output']['data']:
-        assert_positive_sw_out(item)
-    assert job_response1['message'] == "Stopwords identified out of limited resources. Manual verification recommended"
+#     var_gen = {
+#   "lang_code": "hi"
+# }
+#     QRY_GEN = """
+#         mutation generatesw($lang_code:String!){
+#   generateStopword(languageCode:$lang_code){
+#     message
+#     data{
+#       jobId
+#       status
+#       output
+#     }
+#   }
+# }
+#     """
+#     executed = gql_request(QRY_GEN,headers=headers_auth,variables=var_gen)
+#     assert "message" in executed["data"]["generateStopword"]
+#     assert "data" in executed["data"]["generateStopword"]
+#     assert "jobId" in executed["data"]["generateStopword"]['data']
+#     assert "status" in executed["data"]["generateStopword"]['data']
+#     for i in range(10):
+#         job_response1 = get_job_status(executed["data"]["generateStopword"]['data']['jobId'])
+#         status = job_response1['data']['status']
+#         if status == 'job finished':
+#             break
+#         log.info("sleeping for a minute in SW generate test")
+#         time.sleep(60)
+#     assert job_response1['data']['status'] == 'job finished'
+#     assert 'output' in job_response1['data']
+#     for item in job_response1['data']['output']['data']:
+#         assert_positive_sw_out(item)
+#     assert job_response1['message'] == "Stopwords identified out of limited resources. Manual verification recommended"
 
-    var_gen2 = {
-  "gl_code": "hi",
-  "lang_code": "hi",
-  "sentence": sentence_list
-}
+#     var_gen2 = {
+#   "gl_code": "hi",
+#   "lang_code": "hi",
+#   "sentence": sentence_list
+# }
 
-    executed = gql_request(QRY_GENERATE_SW,headers=headers_auth,variables=var_gen2)
-    assert "message" in executed["data"]["generateStopword"]
-    assert "data" in executed["data"]["generateStopword"]
-    assert "jobId" in executed["data"]["generateStopword"]['data']
-    assert "status" in executed["data"]["generateStopword"]['data']
-    for i in range(10):
-        job_response2 = get_job_status(executed["data"]["generateStopword"]['data']['jobId'])
-        status = job_response2['data']['status']
-        if status == 'job finished':
-            break
-        log.info("sleeping for a minute in SW generate test")
-        time.sleep(60)
-    assert job_response2['data']['status'] == 'job finished'
-    assert 'output' in job_response2['data']
-    for item in job_response2['data']['output']['data']:
-        assert_positive_sw_out(item)
-    assert len(job_response2['data']['output']['data']) < len(job_response1
-                                                            ['data']['output']['data'])
-    assert job_response2['message'] == "Automatically generated stopwords for the given language"
+#     executed = gql_request(QRY_GENERATE_SW,headers=headers_auth,variables=var_gen2)
+#     assert "message" in executed["data"]["generateStopword"]
+#     assert "data" in executed["data"]["generateStopword"]
+#     assert "jobId" in executed["data"]["generateStopword"]['data']
+#     assert "status" in executed["data"]["generateStopword"]['data']
+#     for i in range(10):
+#         job_response2 = get_job_status(executed["data"]["generateStopword"]['data']['jobId'])
+#         status = job_response2['data']['status']
+#         if status == 'job finished':
+#             break
+#         log.info("sleeping for a minute in SW generate test")
+#         time.sleep(60)
+#     assert job_response2['data']['status'] == 'job finished'
+#     assert 'output' in job_response2['data']
+#     for item in job_response2['data']['output']['data']:
+#         assert_positive_sw_out(item)
+#     assert len(job_response2['data']['output']['data']) < len(job_response1
+#                                                             ['data']['output']['data'])
+#     assert job_response2['message'] == "Automatically generated stopwords for the given language"
