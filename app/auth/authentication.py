@@ -360,7 +360,7 @@ def register_check_success(reg_response):
     switcher = {
         schema_auth.AdminRoles.AGUSER.value : schema_auth.App.AG.value,
         schema_auth.AdminRoles.VACHANUSER.value : schema_auth.App.VACHAN.value,
-        schema_auth.AdminRoles.VACHANADMIN.value : schema_auth.App.VACHANADMIN.value
+        # schema_auth.AdminRoles.VACHANADMIN.value : schema_auth.AdminRoles.VACHANADMIN.value
             }
     user_role =  switcher.get(user_permision[0], schema_auth.App.API.value)
     data["registered_details"]['Permissions'] = [user_role]
@@ -408,7 +408,7 @@ def register_flow_fail(reg_response,email,user_role,reg_req):
                 switcher = {
                     schema_auth.AdminRoles.AGUSER.value : schema_auth.App.AG.value,
                     schema_auth.AdminRoles.VACHANUSER.value : schema_auth.App.VACHAN.value,
-                    schema_auth.AdminRoles.VACHANADMIN.value : schema_auth.App.VACHANADMIN.value
+                    # schema_auth.AdminRoles.VACHANADMIN.value : schema_auth.App.VACHANADMIN.value
                     }
                 role =  switcher.get(perm, schema_auth.App.API.value)
                 conv_permission.append(role)
@@ -432,7 +432,7 @@ def user_register_kratos(register_details,app_type):
     switcher = {
         schema_auth.App.AG : schema_auth.AdminRoles.AGUSER.value,
         schema_auth.App.VACHAN: schema_auth.AdminRoles.VACHANUSER.value,
-        schema_auth.App.VACHANADMIN: schema_auth.AdminRoles.VACHANADMIN.value
+        # schema_auth.App.VACHANADMIN: schema_auth.AdminRoles.VACHANADMIN.value
             }
     user_role =  switcher.get(app_type, schema_auth.AdminRoles.APIUSER.value)
 

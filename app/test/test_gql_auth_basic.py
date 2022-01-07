@@ -341,11 +341,11 @@ def test_register_roles(create_user_fixture):
         "firstname": "user XYZ4",
         "lastname": "No role Test"
     }
-    executed4 = register(data_xyz4,apptype=types.App.VACHANADMIN.name)
-    data = executed4["data"]["register"]
-    assert data["message"] == "Registration Successfull"
-    assert data['registeredDetails']["permissions"] == [types.App.VACHANADMIN.name]
-    xyz4_id = data["registeredDetails"]["id"]
+    # executed4 = register(data_xyz4,apptype=types.App.VACHANADMIN.name)
+    # data = executed4["data"]["register"]
+    # assert data["message"] == "Registration Successfull"
+    # assert data['registeredDetails']["permissions"] == [types.App.VACHANADMIN.name]
+    # xyz4_id = data["registeredDetails"]["id"]
 
     #login check for users
     data_xyz1 = {
@@ -375,14 +375,14 @@ def test_register_roles(create_user_fixture):
     assert data["message"] == "Login Succesfull"
     assert len(data["token"]) == 32
 
-    data_xyz4 = {
-        "user_email": "xyz4@gmail.com",
-        "password": "passwordxyz4@1"
-    }
-    response4 = login(data_xyz4)
-    data = response4["data"]["login"]
-    assert data["message"] == "Login Succesfull"
-    assert len(data["token"]) == 32
+    # data_xyz4 = {
+    #     "user_email": "xyz4@gmail.com",
+    #     "password": "passwordxyz4@1"
+    # }
+    # response4 = login(data_xyz4)
+    # data = response4["data"]["login"]
+    # assert data["message"] == "Login Succesfull"
+    # assert len(data["token"]) == 32
 
     #Register same users xyz1, xyz2 & xyz3 as above with different app_info
     # and ensure that, their roles are appended
@@ -422,22 +422,22 @@ def test_register_roles(create_user_fixture):
     assert data['registeredDetails']["permissions"] == \
         [types.App.API.name, types.App.AG.name]
 
-    #role changed Vachan Admin --> ag
-    data_xyz4 = {
-        "email": "xyz4@gmail.com",
-        "password": "passwordxyz4@1"
-    }
-    response4 = register(data_xyz4,apptype=types.App.AG.name)
-    data = response4["data"]["register"]
-    assert data["message"] == "User Already Registered, New Permission updated"
-    assert data['registeredDetails']["permissions"] == \
-        [types.App.VACHANADMIN.name, types.App.AG.name]
+    # #role changed Vachan Admin --> ag
+    # data_xyz4 = {
+    #     "email": "xyz4@gmail.com",
+    #     "password": "passwordxyz4@1"
+    # }
+    # response4 = register(data_xyz4,apptype=types.App.AG.name)
+    # data = response4["data"]["register"]
+    # assert data["message"] == "User Already Registered, New Permission updated"
+    # assert data['registeredDetails']["permissions"] == \
+    #     [types.App.VACHANADMIN.name, types.App.AG.name]
 
     users_list = create_user_fixture
     users_list.append(xyz1_id)
     users_list.append(xyz2_id)
     users_list.append(xyz3_id)
-    users_list.append(xyz4_id)
+    # users_list.append(xyz4_id)
 
 #Register two users with app_info=API
 #and make them VachanAdmin and AgAdmin
