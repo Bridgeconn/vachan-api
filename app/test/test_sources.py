@@ -629,7 +629,7 @@ def test_diffrernt_sources_with_app_and_roles():
     API = schema_auth.App.API.value
     AG = schema_auth.App.AG.value
     VACHAN = schema_auth.App.VACHAN.value
-    VACHANADMIN = schema_auth.App.VACHANADMIN.value
+    VACHANADMIN = schema_auth.AdminRoles.VACHANADMIN.value
 
     #create sources for test with different access permissions
     #content is default

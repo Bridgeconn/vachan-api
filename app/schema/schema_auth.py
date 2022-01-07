@@ -17,8 +17,8 @@ class App(str, Enum):
     '''Defined apps'''
     AG = "Autographa"
     VACHAN = "Vachan-online or vachan-app"
-    VACHANADMIN = "VachanAdmin"
     API = "API-user"
+# VACHANADMIN = "VachanAdmin"
 
 class Registration(BaseModel):
     """kratos registration input"""

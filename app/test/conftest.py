@@ -130,7 +130,6 @@ def create_user_session_run_at_start():
         role_user_id = initial_test_users["VachanAdmin"]["test_user_id"]
         role_list = [schema_auth.AdminRoles.VACHANADMIN.value]
         response = assign_roles(super_data,role_user_id,role_list)
-        print("rsp------------------------->",response.json())
         assert response.status_code == 201
         assert response.json()["role_list"] == \
             [schema_auth.AdminRoles.VACHANUSER.value, schema_auth.AdminRoles.VACHANADMIN.value]

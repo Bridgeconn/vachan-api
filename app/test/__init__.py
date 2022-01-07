@@ -254,7 +254,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
     API = schema_auth.App.API.value
     AG = schema_auth.App.AG.value
     VACHAN = schema_auth.App.VACHAN.value
-    VACHANADMIN = schema_auth.App.VACHANADMIN.value       
+    VACHANADMIN = schema_auth.AdminRoles.VACHANADMIN.value
     Apps = [ API,AG,VACHAN,VACHANADMIN]
 
     #Get without Login headers=headers_auth
