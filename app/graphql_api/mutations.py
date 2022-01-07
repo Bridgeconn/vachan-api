@@ -1304,14 +1304,14 @@ class GenerateStopwords(graphene.Mutation):
         language_code = graphene.String(required=True,
             description="Example : hi")
         use_server_data = graphene.Boolean(default_value = True)
-        gl_lang_code = graphene.String()
-        sentence_list = graphene.List(types.SWGenerateInput)
+        gl_lang_code = graphene.String(default_value = None)
+        sentence_list = graphene.List(types.SWGenerateInput,default_value = None)
 
     message = graphene.String()
     data = graphene.Field(types.Job)
 #pylint: disable=R0201,R0913
-    async def mutate(self,info,language_code,sentence_list,
-        use_server_data,gl_lang_code):
+    async def mutate(self,info,language_code,use_server_data,
+        gl_lang_code=None,sentence_list=None):
         '''resolve'''
         log.info('In GraphQL Generate StopWords')
         db_ = info.context["request"].db_session
