@@ -734,3 +734,25 @@ class StopWordUpdateInput(graphene.InputObjectType):
     stopWord = graphene.String(required=True)
     active = graphene.Boolean(default_value = True)
     metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String")
+
+class SWGenerateInput(graphene.InputObjectType):#pylint: disable=too-few-public-methods
+    '''Input for Generate SW'''
+    sentenceId = graphene.String()
+    surrogateId = graphene.String(description="Example : MAT 1:1")
+    sentence = graphene.String()
+
+class Job(graphene.ObjectType):#pylint: disable=too-few-public-methods
+    '''Return Response for Job'''
+    jobId = graphene.Int(description="Example : 100000")
+    status = graphene.String(description="Example : job created")
+    output = graphene.JSONString(description="""{
+        'language':'hi',
+        'data': [{'stopWord': 'और',
+                  'stopwordType': 'auto generated',
+                  'confidence': 0.8,
+                  'active': True,
+                  'metaData': {
+                         'type': 'postposition'
+                   }
+                }]
+        }""")

@@ -1297,6 +1297,35 @@ class EditStopwords(graphene.Mutation):
         message = response['message']
         return EditStopwords(message=message,data=result)
 
+class GenerateStopwords(graphene.Mutation):
+    """Mutation class for Auto generate stop words for a given language"""
+    class Arguments:
+        """Arguments declaration for the mutation"""
+        language_code = graphene.String(required=True,
+            description="Example : hi")
+        use_server_data = graphene.Boolean(default_value = True)
+        gl_lang_code = graphene.String()
+        sentence_list = graphene.List(types.SWGenerateInput)
+
+    message = graphene.String()
+    data = graphene.Field(types.Job)
+#pylint: disable=R0201,R0913
+    async def mutate(self,info,language_code,sentence_list,
+        use_server_data,gl_lang_code):
+        '''resolve'''
+        log.info('In GraphQL Generate StopWords')
+        db_ = info.context["request"].db_session
+        background_tasks = info.context["request"].background_tasks
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "POST"
+        req.scope['path'] = "/v2/translation/stopwords/generate"
+        response = await translation_apis.generate_stopwords(request=req,
+            language_code=language_code,background_tasks=background_tasks,
+            use_server_data=use_server_data,gl_lang_code=gl_lang_code,
+            user_details=user_details,sentence_list=sentence_list,db_=db_)
+        return GenerateStopwords(message=response['message'],
+            data=response["data"])
+
 ########## ALL MUTATIONS FOR API ########
 class VachanMutations(graphene.ObjectType):
     '''All defined mutations'''
@@ -1335,3 +1364,4 @@ class VachanMutations(graphene.ObjectType):
     delete_identity = DeleteIdentity.Field()
     add_stopword = AddStopwords.Field()
     update_stopword = EditStopwords.Field()
+    generate_stopword = GenerateStopwords.Field()
