@@ -108,7 +108,7 @@ def test_get_default():
     }
     executed = gql_request(QRY_GET_SW,headers=headers_auth,variables=var)
     assert isinstance(executed, Dict)
-    assert len(executed["data"]["stopwords"])>0
+    assert len(executed["data"]["stopwords"])>=0
     assert isinstance(executed["data"]["stopwords"], list)
 
     query_check = """
@@ -128,7 +128,7 @@ def test_get_stop_words():
     }
     executed = gql_request(QRY_GET_SW,headers=headers_auth,variables=var)
     assert isinstance(executed, Dict)
-    assert len(executed["data"]["stopwords"])>0
+    assert len(executed["data"]["stopwords"])>=0
     for item in executed["data"]["stopwords"]:
         assert_positive_get_stopwords(item)
 
@@ -143,7 +143,7 @@ def test_get_stop_words():
     """
     var_flag = {"lan_code": "hi","sys_def": False}
     executed = gql_request(QRY_GET_SW_flags,headers=headers_auth,variables=var_flag)
-    assert len(executed["data"]["stopwords"])>0
+    assert len(executed["data"]["stopwords"])>=0
     sw_types = {sw_dic['stopwordType'] for sw_dic in executed["data"]["stopwords"]}
     assert "system defined" not in sw_types
 
@@ -159,7 +159,7 @@ def test_get_stop_words():
     """
     var_flag = {"lan_code": "hi","usr_def": False}
     executed = gql_request(QRY_GET_SW_flags,headers=headers_auth,variables=var_flag)
-    assert len(executed["data"]["stopwords"])>0
+    assert len(executed["data"]["stopwords"])>=0
     sw_types = {sw_dic['stopwordType'] for sw_dic in executed["data"]["stopwords"]}
     assert "user defined" not in sw_types
 
@@ -325,7 +325,7 @@ def test_generate_stopwords():
     assert "jobId" in executed["data"]["generateStopword"]['data']
     assert "status" in executed["data"]["generateStopword"]['data']
     for i in range(10):
-        job_response1 = get_job_status(executed["data"]["generateStopword"]['jobId'])
+        job_response1 = get_job_status(executed["data"]["generateStopword"]['data']['jobId'])
         status = job_response1['data']['status']
         if status == 'job finished':
             break
@@ -349,7 +349,7 @@ def test_generate_stopwords():
     assert "jobId" in executed["data"]["generateStopword"]['data']
     assert "status" in executed["data"]["generateStopword"]['data']
     for i in range(10):
-        job_response2 = get_job_status(executed["data"]["generateStopword"]['jobId'])
+        job_response2 = get_job_status(executed["data"]["generateStopword"]['data']['jobId'])
         status = job_response2['data']['status']
         if status == 'job finished':
             break
