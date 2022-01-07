@@ -319,7 +319,8 @@ class TranslationProject(Base): # pylint: disable=too-few-public-methods
     @declared_attr
     def users(cls):# pylint: disable=E0213
         '''For modelling project users from translation_project_users'''
-        return relationship('TranslationProjectUser', uselist=True)
+        return relationship('TranslationProjectUser', uselist=True,
+            back_populates='project')
     documentFormat = Column('source_document_format', String)
     metaData = Column('metadata', JSON)
     active = Column('active', Boolean, default=True)
@@ -388,7 +389,8 @@ class TranslationProjectUser(Base): # pylint: disable=too-few-public-methods
     @declared_attr
     def project(cls): # pylint: disable=E0213
         '''For modelling the targetLanguage field in this class'''
-        return relationship(TranslationProject, uselist=False)
+        return relationship(TranslationProject, foreign_keys=cls.project_id, uselist=False,
+            back_populates="users")
     userId = Column('user_id', String, index=True)
     userRole = Column('user_role', String)
     metaData = Column('metadata', JSON)
