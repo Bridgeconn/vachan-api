@@ -756,3 +756,8 @@ class Job(graphene.ObjectType):#pylint: disable=too-few-public-methods
                    }
                 }]
         }""")
+
+class JobStatusResponse(graphene.ObjectType):#pylint: disable=too-few-public-methods
+    '''Return Response for Job Status'''
+    message = graphene.String()
+    data = graphene.Field(Job)

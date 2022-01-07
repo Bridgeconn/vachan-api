@@ -17,7 +17,7 @@ class App(str, Enum):
     '''Defined apps'''
     AG = "Autographa"
     VACHAN = "Vachan-online or vachan-app"
-    VACHANADMIN = "VachanAdmin"
+    # VACHANADMIN = "VachanAdmin"
     API = "API-user"
 
 class Registration(BaseModel):
