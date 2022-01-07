@@ -11,6 +11,7 @@ from fastapi import Request
 from custom_exceptions import NotAvailableException
 
 import db_models
+from dependencies import log
 from schema import schemas_nlp
 from crud import utils
 from routers import content_apis
@@ -259,8 +260,7 @@ def update_job(db_, job_id, user_id, update_args):
     if "endTime" in update_args:
         job_entry.endTime = update_args['endTime']
     job_entry.updatedUser = user_id
-    # db_.add(job_entry)
-    db_.flush()
+    db_.commit()
 
 
 async def generate_stopwords(db_: Session, request: Request, *args, user_details=None,  **kwargs):
@@ -291,7 +291,13 @@ async def generate_stopwords(db_: Session, request: Request, *args, user_details
         raise NotAvailableException("Language with code %s, not in database"%language_code)
     language_id = language_id[0]
     kwargs['user_details'] = user_details
-    sentences = await get_data(db_, request, language_code, sentence_list, **kwargs)
+    sentences = []
+    try:
+        sentences = await get_data(db_, request, language_code, sentence_list, **kwargs)
+    except Exception as exe: #pylint: disable=W0703
+        log.error("Error in getting sentences for SW generation")
+        log.error(str(exe))
+
     if len(sentences) < 1000:
         # raise UnprocessableException("Not enough data to generate stopwords")
         msg = "Not enough data to generate stopwords"
@@ -306,8 +312,15 @@ async def generate_stopwords(db_: Session, request: Request, *args, user_details
                         "output": {"message": '', "language": language_code,"data": None}
                       }
         update_job(db_, job_id, user_id, update_args)
-        update_args = await extract_stopwords(db_, request, language_id, language_code,
-                                 gl_lang_code, user_details, sentences)
+        try:
+            update_args = await extract_stopwords(db_, request, language_id, language_code,
+                                     gl_lang_code, user_details, sentences)
+        except Exception as exe: #pylint: disable=W0703
+            update_args = {
+                        "status" : schemas_nlp.JobStatus.FINISHED.value,
+                        "endTime": datetime.now(),
+                        "output": {"message": exe.name, "language": language_code,"data": exe}
+                    }
     update_job(db_, job_id, user_id, update_args)
 
 

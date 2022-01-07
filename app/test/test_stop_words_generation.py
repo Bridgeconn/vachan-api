@@ -211,7 +211,7 @@ def add_version():
         "versionName": "test version",
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    headers_auth['app'] = schema_auth.App.VACHANADMIN.value
+    headers_auth['app'] = schema_auth.AdminRoles.VACHANADMIN.value
     result = client.post('/v2/versions', headers=headers_auth, json=version_data)
     assert result.status_code == 201
 

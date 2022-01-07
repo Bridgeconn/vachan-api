@@ -444,7 +444,7 @@ async def generate_stopwords(request: Request, background_tasks: BackgroundTasks
 
     job_info = create_job(
             request=request, #pylint: disable=W0613
-            db_=db_)
+            db_=db_, user_id=user_details['user_id'])
     job_id = job_info['data']['jobId']
     background_tasks.add_task(nlp_sw_crud.generate_stopwords, db_, request, language_code,
         gl_lang_code, sentence_list, job_id, use_server_data=use_server_data,
@@ -458,10 +458,10 @@ async def generate_stopwords(request: Request, background_tasks: BackgroundTasks
 @router.post('/v2/jobs', response_model=schemas_nlp.JobCreateResponse, status_code=201,
     tags=['Jobs'])
 def create_job(request:Request, #pylint: disable=W0613
-                db_:Session=Depends(get_db)):
+                db_:Session=Depends(get_db), user_id="10101"):
     '''Creates a new job'''
     log.info('In create_job')
-    job_info = nlp_sw_crud.create_job(db_=db_, user_id='10101')
+    job_info = nlp_sw_crud.create_job(db_=db_, user_id=user_id)
     return {'message': "Job created successfully",
         "data": {"jobId": job_info.jobId, "status": job_info.status}}
 

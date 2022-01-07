@@ -693,3 +693,41 @@ class Query(graphene.ObjectType):
             content_type=content_type, skip=skip, limit=limit,
             user_details= user_details, db_=db_)
         return response
+
+    stopwords = graphene.List(types.SWResponse,
+        description="Query stopwords in vachan-db",
+        language_code =graphene.String(required=True),
+        include_system_defined=graphene.Boolean(),
+        include_user_defined=graphene.Boolean(),
+        include_auto_generated=graphene.Boolean(),
+        only_active=graphene.Boolean(),
+        skip=graphene.Int(), limit=graphene.Int())
+    async def resolve_stopwords(self, info, language_code, include_system_defined=True,
+        include_user_defined=True,include_auto_generated=True,only_active=True,
+        skip=0, limit=100):
+        '''resolver'''
+        log.info('In GraphQL Get Stopwords')
+        db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = f"/v2/lookup/stopwords/{language_code}"
+        req.path_params["language_code"] = language_code
+        result =await translation_apis.get_stop_words(request=req,language_code=language_code,
+            include_system_defined=include_system_defined,include_user_defined=include_user_defined,
+            include_auto_generated=include_auto_generated,only_active=only_active,
+            skip=skip,limit=limit,user_details=user_details,db_=db_)
+        for res in result:
+            res = utils.swtype_converison(res)
+        return result
+
+    job_status = graphene.Field(types.JobStatusResponse,
+        description="Query defined to get Job Status in vachan-db",
+        job_id=graphene.Int(required=True,description="example=100000"))
+    def resolve_job_status(self, info, job_id):
+        '''resolver'''
+        log.info('In GraphQL Get Job Status')
+        db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)#pylint: disable=unused-variable
+        req.scope['method'] = "GET"
+        req.scope['path'] = "/v2/jobs"
+        return translation_apis.check_job_status(request=req,job_id=job_id,db_=db_)
