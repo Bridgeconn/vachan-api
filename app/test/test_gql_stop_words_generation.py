@@ -287,7 +287,6 @@ def get_job_status(job_id):
   "jobid": job_id
 }
     response = gql_request(QRY_JOB_STATUS,headers=headers_auth,variables=var)
-    assert response.status_code == 200
     assert "message" in response["data"]["jobStatus"]
     assert "data" in response["data"]["jobStatus"]
     assert "jobId" in response["data"]["jobStatus"]['data']
