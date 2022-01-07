@@ -1,13 +1,18 @@
-# Release v2.0.0-alpha2
+# Release v2.0.0-alpha.2
 
 ## Date: Jan 7, 2022
 
-## Changelog
-* Implemented Autographa Project Management and Module
-* Added NLP functions for translation and other related tasks like gloss, stopwords etc
-* Provides graphQL interface for all features available in REST
-* Implemented authentication using Kratos and access control rules based on user roles as well as resource type. App connects to a central Kratos DB, shareable across other Apps.
-* Started using dockerization
+## New in this Version
+* Autographa Project Management Module. 
+> * Supports multiple kinds of tokenizations(single word & phrases, user-defined tokens, book-wise, chapter-wise, multiple-books etc,)
+> * multiple translations/senses for same token
+> * context based translation suggestions
+> * possible to view draft while translation is in progress
+> * scalable to support non-USFM documents
+* NLP functions for translation and other related tasks like gloss, stopwords etc
+* GraphQL interface for all features available in REST
+* Authentication using Kratos and access control rules based on user roles as well as resource type(Attribute-Based-Access-Control). App connects to a central Kratos DB, shareable across other Apps.
+* Dockerization
 * Automated deployment via github actions
 
 ## Pending
