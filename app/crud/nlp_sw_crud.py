@@ -181,7 +181,7 @@ async def filter_translation_words(db_, request, gl_lang_code, stopwords, user_d
             skip=0, limit=100000,
             user_details=user_details,
             db_=db_, operates_on=schema_auth.ResourceType.CONTENT.value)
-    except Exception as exe:
+    except Exception as exe: #pylint: disable=W0703
         log.exception(exe)
         log.error("Error in accessing translation_words")
         response = None
