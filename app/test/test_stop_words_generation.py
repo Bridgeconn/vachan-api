@@ -2,7 +2,7 @@
 import json
 import time
 from app.main import log
-from app.schema import schema_auth
+from app.schema import schema_auth, schemas
 from . import client
 from . import check_default_get
 from . import assert_not_available_content
@@ -224,7 +224,8 @@ def add_bible_source():
     "revision": 1,
     "year": 2020,
     "license": "CC-BY-SA",
-    "metaData": {"owner": "someone", "access-key": "123xyz"}
+    "metaData": {"owner": "someone" },
+    "accessPermissions": [schemas.SourcePermissions.OPENACCESS, schemas.SourcePermissions.CONTENT]
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     source = client.post('/v2/sources', headers=headers_auth, json=src_data)
@@ -239,7 +240,8 @@ def add_dict_source():
         "language": "hi",
         "version": "TW",
         "revision": 1,
-        "year": 2000
+        "year": 2000,
+        "accessPermissions": [schemas.SourcePermissions.OPENACCESS, schemas.SourcePermissions.CONTENT]
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     source = client.post('/v2/sources', headers=headers_auth, json=source_data)
@@ -274,7 +276,7 @@ def test_generate_stopwords():
 
     table_name = add_dict_source()
     add_tw_dict(table_name)
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
 
     response = client.post(GER_URL+'/generate?language_code=hi',headers=headers_auth)
     assert response.status_code == 201

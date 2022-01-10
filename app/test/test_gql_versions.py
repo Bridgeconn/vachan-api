@@ -2,6 +2,7 @@
 from typing import Dict
 
 #pylint: disable=E0401
+from app.schema import schema_auth
 from .test_versions import assert_positive_get
 #pylint: disable=E0611
 #pylint: disable=R0914
@@ -10,7 +11,9 @@ from . import  check_skip_limit_gql, gql_request,assert_not_available_content_gq
 from .conftest import initial_test_users
 
 headers_auth = {"contentType": "application/json",
-                "accept": "application/json"}
+                "accept": "application/json",
+                "App":schema_auth.App.VACHANADMIN.value,
+                "Authorization": "Bearer "+initial_test_users["VachanAdmin"]["token"]}
 headers = {"contentType": "application/json", "accept": "application/json"}
 
 GLOBAL_VARIABLES = {
@@ -40,6 +43,7 @@ GLOBAL_QUERY = """
 def check_post(query, variables):
     """common for check post"""
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+    headers_auth['App'] = schema_auth.App.VACHANADMIN.value
     #without auth
     executed = gql_request(query=query,operation="mutation", variables=variables)
     assert "errors" in executed.keys()
@@ -209,6 +213,8 @@ QUERY_GET = """
 def test_get():
     '''Test get before adding data to table. Usually run on new test DB on local or github.
     If the testing is done on a DB that already has data(staging), the response wont be empty.'''
+    headers_auth['App'] = schema_auth.App.API.value
+    headers_auth['Authorization'] = "Bearer "+initial_test_users['APIUser']['token']
     executed =  gql_request(query=QUERY_GET,headers=headers_auth)
     if len(executed["data"]["versions"]) == 0:
         assert_not_available_content_gql(executed["data"]["versions"])
@@ -298,7 +304,8 @@ def test_get_after_adding_data():
     get_version_var = {
     "VAbb": "AAA"
     }
-
+    headers_auth['App'] = schema_auth.App.API.value
+    headers_auth['Authorization'] = "Bearer "+initial_test_users['APIUser']['token']
     executed_get = gql_request(query_get_version_added,variables=get_version_var,
     headers=headers_auth)
     assert isinstance(executed_get, Dict)
@@ -425,6 +432,8 @@ def test_get_after_adding_data():
     }
     }
     """
+    headers_auth['App'] = schema_auth.App.API.value
+    headers_auth['Authorization'] = "Bearer "+initial_test_users['APIUser']['token']
     executed5 = gql_request(query5,headers=headers_auth)
     assert isinstance(executed5, Dict)
     assert len(executed5["data"]["versions"]) == 1

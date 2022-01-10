@@ -1322,7 +1322,8 @@ class GenerateStopwords(graphene.Mutation):
         response = await translation_apis.generate_stopwords(request=req,
             language_code=language_code,background_tasks=background_tasks,
             use_server_data=use_server_data,gl_lang_code=gl_lang_code,
-            user_details=user_details,sentence_list=sentence_list,db_=db_)
+            user_details=user_details,sentence_list=sentence_list,db_=db_,
+            operates_on=schema_auth.ResourceType.LOOKUP.value)
         return GenerateStopwords(message=response['message'],
             data=response["data"])
 

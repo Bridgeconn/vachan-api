@@ -12,7 +12,7 @@ from custom_exceptions import NotAvailableException
 
 import db_models
 from dependencies import log
-from schema import schemas_nlp
+from schema import schemas_nlp, schema_auth
 from crud import utils
 from routers import content_apis
 
@@ -135,7 +135,7 @@ async def get_data(db_, request, language_code, sentence_list, **kwargs):
             content_type=None,
             skip=0, limit=100000,
             user_details=kwargs.get('user_details'),
-            db_=db_)
+            db_=db_, operates_on=schema_auth.ResourceType.CONTENT.value)
         if server_data:
             if "error" not in server_data:
                 sentences += [item[2] for item in server_data]
@@ -171,15 +171,20 @@ async def filter_translation_words(db_, request, gl_lang_code, stopwords, user_d
                 %gl_lang_code)
     gl_id = gl_id[0]
     source_name = tw_lookup[gl_lang_code]
-    response = await content_apis.get_dictionary_word(
-        request=request, #pylint: disable=W0613
-        source_name=source_name,
-        search_word =None,
-        details=None,
-        active=True,
-        skip=0, limit=100000,
-        user_details=user_details,
-        db_=db_)
+    try:
+        response = await content_apis.get_dictionary_word(
+            request=request, #pylint: disable=W0613
+            source_name=source_name,
+            search_word =None,
+            details=None,
+            active=True,
+            skip=0, limit=100000,
+            user_details=user_details,
+            db_=db_, operates_on=schema_auth.ResourceType.CONTENT.value)
+    except Exception as exe: #pylint: disable=W0703
+        log.exception(exe)
+        log.error("Error in accessing translation_words")
+        response = None
     if response:
         translation_words = [row.word for row in response]
         translation_words = [item.strip() for item in translation_words if item.strip()!='']
@@ -296,7 +301,7 @@ async def generate_stopwords(db_: Session, request: Request, *args, user_details
         sentences = await get_data(db_, request, language_code, sentence_list, **kwargs)
     except Exception as exe: #pylint: disable=W0703
         log.error("Error in getting sentences for SW generation")
-        log.error(str(exe))
+        log.exception(exe)
 
     if len(sentences) < 1000:
         # raise UnprocessableException("Not enough data to generate stopwords")
@@ -319,7 +324,7 @@ async def generate_stopwords(db_: Session, request: Request, *args, user_details
             update_args = {
                         "status" : schemas_nlp.JobStatus.FINISHED.value,
                         "endTime": datetime.now(),
-                        "output": {"message": exe.name, "language": language_code,"data": exe}
+                        "output": {"message": "Error", "language": language_code,"data": exe}
                     }
     update_job(db_, job_id, user_id, update_args)
 

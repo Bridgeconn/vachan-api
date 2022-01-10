@@ -87,29 +87,30 @@ with open('auth/api-permissions.csv','r') as file:
 def api_resourcetype_map(endpoint, path_params=None):
     '''Default correlation between API endpoints and resource they act upon'''
     if endpoint.split('/')[2] in ["contents", "languages", "licenses", 'versions']:
-        resource_type = schema_auth.ResourceType.METACONTENT
+        resource_type = schema_auth.ResourceType.METACONTENT.value
     elif endpoint.startswith('/v2/autographa/project'):
-        resource_type = schema_auth.ResourceType.PROJECT
+        resource_type = schema_auth.ResourceType.PROJECT.value
     elif endpoint.startswith('/v2/user'):
-        resource_type = schema_auth.ResourceType.USER
+        resource_type = schema_auth.ResourceType.USER.value
     elif endpoint.startswith("/v2/translation"):
-        resource_type = schema_auth.ResourceType.TRANSLATION
+        resource_type = schema_auth.ResourceType.TRANSLATION.value
     elif endpoint.startswith("/v2/lookup"):
-        resource_type = schema_auth.ResourceType.LOOKUP
+        resource_type = schema_auth.ResourceType.LOOKUP.value
     elif endpoint.startswith("/v2/sources") or (
         path_params is not None and "source_name" in path_params):
-        resource_type = schema_auth.ResourceType.CONTENT
+        resource_type = schema_auth.ResourceType.CONTENT.value
     else:
         raise GenericException("Resource Type of API not defined")
     return resource_type
 
 
-def search_api_permission_map(endpoint, method, client_app, path_params=None):
+def search_api_permission_map(endpoint, method, client_app, path_params=None, resource=None):
     '''look up request params in the api-permission table loaded from CSV'''
-    res_perm_list = []
     req_url = endpoint
     for key in path_params:
         req_url = req_url.replace(path_params[key], "*")
+    if resource is None:
+        resource = api_resourcetype_map(endpoint, path_params)
     for row in APIPERMISSIONTABLE:
         table_url = row[0]
         for key in path_params:
@@ -118,14 +119,11 @@ def search_api_permission_map(endpoint, method, client_app, path_params=None):
             if row[1] == method:
                 if row[2] == "None" or row[2] == client_app:
                     # print("url, method and app matched")
-                    res = row[4]
-                    if res == 'None':
-                        res = api_resourcetype_map(req_url, path_params)
-                    res_perm_list.append((res, row[5], row[3]))
-    if len(res_perm_list) == 0:
-        log.error("No permisions map found for:(%s, %s, %s)"%(endpoint, method, client_app))
-        raise PermissionException("API-Permission map not defined for the request!")
-    return res_perm_list
+                    if row[4] == 'None' or row[4] == resource:
+                        return (resource, row[5])
+    log.error("No permisions map found for:(%s, %s, %s, %s)"%(endpoint, method, client_app,
+        resource))
+    raise PermissionException("API-Permission map not defined for the request!")
 
 def get_access_tag(db_, resource_type, path_params=None, resource=None):
     '''obtain access tag based on resource-url direct link or value stored in DB'''
@@ -135,6 +133,7 @@ def get_access_tag(db_, resource_type, path_params=None, resource=None):
         schema_auth.ResourceType.TRANSLATION: ['generic-translation'],
         schema_auth.ResourceType.LOOKUP: ['lookup-content'],
         schema_auth.ResourceType.METACONTENT: ["meta-content","open-access"],
+        schema_auth.ResourceType.RESEARCH: ['content', 'research-use']
         # schema_auth.ResourceType.CONTENT: None # excluded to use item specific tags in db
     }
     if resource_type in resource_tag_map:
@@ -174,6 +173,8 @@ def is_project_member(db_:Session, db_resource, user_id):
 
 def check_right(user_details, required_rights, resp_obj=None, db_=None):
     '''Use user details and info about requested action or resource to ensure right'''
+    log.debug("In check_right with user_details: %s, required_rights:%s, resp_obj:%s",
+        user_details, required_rights, resp_obj)
     valid = False
     if "noAuthRequired" in required_rights:
         valid =  True
@@ -213,27 +214,24 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         method = request.method
         path_params = request.path_params
         user_details = kwargs.get('user_details')
+        resource_type = kwargs.get("operates_on", None)
+        filtering_required = kwargs.get("filtering_required", False)
         if 'app' in request.headers:
             client_app = request.headers['app']
         else:
             client_app = schema_auth.App.API.value
-        required_permissions = search_api_permission_map(
-            endpoint, method, client_app, path_params)
 
+        resource_type, permission = search_api_permission_map(
+            endpoint, method, client_app, path_params, resource=resource_type)
         required_rights = []
-        filtering_required = False
-        for resource_type, permission, filtering in required_permissions:
-            access_tags = get_access_tag(db_, resource_type, path_params)
-            for tag in access_tags:
-                if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
-                    required_rights += ACCESS_RULES[tag][permission]
-            if filtering=="True":
-                filtering_required = True
+        access_tags = get_access_tag(db_, resource_type, path_params)
+        for tag in access_tags:
+            if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
+                required_rights += ACCESS_RULES[tag][permission]
 
         authenticated = check_right(user_details, required_rights)    
 
-        if (schema_auth.ResourceType.USER in [tup[0] for tup in required_permissions] 
-            and not authenticated):
+        if (resource_type == schema_auth.ResourceType.USER and not authenticated):
             # Need to raise error before function execution, as we cannot delay db commit 
             # like we do in other cases as changes happen in Kratos db, not app db'''
             if user_details['user_id'] is None:
@@ -261,7 +259,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                     response['data'] = response['data']['db_content']
                 else:
                     obj = response['data']
-        
+        log.debug("authenticated:%s", authenticated)
         if authenticated:
             # All no-auth and role based cases checked and appoved if applicable
             if db_:
@@ -279,11 +277,10 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             filtered_response = []
             for item in response:
                 required_rights_thisitem = required_rights.copy()
-                for resource_type, permission, filtering in required_permissions:
-                    access_tags = get_access_tag(db_, resource_type, path_params, item)
-                    for tag in access_tags:
-                        if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
-                            required_rights_thisitem += ACCESS_RULES[tag][permission]
+                access_tags = get_access_tag(db_, resource_type, path_params, item)
+                for tag in access_tags:
+                    if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
+                        required_rights_thisitem += ACCESS_RULES[tag][permission]
                 if check_right(user_details, required_rights_thisitem, item, db_):
                     filtered_response.append(item)
             response = filtered_response

@@ -906,7 +906,11 @@ def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, 
                 "accept": "application/json"}
     #create 5 sources for contents with 5 different permisions
     language_list = ['en','ml','tn','ab','af']
-    permission_list = ["CONTENT","OPENACCESS","PUBLISHABLE","DOWNLOADABLE","DERIVABLE"]
+    permission_list = [types.SourcePermissions.CONTENT.value,
+        types.SourcePermissions.OPENACCESS.value,
+        types.SourcePermissions.PUBLISHABLE.value ,
+        types.SourcePermissions.DOWNLOADABLE.value,
+        types.SourcePermissions.DERIVABLE.value]
     permission_list_val = ["content","open-access","publishable","downloadable","derivable"]
     sourcename_list = []
 
