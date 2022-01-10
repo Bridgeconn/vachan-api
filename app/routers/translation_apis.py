@@ -3,7 +3,6 @@
 from typing import List
 from fastapi import APIRouter, Query, Body, Depends, Request, Path, BackgroundTasks
 from sqlalchemy.orm import Session
-from starlette.datastructures import URL
 
 
 from dependencies import get_db, log

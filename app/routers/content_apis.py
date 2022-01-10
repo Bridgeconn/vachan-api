@@ -230,7 +230,7 @@ async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Sources"])
 @get_auth_access_check_decorator
-async def get_source(request: Request,content_type: str=Query(None, example="commentary"),
+async def get_source(request: Request,content_type: str=Query(None, example="commentary"), #pylint: disable=too-many-locals
     version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
     revision: int=Query(None, example=1),
     language_code: schemas.LangCodePattern=Query(None,example="en"),
