@@ -94,7 +94,7 @@ class Query(graphene.ObjectType):
         language_code=graphene.String(
             description="language code as per bcp47(usually 2 letter code)"),
         license_code=graphene.String(),
-        access_tag = graphene.List(types.SourcePermissions),
+        access_tag = graphene.List(graphene.String),
         active=graphene.Boolean(), latest_revision=graphene.Boolean(),
         skip=graphene.Int(), limit=graphene.Int())
     def resolve_contents(self, info, content_type=None, version_abbreviation=None,#pylint: disable=too-many-locals
@@ -117,7 +117,7 @@ class Query(graphene.ObjectType):
         version_abbreviation=version_abbreviation, revision=revision, language_code=language_code
         ,license_code=license_code, metadata=metadata, access_tag=access_tag, active=active,
         latest_revision=latest_revision, skip=skip, limit=limit, user_details=user_details,
-        db_=db_)
+        db_=db_, filtering_required=True)
         return results
 
     bible_books = graphene.List(types.BibleBook,
@@ -300,7 +300,7 @@ class Query(graphene.ObjectType):
         results = translation_apis.get_projects(request= req,
             project_name=project_name, source_language=source_language,
             target_language=target_language, active=active, user_id=user_id,
-            skip= skip, limit= limit, user_details =user_details, db_=db_)
+            skip= skip, limit= limit, user_details =user_details, db_=db_, filtering_required=True)
         return results
 
     agmt_project_tokens = graphene.List(types.Token,

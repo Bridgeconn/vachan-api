@@ -301,7 +301,7 @@ def get_job_status(job_id):
 
 #     table_name = add_dict_source()
 #     add_tw_dict(table_name)
-#     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+#     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
 
 #     var_gen = {
 #   "lang_code": "hi"
@@ -328,6 +328,7 @@ def get_job_status(job_id):
 #         status = job_response1['data']['status']
 #         if status == 'job finished':
 #             break
+#         log.info(job_response1)
 #         log.info("sleeping for a minute in SW generate test")
 #         time.sleep(60)
 #     assert job_response1['data']['status'] == 'job finished'

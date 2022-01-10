@@ -13,6 +13,7 @@ from .test_gql_versions import check_post as version_add
 from .test_gql_sources import check_post as source_add
 from .conftest import initial_test_users
 from app.graphql_api import types
+from app.schema import schemas
 from . test_gql_auth_basic import login,SUPER_PASSWORD,SUPER_USER
 
 headers_auth = {"contentType": "application/json",
@@ -156,7 +157,7 @@ def check_post(query,variables):
   """positive post test"""
   headers_auth = {"contentType": "application/json",
               "accept": "application/json",
-              "app":"Autographa"}
+              "App":"Autographa"}
   headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
   #without Auth
   executed = gql_request(query=query,operation="mutation", variables=variables)
@@ -184,6 +185,8 @@ agmtProjects(projectName:"Test project 1"){
   executed = gql_request(query=get_non_exisitng_project)
   assert "errors" in executed
   #with auth
+  headers_auth["app"] = types.App.AG.value
+  headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
   executed = gql_request(query=get_non_exisitng_project,headers=headers_auth)
   assert_not_available_content_gql(executed["data"]["agmtProjects"])
 
@@ -205,8 +208,6 @@ agmtProjects(projectName:"Test project 1"){
 
 
   #Get created project
-  headers_auth["app"] = types.App.AG.value
-  headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
   get_query_projectname = """
     query agmtfetch($projectname:String){
 agmtProjects(projectName:$projectname){
@@ -268,7 +269,8 @@ agmtProjects(projectName:$projectname){
     "version": "TTT",
     "year": 2020,
     "accessPermissions": [
-      "CONTENT","OPENACCESS"
+      types.SourcePermissions.CONTENT.value,
+      types.SourcePermissions.OPENACCESS.value
     ],
   }
 }

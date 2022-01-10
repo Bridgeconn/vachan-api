@@ -3,6 +3,7 @@
         "create": ["registeredUser"],
         "edit":["SuperAdmin", "resourceCreatedUser"],
         "read-via-api":["noAuthRequired"],
+        "read-via-vachanadmin":["SuperAdmin", "VachanAdmin"],
         "view-on-web":["noAuthRequired"],
         "refer-for-translation": ["registeredUser"]
     },
@@ -49,7 +50,7 @@
         "edit":["registeredUser"]
     },
     "research-use":{
-        "read":["SuperAdmin", "BcsDeveloper"]
+        "read-via-api":["SuperAdmin", "BcsDeveloper"]
     },
     "user":{
         "create":["noAuthRequired"],
