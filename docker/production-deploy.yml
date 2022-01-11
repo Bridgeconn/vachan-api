@@ -72,7 +72,7 @@ services:
    - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
    - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
    - VACHAN_POSTGRES_PORT=5432
-   - VACHAN_KRATOS_PUBLIC_URL=http://kratos:4433/
+   - VACHAN_KRATOS_PUBLIC_URL=${VACHAN_KRATOS_PUBLIC_URL:-http://kratos:4433/}
    - VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
    - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME}
    - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD}
@@ -107,6 +107,8 @@ services:
    retries: 10
   volumes:
     - ./nginx/prod:/etc/nginx/conf.d
+    - ./nginx/prod/certbot/conf:/etc/letsencrypt
+    - ./nginx/prod/certbot/www:/var/www/certbot
     - logs-vol:/var/log/nginx
   networks:
    - my-network
