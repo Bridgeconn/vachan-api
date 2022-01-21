@@ -154,7 +154,7 @@ def test_post_optional():
     post_data.append({ "USFM":"\\id rev\n\\c 1\n\\p\n\\v 1 one verse of revelations",
                     "JSON":{'book':{'bookCode':"REV"},"chapters":[
                     {"chapterNumber":1, "contents":[
-                        {"verseNumber":1, "verseText":"one verse of revelations"}
+                        {"verseNumber":"1", "verseText":"one verse of revelations"}
                     ]}
                 ]}})
 

@@ -121,7 +121,7 @@ def search_api_permission_map(endpoint, method, client_app, path_params=None, re
                     # print("url, method and app matched")
                     if row[4] == 'None' or row[4] == resource:
                         return (resource, row[5])
-    log.error("No permisions map found for:(%s, %s, %s, %s)"%(endpoint, method, client_app,
+    log.error("No permisions map found for:(%s, %s, %s, %s)"%(endpoint, method, client_app,#pylint: disable=logging-not-lazy
         resource))
     raise PermissionException("API-Permission map not defined for the request!")
 
@@ -229,10 +229,10 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
                 required_rights += ACCESS_RULES[tag][permission]
 
-        authenticated = check_right(user_details, required_rights)    
+        authenticated = check_right(user_details, required_rights)
 
         if (resource_type == schema_auth.ResourceType.USER and not authenticated):
-            # Need to raise error before function execution, as we cannot delay db commit 
+            # Need to raise error before function execution, as we cannot delay db commit
             # like we do in other cases as changes happen in Kratos db, not app db'''
             if user_details['user_id'] is None:
                 raise UnAuthorizedException("Access token not provided or user not recognized")
@@ -263,12 +263,12 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         if authenticated:
             # All no-auth and role based cases checked and appoved if applicable
             if db_:
-                db_.commit() 
+                db_.commit()
         elif obj is not None:
             # Resource(item) specific checks
             if check_right(user_details, required_rights, obj, db_):
                 if db_:
-                    db_.commit() 
+                    db_.commit()
             else:
                 if user_details['user_id'] is None:
                     raise UnAuthorizedException("Access token not provided or user not recognized.")
@@ -585,4 +585,3 @@ def create_super_user():
                 raise HTTPException(status_code=400, detail="Error on creating Super Admin")
     else:
         log.info('Super Admin already exist')
-
