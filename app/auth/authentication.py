@@ -121,8 +121,7 @@ def search_api_permission_map(endpoint, method, client_app, path_params=None, re
                     # print("url, method and app matched")
                     if row[4] == 'None' or row[4] == resource:
                         return (resource, row[5])
-    log.error("No permisions map found for:(%s, %s, %s, %s)"%(endpoint, method, client_app,#pylint: disable=logging-not-lazy
-        resource))
+    log.error("No permisions map found for:%s, %s, %s, %s", endpoint, method, client_app, resource)
     raise PermissionException("API-Permission map not defined for the request!")
 
 def get_access_tag(db_, resource_type, path_params=None, resource=None):

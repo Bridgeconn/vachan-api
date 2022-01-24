@@ -46,3 +46,7 @@ jobs:
       - name: Run linter in graphql module
         working-directory: ./app
         run: pylint --extension-pkg-whitelist='pydantic' graphql_api/*.py
+      
+      - name: Run linter in auth module
+        working-directory: ./app
+        run: pylint --extension-pkg-whitelist='pydantic' auth/*.py

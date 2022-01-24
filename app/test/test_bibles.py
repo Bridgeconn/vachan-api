@@ -1,5 +1,6 @@
 '''Test cases for bible videos related APIs'''
 import re
+from urllib import response
 from . import client , contetapi_get_accessrule_checks_app_userroles
 from . import check_default_get
 from . import assert_input_validation_error, assert_not_available_content
@@ -18,6 +19,12 @@ gospel_books_data = [
         {"USFM":"\\id mrk\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"},
         {"USFM":"\\id luk\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"},
         {"USFM":"\\id jhn\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"}
+]
+gospel_books_split_data = [
+        {"USFM":"\\id rev\n\\c 1\n\\p\n\\v 1a test verse one a \n\\v 1b test verse one b \n\\v 2 test verse two"}
+]
+gospel_books_merged_data = [
+        {"USFM":"\\id rom\n\\c 1\n\\p\n\\v 1-2 test verse one and two merged \n\\v 3 test verse two"}
 ]
 
 audio_data = [
@@ -164,6 +171,82 @@ def test_post_optional():
     print(resp.json()['data'])
     assert len(resp.json()['data']) == 2
 
+def test_post_put_split_verse():
+    """test posting split verse"""
+    resp, source_name = check_post(gospel_books_split_data)
+    assert resp.status_code == 201
+    assert resp.json()['message'] == "Bible books uploaded and processed successfully"
+    for i,item in enumerate(resp.json()['data']):
+        assert_positive_get_for_books(item)
+        book_code = re.match(r'\\id (\w\w\w)', gospel_books_split_data[i]['USFM']).group(1)
+        assert item['book']['bookCode'] == book_code.lower()
+    assert len(gospel_books_split_data) == len(resp.json()['data'])
+
+    #get bible data and check split verses are combined
+    response = client.get(UNIT_URL+source_name+'/verses?book_code=rev&chapter=1',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+    for row in response.json():
+        if row["reference"]["verseNumber"] == 1:
+            assert row["verseText"] == "test verse one a test verse one b"
+        if row["reference"]["verseNumber"] == 2:
+            assert row["verseText"] == 'test verse two'
+    
+    #update with split verse
+    update_data_split = [{
+        "USFM": "\\id rev\n\\c 1\n\\p\n\\v 1a new content for rev \n\\v 1b test verse one updated b"}]
+    response2 = client.put(UNIT_URL+source_name+"/books", json=update_data_split, headers=headers_auth)
+    assert response2.status_code == 201
+    assert response2.json()['message'] == "Bible books updated successfully"
+
+    #get updated data combine verse re upload usfm
+    response = client.get(UNIT_URL+source_name+'/verses?book_code=rev&chapter=1',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    for row in response.json():
+        if row["reference"]["verseNumber"] == 1:
+            assert row["verseText"] == "new content for rev test verse one updated b"
+
+def test_post_put_merged_verse():
+    """test posting merged verse"""
+    resp, source_name = check_post(gospel_books_merged_data)
+    assert resp.status_code == 201
+    assert resp.json()['message'] == "Bible books uploaded and processed successfully"
+    for i,item in enumerate(resp.json()['data']):
+        assert_positive_get_for_books(item)
+        book_code = re.match(r'\\id (\w\w\w)', gospel_books_merged_data[i]['USFM']).group(1)
+        assert item['book']['bookCode'] == book_code.lower()
+    assert len(gospel_books_merged_data) == len(resp.json()['data'])
+
+    # # #get bible data and check split verses are combined
+    response = client.get(UNIT_URL+source_name+'/verses?book_code=rom&chapter=1',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 3
+    for row in response.json():
+        if row["reference"]["verseNumber"] == 1:
+            assert row["verseText"] == "test verse one and two merged"
+        if row["reference"]["verseNumber"] == 2:
+            assert row["verseText"] == ''
+        if row["reference"]["verseNumber"] == 3:
+            assert row["verseText"] == "test verse two"
+    
+    #update with merge verse
+    update_data_merge = [{
+        "USFM": "\\id rom\n\\c 1\n\\p\n\\v 1-2 new content for rom merged updated"}]
+    response2 = client.put(UNIT_URL+source_name+"/books", json=update_data_merge, headers=headers_auth)
+    print("response--->",response2.json())
+    assert response2.status_code == 201
+    assert response2.json()['message'] == "Bible books updated successfully"
+
+    #get updated data combine verse re upload usfm
+    response = client.get(UNIT_URL+source_name+'/verses?book_code=rom&chapter=1',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+    for row in response.json():
+        if row["reference"]["verseNumber"] == 1:
+            assert row["verseText"] == "new content for rom merged updated"
+        if row["reference"]["verseNumber"] == 2:
+            assert row["verseText"] == ''
 
 def test_post_duplicate():
     '''test posting the same book twice'''
