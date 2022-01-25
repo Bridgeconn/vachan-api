@@ -2,6 +2,7 @@
 bible, commentary, infographic, biblevideo, dictionary etc'''
 
 import json
+import re
 import sqlalchemy
 from sqlalchemy.orm import Session, defer, joinedload
 
@@ -444,6 +445,62 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
         }
     return response
 
+def bible_verse_type_check(content, model_cls_2, book, db_content2, chapter_number):
+    """manage upload bible books verses based on verse type normal, merged
+    verse or split verse"""
+    normal_verse_pattern = re.compile(r'\d+$')
+    split_verse_pattern = re.compile(r'(\d+)(\w)$')
+    merged_verse_pattern = re.compile(r'(\d+)-(\d+)$')
+    #NormalVerseNumber Pattern
+    if normal_verse_pattern.match(str(content['verseNumber'])):
+        row_other = model_cls_2(
+        book_id = book.bookId,
+        chapter = chapter_number,
+        verseNumber = content['verseNumber'],
+        verseText = utils.normalize_unicode(content['verseText'].strip()))
+        db_content2.append(row_other)
+    #splitVerseNumber Pattern
+    # combine split verses and use the whole number verseNumber
+    elif split_verse_pattern.match(str(content['verseNumber'])):
+        match_obj = split_verse_pattern.match(content['verseNumber'])
+        post_script = match_obj.group(2)
+        verse_number = match_obj.group(1)
+        if post_script == 'a':
+            row_other = model_cls_2(
+            book_id = book.bookId,
+            chapter = chapter_number,
+            verseNumber = verse_number,
+            verseText = utils.normalize_unicode(content['verseText'].strip()))
+            db_content2.append(row_other)
+        else:
+            db_content2[-1].verseText = \
+                db_content2[-1].verseText + ' '+ content['verseText']
+    #mergedVerseNumber Pattern
+    #keep the whole text in first verseNumber of merged verses
+    elif merged_verse_pattern.match(str(content['verseNumber'])):
+        match_obj = merged_verse_pattern.match(content['verseNumber'])
+        verse_number = match_obj.group(1)
+        verse_number_end = match_obj.group(2)
+        row_other = model_cls_2(
+            book_id = book.bookId,
+            chapter = chapter_number,
+            verseNumber = verse_number,
+            verseText = utils.normalize_unicode(content['verseText'].strip()))
+        db_content2.append(row_other)
+        ## add empty text in the rest of the verseNumber range
+        for versenum in range(int(verse_number)+1, int(verse_number_end)+1):
+            row_other = model_cls_2(
+                book_id = book.bookId,
+                chapter = chapter_number,
+                verseNumber = versenum,
+                verseText = "")
+            db_content2.append(row_other)
+    else:
+        raise TypeException(#pylint: disable=raising-format-tuple,too-many-function-args
+            "Unrecognized pattern in %s chapter %s verse %s",
+            book.bookName, chapter_number, content['verseNumber'])
+    return db_content2
+
 def upload_bible_books(db_: Session, source_name, books, user_id=None):#pylint: disable=too-many-locals
     '''Adds rows to the bible table and corresponding bible_cleaned specified by source_name'''
     source_db_content = db_.query(db_models.Source).filter(
@@ -474,12 +531,9 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None):#pylint: 
                     if "verseText" not in content:
                         raise TypeException(
                             "JSON is not of the required format. verseText not found")
-                    row_other = model_cls_2(
-                        book_id = book.bookId,
-                        chapter = chapter_number,
-                        verseNumber = content['verseNumber'],
-                        verseText = utils.normalize_unicode(content['verseText'].strip()))
-                    db_content2.append(row_other)
+                    db_content2 = \
+                        bible_verse_type_check(content, model_cls_2,
+                            book, db_content2, chapter_number)
     db_.add_all(db_content)
     db_.add_all(db_content2)
     source_db_content.updatedUser = user_id
@@ -584,12 +638,9 @@ def update_bible_books_cleaned(db_,source_name,books,source_db_content,user_id):
                 chapter_number = int(chapter['chapterNumber'])
                 for content in chapter['contents']:
                     if 'verseNumber' in content:
-                        row_other = model_cls_2(
-                            book_id = book.bookId,
-                            chapter = chapter_number,
-                            verseNumber = content['verseNumber'],
-                            verseText = utils.normalize_unicode(content['verseText'].strip()))
-                        db_content2.append(row_other)
+                        db_content2 = \
+                        bible_verse_type_check(content, model_cls_2,
+                            book, db_content2, chapter_number)
             db_.add_all(db_content2)
             db_.flush()
         if item.active is not None: # set all the verse rows' active flag accordingly
