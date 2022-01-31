@@ -2,6 +2,7 @@
 This is not part of the automated tests, and data added to DB by running this script will persist.
 This is to be used manually during develepment testing'''
 from app.test import gql_request
+from app.graphql_api import types
 import json
 from .test_gql_agmt_translation import assert_positive_get_tokens_gql
 from .test_translation_workflow import bible_books,ALIGNMENT_SRC,alignment_data,ALIGNMENT_TRG
@@ -37,7 +38,7 @@ src_var={
     "version": "XYZ",
     "revision": "1",
     "accessPermissions": [
-            "CONTENT","OPENACCESS"
+            types.SourcePermissions.CONTENT.value,types.SourcePermissions.OPENACCESS.value
         ],
     "year": 2020,
     "license": "CC-BY-SA",

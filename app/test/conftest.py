@@ -80,7 +80,7 @@ initial_test_users = {
                 "password": "passwordtest@1",
                 "token":"",
                 "test_user_id": "",
-                "app" : schema_auth.App.VACHANADMIN.value
+                "app" : schema_auth.App.VACHAN.value
             },
             "APIUser2":{
                 "user_email": "abctest@mail.test",
@@ -126,6 +126,13 @@ def create_user_session_run_at_start():
         assert response.status_code == 201
         assert response.json()["role_list"] == \
             [schema_auth.AdminRoles.AGUSER.value, schema_auth.AdminRoles.AGADMIN.value]
+        #VachanAdmin
+        role_user_id = initial_test_users["VachanAdmin"]["test_user_id"]
+        role_list = [schema_auth.AdminRoles.VACHANADMIN.value]
+        response = assign_roles(super_data,role_user_id,role_list)
+        assert response.status_code == 201
+        assert response.json()["role_list"] == \
+            [schema_auth.AdminRoles.VACHANUSER.value, schema_auth.AdminRoles.VACHANADMIN.value]
         #BcsDeveloper
         role_user_id = initial_test_users["BcsDev"]["test_user_id"]
         role_list = [schema_auth.AdminRoles.BCSDEV.value]

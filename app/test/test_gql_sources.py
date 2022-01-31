@@ -1,6 +1,7 @@
 """Test cases for Sources in GQL"""
 from typing import Dict
 
+from app.schema import schema_auth
 from app.graphql_api import types
 #pylint: disable=E0401
 from .test_sources import assert_positive_get
@@ -14,7 +15,7 @@ from .conftest import initial_test_users
 from . test_gql_auth_basic import login,SUPER_PASSWORD,SUPER_USER
 
 headers_auth = {"contentType": "application/json",
-                "accept": "application/json"}
+                "accept": "application/json", "App":schema_auth.App.VACHANADMIN.value}
 headers = {"contentType": "application/json", "accept": "application/json"}
 
 SOURCE_GLOBAL_VARIABLES = {
@@ -71,6 +72,7 @@ headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['
 
 def check_post(query,variables):
     """positive post test"""
+    headers_auth['App'] = schema_auth.App.VACHANADMIN.value
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     #without auth
     executed = gql_request(query=query,operation="mutation", variables=variables)
@@ -834,7 +836,7 @@ def test_get_source_filter_access_tag():
     "version": "TTT",
     "year": 2020,
     "accessPermissions": [
-      "CONTENT"
+      types.SourcePermissions.CONTENT.value
     ],
   }
 }
@@ -842,15 +844,15 @@ def test_get_source_filter_access_tag():
     check_post(SOURCE_GLOBAL_QUERY,source_data)
 
     source_data["object"]['language'] = 'mr'
-    source_data["object"]['accessPermissions'] = ["OPENACCESS"]
+    source_data["object"]['accessPermissions'] = [types.SourcePermissions.OPENACCESS.value]
     check_post(SOURCE_GLOBAL_QUERY,source_data)
 
     source_data["object"]['language'] = 'te'
-    source_data["object"]['accessPermissions'] = ["PUBLISHABLE"]
+    source_data["object"]['accessPermissions'] = [types.SourcePermissions.PUBLISHABLE.value]
     check_post(SOURCE_GLOBAL_QUERY,source_data)
 
     get_qry = """
-      query get_source($obj:[SourcePermissions],$ver:String){
+      query get_source($obj:[String],$ver:String){
   contents(accessTag:$obj,versionAbbreviation:$ver){
     sourceName
   }
@@ -858,7 +860,7 @@ def test_get_source_filter_access_tag():
     """
     get_var = {
     "obj": [
-    "CONTENT"
+    types.SourcePermissions.CONTENT.value
   ],
   "ver": "TTT"
 }
@@ -866,17 +868,17 @@ def test_get_source_filter_access_tag():
     assert isinstance(executed1, Dict)
     assert len(executed1["data"]["contents"]) >= 3
 
-    get_var["obj"] = ["OPENACCESS"]
+    get_var["obj"] = [types.SourcePermissions.OPENACCESS.value]
     executed2 = gql_request(query=get_qry,variables=get_var, headers=headers_auth)
     assert isinstance(executed2, Dict)
     assert len(executed2["data"]["contents"]) >= 1
 
-    get_var["obj"] = ["PUBLISHABLE"]
+    get_var["obj"] = [types.SourcePermissions.PUBLISHABLE.value]
     executed3 = gql_request(query=get_qry,variables=get_var, headers=headers_auth)
     assert isinstance(executed3, Dict)
     assert len(executed3["data"]["contents"]) >= 1
 
-    get_var["obj"] = ["PUBLISHABLE","OPENACCESS"]
+    get_var["obj"] = [types.SourcePermissions.PUBLISHABLE.value,types.SourcePermissions.OPENACCESS.value]
     executed4 = gql_request(query=get_qry,variables=get_var, headers=headers_auth,)
     assert_not_available_content_gql(executed4["data"]["contents"])
 
@@ -1210,7 +1212,7 @@ def test_diffrernt_sources_with_app_and_roles():
     "version": "TTT",
     "year": 2020,
     "accessPermissions": [
-      "CONTENT"
+      types.SourcePermissions.CONTENT.value
     ],
   }
 }
@@ -1220,7 +1222,7 @@ def test_diffrernt_sources_with_app_and_roles():
 
     #open-access
     source_data["object"]["language"] = 'ml'
-    source_data["object"]["accessPermissions"] = ["OPENACCESS"]
+    source_data["object"]["accessPermissions"] = [types.SourcePermissions.OPENACCESS.value]
     resposne = check_post(SOURCE_GLOBAL_QUERY,source_data)
     resp_data = resposne["data"]["addSource"]["data"]["metaData"]
     assert resp_data["accessPermissions"] == \
@@ -1228,7 +1230,7 @@ def test_diffrernt_sources_with_app_and_roles():
 
     #publishable
     source_data["object"]["language"] = 'tn'
-    source_data["object"]["accessPermissions"] = ["PUBLISHABLE"]
+    source_data["object"]["accessPermissions"] = [types.SourcePermissions.PUBLISHABLE.value]
     resposne = check_post(SOURCE_GLOBAL_QUERY,source_data)
     resp_data = resposne["data"]["addSource"]["data"]["metaData"]
     assert resp_data["accessPermissions"] == \
@@ -1236,7 +1238,7 @@ def test_diffrernt_sources_with_app_and_roles():
 
     #downloadable
     source_data["object"]["language"] = 'af'
-    source_data["object"]["accessPermissions"] = ["DOWNLOADABLE"]
+    source_data["object"]["accessPermissions"] = [types.SourcePermissions.DOWNLOADABLE.value]
     resposne = check_post(SOURCE_GLOBAL_QUERY,source_data)
     resp_data = resposne["data"]["addSource"]["data"]["metaData"]
     assert resp_data["accessPermissions"] == \
@@ -1244,7 +1246,7 @@ def test_diffrernt_sources_with_app_and_roles():
 
     #derivable
     source_data["object"]["language"] = 'ak'
-    source_data["object"]["accessPermissions"] = ["DERIVABLE"]
+    source_data["object"]["accessPermissions"] = [types.SourcePermissions.DERIVABLE.value]
     resposne = check_post(SOURCE_GLOBAL_QUERY,source_data)
     resp_data = resposne["data"]["addSource"]["data"]["metaData"]
     assert resp_data["accessPermissions"] == \

@@ -12,12 +12,19 @@ class ResourceType(str, Enum):
     USER = "all users in our system (Kratos)"
     TRANSLATION = "generic translation apis"
     LOOKUP = "Lookup contents"
+    RESEARCH = "Research-Material"
 
 class App(str, Enum):
     '''Defined apps'''
     AG = "Autographa"
     VACHAN = "Vachan-online or vachan-app"
+    API = "API-user"
     VACHANADMIN = "VachanAdmin"
+
+class AppInput(str, Enum):
+    '''Input fields for App in Registration'''
+    AG = "Autographa"
+    VACHAN = "Vachan-online or vachan-app"
     API = "API-user"
 
 class Registration(BaseModel):

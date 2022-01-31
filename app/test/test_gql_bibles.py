@@ -5,7 +5,7 @@ from typing import Dict
 #pylint: disable=E0401
 #pylint: disable=C0301
 from .test_bibles import assert_positive_get_for_books,assert_positive_get_for_audio,assert_positive_get_for_verse
-from .test_bibles import gospel_books_data
+from .test_bibles import gospel_books_data,gospel_books_merged_data,gospel_books_split_data
 from .test_gql_versions import GLOBAL_QUERY as version_query
 from .test_gql_sources import SOURCE_GLOBAL_QUERY as source_query
 from .test_gql_versions import check_post as version_add
@@ -134,6 +134,7 @@ AUDIO_EDIT_QUERY = """
   }
 }
 """
+
 headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
 def check_post(query, variables,datatype="books"):
   '''prior steps and post attempt, without checking the response'''
@@ -245,6 +246,126 @@ def test_post_default():
 }
   """
   check_skip_limit_gql(query_check,"bibleContents",headers=headers_auth)
+
+def test_post_put_split_verse():
+    """test posting split verse"""
+    variable = {
+    "object": {
+        "sourceName": "gu_TTT_1_bible",
+        "books": [
+        {"USFM":"\\id rev\n\\c 1\n\\p\n\\v 1a test verse one a\n\\v 1b test verse one b\n\\v 2 test verse two"}]
+    }
+    }
+    executed,table = check_post(BOOK_ADD_QUERY,variable)
+    assert executed["data"]["addBibleBook"]["message"] == "Bible books uploaded and processed successfully"
+    for i,item in enumerate(executed["data"]["addBibleBook"]['data']):
+          assert_positive_get_for_books(item)
+          book_code = re.match(r'\\id (\w\w\w)', gospel_books_split_data[i]['USFM']).group(1)
+          assert item['book']['bookCode'] == book_code.lower()
+    assert len(gospel_books_split_data) == len(executed["data"]["addBibleBook"]['data'])
+
+    get_bile_verse = """
+    {
+bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"rev",chapter:1){
+    reference{
+      bible
+      book
+      chapter
+      verseNumber
+      verseNumberEnd
+    }
+    verseText
+  }
+}
+  """
+    #get bible data and check split verses are combined
+    executed3 = gql_request(get_bile_verse,headers=headers_auth)
+    assert len(executed3["data"]["bibleVerse"]) == 2
+    for row in executed3["data"]["bibleVerse"]:
+        if row["reference"]["verseNumber"] == 1:
+            assert row["verseText"] == "test verse one a test verse one b"
+        if row["reference"]["verseNumber"] == 2:
+            assert row["verseText"] == 'test verse two'
+
+    #update
+    variable2 = {
+      "object": {
+        "sourceName": "gu_TTT_1_bible",
+        "books": [
+          {"USFM":"\\id rev\n\\c 1\n\\p\n\\v 1a test verse one a edited \n\\v 1b test verse one b edited"}]}}
+    #with auth
+    executed2 = gql_request(BOOK_EDIT_QUERY,operation = "mutation",variables=variable2,
+      headers=headers_auth)
+    assert executed2["data"]["editBibleBook"]["message"] == "Bible books updated successfully"
+
+    #get updated data combine verse re upload usfm
+    executed4 = gql_request(get_bile_verse,headers=headers_auth)
+    assert len(executed4["data"]["bibleVerse"]) == 1
+    for row in executed4["data"]["bibleVerse"]:
+        if row["reference"]["verseNumber"] == 1:
+            assert row["verseText"] == "test verse one a edited test verse one b edited"
+
+def test_post_put_merged_verse():
+    """test posting merged verse"""
+    variable = {
+    "object": {
+        "sourceName": "gu_TTT_1_bible",
+        "books": [
+        {"USFM":"\\id rom\n\\c 1\n\\p\n\\v 1-2 test verse one two merged\n\\v 3 test verse three"}]
+    }
+    }
+    executed,table = check_post(BOOK_ADD_QUERY,variable)
+    assert executed["data"]["addBibleBook"]["message"] == "Bible books uploaded and processed successfully"
+    for i,item in enumerate(executed["data"]["addBibleBook"]['data']):
+          assert_positive_get_for_books(item)
+          book_code = re.match(r'\\id (\w\w\w)', gospel_books_merged_data[i]['USFM']).group(1)
+          assert item['book']['bookCode'] == book_code.lower()
+    assert len(gospel_books_merged_data) == len(executed["data"]["addBibleBook"]['data'])
+
+    get_bile_verse = """
+    {
+bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"rom",chapter:1){
+    reference{
+      bible
+      book
+      chapter
+      verseNumber
+      verseNumberEnd
+    }
+    verseText
+  }
+}
+  """
+    #get bible data and check split verses are combined
+    executed3 = gql_request(get_bile_verse,headers=headers_auth)
+    assert len(executed3["data"]["bibleVerse"]) == 3
+    for row in executed3["data"]["bibleVerse"]:
+        if row["reference"]["verseNumber"] == 1:
+            assert row["verseText"] == "test verse one two merged"
+        if row["reference"]["verseNumber"] == 2:
+            assert row["verseText"] == ''
+        if row["reference"]["verseNumber"] == 3:
+            assert row["verseText"] == 'test verse three'
+
+    #update
+    variable2 = {
+      "object": {
+        "sourceName": "gu_TTT_1_bible",
+        "books": [
+          {"USFM":"\\id rom\n\\c 1\n\\p\n\\v 1-2 test verse one two merged edited"}]}}
+    #with auth
+    executed2 = gql_request(BOOK_EDIT_QUERY,operation = "mutation",variables=variable2,
+      headers=headers_auth)
+    assert executed2["data"]["editBibleBook"]["message"] == "Bible books updated successfully"
+
+    #get updated data combine verse re upload usfm
+    executed4 = gql_request(get_bile_verse,headers=headers_auth)
+    assert len(executed4["data"]["bibleVerse"]) == 2
+    for row in executed4["data"]["bibleVerse"]:
+        if row["reference"]["verseNumber"] == 1:
+            assert row["verseText"] == "test verse one two merged edited"
+        if row["reference"]["verseNumber"] == 2:
+            assert row["verseText"] == ''
 
 def test_post_optional():
   '''Positive test fr post with optional JSON upload'''

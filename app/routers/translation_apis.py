@@ -3,11 +3,10 @@
 from typing import List
 from fastapi import APIRouter, Query, Body, Depends, Request, Path, BackgroundTasks
 from sqlalchemy.orm import Session
-from starlette.datastructures import URL
 
 
 from dependencies import get_db, log
-from schema import schemas, schemas_nlp
+from schema import schemas, schemas_nlp, schema_auth
 from crud import nlp_crud, projects_crud, nlp_sw_crud
 from custom_exceptions import GenericException
 from routers import content_apis
@@ -25,7 +24,8 @@ async def get_projects(request: Request,
     target_language:schemas.LangCodePattern=Query(None,example='ml'),
     active:bool=True, user_id:str=Query(None),
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
-    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db),
+    filtering_required=True):
     '''Fetches the list of proejct and their details'''
     log.info('In get_projects')
     log.debug('project_name: %s, source_language:%s, target_language:%s,\
@@ -52,7 +52,8 @@ async def create_project(request: Request,
     tags=['Autographa-Project management'])
 @get_auth_access_check_decorator
 async def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectEdit,
-    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db),
+    operates_on=schema_auth.ResourceType.PROJECT.value):
     '''Adds more books to a autographa MT project's source. Delete or activate project.'''
     log.info('In update_project')
     log.debug('project_obj: %s',project_obj)
@@ -62,8 +63,8 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
         for buk in project_obj.selectedBooks.books:
             books_param_list += "&books=%s"%(buk)
 
-        request.scope['method'] = 'GET'
-        request._url = URL('/v2/sources')#pylint: disable=protected-access
+        # request.scope['method'] = 'GET'
+        # request._url = URL('/v2/sources')#pylint: disable=protected-access
         response = await content_apis.extract_text_contents(
             request=request,
             source_name=project_obj.selectedBooks.bible,
@@ -436,7 +437,8 @@ async def generate_stopwords(request: Request, background_tasks: BackgroundTasks
     language_code:schemas.LangCodePattern=Query(...,example="bi"),
     use_server_data:bool=True, gl_lang_code:schemas.LangCodePattern=Query(None,example="hi"),
     user_details =Depends(get_user_or_none),
-    sentence_list:List[schemas_nlp.SentenceInput]=Body(None), db_:Session=Depends(get_db)):
+    sentence_list:List[schemas_nlp.SentenceInput]=Body(None), db_:Session=Depends(get_db),
+    operates_on=schema_auth.ResourceType.LOOKUP.value):
     '''Auto generate stop words for a given language'''
     log.info('In generate_stopwords')
     log.debug('language_code:%s, use_server_data:%s, gl_lang_code:%s, sentence_list:%s',
@@ -444,7 +446,7 @@ async def generate_stopwords(request: Request, background_tasks: BackgroundTasks
 
     job_info = create_job(
             request=request, #pylint: disable=W0613
-            db_=db_)
+            db_=db_, user_id=user_details['user_id'])
     job_id = job_info['data']['jobId']
     background_tasks.add_task(nlp_sw_crud.generate_stopwords, db_, request, language_code,
         gl_lang_code, sentence_list, job_id, use_server_data=use_server_data,
@@ -458,10 +460,10 @@ async def generate_stopwords(request: Request, background_tasks: BackgroundTasks
 @router.post('/v2/jobs', response_model=schemas_nlp.JobCreateResponse, status_code=201,
     tags=['Jobs'])
 def create_job(request:Request, #pylint: disable=W0613
-                db_:Session=Depends(get_db)):
+                db_:Session=Depends(get_db), user_id="10101"):
     '''Creates a new job'''
     log.info('In create_job')
-    job_info = nlp_sw_crud.create_job(db_=db_, user_id='10101')
+    job_info = nlp_sw_crud.create_job(db_=db_, user_id=user_id)
     return {'message': "Job created successfully",
         "data": {"jobId": job_info.jobId, "status": job_info.status}}
 

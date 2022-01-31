@@ -23,7 +23,7 @@ responses={400: {"model": schemas.ErrorResponse}},
 status_code=201,tags=["Authentication"])
 @get_auth_access_check_decorator
 async def register(register_details:schema_auth.Registration,request: Request,#pylint: disable=unused-argument
-app_type: schema_auth.App=Query(schema_auth.App.API),user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+app_type: schema_auth.AppInput=Query(schema_auth.App.API),user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
 db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Registration for Users
     * user_email and password fiels are mandatory

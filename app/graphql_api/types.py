@@ -401,7 +401,7 @@ class InputAddSource(graphene.InputObjectType):
     year = graphene.Int(required=True)
     license = graphene.String(default_value = "CC-BY-SA",\
         description="pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
-    accessPermissions = graphene.List(SourcePermissions,
+    accessPermissions = graphene.List(graphene.String,
         default_value = [SourcePermissions.CONTENT.value])#pylint: disable=no-member
     metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String",
         default_value = {})
@@ -417,7 +417,7 @@ class InputEditSource(graphene.InputObjectType):
     revision = graphene.String(description="default: 1")
     year = graphene.Int()
     license = graphene.String(description="pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
-    accessPermissions = graphene.List(SourcePermissions,
+    accessPermissions = graphene.List(graphene.String,
         default_value = [SourcePermissions.CONTENT.value])#pylint: disable=no-member
     metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String",
         default_value = {})
@@ -720,3 +720,44 @@ class UserroleInput(graphene.InputObjectType):
 class UserIdentity(graphene.InputObjectType):
     """input for user identity delete"""
     userid = graphene.String(required=True)
+
+class SWResponse(graphene.ObjectType):#pylint: disable=too-few-public-methods
+    '''Return object of SW'''
+    stopWord = graphene.String()
+    stopwordType = graphene.String()
+    confidence = graphene.Float()
+    metaData = graphene.JSONString()
+    active = graphene.Boolean()
+
+class StopWordUpdateInput(graphene.InputObjectType):
+    """SW update Input"""
+    stopWord = graphene.String(required=True)
+    active = graphene.Boolean(default_value = True)
+    metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String")
+
+class SWGenerateInput(graphene.InputObjectType):#pylint: disable=too-few-public-methods
+    '''Input for Generate SW'''
+    sentenceId = graphene.String()
+    surrogateId = graphene.String(description="Example : MAT 1:1")
+    sentence = graphene.String()
+
+class Job(graphene.ObjectType):#pylint: disable=too-few-public-methods
+    '''Return Response for Job'''
+    jobId = graphene.Int(description="Example : 100000")
+    status = graphene.String(description="Example : job created")
+    output = graphene.JSONString(description="""{
+        'language':'hi',
+        'data': [{'stopWord': 'और',
+                  'stopwordType': 'auto generated',
+                  'confidence': 0.8,
+                  'active': True,
+                  'metaData': {
+                         'type': 'postposition'
+                   }
+                }]
+        }""")
+
+class JobStatusResponse(graphene.ObjectType):#pylint: disable=too-few-public-methods
+    '''Return Response for Job Status'''
+    message = graphene.String()
+    data = graphene.Field(Job)

@@ -1,5 +1,6 @@
 '''Test cases for extract text related APIs'''
 from requests.api import head
+from app.schema import schemas, schema_auth
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
@@ -12,7 +13,8 @@ UNIT_URL = 'v2/sources/'
 SENT_URL = UNIT_URL+ "get-sentence"
 headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json",
-                "accept": "application/json"
+                "accept": "application/json",
+                "Authentication":"Bearer"+" "+initial_test_users['APIUser']['token']
             }
 
 def assert_positive_get(item):
@@ -49,6 +51,8 @@ commentary_data = [
 
 def create_sources():
     '''prior steps and post attempt, without checking the response'''
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    headers_auth["App"] = schema_auth.App.VACHAN.value
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version for get sentence",
@@ -59,7 +63,8 @@ def create_sources():
         "language": "hi",
         "version": "TTT",
         "year": 2020,
-        "revision": 1
+        "revision": 1,
+        "accessPermissions":[schemas.SourcePermissions.CONTENT.value, schemas.SourcePermissions.OPENACCESS.value]
     }
     source = add_source(source_data)
     bible_name = source.json()['data']['sourceName']
@@ -71,7 +76,9 @@ def create_sources():
         "language": "en",
         "version": "TTT",
         "year": 2020,
-        "revision": 1
+        "revision": 1,
+        "accessPermissions":[schemas.SourcePermissions.CONTENT.value, schemas.SourcePermissions.OPENACCESS.value]
+
     }
     source = add_source(source_data)
     commentary_name = source.json()['data']['sourceName']
@@ -82,7 +89,6 @@ def create_sources():
 
 def test_get_poisitive():
 	'''normal tests for all possible get queries'''
-	headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
 	# Before adding data
 	resp = client.get(SENT_URL+"?source_name=hi_TTT_1_bible", headers= headers_auth)
 	assert resp.status_code == 404
@@ -90,6 +96,8 @@ def test_get_poisitive():
 	# Add data
 	bible_name, commentary_name = create_sources()
 
+	headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
+	headers_auth['App'] = schema_auth.App.API
 	check_default_get(SENT_URL, headers_auth, assert_positive_get)
 
 	# filtering with various params
@@ -163,6 +171,8 @@ def test_get_negatives():
 	'''error or not available cases'''
 	# Add data
 	bible_name, commentary_name = create_sources()
+	headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
+	headers_auth['App'] = schema_auth.App.API
 
 	for buk in ['mat','mrk','luk','jhn']:
 		resp = client.get(SENT_URL+'?source_name='+commentary_name+'&books='+buk, headers=headers_auth)
