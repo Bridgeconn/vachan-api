@@ -37,15 +37,15 @@ services:
   restart: always
   environment: 
    - POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
-   - POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
+   - POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-newpassword}
    - POSTGRES_DB=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
-   - POSTGRES_HOST_AUTH_METHOD=trust
+   - POSTGRES_HOST_AUTH_METHOD=md5
   logging:
    options:
     max-size: 10m
     max-file: "3"
-  expose:
-   - 5432
+  #expose:
+   #- 5432
   ports:
    # HOST:CONTAINER
    - "5434:5432"
@@ -93,35 +93,31 @@ services:
 
 # Web Server
  web-server:
-  image: nginx:1.15-alpine
-  environment:
-   - domain=${VACHAN_DOMAIN:-localhost}
+  image: nginx:latest
   ports:
    - 80:80
    - 443:443
+  restart: always
+  expose:
+   - 80
+   - 443
   depends_on:
    - vachan-api
-  healthcheck:
-   timeout: 45s
-   interval: 10s
-   retries: 10
   volumes:
-    - ./nginx/prod:/etc/nginx/conf.d
-    - ./nginx/prod/certbot/conf:/etc/letsencrypt
-    - ./nginx/prod/certbot/www:/var/www/certbot
-    - logs-vol:/var/log/nginx
+   - ./nginx/prod/app.conf:/etc/nginx/conf.d/default.conf:ro
+   - ./certbot/www:/var/www/certbot/:ro
+   - ./certbot/conf/:/etc/nginx/ssl/:ro
   networks:
    - my-network
 
- # for SSL
- certbot:
-  image: certbot/certbot
-  volumes:
-    - ./nginx/prod/certbot/conf:/etc/letsencrypt
-    - ./nginx/prod/certbot/www:/var/www/certbot
-  entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-  command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
 
+ certbot:
+  image: certbot/certbot:latest
+  volumes:
+   - ./certbot/www/:/var/www/certbot/:rw
+   - ./certbot/conf/:/etc/letsencrypt/:rw
+  networks:
+   - my-network
 
 networks:
  my-network:              
