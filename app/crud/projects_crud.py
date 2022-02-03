@@ -351,8 +351,9 @@ def get_agmt_source_per_token(db_:Session, project_id, token, occurrences): #pyl
         for mta in trans['replacement_meta']:
             draft.draftMeta.append(mta)
     # return draft_rows
+    draft_dicts = [item.__dict__ for item in draft_rows]
     response = {
-        'db_content':draft_rows,
+        'db_content':draft_dicts,
         'project_content':project_row
         }
     return response
