@@ -388,6 +388,7 @@ class SourcePermissions(graphene.Enum):
     PUBLISHABLE = "publishable"
     DOWNLOADABLE = "downloadable"
     DERIVABLE = "derivable"
+    RESEARCHUSE = "research-use"
 
 class InputAddSource(graphene.InputObjectType):
     """Add Source Input"""

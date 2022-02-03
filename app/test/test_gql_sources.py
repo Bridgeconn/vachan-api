@@ -852,7 +852,7 @@ def test_get_source_filter_access_tag():
     check_post(SOURCE_GLOBAL_QUERY,source_data)
 
     get_qry = """
-      query get_source($obj:[String],$ver:String){
+      query get_source($obj:[SourcePermissions],$ver:String){
   contents(accessTag:$obj,versionAbbreviation:$ver){
     sourceName
   }
@@ -860,7 +860,7 @@ def test_get_source_filter_access_tag():
     """
     get_var = {
     "obj": [
-    types.SourcePermissions.CONTENT.value
+    types.SourcePermissions.CONTENT.name
   ],
   "ver": "TTT"
 }
@@ -868,17 +868,17 @@ def test_get_source_filter_access_tag():
     assert isinstance(executed1, Dict)
     assert len(executed1["data"]["contents"]) >= 3
 
-    get_var["obj"] = [types.SourcePermissions.OPENACCESS.value]
+    get_var["obj"] = [types.SourcePermissions.OPENACCESS.name]
     executed2 = gql_request(query=get_qry,variables=get_var, headers=headers_auth)
     assert isinstance(executed2, Dict)
     assert len(executed2["data"]["contents"]) >= 1
 
-    get_var["obj"] = [types.SourcePermissions.PUBLISHABLE.value]
+    get_var["obj"] = [types.SourcePermissions.PUBLISHABLE.name]
     executed3 = gql_request(query=get_qry,variables=get_var, headers=headers_auth)
     assert isinstance(executed3, Dict)
     assert len(executed3["data"]["contents"]) >= 1
 
-    get_var["obj"] = [types.SourcePermissions.PUBLISHABLE.value,types.SourcePermissions.OPENACCESS.value]
+    get_var["obj"] = [types.SourcePermissions.PUBLISHABLE.name,types.SourcePermissions.OPENACCESS.name]
     executed4 = gql_request(query=get_qry,variables=get_var, headers=headers_auth,)
     assert_not_available_content_gql(executed4["data"]["contents"])
 

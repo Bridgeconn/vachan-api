@@ -406,6 +406,7 @@ def test_created_user_can_only_edit():
 
 def test_soft_delete():
     '''Soft delete is achived by updating the active flag to Fasle'''
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version",
