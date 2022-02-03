@@ -401,7 +401,9 @@ class InputAddSource(graphene.InputObjectType):
     year = graphene.Int(required=True)
     license = graphene.String(default_value = "CC-BY-SA",\
         description="pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
-    accessPermissions = graphene.List(graphene.String,
+    # accessPermissions = graphene.List(graphene.String,
+    #     default_value = [SourcePermissions.CONTENT.value])#pylint: disable=no-member
+    accessPermissions = graphene.List(SourcePermissions,
         default_value = [SourcePermissions.CONTENT.value])#pylint: disable=no-member
     metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String",
         default_value = {})
@@ -417,7 +419,9 @@ class InputEditSource(graphene.InputObjectType):
     revision = graphene.String(description="default: 1")
     year = graphene.Int()
     license = graphene.String(description="pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
-    accessPermissions = graphene.List(graphene.String,
+    # accessPermissions = graphene.List(graphene.String,
+    #     default_value = [SourcePermissions.CONTENT.value])#pylint: disable=no-member
+    accessPermissions = graphene.List(SourcePermissions,
         default_value = [SourcePermissions.CONTENT.value])#pylint: disable=no-member
     metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String",
         default_value = {})

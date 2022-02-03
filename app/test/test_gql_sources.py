@@ -836,7 +836,7 @@ def test_get_source_filter_access_tag():
     "version": "TTT",
     "year": 2020,
     "accessPermissions": [
-      types.SourcePermissions.CONTENT.value
+      types.SourcePermissions.CONTENT.name
     ],
   }
 }
@@ -844,11 +844,11 @@ def test_get_source_filter_access_tag():
     check_post(SOURCE_GLOBAL_QUERY,source_data)
 
     source_data["object"]['language'] = 'mr'
-    source_data["object"]['accessPermissions'] = [types.SourcePermissions.OPENACCESS.value]
+    source_data["object"]['accessPermissions'] = [types.SourcePermissions.OPENACCESS.name]
     check_post(SOURCE_GLOBAL_QUERY,source_data)
 
     source_data["object"]['language'] = 'te'
-    source_data["object"]['accessPermissions'] = [types.SourcePermissions.PUBLISHABLE.value]
+    source_data["object"]['accessPermissions'] = [types.SourcePermissions.PUBLISHABLE.name]
     check_post(SOURCE_GLOBAL_QUERY,source_data)
 
     get_qry = """
@@ -1212,7 +1212,7 @@ def test_diffrernt_sources_with_app_and_roles():
     "version": "TTT",
     "year": 2020,
     "accessPermissions": [
-      types.SourcePermissions.CONTENT.value
+      types.SourcePermissions.CONTENT.name
     ],
   }
 }
@@ -1222,7 +1222,7 @@ def test_diffrernt_sources_with_app_and_roles():
 
     #open-access
     source_data["object"]["language"] = 'ml'
-    source_data["object"]["accessPermissions"] = [types.SourcePermissions.OPENACCESS.value]
+    source_data["object"]["accessPermissions"] = [types.SourcePermissions.OPENACCESS.name]
     resposne = check_post(SOURCE_GLOBAL_QUERY,source_data)
     resp_data = resposne["data"]["addSource"]["data"]["metaData"]
     assert resp_data["accessPermissions"] == \
@@ -1230,7 +1230,7 @@ def test_diffrernt_sources_with_app_and_roles():
 
     #publishable
     source_data["object"]["language"] = 'tn'
-    source_data["object"]["accessPermissions"] = [types.SourcePermissions.PUBLISHABLE.value]
+    source_data["object"]["accessPermissions"] = [types.SourcePermissions.PUBLISHABLE.name]
     resposne = check_post(SOURCE_GLOBAL_QUERY,source_data)
     resp_data = resposne["data"]["addSource"]["data"]["metaData"]
     assert resp_data["accessPermissions"] == \
@@ -1238,7 +1238,7 @@ def test_diffrernt_sources_with_app_and_roles():
 
     #downloadable
     source_data["object"]["language"] = 'af'
-    source_data["object"]["accessPermissions"] = [types.SourcePermissions.DOWNLOADABLE.value]
+    source_data["object"]["accessPermissions"] = [types.SourcePermissions.DOWNLOADABLE.name]
     resposne = check_post(SOURCE_GLOBAL_QUERY,source_data)
     resp_data = resposne["data"]["addSource"]["data"]["metaData"]
     assert resp_data["accessPermissions"] == \
@@ -1246,7 +1246,7 @@ def test_diffrernt_sources_with_app_and_roles():
 
     #derivable
     source_data["object"]["language"] = 'ak'
-    source_data["object"]["accessPermissions"] = [types.SourcePermissions.DERIVABLE.value]
+    source_data["object"]["accessPermissions"] = [types.SourcePermissions.DERIVABLE.name]
     resposne = check_post(SOURCE_GLOBAL_QUERY,source_data)
     resp_data = resposne["data"]["addSource"]["data"]["metaData"]
     assert resp_data["accessPermissions"] == \
