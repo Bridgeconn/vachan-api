@@ -688,6 +688,12 @@ class App(graphene.Enum):
     VACHANADMIN = "VachanAdmin"
     API = "API-user"
 
+class AppInput(graphene.Enum):
+    '''available choices for permission'''
+    AG = "Autographa"
+    VACHAN = "Vachan-online or vachan-app"
+    API = "API-user"
+
 class RegisterInput(graphene.InputObjectType):
     """Register Input"""
     email = graphene.String(required=True)

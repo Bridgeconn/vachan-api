@@ -42,7 +42,7 @@ def login(data):
 def register(data,apptype):
     """test for registration"""
     reg_qry = """
-            mutation register($app:App,$object:RegisterInput){
+            mutation register($app:AppInput,$object:RegisterInput){
     register(registrationArgs:$object,appType:$app){
         message
     registeredDetails{
@@ -162,7 +162,7 @@ def test_register_user_with_none_apptype(create_user_fixture):
     """register user with none type as app"""
 
     reg_qry = """
-            mutation register($app:App,$object:RegisterInput){
+            mutation register($app:AppInput,$object:RegisterInput){
     register(registrationArgs:$object,appType:$app){
         message
     registeredDetails{
