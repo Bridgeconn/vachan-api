@@ -17,14 +17,14 @@ headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json", "accept": "application/json"}
 
 update_obj1 = {
-        "stopWord": "कहता",
+        "stopWord": "उसका",
         "active": False,
         "metaData": {
         "type": "verb"
      }
     }
 update_obj2 = {
-        "stopWord": "गए",
+        "stopWord": "हम",
         "active": False,
     }
 update_wrong_obj =  {
