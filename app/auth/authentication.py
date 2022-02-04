@@ -580,7 +580,13 @@ def create_super_user():
             if reg_req.status_code == 200:
                 log.info('Super Admin created')
             elif reg_req.status_code == 400:
-                log.error(reg_req.content)
-                raise HTTPException(status_code=400, detail="Error on creating Super Admin")
+                #check for any error and throw from content
+                for err_dict in json.loads(reg_req.content)["ui"]["nodes"]:
+                    if len(err_dict["messages"]) > 0:
+                        err_attribute = err_dict['attributes']['name']
+                        error_detail = \
+                            f"{err_attribute} error :{err_dict['messages'][0]['text']}"
+                        log.error("Super User Creation Error :%s",error_detail)
+                        raise HTTPException(status_code=400, detail=error_detail)
     else:
         log.info('Super Admin already exist')
