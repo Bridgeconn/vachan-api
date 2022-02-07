@@ -836,7 +836,7 @@ def test_get_source_filter_access_tag():
     "version": "TTT",
     "year": 2020,
     "accessPermissions": [
-      types.SourcePermissions.CONTENT.value
+      types.SourcePermissions.CONTENT.name
     ],
   }
 }
@@ -844,15 +844,15 @@ def test_get_source_filter_access_tag():
     check_post(SOURCE_GLOBAL_QUERY,source_data)
 
     source_data["object"]['language'] = 'mr'
-    source_data["object"]['accessPermissions'] = [types.SourcePermissions.OPENACCESS.value]
+    source_data["object"]['accessPermissions'] = [types.SourcePermissions.OPENACCESS.name]
     check_post(SOURCE_GLOBAL_QUERY,source_data)
 
     source_data["object"]['language'] = 'te'
-    source_data["object"]['accessPermissions'] = [types.SourcePermissions.PUBLISHABLE.value]
+    source_data["object"]['accessPermissions'] = [types.SourcePermissions.PUBLISHABLE.name]
     check_post(SOURCE_GLOBAL_QUERY,source_data)
 
     get_qry = """
-      query get_source($obj:[String],$ver:String){
+      query get_source($obj:[SourcePermissions],$ver:String){
   contents(accessTag:$obj,versionAbbreviation:$ver){
     sourceName
   }
@@ -860,7 +860,7 @@ def test_get_source_filter_access_tag():
     """
     get_var = {
     "obj": [
-    types.SourcePermissions.CONTENT.value
+    types.SourcePermissions.CONTENT.name
   ],
   "ver": "TTT"
 }
@@ -868,17 +868,17 @@ def test_get_source_filter_access_tag():
     assert isinstance(executed1, Dict)
     assert len(executed1["data"]["contents"]) >= 3
 
-    get_var["obj"] = [types.SourcePermissions.OPENACCESS.value]
+    get_var["obj"] = [types.SourcePermissions.OPENACCESS.name]
     executed2 = gql_request(query=get_qry,variables=get_var, headers=headers_auth)
     assert isinstance(executed2, Dict)
     assert len(executed2["data"]["contents"]) >= 1
 
-    get_var["obj"] = [types.SourcePermissions.PUBLISHABLE.value]
+    get_var["obj"] = [types.SourcePermissions.PUBLISHABLE.name]
     executed3 = gql_request(query=get_qry,variables=get_var, headers=headers_auth)
     assert isinstance(executed3, Dict)
     assert len(executed3["data"]["contents"]) >= 1
 
-    get_var["obj"] = [types.SourcePermissions.PUBLISHABLE.value,types.SourcePermissions.OPENACCESS.value]
+    get_var["obj"] = [types.SourcePermissions.PUBLISHABLE.name,types.SourcePermissions.OPENACCESS.name]
     executed4 = gql_request(query=get_qry,variables=get_var, headers=headers_auth,)
     assert_not_available_content_gql(executed4["data"]["contents"])
 
@@ -1212,7 +1212,7 @@ def test_diffrernt_sources_with_app_and_roles():
     "version": "TTT",
     "year": 2020,
     "accessPermissions": [
-      types.SourcePermissions.CONTENT.value
+      types.SourcePermissions.CONTENT.name
     ],
   }
 }
@@ -1222,7 +1222,7 @@ def test_diffrernt_sources_with_app_and_roles():
 
     #open-access
     source_data["object"]["language"] = 'ml'
-    source_data["object"]["accessPermissions"] = [types.SourcePermissions.OPENACCESS.value]
+    source_data["object"]["accessPermissions"] = [types.SourcePermissions.OPENACCESS.name]
     resposne = check_post(SOURCE_GLOBAL_QUERY,source_data)
     resp_data = resposne["data"]["addSource"]["data"]["metaData"]
     assert resp_data["accessPermissions"] == \
@@ -1230,7 +1230,7 @@ def test_diffrernt_sources_with_app_and_roles():
 
     #publishable
     source_data["object"]["language"] = 'tn'
-    source_data["object"]["accessPermissions"] = [types.SourcePermissions.PUBLISHABLE.value]
+    source_data["object"]["accessPermissions"] = [types.SourcePermissions.PUBLISHABLE.name]
     resposne = check_post(SOURCE_GLOBAL_QUERY,source_data)
     resp_data = resposne["data"]["addSource"]["data"]["metaData"]
     assert resp_data["accessPermissions"] == \
@@ -1238,7 +1238,7 @@ def test_diffrernt_sources_with_app_and_roles():
 
     #downloadable
     source_data["object"]["language"] = 'af'
-    source_data["object"]["accessPermissions"] = [types.SourcePermissions.DOWNLOADABLE.value]
+    source_data["object"]["accessPermissions"] = [types.SourcePermissions.DOWNLOADABLE.name]
     resposne = check_post(SOURCE_GLOBAL_QUERY,source_data)
     resp_data = resposne["data"]["addSource"]["data"]["metaData"]
     assert resp_data["accessPermissions"] == \
@@ -1246,7 +1246,7 @@ def test_diffrernt_sources_with_app_and_roles():
 
     #derivable
     source_data["object"]["language"] = 'ak'
-    source_data["object"]["accessPermissions"] = [types.SourcePermissions.DERIVABLE.value]
+    source_data["object"]["accessPermissions"] = [types.SourcePermissions.DERIVABLE.name]
     resposne = check_post(SOURCE_GLOBAL_QUERY,source_data)
     resp_data = resposne["data"]["addSource"]["data"]["metaData"]
     assert resp_data["accessPermissions"] == \

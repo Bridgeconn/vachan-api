@@ -1160,7 +1160,7 @@ class Register(graphene.Mutation):
     """Mutation class for Register User"""
     class Arguments:#pylint: disable=too-few-public-methods,E1101
         """Arguments declaration for the mutation"""
-        app_type = types.App(default_value=types.App.API.value)
+        app_type = types.AppInput(default_value=types.AppInput.API.value)
         registration_args = types.RegisterInput()
 
     registered_details = graphene.Field(types.RegisterResponse)

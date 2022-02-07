@@ -308,6 +308,7 @@ class SourcePermissions(str, Enum):
     PUBLISHABLE = "publishable"
     DOWNLOADABLE = "downloadable"
     DERIVABLE = "derivable"
+    RESEARCHUSE = "research-use"
 
 TableNamePattern = constr(regex=r"^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\w+_[a-z]+$")
 

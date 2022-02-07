@@ -94,13 +94,13 @@ class Query(graphene.ObjectType):
         language_code=graphene.String(
             description="language code as per bcp47(usually 2 letter code)"),
         license_code=graphene.String(),
-        access_tag = graphene.List(graphene.String),
+        access_tag = graphene.List(types.SourcePermissions),
         active=graphene.Boolean(), latest_revision=graphene.Boolean(),
         skip=graphene.Int(), limit=graphene.Int())
     def resolve_contents(self, info, content_type=None, version_abbreviation=None,#pylint: disable=too-many-locals
         revision=None, language_code=None, license_code=None, active=True,
         latest_revision=True, skip=0, limit=100,metadata=None,
-        access_tag= None):
+        access_tag= types.SourcePermissions.CONTENT.name):#pylint: disable=no-member
         '''resolver'''
         log.info('In GraphQL Get Contents(Sources)')
         if access_tag:

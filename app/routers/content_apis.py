@@ -237,7 +237,7 @@ async def get_source(request: Request,content_type: str=Query(None, example="com
     license_code: schemas.LicenseCodePattern=Query(None,example="ISC"),
     metadata: schemas.MetaDataPattern=Query(None,
         example='{"otherName": "KJBC, King James Bible Commentaries"}'),
-    access_tag:List[schemas.SourcePermissions]=Query(None),
+    access_tag:List[schemas.SourcePermissions]=Query([schemas.SourcePermissions.CONTENT]),
     active: bool = True, latest_revision: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none),
@@ -256,7 +256,6 @@ async def get_source(request: Request,content_type: str=Query(None, example="com
              skip: %s, limit: %s',
         content_type, version_abbreviation, revision, language_code, license_code, metadata,
         access_tag, latest_revision, active, skip, limit)
-
     return structurals_crud.get_sources(db_, content_type, version_abbreviation, revision=revision,
         language_code=language_code, license_code=license_code, metadata=metadata,
         access_tag=access_tag,latest_revision=latest_revision, active=active,skip=skip, limit=limit)

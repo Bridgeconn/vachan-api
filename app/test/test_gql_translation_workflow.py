@@ -38,7 +38,7 @@ src_var={
     "version": "XYZ",
     "revision": "1",
     "accessPermissions": [
-            types.SourcePermissions.CONTENT.value,types.SourcePermissions.OPENACCESS.value
+            types.SourcePermissions.CONTENT.name,types.SourcePermissions.OPENACCESS.name
         ],
     "year": 2020,
     "license": "CC-BY-SA",
