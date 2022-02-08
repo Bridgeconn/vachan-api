@@ -917,13 +917,48 @@ class InfographicUpdateResponse(BaseModel):
     message: str = Field(..., example="Infographics updated successfully")
     data: List[InfographicResponse] = None
 
+class BibleVideoRefObj(BaseModel):
+    """Reference Object of BibleVideo"""
+    bookCode : BookCodePattern
+    chapter: int
+    verseStart: int = None
+    verseEnd: int = None
+
+    @validator('verseStart', 'verseEnd')
+    def check_verses(cls, val, values): # pylint: disable=R0201 disable=E0213
+        '''verse fields should be greater than or equal to -1'''
+        if 'chapter' in values and values['chapter'] in [-1, 0]:
+            if val not in [-1, 0, None]:
+                raise ValueError('verse fields should be 0, for book introductions and epilogues')
+            val = 0
+        if val is None:
+            raise ValueError('verse fields must have a value, '+
+                'except for book introduction and epilogue')
+        if val < -1:
+            raise ValueError('verse fields should be greater than or equal to -1')
+        return val
+
+    @validator('verseEnd')
+    def check_range(cls, val, values): # pylint: disable=R0201 disable=E0213
+        '''verse start should be less than or equal to verse end'''
+        if 'verseStart' in values and val < values['verseStart']:
+            raise ValueError('verse start should be less than or equal to verse end')
+        return val
+
+    @validator('chapter')
+    def check_chapter(cls, val): # pylint: disable=R0201 disable=E0213
+        '''chapter fields should be greater than or equal to -1'''
+        if val < -1:
+            raise ValueError('chapter field should be greater than or equal to -1')
+        return val
+
 class BibleVideo(BaseModel):
     '''Response object of Bible Vedios'''
     title: str
-    books: List[BookCodePattern]
+    books: List[dict]
     videoLink: AnyUrl
     description: str
-    theme: str
+    series: str
     active: bool
     class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
@@ -932,7 +967,11 @@ class BibleVideo(BaseModel):
         schema_extra = {
             "example": {
                 "title": "Overview: song of songs",
-                "books": ["sng"],
+                "books": [{
+                    "bookCode": "1ki",
+                    "chapter": 10,
+                    "verse": 1
+                }],
                 "videoLink": "https://someplace.com/resoucesid",
                 "description": "Watch our overview video on the book of Song of Songs,"+\
                     "which breaks down the literary design of the book and "+\
@@ -955,7 +994,7 @@ class BibleVideoUpdateResponse(BaseModel):
 class BibleVideoUpload(BaseModel):
     '''Input Object of bible Videos'''
     title: str
-    books: List[BookCodePattern]
+    books: List[BibleVideoRefObj]
     videoLink: AnyUrl
     description: str
     theme: str
@@ -965,7 +1004,12 @@ class BibleVideoUpload(BaseModel):
         schema_extra = {
             "example": {
                 "title": "Overview: song of songs",
-                "books": ["sng"],
+                "books": [{
+                    "bookCode": "1ki",
+                    "chapter": 10,
+                    "verseStart": 1,
+                    "verseEnd": 7
+                }],
                 "videoLink": "https://someplace.com/resoucesid",
                 "description": "Watch our overview video on the book of Song of Songs,"+\
                     "which breaks down the literary design of the book and "+\
@@ -976,11 +1020,10 @@ class BibleVideoUpload(BaseModel):
             }
         }
 
-
 class BibleVideoEdit(BaseModel):
     '''Input object of Bible Video update'''
     title: str
-    books: List[BookCodePattern]  = None
+    books: List[BibleVideoRefObj]  = None
     videoLink: AnyUrl  = None
     description: str  = None
     theme: str  = None
@@ -990,7 +1033,12 @@ class BibleVideoEdit(BaseModel):
         schema_extra = {
             "example": {
                 "title": "Overview: song of songs",
-                "books": ["sng"],
+                "books": [{
+                    "bookCode": "1ki",
+                    "chapter": 10,
+                    "verseStart": 1,
+                    "verseEnd": 7
+                }],
                 "videoLink": "https://anotherplace.com/resoucesid",
                 "description": "Watch our overview video on the book of Song of Songs,"+\
                     "which breaks down the literary design of the book and "+\
