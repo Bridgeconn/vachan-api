@@ -449,16 +449,27 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
                 not found for %s"%(
                     item.title, source_name))
         if item.books:
-            for book_code in item.books:
+            ref_id_list = set()
+            for buk in item.books:
                 # verifying if the book codes are valid as we dont use FK for this field
                 book = db_.query(db_models.BibleBook).filter(
-                    db_models.BibleBook.bookCode == book_code.lower() ).first()
+                    db_models.BibleBook.bookCode == buk.bookCode.lower() ).first()
                 if not book:
-                    raise NotAvailableException('Bible Book code, %s, not found in database'
-                        %book_code )
-            row.books = item.books
-        if item.theme:
-            row.theme = utils.normalize_unicode(item.theme.strip())
+                    raise NotAvailableException('Bible Book code, %s, not found in database'%buk.bookCode)
+                #generate refid value in BCV
+                if buk.verseEnd is None:
+                    buk.verseStart = 0 if buk.verseStart is None else buk.verseStart
+                    bcvcode = ref_to_bcv(book.bookId,buk.chapter,buk.verseStart)
+                    ref_id_list.add(int(bcvcode))
+                elif not buk.verseEnd is None:
+                    for x in range(buk.verseStart,buk.verseEnd+1):
+                        current_verse = x
+                        bcvcode = ref_to_bcv(book.bookId,buk.chapter,current_verse)
+                        ref_id_list.add(int(bcvcode))
+            ref_id_list = list(ref_id_list)
+            row.refId = ref_id_list
+        if item.series:
+            row.series = utils.normalize_unicode(item.series.strip())
         if item.description:
             row.description = utils.normalize_unicode(item.description.strip())
         if item.active is not None:
@@ -467,13 +478,14 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
             row.videoLink = item.videoLink
         db_.flush()
         db_content.append(row)
-    # db_.commit()
     source_db_content.updatedUser = user_id
-    # db_.commit()
-    # db_.refresh(source_db_content)
-    # return db_content
+    db_content_dict = [item.__dict__ for item in db_content]
+    for content in db_content_dict:
+        content['books'] = []
+        for ref in content['refId']:
+            content['books'].append(bcv_to_ref(ref,db_))
     response = {
-        'db_content':db_content,
+        'db_content':db_content_dict,
         'source_content':source_db_content
         }
     return response

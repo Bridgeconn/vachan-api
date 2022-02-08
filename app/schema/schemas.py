@@ -976,7 +976,7 @@ class BibleVideo(BaseModel):
                 "description": "Watch our overview video on the book of Song of Songs,"+\
                     "which breaks down the literary design of the book and "+\
                     "its flow of thought.",
-                "theme": "Old Testament, Poetic Book",
+                "series": "Old Testament, Poetic Book",
                 "active": True
             }
         }
@@ -997,7 +997,7 @@ class BibleVideoUpload(BaseModel):
     books: List[BibleVideoRefObj]
     videoLink: AnyUrl
     description: str
-    theme: str
+    series: str
     active: bool = True
     class Config:
         '''display example value in API documentation'''
@@ -1014,7 +1014,7 @@ class BibleVideoUpload(BaseModel):
                 "description": "Watch our overview video on the book of Song of Songs,"+\
                     "which breaks down the literary design of the book and "+\
                     "its flow of thought.",
-                "theme": "Old Testament",
+                "series": "Old Testament",
                 "active": True
 
             }
@@ -1026,7 +1026,7 @@ class BibleVideoEdit(BaseModel):
     books: List[BibleVideoRefObj]  = None
     videoLink: AnyUrl  = None
     description: str  = None
-    theme: str  = None
+    series: str  = None
     active: bool  = None
     class Config:
         '''display example value in API documentation'''
@@ -1043,7 +1043,7 @@ class BibleVideoEdit(BaseModel):
                 "description": "Watch our overview video on the book of Song of Songs,"+\
                     "which breaks down the literary design of the book and "+\
                     "its flow of thought.",
-                "theme": "Old Testament, Poetic Book",
+                "series": "Old Testament, Poetic Book",
                 "active": True
             }
         }
