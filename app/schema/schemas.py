@@ -955,7 +955,7 @@ class BibleVideoRefObj(BaseModel):
 class BibleVideo(BaseModel):
     '''Response object of Bible Vedios'''
     title: str
-    books: List[dict]
+    references: List[dict]
     videoLink: AnyUrl
     description: str
     series: str
@@ -967,10 +967,10 @@ class BibleVideo(BaseModel):
         schema_extra = {
             "example": {
                 "title": "Overview: song of songs",
-                "books": [{
-                    "bookCode": "1ki",
-                    "chapter": 10,
-                    "verse": 1
+                "references": [{
+                    "book": "sng",
+                    "chapter": 1,
+                    "verseNumber": 12
                 }],
                 "videoLink": "https://someplace.com/resoucesid",
                 "description": "Watch our overview video on the book of Song of Songs,"+\
@@ -994,7 +994,7 @@ class BibleVideoUpdateResponse(BaseModel):
 class BibleVideoUpload(BaseModel):
     '''Input Object of bible Videos'''
     title: str
-    books: List[BibleVideoRefObj]
+    references: List[BibleVideoRefObj]
     videoLink: AnyUrl
     description: str
     series: str
@@ -1004,8 +1004,8 @@ class BibleVideoUpload(BaseModel):
         schema_extra = {
             "example": {
                 "title": "Overview: song of songs",
-                "books": [{
-                    "bookCode": "1ki",
+                "references": [{
+                    "bookCode": "sng",
                     "chapter": 10,
                     "verseStart": 1,
                     "verseEnd": 7
@@ -1023,7 +1023,7 @@ class BibleVideoUpload(BaseModel):
 class BibleVideoEdit(BaseModel):
     '''Input object of Bible Video update'''
     title: str
-    books: List[BibleVideoRefObj]  = None
+    references: List[BibleVideoRefObj]  = None
     videoLink: AnyUrl  = None
     description: str  = None
     series: str  = None
@@ -1033,8 +1033,8 @@ class BibleVideoEdit(BaseModel):
         schema_extra = {
             "example": {
                 "title": "Overview: song of songs",
-                "books": [{
-                    "bookCode": "1ki",
+                "references": [{
+                    "bookCode": "sng",
                     "chapter": 10,
                     "verseStart": 1,
                     "verseEnd": 7

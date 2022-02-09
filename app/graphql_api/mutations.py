@@ -731,13 +731,11 @@ class AddBibleVideo(graphene.Mutation):
             source_name=source,videos= schema_list,
             user_details=user_details, db_=db_)
         result = response['data']
-        print("------------------------------")
-        print(result)
         video_content_list = []
         for item in result:
             comm_var = types.BibleVideo(
                 title = item["title"],
-                books = item["books"],
+                references = item["references"],
                 videoLink = item["videoLink"],
                 description = item["description"],
                 series = item["series"],
@@ -782,7 +780,7 @@ class EditBibleVideo(graphene.Mutation):
         for item in result:
             comm_var = types.BibleVideo(
                 title = item["title"],
-                books = item["books"],
+                references = item["references"],
                 videoLink = item["videoLink"],
                 description = item["description"],
                 series = item["series"],

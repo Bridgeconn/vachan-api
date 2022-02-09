@@ -166,7 +166,7 @@ class Infographic(graphene.ObjectType):#pylint: disable=too-few-public-methods
 class BibleVideo(graphene.ObjectType):#pylint: disable=too-few-public-methods
     '''Response for BibleVideo'''
     title = graphene.String()
-    books = graphene.List(graphene.JSONString)
+    references = graphene.List(graphene.JSONString)
     videoLink = graphene.String()
     description = graphene.String()
     series = graphene.String()
@@ -538,7 +538,7 @@ class BibleVideoRefObj(graphene.InputObjectType):
 class BibleVideoDict(graphene.InputObjectType):
     """BibleVideo input"""
     title = graphene.String(required=True)
-    books = graphene.List(BibleVideoRefObj,required=True,\
+    references = graphene.List(BibleVideoRefObj,required=True,\
         description="""{
         'bookCode': '1ki',
         'chapter': 10,
@@ -559,7 +559,7 @@ class InputAddBibleVideo(graphene.InputObjectType):
 class BibleVideoEditDict(graphene.InputObjectType):
     """BibleVideo Edit input"""
     title = graphene.String(required=True)
-    books = graphene.List(BibleVideoRefObj,
+    references = graphene.List(BibleVideoRefObj,
         description="""{
         'bookCode': '1ki',
         'chapter': 10,

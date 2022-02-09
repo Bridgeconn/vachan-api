@@ -349,9 +349,9 @@ def bcv_to_ref(bcvref,db_):
     book = db_.query(db_models.BibleBook).filter(
                 db_models.BibleBook.bookId == int(bbb)).first()
     ref = {
-        "bookCode": book.bookCode,
+        "book": book.bookCode,
         "chapter": str(bcvref)[-6:-3],
-        "verse": str(bcvref)[-3:]
+        "verseNumber": str(bcvref)[-3:]
       }
     return ref
 
@@ -390,7 +390,7 @@ def get_bible_videos(db_:Session, source_name, book_code=None, title=None, serie
         book = db_.query(db_models.BibleBook).filter(
                 db_models.BibleBook.bookCode == book_code.lower() ).first()
         bcv = ref_to_bcv(book.bookId,chapter,verse)
-        query = query.filter(model_cls.refId.any(int(bcv)))
+        query = query.filter(model_cls.refIds.any(int(bcv)))
                     
     query = query.filter(model_cls.active == active)
     db_content = query.offset(skip).limit(limit).all()
@@ -441,7 +441,7 @@ def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
             series = utils.normalize_unicode(item.series.strip()),
             description = utils.normalize_unicode(item.description.strip()),
             active = item.active,
-            refId = ref_id_list,
+            refIds = ref_id_list,
             videoLink = item.videoLink)
         db_content.append(row)
     db_.add_all(db_content)
@@ -449,9 +449,9 @@ def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
     source_db_content.updatedUser = user_id
     db_content_dict = [item.__dict__ for item in db_content]
     for content in db_content_dict:
-        content['books'] = []
-        for ref in content['refId']:
-            content['books'].append(bcv_to_ref(ref,db_))
+        content['references'] = []
+        for ref in content['refIds']:
+            content['references'].append(bcv_to_ref(ref,db_))
     response = {
         'db_content':db_content_dict,
         'source_content':source_db_content
@@ -495,7 +495,7 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
                         bcvcode = ref_to_bcv(book.bookId,buk.chapter,current_verse)
                         ref_id_list.add(int(bcvcode))
             ref_id_list = list(ref_id_list)
-            row.refId = ref_id_list
+            row.refIds = ref_id_list
         if item.series:
             row.series = utils.normalize_unicode(item.series.strip())
         if item.description:
@@ -509,9 +509,9 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
     source_db_content.updatedUser = user_id
     db_content_dict = [item.__dict__ for item in db_content]
     for content in db_content_dict:
-        content['books'] = []
-        for ref in content['refId']:
-            content['books'].append(bcv_to_ref(ref,db_))
+        content['references'] = []
+        for ref in content['refIds']:
+            content['references'].append(bcv_to_ref(ref,db_))
     response = {
         'db_content':db_content_dict,
         'source_content':source_db_content
