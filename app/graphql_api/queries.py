@@ -205,7 +205,7 @@ class Query(graphene.ObjectType):
         description="Query Bible Videos listed in vachan-db",
         source_name=graphene.String(required=True),
         book_code=graphene.String(description="3 letter code like, gen, mat etc"),
-        title=graphene.String(), series=graphene.String(),
+        title=graphene.String(), series=graphene.String(),search_word=graphene.String(),
         active=graphene.Boolean(), skip=graphene.Int(), limit=graphene.Int())
     def resolve_bible_videos(self, info, source_name, book_code=None, title=None, series=None,
         search_word=None, active=True, skip=0, limit=100):

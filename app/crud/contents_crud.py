@@ -373,7 +373,11 @@ def get_bible_videos(db_:Session, source_name, book_code=None, title=None, serie
     if series:
         query = query.filter(model_cls.series == utils.normalize_unicode(series.strip()))
     if search_word:
-        pass
+        search_pattern = " & ".join(re.findall(r'\w+', search_word))
+        search_pattern += ":*"
+        query = query.filter(text("to_tsvector('simple', title || ' ' ||"+\
+            " series || ' ' || description || ' ')"+\
+            " @@ to_tsquery('simple', :pattern)").bindparams(pattern=search_pattern))
     query = query.filter(model_cls.active == active)
     db_content = query.offset(skip).limit(limit).all()
     source_db_content = db_.query(db_models.Source).filter(
