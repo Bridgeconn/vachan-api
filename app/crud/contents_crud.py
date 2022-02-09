@@ -5,6 +5,7 @@ import json
 import re
 import sqlalchemy
 from sqlalchemy.orm import Session, defer, joinedload
+from sqlalchemy.sql import text
 
 import db_models
 from crud import utils
@@ -333,33 +334,6 @@ def update_infographics(db_: Session, source_name, infographics, user_id=None):
         }
     return response
 
-def get_bible_videos(db_:Session, source_name, book_code=None, title=None, theme=None,**kwargs):
-    '''fetches rows of bible videos as per provided source_name and filters'''
-    active = kwargs.get("active",True)
-    skip = kwargs.get("skip",0)
-    limit = kwargs.get("limit",100)
-    if source_name not in db_models.dynamicTables:
-        raise NotAvailableException('%s not found in database.'%source_name)
-    if not source_name.endswith(db_models.ContentTypeName.BIBLEVIDEO.value):
-        raise TypeException('The operation is supported only on biblevideo')
-    model_cls = db_models.dynamicTables[source_name]
-    query = db_.query(model_cls)
-    if book_code:
-        query = query.filter(model_cls.books.any(book_code.lower()))
-    if title:
-        query = query.filter(model_cls.title == utils.normalize_unicode(title.strip()))
-    if theme:
-        query = query.filter(model_cls.theme == utils.normalize_unicode(theme.strip()))
-    query = query.filter(model_cls.active == active)
-    # return query.offset(skip).limit(limit).all()
-    source_db_content = db_.query(db_models.Source).filter(
-        db_models.Source.sourceName == source_name).first()
-    response = {
-        'db_content':query.offset(skip).limit(limit).all(),
-        'source_content':source_db_content
-        }
-    return response
-
 def ref_to_bcv(book,chapter,verse):
     '''convert reference to BCV format'''
     bbb = str(book).zfill(3)
@@ -378,6 +352,42 @@ def bcv_to_ref(bcvref,db_):
         "verse": str(bcvref)[-3:]
       }
     return ref
+
+
+def get_bible_videos(db_:Session, source_name, book_code=None, title=None, series=None,**kwargs):
+    '''fetches rows of bible videos as per provided source_name and filters'''
+    search_word = kwargs.get("search_word",None)
+    active = kwargs.get("active",True)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
+    if source_name not in db_models.dynamicTables:
+        raise NotAvailableException('%s not found in database.'%source_name)
+    if not source_name.endswith(db_models.ContentTypeName.BIBLEVIDEO.value):
+        raise TypeException('The operation is supported only on biblevideo')
+    model_cls = db_models.dynamicTables[source_name]
+    query = db_.query(model_cls)
+    if book_code:
+        query = query.filter(model_cls.books.any(book_code.lower()))
+    if title:
+        query = query.filter(model_cls.title == utils.normalize_unicode(title.strip()))
+    if series:
+        query = query.filter(model_cls.series == utils.normalize_unicode(series.strip()))
+    if search_word:
+        pass
+    query = query.filter(model_cls.active == active)
+    db_content = query.offset(skip).limit(limit).all()
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    db_content_dict = [item.__dict__ for item in db_content]
+    for content in db_content_dict:
+        content['books'] = []
+        for ref in content['refId']:
+            content['books'].append(bcv_to_ref(ref,db_))
+    response = {
+        'db_content':db_content_dict,
+        'source_content':source_db_content
+        }
+    return response
 
 def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
     '''Adds rows to the bible videos table specified by source_name'''
@@ -410,7 +420,7 @@ def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
         ref_id_list = list(ref_id_list)
         row = model_cls(
             title = utils.normalize_unicode(item.title.strip()),
-            series = utils.normalize_unicode(item.theme.strip()),
+            series = utils.normalize_unicode(item.series.strip()),
             description = utils.normalize_unicode(item.description.strip()),
             active = item.active,
             refId = ref_id_list,

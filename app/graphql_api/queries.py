@@ -205,10 +205,10 @@ class Query(graphene.ObjectType):
         description="Query Bible Videos listed in vachan-db",
         source_name=graphene.String(required=True),
         book_code=graphene.String(description="3 letter code like, gen, mat etc"),
-        title=graphene.String(), theme=graphene.String(),
+        title=graphene.String(), series=graphene.String(),
         active=graphene.Boolean(), skip=graphene.Int(), limit=graphene.Int())
-    def resolve_bible_videos(self, info, source_name, book_code=None, title=None, theme=None,
-        active=True, skip=0, limit=100):
+    def resolve_bible_videos(self, info, source_name, book_code=None, title=None, series=None,
+        search_word=None, active=True, skip=0, limit=100):
         '''resolver'''
         log.info('In GraphQL Get Bible Videos')
         db_ = info.context["request"].db_session
@@ -218,8 +218,9 @@ class Query(graphene.ObjectType):
         req.path_params["source_name"] = source_name
         results = content_apis.get_biblevideo(request = req,
             source_name =source_name, book_code = book_code,
-            title =title, theme = theme, skip = skip, limit = limit,
-            user_details =user_details, db_ = db_, active=active)
+            title =title, series = series, skip = skip, limit = limit,
+            user_details =user_details, db_ = db_, active=active,
+            search_word=search_word)
         return results
 
     bible_contents = graphene.List(types.BibleContent,
