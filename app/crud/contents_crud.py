@@ -6,6 +6,8 @@ import re
 import sqlalchemy
 from sqlalchemy.orm import Session, defer, joinedload
 from sqlalchemy.sql import text
+from sqlalchemy import func
+from sqlalchemy.sql.expression import cast
 
 import db_models
 from crud import utils
@@ -15,7 +17,7 @@ from custom_exceptions import NotAvailableException, TypeException, AlreadyExist
 def get_commentaries(db_:Session, *args,**kwargs):
     '''Fetches rows of commentries from the table specified by source_name'''
     source_name = args[0]
-    book_code = args[1]
+    book_code = args[1] 
     chapter = args[2]
     verse = args[3]
     last_verse = args[4]
@@ -353,10 +355,11 @@ def bcv_to_ref(bcvref,db_):
       }
     return ref
 
-
 def get_bible_videos(db_:Session, source_name, book_code=None, title=None, series=None,**kwargs):
     '''fetches rows of bible videos as per provided source_name and filters'''
     search_word = kwargs.get("search_word",None)
+    chapter = kwargs.get("chapter",None)
+    verse = kwargs.get("verse",None)
     active = kwargs.get("active",True)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
@@ -366,8 +369,6 @@ def get_bible_videos(db_:Session, source_name, book_code=None, title=None, serie
         raise TypeException('The operation is supported only on biblevideo')
     model_cls = db_models.dynamicTables[source_name]
     query = db_.query(model_cls)
-    if book_code:
-        query = query.filter(model_cls.books.any(book_code.lower()))
     if title:
         query = query.filter(model_cls.title == utils.normalize_unicode(title.strip()))
     if series:
@@ -378,6 +379,19 @@ def get_bible_videos(db_:Session, source_name, book_code=None, title=None, serie
         query = query.filter(text("to_tsvector('simple', title || ' ' ||"+\
             " series || ' ' || description || ' ')"+\
             " @@ to_tsquery('simple', :pattern)").bindparams(pattern=search_pattern))
+    
+    if book_code:
+        book = db_.query(db_models.BibleBook).filter(
+                db_models.BibleBook.bookCode == book_code.lower() ).first()
+        # query = query.filter(model_cls.refId.like('100%'))
+    elif book_code and chapter:
+        pass
+    elif book_code and chapter and verse:
+        book = db_.query(db_models.BibleBook).filter(
+                db_models.BibleBook.bookCode == book_code.lower() ).first()
+        bcv = ref_to_bcv(book.bookId,chapter,verse)
+        query = query.filter(model_cls.refId.any(int(bcv)))
+                    
     query = query.filter(model_cls.active == active)
     db_content = query.offset(skip).limit(limit).all()
     source_db_content = db_.query(db_models.Source).filter(

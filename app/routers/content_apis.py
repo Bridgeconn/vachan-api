@@ -702,14 +702,17 @@ async def edit_infographics(request: Request,
 @get_auth_access_check_decorator
 async def get_biblevideo(request: Request,
     source_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
-    book_code: schemas.BookCodePattern=Query(None, example="sng"),
     title: str=Query(None, example="Overview: song of songs"),
-    series: str=Query(None, example="Old Testament"), active: bool=True,
+    series: str=Query(None, example="Old Testament"),
     search_word: str = Query(None, example="Sri Lanka"),
+    book_code: schemas.BookCodePattern=Query(None, example="sng"),
+    chapter: int=Query(None, example="1"),
+    verse: int=Query(None, example="1"), active: bool=True,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
     '''Fetches the Bible video details and URL.
     * optional query parameters can be used to filter the result set
+    * Filter by reference in the format book, book and chapter, book-chapter-verse
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
@@ -717,7 +720,8 @@ async def get_biblevideo(request: Request,
     log.debug('source_name: %s, book_code: %s, title: %s, theme: %s, skip: %s, limit: %s',
         source_name, book_code, title, series, skip, limit)
     return contents_crud.get_bible_videos(db_, source_name, book_code, title, series,
-    search_word=search_word,active=active, skip=skip, limit=limit)
+    search_word=search_word,chapter=chapter,verse=verse,
+    active=active, skip=skip, limit=limit)
 
 @router.post('/v2/biblevideos/{source_name}', response_model=schemas.BibleVideoCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
