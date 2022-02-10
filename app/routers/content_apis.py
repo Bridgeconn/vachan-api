@@ -118,7 +118,7 @@ async def edit_language(request: Request, lang_obj: schemas.LanguageEdit = Body(
 async def get_license(request: Request,
     license_code : schemas.LicenseCodePattern=Query(None, example="CC-BY-SA"),
     license_name: str=Query(None, example="Creative Commons License"),
-    permission: schemas.LicensePermisssion=Query(None, example="Commercial_use"),
+    permission: schemas.SourcePermissions=Query(None, example="open-access"),
     active: bool=Query(True), skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none),db_: Session=Depends(get_db)):
     '''fetches all the licenses present in the DB, their code and other details.

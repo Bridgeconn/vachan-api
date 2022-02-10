@@ -23,21 +23,29 @@ class Language(graphene.ObjectType):#pylint: disable=too-few-public-methods
     scriptDirection = graphene.String()
     metaData = Metadata()
 
-class LicensePermission(graphene.Enum):
-    '''available choices for permission'''
-    commercial = "Commercial_use"
-    modification = "Modification"
-    distribution = "Distribution"
-    patent = "Patent_use"
-    private = "Private_use"
+# class LicensePermission(graphene.Enum):
+#     '''available choices for permission'''
+#     commercial = "Commercial_use"
+#     modification = "Modification"
+#     distribution = "Distribution"
+#     patent = "Patent_use"
+#     private = "Private_use"
 
+class SourcePermissions(graphene.Enum):
+    '''To specify source access permisions'''
+    CONTENT = "content"
+    OPENACCESS = "open-access"
+    PUBLISHABLE = "publishable"
+    DOWNLOADABLE = "downloadable"
+    DERIVABLE = "derivable"
+    RESEARCHUSE = "research-use"
 
 class License(graphene.ObjectType):#pylint: disable=too-few-public-methods
     '''Return object of licenses'''
     name = graphene.String()
     code = graphene.String()
     license = graphene.String()
-    permissions = graphene.List(LicensePermission)
+    permissions = graphene.List(SourcePermissions)
     active = graphene.Boolean()
 
 class Version(graphene.ObjectType):#pylint: disable=too-few-public-methods
@@ -346,10 +354,10 @@ class InputAddLicense(graphene.InputObjectType):
     code = graphene.String(required=True,\
         description="pattern: '^[a-zA-Z0-9\\.\\_\\-]+$'")
     license = graphene.String(required=True)
-    permissions = graphene.List(LicensePermission, \
-        default_value =["Private_use"],\
+    permissions = graphene.List(SourcePermissions,
+        default_value = [SourcePermissions.OPENACCESS.value],\
         description="Expecting a list \
-        [ Commercial_use, Modification, Distribution, Patent_use, Private_use ]")
+        [content, open-access, publishable, downloadable, derivable, research-use]")
 
 class InputEditLicense(graphene.InputObjectType):
     """Edit license Input"""
@@ -357,10 +365,10 @@ class InputEditLicense(graphene.InputObjectType):
     code = graphene.String(required=True,description=\
         "pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
     license = graphene.String()
-    permissions = graphene.List(LicensePermission, default_value =\
-        ["Private_use"],\
+    permissions = graphene.List(SourcePermissions,
+        default_value = [SourcePermissions.OPENACCESS.value],\
         description="Expecting a list\
-        [ Commercial_use, Modification, Distribution, Patent_use, Private_use ]")
+        [content, open-access, publishable, downloadable, derivable, research-use]")
     active = graphene.Boolean()
 
 class InputAddVersion(graphene.InputObjectType):
@@ -380,15 +388,6 @@ class InputEditVersion(graphene.InputObjectType):
     versionName = graphene.String()
     revision = graphene.Int()
     metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String")
-
-class SourcePermissions(graphene.Enum):
-    '''To specify source access permisions'''
-    CONTENT = "content"
-    OPENACCESS = "open-access"
-    PUBLISHABLE = "publishable"
-    DOWNLOADABLE = "downloadable"
-    DERIVABLE = "derivable"
-    RESEARCHUSE = "research-use"
 
 class InputAddSource(graphene.InputObjectType):
     """Add Source Input"""

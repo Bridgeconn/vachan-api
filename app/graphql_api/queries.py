@@ -53,7 +53,7 @@ class Query(graphene.ObjectType):
 
     licenses = graphene.List(types.License,
         description="Query uploaded licenses in vachan-db", license_code=graphene.String(),
-        license_name=graphene.String(), permission=types.LicensePermission(),
+        license_name=graphene.String(), permission=types.SourcePermissions(),
         active=graphene.Boolean(), skip=graphene.Int(), limit=graphene.Int())
     def resolve_licenses(self, info, license_code=None, license_name=None,
         permission=None, active=True,
