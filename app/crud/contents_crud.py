@@ -379,18 +379,18 @@ def get_bible_videos(db_:Session, source_name, book_code=None, title=None, serie
         query = query.filter(text("to_tsvector('simple', title || ' ' ||"+\
             " series || ' ' || description || ' ')"+\
             " @@ to_tsquery('simple', :pattern)").bindparams(pattern=search_pattern))
-    
-    if book_code:
-        book = db_.query(db_models.BibleBook).filter(
-                db_models.BibleBook.bookCode == book_code.lower() ).first()
-        # query = query.filter(model_cls.refId.like('100%'))
-    elif book_code and chapter:
-        pass
-    elif book_code and chapter and verse:
+
+    if book_code and chapter and verse:
         book = db_.query(db_models.BibleBook).filter(
                 db_models.BibleBook.bookCode == book_code.lower() ).first()
         bcv = ref_to_bcv(book.bookId,chapter,verse)
         query = query.filter(model_cls.refIds.any(int(bcv)))
+    elif book_code and chapter:
+        pass
+    elif book_code:
+        book = db_.query(db_models.BibleBook).filter(
+                db_models.BibleBook.bookCode == book_code.lower() ).first()
+        # query = query.filter(model_cls.refId.like('100%'))
                     
     query = query.filter(model_cls.active == active)
     db_content = query.offset(skip).limit(limit).all()
@@ -398,9 +398,9 @@ def get_bible_videos(db_:Session, source_name, book_code=None, title=None, serie
         db_models.Source.sourceName == source_name).first()
     db_content_dict = [item.__dict__ for item in db_content]
     for content in db_content_dict:
-        content['books'] = []
-        for ref in content['refId']:
-            content['books'].append(bcv_to_ref(ref,db_))
+        content['references'] = []
+        for ref in content['refIds']:
+            content['references'].append(bcv_to_ref(ref,db_))
     response = {
         'db_content':db_content_dict,
         'source_content':source_db_content
@@ -419,7 +419,7 @@ def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
     db_content = []
     for item in videos:
         ref_id_list = set()
-        for buk in item.books:
+        for buk in item.references:
             # verifying if the book codes are valid as we dont use FK for this field
             book = db_.query(db_models.BibleBook).filter(
                 db_models.BibleBook.bookCode == buk.bookCode.lower() ).first()
@@ -476,9 +476,9 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
             raise NotAvailableException("Bible Video row with title:%s, \
                 not found for %s"%(
                     item.title, source_name))
-        if item.books:
+        if item.references:
             ref_id_list = set()
-            for buk in item.books:
+            for buk in item.references:
                 # verifying if the book codes are valid as we dont use FK for this field
                 book = db_.query(db_models.BibleBook).filter(
                     db_models.BibleBook.bookCode == buk.bookCode.lower() ).first()
