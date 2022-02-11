@@ -1,5 +1,5 @@
 '''Defines all input and output classes for API endpoints'''
-
+#pylint: disable=too-many-lines
 from typing import List
 from enum import Enum
 from pydantic import BaseModel, constr, AnyUrl, validator, root_validator, Field
@@ -163,7 +163,8 @@ class LicenseCreate(BaseModel):
                 "code": "GPL-3",
                 "license": "...actual license text here...",
                 "permissions":
-                    ["content", "open-access", "publishable", "downloadable", "derivable", "research-use"]
+                    ["content", "open-access", "publishable",
+                    "downloadable", "derivable", "research-use"]
             }
         }
 
@@ -183,7 +184,8 @@ class LicenseShortResponse(BaseModel):
                 "name": "GNU Public License version 3",
                 "code": "GPL-3",
                 "permissions":
-                    ["content", "open-access", "publishable", "downloadable", "derivable", "research-use"]
+                    ["content", "open-access", "publishable",
+                    "downloadable", "derivable", "research-use"]
             }
         }
 
@@ -206,7 +208,8 @@ class LicenseResponse(BaseModel):
                 "code": "GPL-3",
                 "license": "...actual license text here...",
                 "permissions":
-                    ["content", "open-access", "publishable", "downloadable", "derivable", "research-use"]
+                    ["content", "open-access", "publishable",
+                    "downloadable", "derivable", "research-use"]
             }
         }
 
@@ -235,7 +238,8 @@ class LicenseEdit (BaseModel):
                 "code": "GPL-3",
                 "license": "...actual license text here...",
                 "permissions":
-                    ["content", "open-access", "publishable", "downloadable", "derivable", "research-use"]
+                    ["content", "open-access", "publishable",
+                    "downloadable", "derivable", "research-use"]
             }
         }
 

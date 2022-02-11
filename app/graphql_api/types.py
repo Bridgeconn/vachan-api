@@ -355,8 +355,8 @@ class InputAddLicense(graphene.InputObjectType):
         description="pattern: '^[a-zA-Z0-9\\.\\_\\-]+$'")
     license = graphene.String(required=True)
     permissions = graphene.List(SourcePermissions,
-        default_value = [SourcePermissions.OPENACCESS.value],\
-        description="Expecting a list \
+        default_value = [SourcePermissions.OPENACCESS.value],#pylint: disable=no-member
+        description="Expecting a list\
         [content, open-access, publishable, downloadable, derivable, research-use]")
 
 class InputEditLicense(graphene.InputObjectType):
@@ -366,7 +366,7 @@ class InputEditLicense(graphene.InputObjectType):
         "pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
     license = graphene.String()
     permissions = graphene.List(SourcePermissions,
-        default_value = [SourcePermissions.OPENACCESS.value],\
+        default_value = [SourcePermissions.OPENACCESS.value],#pylint: disable=no-member
         description="Expecting a list\
         [content, open-access, publishable, downloadable, derivable, research-use]")
     active = graphene.Boolean()
@@ -401,7 +401,7 @@ class InputAddSource(graphene.InputObjectType):
     year = graphene.Int(required=True)
     license = graphene.String(default_value = "CC-BY-SA",\
         description="pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
-    # accessPermissions = graphene.List(graphene.String,
+    # accessPermissions = graphene.List(graphene.String,358
     #     default_value = [SourcePermissions.CONTENT.value])#pylint: disable=no-member
     accessPermissions = graphene.List(SourcePermissions,
         default_value = [SourcePermissions.CONTENT.value])#pylint: disable=no-member
