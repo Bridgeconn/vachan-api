@@ -1,12 +1,14 @@
 ''' Place to define all Database CRUD operations for content tables
 bible, commentary, infographic, biblevideo, dictionary etc'''
 
+from ast import operator
 import json
+from operator import contains
 import re
 import sqlalchemy
 from sqlalchemy.orm import Session, defer, joinedload
-from sqlalchemy.sql import text
-from sqlalchemy import func
+from sqlalchemy.sql import text,operators
+from sqlalchemy import bindparam, func
 from sqlalchemy.sql.expression import cast
 
 import db_models
@@ -379,18 +381,28 @@ def get_bible_videos(db_:Session, source_name, book_code=None, title=None, serie
         query = query.filter(text("to_tsvector('simple', title || ' ' ||"+\
             " series || ' ' || description || ' ')"+\
             " @@ to_tsquery('simple', :pattern)").bindparams(pattern=search_pattern))
-
-    if book_code and chapter and verse:
-        book = db_.query(db_models.BibleBook).filter(
+    book = db_.query(db_models.BibleBook).filter(
                 db_models.BibleBook.bookCode == book_code.lower() ).first()
-        bcv = ref_to_bcv(book.bookId,chapter,verse)
-        query = query.filter(model_cls.refIds.any(int(bcv)))
-    elif book_code and chapter:
-        pass
-    elif book_code:
-        book = db_.query(db_models.BibleBook).filter(
-                db_models.BibleBook.bookCode == book_code.lower() ).first()
-        # query = query.filter(model_cls.refId.like('100%'))
+    if book:
+        if book_code and chapter and verse:
+            bcv = ref_to_bcv(book.bookId,chapter,verse)
+            query = query.filter(model_cls.refIds.any(int(bcv)))
+        elif book_code and chapter:
+            code = str(book.bookId)
+            chapter = str(chapter).zfill(3)
+            raw_sql = f'''SELECT * FROM {model_cls.__tablename__} WHERE EXISTS (SELECT 1 FROM unnest(
+                {model_cls.__tablename__}.ref_ids) AS ele WHERE CAST(ele AS TEXT) LIKE '{code+chapter}%')'''
+            result = db_.execute(raw_sql)
+            id_list = [row[0] for row in result]
+            query = query.filter(model_cls.bibleVideoId.in_(id_list))
+        elif book_code:
+            code = str(book.bookId)
+            # query = query.filter(cast(model_cls.refIds,sqlalchemy.String).contains(code+'%'))
+            raw_sql = f'''SELECT * FROM {model_cls.__tablename__} WHERE EXISTS (SELECT 1 FROM unnest(
+                {model_cls.__tablename__}.ref_ids) AS ele WHERE CAST(ele AS TEXT) LIKE '{code}%')'''
+            result = db_.execute(raw_sql)
+            id_list = [row[0] for row in result]
+            query = query.filter(model_cls.bibleVideoId.in_(id_list))
                     
     query = query.filter(model_cls.active == active)
     db_content = query.offset(skip).limit(limit).all()
