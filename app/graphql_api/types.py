@@ -1,5 +1,4 @@
 '''Input and Ourput object definitions for graphQL'''
-from typing import Dict
 import graphene
 from graphene.types import Scalar
 

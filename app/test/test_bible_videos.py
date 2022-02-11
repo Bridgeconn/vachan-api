@@ -42,13 +42,13 @@ def check_post(data: list):
     }
     source = add_source(source_data)
     table_name = source.json()['data']['sourceName']
-    #without auth
-    # resp = client.post(UNIT_URL+table_name, headers=headers, json=data)
-    # if resp.status_code == 422:
-    #     assert resp.json()['error'] == 'Input Validation Error'
-    # else:
-    #     assert resp.status_code == 401
-    #     assert resp.json()['error'] == 'Authentication Error'
+    # without auth
+    response = client.post(UNIT_URL+table_name, headers=headers, json=data)
+    if response.status_code == 422:
+        assert response.json()['error'] == 'Input Validation Error'
+    else:
+        assert response.status_code == 401
+        assert response.json()['error'] == 'Authentication Error'
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     #with auth
     resp = client.post(UNIT_URL+table_name, headers=headers_auth, json=data)
@@ -64,6 +64,7 @@ def test_post_default():
             'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1,"verseEnd": 3}],
             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
+    
     resp = check_post(data)[0]
     assert resp.status_code == 201
     assert resp.json()['message'] == "Bible videos added successfully"
@@ -177,7 +178,7 @@ def test_get_after_data_upload():
             'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1,"verseEnd": 3}],
              'videoLink': 'https://www.youtube.com/biblevideos/vid'},
         {'title':'Overview: Matthew', 'series': 'New testament', 'description':"brief description",
-            'references': [{"bookCode": "mat","chapter": 10,"verseStart": 1}],
+            'references': [{"bookCode": "mat","chapter": 5,"verseStart": 5}],
             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
@@ -185,22 +186,27 @@ def test_get_after_data_upload():
     assert res.status_code == 201
     check_default_get(UNIT_URL+source_name, headers_auth, assert_positive_get)
 
-    #filter by book -------------> NOT IMPLEMENTED
-    # #without auth 
-    # response = client.get(UNIT_URL+source_name+'?book_code=gen')
-    # assert response.status_code == 401
-    # assert response.json()["error"] == "Authentication Error"
-    # #with auth
-    # response = client.get(UNIT_URL+source_name+'?book_code=gen',headers=headers_auth)
-    # assert response.status_code == 200
-    # assert len(response.json()) == 1
+    #filter by book
+    #without auth 
+    response = client.get(UNIT_URL+source_name+'?book_code=gen')
+    assert response.status_code == 401
+    assert response.json()["error"] == "Authentication Error"
+    #with auth
+    response = client.get(UNIT_URL+source_name+'?book_code=gen',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
 
-    # response = client.get(UNIT_URL+source_name+'?book_code=mat',headers=headers_auth)
-    # assert response.status_code == 200
-    # assert len(response.json()) == 2
+    response = client.get(UNIT_URL+source_name+'?book_code=mat',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 2
 
     #Filter by BCV
     response = client.get(UNIT_URL+source_name+'?book_code=act&chapter=10&verse=1',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+    #Filter by book and chapter
+    response = client.get(UNIT_URL+source_name+'?book_code=mat&chapter=5',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
@@ -208,6 +214,10 @@ def test_get_after_data_upload():
     response = client.get(UNIT_URL+source_name+'?search_word=creation',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
+
+    #Filter by searchword not exist
+    response = client.get(UNIT_URL+source_name+'?search_word=ffffrrrttt',headers=headers_auth)
+    assert_not_available_content(response)
 
     # filter with title
     response = client.get(UNIT_URL+source_name+'?title=Overview:%20Matthew')
@@ -227,12 +237,12 @@ def test_get_after_data_upload():
     assert response.status_code == 200
     assert len(response.json()) == 3
 
-    # not available -------------> NOT IMPLEMENTED
-    # response = client.get(UNIT_URL+source_name+'?book_code=rev',headers=headers_auth)
-    # assert_not_available_content(response)
+    # not available
+    response = client.get(UNIT_URL+source_name+'?book_code=rev',headers=headers_auth)
+    assert_not_available_content(response)
 
-    # response = client.get(UNIT_URL+source_name+'?book_code=mat&theme=Old%20testament',headers=headers_auth)
-    # assert_not_available_content(response)
+    response = client.get(UNIT_URL+source_name+'?book_code=mat&series=Old%20testament',headers=headers_auth)
+    assert_not_available_content(response)
 
 def test_get_incorrect_data():
     '''Check for input validations in get'''
@@ -240,15 +250,15 @@ def test_get_incorrect_data():
     response = client.get(UNIT_URL+source_name)
     assert_input_validation_error(response)
 
-    # source_name = 'mr_TTT_1_biblevideo' -------------> NOT IMPLEMENTED
-    # response = client.get(UNIT_URL+source_name+'?book_code=61',headers=headers_auth)
-    # assert_input_validation_error(response)
+    source_name = 'mr_TTT_1_biblevideo'
+    response = client.get(UNIT_URL+source_name+'?book_code=61',headers=headers_auth)
+    assert_input_validation_error(response)
 
-    # response = client.get(UNIT_URL+source_name+'?book_code=luke',headers=headers_auth)
-    # assert_input_validation_error(response)-------------> NOT IMPLEMENTED
+    response = client.get(UNIT_URL+source_name+'?book_code=luke',headers=headers_auth)
+    assert_input_validation_error(response)
 
-    # response = client.get(UNIT_URL+source_name+'?book_code=[gen]',headers=headers_auth)
-    # assert_input_validation_error(response)-------------> NOT IMPLEMENTED
+    response = client.get(UNIT_URL+source_name+'?book_code=[gen]',headers=headers_auth)
+    assert_input_validation_error(response)
 
     resp, source_name = check_post([])
     assert resp.status_code == 201

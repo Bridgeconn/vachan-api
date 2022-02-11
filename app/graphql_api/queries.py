@@ -208,7 +208,7 @@ class Query(graphene.ObjectType):
         book_code=graphene.String(description="3 letter code like, gen, mat etc"),
         chapter=graphene.Int(),verse=graphene.Int(),
         active=graphene.Boolean(), skip=graphene.Int(), limit=graphene.Int())
-    def resolve_bible_videos(self, info, source_name, book_code=None, title=None, series=None,
+    def resolve_bible_videos(self, info, source_name, book_code=None, title=None, series=None,#pylint: disable=too-many-locals
         search_word=None,chapter=None,verse=None, active=True, skip=0, limit=100):
         '''resolver'''
         log.info('In GraphQL Get Bible Videos')

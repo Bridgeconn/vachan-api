@@ -86,9 +86,9 @@ def check_post(query, variables):
     #add source
     src_executed = source_add(source_query,SOURCE_VAR)
     source_name = src_executed["data"]["addSource"]["data"]["sourceName"]
-    #without auth-----------------------> NEED TO FIX 
-    # executed = gql_request(query=query,operation="mutation", variables=variables)
-    # assert "errors" in executed
+    #without auth
+    executed = gql_request(query=query,operation="mutation", variables=variables)
+    assert "errors" in executed
     #with auth
     executed = gql_request(query=query,operation="mutation", variables=variables,
       headers=headers_auth)
@@ -274,7 +274,7 @@ def test_get_after_data_upload():
             'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1,"verseEnd": 3}],
              'videoLink': 'https://www.youtube.com/biblevideos/vid'},
         {'title':'Overview: Matthew', 'series': 'New testament', 'description':"brief description",
-            'references': [{"bookCode": "mat","chapter": 10,"verseStart": 1}],
+            'references': [{"bookCode": "mat","chapter": 5,"verseStart": 5}],
             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
   }
@@ -289,18 +289,22 @@ def test_get_after_data_upload():
   }
 }
     """
-    # query1 = query.replace("arg_text",'bookCode:"gen"') --> book filter need to implement
-    # #without Auth
-    # executed1 = gql_request(query1)
-    # assert "errors" in executed1
-    # #with Auth
-    # executed1 = gql_request(query1,headers=headers_auth)
-    # assert len(executed1["data"]["bibleVideos"]) == 1
+    query1 = query.replace("arg_text",'bookCode:"gen"')
+    #without Auth
+    executed1 = gql_request(query1)
+    assert "errors" in executed1
+    #with Auth
+    executed1 = gql_request(query1,headers=headers_auth)
+    assert len(executed1["data"]["bibleVideos"]) == 1
 
-    # query2 = query.replace("arg_text",'bookCode:"mat"')
-    # executed2 = gql_request(query2,headers=headers_auth)
-    # assert len(executed2["data"]["bibleVideos"]) == 2
+    query2 = query.replace("arg_text",'bookCode:"mat"')
+    executed2 = gql_request(query2,headers=headers_auth)
+    assert len(executed2["data"]["bibleVideos"]) == 2
 
+    query2a = query.replace("arg_text",'bookCode:"mat",chapter:5')
+    executed2a = gql_request(query2a,headers=headers_auth)
+    assert len(executed2a["data"]["bibleVideos"]) == 1
+  
     # filter with title overview
     query3 = query.replace("arg_text",'title:"Overview: Matthew"')
     executed3 = gql_request(query3,headers=headers_auth)
@@ -315,14 +319,24 @@ def test_get_after_data_upload():
     executed5 = gql_request(query5,headers=headers_auth)
     assert len(executed5["data"]["bibleVideos"]) == 3
 
+    # filter with search word
+    query3 = query.replace("arg_text",'searchWord:"creation"')
+    executed3 = gql_request(query3,headers=headers_auth)
+    assert len(executed3["data"]["bibleVideos"]) == 1
+
+    # filter with search word not exist
+    query3 = query.replace("arg_text",'searchWord:"ffffrrrttt"')
+    executed3 = gql_request(query3,headers=headers_auth)
+    assert_not_available_content_gql(executed3["data"]["bibleVideos"])
+
     # not available
     query6 = query.replace("arg_text",'series:"Jude Overview"')
     executed6 = gql_request(query6,headers=headers_auth)
     assert_not_available_content_gql(executed6["data"]["bibleVideos"])
 
-    # query7 = query.replace("arg_text",'bookCode:"mat",series:"Old testament"')--> Need to implement
-    # executed7 = gql_request(query7,headers=headers_auth)
-    # assert_not_available_content_gql(executed7["data"]["bibleVideos"])
+    query7 = query.replace("arg_text",'bookCode:"mat",series:"Old testament"')
+    executed7 = gql_request(query7,headers=headers_auth)
+    assert_not_available_content_gql(executed7["data"]["bibleVideos"])
 
 def test_get_incorrect_data():
     '''Check for input validations in get'''    
@@ -343,13 +357,13 @@ def test_get_incorrect_data():
   }
 }
     """
-    # query1 = query0.replace("arg_text","bookCode:60") --> Need to implement book filter
-    # executed1 = gql_request(query1,headers=headers_auth)
-    # assert "errors" in executed1.keys()
+    query1 = query0.replace("arg_text","bookCode:60")
+    executed1 = gql_request(query1,headers=headers_auth)
+    assert "errors" in executed1.keys()
 
-    # query2 = query0.replace("arg_text","bookCode:luke")
-    # executed2 = gql_request(query2,headers=headers_auth)
-    # assert "errors" in executed2.keys()
+    query2 = query0.replace("arg_text","bookCode:luke")
+    executed2 = gql_request(query2,headers=headers_auth)
+    assert "errors" in executed2.keys()
 
     query3 = query0.replace("arg_text","title:1")
     executed3 = gql_request(query3,headers=headers_auth)
@@ -504,7 +518,6 @@ def test_put_incorrect_data():
 } 
     executed5 = gql_request(EDIT_BIBLEVIDEO,operation="mutation",variables=variable5,
       headers=headers_auth)
-    print(executed5)
     assert "errors" in executed5.keys()
 
     variable6 = {

@@ -1,25 +1,20 @@
 ''' Place to define all Database CRUD operations for content tables
 bible, commentary, infographic, biblevideo, dictionary etc'''
 
-from ast import operator
 import json
-from operator import contains
 import re
 import sqlalchemy
 from sqlalchemy.orm import Session, defer, joinedload
-from sqlalchemy.sql import text,operators
-from sqlalchemy import bindparam, func
-from sqlalchemy.sql.expression import cast
+from sqlalchemy.sql import text
 
 import db_models
 from crud import utils
 from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException
 
-
 def get_commentaries(db_:Session, *args,**kwargs):
     '''Fetches rows of commentries from the table specified by source_name'''
     source_name = args[0]
-    book_code = args[1] 
+    book_code = args[1]
     chapter = args[2]
     verse = args[3]
     last_verse = args[4]
@@ -357,7 +352,7 @@ def bcv_to_ref(bcvref,db_):
       }
     return ref
 
-def get_bible_videos(db_:Session, source_name, book_code=None, title=None, series=None,**kwargs):
+def get_bible_videos(db_:Session, source_name, book_code=None, title=None, series=None,**kwargs):#pylint: disable=too-many-locals
     '''fetches rows of bible videos as per provided source_name and filters'''
     search_word = kwargs.get("search_word",None)
     chapter = kwargs.get("chapter",None)
@@ -381,29 +376,34 @@ def get_bible_videos(db_:Session, source_name, book_code=None, title=None, serie
         query = query.filter(text("to_tsvector('simple', title || ' ' ||"+\
             " series || ' ' || description || ' ')"+\
             " @@ to_tsquery('simple', :pattern)").bindparams(pattern=search_pattern))
-    book = db_.query(db_models.BibleBook).filter(
+    if book_code:
+        book = db_.query(db_models.BibleBook).filter(
                 db_models.BibleBook.bookCode == book_code.lower() ).first()
-    if book:
         if book_code and chapter and verse:
             bcv = ref_to_bcv(book.bookId,chapter,verse)
             query = query.filter(model_cls.refIds.any(int(bcv)))
         elif book_code and chapter:
             code = str(book.bookId)
             chapter = str(chapter).zfill(3)
-            raw_sql = f'''SELECT * FROM {model_cls.__tablename__} WHERE EXISTS (SELECT 1 FROM unnest(
-                {model_cls.__tablename__}.ref_ids) AS ele WHERE CAST(ele AS TEXT) LIKE '{code+chapter}%')'''
+            raw_sql = f'''SELECT * FROM {model_cls.__tablename__}
+                WHERE EXISTS (SELECT 1 FROM unnest(
+                {model_cls.__tablename__}.ref_ids) AS ele WHERE
+                CAST(ele AS TEXT) LIKE '{code+chapter}%')'''
             result = db_.execute(raw_sql)
             id_list = [row[0] for row in result]
             query = query.filter(model_cls.bibleVideoId.in_(id_list))
         elif book_code:
             code = str(book.bookId)
+            code = code+"0" if len(code)==1 else code
             # query = query.filter(cast(model_cls.refIds,sqlalchemy.String).contains(code+'%'))
-            raw_sql = f'''SELECT * FROM {model_cls.__tablename__} WHERE EXISTS (SELECT 1 FROM unnest(
-                {model_cls.__tablename__}.ref_ids) AS ele WHERE CAST(ele AS TEXT) LIKE '{code}%')'''
+            raw_sql = f'''SELECT * FROM {model_cls.__tablename__}
+             WHERE EXISTS (SELECT 1 FROM unnest(
+                {model_cls.__tablename__}.ref_ids) AS ele
+                WHERE CAST(ele AS TEXT) LIKE '{code}%')'''
             result = db_.execute(raw_sql)
             id_list = [row[0] for row in result]
             query = query.filter(model_cls.bibleVideoId.in_(id_list))
-                    
+
     query = query.filter(model_cls.active == active)
     db_content = query.offset(skip).limit(limit).all()
     source_db_content = db_.query(db_models.Source).filter(
@@ -419,7 +419,7 @@ def get_bible_videos(db_:Session, source_name, book_code=None, title=None, serie
         }
     return response
 
-def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
+def upload_bible_videos(db_: Session, source_name, videos, user_id=None):#pylint: disable=too-many-locals
     '''Adds rows to the bible videos table specified by source_name'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
@@ -436,15 +436,16 @@ def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
             book = db_.query(db_models.BibleBook).filter(
                 db_models.BibleBook.bookCode == buk.bookCode.lower() ).first()
             if not book:
-                raise NotAvailableException('Bible Book code, %s, not found in database'%buk.bookCode)
+                raise NotAvailableException\
+                    ('Bible Book code, %s, not found in database'%buk.bookCode)
             #generate refid value in BCV
             if buk.verseEnd is None:
                 buk.verseStart = 0 if buk.verseStart is None else buk.verseStart
                 bcvcode = ref_to_bcv(book.bookId,buk.chapter,buk.verseStart)
                 ref_id_list.add(int(bcvcode))
             elif not buk.verseEnd is None:
-                for x in range(buk.verseStart,buk.verseEnd+1):
-                    current_verse = x
+                for count in range(buk.verseStart,buk.verseEnd+1):
+                    current_verse = count
                     bcvcode = ref_to_bcv(book.bookId,buk.chapter,current_verse)
                     ref_id_list.add(int(bcvcode))
         ref_id_list = list(ref_id_list)
@@ -456,21 +457,21 @@ def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
             refIds = ref_id_list,
             videoLink = item.videoLink)
         db_content.append(row)
-    db_.add_all(db_content)
-    db_.expire_all()
-    source_db_content.updatedUser = user_id
     db_content_dict = [item.__dict__ for item in db_content]
     for content in db_content_dict:
         content['references'] = []
         for ref in content['refIds']:
             content['references'].append(bcv_to_ref(ref,db_))
+    db_.add_all(db_content)
+    db_.expire_all()
+    source_db_content.updatedUser = user_id
     response = {
         'db_content':db_content_dict,
         'source_content':source_db_content
         }
     return response
 
-def update_bible_videos(db_: Session, source_name, videos, user_id=None):
+def update_bible_videos(db_: Session, source_name, videos, user_id=None):#pylint: disable=too-many-locals,too-many-branches
     '''Update rows, that matches title in the bible videos table
     specified by source_name'''
     source_db_content = db_.query(db_models.Source).filter(
@@ -495,15 +496,16 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
                 book = db_.query(db_models.BibleBook).filter(
                     db_models.BibleBook.bookCode == buk.bookCode.lower() ).first()
                 if not book:
-                    raise NotAvailableException('Bible Book code, %s, not found in database'%buk.bookCode)
+                    raise NotAvailableException\
+                        ('Bible Book code, %s, not found in database'%buk.bookCode)
                 #generate refid value in BCV
                 if buk.verseEnd is None:
                     buk.verseStart = 0 if buk.verseStart is None else buk.verseStart
                     bcvcode = ref_to_bcv(book.bookId,buk.chapter,buk.verseStart)
                     ref_id_list.add(int(bcvcode))
                 elif not buk.verseEnd is None:
-                    for x in range(buk.verseStart,buk.verseEnd+1):
-                        current_verse = x
+                    for count in range(buk.verseStart,buk.verseEnd+1):
+                        current_verse = count
                         bcvcode = ref_to_bcv(book.bookId,buk.chapter,current_verse)
                         ref_id_list.add(int(bcvcode))
             ref_id_list = list(ref_id_list)
