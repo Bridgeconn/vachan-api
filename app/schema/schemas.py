@@ -1,5 +1,5 @@
 '''Defines all input and output classes for API endpoints'''
-
+#pylint: disable=too-many-lines
 from typing import List
 from enum import Enum
 from pydantic import BaseModel, constr, AnyUrl, validator, root_validator, Field
@@ -130,21 +130,31 @@ class LanguageEdit (BaseModel):
             }
         }
 
+class SourcePermissions(str, Enum):
+    '''To specify source access permisions'''
+    CONTENT = "content"
+    OPENACCESS = "open-access"
+    PUBLISHABLE = "publishable"
+    DOWNLOADABLE = "downloadable"
+    DERIVABLE = "derivable"
+    RESEARCHUSE = "research-use"
+
 LicenseCodePattern =constr(regex=r"^[a-zA-Z0-9\.\_\-]+$")
-class LicensePermisssion(str, Enum):
-    '''To specify direction of script'''
-    COMMERCIAL = "Commercial_use"
-    MODIFICATION = "Modification"
-    DISTRIBUTION = "Distribution"
-    PATENT = "Patent_use"
-    PRIVATE = "Private_use"
+
+# class LicensePermisssion(str, Enum):
+#     '''To specify direction of script'''
+#     COMMERCIAL = "Commercial_use"
+#     MODIFICATION = "Modification"
+#     DISTRIBUTION = "Distribution"
+#     PATENT = "Patent_use"
+#     PRIVATE = "Private_use"
 
 class LicenseCreate(BaseModel):
     '''To create and upload new license'''
     name: str
     code : LicenseCodePattern
     license : str
-    permissions : List[LicensePermisssion] = ['Private_use']
+    permissions : List[SourcePermissions] = [SourcePermissions.OPENACCESS]
     class Config:
         '''display example value in API documentation'''
         schema_extra = {
@@ -153,7 +163,8 @@ class LicenseCreate(BaseModel):
                 "code": "GPL-3",
                 "license": "...actual license text here...",
                 "permissions":
-                    ["Commercial_use", "Modification", "Distribution", "Patent_use", "Private_use"]
+                    ["content", "open-access", "publishable",
+                    "downloadable", "derivable", "research-use"]
             }
         }
 
@@ -161,7 +172,7 @@ class LicenseShortResponse(BaseModel):
     '''Return object of licenses without the full text'''
     name : str
     code : LicenseCodePattern
-    permissions : List[LicensePermisssion]
+    permissions : List[SourcePermissions]
     active: bool
     class Config: # pylint: disable=too-few-public-methods
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
@@ -173,7 +184,8 @@ class LicenseShortResponse(BaseModel):
                 "name": "GNU Public License version 3",
                 "code": "GPL-3",
                 "permissions":
-                    ["Commercial_use", "Modification", "Distribution", "Patent_use", "Private_use"]
+                    ["content", "open-access", "publishable",
+                    "downloadable", "derivable", "research-use"]
             }
         }
 
@@ -183,7 +195,7 @@ class LicenseResponse(BaseModel):
     name : str
     code : LicenseCodePattern
     license : str
-    permissions : List[LicensePermisssion]
+    permissions : List[SourcePermissions]
     active: bool
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
@@ -196,7 +208,8 @@ class LicenseResponse(BaseModel):
                 "code": "GPL-3",
                 "license": "...actual license text here...",
                 "permissions":
-                    ["Commercial_use", "Modification", "Distribution", "Patent_use", "Private_use"]
+                    ["content", "open-access", "publishable",
+                    "downloadable", "derivable", "research-use"]
             }
         }
 
@@ -215,7 +228,7 @@ class LicenseEdit (BaseModel):
     code: LicenseCodePattern
     name : str = None
     license : str = None
-    permissions : List[LicensePermisssion] = None
+    permissions : List[SourcePermissions] = [SourcePermissions.OPENACCESS]
     active: bool = None
     class Config:
         '''display example value in API documentation'''
@@ -225,7 +238,8 @@ class LicenseEdit (BaseModel):
                 "code": "GPL-3",
                 "license": "...actual license text here...",
                 "permissions":
-                    ["Commercial_use", "Modification", "Distribution", "Patent_use", "Private_use"]
+                    ["content", "open-access", "publishable",
+                    "downloadable", "derivable", "research-use"]
             }
         }
 
@@ -300,15 +314,6 @@ class VersionEdit(BaseModel):
                 "metaData": {"publishedIn": "1611"}
             }
         }
-
-class SourcePermissions(str, Enum):
-    '''To specify source access permisions'''
-    CONTENT = "content"
-    OPENACCESS = "open-access"
-    PUBLISHABLE = "publishable"
-    DOWNLOADABLE = "downloadable"
-    DERIVABLE = "derivable"
-    RESEARCHUSE = "research-use"
 
 TableNamePattern = constr(regex=r"^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\w+_[a-z]+$")
 

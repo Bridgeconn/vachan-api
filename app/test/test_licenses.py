@@ -3,6 +3,7 @@ from . import client, check_default_get
 from . import assert_input_validation_error, assert_not_available_content
 from .test_auth_basic import logout_user,login,SUPER_PASSWORD,SUPER_USER
 from .conftest import initial_test_users
+from schema.schemas import SourcePermissions
 
 UNIT_URL = '/v2/licenses'
 headers = {"contentType": "application/json", "accept": "application/json"}
@@ -71,7 +72,7 @@ def test_get():
     assert_not_available_content(response)
 
     # '''filter with permissions'''
-    response = client.get(UNIT_URL+'?permission=Commercial_use')
+    response = client.get(UNIT_URL+'?permission='+SourcePermissions.OPENACCESS.value)
     assert response.status_code == 200
     assert len(response.json()) == 2
 
@@ -94,7 +95,7 @@ def test_post():
       "license": "A very very long license text",
       "name": "Test License version 1",
       "code": "LIC-1",
-      "permissions": ["Private_use"]
+      "permissions": [SourcePermissions.OPENACCESS.value]
     }
     response = client.post(UNIT_URL, headers=headers, json=data)
     #without Auth
@@ -136,7 +137,7 @@ def test_post():
     assert response.status_code == 201
     assert response.json()['message'] == "License uploaded successfully"
     assert_positive_get(response.json()['data'])
-    assert response.json()["data"]["permissions"] == ["Private_use"]
+    assert response.json()["data"]["permissions"] == [SourcePermissions.OPENACCESS.value]
 
     # '''without mandatory fields'''
     #with auth
@@ -194,7 +195,7 @@ def test_put():
       "license": "A very very long license text",
       "code": "LIC-1",
       "name": "Test License version 1",
-      "permissions": ["Private_use"]
+      "permissions": [SourcePermissions.OPENACCESS.value]
     }
     #without Auth
     response = client.post(UNIT_URL, headers=headers, json=data)
@@ -206,7 +207,8 @@ def test_put():
     assert response.status_code == 201
     assert response.json()['message'] == "License uploaded successfully"
 
-    update_data = {"code":"LIC-1", "permissions":["Private_use", "Patent_use"]}
+    update_data = {"code":"LIC-1", "permissions":
+      [SourcePermissions.OPENACCESS.value, SourcePermissions.PUBLISHABLE.value]}
     #without auth update
     response = client.put(UNIT_URL, json=update_data, headers=headers)
     assert response.status_code == 401
@@ -216,7 +218,8 @@ def test_put():
     response = client.put(UNIT_URL, json=update_data, headers=headers_auth)
     assert response.status_code == 201
     assert response.json()['message'] == "License edited successfully"
-    assert response.json()['data']['permissions'] == ["Private_use", "Patent_use"]
+    assert response.json()['data']['permissions'] ==\
+      [SourcePermissions.OPENACCESS.value, SourcePermissions.PUBLISHABLE.value]
 
     update_data = {"code":"LIC-1", "name":"New name for test license"}
     response = client.put(UNIT_URL, json=update_data, headers=headers_auth)
@@ -251,7 +254,7 @@ def test_put():
       "license": "license edited by admin",
       "code": "LIC-1",
       "name": "Test License version 1",
-      "permissions": ["Private_use"]
+      "permissions": [SourcePermissions.OPENACCESS.value]
     }
     headers_admin = {"contentType": "application/json",
                     "accept": "application/json",

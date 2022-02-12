@@ -7,6 +7,7 @@ from .test_licenses import assert_positive_get
 #pylint: disable=R0915
 from . import check_skip_limit_gql, gql_request,assert_not_available_content_gql
 from .conftest import initial_test_users
+from schema.schemas import SourcePermissions
 
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json"}
@@ -142,7 +143,7 @@ def test_get():
     # '''filter with permissions'''
     query7 = """
         {
-    licenses(permission:commercial){
+    licenses(permission:OPENACCESS){
         name
         code
         license
@@ -224,7 +225,7 @@ def test_post():
         "license": "A very very long license text",
         "name": "Test License version 1",
         "code": "LIC-1",
-        "permissions": ["private"]
+        "permissions": [SourcePermissions.OPENACCESS.name]
     }
     }
     query = """
@@ -285,7 +286,7 @@ def test_post_casesensitive():
     item =executed1["data"]["addLicense"]["data"]
     assert_positive_get(item)
     assert executed1["data"]["addLicense"]["data"]["code"] == "LIC-1"
-    assert executed1["data"]["addLicense"]["data"]["permissions"] == ["private"]
+    assert executed1["data"]["addLicense"]["data"]["permissions"] == [SourcePermissions.OPENACCESS.name]
 
 
 def test_post_mandatory():
@@ -383,7 +384,7 @@ def test_put():
         "license": "A very very long license text",
         "name": "Test License version 1",
         "code": "LIC-1",
-        "permissions": ["private"]
+        "permissions": [SourcePermissions.OPENACCESS.name]
     }
     }
     query = """
@@ -455,14 +456,15 @@ def test_put():
     up_variable3 = {
     "object": {
         "code": "LIC-1",
-        "permissions":["patent","private"]
+        "permissions":[SourcePermissions.OPENACCESS.name,SourcePermissions.PUBLISHABLE.name]
         }
     }
     up_executed3 = gql_request(query=up_query, operation=operation, variables=up_variable3,
     headers=headers_auth)
     assert isinstance(up_executed3, Dict)
     assert up_executed3["data"]["editLicense"]["message"] == "License edited successfully"
-    assert up_executed3["data"]["editLicense"]["data"]["permissions"] == ["patent","private"]
+    assert up_executed3["data"]["editLicense"]["data"]["permissions"] ==\
+         [SourcePermissions.OPENACCESS.name,SourcePermissions.PUBLISHABLE.name]
 
     #edit with different user otherthan created
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
