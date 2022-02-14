@@ -338,6 +338,56 @@ def test_get_after_data_upload():
     executed7 = gql_request(query7,headers=headers_auth)
     assert_not_available_content_gql(executed7["data"]["bibleVideos"])
 
+def test_get_reference_filter():
+    '''Add some biblevideo data into the table and do filter references get tests'''
+    variable = {
+  "object": {
+    "sourceName": "mr_TTT_1_biblevideo",
+    "videoData":  [
+        {'title':'Overview: Genesis', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Genesis Two', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 10}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Genesis Three', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 0,}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Genesis Four', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 4}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Genesis Five', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 12,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+    ]
+  }
+}
+    post_biblevideo(variable)
+
+    #filter by book
+    query = """
+        {
+  bibleVideos(sourceName:"mr_TTT_1_biblevideo",arg_text){
+    title
+  }
+}
+    """
+    query2 = query.replace("arg_text",'bookCode:"gen"')
+    executed2 = gql_request(query2,headers=headers_auth)
+    assert len(executed2["data"]["bibleVideos"]) == 5
+
+    query2a = query.replace("arg_text",'bookCode:"gen",chapter:10')
+    executed2a = gql_request(query2a,headers=headers_auth)
+    assert len(executed2a["data"]["bibleVideos"]) == 4
+
+    query2a = query.replace("arg_text",'bookCode:"gen",chapter:10,verse:4')
+    executed2a = gql_request(query2a,headers=headers_auth)
+    assert len(executed2a["data"]["bibleVideos"]) == 3
+
+    query2a = query.replace("arg_text",'bookCode:"gen",chapter:12')
+    executed2a = gql_request(query2a,headers=headers_auth)
+    assert len(executed2a["data"]["bibleVideos"]) == 2
+
 def test_get_incorrect_data():
     '''Check for input validations in get'''    
     query = """

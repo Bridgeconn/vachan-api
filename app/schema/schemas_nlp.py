@@ -3,8 +3,8 @@ from typing import List, Tuple
 from enum import Enum
 from pydantic import BaseModel, Field, constr, root_validator
 
-from schema.schemas import LangCodePattern, BookCodePattern, TableNamePattern,LanguageResponse
-
+from schema.schemas import LangCodePattern, TableNamePattern, LanguageResponse
+from schema.schema_content import BookCodePattern
 
 #pylint: disable=too-few-public-methods
 class TranslationDocumentType(Enum):

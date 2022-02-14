@@ -244,6 +244,49 @@ def test_get_after_data_upload():
     response = client.get(UNIT_URL+source_name+'?book_code=mat&series=Old%20testament',headers=headers_auth)
     assert_not_available_content(response)
 
+def test_get_reference_filter():
+    '''Add some biblevideo data into the table and do filter references get tests'''
+    input_data = [
+        {'title':'Overview: Genesis', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Genesis Two', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 10}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Genesis Three', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 0,}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Genesis Four', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 4}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Genesis Five', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 12,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+    ]
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    res, source_name = check_post(input_data)
+    assert res.status_code == 201
+    check_default_get(UNIT_URL+source_name, headers_auth, assert_positive_get)
+
+    #Filter by book all
+    response = client.get(UNIT_URL+source_name+'?book_code=gen',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 5
+
+    #Filter by book and capter gives all related to that chapter and book
+    response = client.get(UNIT_URL+source_name+'?book_code=gen&chapter=10',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 4
+
+    #Filter by specfic verse gives full book, chapter and verse only
+    response = client.get(UNIT_URL+source_name+'?book_code=gen&chapter=10&verse=4',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 3
+
+    response = client.get(UNIT_URL+source_name+'?book_code=gen&chapter=12&verse=1',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+
 def test_get_incorrect_data():
     '''Check for input validations in get'''
     source_name = 'mr_TTT'
