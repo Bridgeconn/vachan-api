@@ -1,4 +1,5 @@
 """Test cases for Bible Videos in GQL"""
+import json
 from typing import Dict
 #pylint: disable=E0401
 from .test_gql_versions import GLOBAL_QUERY as version_query
@@ -40,10 +41,10 @@ ADD_BIBLEVIDEO = """
     message
     data{
       title
-      books
+      references
       videoLink
       description
-      theme
+      series
       active
     }
   }
@@ -55,10 +56,10 @@ EDIT_BIBLEVIDEO = """
     message
     data{
       title
-      books
+      references
       videoLink
       description
-      theme
+      series
       active
     }
   }
@@ -69,10 +70,10 @@ GET_BIBLEVIDEO = """
     {
   bibleVideos(sourceName:"mr_TTT_1_biblevideo"){
     title
-    books
+    references
     videoLink
     description
-    theme
+    series
     active
   }
 }
@@ -102,6 +103,8 @@ def post_biblevideo(variable):
     assert len(variable["object"]["videoData"]) ==\
        len(executed["data"]["addBibleVideo"]["data"])
     for item in executed["data"]["addBibleVideo"]["data"]:
+        for x in range(len(item["references"])):
+          item["references"][x] = json.loads(item["references"][x])
         assert_positive_get(item)
     return executed,source_name
 
@@ -112,10 +115,12 @@ def test_post_default():
   "object": {
     "sourceName": "mr_TTT_1_biblevideo",
     "videoData": [
-        {'title':'Overview: Genesis', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['gen'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'},
-        {'title':'Overview: Exodus', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['exo'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+        {'title':'Overview: Genesis', 'series': 'Old testament', 'description':"brief description",
+            'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+            'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Exodus', 'series': 'Old testament', 'description':"brief description",
+            'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+            'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
   }
 }
@@ -143,9 +148,10 @@ def test_post_incorrect_data():
   "object": {
     "sourceName": "mr_TTT_1_biblevideo",
     "videoData": 
-        {'title':'Overview: Genesis', 'theme': 'Old testament',
+        {'title':'Overview: Genesis', 'series': 'Old testament',
         'description':"brief description",
-        'books': ['gen'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+        'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+         'videoLink': 'https://www.youtube.com/biblevideos/vid'}
   }
 }
 
@@ -159,8 +165,9 @@ def test_post_incorrect_data():
     "sourceName": "mr_TTT_1_biblevideo",
     "videoData": 
          [
-        {'theme': 'Old testament', 'description':"brief description",
-            'books': ['gen'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+        {'series': 'Old testament', 'description':"brief description",
+            'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
   }
 }
@@ -173,7 +180,7 @@ def test_post_incorrect_data():
     "sourceName": "mr_TTT_1_biblevideo",
     "videoData": 
          [
-        {'title':'Overview: Genesis', 'theme': 'Old testament', 'description':"brief description",
+        {'title':'Overview: Genesis', 'series': 'Old testament', 'description':"brief description",
             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
   }
@@ -188,7 +195,7 @@ def test_post_incorrect_data():
     "videoData": 
          [
         {'title':'Overview: Genesis', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['gen']}
+            'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1}]}
     ]
   }
 }
@@ -203,7 +210,7 @@ def test_post_incorrect_data():
     "videoData": 
          [
         {'title':'Overview: Genesis', 'theme': 'Old testament', 'description':"brief description",
-            'books': 'gen', 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+            'references': 'gen', 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
   }
 }
@@ -217,7 +224,8 @@ def test_post_incorrect_data():
     "videoData": 
         [
         {'title':'Overview: Genesis', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['gen'], 'videoLink': 'vid'}
+            'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1}],
+             'videoLink': 'vid'}
     ]
   }
 }
@@ -231,9 +239,11 @@ def test_post_incorrect_data():
     "videoData": 
         [
         {'title':'Overview: Genesis', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['gen'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+            'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
         {'title':'Overview: Exodus', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['exo'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+            'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
   }
 }
@@ -247,18 +257,25 @@ def test_get_after_data_upload():
   "object": {
     "sourceName": "mr_TTT_1_biblevideo",
     "videoData":  [
-        {'title':'Overview: Genesis', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['gen'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'},
-        {'title':'Overview: Gospels', 'theme': 'New testament', 'description':"brief description",
-            'books': ['mat', 'mrk', 'luk', 'jhn'],
+        {'title':'Overview: Genesis', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Gospels', 'series': 'New testament', 'description':"brief description",
+            'references': [{"bookCode": "mat","chapter": 10,"verseStart": 1},
+            {"bookCode": "mrk","chapter": 0,},
+            {"bookCode": "luk","chapter": 10},
+            {"bookCode": "jhn","chapter": 10,"verseStart": 1}],
             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
-        {'title':'Overview: Acts of Apostles', 'theme': 'New testament',
+        {'title':'Overview: Acts of Apostles', 'series': 'New testament',
             'description':"brief description",
-            'books': ['act'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'},
-        {'title':'Overview: Exodus', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['exo'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'},
-        {'title':'Overview: Matthew', 'theme': 'New testament', 'description':"brief description",
-            'books': ['mat'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+            'references': [{"bookCode": "act","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Exodus', 'series': 'Old testament', 'description':"brief description",
+            'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Matthew', 'series': 'New testament', 'description':"brief description",
+            'references': [{"bookCode": "mat","chapter": 5,"verseStart": 5}],
+            'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
   }
 }
@@ -284,28 +301,92 @@ def test_get_after_data_upload():
     executed2 = gql_request(query2,headers=headers_auth)
     assert len(executed2["data"]["bibleVideos"]) == 2
 
+    query2a = query.replace("arg_text",'bookCode:"mat",chapter:5')
+    executed2a = gql_request(query2a,headers=headers_auth)
+    assert len(executed2a["data"]["bibleVideos"]) == 1
+  
     # filter with title overview
     query3 = query.replace("arg_text",'title:"Overview: Matthew"')
     executed3 = gql_request(query3,headers=headers_auth)
     assert len(executed3["data"]["bibleVideos"]) == 1
 
-    # filter with theme
-    query4 = query.replace("arg_text",'theme:"Old testament"')
+    # filter with series
+    query4 = query.replace("arg_text",'series:"Old testament"')
     executed4 = gql_request(query4,headers=headers_auth)
     assert len(executed4["data"]["bibleVideos"]) == 2
 
-    query5 = query.replace("arg_text",'theme:"New testament"')
+    query5 = query.replace("arg_text",'series:"New testament"')
     executed5 = gql_request(query5,headers=headers_auth)
     assert len(executed5["data"]["bibleVideos"]) == 3
 
+    # filter with search word
+    query3 = query.replace("arg_text",'searchWord:"creation"')
+    executed3 = gql_request(query3,headers=headers_auth)
+    assert len(executed3["data"]["bibleVideos"]) == 1
+
+    # filter with search word not exist
+    query3 = query.replace("arg_text",'searchWord:"ffffrrrttt"')
+    executed3 = gql_request(query3,headers=headers_auth)
+    assert_not_available_content_gql(executed3["data"]["bibleVideos"])
+
     # not available
-    query6 = query.replace("arg_text",'bookCode:"rev"')
+    query6 = query.replace("arg_text",'series:"Jude Overview"')
     executed6 = gql_request(query6,headers=headers_auth)
     assert_not_available_content_gql(executed6["data"]["bibleVideos"])
 
-    query7 = query.replace("arg_text",'bookCode:"mat",theme:"Old testament"')
+    query7 = query.replace("arg_text",'bookCode:"mat",series:"Old testament"')
     executed7 = gql_request(query7,headers=headers_auth)
     assert_not_available_content_gql(executed7["data"]["bibleVideos"])
+
+def test_get_reference_filter():
+    '''Add some biblevideo data into the table and do filter references get tests'''
+    variable = {
+  "object": {
+    "sourceName": "mr_TTT_1_biblevideo",
+    "videoData":  [
+        {'title':'Overview: Genesis', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Genesis Two', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 10}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Genesis Three', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 0,}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Genesis Four', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 4}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Genesis Five', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 12,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+    ]
+  }
+}
+    post_biblevideo(variable)
+
+    #filter by book
+    query = """
+        {
+  bibleVideos(sourceName:"mr_TTT_1_biblevideo",arg_text){
+    title
+  }
+}
+    """
+    query2 = query.replace("arg_text",'bookCode:"gen"')
+    executed2 = gql_request(query2,headers=headers_auth)
+    assert len(executed2["data"]["bibleVideos"]) == 5
+
+    query2a = query.replace("arg_text",'bookCode:"gen",chapter:10')
+    executed2a = gql_request(query2a,headers=headers_auth)
+    assert len(executed2a["data"]["bibleVideos"]) == 4
+
+    query2a = query.replace("arg_text",'bookCode:"gen",chapter:10,verse:4')
+    executed2a = gql_request(query2a,headers=headers_auth)
+    assert len(executed2a["data"]["bibleVideos"]) == 3
+
+    query2a = query.replace("arg_text",'bookCode:"gen",chapter:12')
+    executed2a = gql_request(query2a,headers=headers_auth)
+    assert len(executed2a["data"]["bibleVideos"]) == 2
 
 def test_get_incorrect_data():
     '''Check for input validations in get'''    
@@ -344,13 +425,16 @@ def test_put_after_upload():
   "object": {
     "sourceName": "mr_TTT_1_biblevideo",
     "videoData":  [
-        {'title':'Overview: Acts of Apostles', 'theme': 'New testament',
+        {'title':'Overview: Acts of Apostles', 'series': 'New testament',
             'description':"brief description",
-            'books': ['act'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'},
-        {'title':'Overview: Matthew', 'theme': 'New testament', 'description':"brief description",
-            'books': ['mat'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'},
-        {'title':'Overview: Exodus', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['exo'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+            'references': [{"bookCode": "act","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Matthew', 'series': 'New testament', 'description':"brief description",
+            'references': [{"bookCode": "mat","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Exodus', 'series': 'Old testament', 'description':"brief description",
+            'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
   }
 }
@@ -362,7 +446,7 @@ def test_put_after_upload():
     "sourceName": "mr_TTT_1_biblevideo",
     "videoData":  [
         {'title':'Overview: Matthew', 'active': False},
-        {'title':'Overview: Acts of Apostles', 'theme': 'New testament history'},
+        {'title':'Overview: Acts of Apostles', 'series': 'New testament history'},
         {'title':'Overview: Exodus', 'videoLink': 'https://www.youtube.com/biblevideos/newvid'}
     ]
   }
@@ -376,20 +460,22 @@ def test_put_after_upload():
     assert executed["data"]["editBibleVideo"]["message"] == "Bible videos updated successfully"
     assert len(executed["data"]["editBibleVideo"]["data"]) > 0
     for item in executed["data"]["editBibleVideo"]["data"]:
+        for x in range(len(item["references"])):
+          item["references"][x] = json.loads(item["references"][x])
         assert_positive_get(item)
         if item['title'] == 'Overview: Exodus':
             assert item['videoLink'].endswith('newvid')
         if item['title'] == 'Overview: Matthew':
             assert not item['active']
         if item['title'] == 'Overview: Acts of Apostles':
-            assert item['theme'] == 'New testament history'
+            assert item['series'] == 'New testament history'
 
     # not available PUT
     variable2 = {
   "object": {
     "sourceName": "mr_TTT_1_biblevideo",
     "videoData":  [
-        {'title':'Overview: Acts', 'theme': 'New testament history'}
+        {'title':'Overview: Acts', 'series': 'New testament history'}
     ]
   }
 }
@@ -402,16 +488,17 @@ def test_put_incorrect_data():
     variable = {
   "object": {
     "sourceName": "mr_TTT_1_biblevideo",
-    "videoData":  [
-        {'title':'Overview: Acts of Apostles', 'theme': 'New testament',
+    "videoData": [
+        {'title':'Overview: Acts of Apostles', 'series': 'New testament',
             'description':"brief description",
-            'books': ['act'], 'videoLink': 'https://www.youtube.com/biblevideos/vid',
-            'active':True},
-        {'title':'Overview: Matthew', 'theme': 'New testament', 'description':"brief description",
-            'books': ['mat'], 'videoLink': 'https://www.youtube.com/biblevideos/vid',
-            'active':True},
-        {'title':'Overview: Exodus', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['exo'], 'videoLink': 'https://www.youtube.com/biblevideos/vid', 'active':True}
+            'references': [{"bookCode": "act","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Matthew', 'series': 'New testament', 'description':"brief description",
+            'references': [{"bookCode": "mat","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Exodus', 'series': 'Old testament', 'description':"brief description",
+            'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
   }
 }
@@ -423,9 +510,9 @@ def test_put_incorrect_data():
   "object": {
     "sourceName": "mr_TTT_1_biblevideo",
     "videoData": 
-        {'title':'Overview: Genesis', 'theme': 'Old testament',
-        'description':"brief description",
-        'books': ['gen'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+        {'title':'Overview: Exodus', 'series': 'Old testament', 'description':"brief description",
+            'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid', 'status':True}
   }
 } 
     executed = gql_request(EDIT_BIBLEVIDEO,operation="mutation",variables=variable,
@@ -437,7 +524,7 @@ def test_put_incorrect_data():
   "object": {
     "sourceName": "mr_TTT_1_biblevideo",
     "videoData": [
-        {'theme': 'New testament',
+        {'series': 'New testament',
         "videoLink":"http://anotherplace.com/something"}
     ]
   }
@@ -450,7 +537,7 @@ def test_put_incorrect_data():
   "object": {
     "sourceName": "mr_TTT_1_biblevideo",
     "videoData": [
-        {'title':'Overview: Acts of Apostles', 'books': 'acts'}
+        {'title':'Overview: Acts of Apostles', 'references': [{"chapter": 10,"verseStart": 1}]}
     ]
     }
 } 
@@ -475,7 +562,7 @@ def test_put_incorrect_data():
   "object": {
     "sourceName": "mr_TTT_1_biblevideo",
     "videoData": [
-        {'title':'Overview: Acts of Apostles', 'books': [1,2,3]}
+        {'title':'Overview: Acts of Apostles', 'references': [{"chapter": 10,"verseStart": 1}]}
     ]
     }
 } 
@@ -502,7 +589,8 @@ def test_put_incorrect_data():
     "videoData": [
         {'title':'Overview: Genesis', 'theme': 'Old testament',
         'description':"brief description",
-        'books': ['gen'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+        'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1}],
+         'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
     }
 } 
@@ -516,18 +604,23 @@ def test_soft_delete():
   "object": {
     "sourceName": "mr_TTT_1_biblevideo",
     "videoData":  [
-        {'title':'Words of Jesus', 'theme': 'New testament',
+        {'title':'Words of Jesus', 'series': 'New testament',
             'description':"brief description",
-            'books': ['mat', 'mrk', 'luk', 'jhn'],
-            'videoLink': 'https://www.youtube.com/biblevideos/vid',
-            'active':True},
-        {'title':'Miracles of Jesus', 'theme': 'New testament', 'description':"brief description",
-            'books': ['mat', 'mrk', 'luk', 'jhn'],
-            'videoLink': 'https://www.youtube.com/biblevideos/vid',
-            'active':True},
-        {'title':'Miracles the Israelites saw', 'theme': 'Old testament',
+            'references': [{"bookCode": "mat","chapter": 10,"verseStart": 1},
+            {"bookCode": "mrk","chapter": 0,},
+            {"bookCode": "luk","chapter": 10},
+            {"bookCode": "jhn","chapter": 10,"verseStart": 1}],
+            'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Miracles of Jesus', 'series': 'New testament', 'description':"brief description",
+            'references': [{"bookCode": "mat","chapter": 10,"verseStart": 1},
+            {"bookCode": "mrk","chapter": 0,},
+            {"bookCode": "luk","chapter": 11},
+            {"bookCode": "jhn","chapter": 11,"verseStart": 5}],
+            'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Miracles the Israelites saw', 'series': 'Old testament',
             'description':"brief description",
-            'books': ['exo'], 'videoLink': 'https://www.youtube.com/biblevideos/vid', 'active':True}
+            'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
   }
 }
@@ -541,9 +634,12 @@ def test_soft_delete():
   "object": {
     "sourceName": "mr_TTT_1_biblevideo",
     "videoData":  [
-        {'title':'Words of Jesus', 'theme': 'New testament',
+        {'title':'Words of Jesus', 'series': 'New testament',
             'description':"brief description",
-            'books': ['mat', 'mrk', 'luk', 'jhn'],
+            'references': [{"bookCode": "mat","chapter": 13,"verseStart": 1},
+            {"bookCode": "mrk","chapter": 0,},
+            {"bookCode": "luk","chapter": 12},
+            {"bookCode": "jhn","chapter": 12,"verseStart": 5}],
             'videoLink': 'https://www.youtube.com/biblevideos/vid',
             'active':False}
     ]
@@ -594,13 +690,16 @@ def test_created_user_can_only_edit():
   "object": {
     "sourceName": "gu_TTT_1_biblevideo",
     "videoData":  [
-        {'title':'Overview: Acts of Apostles', 'theme': 'New testament',
+        {'title':'Overview: Acts of Apostles', 'series': 'New testament',
             'description':"brief description",
-            'books': ['act'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'},
-        {'title':'Overview: Matthew', 'theme': 'New testament', 'description':"brief description",
-            'books': ['mat'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'},
-        {'title':'Overview: Exodus', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['exo'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+            'references': [{"bookCode": "act","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Matthew', 'series': 'New testament', 'description':"brief description",
+            'references': [{"bookCode": "mat","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Exodus', 'series': 'Old testament', 'description':"brief description",
+            'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
   }
 }
@@ -614,7 +713,7 @@ def test_created_user_can_only_edit():
     "sourceName": "gu_TTT_1_biblevideo",
     "videoData":  [
         {'title':'Overview: Matthew', 'active': False},
-        {'title':'Overview: Acts of Apostles', 'theme': 'New testament history'},
+        {'title':'Overview: Acts of Apostles', 'series': 'New testament history'},
         {'title':'Overview: Exodus', 'videoLink': 'https://www.youtube.com/biblevideos/newvid'}
     ]
   }
@@ -637,10 +736,10 @@ def test_get_access_with_user_roles_and_apps():
   "object": {
     "sourceName": "mr_TTT_1_biblevideo",
     "videoData": [
-        {'title':'Overview: Genesis', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['gen'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'},
-        {'title':'Overview: Exodus', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['exo'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+    	{'title':'Overview: Acts of Apostles', 'series': 'New testament',
+            'description':"brief description",
+            'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1}],
+            'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
   }
 }

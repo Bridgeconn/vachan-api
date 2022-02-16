@@ -584,7 +584,7 @@ def test_get_source_filter_access_tag():
     
     response1 = client.get(UNIT_URL,headers=headers_auth)
     assert response1.status_code == 200
-    assert len(response1.json()) == 3
+    assert len(response1.json()) >= 3
     for item in response1.json():
         assert_positive_get(item)
 

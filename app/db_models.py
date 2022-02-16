@@ -170,12 +170,12 @@ class BibleVideo(): # pylint: disable=too-few-public-methods
     '''Corresponds to the dynamically created bible videos tables in vachan Db(postgres)'''
     bibleVideoId  = Column('biblevideo_id', Integer,
         Sequence('biblevideo_id_seq', start=100001, increment=1), primary_key=True)
+    refIds  = Column('ref_ids', ARRAY(Integer))
     title = Column('title', String, unique=True)
-    theme = Column('theme', String)
+    series = Column('series', String)
     description = Column('description', String)
     videoLink = Column('video_link', String)
     active = Column('active', Boolean)
-    books = Column('books', ARRAY(String))
     __table_args__ = {'extend_existing': True}
 
 class BibleAudio(): # pylint: disable=too-few-public-methods

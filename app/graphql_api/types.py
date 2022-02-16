@@ -173,10 +173,10 @@ class Infographic(graphene.ObjectType):#pylint: disable=too-few-public-methods
 class BibleVideo(graphene.ObjectType):#pylint: disable=too-few-public-methods
     '''Response for BibleVideo'''
     title = graphene.String()
-    books = graphene.List(graphene.String)
+    references = graphene.List(graphene.JSONString)
     videoLink = graphene.String()
     description = graphene.String()
-    theme = graphene.String()
+    series = graphene.String()
     active = graphene.Boolean()
 
 class TranslationDocumentType(graphene.Enum):
@@ -526,14 +526,26 @@ class AGMTUserEditInput(graphene.InputObjectType):
     metaData = graphene.JSONString()
     active = graphene.Boolean()
 
+class BibleVideoRefObj(graphene.InputObjectType):
+    """BibleVideoRefObj input"""
+    bookCode = graphene.String(required=True)
+    chapter = graphene.Int(required=True)
+    verseStart = graphene.Int(default_value = None)
+    verseEnd = graphene.Int(default_value = None)
+
 class BibleVideoDict(graphene.InputObjectType):
     """BibleVideo input"""
     title = graphene.String(required=True)
-    books = graphene.List(graphene.String,required=True,\
-        description="provide book codes")
+    references = graphene.List(BibleVideoRefObj,required=True,\
+        description="""{
+        'bookCode': '1ki',
+        'chapter': 10,
+        'verseStart': 1,
+        'verseEnd': 7
+      }""")
     videoLink = graphene.String(required=True)
     description = graphene.String(required=True)
-    theme = graphene.String(required=True)
+    series = graphene.String(required=True)
     active = graphene.Boolean(default_value = True)
 
 class InputAddBibleVideo(graphene.InputObjectType):
@@ -545,10 +557,16 @@ class InputAddBibleVideo(graphene.InputObjectType):
 class BibleVideoEditDict(graphene.InputObjectType):
     """BibleVideo Edit input"""
     title = graphene.String(required=True)
-    books = graphene.List(graphene.String)
+    references = graphene.List(BibleVideoRefObj,
+        description="""{
+        'bookCode': '1ki',
+        'chapter': 10,
+        'verseStart': 1,
+        'verseEnd': 7
+      }""")
     videoLink = graphene.String()
     description = graphene.String()
-    theme = graphene.String()
+    series = graphene.String()
     active = graphene.Boolean(default_value = True)
 
 class InputEditBibleVideo(graphene.InputObjectType):
