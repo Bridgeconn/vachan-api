@@ -382,13 +382,11 @@ def get_bible_videos(db_:Session, source_name, book_code=None, title=None, serie
         if book_code and chapter and verse:
             bcv = ref_to_bcv(book.bookId,chapter,verse)
             fullbook = int(str(book.bookId)+'000000')
-            chapter = str(chapter).zfill(3)
-            book_chapter = int(str(book.bookId)+str(chapter)+"000")
+            book_chapter = book.bookId * 1000000 + chapter*1000
             query = query.filter(sqlalchemy.or_(model_cls.refIds.any(int(bcv)),
                 model_cls.refIds.any(fullbook),model_cls.refIds.any(book_chapter)))
         elif book_code and chapter:
-            chapter = str(chapter).zfill(3)
-            book_chapter = int(str(book.bookId)+str(chapter)+"000")
+            book_chapter = book.bookId * 1000000 + chapter*1000
             fullbook = int(str(book.bookId)+'000000')
             raw_sql = f'''SELECT * FROM {model_cls.__tablename__}
                 WHERE EXISTS (SELECT 1 FROM unnest(
