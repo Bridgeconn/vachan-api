@@ -11,7 +11,6 @@ from auth.authentication import get_auth_access_check_decorator ,\
     get_user_or_none
 
 router = APIRouter()
-# auth_handler = AuthHandler()
 
 #pylint: disable=too-many-arguments,unused-argument
 ##### Content types #####
@@ -33,7 +32,8 @@ async def get_contents(request: Request,content_type: str = Query(None, example=
 
 @router.post('/v2/contents', response_model=schemas.ContentTypeUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    422: {"model": schemas.ErrorResponse},401:{"model": schemas.ErrorResponse},
+    409: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Contents Types"])
 @get_auth_access_check_decorator
 async def add_contents(request: Request, content: schemas.ContentTypeCreate,
@@ -78,8 +78,9 @@ async def get_language(request: Request,
         skip = skip, limit = limit)
 
 @router.post('/v2/languages', response_model=schemas.LanguageCreateResponse,
-    responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    responses={502: {"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Languages"])
 @get_auth_access_check_decorator
 async def add_language(request: Request, lang_obj : schemas.LanguageCreate = Body(...),
@@ -94,8 +95,9 @@ async def add_language(request: Request, lang_obj : schemas.LanguageCreate = Bod
         user_id=user_details['user_id'])}
 
 @router.put('/v2/languages', response_model=schemas.LanguageUpdateResponse,
-    responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    responses={502:{"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Languages"])
 @get_auth_access_check_decorator
 async def edit_language(request: Request, lang_obj: schemas.LanguageEdit = Body(...),
@@ -134,7 +136,8 @@ async def get_license(request: Request,
 
 @router.post('/v2/licenses', response_model=schemas.LicenseCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Licenses"])
 @get_auth_access_check_decorator
 async def add_license(request: Request, license_obj : schemas.LicenseCreate = Body(...),
@@ -147,7 +150,8 @@ async def add_license(request: Request, license_obj : schemas.LicenseCreate = Bo
 
 @router.put('/v2/licenses', response_model=schemas.LicenseUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Licenses"])
 @get_auth_access_check_decorator
 async def edit_license(request: Request, license_obj: schemas.LicenseEdit = Body(...),
@@ -187,7 +191,8 @@ async def get_version(request: Request,
 
 @router.post('/v2/versions', response_model=schemas.VersionCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Versions"])
 @get_auth_access_check_decorator
 async def add_version(request: Request, version_obj : schemas.VersionCreate = Body(...),
@@ -207,7 +212,8 @@ async def add_version(request: Request, version_obj : schemas.VersionCreate = Bo
 
 @router.put('/v2/versions', response_model=schemas.VersionUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Versions"])
 @get_auth_access_check_decorator
 async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...),
@@ -228,7 +234,8 @@ async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...
 @router.get('/v2/sources',
     response_model=List[schemas.SourceResponse],
     responses={502: {"model": schemas.ErrorResponse},
-    422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Sources"])
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse}},
+    status_code=200, tags=["Sources"])
 @get_auth_access_check_decorator
 async def get_source(request: Request,content_type: str=Query(None, example="commentary"), #pylint: disable=too-many-locals
     version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
@@ -262,7 +269,8 @@ async def get_source(request: Request,content_type: str=Query(None, example="com
 
 @router.post('/v2/sources', response_model=schemas.SourceCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Sources"])
 @get_auth_access_check_decorator
 async def add_source(request: Request, source_obj : schemas.SourceCreate = Body(...),
@@ -293,7 +301,8 @@ async def add_source(request: Request, source_obj : schemas.SourceCreate = Body(
 
 @router.put('/v2/sources', response_model=schemas.SourceUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Sources"])
 @get_auth_access_check_decorator
 async def edit_source(request: Request,source_obj: schemas.SourceEdit = Body(...),
@@ -340,7 +349,9 @@ async def get_bible_book(request: Request,book_id: int=Query(None, example=67),
     response_model=schema_content.BibleBookCreateResponse,
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    422: {"model": schemas.ErrorResponse},409:{"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
+    404:{"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def add_bible_book(request: Request,
@@ -359,7 +370,8 @@ async def add_bible_book(request: Request,
 @router.put('/v2/bibles/{source_name}/books', response_model=schema_content.BibleBookUpdateResponse,
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
+    401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def edit_bible_book(request: Request,
@@ -384,7 +396,9 @@ async def edit_bible_book(request: Request,
     response_model=List[schema_content.BibleBookContent],
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
-    422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
+    422: {"model": schemas.ErrorResponse},401:{"model": schemas.ErrorResponse},
+    404:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
+    status_code=200, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def get_available_bible_book(request: Request,
     source_name: schemas.TableNamePattern=Path(...,example="hi_IRV_1_bible"),
@@ -423,7 +437,9 @@ async def get_bible_versification(request: Request,
     response_model=List[schema_content.BibleVerse],
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
-    422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
+    422: {"model": schemas.ErrorResponse},
+    404:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
+    status_code=200, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def get_bible_verse(request: Request,
     source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
@@ -456,7 +472,9 @@ async def get_bible_verse(request: Request,
 @router.post('/v2/bibles/{source_name}/audios',
     response_model=schema_content.AudioBibleCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
+    401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
+    415:{"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def add_audio_bible(request: Request,
@@ -474,7 +492,9 @@ async def add_audio_bible(request: Request,
 @router.put('/v2/bibles/{source_name}/audios',
     response_model=schema_content.AudioBibleUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
+    401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
+    415:{"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def edit_audio_bible(request: Request,
@@ -496,7 +516,8 @@ async def edit_audio_bible(request: Request,
 @router.get('/v2/commentaries/{source_name}',
     response_model=List[schema_content.CommentaryResponse],
     responses={502: {"model": schemas.ErrorResponse},
-    422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Commentaries"])
+    422: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
+    415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Commentaries"])
 @get_auth_access_check_decorator
 async def get_commentary(request: Request,
     source_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
@@ -525,7 +546,9 @@ async def get_commentary(request: Request,
 @router.post('/v2/commentaries/{source_name}',
     response_model=schema_content.CommentaryCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
+    401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
+    415:{"model": schemas.ErrorResponse}},
     status_code=201, tags=["Commentaries"])
 @get_auth_access_check_decorator
 async def add_commentary(request: Request,
@@ -552,7 +575,8 @@ async def add_commentary(request: Request,
 @router.put('/v2/commentaries/{source_name}',
     response_model=schema_content.CommentaryUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
+    401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
     status_code=201, tags=["Commentaries"])
 @get_auth_access_check_decorator
 async def edit_commentary(request: Request,
@@ -575,7 +599,8 @@ async def edit_commentary(request: Request,
     response_model_exclude_unset=True,
     response_model=List[schema_content.DictionaryWordResponse],
     responses={502: {"model": schemas.ErrorResponse},
-    422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Dictionaries"])
+    422: {"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
+    404:{"model": schemas.ErrorResponse},}, status_code=200, tags=["Dictionaries"])
 @get_auth_access_check_decorator
 async def get_dictionary_word(request: Request,
     source_name: schemas.TableNamePattern=Path(...,example="en_TW_1_dictionary"),
@@ -607,7 +632,9 @@ async def get_dictionary_word(request: Request,
 @router.post('/v2/dictionaries/{source_name}',
     response_model=schema_content.DictionaryCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
+    401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
+    415:{"model": schemas.ErrorResponse}},
     status_code=201, tags=["Dictionaries"])
 @get_auth_access_check_decorator
 async def add_dictionary_word(request: Request,
@@ -626,7 +653,8 @@ async def add_dictionary_word(request: Request,
 @router.put('/v2/dictionaries/{source_name}',
     response_model=schema_content.DictionaryUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
+    401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
     status_code=201, tags=["Dictionaries"])
 @get_auth_access_check_decorator
 async def edit_dictionary_word(request: Request,
@@ -647,7 +675,8 @@ async def edit_dictionary_word(request: Request,
 @router.get('/v2/infographics/{source_name}',
     response_model=List[schema_content.InfographicResponse],
     responses={502: {"model": schemas.ErrorResponse},
-    422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Infographics"])
+    422: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
+    415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Infographics"])
 @get_auth_access_check_decorator
 async def get_infographic(request: Request,
     source_name:schemas.TableNamePattern=Path(...,example="hi_IRV_1_infographic"),
@@ -669,7 +698,9 @@ async def get_infographic(request: Request,
 @router.post('/v2/infographics/{source_name}',
     response_model=schema_content.InfographicCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
+    401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
+    415:{"model": schemas.ErrorResponse}},
     status_code=201, tags=["Infographics"])
 @get_auth_access_check_decorator
 async def add_infographics(request: Request,
@@ -689,7 +720,8 @@ async def add_infographics(request: Request,
 @router.put('/v2/infographics/{source_name}',
     response_model=schema_content.InfographicUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
+    401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
     status_code=201, tags=["Infographics"])
 @get_auth_access_check_decorator
 async def edit_infographics(request: Request,
@@ -711,8 +743,9 @@ async def edit_infographics(request: Request,
 # # ########### bible videos ###################
 @router.get('/v2/biblevideos/{source_name}',
     response_model=List[schema_content.BibleVideo],response_model_exclude_none=True,
-    responses={502: {"model": schemas.ErrorResponse},
-    422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bible Videos"])
+    responses={502: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
+    status_code=200, tags=["Bible Videos"])
 @get_auth_access_check_decorator
 async def get_biblevideo(request: Request,
     source_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
@@ -740,7 +773,9 @@ async def get_biblevideo(request: Request,
 @router.post('/v2/biblevideos/{source_name}',
     response_model=schema_content.BibleVideoCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
+    401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
+    415:{"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bible Videos"])
 @get_auth_access_check_decorator
 async def add_biblevideo(request: Request,
@@ -758,7 +793,8 @@ async def add_biblevideo(request: Request,
 
 @router.put('/v2/biblevideos/{source_name}', response_model=schema_content.BibleVideoUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
+    401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bible Videos"])
 @get_auth_access_check_decorator
 async def edit_biblevideo(request: Request,
@@ -777,7 +813,9 @@ async def edit_biblevideo(request: Request,
 
 @router.get('/v2/sources/get-sentence', response_model=List[schemas_nlp.SentenceInput],
     responses={502: {"model": schemas.ErrorResponse},
-    422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Sources"])
+    422: {"model": schemas.ErrorResponse},401:{"model": schemas.ErrorResponse},
+    404:{"model": schemas.ErrorResponse}},
+    status_code=200, tags=["Sources"])
 @get_auth_access_check_decorator
 async def extract_text_contents(request:Request, #pylint: disable=W0613
     source_name:schemas.TableNamePattern=Query(None,example="en_TBP_1_bible"),
