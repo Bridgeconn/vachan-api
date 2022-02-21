@@ -276,9 +276,9 @@ def create_dynamic_table(source_name, table_name, content_type):
     elif content_type == ContentTypeName.DICTIONARY.value:
         dynamicTables[source_name] = type(
             table_name,(Dictionary, Base,),{"__tablename__": table_name})
-        new_index = Index(table_name+'_word_details_ix', 
+        new_index = Index(table_name+'_word_details_ix',  # pylint: disable=W0612
             text("to_tsvector('simple', word || ' ' ||"+\
-            "jsonb_to_tsvector('simple', details, '[\"string\", \"numeric\"]') || ' ')"), 
+            "jsonb_to_tsvector('simple', details, '[\"string\", \"numeric\"]') || ' ')"),
             postgresql_using="gin",
             )
     elif content_type == ContentTypeName.INFOGRAPHIC.value:
