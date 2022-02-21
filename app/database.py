@@ -19,12 +19,12 @@ connection_url = os.environ.get("VACHAN_POSTGRES_CONN", SQLALCHEMY_DATABASE_URL)
 engine = create_engine(connection_url, pool_size=10, max_overflow=20)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-meta = MetaData(naming_convention={
-        "ix": "%(table_name)s_ix_%(column_0_label)s",
-        "uq": "uq_%(table_name)s_%(column_0_name)s",
-        "ck": "ck_%(table_name)s_%(constraint_name)s",
-        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-        "pk": "pk_%(table_name)s"
-      })
+# meta = MetaData(naming_convention={
+#         "ix": "%(table_name)s_ix_%(column_0_label)s",
+#         "uq": "uq_%(table_name)s_%(column_0_name)s",
+#         "ck": "ck_%(table_name)s_%(constraint_name)s",
+#         "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+#         "pk": "pk_%(table_name)s"
+#       })
 
 Base = declarative_base(metadata=meta)

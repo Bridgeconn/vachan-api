@@ -14,6 +14,8 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from database import Base
 from custom_exceptions import GenericException
 
+dynamicTables = {}
+
 class ContentTypeName(Enum):
     '''The string literals used as value of ContentType field in ContentType
     and also used to as the ending of respective database table names'''
@@ -146,13 +148,7 @@ class Dictionary(): # pylint: disable=too-few-public-methods
     active = Column('active', Boolean)
 
     __table_args__ = (
-        # Index(self.__tablename__+'word_details_ix', 
-        Index(None, 
-            text("to_tsvector('simple', word || ' ' ||"+\
-            "jsonb_to_tsvector('simple', details, '[\"string\", \"numeric\"]') || ' ')"), 
-            postgresql_using="gin",
-            ),
-        {'extend_existing': True}
+        {'extend_existing': True},
                      )
 
 class Infographic(): # pylint: disable=too-few-public-methods
@@ -262,7 +258,6 @@ class BibleContentCleaned(): # pylint: disable=too-few-public-methods
         {'extend_existing': True}
                      )
 
-dynamicTables = {}
 def create_dynamic_table(source_name, table_name, content_type):
     '''To map or create one dynamic table based on the content Type'''
     if content_type == ContentTypeName.BIBLE.value:
@@ -281,11 +276,11 @@ def create_dynamic_table(source_name, table_name, content_type):
     elif content_type == ContentTypeName.DICTIONARY.value:
         dynamicTables[source_name] = type(
             table_name,(Dictionary, Base,),{"__tablename__": table_name})
-        # CREATE INDEX languages_search_idx ON table_name USING gin (
-        #     word gin_trgm_ops, 
-        #     (jsonb_to_tsvector('simple', details, '["string", "numeric"]'))
-        # );
-
+        new_index = Index(table_name+'_word_details_ix', 
+            text("to_tsvector('simple', word || ' ' ||"+\
+            "jsonb_to_tsvector('simple', details, '[\"string\", \"numeric\"]') || ' ')"), 
+            postgresql_using="gin",
+            )
     elif content_type == ContentTypeName.INFOGRAPHIC.value:
         dynamicTables[source_name] = type(
             table_name,(Infographic, Base,),{"__tablename__": table_name})
