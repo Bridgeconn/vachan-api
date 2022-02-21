@@ -3,7 +3,7 @@
 import os
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine, MetaData
+from sqlalchemy import create_engine
 
 postgres_host = os.environ.get("VACHAN_POSTGRES_HOST", "localhost")
 postgres_user = os.environ.get("VACHAN_POSTGRES_USER", "postgres")
