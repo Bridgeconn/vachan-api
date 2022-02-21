@@ -14,13 +14,15 @@ headers_auth = {"contentType": "application/json",
 
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
-    assert "books" in item
-    assert  isinstance(item['books'], list)
-    for book in item['books']:
-        assert isinstance(book, str)
-        assert len(book) == 3
+    assert "references" in item
+    assert  isinstance(item['references'], list)
+    for ref in item['references']:
+        assert isinstance(ref, dict)
+        assert "book" in ref
+        assert "chapter" in ref
+        assert "verseNumber" in ref
     assert "title" in item
-    assert "theme" in item
+    assert "series" in item
     assert "description" in item
     assert "videoLink" in item
 
@@ -40,14 +42,14 @@ def check_post(data: list):
     }
     source = add_source(source_data)
     table_name = source.json()['data']['sourceName']
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    #without auth
-    resp = client.post(UNIT_URL+table_name, headers=headers, json=data)
-    if resp.status_code == 422:
-        assert resp.json()['error'] == 'Input Validation Error'
+    # without auth
+    response = client.post(UNIT_URL+table_name, headers=headers, json=data)
+    if response.status_code == 422:
+        assert response.json()['error'] == 'Input Validation Error'
     else:
-        assert resp.status_code == 401
-        assert resp.json()['error'] == 'Authentication Error'
+        assert response.status_code == 401
+        assert response.json()['error'] == 'Authentication Error'
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     #with auth
     resp = client.post(UNIT_URL+table_name, headers=headers_auth, json=data)
     return resp, table_name
@@ -55,11 +57,14 @@ def check_post(data: list):
 def test_post_default():
     '''Positive test to upload bible videos'''
     data = [
-        {'title':'Overview: Genesis', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['gen'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'},
-        {'title':'Overview: Exodus', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['exo'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+        {'title':'Overview: Genesis', 'series': 'Old testament', 'description':"brief description",
+            'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+            'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Exodus', 'series': 'Old testament', 'description':"brief description",
+            'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+            'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
+    
     resp = check_post(data)[0]
     assert resp.status_code == 201
     assert resp.json()['message'] == "Bible videos added successfully"
@@ -70,8 +75,9 @@ def test_post_default():
 def test_post_duplicate():
     '''Negative test to add two bible videos Links with same title'''
     data = [
-        {'title':'Overview: Genesis', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['gen'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+        {'title':'Overview: Genesis', 'series': 'Old testament', 'description':"brief description",
+            'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+            'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
     response1, source_name = check_post(data)
     assert response1.status_code == 201
@@ -86,9 +92,10 @@ def test_post_incorrect_data():
     ''' tests to check input validation in post API'''
 
     # single data object instead of list
-    one_row = {'title':'Overview: Genesis', 'theme': 'Old testament',
+    one_row = {'title':'Overview: Genesis', 'series': 'Old testament',
         'description':"brief description",
-        'books': ['gen'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+        'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+         'videoLink': 'https://www.youtube.com/biblevideos/vid'}
 
     resp, source_name = check_post(one_row)
     assert_input_validation_error(resp)
@@ -96,22 +103,23 @@ def test_post_incorrect_data():
     # data object with missing mandatory fields
     headers = {"contentType": "application/json", "accept": "application/json"}
     data = [
-        {'theme': 'Old testament', 'description':"brief description",
-            'books': ['gen'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+        {'series': 'Old testament', 'description':"brief description",
+            'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
     response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     data = [
-        {'title':'Overview: Genesis', 'theme': 'Old testament', 'description':"brief description",
+        {'title':'Overview: Genesis', 'series': 'Old testament', 'description':"brief description",
             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
     response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     data = [
-        {'title':'Overview: Genesis', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['gen']}
+        {'title':'Overview: Genesis', 'series': 'Old testament', 'description':"brief description",
+            'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 3}]}
     ]
     response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
@@ -119,21 +127,24 @@ def test_post_incorrect_data():
     # incorrect data values in fields
     data = [
         {'title':'Overview: Genesis', 'theme': 'Old testament', 'description':"brief description",
-            'books': 'gen', 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+            'references': [{"verseStart": 1,"verseEnd": 3}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
     response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     data = [
         {'title':'Overview: Genesis', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['gen'], 'videoLink': 'vid'}
+            'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+            'videoLink': 'vid'}
     ]
     response = client.post(UNIT_URL+source_name, headers=headers, json=data)
     assert_input_validation_error(response)
 
     data = [
         {'title':'Overview: Genesis', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['Genesis'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+            'references': [{"bookCode": "genesis","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
     response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
@@ -148,27 +159,35 @@ def test_post_incorrect_data():
     assert response.status_code == 404
 
 def test_get_after_data_upload():
-    '''Add some infographics data into the table and do all get tests'''
+    '''Add some biblevideo data into the table and do all get tests'''
     input_data = [
-        {'title':'Overview: Genesis', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['gen'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'},
-        {'title':'Overview: Gospels', 'theme': 'New testament', 'description':"brief description",
-            'books': ['mat', 'mrk', 'luk', 'jhn'],
+        {'title':'Overview: Genesis', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Gospels', 'series': 'New testament', 'description':"brief description",
+            'references': [{"bookCode": "mat","chapter": 10,"verseStart": 1},
+            {"bookCode": "mrk","chapter": 0,},
+            {"bookCode": "luk","chapter": 10},
+            {"bookCode": "jhn","chapter": 10,"verseStart": 1}],
             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
-        {'title':'Overview: Acts of Apostles', 'theme': 'New testament',
+        {'title':'Overview: Acts of Apostles', 'series': 'New testament',
             'description':"brief description",
-            'books': ['act'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'},
-        {'title':'Overview: Exodus', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['exo'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'},
-        {'title':'Overview: Matthew', 'theme': 'New testament', 'description':"brief description",
-            'books': ['mat'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+            'references': [{"bookCode": "act","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Exodus', 'series': 'Old testament', 'description':"brief description",
+            'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Matthew', 'series': 'New testament', 'description':"brief description",
+            'references': [{"bookCode": "mat","chapter": 5,"verseStart": 5}],
+            'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     res, source_name = check_post(input_data)
     assert res.status_code == 201
     check_default_get(UNIT_URL+source_name, headers_auth, assert_positive_get)
 
     #filter by book
-    #without auth
+    #without auth 
     response = client.get(UNIT_URL+source_name+'?book_code=gen')
     assert response.status_code == 401
     assert response.json()["error"] == "Authentication Error"
@@ -181,6 +200,25 @@ def test_get_after_data_upload():
     assert response.status_code == 200
     assert len(response.json()) == 2
 
+    #Filter by BCV
+    response = client.get(UNIT_URL+source_name+'?book_code=act&chapter=10&verse=1',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+    #Filter by book and chapter
+    response = client.get(UNIT_URL+source_name+'?book_code=mat&chapter=5',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+    #Filter by searchword
+    response = client.get(UNIT_URL+source_name+'?search_word=creation',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+    #Filter by searchword not exist
+    response = client.get(UNIT_URL+source_name+'?search_word=ffffrrrttt',headers=headers_auth)
+    assert_not_available_content(response)
+
     # filter with title
     response = client.get(UNIT_URL+source_name+'?title=Overview:%20Matthew')
     assert response.status_code == 401
@@ -190,12 +228,12 @@ def test_get_after_data_upload():
     assert response.status_code == 200
     assert len(response.json()) == 1
 
-    # filter with theme
-    response = client.get(UNIT_URL+source_name+"?theme=Old%20testament",headers=headers_auth)
+    # filter with Series
+    response = client.get(UNIT_URL+source_name+"?series=Old%20testament",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
 
-    response = client.get(UNIT_URL+source_name+"?theme=New%20testament",headers=headers_auth)
+    response = client.get(UNIT_URL+source_name+"?series=New%20testament",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 3
 
@@ -203,8 +241,51 @@ def test_get_after_data_upload():
     response = client.get(UNIT_URL+source_name+'?book_code=rev',headers=headers_auth)
     assert_not_available_content(response)
 
-    response = client.get(UNIT_URL+source_name+'?book_code=mat&theme=Old%20testament',headers=headers_auth)
+    response = client.get(UNIT_URL+source_name+'?book_code=mat&series=Old%20testament',headers=headers_auth)
     assert_not_available_content(response)
+
+def test_get_reference_filter():
+    '''Add some biblevideo data into the table and do filter references get tests'''
+    input_data = [
+        {'title':'Overview: Genesis', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 3}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Genesis Two', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 10}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Genesis Three', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 0,}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Genesis Four', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 4}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Genesis Five', 'series': 'Old testament', 'description':"brief description creation",
+            'references': [{"bookCode": "gen","chapter": 12,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+    ]
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    res, source_name = check_post(input_data)
+    assert res.status_code == 201
+    check_default_get(UNIT_URL+source_name, headers_auth, assert_positive_get)
+
+    #Filter by book all
+    response = client.get(UNIT_URL+source_name+'?book_code=gen',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 5
+
+    #Filter by book and capter gives all related to that chapter and book
+    response = client.get(UNIT_URL+source_name+'?book_code=gen&chapter=10',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 4
+
+    #Filter by specfic verse gives full book, chapter and verse only
+    response = client.get(UNIT_URL+source_name+'?book_code=gen&chapter=10&verse=4',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 3
+
+    response = client.get(UNIT_URL+source_name+'?book_code=gen&chapter=12&verse=1',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 2
 
 def test_get_incorrect_data():
     '''Check for input validations in get'''
@@ -232,13 +313,16 @@ def test_get_incorrect_data():
 def test_put_after_upload():
     '''Positive tests for put'''
     data = [
-        {'title':'Overview: Acts of Apostles', 'theme': 'New testament',
+        {'title':'Overview: Acts of Apostles', 'series': 'New testament',
             'description':"brief description",
-            'books': ['act'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'},
-        {'title':'Overview: Matthew', 'theme': 'New testament', 'description':"brief description",
-            'books': ['mat'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'},
-        {'title':'Overview: Exodus', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['exo'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+            'references': [{"bookCode": "act","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Matthew', 'series': 'New testament', 'description':"brief description",
+            'references': [{"bookCode": "mat","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Exodus', 'series': 'Old testament', 'description':"brief description",
+            'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
     response, source_name = check_post(data)
     assert response.status_code == 201
@@ -246,7 +330,7 @@ def test_put_after_upload():
     # positive PUT
     new_data = [
         {'title':'Overview: Matthew', 'active': False},
-        {'title':'Overview: Acts of Apostles', 'theme': 'New testament history'},
+        {'title':'Overview: Acts of Apostles', 'series': 'New testament history'},
         {'title':'Overview: Exodus', 'videoLink': 'https://www.youtube.com/biblevideos/newvid'}
     ]
     # headers = {"contentType": "application/json", "accept": "application/json"}
@@ -258,7 +342,6 @@ def test_put_after_upload():
     new_response = client.put(UNIT_URL+source_name,headers=headers_auth, json=new_data)
     assert new_response.status_code == 201
     assert new_response.json()['message'] == 'Bible videos updated successfully'
-    print(new_response.json()['data'])
     for item in new_response.json()['data']:
         assert_positive_get(item)
         if item['title'] == 'Overview: Exodus':
@@ -266,11 +349,11 @@ def test_put_after_upload():
         if item['title'] == 'Overview: Matthew':
             assert not item['active']
         if item['title'] == 'Overview: Acts of Apostles':
-            assert item['theme'] == 'New testament history'
+            assert item['series'] == 'New testament history'
 
     # not available PUT
     new_data = [
-        {'title':'Overview: Acts', 'theme': 'New testament history'}
+        {'title':'Overview: Acts', 'series': 'New testament history'}
     ]
     response = client.put(UNIT_URL+source_name, headers=headers_auth, json=new_data)
     assert response.status_code == 404
@@ -283,28 +366,31 @@ def test_put_incorrect_data():
     ''' tests to check input validation in put API'''
 
     post_data = [
-        {'title':'Overview: Acts of Apostles', 'theme': 'New testament',
+        {'title':'Overview: Acts of Apostles', 'series': 'New testament',
             'description':"brief description",
-            'books': ['act'], 'videoLink': 'https://www.youtube.com/biblevideos/vid',
+            'references': [{"bookCode": "act","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid',
             'status':True},
-        {'title':'Overview: Matthew', 'theme': 'New testament', 'description':"brief description",
-            'books': ['mat'], 'videoLink': 'https://www.youtube.com/biblevideos/vid',
+        {'title':'Overview: Matthew', 'series': 'New testament', 'description':"brief description",
+            'references': [{"bookCode": "mat","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid',
             'status':True},
-        {'title':'Overview: Exodus', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['exo'], 'videoLink': 'https://www.youtube.com/biblevideos/vid', 'status':True}
+        {'title':'Overview: Exodus', 'series': 'Old testament', 'description':"brief description",
+            'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid', 'status':True}
     ]
     resp, source_name = check_post(post_data)
     assert resp.status_code == 201
 
     # single data object instead of list
     headers = {"contentType": "application/json", "accept": "application/json"}
-    data =  {'title':'Overview: Acts of Apostles', 'theme': 'Old testament'}
+    data =  {'title':'Overview: Acts of Apostles', 'series': 'Old testament'}
     response = client.put(UNIT_URL+source_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     # data object with missing mandatory fields
     data = [
-        {'theme': 'New testament',
+        {'series': 'New testament',
         "videoLink":"http://anotherplace.com/something"}
             ]
     response = client.put(UNIT_URL+source_name, headers=headers_auth, json=data)
@@ -313,7 +399,7 @@ def test_put_incorrect_data():
     # incorrect data values in fields
 
     data = [
-        {'title':'Overview: Acts of Apostles', 'books': 'acts'}
+        {'title':'Overview: Acts of Apostles', 'references': 'acts'}
     ]
     response = client.put(UNIT_URL+source_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
@@ -325,7 +411,7 @@ def test_put_incorrect_data():
     assert_input_validation_error(response)
 
     data = [
-        {'title':'Overview: Acts of Apostles', 'books': [1,2,3]}
+        {'title':'Overview: Acts of Apostles', 'references': [1,2,3]}
     ]
     response = client.put(UNIT_URL+source_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
@@ -346,18 +432,25 @@ def test_put_incorrect_data():
 def test_soft_delete():
     '''check soft delete in infographics'''
     data = [
-        {'title':'Words of Jesus', 'theme': 'New testament',
+        {'title':'Words of Jesus', 'series': 'New testament',
             'description':"brief description",
-            'books': ['mat', 'mrk', 'luk', 'jhn'],
+            'references': [{"bookCode": "mat","chapter": 10,"verseStart": 1},
+            {"bookCode": "mrk","chapter": 0,},
+            {"bookCode": "luk","chapter": 10},
+            {"bookCode": "jhn","chapter": 10,"verseStart": 1}],
             'videoLink': 'https://www.youtube.com/biblevideos/vid',
             'status':True},
-        {'title':'Miracles of Jesus', 'theme': 'New testament', 'description':"brief description",
-            'books': ['mat', 'mrk', 'luk', 'jhn'],
+        {'title':'Miracles of Jesus', 'series': 'New testament', 'description':"brief description",
+            'references': [{"bookCode": "mat","chapter": 10,"verseStart": 1},
+            {"bookCode": "mrk","chapter": 0,},
+            {"bookCode": "luk","chapter": 11},
+            {"bookCode": "jhn","chapter": 11,"verseStart": 5}],
             'videoLink': 'https://www.youtube.com/biblevideos/vid',
             'status':True},
-        {'title':'Miracles the Israelites saw', 'theme': 'Old testament',
+        {'title':'Miracles the Israelites saw', 'series': 'Old testament',
             'description':"brief description",
-            'books': ['exo'], 'videoLink': 'https://www.youtube.com/biblevideos/vid', 'status':True}
+            'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid', 'status':True}
     ]
 
     delete_data = [
@@ -398,13 +491,16 @@ def test_created_user_can_only_edit():
     
     #create bible videos
     data = [
-        {'title':'Overview: Acts of Apostles', 'theme': 'New testament',
+        {'title':'Overview: Acts of Apostles', 'series': 'New testament',
             'description':"brief description",
-            'books': ['act'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'},
-        {'title':'Overview: Matthew', 'theme': 'New testament', 'description':"brief description",
-            'books': ['mat'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'},
-        {'title':'Overview: Exodus', 'theme': 'Old testament', 'description':"brief description",
-            'books': ['exo'], 'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+            'references': [{"bookCode": "act","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Matthew', 'series': 'New testament', 'description':"brief description",
+            'references': [{"bookCode": "mat","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'},
+        {'title':'Overview: Exodus', 'series': 'Old testament', 'description':"brief description",
+            'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1}],
+             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
     resp = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
     assert resp.status_code == 201
@@ -413,7 +509,7 @@ def test_created_user_can_only_edit():
     #update dictionary with created SA user
     new_data = [
         {'title':'Overview: Matthew', 'active': False},
-        {'title':'Overview: Acts of Apostles', 'theme': 'New testament history'},
+        {'title':'Overview: Acts of Apostles', 'series': 'New testament history'},
         {'title':'Overview: Exodus', 'videoLink': 'https://www.youtube.com/biblevideos/newvid'}
     ]
     new_response = client.put(UNIT_URL+source_name,headers=headers_auth, json=new_data)
@@ -429,9 +525,10 @@ def test_created_user_can_only_edit():
 def test_get_access_with_user_roles_and_apps():
     """Test get filter from apps and with users having different permissions"""
     data = [
-    	{'title':'Overview: Acts of Apostles', 'theme': 'New testament',
+    	{'title':'Overview: Acts of Apostles', 'series': 'New testament',
             'description':"brief description",
-            'books': ['act'], 'videoLink': 'https://www.youtube.com/biblevideos/vid',
+            'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1}],
+            'videoLink': 'https://www.youtube.com/biblevideos/vid',
             'status':True}
     ]
     contetapi_get_accessrule_checks_app_userroles("biblevideo",UNIT_URL,data)

@@ -93,6 +93,12 @@ VACHAN_SUPPORT_EMAIL_CREDS="smtps://<email-id>:<password>:<email-service>:<smtp-
 VACHAN_SUPPORT_EMAIL="<email-id>"
 ```
 
+To re-create SSL certificates, follow instructions [here](https://mindsers.blog/post/https-using-nginx-certbot-docker/)
+
+```
+docker-compose -f production.yml run --rm certbot renew
+```
+
 ### To start the app
 
 ```

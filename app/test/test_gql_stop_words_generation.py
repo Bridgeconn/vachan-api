@@ -82,12 +82,12 @@ QRY_GENERATE_SW = """
 """
 
 update_obj1 = {
-        "stopWord": "कहता",
+        "stopWord": "उसका",
         "active": False,
         "metaData": "{\"type\": \"verb\"}"
     }
 update_obj2 = {
-        "stopWord": "गए",
+        "stopWord": "हम",
         "active": False,
     }
 update_wrong_obj =  {

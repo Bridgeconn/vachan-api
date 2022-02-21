@@ -53,7 +53,7 @@ class Query(graphene.ObjectType):
 
     licenses = graphene.List(types.License,
         description="Query uploaded licenses in vachan-db", license_code=graphene.String(),
-        license_name=graphene.String(), permission=types.LicensePermission(),
+        license_name=graphene.String(), permission=types.SourcePermissions(),
         active=graphene.Boolean(), skip=graphene.Int(), limit=graphene.Int())
     def resolve_licenses(self, info, license_code=None, license_name=None,
         permission=None, active=True,
@@ -94,13 +94,13 @@ class Query(graphene.ObjectType):
         language_code=graphene.String(
             description="language code as per bcp47(usually 2 letter code)"),
         license_code=graphene.String(),
-        access_tag = graphene.List(graphene.String),
+        access_tag = graphene.List(types.SourcePermissions),
         active=graphene.Boolean(), latest_revision=graphene.Boolean(),
         skip=graphene.Int(), limit=graphene.Int())
     def resolve_contents(self, info, content_type=None, version_abbreviation=None,#pylint: disable=too-many-locals
         revision=None, language_code=None, license_code=None, active=True,
         latest_revision=True, skip=0, limit=100,metadata=None,
-        access_tag= None):
+        access_tag= types.SourcePermissions.CONTENT.name):#pylint: disable=no-member
         '''resolver'''
         log.info('In GraphQL Get Contents(Sources)')
         if access_tag:
@@ -204,11 +204,12 @@ class Query(graphene.ObjectType):
     bible_videos = graphene.List(types.BibleVideo,
         description="Query Bible Videos listed in vachan-db",
         source_name=graphene.String(required=True),
+        title=graphene.String(), series=graphene.String(),search_word=graphene.String(),
         book_code=graphene.String(description="3 letter code like, gen, mat etc"),
-        title=graphene.String(), theme=graphene.String(),
+        chapter=graphene.Int(),verse=graphene.Int(),
         active=graphene.Boolean(), skip=graphene.Int(), limit=graphene.Int())
-    def resolve_bible_videos(self, info, source_name, book_code=None, title=None, theme=None,
-        active=True, skip=0, limit=100):
+    def resolve_bible_videos(self, info, source_name, book_code=None, title=None, series=None,#pylint: disable=too-many-locals
+        search_word=None,chapter=None,verse=None, active=True, skip=0, limit=100):
         '''resolver'''
         log.info('In GraphQL Get Bible Videos')
         db_ = info.context["request"].db_session
@@ -218,8 +219,9 @@ class Query(graphene.ObjectType):
         req.path_params["source_name"] = source_name
         results = content_apis.get_biblevideo(request = req,
             source_name =source_name, book_code = book_code,
-            title =title, theme = theme, skip = skip, limit = limit,
-            user_details =user_details, db_ = db_, active=active)
+            title =title, series = series, skip = skip, limit = limit,
+            user_details =user_details, db_ = db_, active=active,
+            search_word=search_word,chapter=chapter,verse=verse)
         return results
 
     bible_contents = graphene.List(types.BibleContent,

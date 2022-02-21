@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 
 from dependencies import get_db, log
-from schema import schemas, schemas_nlp, schema_auth
+from schema import schemas, schemas_nlp, schema_auth, schema_content
 from crud import nlp_crud, projects_crud, nlp_sw_crud
 from custom_exceptions import GenericException
 from routers import content_apis
@@ -230,7 +230,7 @@ async def get_progress(request: Request,project_id:int=Query(...,example="102200
         sentence_id_list, sentence_id_range)
 
 @router.get('/v2/autographa/project/versification', status_code=200,
-    response_model= schemas.Versification,
+    response_model= schema_content.Versification,
     tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def get_project_versification(request: Request,project_id:int=Query(...,example="1022004"),

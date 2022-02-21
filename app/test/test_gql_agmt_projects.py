@@ -269,8 +269,8 @@ agmtProjects(projectName:$projectname){
     "version": "TTT",
     "year": 2020,
     "accessPermissions": [
-      types.SourcePermissions.CONTENT.value,
-      types.SourcePermissions.OPENACCESS.value
+      types.SourcePermissions.CONTENT.name,
+      types.SourcePermissions.OPENACCESS.name
     ],
   }
 }

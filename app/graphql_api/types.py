@@ -23,21 +23,29 @@ class Language(graphene.ObjectType):#pylint: disable=too-few-public-methods
     scriptDirection = graphene.String()
     metaData = Metadata()
 
-class LicensePermission(graphene.Enum):
-    '''available choices for permission'''
-    commercial = "Commercial_use"
-    modification = "Modification"
-    distribution = "Distribution"
-    patent = "Patent_use"
-    private = "Private_use"
+# class LicensePermission(graphene.Enum):
+#     '''available choices for permission'''
+#     commercial = "Commercial_use"
+#     modification = "Modification"
+#     distribution = "Distribution"
+#     patent = "Patent_use"
+#     private = "Private_use"
 
+class SourcePermissions(graphene.Enum):
+    '''To specify source access permisions'''
+    CONTENT = "content"
+    OPENACCESS = "open-access"
+    PUBLISHABLE = "publishable"
+    DOWNLOADABLE = "downloadable"
+    DERIVABLE = "derivable"
+    RESEARCHUSE = "research-use"
 
 class License(graphene.ObjectType):#pylint: disable=too-few-public-methods
     '''Return object of licenses'''
     name = graphene.String()
     code = graphene.String()
     license = graphene.String()
-    permissions = graphene.List(LicensePermission)
+    permissions = graphene.List(SourcePermissions)
     active = graphene.Boolean()
 
 class Version(graphene.ObjectType):#pylint: disable=too-few-public-methods
@@ -165,10 +173,10 @@ class Infographic(graphene.ObjectType):#pylint: disable=too-few-public-methods
 class BibleVideo(graphene.ObjectType):#pylint: disable=too-few-public-methods
     '''Response for BibleVideo'''
     title = graphene.String()
-    books = graphene.List(graphene.String)
+    references = graphene.List(graphene.JSONString)
     videoLink = graphene.String()
     description = graphene.String()
-    theme = graphene.String()
+    series = graphene.String()
     active = graphene.Boolean()
 
 class TranslationDocumentType(graphene.Enum):
@@ -346,10 +354,10 @@ class InputAddLicense(graphene.InputObjectType):
     code = graphene.String(required=True,\
         description="pattern: '^[a-zA-Z0-9\\.\\_\\-]+$'")
     license = graphene.String(required=True)
-    permissions = graphene.List(LicensePermission, \
-        default_value =["Private_use"],\
-        description="Expecting a list \
-        [ Commercial_use, Modification, Distribution, Patent_use, Private_use ]")
+    permissions = graphene.List(SourcePermissions,
+        default_value = [SourcePermissions.OPENACCESS.value],#pylint: disable=no-member
+        description="Expecting a list\
+        [content, open-access, publishable, downloadable, derivable, research-use]")
 
 class InputEditLicense(graphene.InputObjectType):
     """Edit license Input"""
@@ -357,10 +365,10 @@ class InputEditLicense(graphene.InputObjectType):
     code = graphene.String(required=True,description=\
         "pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
     license = graphene.String()
-    permissions = graphene.List(LicensePermission, default_value =\
-        ["Private_use"],\
+    permissions = graphene.List(SourcePermissions,
+        default_value = [SourcePermissions.OPENACCESS.value],#pylint: disable=no-member
         description="Expecting a list\
-        [ Commercial_use, Modification, Distribution, Patent_use, Private_use ]")
+        [content, open-access, publishable, downloadable, derivable, research-use]")
     active = graphene.Boolean()
 
 class InputAddVersion(graphene.InputObjectType):
@@ -381,14 +389,6 @@ class InputEditVersion(graphene.InputObjectType):
     revision = graphene.Int()
     metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String")
 
-class SourcePermissions(graphene.Enum):
-    '''To specify source access permisions'''
-    CONTENT = "content"
-    OPENACCESS = "open-access"
-    PUBLISHABLE = "publishable"
-    DOWNLOADABLE = "downloadable"
-    DERIVABLE = "derivable"
-
 class InputAddSource(graphene.InputObjectType):
     """Add Source Input"""
     contentType  = graphene.String(required=True)
@@ -401,7 +401,9 @@ class InputAddSource(graphene.InputObjectType):
     year = graphene.Int(required=True)
     license = graphene.String(default_value = "CC-BY-SA",\
         description="pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
-    accessPermissions = graphene.List(graphene.String,
+    # accessPermissions = graphene.List(graphene.String,358
+    #     default_value = [SourcePermissions.CONTENT.value])#pylint: disable=no-member
+    accessPermissions = graphene.List(SourcePermissions,
         default_value = [SourcePermissions.CONTENT.value])#pylint: disable=no-member
     metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String",
         default_value = {})
@@ -417,7 +419,9 @@ class InputEditSource(graphene.InputObjectType):
     revision = graphene.String(description="default: 1")
     year = graphene.Int()
     license = graphene.String(description="pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
-    accessPermissions = graphene.List(graphene.String,
+    # accessPermissions = graphene.List(graphene.String,
+    #     default_value = [SourcePermissions.CONTENT.value])#pylint: disable=no-member
+    accessPermissions = graphene.List(SourcePermissions,
         default_value = [SourcePermissions.CONTENT.value])#pylint: disable=no-member
     metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String",
         default_value = {})
@@ -522,14 +526,26 @@ class AGMTUserEditInput(graphene.InputObjectType):
     metaData = graphene.JSONString()
     active = graphene.Boolean()
 
+class BibleVideoRefObj(graphene.InputObjectType):
+    """BibleVideoRefObj input"""
+    bookCode = graphene.String(required=True)
+    chapter = graphene.Int(required=True)
+    verseStart = graphene.Int(default_value = None)
+    verseEnd = graphene.Int(default_value = None)
+
 class BibleVideoDict(graphene.InputObjectType):
     """BibleVideo input"""
     title = graphene.String(required=True)
-    books = graphene.List(graphene.String,required=True,\
-        description="provide book codes")
+    references = graphene.List(BibleVideoRefObj,required=True,\
+        description="""{
+        'bookCode': '1ki',
+        'chapter': 10,
+        'verseStart': 1,
+        'verseEnd': 7
+      }""")
     videoLink = graphene.String(required=True)
     description = graphene.String(required=True)
-    theme = graphene.String(required=True)
+    series = graphene.String(required=True)
     active = graphene.Boolean(default_value = True)
 
 class InputAddBibleVideo(graphene.InputObjectType):
@@ -541,10 +557,16 @@ class InputAddBibleVideo(graphene.InputObjectType):
 class BibleVideoEditDict(graphene.InputObjectType):
     """BibleVideo Edit input"""
     title = graphene.String(required=True)
-    books = graphene.List(graphene.String)
+    references = graphene.List(BibleVideoRefObj,
+        description="""{
+        'bookCode': '1ki',
+        'chapter': 10,
+        'verseStart': 1,
+        'verseEnd': 7
+      }""")
     videoLink = graphene.String()
     description = graphene.String()
-    theme = graphene.String()
+    series = graphene.String()
     active = graphene.Boolean(default_value = True)
 
 class InputEditBibleVideo(graphene.InputObjectType):
@@ -682,6 +704,12 @@ class App(graphene.Enum):
     AG = "Autographa"
     VACHAN = "Vachan-online or vachan-app"
     VACHANADMIN = "VachanAdmin"
+    API = "API-user"
+
+class AppInput(graphene.Enum):
+    '''available choices for permission'''
+    AG = "Autographa"
+    VACHAN = "Vachan-online or vachan-app"
     API = "API-user"
 
 class RegisterInput(graphene.InputObjectType):

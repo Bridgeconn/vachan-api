@@ -403,6 +403,7 @@ def test_drafts():
 
 def test_get_token_sentences():
     '''Check if draft-meta is properly segemneted according to specifed token occurence'''
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     resp = add_project(project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
@@ -432,7 +433,7 @@ def test_get_token_sentences():
             for meta in sent['draftMeta']:
                 if meta[0] == occur['offset']:
                     found_slice = True
-        # assert found_slice ---------------------------------------------> Error
+        assert found_slice
 
     post_obj_list = [
       {

@@ -37,15 +37,15 @@ services:
   restart: always
   environment: 
    - POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
-   - POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
+   - POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-newpassword}
    - POSTGRES_DB=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
-   - POSTGRES_HOST_AUTH_METHOD=trust
+   - POSTGRES_HOST_AUTH_METHOD=scram-sha-256
   logging:
    options:
     max-size: 10m
     max-file: "3"
-  expose:
-   - 5432
+  #expose:
+   #- 5432
   ports:
    # HOST:CONTAINER
    - "5434:5432"
@@ -72,7 +72,7 @@ services:
    - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
    - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
    - VACHAN_POSTGRES_PORT=5432
-   - VACHAN_KRATOS_PUBLIC_URL=http://kratos:4433/
+   - VACHAN_KRATOS_PUBLIC_URL=${VACHAN_KRATOS_PUBLIC_URL:-http://kratos:4433/}
    - VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
    - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME}
    - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD}
@@ -93,22 +93,29 @@ services:
 
 # Web Server
  web-server:
-  build:
-   context: ./nginx
-   dockerfile: Dockerfile
-  environment:
-   - domain=${VACHAN_DOMAIN:-localhost}
+  image: nginx:latest
   ports:
    - 80:80
    - 443:443
+  restart: always
+  expose:
+   - 80
+   - 443
   depends_on:
    - vachan-api
-  healthcheck:
-   timeout: 45s
-   interval: 10s
-   retries: 10
   volumes:
-    - logs-vol:/var/log/nginx
+   - ./nginx/prod/app.conf:/etc/nginx/conf.d/default.conf:ro
+   - ./certbot/www:/var/www/certbot/:ro
+   - ./certbot/conf/:/etc/nginx/ssl/:ro
+  networks:
+   - my-network
+
+
+ certbot:
+  image: certbot/certbot:latest
+  volumes:
+   - ./certbot/www/:/var/www/certbot/:rw
+   - ./certbot/conf/:/etc/letsencrypt/:rw
   networks:
    - my-network
 

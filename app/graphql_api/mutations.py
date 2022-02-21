@@ -1,7 +1,7 @@
 '''GraphQL queries and mutations'''
 #pylint: disable=too-many-lines
 import graphene
-from schema import schemas, schemas_nlp, schema_auth
+from schema import schemas, schemas_nlp, schema_auth, schema_content
 from routers import translation_apis , content_apis, auth_api
 from graphql_api import types, utils
 from auth.authentication import get_user_or_none_graphql
@@ -329,7 +329,7 @@ class AddBible(graphene.Mutation):
         schema_list = []
         for item in books:
             schema_model = utils.convert_graphene_obj_to_pydantic\
-            (item,schemas.BibleBookUpload)
+            (item,schema_content.BibleBookUpload)
             schema_list.append(schema_model)
         # result =contents_crud.upload_bible_books(db_=db_, source_name=source,
         # books=schema_list, user_id=None)
@@ -373,7 +373,7 @@ class EditBible(graphene.Mutation):
         schema_list = []
         for item in books:
             schema_model = utils.convert_graphene_obj_to_pydantic\
-            (item,schemas.BibleBookEdit)
+            (item,schema_content.BibleBookEdit)
             schema_list.append(schema_model)
         # result =contents_crud.update_bible_books(db_=db_, source_name=source,
         # books=schema_list, user_id=None)
@@ -417,7 +417,7 @@ class AddAudioBible(graphene.Mutation):
         schema_list = []
         for item in audio_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
-            (item,schemas.AudioBibleUpload)
+            (item,schema_content.AudioBibleUpload)
             schema_list.append(schema_model)
         # result =contents_crud.upload_bible_audios(db_=db_, source_name=source,
         # audios=schema_list, user_id=None)
@@ -460,7 +460,7 @@ class EditAudioBible(graphene.Mutation):
         schema_list = []
         for item in audio_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
-            (item,schemas.AudioBibleEdit)
+            (item,schema_content.AudioBibleEdit)
             schema_list.append(schema_model)
         # result =contents_crud.update_bible_audios(db_=db_, source_name=source,
         # audios=schema_list, user_id=None)
@@ -503,7 +503,7 @@ class AddCommentary(graphene.Mutation):
         schema_list = []
         for item in comm_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
-            (item,schemas.CommentaryCreate)
+            (item,schema_content.CommentaryCreate)
             schema_list.append(schema_model)
         # result =contents_crud.upload_commentaries(db_=db_, source_name=source,
         # commentaries=schema_list, user_id=None)
@@ -548,7 +548,7 @@ class EditCommentary(graphene.Mutation):
         schema_list = []
         for item in comm_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
-            (item,schemas.CommentaryEdit)
+            (item,schema_content.CommentaryEdit)
             schema_list.append(schema_model)
         # result =contents_crud.update_commentaries(db_=db_, source_name=source,
         # commentaries=schema_list, user_id=None)
@@ -723,7 +723,7 @@ class AddBibleVideo(graphene.Mutation):
         schema_list = []
         for item in video_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
-            (item,schemas.BibleVideoUpload)
+            (item,schema_content.BibleVideoUpload)
             schema_list.append(schema_model)
         # result =contents_crud.upload_bible_videos(db_=db_, source_name=source,
         # videos=schema_list, user_id=None)
@@ -734,12 +734,12 @@ class AddBibleVideo(graphene.Mutation):
         video_content_list = []
         for item in result:
             comm_var = types.BibleVideo(
-                title = item.title,
-                books = item.books,
-                videoLink = item.videoLink,
-                description = item.description,
-                theme = item.theme,
-                active = item.active
+                title = item["title"],
+                references = item["references"],
+                videoLink = item["videoLink"],
+                description = item["description"],
+                series = item["series"],
+                active = item["active"]
             )
             video_content_list.append(comm_var)
         message = response['message']
@@ -768,7 +768,7 @@ class EditBibleVideo(graphene.Mutation):
         schema_list = []
         for item in video_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
-            (item,schemas.BibleVideoEdit)
+            (item,schema_content.BibleVideoEdit)
             schema_list.append(schema_model)
         # result =contents_crud.update_bible_videos(db_=db_, source_name=source,
         # videos=schema_list, user_id=None)
@@ -779,12 +779,12 @@ class EditBibleVideo(graphene.Mutation):
         video_content_list = []
         for item in result:
             comm_var = types.BibleVideo(
-                title = item.title,
-                books = item.books,
-                videoLink = item.videoLink,
-                description = item.description,
-                theme = item.theme,
-                active = item.active
+                title = item["title"],
+                references = item["references"],
+                videoLink = item["videoLink"],
+                description = item["description"],
+                series = item["series"],
+                active = item["active"]
             )
             video_content_list.append(comm_var)
         message = response['message']
@@ -813,7 +813,7 @@ class AddDictionary(graphene.Mutation):
         schema_list = []
         for item in dict_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
-            (item,schemas.DictionaryWordCreate)
+            (item,schema_content.DictionaryWordCreate)
             schema_list.append(schema_model)
         # result =contents_crud.upload_dictionary_words(db_=db_, source_name=source,
         # dictionary_words=schema_list, user_id=None)
@@ -855,7 +855,7 @@ class EditDictionary(graphene.Mutation):
         schema_list = []
         for item in dict_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
-            (item,schemas.DictionaryWordEdit)
+            (item,schema_content.DictionaryWordEdit)
             schema_list.append(schema_model)
         # result =contents_crud.update_dictionary_words(db_=db_, source_name=source,
         # dictionary_words=schema_list, user_id=None)
@@ -897,7 +897,7 @@ class AddInfographic(graphene.Mutation):
         schema_list = []
         for item in dict_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
-            (item,schemas.InfographicCreate)
+            (item,schema_content.InfographicCreate)
             schema_list.append(schema_model)
         response = await content_apis.add_infographics(request=req,
             source_name=source, infographics= schema_list,
@@ -938,7 +938,7 @@ class EditInfographic(graphene.Mutation):
         schema_list = []
         for item in dict_data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
-            (item,schemas.InfographicEdit)
+            (item,schema_content.InfographicEdit)
             schema_list.append(schema_model)
         # result =contents_crud.update_infographics(db_=db_, source_name=source,
         # infographics=schema_list, user_id=None)
@@ -1160,7 +1160,7 @@ class Register(graphene.Mutation):
     """Mutation class for Register User"""
     class Arguments:#pylint: disable=too-few-public-methods,E1101
         """Arguments declaration for the mutation"""
-        app_type = types.App(default_value=types.App.API.value)
+        app_type = types.AppInput(default_value=types.AppInput.API.value)
         registration_args = types.RegisterInput()
 
     registered_details = graphene.Field(types.RegisterResponse)
