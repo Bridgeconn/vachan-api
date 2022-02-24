@@ -175,6 +175,14 @@ def test_get_after_data_upload():
     for item in response.json():
         assert item['details']['type'] == "even"
 
+    # search word from details
+    response = client.get(UNIT_URL+source_name+'?search_word=odd',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 3
+    for item in response.json():
+        assert item['details']['type'] == "odd"
+
+
 def test_get_incorrect_data():
     '''Check for input validations in get'''
 

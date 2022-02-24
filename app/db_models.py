@@ -1,9 +1,9 @@
 ''' Defines SQL Alchemy models for each Database Table'''
 
 from enum import Enum
-from sqlalchemy import Column, Integer, String, JSON, ARRAY, Float
+from sqlalchemy import Column, Integer, String, JSON, ARRAY, Float, text
 from sqlalchemy import Boolean, ForeignKey, DateTime
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import UniqueConstraint, Index
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, Session
 from sqlalchemy.ext.declarative import declared_attr
@@ -13,6 +13,8 @@ from sqlalchemy.ext.hybrid import hybrid_property
 
 from database import Base
 from custom_exceptions import GenericException
+
+dynamicTables = {}
 
 class ContentTypeName(Enum):
     '''The string literals used as value of ContentType field in ContentType
@@ -142,9 +144,12 @@ class Dictionary(): # pylint: disable=too-few-public-methods
     wordId = Column('word_id', Integer,
         Sequence('word_id_seq', start=100001, increment=1), primary_key=True)
     word = Column('word', String, unique=True)
-    details = Column('details', JSON)
+    details = Column('details', JSONB)
     active = Column('active', Boolean)
-    __table_args__ = {'extend_existing': True}
+
+    __table_args__ = (
+        {'extend_existing': True},
+                     )
 
 class Infographic(): # pylint: disable=too-few-public-methods
     '''Corresponds to the dynamically created infographics tables in vachan Db(postgres)'''
@@ -253,7 +258,6 @@ class BibleContentCleaned(): # pylint: disable=too-few-public-methods
         {'extend_existing': True}
                      )
 
-dynamicTables = {}
 def create_dynamic_table(source_name, table_name, content_type):
     '''To map or create one dynamic table based on the content Type'''
     if content_type == ContentTypeName.BIBLE.value:
@@ -272,6 +276,11 @@ def create_dynamic_table(source_name, table_name, content_type):
     elif content_type == ContentTypeName.DICTIONARY.value:
         dynamicTables[source_name] = type(
             table_name,(Dictionary, Base,),{"__tablename__": table_name})
+        new_index = Index(table_name+'_word_details_ix',  # pylint: disable=W0612
+            text("to_tsvector('simple', word || ' ' ||"+\
+            "jsonb_to_tsvector('simple', details, '[\"string\", \"numeric\"]') || ' ')"),
+            postgresql_using="gin",
+            )
     elif content_type == ContentTypeName.INFOGRAPHIC.value:
         dynamicTables[source_name] = type(
             table_name,(Infographic, Base,),{"__tablename__": table_name})
