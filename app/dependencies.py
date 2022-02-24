@@ -22,3 +22,12 @@ def get_db():
     finally:
         # pass
         db_.close()
+
+class AddHiddenInput:#pylint: disable=too-few-public-methods
+    '''work as dependancy return the value same as it is
+    pass to it for making a hiddent input field'''
+    def __init__(self, value):
+        self.value= value
+
+    def __call__(self):
+        return self.value

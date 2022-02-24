@@ -4,7 +4,7 @@ from fastapi import APIRouter, Query, Body, Depends, Path , Request
 from sqlalchemy.orm import Session
 
 from schema import schemas,schemas_nlp, schema_auth, schema_content
-from dependencies import get_db, log
+from dependencies import get_db, log, AddHiddenInput
 from custom_exceptions import NotAvailableException, AlreadyExistsException
 from crud import structurals_crud, contents_crud
 from auth.authentication import get_auth_access_check_decorator ,\
@@ -241,8 +241,9 @@ async def get_source(request: Request,content_type: str=Query(None, example="com
     active: bool = True, latest_revision: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none),
-    db_: Session = Depends(get_db), operates_on=schema_auth.ResourceType.CONTENT.value,
-    filtering_required=True):
+    db_: Session = Depends(get_db),
+    operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.CONTENT.value)),
+    filtering_required=Depends(AddHiddenInput(value=True))):
     '''Fetches all sources and their details.
     * optional query parameters can be used to filter the result set
     * If revision is not explictly set or latest_revision is not set to False,
@@ -584,7 +585,8 @@ async def get_dictionary_word(request: Request,
     details: schemas.MetaDataPattern=Query(None, example='{"type":"person"}'), active: bool=True,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db),
-    operates_on=schema_auth.ResourceType.CONTENT.value):
+    operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.CONTENT.value))):
+    #operates_on=schema_auth.ResourceType.CONTENT.value
     '''fetches list of dictionary words and all available details about them.
     Using the searchIndex appropriately, it is possible to get
     * All words starting with a letter
@@ -786,7 +788,7 @@ async def extract_text_contents(request:Request, #pylint: disable=W0613
     content_type:str=Query(None, example="commentary"),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details = Depends(get_user_or_none), db_: Session = Depends(get_db),
-    operates_on=schema_auth.ResourceType.RESEARCH.value):
+    operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.RESEARCH.value))):
     '''A generic API for all content type tables to get just the text contents of that table
     that could be used for translation, as corpus for NLP operations like SW identification.
     If source_name is provided, only that filter will be considered over content_type & language.'''
