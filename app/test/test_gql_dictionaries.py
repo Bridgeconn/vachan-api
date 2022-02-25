@@ -185,9 +185,9 @@ def test_get_after_data_upload():
     "wordList": [
       {"word": "one", "details":"{\"digit\":1,\"type\":\"odd\"}"},
     	{"word": "two", "details":"{\"digit\":2,\"type\":\"even\"}"},
-    	{"word": "three", "details":"{\"digit\":3,\"type\":\"even\"}"},
+    	{"word": "three", "details":"{\"digit\":3,\"type\":\"odd\"}"},
     	{"word": "four", "details":"{\"digit\":4,\"type\":\"even\"}"},
-    	{"word": "five", "details":"{\"digit\":5,\"type\":\"even\"}"}
+    	{"word": "five", "details":"{\"digit\":5,\"type\":\"odd\"}"}
     ]
   }
 }    
@@ -240,6 +240,19 @@ def test_get_after_data_upload():
     """
     executed3 = gql_request(query3,headers=headers_auth)
     assert_not_available_content_gql(executed3["data"]["dictionaryWords"])    
+
+    # search word from details
+    query6 = """
+      {
+  dictionaryWords(sourceName:"gu_TTT_1_dictionary",searchWord:"odd"){
+    word,
+    details
+  }
+}
+    """
+    executed6 = gql_request(query6,headers=headers_auth)
+    print(executed6)
+    assert len(executed6["data"]["dictionaryWords"]) == 3
 
 def test_get_incorrect_data():
     '''Check for input validations in get'''
