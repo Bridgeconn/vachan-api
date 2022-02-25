@@ -505,7 +505,7 @@ class Query(graphene.ObjectType):
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
-        req.scope['path'] = "/v2/translation/gloss"
+        req.scope['path'] = "/v2/nlp/gloss"
         # return nlp_crud.glossary(db_, source_language, target_language, token,
         # context=context,token_offset=token_offset)
         results = translation_apis.get_glossary(request=req, source_language=source_language,

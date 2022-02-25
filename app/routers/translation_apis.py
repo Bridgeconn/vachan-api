@@ -332,8 +332,8 @@ async def suggest_translation(request: Request,
     return nlp_crud.auto_translate(db_, sentence_list, source_language, target_language,
         punctuations=punctuations, stopwords=stopwords)
 
-@router.get('/v2/translation/gloss', response_model=schemas_nlp.GlossOutput,
-    status_code=200, tags=["Translation Suggestion"])
+@router.get('/v2/nlp/gloss', response_model=schemas_nlp.GlossOutput,
+    status_code=200, tags=["Nlp"])
 @get_auth_access_check_decorator
 async def get_glossary(request: Request,
     source_language:schemas.LangCodePattern=Query(...,example="en"),
@@ -350,8 +350,8 @@ async def get_glossary(request: Request,
     return nlp_crud.glossary(db_, source_language, target_language, token,
     context=context, token_offset=token_offset)
 
-@router.post('/v2/translation/learn/gloss', response_model=schemas_nlp.GlossUpdateResponse,
-    status_code=201, tags=["Translation Suggestion"])
+@router.post('/v2/nlp/learn/gloss', response_model=schemas_nlp.GlossUpdateResponse,
+    status_code=201, tags=["Nlp"])
 @get_auth_access_check_decorator
 async def add_gloss(request: Request,
     source_language:schemas.LangCodePattern=Query(...,example='en'),
@@ -366,8 +366,8 @@ async def add_gloss(request: Request,
         token_translations)
     return { "message": "Added to glossary", "data":tw_data }
 
-@router.post('/v2/translation/learn/alignment', response_model=schemas_nlp.GlossUpdateResponse,
-    status_code=201, tags=["Translation Suggestion"])
+@router.post('/v2/nlp/learn/alignment', response_model=schemas_nlp.GlossUpdateResponse,
+    status_code=201, tags=["Nlp"])
 @get_auth_access_check_decorator
 async def add_alignments(request: Request,
     source_language:schemas.LangCodePattern, target_language:schemas.LangCodePattern,
@@ -430,16 +430,16 @@ async def add_stopwords(request: Request,
     msg = f"{len(result)} stopwords added successfully"
     return {"message": msg, "data": result}
 
-@router.post('/v2/translation/stopwords/generate',
+@router.post('/v2/nlp/stopwords/generate',
     response_model=schemas_nlp.StopWordsGenerateResponse, response_model_exclude_none=True,
-    status_code=201, tags=['Lookups'])
+    status_code=201, tags=['Nlp'])
 @get_auth_access_check_decorator
 async def generate_stopwords(request: Request, background_tasks: BackgroundTasks,
     language_code:schemas.LangCodePattern=Query(...,example="bi"),
     use_server_data:bool=True, gl_lang_code:schemas.LangCodePattern=Query(None,example="hi"),
     user_details =Depends(get_user_or_none),
     sentence_list:List[schemas_nlp.SentenceInput]=Body(None), db_:Session=Depends(get_db),
-    operates_on=schema_auth.ResourceType.LOOKUP.value):
+    operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.LOOKUP.value))):
     '''Auto generate stop words for a given language'''
     log.info('In generate_stopwords')
     log.debug('language_code:%s, use_server_data:%s, gl_lang_code:%s, sentence_list:%s',
