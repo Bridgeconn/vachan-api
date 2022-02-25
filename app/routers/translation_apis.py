@@ -16,6 +16,9 @@ router = APIRouter()
 #pylint: disable=too-many-arguments,unused-argument
 ############## Autographa Projects ##########################
 @router.get('/v2/autographa/projects', response_model=List[schemas_nlp.TranslationProject],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}},
     status_code=200, tags=['Autographa-Project management'])
 @get_auth_access_check_decorator
 async def get_projects(request: Request,
@@ -35,6 +38,8 @@ async def get_projects(request: Request,
 
 @router.post('/v2/autographa/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse}},
     tags=['Autographa-Project management'])
 @get_auth_access_check_decorator
 async def create_project(request: Request,
@@ -49,6 +54,9 @@ async def create_project(request: Request,
 
 @router.put('/v2/autographa/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    500: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
     tags=['Autographa-Project management'])
 @get_auth_access_check_decorator
 async def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectEdit,
@@ -88,7 +96,11 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
             user_id=user_details['user_id'])}
 
 @router.post('/v2/autographa/project/user', status_code=201,
-    response_model=schemas_nlp.UserUpdateResponse, tags=['Autographa-Project management'])
+    response_model=schemas_nlp.UserUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}},
+    tags=['Autographa-Project management'])
 @get_auth_access_check_decorator
 async def add_user(request: Request,project_id:int, user_id:str,
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
@@ -100,7 +112,10 @@ async def add_user(request: Request,project_id:int, user_id:str,
             current_user=user_details['user_id'])}
 
 @router.put('/v2/autographa/project/user', status_code=201,
-    response_model=schemas_nlp.UserUpdateResponse, tags=['Autographa-Project management'])
+    response_model=schemas_nlp.UserUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}},tags=['Autographa-Project management'])
 @get_auth_access_check_decorator
 async def update_user(request: Request,user_obj:schemas_nlp.ProjectUser,
     user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):
@@ -114,6 +129,9 @@ async def update_user(request: Request,user_obj:schemas_nlp.ProjectUser,
 ############## Autographa Translations ##########################
 @router.get('/v2/autographa/project/tokens', response_model=List[schemas_nlp.Token],
     response_model_exclude_unset=True,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}},
     status_code=200, tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def get_tokens(request: Request, project_id:int=Query(...,example="1022004"),
@@ -138,6 +156,9 @@ async def get_tokens(request: Request, project_id:int=Query(...,example="1022004
         include_phrases = include_phrases, include_stopwords=include_stopwords)
 
 @router.put('/v2/autographa/project/tokens', response_model=schemas_nlp.TranslateResponse,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    500: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def apply_token_translations(request: Request,project_id:int=Query(...,example="1022004"),
@@ -152,6 +173,9 @@ async def apply_token_translations(request: Request,project_id:int=Query(...,exa
 
 @router.get('/v2/autographa/project/token-translations', status_code=200,
     response_model= schemas_nlp.Translation,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}},
     tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def get_token_translation(request: Request,project_id:int=Query(...,example="1022004"),
@@ -167,6 +191,9 @@ async def get_token_translation(request: Request,project_id:int=Query(...,exampl
 
 @router.put('/v2/autographa/project/token-sentences', status_code=200,
     response_model = List[schemas_nlp.Sentence],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}},
     tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def get_token_sentences(request: Request,project_id:int=Query(...,example="1022004"),
@@ -180,7 +207,11 @@ async def get_token_sentences(request: Request,project_id:int=Query(...,example=
     log.debug('project_id: %s, token:%s, occurrences:%s',project_id, token, occurrences)
     return projects_crud.get_agmt_source_per_token(db_, project_id, token, occurrences)
 
-@router.get('/v2/autographa/project/draft', status_code=200, tags=['Autographa-Translation'])
+@router.get('/v2/autographa/project/draft', status_code=200,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    415: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
+    tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def get_draft(request: Request,project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
@@ -198,8 +229,11 @@ async def get_draft(request: Request,project_id:int=Query(...,example="1022004")
         sentence_id_list, sentence_id_range, output_format=output_format)
 
 @router.get('/v2/autographa/project/sentences', status_code=200,
-    response_model_exclude_unset=True,
-    response_model=List[schemas_nlp.Sentence], tags=['Autographa-Translation'])
+    response_model_exclude_unset=True, response_model=List[schemas_nlp.Sentence],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}},
+    tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def get_project_source(request: Request,project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
@@ -215,6 +249,9 @@ async def get_project_source(request: Request,project_id:int=Query(...,example="
 
 @router.get('/v2/autographa/project/progress', status_code=200,
     response_model= schemas_nlp.Progress,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}},
     tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def get_progress(request: Request,project_id:int=Query(...,example="1022004"),
@@ -231,6 +268,9 @@ async def get_progress(request: Request,project_id:int=Query(...,example="102200
 
 @router.get('/v2/autographa/project/versification', status_code=200,
     response_model= schema_content.Versification,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}},
     tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def get_project_versification(request: Request,project_id:int=Query(...,example="1022004"),
@@ -242,6 +282,9 @@ async def get_project_versification(request: Request,project_id:int=Query(...,ex
 
 @router.put('/v2/autographa/project/suggestions', status_code=201,
     response_model=List[schemas_nlp.Sentence],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}},
     tags=["Translation Suggestion"])
 @get_auth_access_check_decorator
 async def suggest_auto_translation(request: Request,project_id:int=Query(...,example="1022004"),
@@ -260,8 +303,11 @@ async def suggest_auto_translation(request: Request,project_id:int=Query(...,exa
 
 ########### Generic Translation ##################
 @router.put('/v2/translation/tokens', response_model=List[schemas_nlp.Token],
-    response_model_exclude_unset=True,
-    status_code=200, tags=['Generic Translation'])
+    response_model_exclude_unset=True, status_code=200,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}},
+    tags=['Generic Translation'])
 @get_auth_access_check_decorator
 async def tokenize(request: Request,source_language:schemas.LangCodePattern=Query(...,example="hi"),
     sentence_list:List[schemas_nlp.SentenceInput]=Body(...),
@@ -284,7 +330,11 @@ async def tokenize(request: Request,source_language:schemas.LangCodePattern=Quer
         include_stopwords = include_stopwords)
 
 @router.put('/v2/translation/token-translate', response_model=schemas_nlp.TranslateResponse,
-    status_code=200, tags=['Generic Translation'])
+    status_code=200,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    500: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
+    tags=['Generic Translation'])
 @get_auth_access_check_decorator
 async def token_replace(request: Request,sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     token_translations:List[schemas_nlp.TokenUpdate]=Body(...),
@@ -302,7 +352,11 @@ async def token_replace(request: Request,sentence_list:List[schemas_nlp.DraftInp
         target_language, use_data_for_learning=use_data_for_learning)
     return {"message": "Tokens replaced with translations", "data": result}
 
-@router.put('/v2/translation/draft', status_code=200, tags=['Generic Translation'])
+@router.put('/v2/translation/draft', status_code=200,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    415: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
+    tags=['Generic Translation'])
 @get_auth_access_check_decorator
 async def generate_draft(request: Request,sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     doc_type:schemas_nlp.TranslationDocumentType=Query(schemas_nlp.TranslationDocumentType.USFM),
@@ -314,7 +368,9 @@ async def generate_draft(request: Request,sentence_list:List[schemas_nlp.DraftIn
     return nlp_crud.obtain_draft(sentence_list, doc_type)
 
 @router.put('/v2/translation/suggestions', response_model=List[schemas_nlp.Sentence],
-    status_code=200, tags=["Translation Suggestion"])
+    status_code=200,responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse}},
+    tags=["Translation Suggestion"])
 @get_auth_access_check_decorator
 async def suggest_translation(request: Request,
     source_language:schemas.LangCodePattern=Query(...,example="hi"),
@@ -332,7 +388,9 @@ async def suggest_translation(request: Request,
         punctuations=punctuations, stopwords=stopwords)
 
 @router.get('/v2/translation/gloss', response_model=schemas_nlp.GlossOutput,
-    status_code=200, tags=["Translation Suggestion"])
+    status_code=200,responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse}},
+    tags=["Translation Suggestion"])
 @get_auth_access_check_decorator
 async def get_glossary(request: Request,
     source_language:schemas.LangCodePattern=Query(...,example="en"),
@@ -350,7 +408,10 @@ async def get_glossary(request: Request,
     context=context, token_offset=token_offset)
 
 @router.post('/v2/translation/learn/gloss', response_model=schemas_nlp.GlossUpdateResponse,
-    status_code=201, tags=["Translation Suggestion"])
+    status_code=201,responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}},
+    tags=["Translation Suggestion"])
 @get_auth_access_check_decorator
 async def add_gloss(request: Request,
     source_language:schemas.LangCodePattern=Query(...,example='en'),
@@ -366,7 +427,10 @@ async def add_gloss(request: Request,
     return { "message": "Added to glossary", "data":tw_data }
 
 @router.post('/v2/translation/learn/alignment', response_model=schemas_nlp.GlossUpdateResponse,
-    status_code=201, tags=["Translation Suggestion"])
+    status_code=201,responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    415: {"model": schemas.ErrorResponse}},
+    tags=["Translation Suggestion"])
 @get_auth_access_check_decorator
 async def add_alignments(request: Request,
     source_language:schemas.LangCodePattern, target_language:schemas.LangCodePattern,
@@ -381,7 +445,11 @@ async def add_alignments(request: Request,
     return { "message": "Alignments used for learning", "data":tw_data }
 
 @router.get('/v2/lookup/stopwords/{language_code}', response_model=List[schemas_nlp.StopWords],
-    response_model_exclude_none=True, status_code=200, tags=["Lookups"])
+    response_model_exclude_none=True, status_code=200,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}},
+    tags=["Lookups"])
 @get_auth_access_check_decorator
 async def get_stop_words(request: Request,
     language_code:schemas.LangCodePattern=Path(...,example="hi"),
@@ -401,7 +469,10 @@ async def get_stop_words(request: Request,
 
 @router.put('/v2/lookup/stopwords/{language_code}',
     response_model=schemas_nlp.StopWordUpdateResponse, response_model_exclude_none=True,
-    status_code=201, tags=['Lookups'])
+    status_code=201,responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}},
+    tags=['Lookups'])
 @get_auth_access_check_decorator
 async def update_stop_words(request: Request,
     language_code:schemas.LangCodePattern=Path(...,example="hi"),
@@ -415,7 +486,10 @@ async def update_stop_words(request: Request,
 
 @router.post('/v2/lookup/stopwords/{language_code}',
     response_model=schemas_nlp.StopWordsAddResponse, response_model_exclude_none=True,
-    status_code=201, tags=['Lookups'])
+    status_code=201,responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}},
+    tags=['Lookups'])
 @get_auth_access_check_decorator
 async def add_stopwords(request: Request,
     language_code:schemas.LangCodePattern=Path(...,example="hi"),
@@ -431,7 +505,9 @@ async def add_stopwords(request: Request,
 
 @router.post('/v2/translation/stopwords/generate',
     response_model=schemas_nlp.StopWordsGenerateResponse, response_model_exclude_none=True,
-    status_code=201, tags=['Lookups'])
+    status_code=201,responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse}},
+    tags=['Lookups'])
 @get_auth_access_check_decorator
 async def generate_stopwords(request: Request, background_tasks: BackgroundTasks,
     language_code:schemas.LangCodePattern=Query(...,example="bi"),
@@ -457,7 +533,9 @@ async def generate_stopwords(request: Request, background_tasks: BackgroundTasks
 
 #################### Jobs ####################
 
-@router.post('/v2/jobs', response_model=schemas_nlp.JobCreateResponse, status_code=201,
+@router.post('/v2/jobs', response_model=schemas_nlp.JobCreateResponse,
+    status_code=201,responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse}},
     tags=['Jobs'])
 def create_job(request:Request, #pylint: disable=W0613
                 db_:Session=Depends(get_db), user_id="10101"):
@@ -468,7 +546,10 @@ def create_job(request:Request, #pylint: disable=W0613
         "data": {"jobId": job_info.jobId, "status": job_info.status}}
 
 @router.get('/v2/jobs', response_model=schemas_nlp.JobStatusResponse,
-    response_model_exclude_none=True, status_code=200, tags=['Jobs'])
+    response_model_exclude_none=True, status_code=200,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse}},
+    tags=['Jobs'])
 def check_job_status(request: Request,
     job_id:int=Query(...,example="100000"),db_:Session=Depends(get_db)):
     '''Checking the status of a job'''

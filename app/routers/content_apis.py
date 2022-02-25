@@ -268,7 +268,7 @@ async def get_source(request: Request,content_type: str=Query(None, example="com
         access_tag=access_tag,latest_revision=latest_revision, active=active,skip=skip, limit=limit)
 
 @router.post('/v2/sources', response_model=schemas.SourceCreateResponse,
-    responses={502: {"model": schemas.ErrorResponse}, \
+    responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=["Sources"])
@@ -493,8 +493,7 @@ async def add_audio_bible(request: Request,
     response_model=schema_content.AudioBibleUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
-    401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
-    415:{"model": schemas.ErrorResponse}},
+    401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
     status_code=201, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def edit_audio_bible(request: Request,
