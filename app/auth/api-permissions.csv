@@ -95,14 +95,14 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/autographa/project/versification,GET,Autographa,False,None,view-project
 /v2/autographa/project/suggestions,PUT,Autographa,False,None,edit-draft
 /v2/translation/suggestions,PUT,None,False,None,process
-/v2/translation/gloss,GET,None,False,None,read
-/v2/translation/learn/gloss,POST,None,False,None,create
-/v2/translation/learn/alignment,POST,None,False,None,create
 /v2/translation/tokens,PUT,None,False,None,process
 /v2/translation/token-translate,PUT,None,False,None,process
 /v2/translation/draft,PUT,None,False,None,process
-/v2/translation/stopwords/generate,POST,None,False,Lookup contents,create
-/v2/translation/stopwords/generate,POST,None,False,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-api
+/v2/nlp/gloss,GET,None,False,None,read
+/v2/nlp/learn/gloss,POST,None,False,None,create
+/v2/nlp/learn/alignment,POST,None,False,None,create
+/v2/nlp/stopwords/generate,POST,None,False,Lookup contents,create
+/v2/nlp/stopwords/generate,POST,None,False,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-api
 /v2/lookup/stopwords/{language_code},GET,None,False,None,read
 /v2/lookup/stopwords/{language_code},PUT,None,False,None,edit
 /v2/lookup/stopwords/{language_code},POST,None,False,None,create
