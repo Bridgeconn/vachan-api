@@ -166,27 +166,27 @@ def test_add_stopword():
     assert response.json()['data'][0]['active'] is True
     assert len(response.json()['data']) == 1
 
-def test_create_job():
-    '''Positve tests for create job API'''
-    response = client.post(JOBS_URL,headers=headers)
-    assert response.status_code == 201
-    assert_positive_response(response.json())
-    assert "jobId" in response.json()['data']
-    assert "status" in response.json()['data']
-    assert response.json()['data']['status'] == 'job created'
+# def test_create_job():
+#     '''Positve tests for create job API'''
+#     response = client.post(JOBS_URL,headers=headers)
+#     assert response.status_code == 201
+#     assert_positive_response(response.json())
+#     assert "jobId" in response.json()['data']
+#     assert "status" in response.json()['data']
+#     assert response.json()['data']['status'] == 'job created'
 
-def test_check_job_status():
-    '''Positve tests for checking job status API'''
-    response = client.post(JOBS_URL,headers=headers)
-    assert response.status_code == 201
-    job_id = response.json()['data']['jobId']
-    response = client.get(JOBS_URL+'/?job_id='+str(job_id),headers=headers)
-    assert response.status_code == 200
-    assert_positive_response(response.json())
-    assert "jobId" in response.json()['data']
-    assert "status" in response.json()['data']
-    if response.json()['data']['status'] == 'job finished':
-        assert 'output' in response.json()['data']
+# def test_check_job_status():
+#     '''Positve tests for checking job status API'''
+#     response = client.post(JOBS_URL,headers=headers)
+#     assert response.status_code == 201
+#     job_id = response.json()['data']['jobId']
+#     response = client.get(JOBS_URL+'/?job_id='+str(job_id),headers=headers)
+#     assert response.status_code == 200
+#     assert_positive_response(response.json())
+#     assert "jobId" in response.json()['data']
+#     assert "status" in response.json()['data']
+#     if response.json()['data']['status'] == 'job finished':
+#         assert 'output' in response.json()['data']
 
 def get_job_status(job_id):
     '''Retrieve status of a job'''

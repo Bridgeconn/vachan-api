@@ -445,28 +445,30 @@ async def generate_stopwords(request: Request, background_tasks: BackgroundTasks
     log.debug('language_code:%s, use_server_data:%s, gl_lang_code:%s, sentence_list:%s',
         language_code, use_server_data, gl_lang_code, sentence_list)
 
-    job_info = create_job(
-            request=request, #pylint: disable=W0613
-            db_=db_, user_id=user_details['user_id'])
-    job_id = job_info['data']['jobId']
+    # job_info = create_job(
+    #         request=request, #pylint: disable=W0613
+    #         db_=db_, user_id=user_details['user_id'])
+    job_info = nlp_sw_crud.create_job(db_=db_, user_id=user_details['user_id'])
+    job_id = job_info.jobId
     background_tasks.add_task(nlp_sw_crud.generate_stopwords, db_, request, language_code,
         gl_lang_code, sentence_list, job_id, use_server_data=use_server_data,
         user_details=user_details)
     msg = "Generating stop words in background"
-    data = {"jobId": job_info['data']['jobId'], "status": job_info['data']['status']}
+    # data = {"jobId": job_info['data']['jobId'], "status": job_info['data']['status']}
+    data = {"jobId": job_info.jobId, "status": job_info.status}
     return {"message": msg, "data": data}
 
 #################### Jobs ####################
 
-@router.post('/v2/jobs', response_model=schemas_nlp.JobCreateResponse, status_code=201,
-    tags=['Jobs'])
-def create_job(request:Request, #pylint: disable=W0613
-                db_:Session=Depends(get_db), user_id="10101"):
-    '''Creates a new job'''
-    log.info('In create_job')
-    job_info = nlp_sw_crud.create_job(db_=db_, user_id=user_id)
-    return {'message': "Job created successfully",
-        "data": {"jobId": job_info.jobId, "status": job_info.status}}
+# @router.post('/v2/jobs', response_model=schemas_nlp.JobCreateResponse, status_code=201,
+#     tags=['Jobs'])
+# def create_job(request:Request, #pylint: disable=W0613
+#                 db_:Session=Depends(get_db), user_id="10101"):
+#     '''Creates a new job'''
+#     log.info('In create_job')
+#     job_info = nlp_sw_crud.create_job(db_=db_, user_id=user_id)
+#     return {'message': "Job created successfully",
+#         "data": {"jobId": job_info.jobId, "status": job_info.status}}
 
 @router.get('/v2/jobs', response_model=schemas_nlp.JobStatusResponse,
     response_model_exclude_none=True, status_code=200, tags=['Jobs'])
