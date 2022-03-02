@@ -1063,7 +1063,7 @@ class AddGloss(graphene.Mutation):
         target_language =gloss_arg.target_language
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "POST"
-        req.scope['path'] = "/v2/translation/learn/gloss"
+        req.scope['path'] = "/v2/nlp/learn/gloss"
         schema_list = []
         for item in gloss_arg.data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
@@ -1117,7 +1117,7 @@ class AddAlignment(graphene.Mutation):
         target_language =alignment_arg.target_language
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "POST"
-        req.scope['path'] = "/v2/translation/learn/alignment"
+        req.scope['path'] = "/v2/nlp/learn/alignment"
         schema_list = []
         for item in alignment_arg.data:
             schema_model = utils.convert_graphene_obj_to_pydantic\
@@ -1318,7 +1318,7 @@ class GenerateStopwords(graphene.Mutation):
         background_tasks = info.context["request"].background_tasks
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "POST"
-        req.scope['path'] = "/v2/translation/stopwords/generate"
+        req.scope['path'] = "/v2/nlp/stopwords/generate"
         response = await translation_apis.generate_stopwords(request=req,
             language_code=language_code,background_tasks=background_tasks,
             use_server_data=use_server_data,gl_lang_code=gl_lang_code,

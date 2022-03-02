@@ -10,7 +10,7 @@ from .conftest import initial_test_users
 
 
 UNIT_URL = '/v2/lookup/stopwords'
-GER_URL = '/v2/translation/stopwords'
+GER_URL = '/v2/nlp/stopwords'
 JOBS_URL = '/v2/jobs'
 
 headers = {"contentType": "application/json", "accept": "application/json"}

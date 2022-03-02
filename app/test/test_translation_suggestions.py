@@ -6,6 +6,7 @@ from .test_generic_translation import sentence_list, sample_sent
 from .conftest import initial_test_users
 
 UNIT_URL = '/v2/translation'
+NLP_UNIT_URL = '/v2/nlp'
 headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json"
@@ -63,12 +64,13 @@ def test_learn_n_suggest():
     # add dictionary
     #without auth
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
-    response = client.post(UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
+    response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
         headers=headers, json=tokens_trans)
+    print("res===>",response.json())
     assert response.json()['error'] == "Authentication Error"
     assert response.status_code == 401
     #with auth
-    response = client.post(UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
+    response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
         headers=headers_auth, json=tokens_trans)
     assert response.status_code == 201
     assert response.json()['message'] == "Added to glossary"
@@ -102,12 +104,12 @@ def test_learn_n_suggest():
     assert found_testcase
 
     # add alignmnet
-    response = client.post(UNIT_URL+'/learn/alignment?source_language=en&target_language=ml',
+    response = client.post(NLP_UNIT_URL+'/learn/alignment?source_language=en&target_language=ml',
         headers=headers, json=align_data)
     assert response.json()['error'] == "Authentication Error"
     assert response.status_code == 401
     #with auth
-    response = client.post(UNIT_URL+'/learn/alignment?source_language=en&target_language=ml',
+    response = client.post(NLP_UNIT_URL+'/learn/alignment?source_language=en&target_language=ml',
         headers=headers_auth, json=align_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Alignments used for learning"
@@ -142,12 +144,12 @@ def test_learn_n_suggest():
     # get gloss
 
     # only a dict entry not in draft or alignment
-    response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
+    response = client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
     headers=headers)
     assert response.json()['error'] == "Authentication Error"
     assert response.status_code == 401
     #with auth
-    response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
+    response = client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
     headers=headers_auth)
     assert response.status_code ==200
     assert isinstance(response.json(), dict)
@@ -160,12 +162,12 @@ def test_learn_n_suggest():
     assert found_test
 
     # learnt from alignment
-    response = client.get(UNIT_URL+
+    response = client.get(NLP_UNIT_URL+
         '/gloss?source_language=en&target_language=ml&token=a%20test%20case',headers=headers)
     assert response.json()['error'] == "Authentication Error"
     assert response.status_code == 401
     #with auth
-    response = client.get(UNIT_URL+
+    response = client.get(NLP_UNIT_URL+
         '/gloss?source_language=en&target_language=ml&token=a%20test%20case',headers=headers_auth)
     assert response.status_code ==200
     assert_positive_get_suggetion(response.json())
@@ -180,12 +182,12 @@ def test_learn_n_suggest():
     sense2 = "സന്തോഷവാന്‍ ആയ"
 
     #no context
-    response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy',
+    response = client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy',
     headers=headers)
     assert response.json()['error'] == "Authentication Error"
     assert response.status_code == 401
     #with auth
-    response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy',
+    response = client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy',
     headers=headers_auth)
     assert response.status_code ==200
     assert_positive_get_suggetion(response.json())
@@ -204,7 +206,7 @@ def test_learn_n_suggest():
 
 
     # context 1
-    response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy'+
+    response = client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy'+
         '&context=the%20happy%20user%20went%20home',headers=headers_auth)
     assert response.status_code ==200
     assert_positive_get_suggetion(response.json())
@@ -223,7 +225,7 @@ def test_learn_n_suggest():
     assert score1 < score2
 
     # context 2
-    response = client.get(UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy'+
+    response = client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy'+
         '&context=now%20user%20is%20not%20happy',headers=headers_auth)
     assert response.status_code ==200
     assert_positive_get_suggetion(response.json())
