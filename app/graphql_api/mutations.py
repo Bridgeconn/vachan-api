@@ -1304,14 +1304,16 @@ class GenerateStopwords(graphene.Mutation):
         language_code = graphene.String(required=True,
             description="Example : hi")
         use_server_data = graphene.Boolean(default_value = True)
-        gl_lang_code = graphene.String(default_value = None)
+        source_name = graphene.String(default_value = None,
+            description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\\w+_[a-z]+$")
+
         sentence_list = graphene.List(types.SWGenerateInput,default_value = None)
 
     message = graphene.String()
     data = graphene.Field(types.Job)
 #pylint: disable=R0201,R0913
     async def mutate(self,info,language_code,use_server_data,
-        gl_lang_code=None,sentence_list=None):
+        source_name=None,sentence_list=None):
         '''resolve'''
         log.info('In GraphQL Generate StopWords')
         db_ = info.context["request"].db_session
@@ -1321,7 +1323,7 @@ class GenerateStopwords(graphene.Mutation):
         req.scope['path'] = "/v2/nlp/stopwords/generate"
         response = await translation_apis.generate_stopwords(request=req,
             language_code=language_code,background_tasks=background_tasks,
-            use_server_data=use_server_data,gl_lang_code=gl_lang_code,
+            use_server_data=use_server_data,source_name=source_name,
             user_details=user_details,sentence_list=sentence_list,db_=db_,
             operates_on=schema_auth.ResourceType.LOOKUP.value)
         return GenerateStopwords(message=response['message'],

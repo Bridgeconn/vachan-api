@@ -274,8 +274,8 @@ def test_generate_stopwords():
     table_name = add_bible_source()
     add_bible_books(table_name)
 
-    table_name = add_dict_source()
-    add_tw_dict(table_name)
+    dict_table_name = add_dict_source()
+    add_tw_dict(dict_table_name)
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
 
     response = client.post(GER_URL+'/generate?language_code=hi',headers=headers_auth)
@@ -332,7 +332,7 @@ def test_generate_stopwords():
         assert_positive_sw_out(item)
     assert job_response1.json()['message'] == "Stopwords identified out of limited resources. Manual verification recommended"
 
-    response = client.post(GER_URL+'/generate?language_code=hi&gl_lang_code=hi',
+    response = client.post(GER_URL+'/generate?language_code=hi&source_name='+dict_table_name,
         headers=headers_auth, json=sentence_list)
     assert response.status_code == 201
     assert_positive_response(response.json())

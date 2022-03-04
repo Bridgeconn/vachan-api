@@ -69,8 +69,8 @@ QRY_GET_SW = """
 }
 """
 QRY_GENERATE_SW = """
-    mutation generatesw($gl_code:String,$lang_code:String!,$sentence:[SWGenerateInput]){
-  generateStopword(glLangCode:$gl_code,languageCode:$lang_code,sentenceList:$sentence){
+    mutation generatesw($sourceName:String,$lang_code:String!,$sentence:[SWGenerateInput]){
+  generateStopword(sourceName:$sourceName,languageCode:$lang_code,sentenceList:$sentence){
     message
     data{
       jobId
@@ -338,7 +338,7 @@ def get_job_status(job_id):
 #     assert job_response1['message'] == "Stopwords identified out of limited resources. Manual verification recommended"
 
 #     var_gen2 = {
-#   "gl_code": "hi",
+#   "sourceName": table_name,
 #   "lang_code": "hi",
 #   "sentence": sentence_list
 # }
