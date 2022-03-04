@@ -19,8 +19,9 @@ async def form_login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 #Authentication apis
 @router.post('/v2/user/register',response_model=schema_auth.RegisterResponse,
-responses={400: {"model": schemas.ErrorResponse}},
-status_code=201,tags=["Authentication"])
+    responses={400: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
+    500: {"model": schemas.ErrorResponse}},
+    status_code=201,tags=["Authentication"])
 @get_auth_access_check_decorator
 async def register(register_details:schema_auth.Registration,request: Request,#pylint: disable=unused-argument
 app_type: schema_auth.AppInput=Query(schema_auth.App.API),user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
@@ -49,7 +50,7 @@ async def login(user_email: str,password: types.SecretStr,
     return user_login_kratos(user_email,password)
 
 @router.get('/v2/user/logout',response_model=schema_auth.LogoutResponse,
-responses={403: {"model": schemas.ErrorResponse},
+responses={403: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
 401: {"model": schemas.ErrorResponse}}
 ,tags=["Authentication"])
 def logout(request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
@@ -70,8 +71,8 @@ def logout(request: Request,user_details =Depends(get_user_or_none),#pylint: dis
 
 @router.put('/v2/user/userrole',response_model=schema_auth.UseroleResponse,
 responses={403: {"model": schemas.ErrorResponse},
-401: {"model": schemas.ErrorResponse},
-422: {"model": schemas.ErrorResponse}},
+401: {"model": schemas.ErrorResponse},409: {"model": schemas.ErrorResponse},
+422: {"model": schemas.ErrorResponse},500: {"model": schemas.ErrorResponse}},
 status_code=201,tags=["Authentication"])
 @get_auth_access_check_decorator
 async def userrole(role_data:schema_auth.UserRole,request: Request,#pylint: disable=unused-argument
@@ -89,9 +90,9 @@ user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint:
     return user_role_add(user_id,role_list)
 
 @router.delete('/v2/user/delete-identity',response_model=schema_auth.IdentityDeleteResponse,
-responses={404: {"model": schemas.ErrorResponse},
-401: {"model": schemas.ErrorResponse}},
-status_code=200,tags=["Authentication"])
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Authentication"])
 @get_auth_access_check_decorator
 async def delete_user(user:schema_auth.UserIdentity,request: Request,#pylint: disable=unused-argument
 user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
