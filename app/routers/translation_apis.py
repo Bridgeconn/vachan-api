@@ -440,12 +440,12 @@ async def generate_stopwords(request: Request, background_tasks: BackgroundTasks
     source_name: schemas.TableNamePattern=Query(None,example="en_TW_1_dictionary"),
     user_details =Depends(get_user_or_none),
     sentence_list:List[schemas_nlp.SentenceInput]=Body(None), db_:Session=Depends(get_db),
-    operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.LOOKUP.value))):
+    operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.LOOKUP.value))):#pylint: disable=unused-argument
     '''Auto generate stop words for a given language'''
     log.info('In generate_stopwords')
     log.debug('language_code:%s, use_server_data:%s, source_name:%s, sentence_list:%s',
         language_code, use_server_data, source_name, sentence_list)
-    
+
     # job_info = create_job(
     #         request=request, #pylint: disable=W0613
     #         db_=db_, user_id=user_details['user_id'])

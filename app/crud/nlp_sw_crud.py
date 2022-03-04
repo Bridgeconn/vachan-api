@@ -286,7 +286,7 @@ async def generate_stopwords(db_: Session, request: Request, *args, user_details
     update_job(db_, job_id, user_id, update_args)
     language_id = db_.query(db_models.Language.languageId).filter(func.lower(
                             db_models.Language.code) == language_code.lower()).first()
-    
+
     if source_name:
         update_args = {
                     "status" : schemas_nlp.JobStatus.ERROR.value,
