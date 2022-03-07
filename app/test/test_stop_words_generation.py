@@ -166,27 +166,27 @@ def test_add_stopword():
     assert response.json()['data'][0]['active'] is True
     assert len(response.json()['data']) == 1
 
-def test_create_job():
-    '''Positve tests for create job API'''
-    response = client.post(JOBS_URL,headers=headers)
-    assert response.status_code == 201
-    assert_positive_response(response.json())
-    assert "jobId" in response.json()['data']
-    assert "status" in response.json()['data']
-    assert response.json()['data']['status'] == 'job created'
+# def test_create_job():
+#     '''Positve tests for create job API'''
+#     response = client.post(JOBS_URL,headers=headers)
+#     assert response.status_code == 201
+#     assert_positive_response(response.json())
+#     assert "jobId" in response.json()['data']
+#     assert "status" in response.json()['data']
+#     assert response.json()['data']['status'] == 'job created'
 
-def test_check_job_status():
-    '''Positve tests for checking job status API'''
-    response = client.post(JOBS_URL,headers=headers)
-    assert response.status_code == 201
-    job_id = response.json()['data']['jobId']
-    response = client.get(JOBS_URL+'/?job_id='+str(job_id),headers=headers)
-    assert response.status_code == 200
-    assert_positive_response(response.json())
-    assert "jobId" in response.json()['data']
-    assert "status" in response.json()['data']
-    if response.json()['data']['status'] == 'job finished':
-        assert 'output' in response.json()['data']
+# def test_check_job_status():
+#     '''Positve tests for checking job status API'''
+#     response = client.post(JOBS_URL,headers=headers)
+#     assert response.status_code == 201
+#     job_id = response.json()['data']['jobId']
+#     response = client.get(JOBS_URL+'/?job_id='+str(job_id),headers=headers)
+#     assert response.status_code == 200
+#     assert_positive_response(response.json())
+#     assert "jobId" in response.json()['data']
+#     assert "status" in response.json()['data']
+#     if response.json()['data']['status'] == 'job finished':
+#         assert 'output' in response.json()['data']
 
 def get_job_status(job_id):
     '''Retrieve status of a job'''
@@ -274,8 +274,8 @@ def test_generate_stopwords():
     table_name = add_bible_source()
     add_bible_books(table_name)
 
-    table_name = add_dict_source()
-    add_tw_dict(table_name)
+    dict_table_name = add_dict_source()
+    add_tw_dict(dict_table_name)
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
 
     response = client.post(GER_URL+'/generate?language_code=hi',headers=headers_auth)
@@ -332,7 +332,7 @@ def test_generate_stopwords():
         assert_positive_sw_out(item)
     assert job_response1.json()['message'] == "Stopwords identified out of limited resources. Manual verification recommended"
 
-    response = client.post(GER_URL+'/generate?language_code=hi&gl_lang_code=hi',
+    response = client.post(GER_URL+'/generate?language_code=hi&source_name='+dict_table_name,
         headers=headers_auth, json=sentence_list)
     assert response.status_code == 201
     assert_positive_response(response.json())

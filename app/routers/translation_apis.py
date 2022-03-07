@@ -511,39 +511,40 @@ async def add_stopwords(request: Request,
 @get_auth_access_check_decorator
 async def generate_stopwords(request: Request, background_tasks: BackgroundTasks,
     language_code:schemas.LangCodePattern=Query(...,example="bi"),
-    use_server_data:bool=True, gl_lang_code:schemas.LangCodePattern=Query(None,example="hi"),
+    use_server_data:bool=True,
+    source_name: schemas.TableNamePattern=Query(None,example="en_TW_1_dictionary"),
     user_details =Depends(get_user_or_none),
     sentence_list:List[schemas_nlp.SentenceInput]=Body(None), db_:Session=Depends(get_db),
-    operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.LOOKUP.value))):
+    operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.LOOKUP.value))):#pylint: disable=unused-argument
     '''Auto generate stop words for a given language'''
     log.info('In generate_stopwords')
-    log.debug('language_code:%s, use_server_data:%s, gl_lang_code:%s, sentence_list:%s',
-        language_code, use_server_data, gl_lang_code, sentence_list)
+    log.debug('language_code:%s, use_server_data:%s, source_name:%s, sentence_list:%s',
+        language_code, use_server_data, source_name, sentence_list)
 
-    job_info = create_job(
-            request=request, #pylint: disable=W0613
-            db_=db_, user_id=user_details['user_id'])
-    job_id = job_info['data']['jobId']
+    # job_info = create_job(
+    #         request=request, #pylint: disable=W0613
+    #         db_=db_, user_id=user_details['user_id'])
+    job_info = nlp_sw_crud.create_job(db_=db_, user_id=user_details['user_id'])
+    job_id = job_info.jobId
     background_tasks.add_task(nlp_sw_crud.generate_stopwords, db_, request, language_code,
-        gl_lang_code, sentence_list, job_id, use_server_data=use_server_data,
+        source_name, sentence_list, job_id, use_server_data=use_server_data,
         user_details=user_details)
     msg = "Generating stop words in background"
-    data = {"jobId": job_info['data']['jobId'], "status": job_info['data']['status']}
+    # data = {"jobId": job_info['data']['jobId'], "status": job_info['data']['status']}
+    data = {"jobId": job_info.jobId, "status": job_info.status}
     return {"message": msg, "data": data}
 
 #################### Jobs ####################
 
-@router.post('/v2/jobs', response_model=schemas_nlp.JobCreateResponse,
-    status_code=201,responses={502: {"model": schemas.ErrorResponse},
-    422: {"model": schemas.ErrorResponse}},
-    tags=['Jobs'])
-def create_job(request:Request, #pylint: disable=W0613
-                db_:Session=Depends(get_db), user_id="10101"):
-    '''Creates a new job'''
-    log.info('In create_job')
-    job_info = nlp_sw_crud.create_job(db_=db_, user_id=user_id)
-    return {'message': "Job created successfully",
-        "data": {"jobId": job_info.jobId, "status": job_info.status}}
+# @router.post('/v2/jobs', response_model=schemas_nlp.JobCreateResponse, status_code=201,
+#     tags=['Jobs'])
+# def create_job(request:Request, #pylint: disable=W0613
+#                 db_:Session=Depends(get_db), user_id="10101"):
+#     '''Creates a new job'''
+#     log.info('In create_job')
+#     job_info = nlp_sw_crud.create_job(db_=db_, user_id=user_id)
+#     return {'message': "Job created successfully",
+#         "data": {"jobId": job_info.jobId, "status": job_info.status}}
 
 @router.get('/v2/jobs', response_model=schemas_nlp.JobStatusResponse,
     response_model_exclude_none=True, status_code=200,
