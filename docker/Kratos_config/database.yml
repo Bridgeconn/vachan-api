@@ -4,7 +4,7 @@ services:
   kratos-migrate:
     image: oryd/kratos:v0.7.0-alpha.1
     environment:
-      - DSN=${VACHAN_AUTH_DATABASE_1:-postgres://kratos:secret@postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
+      - DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
     volumes:
       - type: volume
         source: kratos-sqlite
@@ -15,6 +15,8 @@ services:
         target: /etc/config/kratos
     command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
     restart: on-failure
+    depends_on:
+      - postgresd
     networks:
       - vachan-auth-net
 
@@ -26,7 +28,7 @@ services:
       - POSTGRES_USER=${VACHAN_KRATOS_DB_USER:-kratos}
       - POSTGRES_PASSWORD=${VACHAN_KRATOS_DB_PASSWORD:-secret}
       - POSTGRES_DB=${VACHAN_KRATOS_DB_NAME:-kratos}
-      - POSTGRES_HOST_AUTH_METHOD=scram-sha-256
+      - POSTGRES_HOST_AUTH_METHOD=md5
     networks:
       - vachan-auth-net
 networks:
