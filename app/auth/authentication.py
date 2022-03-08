@@ -96,6 +96,8 @@ def api_resourcetype_map(endpoint, path_params=None):
         resource_type = schema_auth.ResourceType.TRANSLATION.value
     elif endpoint.startswith("/v2/lookup"):
         resource_type = schema_auth.ResourceType.LOOKUP.value
+    elif endpoint.startswith("/v2/jobs"):
+        resource_type = schema_auth.ResourceType.JOBS.value
     elif endpoint.startswith("/v2/sources") or (
         path_params is not None and "source_name" in path_params):
         resource_type = schema_auth.ResourceType.CONTENT.value
@@ -132,7 +134,8 @@ def get_access_tag(db_, resource_type, path_params=None, resource=None):
         schema_auth.ResourceType.TRANSLATION: ['generic-translation'],
         schema_auth.ResourceType.LOOKUP: ['lookup-content'],
         schema_auth.ResourceType.METACONTENT: ["meta-content","open-access"],
-        schema_auth.ResourceType.RESEARCH: ['content', 'research-use']
+        schema_auth.ResourceType.RESEARCH: ['content', 'research-use'],
+        schema_auth.ResourceType.JOBS: ['jobs']
         # schema_auth.ResourceType.CONTENT: None # excluded to use item specific tags in db
     }
     if resource_type in resource_tag_map:

@@ -106,3 +106,4 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/lookup/stopwords/{language_code},GET,None,False,None,read
 /v2/lookup/stopwords/{language_code},PUT,None,False,None,edit
 /v2/lookup/stopwords/{language_code},POST,None,False,None,create
+/v2/jobs,GET,None,False,None,read

@@ -725,11 +725,12 @@ class Query(graphene.ObjectType):
     job_status = graphene.Field(types.JobStatusResponse,
         description="Query defined to get Job Status in vachan-db",
         job_id=graphene.Int(required=True,description="example=100000"))
-    def resolve_job_status(self, info, job_id):
+    async def resolve_job_status(self, info, job_id):
         '''resolver'''
         log.info('In GraphQL Get Job Status')
         db_ = info.context["request"].db_session
-        user_details , req = get_user_or_none_graphql(info)#pylint: disable=unused-variable
+        user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
         req.scope['path'] = "/v2/jobs"
-        return translation_apis.check_job_status(request=req,job_id=job_id,db_=db_)
+        return await translation_apis.check_job_status(request=req,job_id=job_id,
+            user_details=user_details,db_=db_)

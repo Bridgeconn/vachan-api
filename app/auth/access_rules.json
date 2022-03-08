@@ -52,6 +52,9 @@
     "research-use":{
         "read-via-api":["SuperAdmin", "BcsDeveloper"]
     },
+    "jobs":{
+        "read":["registeredUser"]
+    },
     "user":{
         "create":["noAuthRequired"],
         "edit-role":["SuperAdmin"],

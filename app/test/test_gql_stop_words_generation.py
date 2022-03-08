@@ -286,6 +286,10 @@ def get_job_status(job_id):
     var = {
   "jobid": job_id
 }
+    #registered user can get status
+    response = gql_request(QRY_JOB_STATUS,headers=headers_auth,variables=var)
+    assert "errors" in response.keys()
+
     response = gql_request(QRY_JOB_STATUS,headers=headers_auth,variables=var)
     assert "message" in response["data"]["jobStatus"]
     assert "data" in response["data"]["jobStatus"]
