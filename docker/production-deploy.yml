@@ -39,7 +39,7 @@ services:
    - POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
    - POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-newpassword}
    - POSTGRES_DB=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
-   - POSTGRES_HOST_AUTH_METHOD=scram-sha-256
+   - POSTGRES_HOST_AUTH_METHOD=md5
   logging:
    options:
     max-size: 10m
