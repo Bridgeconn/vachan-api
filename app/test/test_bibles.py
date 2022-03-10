@@ -189,8 +189,19 @@ def test_post_put_split_verse():
     for row in response.json():
         if row["reference"]["verseNumber"] == 1:
             assert row["verseText"] == "test verse one a test verse one b"
+            #check metadata
+            assert "publishedVersification" in row["metaData"]
+            assert len(row["metaData"]["publishedVersification"]) == 2
+            for dict in row["metaData"]["publishedVersification"]:
+                dict["verseNumber"] in ('1a','1b')
+                if dict["verseNumber"] == '1a':
+                    dict["verseText"] == 'test verse one a'
+                elif dict["verseNumber"] == '1b':
+                    dict["verseText"] == 'test verse one b'
+
         if row["reference"]["verseNumber"] == 2:
             assert row["verseText"] == 'test verse two'
+
     
     #update with split verse
     update_data_split = [{
@@ -206,6 +217,15 @@ def test_post_put_split_verse():
     for row in response.json():
         if row["reference"]["verseNumber"] == 1:
             assert row["verseText"] == "new content for rev test verse one updated b"
+            #check metadata
+            assert "publishedVersification" in row["metaData"]
+            assert len(row["metaData"]["publishedVersification"]) == 2
+            for dict in row["metaData"]["publishedVersification"]:
+                assert dict["verseNumber"] in ('1a','1b')
+                if dict["verseNumber"] == '1a':
+                    assert dict["verseText"] == 'new content for rev'
+                elif dict["verseNumber"] == '1b':
+                    assert dict["verseText"] == 'test verse one updated b'
 
 def test_post_put_merged_verse():
     """test posting merged verse"""
@@ -225,16 +245,26 @@ def test_post_put_merged_verse():
     for row in response.json():
         if row["reference"]["verseNumber"] == 1:
             assert row["verseText"] == "test verse one and two merged"
+            assert "publishedVersification" in row["metaData"]
+            assert len(row["metaData"]["publishedVersification"]) == 1
+            for dict in row["metaData"]["publishedVersification"]:
+                assert dict["verseNumber"] == '1-2'
+                assert dict["verseText"] == 'test verse one and two merged'
         if row["reference"]["verseNumber"] == 2:
             assert row["verseText"] == ''
+            assert "publishedVersification" in row["metaData"]
+            assert len(row["metaData"]["publishedVersification"]) == 1
+            for dict in row["metaData"]["publishedVersification"]:
+                assert dict["verseNumber"] == '1-2'
+                assert dict["verseText"] == 'test verse one and two merged'
         if row["reference"]["verseNumber"] == 3:
             assert row["verseText"] == "test verse two"
+            assert row["metaData"] is None
     
     #update with merge verse
     update_data_merge = [{
         "USFM": "\\id rom\n\\c 1\n\\p\n\\v 1-2 new content for rom merged updated"}]
     response2 = client.put(UNIT_URL+source_name+"/books", json=update_data_merge, headers=headers_auth)
-    print("response--->",response2.json())
     assert response2.status_code == 201
     assert response2.json()['message'] == "Bible books updated successfully"
 
@@ -245,8 +275,18 @@ def test_post_put_merged_verse():
     for row in response.json():
         if row["reference"]["verseNumber"] == 1:
             assert row["verseText"] == "new content for rom merged updated"
+            assert "publishedVersification" in row["metaData"]
+            assert len(row["metaData"]["publishedVersification"]) == 1
+            for dict in row["metaData"]["publishedVersification"]:
+                assert dict["verseNumber"] == '1-2'
+                assert dict["verseText"] == 'new content for rom merged updated'
         if row["reference"]["verseNumber"] == 2:
             assert row["verseText"] == ''
+            assert "publishedVersification" in row["metaData"]
+            assert len(row["metaData"]["publishedVersification"]) == 1
+            for dict in row["metaData"]["publishedVersification"]:
+                assert dict["verseNumber"] == '1-2'
+                assert dict["verseText"] == 'new content for rom merged updated'
 
 def test_post_duplicate():
     '''test posting the same book twice'''

@@ -236,6 +236,7 @@ class BibleVerse(BaseModel):
     '''Response object of Bible Verse'''
     reference : Reference
     verseText: str
+    metaData : dict = None
     # footNote : str = None
     # crossReference : str = None
     class Config:

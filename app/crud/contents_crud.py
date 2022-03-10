@@ -530,6 +530,7 @@ def bible_verse_type_check(content, model_cls_2, book, db_content2, chapter_numb
     normal_verse_pattern = re.compile(r'\d+$')
     split_verse_pattern = re.compile(r'(\d+)(\w)$')
     merged_verse_pattern = re.compile(r'(\d+)-(\d+)$')
+    metaData_field = {"publishedVersification":[]}
     #NormalVerseNumber Pattern
     if normal_verse_pattern.match(str(content['verseNumber'])):
         row_other = model_cls_2(
@@ -544,27 +545,35 @@ def bible_verse_type_check(content, model_cls_2, book, db_content2, chapter_numb
         match_obj = split_verse_pattern.match(content['verseNumber'])
         post_script = match_obj.group(2)
         verse_number = match_obj.group(1)
+        metaData_field['publishedVersification'].append(
+            {"verseNumber": content["verseNumber"], "verseText":content["verseText"]})
         if post_script == 'a':
             row_other = model_cls_2(
             book_id = book.bookId,
             chapter = chapter_number,
             verseNumber = verse_number,
-            verseText = utils.normalize_unicode(content['verseText'].strip()))
+            verseText = utils.normalize_unicode(content['verseText'].strip()),
+            metaData = metaData_field)
             db_content2.append(row_other)
         else:
             db_content2[-1].verseText = \
                 db_content2[-1].verseText + ' '+ content['verseText']
+            db_content2[-1].metaData['publishedVersification'].append(
+                metaData_field['publishedVersification'][0])
     #mergedVerseNumber Pattern
     #keep the whole text in first verseNumber of merged verses
     elif merged_verse_pattern.match(str(content['verseNumber'])):
         match_obj = merged_verse_pattern.match(content['verseNumber'])
         verse_number = match_obj.group(1)
         verse_number_end = match_obj.group(2)
+        metaData_field['publishedVersification'].append({"verseNumber":content['verseNumber'],
+            "verseText":content['verseText']})
         row_other = model_cls_2(
             book_id = book.bookId,
             chapter = chapter_number,
             verseNumber = verse_number,
-            verseText = utils.normalize_unicode(content['verseText'].strip()))
+            verseText = utils.normalize_unicode(content['verseText'].strip()),
+            metaData = metaData_field)
         db_content2.append(row_other)
         ## add empty text in the rest of the verseNumber range
         for versenum in range(int(verse_number)+1, int(verse_number_end)+1):
@@ -572,7 +581,8 @@ def bible_verse_type_check(content, model_cls_2, book, db_content2, chapter_numb
                 book_id = book.bookId,
                 chapter = chapter_number,
                 verseNumber = versenum,
-                verseText = "")
+                verseText = "",
+                metaData = metaData_field)
             db_content2.append(row_other)
     else:
         raise TypeException(#pylint: disable=raising-format-tuple,too-many-function-args
@@ -621,7 +631,6 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None):#pylint: 
         'db_content':db_content,
         'source_content':source_db_content
     }
-    # return db_content
     return response
 
 def upload_bible_books_checks(db_, item, source_name, db_content):
@@ -925,6 +934,7 @@ def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, ver
     for res in results:
         ref_combined = {}
         ref_combined['verseText'] = res.verseText
+        ref_combined['metaData'] = res.metaData
         ref = { "bible": source_name,
                 "book": res.book.bookCode,
                 "chapter": res.chapter,

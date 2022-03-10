@@ -275,6 +275,7 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"rev",chapter:1){
       verseNumberEnd
     }
     verseText
+    metaData
   }
 }
   """
@@ -284,6 +285,15 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"rev",chapter:1){
     for row in executed3["data"]["bibleVerse"]:
         if row["reference"]["verseNumber"] == 1:
             assert row["verseText"] == "test verse one a test verse one b"
+            #check metadata
+            assert "publishedVersification" in row["metaData"]
+            assert len(row["metaData"]["publishedVersification"]) == 2
+            for dict in row["metaData"]["publishedVersification"]:
+                dict["verseNumber"] in ('1a','1b')
+                if dict["verseNumber"] == '1a':
+                    dict["verseText"] == 'test verse one a'
+                elif dict["verseNumber"] == '1b':
+                    dict["verseText"] == 'test verse one b'
         if row["reference"]["verseNumber"] == 2:
             assert row["verseText"] == 'test verse two'
 
@@ -304,6 +314,14 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"rev",chapter:1){
     for row in executed4["data"]["bibleVerse"]:
         if row["reference"]["verseNumber"] == 1:
             assert row["verseText"] == "test verse one a edited test verse one b edited"
+            assert "publishedVersification" in row["metaData"]
+            assert len(row["metaData"]["publishedVersification"]) == 2
+            for dict in row["metaData"]["publishedVersification"]:
+                assert dict["verseNumber"] in ('1a','1b')
+                if dict["verseNumber"] == '1a':
+                    assert dict["verseText"] == 'test verse one a edited'
+                elif dict["verseNumber"] == '1b':
+                    assert dict["verseText"] == 'test verse one b edited'
 
 def test_post_put_merged_verse():
     """test posting merged verse"""
@@ -333,6 +351,7 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"rom",chapter:1){
       verseNumberEnd
     }
     verseText
+    metaData
   }
 }
   """
@@ -342,8 +361,18 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"rom",chapter:1){
     for row in executed3["data"]["bibleVerse"]:
         if row["reference"]["verseNumber"] == 1:
             assert row["verseText"] == "test verse one two merged"
+            assert "publishedVersification" in row["metaData"]
+            assert len(row["metaData"]["publishedVersification"]) == 1
+            for dict in row["metaData"]["publishedVersification"]:
+                assert dict["verseNumber"] == '1-2'
+                assert dict["verseText"] == 'test verse one two merged'
         if row["reference"]["verseNumber"] == 2:
             assert row["verseText"] == ''
+            assert "publishedVersification" in row["metaData"]
+            assert len(row["metaData"]["publishedVersification"]) == 1
+            for dict in row["metaData"]["publishedVersification"]:
+                assert dict["verseNumber"] == '1-2'
+                assert dict["verseText"] == 'test verse one two merged'
         if row["reference"]["verseNumber"] == 3:
             assert row["verseText"] == 'test verse three'
 
@@ -364,8 +393,20 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"rom",chapter:1){
     for row in executed4["data"]["bibleVerse"]:
         if row["reference"]["verseNumber"] == 1:
             assert row["verseText"] == "test verse one two merged edited"
+            #check metadata
+            assert "publishedVersification" in row["metaData"]
+            assert len(row["metaData"]["publishedVersification"]) == 1
+            for dict in row["metaData"]["publishedVersification"]:
+                assert dict["verseNumber"] == '1-2'
+                assert dict["verseText"] == 'test verse one two merged edited'
         if row["reference"]["verseNumber"] == 2:
             assert row["verseText"] == ''
+            #check metadata
+            assert "publishedVersification" in row["metaData"]
+            assert len(row["metaData"]["publishedVersification"]) == 1
+            for dict in row["metaData"]["publishedVersification"]:
+                assert dict["verseNumber"] == '1-2'
+                assert dict["verseText"] == 'test verse one two merged edited'
 
 def test_post_optional():
   '''Positive test fr post with optional JSON upload'''
