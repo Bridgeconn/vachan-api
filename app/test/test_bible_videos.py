@@ -88,6 +88,20 @@ def test_post_duplicate():
     assert response2.status_code == 409
     assert response2.json()['error'] == "Already Exists"
 
+def test_post_no_reference_field():
+    '''Reference filed will be taken as []'''
+    #test post without reference filed will be taken as []
+    data = [
+        {'title':'Overview: Full OT', 'series': 'Old testament', 'description':"No reference filed",
+            'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+    ]
+    response, source_name = check_post(data)
+    assert response.status_code == 201
+    print(response.json())
+    assert response.json()['message'] == "Bible videos added successfully"
+    assert response.json()["data"][0]["references"] == []
+    
+
 def test_post_incorrect_data():
     ''' tests to check input validation in post API'''
 
@@ -110,12 +124,12 @@ def test_post_incorrect_data():
     response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
-    data = [
-        {'title':'Overview: Genesis', 'series': 'Old testament', 'description':"brief description",
-            'videoLink': 'https://www.youtube.com/biblevideos/vid'}
-    ]
-    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
-    assert_input_validation_error(response)
+    # data = [
+    #     {'title':'Overview: Genesis', 'series': 'Old testament', 'description':"brief description",
+    #         'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+    # ]
+    # response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    # assert_input_validation_error(response)
 
     data = [
         {'title':'Overview: Genesis', 'series': 'Old testament', 'description':"brief description",

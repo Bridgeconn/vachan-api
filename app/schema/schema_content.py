@@ -522,7 +522,7 @@ class InfographicUpdateResponse(BaseModel):
 
 class BibleVideoRefObj(BaseModel):
     """Reference Object of BibleVideo"""
-    bookCode : BookCodePattern
+    bookCode : BookCodePattern = None
     chapter: int
     verseStart: int = None
     verseEnd: int = None
@@ -558,7 +558,7 @@ class BibleVideoRefObj(BaseModel):
 class BibleVideo(BaseModel):
     '''Response object of Bible Vedios'''
     title: str
-    references: List[Reference]
+    references: List[Reference] = []
     videoLink: AnyUrl
     description: str
     series: str
@@ -597,7 +597,7 @@ class BibleVideoUpdateResponse(BaseModel):
 class BibleVideoUpload(BaseModel):
     '''Input Object of bible Videos'''
     title: str
-    references: List[BibleVideoRefObj]
+    references: List[BibleVideoRefObj] = []
     videoLink: AnyUrl
     description: str
     series: str
