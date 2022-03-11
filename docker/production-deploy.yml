@@ -4,7 +4,7 @@ services:
   image: oryd/kratos:v0.7.0-alpha.1
   ports:
     - '4433:4433' # public
-    - '4434:4434' # admin
+    # - '4434:4434' # admin
   restart: unless-stopped
   environment:
     - DSN=${VACHAN_AUTH_DATABASE}
@@ -39,7 +39,7 @@ services:
    - POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
    - POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-newpassword}
    - POSTGRES_DB=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
-   - POSTGRES_HOST_AUTH_METHOD=scram-sha-256
+   - POSTGRES_HOST_AUTH_METHOD=md5
   logging:
    options:
     max-size: 10m
