@@ -96,3 +96,19 @@ class TableHeading(int, Enum):
     USERNEEDED = 3
     RESOURCETYPE = 4
     PERMISSION = 5
+
+class IdentitityListResponse(BaseModel):
+    """Response object of list of identities"""
+    userId:str
+    name: dict
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example":{
+            "userId": "ecf57420-9rg0-4048-b56b-dc56fc57c4ed",
+            "name": {
+                "last": "lastname",
+                "first": "firstname",
+                "fullname": "Full Name"
+            }
+        }}

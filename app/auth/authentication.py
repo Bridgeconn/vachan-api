@@ -227,7 +227,6 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         for tag in access_tags:
             if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
                 required_rights += ACCESS_RULES[tag][permission]
-
         authenticated = check_right(user_details, required_rights)
 
         if (resource_type == schema_auth.ResourceType.USER and not authenticated):
@@ -319,16 +318,34 @@ def kratos_logout(recieve_token):
     return data
 
 #get all or single user details
-def get_all_or_one_kratos_users(rec_user_id=None):
+def get_all_or_one_kratos_users(rec_user_id=None,page=None,limit=None):
     """get all user info or a particular user details"""
     base_url = ADMIN_BASE_URL+"identities/"
 
     if rec_user_id is None:
-        response = requests.get(base_url)
-        if response.status_code == 200:
-            user_data = json.loads(response.content)
+        if page is None and limit is None:
+            response = requests.get(base_url)
+            if response.status_code == 200:
+                user_data = json.loads(response.content)
+            else:
+                raise UnAuthorizedException(detail=json.loads(response.content))
         else:
-            raise UnAuthorizedException(detail=json.loads(response.content))
+            page = 0 if page is None else page
+            limit = 100 if limit is None else limit
+            base_url = base_url+f"?per_page={limit}&page={page}"
+            response = requests.get(base_url)
+            if response.status_code == 200:
+                user_data = []
+                for data in json.loads(response.content):
+                    kratos_user = {
+                        "userId":data["id"],
+                        "name":data["traits"]["name"]
+                    }
+                    kratos_user["name"]["fullname"] = data["traits"]["name"]["first"] + " "+\
+                        data["traits"]["name"]["last"]
+                    user_data.append(kratos_user)
+            else:
+                raise GenericException(detail=json.loads(response.content))
     else:
         response = requests.get(base_url+rec_user_id)
         if response.status_code == 200:

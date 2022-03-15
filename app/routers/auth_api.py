@@ -2,12 +2,14 @@
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import types
+from typing import List
 from sqlalchemy.orm import Session
 from schema import schema_auth, schemas
 from custom_exceptions import NotAvailableException
 from dependencies import log , get_db
 from auth.authentication import user_register_kratos,user_login_kratos,user_role_add ,\
-    delete_identity , get_auth_access_check_decorator , get_user_or_none, kratos_logout
+    delete_identity , get_auth_access_check_decorator , get_user_or_none, kratos_logout,\
+    get_all_or_one_kratos_users
 
 router = APIRouter()
 
@@ -48,6 +50,21 @@ async def login(user_email: str,password: types.SecretStr,
     log.info('In User Login')
     log.debug('login:%s',user_email)
     return user_login_kratos(user_email,password)
+
+@router.get('/v2/user/list-identities', response_model=List[schema_auth.IdentitityListResponse],
+responses={401: {"model": schemas.ErrorResponse}}
+,tags=["Authentication"])
+@get_auth_access_check_decorator
+async def get_identities_list(request: Request,
+    page: int = Query(1, ge=1),limit: int = Query(100, ge=0),
+    user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+    '''fetches all the users
+    * the optional query parameter can be used to filter the result set
+    * limit=n: limits the no. of items to be returned to n
+    * page=n: pagination based on data per page (limit)'''
+    log.info('In User List Identities')
+    log.debug('page: %s, limit: %s', page, limit)
+    return get_all_or_one_kratos_users(page=page,limit=limit)
 
 @router.get('/v2/user/logout',response_model=schema_auth.LogoutResponse,
 responses={403: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
