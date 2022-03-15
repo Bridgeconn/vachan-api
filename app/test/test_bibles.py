@@ -227,6 +227,52 @@ def test_post_put_split_verse():
                 elif dict["verseNumber"] == '1b':
                     assert dict["verseText"] == 'test verse one updated b'
 
+    #check for sorted verses in exact order
+    split_data_sort = [
+        {"USFM":"\\id exo\n\\c 1\n\\p\n\\v 6ഉ test verse six g \n\\v 6എ test verse six c \n\\v 6അ test verse six b"},
+        {"USFM":"\\id gen\n\\c 1\n\\p\n\\v 7l test verse seven l \n\\v 7d test verse seven d \n\\v 7x test verse seven x"},
+        {"USFM":"\\id lev\n\\c 1\n\\p\n\\v 4k test verse four k \n\\v 4b test verse four b \n\\v 4j test verse four j"}
+    ]
+    expected_versetext_eng = "test verse four b test verse four j test verse four k"
+    expected_versetext_mal = "test verse six b test verse six g test verse six c"
+    expected_versetext_7 = "test verse seven d test verse seven l test verse seven x"
+
+    #add
+    resp = client.post(UNIT_URL+source_name+'/books', headers=headers_auth, json=split_data_sort)
+    response1 = client.get(UNIT_URL+source_name+'/verses?book_code=lev&chapter=1',headers=headers_auth)
+    response2 = client.get(UNIT_URL+source_name+'/verses?book_code=exo&chapter=1',headers=headers_auth)
+    response3 = client.get(UNIT_URL+source_name+'/verses?book_code=gen&chapter=1',headers=headers_auth)
+    assert response.status_code == 200
+    assert resp.json()['message'] == "Bible books uploaded and processed successfully"
+    for row in response1.json():
+        if row["reference"]["verseNumber"] == 4:
+            assert row["verseText"] == expected_versetext_eng
+    for row in response2.json():
+        if row["reference"]["verseNumber"] == 6:
+            assert row["verseText"] == expected_versetext_mal
+    for row in response3.json():
+        if row["reference"]["verseNumber"] == 7:
+            assert row["verseText"] == expected_versetext_7
+    #update sort
+    split_data_sort = [
+        {"USFM":"\\id exo\n\\c 1\n\\p\n\\v 6ഉ test verse six g \n\\v 6എ test verse six c edited \n\\v 6അ test verse six b"},
+        {"USFM":"\\id lev\n\\c 1\n\\p\n\\v 4k test verse four k edited \n\\v 4b test verse four b \n\\v 4j test verse four j"}
+    ]
+    edited_versetext_eng = "test verse four b test verse four j test verse four k edited"
+    edited_versetext_mal = "test verse six b test verse six g test verse six c edited"
+    response_up1 = client.put(UNIT_URL+source_name+"/books", json=split_data_sort, headers=headers_auth)
+    assert response_up1.status_code == 201
+    assert response_up1.json()['message'] == "Bible books updated successfully"
+
+    response1 = client.get(UNIT_URL+source_name+'/verses?book_code=exo&chapter=1',headers=headers_auth)
+    response2 = client.get(UNIT_URL+source_name+'/verses?book_code=lev&chapter=1',headers=headers_auth)
+    for row in response1.json():
+        if row["reference"]["verseNumber"] == 6:
+            assert row["verseText"] == edited_versetext_mal
+    for row in response2.json():
+        if row["reference"]["verseNumber"] == 4:
+            assert row["verseText"] == edited_versetext_eng
+
 def test_post_put_merged_verse():
     """test posting merged verse"""
     resp, source_name = check_post(gospel_books_merged_data)
