@@ -1,8 +1,8 @@
 """router for authentication endpoints"""
+from typing import List
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import types
-from typing import List
 from sqlalchemy.orm import Session
 from schema import schema_auth, schemas
 from custom_exceptions import NotAvailableException
@@ -55,7 +55,7 @@ async def login(user_email: str,password: types.SecretStr,
 responses={401: {"model": schemas.ErrorResponse}}
 ,tags=["Authentication"])
 @get_auth_access_check_decorator
-async def get_identities_list(request: Request,
+async def get_identities_list(request: Request,#pylint: disable=unused-argument
     page: int = Query(1, ge=1),limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''fetches all the users
