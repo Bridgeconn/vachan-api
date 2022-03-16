@@ -140,6 +140,23 @@ def test_post_default():
       headers=headers_auth)
     assert "errors" in executed.keys()
 
+def test_post_no_reference_field():
+    '''Reference filed will be taken as []'''
+    #test post without reference filed will be taken as []
+    variable = {
+  "object": {
+    "sourceName": "mr_TTT_1_biblevideo",
+    "videoData": [
+        {'title':'Overview: Genesis', 'series': 'Old testament', 'description':"brief description",
+            'references': [],
+            'videoLink': 'https://www.youtube.com/biblevideos/vid'}
+    ]
+  }
+}
+
+    response, source_name = post_biblevideo(variable)
+    assert response["data"]["addBibleVideo"]["data"][0]["references"] == []
+
 def test_post_incorrect_data():
     ''' tests to check input validation in post API'''
 

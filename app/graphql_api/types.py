@@ -111,6 +111,7 @@ class BibleVerse(graphene.ObjectType):
     refString = graphene.String()
     reference = graphene.Field(Reference)
     verseText = graphene.String()
+    metaData = Metadata()
     # footNotes = graphene.List(graphene.String)
     # crossReferences  = graphene.List(graphene.String)
 

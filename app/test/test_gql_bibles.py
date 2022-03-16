@@ -275,6 +275,7 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"rev",chapter:1){
       verseNumberEnd
     }
     verseText
+    metaData
   }
 }
   """
@@ -284,6 +285,15 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"rev",chapter:1){
     for row in executed3["data"]["bibleVerse"]:
         if row["reference"]["verseNumber"] == 1:
             assert row["verseText"] == "test verse one a test verse one b"
+            #check metadata
+            assert "publishedVersification" in row["metaData"]
+            assert len(row["metaData"]["publishedVersification"]) == 2
+            for dict in row["metaData"]["publishedVersification"]:
+                dict["verseNumber"] in ('1a','1b')
+                if dict["verseNumber"] == '1a':
+                    dict["verseText"] == 'test verse one a'
+                elif dict["verseNumber"] == '1b':
+                    dict["verseText"] == 'test verse one b'
         if row["reference"]["verseNumber"] == 2:
             assert row["verseText"] == 'test verse two'
 
@@ -304,6 +314,79 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"rev",chapter:1){
     for row in executed4["data"]["bibleVerse"]:
         if row["reference"]["verseNumber"] == 1:
             assert row["verseText"] == "test verse one a edited test verse one b edited"
+            assert "publishedVersification" in row["metaData"]
+            assert len(row["metaData"]["publishedVersification"]) == 2
+            for dict in row["metaData"]["publishedVersification"]:
+                assert dict["verseNumber"] in ('1a','1b')
+                if dict["verseNumber"] == '1a':
+                    assert dict["verseText"] == 'test verse one a edited'
+                elif dict["verseNumber"] == '1b':
+                    assert dict["verseText"] == 'test verse one b edited'
+    #add sort split verse
+    variable = {
+    "object": {
+        "sourceName": "gu_TTT_1_bible",
+        "books": [
+        {"USFM":"\\id exo\n\\c 1\n\\p\n\\v 6ഉ test verse six g \n\\v 6എ test verse six c \n\\v 6അ test verse six b"},
+        {"USFM":"\\id gen\n\\c 1\n\\p\n\\v 7l test verse seven l \n\\v 7d test verse seven d \n\\v 7x test verse seven x"},
+        {"USFM":"\\id lev\n\\c 1\n\\p\n\\v 4k test verse four k \n\\v 4b test verse four b \n\\v 4j test verse four j"}
+      ]
+    }
+    }
+    executed = gql_request(query=BOOK_ADD_QUERY,operation="mutation", variables=variable,
+      headers=headers_auth)
+    assert executed["data"]["addBibleBook"]["message"] == "Bible books uploaded and processed successfully"
+    expected_versetext_eng = "test verse four b test verse four j test verse four k"
+    expected_versetext_mal = "test verse six b test verse six g test verse six c"
+    expected_versetext_7 = "test verse seven d test verse seven l test verse seven x"
+    get_bible_verse = """
+         query verses($sourceName:String!,$bookCode:String,$chapter:Int){
+  bibleVerse(sourceName:$sourceName,bookCode:$bookCode,chapter:$chapter){
+    verseText
+    reference{
+      book
+      chapter
+      verseNumber
+    }
+  }
+}
+    """
+    var1 = {
+  "sourceName":"gu_TTT_1_bible" ,
+  "bookCode": "exo",
+  "chapter": 1
+}
+    var2 = var1
+    var2["bookCode"] = "gen"
+    var3 = var1
+    var3["bookCode"] = "lev"
+    executed5 = gql_request(get_bible_verse,headers=headers_auth,variables=var1)
+    executed6 = gql_request(get_bible_verse,headers=headers_auth,variables=var2)
+    executed7 = gql_request(get_bible_verse,headers=headers_auth,variables=var3)
+    for row in executed5["data"]["bibleVerse"]:
+        if row["reference"]["verseNumber"] == 1:
+            assert row["verseText"] == expected_versetext_mal
+    for row in executed6["data"]["bibleVerse"]:
+        if row["reference"]["verseNumber"] == 1:
+            assert row["verseText"] == expected_versetext_7
+    for row in executed7["data"]["bibleVerse"]:
+        if row["reference"]["verseNumber"] == 1:
+            assert row["verseText"] == expected_versetext_eng
+    #update 
+    variable2 = {
+      "object": {
+        "sourceName": "gu_TTT_1_bible",
+        "books": [
+          {"USFM":"\\id exo\n\\c 1\n\\p\n\\v 6ഉ test verse six g \n\\v 6എ test verse six c edited \n\\v 6അ test verse six b"}]}}
+    executed2 = gql_request(BOOK_EDIT_QUERY,operation = "mutation",variables=variable2,
+      headers=headers_auth)
+    assert executed2["data"]["editBibleBook"]["message"] == "Bible books updated successfully"
+    
+    expected_versetext_mal_edited = "test verse six b test verse six g test verse six c edited"
+    executed8 = gql_request(get_bible_verse,headers=headers_auth,variables=var1)
+    for row in executed8["data"]["bibleVerse"]:
+        if row["reference"]["verseNumber"] == 1:
+            assert row["verseText"] == expected_versetext_mal_edited
 
 def test_post_put_merged_verse():
     """test posting merged verse"""
@@ -333,6 +416,7 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"rom",chapter:1){
       verseNumberEnd
     }
     verseText
+    metaData
   }
 }
   """
@@ -342,8 +426,18 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"rom",chapter:1){
     for row in executed3["data"]["bibleVerse"]:
         if row["reference"]["verseNumber"] == 1:
             assert row["verseText"] == "test verse one two merged"
+            assert "publishedVersification" in row["metaData"]
+            assert len(row["metaData"]["publishedVersification"]) == 1
+            for dict in row["metaData"]["publishedVersification"]:
+                assert dict["verseNumber"] == '1-2'
+                assert dict["verseText"] == 'test verse one two merged'
         if row["reference"]["verseNumber"] == 2:
             assert row["verseText"] == ''
+            assert "publishedVersification" in row["metaData"]
+            assert len(row["metaData"]["publishedVersification"]) == 1
+            for dict in row["metaData"]["publishedVersification"]:
+                assert dict["verseNumber"] == '1-2'
+                assert dict["verseText"] == 'test verse one two merged'
         if row["reference"]["verseNumber"] == 3:
             assert row["verseText"] == 'test verse three'
 
@@ -364,8 +458,20 @@ bibleVerse(sourceName:"gu_TTT_1_bible",bookCode:"rom",chapter:1){
     for row in executed4["data"]["bibleVerse"]:
         if row["reference"]["verseNumber"] == 1:
             assert row["verseText"] == "test verse one two merged edited"
+            #check metadata
+            assert "publishedVersification" in row["metaData"]
+            assert len(row["metaData"]["publishedVersification"]) == 1
+            for dict in row["metaData"]["publishedVersification"]:
+                assert dict["verseNumber"] == '1-2'
+                assert dict["verseText"] == 'test verse one two merged edited'
         if row["reference"]["verseNumber"] == 2:
             assert row["verseText"] == ''
+            #check metadata
+            assert "publishedVersification" in row["metaData"]
+            assert len(row["metaData"]["publishedVersification"]) == 1
+            for dict in row["metaData"]["publishedVersification"]:
+                assert dict["verseNumber"] == '1-2'
+                assert dict["verseText"] == 'test verse one two merged edited'
 
 def test_post_optional():
   '''Positive test fr post with optional JSON upload'''

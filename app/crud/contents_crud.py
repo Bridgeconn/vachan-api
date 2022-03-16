@@ -1,12 +1,10 @@
 ''' Place to define all Database CRUD operations for content tables
 bible, commentary, infographic, biblevideo, dictionary etc'''
-
 import json
 import re
 import sqlalchemy
 from sqlalchemy.orm import Session, defer, joinedload
 from sqlalchemy.sql import text
-
 import db_models
 from crud import utils
 from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException
@@ -21,7 +19,6 @@ def get_commentaries(db_:Session, *args,**kwargs):
     active = kwargs.get("active",True)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
-
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException('%s not found in database.'%source_name)
     if not source_name.endswith(db_models.ContentTypeName.COMMENTARY.value):
@@ -75,11 +72,8 @@ def upload_commentaries(db_: Session, source_name, commentaries, user_id=None):
             active=item.active)
         db_content.append(row)
     db_.add_all(db_content)
-    # db_.commit()
     db_.expire_all()
     source_db_content.updatedUser = user_id
-    # db_.commit()
-    # return db_content
     response = {
         'db_content':db_content,
         'source_content':source_db_content
@@ -120,15 +114,11 @@ def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
             row.active = item.active
         db_.flush()
         db_content.append(row)
-    # db_.commit()
     source_db_content.updatedUser = user_id
-    # db_.commit()
-    # db_.refresh(source_db_content)
     response = {
         'db_content':db_content,
         'source_content':source_db_content
     }
-    # return db_content
     return response
 
 def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):#pylint: disable=too-many-locals
@@ -150,8 +140,6 @@ def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):#
         query = db_.query(model_cls)
     if search_word and exact_match:
         query = query.filter(model_cls.word == utils.normalize_unicode(search_word))
-    # elif search_word:
-    #     query = query.filter(model_cls.word.like(utils.normalize_unicode(search_word)+"%"))
     elif search_word:
         search_pattern = " & ".join(re.findall(r'\w+', search_word))
         search_pattern += ":*"
@@ -190,11 +178,8 @@ def upload_dictionary_words(db_: Session, source_name, dictionary_words, user_id
             active = item.active)
         db_content.append(row)
     db_.add_all(db_content)
-    # db_.commit()
     db_.expire_all()
     source_db_content.updatedUser = user_id
-    # db_.commit()
-    # return db_content
     response = {
         'db_content':db_content,
         'source_content':source_db_content
@@ -222,11 +207,7 @@ def update_dictionary_words(db_: Session, source_name, dictionary_words, user_id
             row.active = item.active
         db_.flush()
         db_content.append(row)
-    # db_.commit()
     source_db_content.updatedUser = user_id
-    # db_.commit()
-    # db_.refresh(source_db_content)
-    # return db_content
     response = {
         'db_content':db_content,
         'source_content':source_db_content
@@ -249,7 +230,6 @@ def get_infographics(db_:Session, source_name, book_code=None, title=None,**kwar
     if title:
         query = query.filter(model_cls.title == utils.normalize_unicode(title.strip()))
     query = query.filter(model_cls.active == active)
-    # return query.offset(skip).limit(limit).all()
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     response = {
@@ -328,11 +308,7 @@ def update_infographics(db_: Session, source_name, infographics, user_id=None):
             row.active = item.active
         db_.flush()
         db_content.append(row)
-    # db_.commit()
     source_db_content.updatedUser = user_id
-    # db_.commit()
-    # db_.refresh(source_db_content)
-    # return db_content
     response = {
         'db_content':db_content,
         'source_content':source_db_content
@@ -524,12 +500,30 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
         }
     return response
 
-def bible_verse_type_check(content, model_cls_2, book, db_content2, chapter_number):
+def bible_split_verse_completion(db_content2,split_indexs):
+    """create split verse entry in db object"""
+    post_script_list = []
+    for indx in split_indexs:
+        for char in db_content2[indx].metaData["tempcontent"]:
+            post_script_list.append(char)
+        post_script_list.sort()
+        for char in post_script_list:
+            db_content2[indx].verseText = \
+                    db_content2[indx].verseText + ' '+ db_content2[indx].metaData\
+                        ["tempcontent"][char]["verseText"]
+            db_content2[indx].verseText=db_content2[indx].verseText.strip()
+        db_content2[indx].metaData.pop("tempcontent")
+        post_script_list = []
+    return db_content2
+
+def bible_verse_type_check(content, model_cls_2, book, db_content2, chapter_number,*args):#pylint: disable=too-many-locals
     """manage upload bible books verses based on verse type normal, merged
     verse or split verse"""
+    split_indexs = args[0]
     normal_verse_pattern = re.compile(r'\d+$')
-    split_verse_pattern = re.compile(r'(\d+)(\w)$')
+    split_verse_pattern = re.compile(r'(\d+)(\w+)$')
     merged_verse_pattern = re.compile(r'(\d+)-(\d+)$')
+    metadata_field = {"publishedVersification":[]}
     #NormalVerseNumber Pattern
     if normal_verse_pattern.match(str(content['verseNumber'])):
         row_other = model_cls_2(
@@ -544,27 +538,47 @@ def bible_verse_type_check(content, model_cls_2, book, db_content2, chapter_numb
         match_obj = split_verse_pattern.match(content['verseNumber'])
         post_script = match_obj.group(2)
         verse_number = match_obj.group(1)
-        if post_script == 'a':
+
+        if not len(db_content2)==0 and book.bookId == db_content2[-1].book_id and\
+            chapter_number == db_content2[-1].chapter\
+            and verse_number == db_content2[-1].verseNumber:
+            metadata_field['publishedVersification'].append(
+                {"verseNumber": content["verseNumber"], "verseText":content["verseText"]})
+            db_content2[-1].metaData['publishedVersification'].append(
+                metadata_field['publishedVersification'][0])
+            db_content2[-1].metaData['tempcontent'][post_script] = \
+                {"verseText":utils.normalize_unicode(content['verseText'].strip()),
+                "verseNumber":verse_number}
+        else:
+            #first time split verse
+            split_indexs.append(len(db_content2)) if len(split_indexs) != 0\
+                else split_indexs.append(0)#pylint: disable=expression-not-assigned
+            metadata_field["tempcontent"] = {
+                post_script:{"verseText":utils.normalize_unicode(content['verseText'].strip()),
+                "verseNumber":verse_number}}
+            metadata_field['publishedVersification'].append(
+                {"verseNumber": content["verseNumber"], "verseText":content["verseText"]})
             row_other = model_cls_2(
             book_id = book.bookId,
             chapter = chapter_number,
             verseNumber = verse_number,
-            verseText = utils.normalize_unicode(content['verseText'].strip()))
+            verseText = '',
+            metaData = metadata_field)
             db_content2.append(row_other)
-        else:
-            db_content2[-1].verseText = \
-                db_content2[-1].verseText + ' '+ content['verseText']
     #mergedVerseNumber Pattern
     #keep the whole text in first verseNumber of merged verses
     elif merged_verse_pattern.match(str(content['verseNumber'])):
         match_obj = merged_verse_pattern.match(content['verseNumber'])
         verse_number = match_obj.group(1)
         verse_number_end = match_obj.group(2)
+        metadata_field['publishedVersification'].append({"verseNumber":content['verseNumber'],
+            "verseText":content['verseText']})
         row_other = model_cls_2(
             book_id = book.bookId,
             chapter = chapter_number,
             verseNumber = verse_number,
-            verseText = utils.normalize_unicode(content['verseText'].strip()))
+            verseText = utils.normalize_unicode(content['verseText'].strip()),
+            metaData = metadata_field)
         db_content2.append(row_other)
         ## add empty text in the rest of the verseNumber range
         for versenum in range(int(verse_number)+1, int(verse_number_end)+1):
@@ -572,13 +586,14 @@ def bible_verse_type_check(content, model_cls_2, book, db_content2, chapter_numb
                 book_id = book.bookId,
                 chapter = chapter_number,
                 verseNumber = versenum,
-                verseText = "")
+                verseText = "",
+                metaData = metadata_field)
             db_content2.append(row_other)
     else:
         raise TypeException(#pylint: disable=raising-format-tuple,too-many-function-args
             "Unrecognized pattern in %s chapter %s verse %s",
             book.bookName, chapter_number, content['verseNumber'])
-    return db_content2
+    return db_content2, split_indexs
 
 def upload_bible_books(db_: Session, source_name, books, user_id=None):#pylint: disable=too-many-locals
     '''Adds rows to the bible table and corresponding bible_cleaned specified by source_name'''
@@ -591,6 +606,7 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None):#pylint: 
     model_cls_2 = db_models.dynamicTables[source_name+'_cleaned']
     db_content = []
     db_content2 = []
+    split_indexs = []
     for item in books:
         #checks for uploaded books
         book = upload_bible_books_checks(db_, item, source_name, db_content)
@@ -610,9 +626,12 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None):#pylint: 
                     if "verseText" not in content:
                         raise TypeException(
                             "JSON is not of the required format. verseText not found")
-                    db_content2 = \
+                    db_content2, split_indexs = \
                         bible_verse_type_check(content, model_cls_2,
-                            book, db_content2, chapter_number)
+                            book, db_content2, chapter_number,split_indexs)
+    if len(split_indexs) > 0:
+        db_content2 = bible_split_verse_completion(db_content2, split_indexs)
+
     db_.add_all(db_content)
     db_.add_all(db_content2)
     source_db_content.updatedUser = user_id
@@ -621,7 +640,6 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None):#pylint: 
         'db_content':db_content,
         'source_content':source_db_content
     }
-    # return db_content
     return response
 
 def upload_bible_books_checks(db_, item, source_name, db_content):
@@ -706,6 +724,7 @@ def update_bible_books(db_: Session, source_name, books, user_id=None):
 def update_bible_books_cleaned(db_,source_name,books,source_db_content,user_id):
     """update bible cleaned table"""
     db_content2 = []
+    split_indexs = []
     model_cls_2 = db_models.dynamicTables[source_name+'_cleaned']
     for item in books:
         book = db_.query(db_models.BibleBook).filter(
@@ -717,16 +736,19 @@ def update_bible_books_cleaned(db_,source_name,books,source_db_content,user_id):
                 chapter_number = int(chapter['chapterNumber'])
                 for content in chapter['contents']:
                     if 'verseNumber' in content:
-                        db_content2 = \
+                        db_content2, split_indexs = \
                         bible_verse_type_check(content, model_cls_2,
-                            book, db_content2, chapter_number)
-            db_.add_all(db_content2)
-            db_.flush()
+                            book, db_content2, chapter_number,split_indexs)
+
         if item.active is not None: # set all the verse rows' active flag accordingly
             rows = db_.query(model_cls_2).filter(
                 model_cls_2.book_id == book.bookId).all()
             for row in rows:
                 row.active = item.active
+    if len(split_indexs) > 0:
+        db_content2 = bible_split_verse_completion(db_content2, split_indexs)
+    db_.add_all(db_content2)
+    db_.flush()
     # db_.commit()
     # source_db_content.updatedUser = user_id
     source_db_content.updatedUser = user_id
@@ -925,6 +947,7 @@ def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, ver
     for res in results:
         ref_combined = {}
         ref_combined['verseText'] = res.verseText
+        ref_combined['metaData'] = res.metaData
         ref = { "bible": source_name,
                 "book": res.book.bookCode,
                 "chapter": res.chapter,
