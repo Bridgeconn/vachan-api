@@ -228,7 +228,6 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
                 required_rights += ACCESS_RULES[tag][permission]
         authenticated = check_right(user_details, required_rights)
-
         if (resource_type == schema_auth.ResourceType.USER and not authenticated):
             # Need to raise error before function execution, as we cannot delay db commit
             # like we do in other cases as changes happen in Kratos db, not app db'''

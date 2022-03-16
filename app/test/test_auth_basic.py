@@ -10,7 +10,7 @@ from .conftest import initial_test_users
 LOGIN_URL = '/v2/user/login'
 REGISTER_URL = '/v2/user/register'
 LOGOUT_URL = '/v2/user/logout'
-GETUSERURL = '/v2/user/list-identities'
+GETUSERURL = '/v2/users'
 USERROLE_URL = '/v2/user/userrole'
 DELETE_URL = '/v2/user/delete-identity'
 SUPER_USER = os.environ.get("VACHAN_SUPER_USERNAME")
@@ -522,7 +522,7 @@ def test_get_users():
     response = client.get(GETUSERURL+params)
     assert response.status_code == 401
     #with Auth
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
     response = client.get(GETUSERURL+params,headers=headers_auth)
     assert response.status_code == 200
     assert isinstance(response.json(),list)

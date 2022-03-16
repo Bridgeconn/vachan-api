@@ -51,7 +51,7 @@ async def login(user_email: str,password: types.SecretStr,
     log.debug('login:%s',user_email)
     return user_login_kratos(user_email,password)
 
-@router.get('/v2/user/list-identities', response_model=List[schema_auth.IdentitityListResponse],
+@router.get('/v2/users', response_model=List[schema_auth.IdentitityListResponse],
 responses={401: {"model": schemas.ErrorResponse}}
 ,tags=["Authentication"])
 @get_auth_access_check_decorator

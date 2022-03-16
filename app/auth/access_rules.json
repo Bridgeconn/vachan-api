@@ -57,7 +57,7 @@
         "edit-role":["SuperAdmin"],
        "edit-data":["SuperAdmin", "createdUser"],
         "view-profile":["SuperAdmin", "createdUser"],
-        "read":["SuperAdmin", "AgAdmin", "VachanAdmin"],
+        "read":["registeredUser"],
        "login":["noAuthRequired"],
         "logout":["createdUser"],
         "delete/deactivate":["SuperAdmin"]
