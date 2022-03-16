@@ -45,6 +45,13 @@ class AdminRoles(str, Enum):
     APIUSER = 'APIUser'
     BCSDEV = 'BcsDeveloper'
 
+class FilterRoles(str, Enum):
+    '''Input fields for App in Registration'''
+    ALL = "All"
+    AG = "Autographa"
+    VACHAN = "Vachan-online or vachan-app"
+    API = "API-user"
+
 class UserRole(BaseModel):
     """kratos user role input"""
     userid:str

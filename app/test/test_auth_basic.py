@@ -546,6 +546,40 @@ def test_get_users():
     for user in page2_users:
         assert not user in page1_users
 
+    #filter with name
+    params = f"?name=api&roles={schema_auth.FilterRoles.ALL}"
+    response = client.get(GETUSERURL+params,headers=headers_auth)
+    assert len(response.json()) >= 2
+
+    #filter with not available name in initial test user
+    params = f"?name=aqsdwerfgtyuiolkj&roles={schema_auth.FilterRoles.ALL}"
+    response = client.get(GETUSERURL+params,headers=headers_auth)
+    assert len(response.json()) == 0
+
+    #filter with roles
+    params = f"?roles={schema_auth.FilterRoles.ALL}"
+    response = client.get(GETUSERURL+params,headers=headers_auth)
+    assert len(response.json()) >=8
+
+    params = f"?roles={schema_auth.FilterRoles.API}"
+    response = client.get(GETUSERURL+params,headers=headers_auth)
+    assert len(response.json()) >=3
+
+    params = f"?roles={schema_auth.FilterRoles.AG}"
+    response = client.get(GETUSERURL+params,headers=headers_auth)
+    assert len(response.json()) >=2
+
+    params = f"?roles={schema_auth.FilterRoles.VACHAN}"
+    response = client.get(GETUSERURL+params,headers=headers_auth)
+    assert len(response.json()) >=2
+
+    params = f"?roles={schema_auth.FilterRoles.VACHAN}&roles={schema_auth.FilterRoles.AG}"
+    response = client.get(GETUSERURL+params,headers=headers_auth)
+    assert len(response.json()) >=4
+
+    
+
+
 
 
     

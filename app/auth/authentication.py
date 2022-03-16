@@ -316,11 +316,48 @@ def kratos_logout(recieve_token):
         raise GenericException(data["error"])
     return data
 
+#pylint: disable=R1703
+def get_users_kratos_filter(base_url,name,roles,limit,page):
+    """v2/users filter block"""
+    response = requests.get(base_url)
+    if response.status_code == 200:
+        user_data = []
+        for data in json.loads(response.content):
+            name_status = True
+            role_status = True
+            kratos_user = {
+                "userId":data["id"],
+                "name":data["traits"]["name"]
+            }
+            kratos_user["name"]["fullname"] = data["traits"]["name"]["first"].capitalize() \
+                + " "+ data["traits"]["name"]["last"].capitalize()
+            if not name is None:
+                if name.lower() == kratos_user["name"]["fullname"].lower() or\
+                    name.lower() == kratos_user["name"]["last"].lower() or\
+                        name.lower() == kratos_user["name"]["first"].lower():
+                    name_status = True
+                else:
+                    name_status = False
+            if not schema_auth.FilterRoles.ALL in roles:
+                role_list = [x.name.lower() for x in roles]
+                kratos_role = [x.lower() for x in data["traits"]["userrole"]]
+                for k_role in kratos_role:
+                    res = list(filter(k_role.startswith, role_list)) != []
+                    if res:
+                        role_status = True
+                        break
+                    role_status = False
+            if name_status and role_status:
+                user_data.append(kratos_user)
+        user_data = user_data[((limit*page)-limit):(limit*page)]
+        return user_data
+    raise GenericException(detail=json.loads(response.content))
+
 #get all or single user details
-def get_all_or_one_kratos_users(rec_user_id=None,page=None,limit=None):
+def get_all_or_one_kratos_users(rec_user_id=None,page=None,limit=None,name=None,roles=None):
     """get all user info or a particular user details"""
     base_url = ADMIN_BASE_URL+"identities/"
-
+    #all users
     if rec_user_id is None:
         if page is None and limit is None:
             response = requests.get(base_url)
@@ -328,23 +365,10 @@ def get_all_or_one_kratos_users(rec_user_id=None,page=None,limit=None):
                 user_data = json.loads(response.content)
             else:
                 raise UnAuthorizedException(detail=json.loads(response.content))
+        #v2/users
         else:
-            page = 0 if page is None else page
-            limit = 100 if limit is None else limit
-            base_url = base_url+f"?per_page={limit}&page={page}"
-            response = requests.get(base_url)
-            if response.status_code == 200:
-                user_data = []
-                for data in json.loads(response.content):
-                    kratos_user = {
-                        "userId":data["id"],
-                        "name":data["traits"]["name"]
-                    }
-                    kratos_user["name"]["fullname"] = data["traits"]["name"]["first"] + " "+\
-                        data["traits"]["name"]["last"]
-                    user_data.append(kratos_user)
-            else:
-                raise GenericException(detail=json.loads(response.content))
+            user_data = get_users_kratos_filter(base_url,name,roles,limit,page)
+    #single user
     else:
         response = requests.get(base_url+rec_user_id)
         if response.status_code == 200:
