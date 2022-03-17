@@ -9,6 +9,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 import db_models
 # from auth.api_permission_map import api_permission_map
+from auth import utils
 from schema import schema_auth
 from dependencies import log
 from custom_exceptions import GenericException ,\
@@ -187,7 +188,7 @@ def check_right(user_details, required_rights, resp_obj=None, db_=None):
     if resp_obj is not None and db_ is not None:
         try:
             if "resourceCreatedUser" in required_rights and \
-                user_details['user_id'] == resp_obj.createdUser:
+                    user_details['user_id'] == resp_obj.createdUser:
                 valid = True
             if "projectOwner" in required_rights and \
                 is_project_owner(db_, resp_obj, user_details['user_id']):
@@ -228,12 +229,19 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
                 required_rights += ACCESS_RULES[tag][permission]
         authenticated = check_right(user_details, required_rights)
+
         if (resource_type == schema_auth.ResourceType.USER and not authenticated):
             # Need to raise error before function execution, as we cannot delay db commit
             # like we do in other cases as changes happen in Kratos db, not app db'''
             if user_details['user_id'] is None:
                 raise UnAuthorizedException("Access token not provided or user not recognized")
-            raise PermissionException("Access Permission Denied for the URL")
+            #check for created user
+            if method == "PUT" and len(path_params)>0 :
+                obj = utils.ConvertDictObj()
+                obj['createdUser'] = path_params["user_id"]
+                authenticated = check_right(user_details, required_rights, obj, db_)
+            else:
+                raise PermissionException("Access Permission Denied for the URL")
 
         ###### Executing the API function #######
         response = await func(*args, **kwargs)
@@ -375,12 +383,38 @@ def get_all_or_one_kratos_users(rec_user_id=None,page=None,limit=None,name=None,
             data = json.loads(response.content)
             user_data = {
                 "userId":data["id"],
-                "name":data["traits"]["name"]
+                "name":data["traits"]["name"],
+                "dbTraits":""
             }
             user_data["name"]["fullname"] = data["traits"]["name"]["first"].capitalize() \
                 + " "+ data["traits"]["name"]["last"].capitalize()
+            user_data["dbTraits"] = data["traits"]
         else:
             raise NotAvailableException("User does not exist")
+    return user_data
+
+def update_kratos_user(rec_user_id,data):
+    """update kratos user profile"""
+    base_url = ADMIN_BASE_URL+"identities/"+rec_user_id
+    #check valid user
+    fetch_data = get_all_or_one_kratos_users(rec_user_id=rec_user_id)["dbTraits"]
+    fetch_data["name"].pop("fullname")
+    fetch_data["name"]["last"] = data.lastname
+    fetch_data["name"]["first"] = data.firstname
+    payload = json.dumps({"traits":fetch_data, "schema_id":"default"})
+    headers = {'Content-Type': 'application/json'}
+    response = requests.put(base_url, headers=headers, data=payload)
+    if response.status_code == 200:
+        response = json.loads(response.content)
+        user_data = {
+                    "userId":response["id"],
+                    "name":response["traits"]["name"]}
+        user_data["name"]["fullname"] = response["traits"]["name"]["first"].capitalize() \
+                    + " "+ response["traits"]["name"]["last"].capitalize()
+    elif response.status_code == 404:
+        raise NotAvailableException(json.loads(response.content)["error"]["details"])
+    elif response.status_code == 500:
+        raise GenericException(json.loads(response.content)["error"]["details"])
     return user_data
 
 #User registration with credentials

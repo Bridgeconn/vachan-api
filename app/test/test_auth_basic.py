@@ -1,4 +1,5 @@
 """Basic test cases of features Register, Login, Logout, Role assignment"""
+import json
 import os
 import pytest
 from urllib.parse import quote
@@ -514,7 +515,7 @@ def test_token_expiry(create_user_fixture):
     assert response.status_code == 401
     assert response.json()["error"] == "Authentication Error"
 
-def test_get_users():
+def test_get_put_users():
     """get users"""
     #get list of users
     #without auth
@@ -581,3 +582,61 @@ def test_get_users():
     assert response.status_code == 200
     assert response.json()["userId"] == initial_test_users['APIUser']['test_user_id']
     assert response.json()["name"]["first"] == initial_test_users['APIUser']['firstname']
+
+    #edit user
+    #No auth
+    data = {
+    'firstname': 'API user',
+    'lastname': 'Edited'
+    }
+    response = client.put(f"/v2/user/{initial_test_users['APIUser']['test_user_id']}",json=data)
+    assert response.status_code == 401
+    assert response.json()["error"] == 'Authentication Error'
+
+    #with auth super admin
+    data_SA = {
+        "user_email": SUPER_USER,
+        "password": SUPER_PASSWORD
+    }
+    response = login(data_SA)
+    token =  response.json()['token']
+
+    #before update get data
+    response = client.get(f"/v2/user/{initial_test_users['APIUser']['test_user_id']}",headers=headers_auth)
+    assert response.json()["userId"] == initial_test_users['APIUser']['test_user_id']
+    assert response.json()["name"]["first"] == initial_test_users['APIUser']['firstname']
+
+    #SA
+    headers_SA = {"contentType": "application/json",
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+token
+            }
+    response = client.put(f"/v2/user/{initial_test_users['APIUser']['test_user_id']}",json=data,headers=headers_SA)
+    assert response.status_code == 201
+    assert "userId" in response.json()
+    assert "name" in response.json()
+    assert response.json()["name"]["first"] == data["firstname"]
+    assert response.json()["name"]["last"] == data["lastname"]
+    assert response.json()["name"]["first"] != initial_test_users['APIUser']['firstname']
+    assert response.json()["name"]["last"] != initial_test_users['APIUser']['firstname']
+    #Created User
+    data = {
+    'firstname': 'API',
+    'lastname': 'Edited by createdUser'
+    }
+
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+    response1 = client.put(f"/v2/user/{initial_test_users['APIUser']['test_user_id']}",json=data,headers=headers_auth)
+    assert response1.status_code == 201
+    assert "userId" in response1.json()
+    assert "name" in response1.json()
+    assert response1.json()["name"]["first"] == data["firstname"]
+    assert response1.json()["name"]["last"] == data["lastname"]
+    assert response1.json()["name"]["first"] != response.json()["name"]["first"]
+    assert response1.json()["name"]["last"] != response.json()["name"]["last"]
+
+    #user otherthan created and SA
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    response2 = client.put(f"/v2/user/{initial_test_users['APIUser']['test_user_id']}",json=data,headers=headers_auth)
+    assert response2.status_code == 403
+    assert response2.json()["error"] == "Permission Denied"

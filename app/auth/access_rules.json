@@ -55,7 +55,7 @@
     "user":{
         "create":["noAuthRequired"],
         "edit-role":["SuperAdmin"],
-       "edit-data":["SuperAdmin", "createdUser"],
+       "edit-data":["SuperAdmin", "resourceCreatedUser"],
         "view-profile":["SuperAdmin", "createdUser"],
         "read":["registeredUser"],
        "login":["noAuthRequired"],

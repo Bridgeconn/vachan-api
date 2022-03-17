@@ -35,6 +35,11 @@ class Registration(BaseModel):
     firstname:str = None
     lastname:str = None
 
+class EditUser(BaseModel):
+    """kratos registration input"""
+    firstname:str
+    lastname:str
+
 class AdminRoles(str, Enum):
     '''Admin Roles'''
     SUPERADMIN = 'SuperAdmin'
