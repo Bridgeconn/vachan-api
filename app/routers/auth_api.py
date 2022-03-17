@@ -123,18 +123,19 @@ user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint:
     role_list = role_data.roles
     return user_role_add(user_id,role_list)
 
-@router.put('/v2/user/{user_id}', response_model=schema_auth.IdentitityListResponse,
+@router.put('/v2/user/{user_id}', response_model=schema_auth.UserUpdateResponse,
 responses={401: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse},
 500: {"model": schemas.ErrorResponse}},status_code=201,tags=["Authentication"])
 @get_auth_access_check_decorator
-async def edit__user(request: Request,#pylint: disable=unused-argument
+async def edit_user(request: Request,#pylint: disable=unused-argument
     user_id:str =Path(...,example="4bd012fd-7de8-4d66-928f-4925ee9bb"),
     edit_details:schema_auth.EditUser = Body(...),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''update user data'''
     log.info('In edit User Identity')
     log.debug('user_id: %s, user_details: %s',user_id, edit_details)
-    return update_kratos_user(rec_user_id=user_id,data=edit_details)
+    data =  update_kratos_user(rec_user_id=user_id,data=edit_details)
+    return {"message":"User details updated successfully","data":data}
 
 @router.delete('/v2/user/delete-identity',response_model=schema_auth.IdentityDeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},

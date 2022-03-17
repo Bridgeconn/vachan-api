@@ -125,3 +125,8 @@ class IdentitityListResponse(BaseModel):
                 "fullname": "Full Name"
             }
         }}
+
+class UserUpdateResponse(BaseModel):
+    """Response object of User Update"""
+    message:str
+    data: IdentitityListResponse

@@ -742,6 +742,11 @@ class LoginResponse(graphene.ObjectType):#pylint: disable=too-few-public-methods
     message = graphene.String()
     token = graphene.String()
 
+class UserUpdateInput(graphene.InputObjectType):#pylint: disable=too-few-public-methods
+    """input of userdata to update"""
+    firstname = graphene.String(required=True)
+    lastname = graphene.String(required=True)
+
 class AdminRoles(graphene.Enum):
     '''Admin Roles'''
     SUPERADMIN = 'SuperAdmin'
