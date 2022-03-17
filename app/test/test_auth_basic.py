@@ -5,15 +5,20 @@ from urllib.parse import quote
 
 from app.schema import schema_auth
 from . import assert_input_validation_error, client
+from .conftest import initial_test_users
 
 LOGIN_URL = '/v2/user/login'
 REGISTER_URL = '/v2/user/register'
 LOGOUT_URL = '/v2/user/logout'
+GETUSERURL = '/v2/users'
 USERROLE_URL = '/v2/user/userrole'
 DELETE_URL = '/v2/user/delete-identity'
 SUPER_USER = os.environ.get("VACHAN_SUPER_USERNAME")
 SUPER_PASSWORD = os.environ.get("VACHAN_SUPER_PASSWORD")
 ADMIN_BASE_URL = os.environ.get("VACHAN_KRATOS_ADMIN_URL")
+
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
 
 #Fixture for delete users from kratos created
 @pytest.fixture
@@ -508,4 +513,40 @@ def test_token_expiry(create_user_fixture):
 
     assert response.status_code == 401
     assert response.json()["error"] == "Authentication Error"
+
+def test_get_users():
+    """get users"""
+    #get list of users
+    #without auth
+    params = f"?page=1&limit=100"
+    response = client.get(GETUSERURL+params)
+    assert response.status_code == 401
+    #with Auth
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+    response = client.get(GETUSERURL+params,headers=headers_auth)
+    assert response.status_code == 200
+    assert isinstance(response.json(),list)
+    assert len(response.json()) >= len(initial_test_users)
+    for item in response.json():
+        assert "userId" in item
+        assert "name" in item
+        assert isinstance(item["name"],dict)
+
+    #users created in initial test users-check pagination content
+    #page 1 and limit 3
+    params = f"?page=1&limit=3"
+    response = client.get(GETUSERURL+params,headers=headers_auth)
+    assert len(response.json())==3
+    page1_users = [x["userId"] for x in response.json()]
+    #limit 3 and page 2
+    params = f"?page=2&limit=3"
+    response = client.get(GETUSERURL+params,headers=headers_auth)
+    page2_users = [x["userId"] for x in response.json()]
+    assert len(response.json())==3
+    for user in page2_users:
+        assert not user in page1_users
+
+
+
+    
 
