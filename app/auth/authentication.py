@@ -372,7 +372,13 @@ def get_all_or_one_kratos_users(rec_user_id=None,page=None,limit=None,name=None,
     else:
         response = requests.get(base_url+rec_user_id)
         if response.status_code == 200:
-            user_data = json.loads(response.content)
+            data = json.loads(response.content)
+            user_data = {
+                "userId":data["id"],
+                "name":data["traits"]["name"]
+            }
+            user_data["name"]["fullname"] = data["traits"]["name"]["first"].capitalize() \
+                + " "+ data["traits"]["name"]["last"].capitalize()
         else:
             raise NotAvailableException("User does not exist")
     return user_data

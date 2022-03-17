@@ -577,10 +577,7 @@ def test_get_users():
     response = client.get(GETUSERURL+params,headers=headers_auth)
     assert len(response.json()) >=4
 
-    
-
-
-
-
-    
-
+    response = client.get(f"/v2/user/{initial_test_users['APIUser']['test_user_id']}",headers=headers_auth)
+    assert response.status_code == 200
+    assert response.json()["userId"] == initial_test_users['APIUser']['test_user_id']
+    assert response.json()["name"]["first"] == initial_test_users['APIUser']['firstname']

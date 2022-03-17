@@ -1,6 +1,7 @@
 Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/user/register,POST,None,False,None,create
 /v2/user/login,GET,None,False,None,login
+/v2/user/{user_id},GET,None,False,None,read
 /v2/users,GET,None,False,None,read
 /v2/user/logout,GET,None,False,None,logout
 /v2/user/userrole,PUT,None,False,None,edit-role
