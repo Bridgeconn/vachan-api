@@ -325,7 +325,7 @@ def kratos_logout(recieve_token):
     return data
 
 #pylint: disable=R1703
-def get_users_kratos_filter(base_url,name,roles,limit,page):
+def get_users_kratos_filter(base_url,name,roles,limit,page):#pylint: disable=too-many-locals
     """v2/users filter block"""
     response = requests.get(base_url)
     if response.status_code == 200:
@@ -346,8 +346,18 @@ def get_users_kratos_filter(base_url,name,roles,limit,page):
                     name_status = True
                 else:
                     name_status = False
+
             if not schema_auth.FilterRoles.ALL in roles:
-                role_list = [x.name.lower() for x in roles]
+                temp_role = []
+                switcher = {
+                    schema_auth.FilterRoles.AG.value : schema_auth.FilterRoles.AG,
+                    schema_auth.FilterRoles.VACHAN.value : schema_auth.FilterRoles.VACHAN,
+                    schema_auth.FilterRoles.API.value : schema_auth.FilterRoles.API
+                        }
+                for role in roles:
+                    user_role =  switcher.get(role)
+                    temp_role.append(user_role)
+                role_list = [x.name.lower() for x in temp_role]
                 kratos_role = [x.lower() for x in data["traits"]["userrole"]]
                 for k_role in kratos_role:
                     res = list(filter(k_role.startswith, role_list)) != []

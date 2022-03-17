@@ -51,7 +51,7 @@ class AdminRoles(str, Enum):
     BCSDEV = 'BcsDeveloper'
 
 class FilterRoles(str, Enum):
-    '''Input fields for App in Registration'''
+    '''Filter roles for get users'''
     ALL = "All"
     AG = "Autographa"
     VACHAN = "Vachan-online or vachan-app"
