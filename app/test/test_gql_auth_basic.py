@@ -604,6 +604,12 @@ def test_get_put_users():
     userId
     name}}
     """
+    qry_get_user_by_id = """
+        query getusers($userId:String){
+  getusers(userId:$userId){
+    userId
+    name}}
+    """
 
     #get user
     #without Auth
@@ -664,14 +670,32 @@ def test_get_put_users():
     executed3 = gql_request(query=qry_get_user_role_filter,headers=headers_auth,variables=var3)
     assert len(executed3["data"]["getusers"]) >=4
 
-    #user id filter pending
+    #user id filter
+    var3 ={"userId": initial_test_users['APIUser']['test_user_id']}
+    executed3 = gql_request(query=qry_get_user_by_id,headers=headers_auth,variables=var3)
+    assert len(executed3["data"]["getusers"]) == 1
+    assert executed3["data"]["getusers"][0]["userId"] == initial_test_users['APIUser']['test_user_id']
+    assert executed3["data"]["getusers"][0]["name"]["first"] == initial_test_users['APIUser']['firstname']
+
+    #wrong user id
+    var3 ={"userId": "hgtyr-1234-tthhh-6677-yyyyyy-67777-111"}
+    executed3 = gql_request(query=qry_get_user_by_id,headers=headers_auth,variables=var3)
+    assert "errors" in executed3
 
     #edit
     data = {
         "userId": initial_test_users['APIUser']['test_user_id'],
         "userData": {"firstname": "API user","lastname": "Edited"}}
-    executed4 = gql_request(query=qry_update_user,variables=data)
+
+    executed4 = gql_request(query=qry_update_user, operation="mutation",variables=data)
     assert "errors" in executed4
+
+    #before update get data
+    var3 ={"userId": initial_test_users['APIUser']['test_user_id']}
+    executed3 = gql_request(query=qry_get_user_by_id,headers=headers_auth,variables=var3)
+    assert len(executed3["data"]["getusers"]) == 1
+    assert executed3["data"]["getusers"][0]["userId"] == initial_test_users['APIUser']['test_user_id']
+    assert executed3["data"]["getusers"][0]["name"]["first"] == initial_test_users['APIUser']['firstname']
 
     # SA
     data_SA = {
@@ -686,7 +710,28 @@ def test_get_put_users():
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+token}
 
-    
+    executed4 = gql_request(query=qry_update_user, operation="mutation",variables=data,headers=headers_SA)
+    assert executed4["data"]["updateUser"]["message"] == "User details updated successfully"
+    assert executed4["data"]["updateUser"]["data"]["name"]["first"] == data["userData"]["firstname"]
+    assert executed4["data"]["updateUser"]["data"]["name"]["last"] == data["userData"]["lastname"]
+    assert executed4["data"]["updateUser"]["data"]["name"]["first"] != initial_test_users['APIUser']['firstname']
+    assert executed4["data"]["updateUser"]["data"]["name"]["last"] != initial_test_users['APIUser']['firstname']
 
+    #Created User
+    data = {
+        "userId": initial_test_users['APIUser']['test_user_id'],
+        "userData": {"firstname": "API","lastname": "Edited by createdUser"}}
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+    executed5 = gql_request(query=qry_update_user, operation="mutation",variables=data,headers=headers_auth)
+    assert executed5["data"]["updateUser"]["message"] == "User details updated successfully"
+    assert executed5["data"]["updateUser"]["data"]["name"]["first"] == data["userData"]["firstname"]
+    assert executed5["data"]["updateUser"]["data"]["name"]["last"] == data["userData"]["lastname"]
+    assert executed5["data"]["updateUser"]["data"]["name"]["first"] != \
+        executed4["data"]["updateUser"]["data"]["name"]["first"]
+    assert executed5["data"]["updateUser"]["data"]["name"]["last"] !=\
+        executed4["data"]["updateUser"]["data"]["name"]["last"]
 
-    
+    #user other than created and SA
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    executed5 = gql_request(query=qry_update_user, operation="mutation",variables=data,headers=headers_auth)
+    assert "errors" in executed5

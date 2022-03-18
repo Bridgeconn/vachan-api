@@ -578,10 +578,19 @@ def test_get_put_users():
     response = client.get(GETUSERURL+params,headers=headers_auth)
     assert len(response.json()) >=4
 
-    response = client.get(f"/v2/user/{initial_test_users['APIUser']['test_user_id']}",headers=headers_auth)
+    #get user
+    params = f"?user_id={initial_test_users['APIUser']['test_user_id']}"
+    response = client.get(GETUSERURL+params,headers=headers_auth)
     assert response.status_code == 200
-    assert response.json()["userId"] == initial_test_users['APIUser']['test_user_id']
-    assert response.json()["name"]["first"] == initial_test_users['APIUser']['firstname']
+    assert len(response.json()) == 1
+    assert response.json()[0]["userId"] == initial_test_users['APIUser']['test_user_id']
+    assert response.json()[0]["name"]["first"] == initial_test_users['APIUser']['firstname']
+
+    #wrong user id
+    params = f"?user_id=hgtyr-1234-tthhh-6677-yyyyyy-67777-111"
+    response = client.get(GETUSERURL+params,headers=headers_auth)
+    assert response.status_code == 404
+    assert response.json()["error"] == "Requested Content Not Available"
 
     #edit user
     #No auth
@@ -602,9 +611,10 @@ def test_get_put_users():
     token =  response.json()['token']
 
     #before update get data
-    response = client.get(f"/v2/user/{initial_test_users['APIUser']['test_user_id']}",headers=headers_auth)
-    assert response.json()["userId"] == initial_test_users['APIUser']['test_user_id']
-    assert response.json()["name"]["first"] == initial_test_users['APIUser']['firstname']
+    params = f"?user_id={initial_test_users['APIUser']['test_user_id']}"
+    response = client.get(GETUSERURL+params,headers=headers_auth)
+    assert response.json()[0]["userId"] == initial_test_users['APIUser']['test_user_id']
+    assert response.json()[0]["name"]["first"] == initial_test_users['APIUser']['firstname']
 
     #SA
     headers_SA = {"contentType": "application/json",
@@ -613,12 +623,13 @@ def test_get_put_users():
             }
     response = client.put(f"/v2/user/{initial_test_users['APIUser']['test_user_id']}",json=data,headers=headers_SA)
     assert response.status_code == 201
-    assert "userId" in response.json()
-    assert "name" in response.json()
-    assert response.json()["name"]["first"] == data["firstname"]
-    assert response.json()["name"]["last"] == data["lastname"]
-    assert response.json()["name"]["first"] != initial_test_users['APIUser']['firstname']
-    assert response.json()["name"]["last"] != initial_test_users['APIUser']['firstname']
+    assert response.json()["message"] == "User details updated successfully"
+    assert "userId" in response.json()["data"]
+    assert "name" in response.json()["data"]
+    assert response.json()["data"]["name"]["first"] == data["firstname"]
+    assert response.json()["data"]["name"]["last"] == data["lastname"]  
+    assert response.json()["data"]["name"]["first"] != initial_test_users['APIUser']['firstname']
+    assert response.json()["data"]["name"]["last"] != initial_test_users['APIUser']['firstname']
     #Created User
     data = {
     'firstname': 'API',
@@ -628,12 +639,13 @@ def test_get_put_users():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
     response1 = client.put(f"/v2/user/{initial_test_users['APIUser']['test_user_id']}",json=data,headers=headers_auth)
     assert response1.status_code == 201
-    assert "userId" in response1.json()
-    assert "name" in response1.json()
-    assert response1.json()["name"]["first"] == data["firstname"]
-    assert response1.json()["name"]["last"] == data["lastname"]
-    assert response1.json()["name"]["first"] != response.json()["name"]["first"]
-    assert response1.json()["name"]["last"] != response.json()["name"]["last"]
+    assert response.json()["message"] == "User details updated successfully"
+    assert "userId" in response.json()["data"]
+    assert "name" in response.json()["data"]
+    assert response1.json()["data"]["name"]["first"] == data["firstname"]
+    assert response1.json()["data"]["name"]["last"] == data["lastname"]
+    assert response1.json()["data"]["name"]["first"] != response.json()["data"]["name"]["first"]
+    assert response1.json()["data"]["name"]["last"] != response.json()["data"]["name"]["last"]
 
     #user otherthan created and SA
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
