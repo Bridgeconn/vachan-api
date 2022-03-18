@@ -5,10 +5,14 @@ from urllib.parse import quote
 
 from graphql_api import types
 from . import gql_request
+from .conftest import initial_test_users
 
 SUPER_USER = os.environ.get("VACHAN_SUPER_USERNAME")
 SUPER_PASSWORD = os.environ.get("VACHAN_SUPER_PASSWORD")
 ADMIN_BASE_URL = os.environ.get("VACHAN_KRATOS_ADMIN_URL")
+
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
 
 #Fixture for delete users from kratos created
 @pytest.fixture
@@ -559,3 +563,130 @@ def test_token_expiry(create_user_fixture):
     users_list.append(user_id)
 
     assert "errors" in executed
+
+def test_get_put_users():
+    """get users"""
+    qry_get_users = """
+        {
+  getusers{
+    userId
+    name
+  }
+}
+    """
+    qry_get_user_role_filter = """
+        query getusers($roles:[FilterRoles]){
+  getusers(roles:$roles){
+    userId
+    name}}
+    """
+    qry_get_user_pagination = """
+        query getusers($page:Int,$limit:Int){
+  getusers(page:$page,limit:$limit){
+    userId
+    name}}
+    """
+
+    qry_update_user = """
+        mutation updateuser($userId:String!,$userData:UserUpdateInput){
+  updateUser(userId:$userId,userData:$userData){
+    message
+    data{
+      userId
+      name
+    }
+  }
+}
+    """
+    get_name_filter = """
+        query getusers($name:String){
+  getusers(name:$name){
+    userId
+    name}}
+    """
+
+    #get user
+    #without Auth
+    executed = gql_request(query=qry_get_users)
+    assert "errors" in executed
+    #with auth
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+    executed = gql_request(query=qry_get_users,headers=headers_auth)
+    assert isinstance(executed["data"]["getusers"],list)
+    assert len(executed["data"]["getusers"]) >= len(initial_test_users)
+    for item in executed["data"]["getusers"]:
+        assert "userId" in item
+        assert "name" in item
+        assert isinstance(item["name"],dict)
+    
+    #users created in initial test users-check pagination content
+    #page 1 and limit 3
+    var1= {"page": 1,"limit": 3}
+    executed = gql_request(query=qry_get_user_pagination,headers=headers_auth,variables=var1)
+    assert len(executed["data"]["getusers"]) == 3
+    page1_users = [x["userId"] for x in executed["data"]["getusers"]]
+    #limit 3 and page 2
+    var2= {"page": 2,"limit": 3}
+    executed1 = gql_request(query=qry_get_user_pagination,headers=headers_auth,variables=var2)
+    assert len(executed1["data"]["getusers"]) == 3
+    page2_users = [x["userId"] for x in executed1["data"]["getusers"]]
+    for user in page2_users:
+        assert not user in page1_users
+
+    #filters
+    var3 ={"name": "api"}
+    executed3 = gql_request(query=get_name_filter,headers=headers_auth,variables=var3)
+    assert len(executed3["data"]["getusers"]) >=2
+
+    #filter with not available name in initial test user
+    var3 ={"name": "api-endpoint-test-name"}
+    executed3 = gql_request(query=get_name_filter,headers=headers_auth,variables=var3)
+    assert len(executed3["data"]["getusers"]) == 0
+
+    #filter with roles
+    var3 ={"roles": ["ALL"]}
+    executed3 = gql_request(query=qry_get_user_role_filter,headers=headers_auth,variables=var3)
+    assert len(executed3["data"]["getusers"]) >=8
+
+    var3 ={"roles": ["AG"]}
+    executed3 = gql_request(query=qry_get_user_role_filter,headers=headers_auth,variables=var3)
+    assert len(executed3["data"]["getusers"]) >=2
+
+    var3 ={"roles": ["VACHAN"]}
+    executed3 = gql_request(query=qry_get_user_role_filter,headers=headers_auth,variables=var3)
+    assert len(executed3["data"]["getusers"]) >=2
+
+    var3 ={"roles": ["API"]}
+    executed3 = gql_request(query=qry_get_user_role_filter,headers=headers_auth,variables=var3)
+    assert len(executed3["data"]["getusers"]) >=3
+
+    var3 ={"roles": ["VACHAN","AG"]}
+    executed3 = gql_request(query=qry_get_user_role_filter,headers=headers_auth,variables=var3)
+    assert len(executed3["data"]["getusers"]) >=4
+
+    #user id filter pending
+
+    #edit
+    data = {
+        "userId": initial_test_users['APIUser']['test_user_id'],
+        "userData": {"firstname": "API user","lastname": "Edited"}}
+    executed4 = gql_request(query=qry_update_user,variables=data)
+    assert "errors" in executed4
+
+    # SA
+    data_SA = {
+        "user_email": SUPER_USER,
+        "password": SUPER_PASSWORD
+    }
+    response = login(data_SA)
+    resp_sa = response["data"]["login"]
+    assert resp_sa["message"] == "Login Succesfull"
+    token = resp_sa['token']
+    headers_SA = {"contentType": "application/json",
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+token}
+
+    
+
+
+    

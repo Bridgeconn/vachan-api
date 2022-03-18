@@ -686,6 +686,21 @@ class Query(graphene.ObjectType):
         response = await auth_api.get_identities_list(request=req,name=name,
         roles=roles,page=page,limit=limit, user_details=user_details,db_=db_)
         return response
+    
+    get_single_user = graphene.Field(types.IdentitityListResponse,
+        description="""get single user""",
+        user_id = graphene.String(required=True))
+    async def resolve_get_single_user(self, info, user_id):
+        """resolve"""
+        log.info('In GraphQL get single user')
+        db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = f"/v2/user/{user_id}"
+        req.path_params["user_id"] = user_id
+        response = await auth_api.get_single_user(request=req,
+        user_id=user_id, user_details=user_details, db_=db_)
+        return response
 
     #Source Get-Sentence Extract Text Contents
     extract_text_contents = graphene.List(types.ExtractSentenceResposne,
