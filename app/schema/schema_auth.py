@@ -14,6 +14,7 @@ class ResourceType(str, Enum):
     TRANSLATION = "generic translation apis"
     LOOKUP = "Lookup contents"
     RESEARCH = "Research-Material"
+    JOBS = "Background-jobs"
 
 class App(str, Enum):
     '''Defined apps'''

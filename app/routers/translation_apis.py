@@ -551,8 +551,10 @@ async def generate_stopwords(request: Request, background_tasks: BackgroundTasks
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}},
     tags=['Jobs'])
-def check_job_status(request: Request,
-    job_id:int=Query(...,example="100000"),db_:Session=Depends(get_db)):
+@get_auth_access_check_decorator
+async def check_job_status(request: Request,
+    job_id:int=Query(...,example="100000"),user_details =Depends(get_user_or_none),
+    db_:Session=Depends(get_db)):
     '''Checking the status of a job'''
     log.info('In check_job_status')
     log.debug('job_id:%s', job_id)

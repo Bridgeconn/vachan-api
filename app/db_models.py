@@ -253,6 +253,7 @@ class BibleContentCleaned(): # pylint: disable=too-few-public-methods
     # footNote = Column('footnote', String)
     # crossReference = Column('cross_reference')
     active = Column('active', Boolean, default=True)
+    metaData = Column('metadata', JSONB)
     __table_args__ = (
         UniqueConstraint('book_id', 'chapter', 'verse_number'),
         {'extend_existing': True}
