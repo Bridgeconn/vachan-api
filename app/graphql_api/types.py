@@ -741,6 +741,7 @@ class LoginResponse(graphene.ObjectType):#pylint: disable=too-few-public-methods
     """Login Response Object"""
     message = graphene.String()
     token = graphene.String()
+    userId = graphene.String()
 
 class UserUpdateInput(graphene.InputObjectType):#pylint: disable=too-few-public-methods
     """input of userdata to update"""

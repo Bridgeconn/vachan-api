@@ -82,6 +82,7 @@ class LoginResponse(BaseModel):
     """Response object of login"""
     message:str
     token:str
+    userId:str
 
 class LogoutResponse(BaseModel):
     """Response object of logout"""

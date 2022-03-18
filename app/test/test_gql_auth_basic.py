@@ -32,6 +32,7 @@ def login(data):
         login(userEmail:$email,password:$password){
             message
             token
+            userId
         }
         }
     """
@@ -40,6 +41,10 @@ def login(data):
     "password": data['password']
     }
     executed = gql_request(query=login_qry, variables=login_var)
+    if not "errors" in executed:
+        assert "userId" in executed["data"]["login"]
+        assert "token" in executed["data"]["login"]
+        assert executed["data"]["login"]["message"] == "Login Succesfull"
     return executed
 
 #registration check
@@ -671,11 +676,12 @@ def test_get_put_users():
     assert len(executed3["data"]["getusers"]) >=4
 
     #user id filter
-    var3 ={"userId": initial_test_users['APIUser']['test_user_id']}
+    var3 ={"userId": initial_test_users['APIUser2']['test_user_id']}
     executed3 = gql_request(query=qry_get_user_by_id,headers=headers_auth,variables=var3)
     assert len(executed3["data"]["getusers"]) == 1
-    assert executed3["data"]["getusers"][0]["userId"] == initial_test_users['APIUser']['test_user_id']
-    assert executed3["data"]["getusers"][0]["name"]["first"] == initial_test_users['APIUser']['firstname']
+    assert executed3["data"]["getusers"][0]["userId"] == initial_test_users['APIUser2']['test_user_id']
+    assert executed3["data"]["getusers"][0]["name"]["first"] == \
+        initial_test_users['APIUser2']['firstname']
 
     #wrong user id
     var3 ={"userId": "hgtyr-1234-tthhh-6677-yyyyyy-67777-111"}
@@ -684,18 +690,18 @@ def test_get_put_users():
 
     #edit
     data = {
-        "userId": initial_test_users['APIUser']['test_user_id'],
+        "userId": initial_test_users['APIUser2']['test_user_id'],
         "userData": {"firstname": "API user","lastname": "Edited"}}
 
     executed4 = gql_request(query=qry_update_user, operation="mutation",variables=data)
     assert "errors" in executed4
 
     #before update get data
-    var3 ={"userId": initial_test_users['APIUser']['test_user_id']}
+    var3 ={"userId": initial_test_users['APIUser2']['test_user_id']}
     executed3 = gql_request(query=qry_get_user_by_id,headers=headers_auth,variables=var3)
     assert len(executed3["data"]["getusers"]) == 1
-    assert executed3["data"]["getusers"][0]["userId"] == initial_test_users['APIUser']['test_user_id']
-    assert executed3["data"]["getusers"][0]["name"]["first"] == initial_test_users['APIUser']['firstname']
+    assert executed3["data"]["getusers"][0]["userId"] == initial_test_users['APIUser2']['test_user_id']
+    assert executed3["data"]["getusers"][0]["name"]["first"] == initial_test_users['APIUser2']['firstname']
 
     # SA
     data_SA = {
@@ -714,14 +720,14 @@ def test_get_put_users():
     assert executed4["data"]["updateUser"]["message"] == "User details updated successfully"
     assert executed4["data"]["updateUser"]["data"]["name"]["first"] == data["userData"]["firstname"]
     assert executed4["data"]["updateUser"]["data"]["name"]["last"] == data["userData"]["lastname"]
-    assert executed4["data"]["updateUser"]["data"]["name"]["first"] != initial_test_users['APIUser']['firstname']
-    assert executed4["data"]["updateUser"]["data"]["name"]["last"] != initial_test_users['APIUser']['firstname']
+    assert executed4["data"]["updateUser"]["data"]["name"]["first"] != initial_test_users['APIUser2']['firstname']
+    assert executed4["data"]["updateUser"]["data"]["name"]["last"] != initial_test_users['APIUser2']['firstname']
 
     #Created User
     data = {
-        "userId": initial_test_users['APIUser']['test_user_id'],
+        "userId": initial_test_users['APIUser2']['test_user_id'],
         "userData": {"firstname": "API","lastname": "Edited by createdUser"}}
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser2']['token']
     executed5 = gql_request(query=qry_update_user, operation="mutation",variables=data,headers=headers_auth)
     assert executed5["data"]["updateUser"]["message"] == "User details updated successfully"
     assert executed5["data"]["updateUser"]["data"]["name"]["first"] == data["userData"]["firstname"]

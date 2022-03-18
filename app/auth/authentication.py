@@ -566,6 +566,7 @@ def user_login_kratos(user_email,password):#pylint: disable=R1710
             session_id = login_req_content["session_token"]
             data["message"] = "Login Succesfull"
             data["token"] = session_id
+            data["userId"] = login_req_content["session"]["identity"]["id"]
         else:
             raise UnAuthorizedException(login_req_content["ui"]["messages"][0]["text"])
     return data

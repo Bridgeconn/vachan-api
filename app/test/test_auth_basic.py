@@ -41,6 +41,7 @@ def login(data):
         assert response.json()['message'] == "Login Succesfull"
         token =  response.json()['token']
         assert len(token) == 32
+        assert "userId" in response.json()
     elif response.status_code == 401:
         assert response.json()['error'] == "Authentication Error"
         assert response.json()['details'] ==\
