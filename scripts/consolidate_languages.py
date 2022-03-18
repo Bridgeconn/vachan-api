@@ -10,10 +10,10 @@ leading_space_pattern = re.compile(r'^\s+')
 
 #pylint: disable=too-many-branches, disable=too-many-statements, disable=too-many-locals
 
-def read_language_subtag_registry(iana_file_path='../db/language-subtag-registry.txt'):
+def read_language_subtag_registry(iana_file_path='language-subtag-registry.txt'):
     '''converts data in text format to dict/json'''
     iana_data = {}
-    iana_file = open(iana_file_path, 'r')
+    iana_file = open(iana_file_path, 'r',encoding='utf-8')
     new_obj = {}
     lines = iana_file.readlines()
     index = 0
@@ -174,7 +174,7 @@ def process_language_subtag_registry(data):
             metadata = {}
             similar_to = []
             if "Preferred-Value" in item:
-                metadata['use-instead']: item['Preferred-Value']
+                metadata['use-instead']= item['Preferred-Value']
                 similar_to.append(item['Preferred-Value'])
             if "Macrolanguage" in item:
                 metadata['macrolanguage'] = item['Macrolanguage']
@@ -195,11 +195,11 @@ def process_language_subtag_registry(data):
     return languages
 
 def add_from_trans_database_to_languages(languages_list, registry_data,
-    json_filepath='../db/langnames_from_translationDatabase.json'):
+    json_filepath='langnames_from_translationDatabase.json'):
     '''collect languages from unfoldngword's translation database and add to our list'''
     languages_dict = {lang["code"]:lang for lang in languages_list}
 
-    loaded_json = json.loads(open(json_filepath, "r").read())
+    loaded_json = json.loads(open(json_filepath, "r",encoding='utf-8').read())
     for lang in loaded_json:
         code = lang['lc']
         country_code = lang['hc']
@@ -218,7 +218,7 @@ def add_from_trans_database_to_languages(languages_list, registry_data,
         if lang['ld'] == "ltr":
             direction = "left-to-right"
         elif lang['ld'] == "rtl":
-            direction = 'left-to-right'
+            direction = 'right-to-left'
         else:
             direction = lang['ld']
         new_info = {
@@ -255,11 +255,11 @@ def add_from_trans_database_to_languages(languages_list, registry_data,
     new_list = [ languages_dict[key] for key in languages_dict]
     return new_list
 
-def add_from_venea_list(languages_list, venea_filepath='../db/languages-venea.tsv'):
+def add_from_venea_list(languages_list, venea_filepath='languages-venea.tsv'):
     '''read the langauges from the TSV file and append them to common pool'''
     languages_dict = {lang["code"]:lang for lang in languages_list}
 
-    with open(venea_filepath, newline='') as csvfile:
+    with open(venea_filepath, newline='',encoding='utf-8') as csvfile:
         lang_reader = csv.reader(csvfile, delimiter='\t')
         next(lang_reader, None) #skip header
         for row in lang_reader:
@@ -283,7 +283,7 @@ def write_to_csv(languages_list):
     '''Save the consolidated list to a csv file to be imported to DB later'''
     known_invalid_tags = ["qaa..qtz", "alalc97", "hni-x-Bu4Du1 Hani", "iba-x-", "iba-x-kancing'k",
         "mdj-x-", "sgn-x-aurangabad 1", "-x-", "-x-antambahoaka"]
-    with open('../db/consolidated_languages.csv', 'w', newline='') as csvfile:
+    with open('consolidated_languages.csv', 'w', newline='',encoding='utf-8') as csvfile:
         lang_writer = csv.writer(csvfile, delimiter=',',
                             quotechar='"', quoting=csv.QUOTE_MINIMAL)
         for lang in languages_list:
