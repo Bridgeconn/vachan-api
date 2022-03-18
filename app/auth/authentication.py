@@ -390,14 +390,14 @@ def get_all_or_one_kratos_users(rec_user_id=None,page=None,limit=None,name=None,
         response = requests.get(base_url+rec_user_id)
         if response.status_code == 200:
             data = json.loads(response.content)
-            user_data = {
+            user_data = [{
                 "userId":data["id"],
                 "name":data["traits"]["name"],
                 "dbTraits":""
-            }
-            user_data["name"]["fullname"] = data["traits"]["name"]["first"].capitalize() \
+            }]
+            user_data[0]["name"]["fullname"] = data["traits"]["name"]["first"].capitalize() \
                 + " "+ data["traits"]["name"]["last"].capitalize()
-            user_data["dbTraits"] = data["traits"]
+            user_data[0]["dbTraits"] = data["traits"]
         else:
             raise NotAvailableException("User does not exist")
     return user_data
@@ -406,7 +406,7 @@ def update_kratos_user(rec_user_id,data):
     """update kratos user profile"""
     base_url = ADMIN_BASE_URL+"identities/"+rec_user_id
     #check valid user
-    fetch_data = get_all_or_one_kratos_users(rec_user_id=rec_user_id)["dbTraits"]
+    fetch_data = get_all_or_one_kratos_users(rec_user_id=rec_user_id)[0]["dbTraits"]
     fetch_data["name"].pop("fullname")
     fetch_data["name"]["last"] = data.lastname
     fetch_data["name"]["first"] = data.firstname

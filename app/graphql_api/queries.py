@@ -673,33 +673,19 @@ class Query(graphene.ObjectType):
 
     getusers = graphene.List(types.IdentitityListResponse,
         description="""get list of users""",
-        name = graphene.String(),roles = graphene.List(types.FilterRoles),
+        name = graphene.String(),user_id = graphene.String(),
+        roles = graphene.List(types.FilterRoles),
         page=graphene.Int(), limit=graphene.Int())
     async def resolve_getusers(self, info, name=None, roles=[types.FilterRoles.ALL.value],#pylint: disable=W0102,E1101
-        page=1, limit=100):
+        user_id=None, page=1, limit=100):
         """resolve"""
         log.info('In GraphQL get users')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
         req.scope['path'] = "/v2/users"
-        response = await auth_api.get_identities_list(request=req,name=name,
+        response= await auth_api.get_identities_list(request=req,name=name,user_id=user_id,
         roles=roles,page=page,limit=limit, user_details=user_details,db_=db_)
-        return response
-    
-    get_single_user = graphene.Field(types.IdentitityListResponse,
-        description="""get single user""",
-        user_id = graphene.String(required=True))
-    async def resolve_get_single_user(self, info, user_id):
-        """resolve"""
-        log.info('In GraphQL get single user')
-        db_ = info.context["request"].db_session
-        user_details , req = get_user_or_none_graphql(info)
-        req.scope['method'] = "GET"
-        req.scope['path'] = f"/v2/user/{user_id}"
-        req.path_params["user_id"] = user_id
-        response = await auth_api.get_single_user(request=req,
-        user_id=user_id, user_details=user_details, db_=db_)
         return response
 
     #Source Get-Sentence Extract Text Contents

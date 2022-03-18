@@ -78,30 +78,22 @@ responses={401: {"model": schemas.ErrorResponse}}
 @get_auth_access_check_decorator
 async def get_identities_list(request: Request,#pylint: disable=unused-argument
     name: str = Query(None, example="Bridgeconn"),
+    user_id: str = Query(None, example="ecf57420-9rg0-40t8-b56b-dce1fc52c452"),
     roles:List[schema_auth.FilterRoles]=Query([schema_auth.FilterRoles.ALL]),
     page: int = Query(1, ge=1),limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''fetches all the users
     * the optional query parameter can be used to filter the result set
     * name = fullname, firstname or lastname to search
+    * user_id = user_id will not consider other filter params
     * roles= None, select one or more type
     * limit=n: limits the no. of items to be returned to n
     * page=n: pagination based on data per page (limit)'''
     log.info('In User List Identities')
-    log.debug('page: %s, page: %s, page: %s, limit: %s', name, roles, page, limit)
-    return get_all_or_one_kratos_users(page=page,limit=limit,name=name,roles=roles)
-
-@router.get('/v2/user/{user_id}', response_model=schema_auth.IdentitityListResponse,
-responses={401: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
-tags=["Authentication"])
-@get_auth_access_check_decorator
-async def get_single_user(request: Request,#pylint: disable=unused-argument
-    user_id:str =Path(...,example="4bd012fd-7de8-4d66-928f-4925ee9bb"),
-    user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
-    '''fetches single user'''
-    log.info('In get User Identity')
-    log.debug('user_id: %s,',user_id)
-    return get_all_or_one_kratos_users(rec_user_id=user_id)
+    log.debug('name: %s, roles: %s, user_id: %s, page: %s, limit: %s',
+        name, roles, user_id, page, limit)
+    return get_all_or_one_kratos_users(rec_user_id=user_id,page=page,
+        limit=limit,name=name,roles=roles)
 
 @router.put('/v2/user/userrole',response_model=schema_auth.UseroleResponse,
 responses={403: {"model": schemas.ErrorResponse},
