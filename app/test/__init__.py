@@ -168,7 +168,7 @@ def check_skip_limit_gql(query,api_name,headers=None):
 }
     executed6 = gql_request(query=query, operation="query", variables=var6,headers=headers)
     assert isinstance(executed6, Dict)
-    assert executed6["data"][api_name] == None
+    assert executed6["data"][api_name] == None or executed6["data"][api_name] == []
 
     # limit should be an integer
     var7 = {
@@ -184,7 +184,7 @@ def check_skip_limit_gql(query,api_name,headers=None):
   "limit": -1
 }
     executed8 = gql_request(query=query, operation="query", variables=var8,headers=headers)
-    assert "errors" in executed8.keys()
+    assert "errors" in executed8.keys() or executed8["data"][api_name] == []
 
 def assert_not_available_content_gql(item):
     '''Checks for empty array returned when requetsed content not available'''

@@ -4,7 +4,7 @@ import pytest
 from urllib.parse import quote
 
 from graphql_api import types
-from . import gql_request
+from . import gql_request, check_skip_limit_gql
 from .conftest import initial_test_users
 
 SUPER_USER = os.environ.get("VACHAN_SUPER_USERNAME")
@@ -586,8 +586,8 @@ def test_get_put_users():
     name}}
     """
     qry_get_user_pagination = """
-        query getusers($page:Int,$limit:Int){
-  getusers(page:$page,limit:$limit){
+        query getusers($skip:Int,$limit:Int){
+  getusers(skip:$skip,limit:$limit){
     userId
     name}}
     """
@@ -631,18 +631,7 @@ def test_get_put_users():
         assert isinstance(item["name"],dict)
     
     #users created in initial test users-check pagination content
-    #page 1 and limit 3
-    var1= {"page": 1,"limit": 3}
-    executed = gql_request(query=qry_get_user_pagination,headers=headers_auth,variables=var1)
-    assert len(executed["data"]["getusers"]) == 3
-    page1_users = [x["userId"] for x in executed["data"]["getusers"]]
-    #limit 3 and page 2
-    var2= {"page": 2,"limit": 3}
-    executed1 = gql_request(query=qry_get_user_pagination,headers=headers_auth,variables=var2)
-    assert len(executed1["data"]["getusers"]) == 3
-    page2_users = [x["userId"] for x in executed1["data"]["getusers"]]
-    for user in page2_users:
-        assert not user in page1_users
+    check_skip_limit_gql(qry_get_user_pagination,"getusers",headers=headers_auth)
 
     #filters
     var3 ={"name": "api"}

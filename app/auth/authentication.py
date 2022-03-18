@@ -324,7 +324,7 @@ def kratos_logout(recieve_token):
     return data
 
 #pylint: disable=R1703
-def get_users_kratos_filter(base_url,name,roles,limit,page):#pylint: disable=too-many-locals
+def get_users_kratos_filter(base_url,name,roles,limit,skip):#pylint: disable=too-many-locals
     """v2/users filter block"""
     response = requests.get(base_url)
     if response.status_code == 200:
@@ -366,17 +366,18 @@ def get_users_kratos_filter(base_url,name,roles,limit,page):#pylint: disable=too
                     role_status = False
             if name_status and role_status:
                 user_data.append(kratos_user)
-        user_data = user_data[((limit*page)-limit):(limit*page)]
+        user_data = user_data[skip:skip+limit] if skip>=0 and limit>=0 else []
+        # user_data = user_data[skip:skip+limit]
         return user_data
     raise GenericException(detail=json.loads(response.content))
 
 #get all or single user details
-def get_all_or_one_kratos_users(rec_user_id=None,page=None,limit=None,name=None,roles=None):
+def get_all_or_one_kratos_users(rec_user_id=None,skip=None,limit=None,name=None,roles=None):
     """get all user info or a particular user details"""
     base_url = ADMIN_BASE_URL+"identities/"
     #all users
     if rec_user_id is None:
-        if page is None and limit is None:
+        if skip is None and limit is None:
             response = requests.get(base_url)
             if response.status_code == 200:
                 user_data = json.loads(response.content)
@@ -384,7 +385,7 @@ def get_all_or_one_kratos_users(rec_user_id=None,page=None,limit=None,name=None,
                 raise UnAuthorizedException(detail=json.loads(response.content))
         #v2/users
         else:
-            user_data = get_users_kratos_filter(base_url,name,roles,limit,page)
+            user_data = get_users_kratos_filter(base_url,name,roles,limit,skip)
     #single user
     else:
         response = requests.get(base_url+rec_user_id)
