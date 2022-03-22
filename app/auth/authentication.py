@@ -238,10 +238,12 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             if user_details['user_id'] is None:
                 raise UnAuthorizedException("Access token not provided or user not recognized")
             #check for created user
-            if method == "PUT" and len(path_params)>0 :
+            if len(path_params)>0 :
                 obj = utils.ConvertDictObj()
                 obj['createdUser'] = path_params["user_id"]
                 authenticated = check_right(user_details, required_rights, obj, db_)
+                if not authenticated:
+                    raise PermissionException("Access Permission Denied for the URL")
             else:
                 raise PermissionException("Access Permission Denied for the URL")
 
