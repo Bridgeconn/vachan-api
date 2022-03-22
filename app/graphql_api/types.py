@@ -726,10 +726,28 @@ class RegisterResponse(graphene.ObjectType):#pylint: disable=too-few-public-meth
     email = graphene.String(required=True)
     permissions = graphene.List(App)
 
+class FilterRoles(graphene.Enum):
+    '''Filter roles for get users'''
+    ALL = "All"
+    AG = "Autographa"
+    VACHAN = "Vachan-online or vachan-app"
+    API = "API-user"
+
+class IdentitityListResponse(graphene.ObjectType):#pylint: disable=too-few-public-methods
+    """Response object of getusers"""
+    userId = graphene.String(required=True)
+    name = Metadata(required=True)
+
 class LoginResponse(graphene.ObjectType):#pylint: disable=too-few-public-methods
     """Login Response Object"""
     message = graphene.String()
     token = graphene.String()
+    userId = graphene.String()
+
+class UserUpdateInput(graphene.InputObjectType):#pylint: disable=too-few-public-methods
+    """input of userdata to update"""
+    firstname = graphene.String(required=True)
+    lastname = graphene.String(required=True)
 
 class AdminRoles(graphene.Enum):
     '''Admin Roles'''

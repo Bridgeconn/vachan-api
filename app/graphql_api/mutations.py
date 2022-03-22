@@ -1206,13 +1206,40 @@ class UpdateUserRole(graphene.Mutation):
         #Auth and access rules
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
-        req.scope['path'] = "/v2/user/userrole"
+        req.scope['path'] = "/v2/user/role"
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (user_roles_args,schema_auth.UserRole)
         response = await auth_api.userrole(request=req, role_data = schema_model,
         user_details=user_details, db_=db_)
         message = response['message']
         return UpdateUserRole(message=message,role_list=response["role_list"])
+
+#User update
+class UpdateUser(graphene.Mutation):
+    """Mutation class for Update User"""
+    class Arguments:#pylint: disable=too-few-public-methods,E1101
+        """Arguments declaration for the mutation"""
+        user_id = graphene.String(required=True)
+        user_data = types.UserUpdateInput()
+
+    message = graphene.String()
+    data = graphene.Field(types.IdentitityListResponse)
+#pylint: disable=R0201
+    async def mutate(self,info,user_id, user_data):
+        '''resolve'''
+        log.info('In GraphQL User Role Update')
+        db_ = info.context["request"].db_session
+        #Auth and access rules
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "PUT"
+        req.scope['path'] = f"/v2/user/{user_id}"
+        req.path_params["user_id"] = user_id
+        schema_model = utils.convert_graphene_obj_to_pydantic\
+            (user_data,schema_auth.EditUser)
+        response = await auth_api.edit_user(request=req, user_id=user_id,
+        edit_details=schema_model, user_details=user_details,db_=db_)
+        message = response['message']
+        return UpdateUser(message=message,data=response["data"])
 
 #User identity delete
 class DeleteIdentity(graphene.Mutation):
@@ -1364,6 +1391,7 @@ class VachanMutations(graphene.ObjectType):
     add_alignment = AddAlignment.Field()
     register = Register.Field()
     update_userrole = UpdateUserRole.Field()
+    update_user = UpdateUser.Field()
     delete_identity = DeleteIdentity.Field()
     add_stopword = AddStopwords.Field()
     update_stopword = EditStopwords.Field()

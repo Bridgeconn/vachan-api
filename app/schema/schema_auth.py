@@ -36,6 +36,11 @@ class Registration(BaseModel):
     firstname:str = None
     lastname:str = None
 
+class EditUser(BaseModel):
+    """kratos registration input"""
+    firstname:str
+    lastname:str
+
 class AdminRoles(str, Enum):
     '''Admin Roles'''
     SUPERADMIN = 'SuperAdmin'
@@ -45,6 +50,13 @@ class AdminRoles(str, Enum):
     VACHANUSER = 'VachanUser'
     APIUSER = 'APIUser'
     BCSDEV = 'BcsDeveloper'
+
+class FilterRoles(str, Enum):
+    '''Filter roles for get users'''
+    ALL = "All"
+    AG = "Autographa"
+    VACHAN = "Vachan-online or vachan-app"
+    API = "API-user"
 
 class UserRole(BaseModel):
     """kratos user role input"""
@@ -71,6 +83,7 @@ class LoginResponse(BaseModel):
     """Response object of login"""
     message:str
     token:str
+    userId:str
 
 class LogoutResponse(BaseModel):
     """Response object of logout"""
@@ -114,3 +127,8 @@ class IdentitityListResponse(BaseModel):
                 "fullname": "Full Name"
             }
         }}
+
+class UserUpdateResponse(BaseModel):
+    """Response object of User Update"""
+    message:str
+    data: IdentitityListResponse

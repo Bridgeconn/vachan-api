@@ -671,6 +671,23 @@ class Query(graphene.ObjectType):
             user_details=user_details, db_=db_)
         return response["message"]
 
+    getusers = graphene.List(types.IdentitityListResponse,
+        description="""get list of users""",
+        name = graphene.String(),user_id = graphene.String(),
+        roles = graphene.List(types.FilterRoles),
+        skip=graphene.Int(), limit=graphene.Int())
+    async def resolve_getusers(self, info, name=None, roles=[types.FilterRoles.ALL.value],#pylint: disable=W0102,E1101
+        user_id=None, skip=0, limit=100):
+        """resolve"""
+        log.info('In GraphQL get users')
+        db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = "/v2/users"
+        response= await auth_api.get_identities_list(request=req,name=name,user_id=user_id,
+        roles=roles,skip=skip,limit=limit, user_details=user_details,db_=db_)
+        return response
+
     #Source Get-Sentence Extract Text Contents
     extract_text_contents = graphene.List(types.ExtractSentenceResposne,
         description="""A generic API for all content type tables to get just the text

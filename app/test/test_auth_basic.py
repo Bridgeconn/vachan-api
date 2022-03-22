@@ -1,17 +1,18 @@
 """Basic test cases of features Register, Login, Logout, Role assignment"""
+import json
 import os
 import pytest
 from urllib.parse import quote
 
 from app.schema import schema_auth
-from . import assert_input_validation_error, client
+from . import assert_input_validation_error, client, check_skip, check_limit
 from .conftest import initial_test_users
 
 LOGIN_URL = '/v2/user/login'
 REGISTER_URL = '/v2/user/register'
 LOGOUT_URL = '/v2/user/logout'
 GETUSERURL = '/v2/users'
-USERROLE_URL = '/v2/user/userrole'
+USERROLE_URL = '/v2/user/role'
 DELETE_URL = '/v2/user/delete-identity'
 SUPER_USER = os.environ.get("VACHAN_SUPER_USERNAME")
 SUPER_PASSWORD = os.environ.get("VACHAN_SUPER_PASSWORD")
@@ -40,6 +41,7 @@ def login(data):
         assert response.json()['message'] == "Login Succesfull"
         token =  response.json()['token']
         assert len(token) == 32
+        assert "userId" in response.json()
     elif response.status_code == 401:
         assert response.json()['error'] == "Authentication Error"
         assert response.json()['details'] ==\
@@ -514,11 +516,11 @@ def test_token_expiry(create_user_fixture):
     assert response.status_code == 401
     assert response.json()["error"] == "Authentication Error"
 
-def test_get_users():
+def test_get_put_users():
     """get users"""
     #get list of users
     #without auth
-    params = f"?page=1&limit=100"
+    params = f"?skip=0&limit=100"
     response = client.get(GETUSERURL+params)
     assert response.status_code == 401
     #with Auth
@@ -533,20 +535,111 @@ def test_get_users():
         assert isinstance(item["name"],dict)
 
     #users created in initial test users-check pagination content
-    #page 1 and limit 3
-    params = f"?page=1&limit=3"
+    check_skip(GETUSERURL,headers_auth)
+    check_limit(GETUSERURL,headers_auth)
+
+    #filter with name
+    params = f"?name=api&roles={schema_auth.FilterRoles.ALL}"
     response = client.get(GETUSERURL+params,headers=headers_auth)
-    assert len(response.json())==3
-    page1_users = [x["userId"] for x in response.json()]
-    #limit 3 and page 2
-    params = f"?page=2&limit=3"
+    assert len(response.json()) >= 2
+
+    #filter with not available name in initial test user
+    params = f"?name=aqsdwerfgtyuiolkj&roles={schema_auth.FilterRoles.ALL}"
     response = client.get(GETUSERURL+params,headers=headers_auth)
-    page2_users = [x["userId"] for x in response.json()]
-    assert len(response.json())==3
-    for user in page2_users:
-        assert not user in page1_users
+    assert len(response.json()) == 0
 
+    #filter with roles
+    params = f"?roles={schema_auth.FilterRoles.ALL}"
+    response = client.get(GETUSERURL+params,headers=headers_auth)
+    assert len(response.json()) >=8
 
+    params = f"?roles={schema_auth.FilterRoles.API}"
+    response = client.get(GETUSERURL+params,headers=headers_auth)
+    assert len(response.json()) >=3
 
-    
+    params = f"?roles={schema_auth.FilterRoles.AG}"
+    response = client.get(GETUSERURL+params,headers=headers_auth)
+    assert len(response.json()) >=2
 
+    params = f"?roles={schema_auth.FilterRoles.VACHAN}"
+    response = client.get(GETUSERURL+params,headers=headers_auth)
+    assert len(response.json()) >=2
+
+    params = f"?roles={schema_auth.FilterRoles.VACHAN}&roles={schema_auth.FilterRoles.AG}"
+    response = client.get(GETUSERURL+params,headers=headers_auth)
+    assert len(response.json()) >=4
+
+    #get user
+    params = f"?user_id={initial_test_users['APIUser']['test_user_id']}"
+    response = client.get(GETUSERURL+params,headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["userId"] == initial_test_users['APIUser']['test_user_id']
+    assert response.json()[0]["name"]["first"] == initial_test_users['APIUser']['firstname']
+
+    #wrong user id
+    params = f"?user_id=hgtyr-1234-tthhh-6677-yyyyyy-67777-111"
+    response = client.get(GETUSERURL+params,headers=headers_auth)
+    assert response.status_code == 404
+    assert response.json()["error"] == "Requested Content Not Available"
+
+    #edit user
+    #No auth
+    data = {
+    'firstname': 'API user',
+    'lastname': 'Edited'
+    }
+    response = client.put(f"/v2/user/{initial_test_users['APIUser']['test_user_id']}",json=data)
+    assert response.status_code == 401
+    assert response.json()["error"] == 'Authentication Error'
+
+    #with auth super admin
+    data_SA = {
+        "user_email": SUPER_USER,
+        "password": SUPER_PASSWORD
+    }
+    response = login(data_SA)
+    token =  response.json()['token']
+
+    #before update get data
+    params = f"?user_id={initial_test_users['APIUser']['test_user_id']}"
+    response = client.get(GETUSERURL+params,headers=headers_auth)
+    assert response.json()[0]["userId"] == initial_test_users['APIUser']['test_user_id']
+    assert response.json()[0]["name"]["first"] == initial_test_users['APIUser']['firstname']
+
+    #SA
+    headers_SA = {"contentType": "application/json",
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+token
+            }
+    response = client.put(f"/v2/user/{initial_test_users['APIUser']['test_user_id']}",json=data,headers=headers_SA)
+    assert response.status_code == 201
+    assert response.json()["message"] == "User details updated successfully"
+    assert "userId" in response.json()["data"]
+    assert "name" in response.json()["data"]
+    assert response.json()["data"]["name"]["first"] == data["firstname"]
+    assert response.json()["data"]["name"]["last"] == data["lastname"]  
+    assert response.json()["data"]["name"]["first"] != initial_test_users['APIUser']['firstname']
+    assert response.json()["data"]["name"]["last"] != initial_test_users['APIUser']['firstname']
+    #Created User
+    data = {
+    'firstname': 'API',
+    'lastname': 'Edited by createdUser'
+    }
+
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+    response1 = client.put(f"/v2/user/{initial_test_users['APIUser']['test_user_id']}",json=data,headers=headers_auth)
+    assert response1.status_code == 201
+    assert response.json()["message"] == "User details updated successfully"
+    assert "userId" in response.json()["data"]
+    assert "name" in response.json()["data"]
+    assert response1.json()["data"]["name"]["first"] == data["firstname"]
+    assert response1.json()["data"]["name"]["last"] == data["lastname"]
+    assert response1.json()["data"]["name"]["first"] != response.json()["data"]["name"]["first"]
+    assert response1.json()["data"]["name"]["last"] != response.json()["data"]["name"]["last"]
+
+    #user otherthan created and SA
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    response2 = client.put(f"/v2/user/{initial_test_users['APIUser']['test_user_id']}",json=data,headers=headers_auth)
+    assert response2.status_code == 403
+    assert response2.json()["error"] == "Permission Denied"

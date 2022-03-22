@@ -407,17 +407,20 @@ def test_end_to_end_translation():
     assert resp.json()['message'] == "Token translations saved"
 
     # Additional user
+    NEW_USER_ID = initial_test_users['AgUser']['test_user_id']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     resp = client.post(BASE_URL+"autographa/project/user?project_id="+str(project_id)+
     	"&user_id="+str(NEW_USER_ID), headers=headers_auth)
     assert resp.json()['message'] == "User added to project successfully"
 
     user_data['project_id'] = project_id
+    user_data['userId'] = NEW_USER_ID
     resp = client.put(BASE_URL+"autographa/project/user", headers=headers_auth, json=user_data)
+    print(resp.json())
     assert resp.json()['message'] == "User updated in project successfully"
 
     resp = client.get(BASE_URL+"autographa/projects?user_id="+str(NEW_USER_ID),headers=headers_auth)
     assert len(resp.json()) > 0
-    # print(resp.json())
 
     # # Suggestions
 

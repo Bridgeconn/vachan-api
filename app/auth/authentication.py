@@ -9,6 +9,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 import db_models
 # from auth.api_permission_map import api_permission_map
+from auth import utils
 from schema import schema_auth
 from dependencies import log
 from custom_exceptions import GenericException ,\
@@ -190,7 +191,7 @@ def check_right(user_details, required_rights, resp_obj=None, db_=None):
     if resp_obj is not None and db_ is not None:
         try:
             if "resourceCreatedUser" in required_rights and \
-                user_details['user_id'] == resp_obj.createdUser:
+                    user_details['user_id'] == resp_obj.createdUser:
                 valid = True
             if "projectOwner" in required_rights and \
                 is_project_owner(db_, resp_obj, user_details['user_id']):
@@ -222,7 +223,6 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             client_app = request.headers['app']
         else:
             client_app = schema_auth.App.API.value
-
         resource_type, permission = search_api_permission_map(
             endpoint, method, client_app, path_params, resource=resource_type)
         required_rights = []
@@ -231,12 +231,21 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
                 required_rights += ACCESS_RULES[tag][permission]
         authenticated = check_right(user_details, required_rights)
+
         if (resource_type == schema_auth.ResourceType.USER and not authenticated):
             # Need to raise error before function execution, as we cannot delay db commit
             # like we do in other cases as changes happen in Kratos db, not app db'''
             if user_details['user_id'] is None:
                 raise UnAuthorizedException("Access token not provided or user not recognized")
-            raise PermissionException("Access Permission Denied for the URL")
+            #check for created user
+            if len(path_params)>0 :
+                obj = utils.ConvertDictObj()
+                obj['createdUser'] = path_params["user_id"]
+                authenticated = check_right(user_details, required_rights, obj, db_)
+                if not authenticated:
+                    raise PermissionException("Access Permission Denied for the URL")
+            else:
+                raise PermissionException("Access Permission Denied for the URL")
 
         ###### Executing the API function #######
         response = await func(*args, **kwargs)
@@ -319,41 +328,108 @@ def kratos_logout(recieve_token):
         raise GenericException(data["error"])
     return data
 
+#pylint: disable=R1703
+def get_users_kratos_filter(base_url,name,roles,limit,skip):#pylint: disable=too-many-locals
+    """v2/users filter block"""
+    response = requests.get(base_url)
+    if response.status_code == 200:
+        user_data = []
+        for data in json.loads(response.content):
+            name_status = True
+            role_status = True
+            kratos_user = {
+                "userId":data["id"],
+                "name":data["traits"]["name"]
+            }
+            kratos_user["name"]["fullname"] = data["traits"]["name"]["first"].capitalize() \
+                + " "+ data["traits"]["name"]["last"].capitalize()
+            if not name is None:
+                if name.lower() == kratos_user["name"]["fullname"].lower() or\
+                    name.lower() == kratos_user["name"]["last"].lower() or\
+                        name.lower() == kratos_user["name"]["first"].lower():
+                    name_status = True
+                else:
+                    name_status = False
+
+            if not schema_auth.FilterRoles.ALL in roles:
+                temp_role = []
+                switcher = {
+                    schema_auth.FilterRoles.AG.value : schema_auth.FilterRoles.AG,
+                    schema_auth.FilterRoles.VACHAN.value : schema_auth.FilterRoles.VACHAN,
+                    schema_auth.FilterRoles.API.value : schema_auth.FilterRoles.API
+                        }
+                for role in roles:
+                    user_role =  switcher.get(role)
+                    temp_role.append(user_role)
+                role_list = [x.name.lower() for x in temp_role]
+                kratos_role = [x.lower() for x in data["traits"]["userrole"]]
+                for k_role in kratos_role:
+                    res = list(filter(k_role.startswith, role_list)) != []
+                    if res:
+                        role_status = True
+                        break
+                    role_status = False
+            if name_status and role_status:
+                user_data.append(kratos_user)
+        user_data = user_data[skip:skip+limit] if skip>=0 and limit>=0 else []
+        # user_data = user_data[skip:skip+limit]
+        return user_data
+    raise GenericException(detail=json.loads(response.content))
+
 #get all or single user details
-def get_all_or_one_kratos_users(rec_user_id=None,page=None,limit=None):
+def get_all_or_one_kratos_users(rec_user_id=None,skip=None,limit=None,name=None,roles=None):
     """get all user info or a particular user details"""
     base_url = ADMIN_BASE_URL+"identities/"
-
+    #all users
     if rec_user_id is None:
-        if page is None and limit is None:
+        if skip is None and limit is None:
             response = requests.get(base_url)
             if response.status_code == 200:
                 user_data = json.loads(response.content)
             else:
                 raise UnAuthorizedException(detail=json.loads(response.content))
+        #v2/users
         else:
-            page = 0 if page is None else page
-            limit = 100 if limit is None else limit
-            base_url = base_url+f"?per_page={limit}&page={page}"
-            response = requests.get(base_url)
-            if response.status_code == 200:
-                user_data = []
-                for data in json.loads(response.content):
-                    kratos_user = {
-                        "userId":data["id"],
-                        "name":data["traits"]["name"]
-                    }
-                    kratos_user["name"]["fullname"] = data["traits"]["name"]["first"] + " "+\
-                        data["traits"]["name"]["last"]
-                    user_data.append(kratos_user)
-            else:
-                raise GenericException(detail=json.loads(response.content))
+            user_data = get_users_kratos_filter(base_url,name,roles,limit,skip)
+    #single user
     else:
         response = requests.get(base_url+rec_user_id)
         if response.status_code == 200:
-            user_data = json.loads(response.content)
+            data = json.loads(response.content)
+            user_data = [{
+                "userId":data["id"],
+                "name":data["traits"]["name"],
+                "dbTraits":""
+            }]
+            user_data[0]["name"]["fullname"] = data["traits"]["name"]["first"].capitalize() \
+                + " "+ data["traits"]["name"]["last"].capitalize()
+            user_data[0]["dbTraits"] = data["traits"]
         else:
             raise NotAvailableException("User does not exist")
+    return user_data
+
+def update_kratos_user(rec_user_id,data):
+    """update kratos user profile"""
+    base_url = ADMIN_BASE_URL+"identities/"+rec_user_id
+    #check valid user
+    fetch_data = get_all_or_one_kratos_users(rec_user_id=rec_user_id)[0]["dbTraits"]
+    fetch_data["name"].pop("fullname")
+    fetch_data["name"]["last"] = data.lastname
+    fetch_data["name"]["first"] = data.firstname
+    payload = json.dumps({"traits":fetch_data, "schema_id":"default"})
+    headers = {'Content-Type': 'application/json'}
+    response = requests.put(base_url, headers=headers, data=payload)
+    if response.status_code == 200:
+        response = json.loads(response.content)
+        user_data = {
+                    "userId":response["id"],
+                    "name":response["traits"]["name"]}
+        user_data["name"]["fullname"] = response["traits"]["name"]["first"].capitalize() \
+                    + " "+ response["traits"]["name"]["last"].capitalize()
+    elif response.status_code == 404:
+        raise NotAvailableException(json.loads(response.content)["error"]["details"])
+    elif response.status_code == 500:
+        raise GenericException(json.loads(response.content)["error"]["details"])
     return user_data
 
 #User registration with credentials
@@ -496,6 +572,7 @@ def user_login_kratos(user_email,password):#pylint: disable=R1710
             session_id = login_req_content["session_token"]
             data["message"] = "Login Succesfull"
             data["token"] = session_id
+            data["userId"] = login_req_content["session"]["identity"]["id"]
         else:
             raise UnAuthorizedException(login_req_content["ui"]["messages"][0]["text"])
     return data
