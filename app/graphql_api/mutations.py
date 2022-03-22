@@ -1206,7 +1206,7 @@ class UpdateUserRole(graphene.Mutation):
         #Auth and access rules
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
-        req.scope['path'] = "/v2/user/userrole"
+        req.scope['path'] = "/v2/user/role"
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (user_roles_args,schema_auth.UserRole)
         response = await auth_api.userrole(request=req, role_data = schema_model,

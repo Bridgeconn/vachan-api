@@ -95,7 +95,7 @@ async def get_identities_list(request: Request,#pylint: disable=unused-argument
     return get_all_or_one_kratos_users(rec_user_id=user_id,skip=skip,
         limit=limit,name=name,roles=roles)
 
-@router.put('/v2/user/userrole',response_model=schema_auth.UseroleResponse,
+@router.put('/v2/user/role',response_model=schema_auth.UseroleResponse,
 responses={403: {"model": schemas.ErrorResponse},
 401: {"model": schemas.ErrorResponse},409: {"model": schemas.ErrorResponse},
 422: {"model": schemas.ErrorResponse},500: {"model": schemas.ErrorResponse}},
@@ -110,7 +110,7 @@ user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint:
     * avaialable roles are
     * [VachanAdmin , AgAdmin , AgUser , VachanUser] '''
     log.info('In User Role')
-    log.debug('userrole:%s',role_data)
+    log.debug('role:%s',role_data)
     user_id = role_data.userid
     role_list = role_data.roles
     return user_role_add(user_id,role_list)
