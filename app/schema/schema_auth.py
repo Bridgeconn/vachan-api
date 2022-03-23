@@ -128,6 +128,22 @@ class IdentitityListResponse(BaseModel):
             }
         }}
 
+class UserProfileResponse(BaseModel):
+    """Response object of list of identities"""
+    userId:str
+    traits: dict
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example":{
+            "userId": "ecf57420-9rg0-4048-b56b-dc56fc57c4ed",
+            "traits": {
+                "name":{"last":"lastname", "first":"firstname"},
+                "email":"useremail@test.com",
+                "userrole":["AgUser, VachanUser"]
+            }
+        }}
+
 class UserUpdateResponse(BaseModel):
     """Response object of User Update"""
     message:str

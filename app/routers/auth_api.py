@@ -95,6 +95,18 @@ async def get_identities_list(request: Request,#pylint: disable=unused-argument
     return get_all_or_one_kratos_users(rec_user_id=user_id,skip=skip,
         limit=limit,name=name,roles=roles)
 
+@router.get('/v2/user/{user_id}', response_model=schema_auth.UserProfileResponse,
+responses={401: {"model": schemas.ErrorResponse}}
+,tags=["Authentication"])
+@get_auth_access_check_decorator
+async def get_user_profile(request: Request,#pylint: disable=unused-argument
+    user_id:str =Path(...,example="4bd012fd-7de8-4d66-928f-4925ee9bb"),
+    user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+    '''fetches user profile Data'''
+    log.info('In User Profile')
+    log.debug('userid: %s',user_id)
+    return get_all_or_one_kratos_users(rec_user_id=user_id)[0]
+
 @router.put('/v2/user/role',response_model=schema_auth.UseroleResponse,
 responses={403: {"model": schemas.ErrorResponse},
 401: {"model": schemas.ErrorResponse},409: {"model": schemas.ErrorResponse},

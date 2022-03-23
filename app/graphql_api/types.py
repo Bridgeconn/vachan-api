@@ -738,6 +738,11 @@ class IdentitityListResponse(graphene.ObjectType):#pylint: disable=too-few-publi
     userId = graphene.String(required=True)
     name = Metadata(required=True)
 
+class UserProfileResponse(graphene.ObjectType):#pylint: disable=too-few-public-methods
+    """Response object of get user profile"""
+    userId = graphene.String(required=True)
+    traits = Metadata(required=True)
+
 class LoginResponse(graphene.ObjectType):#pylint: disable=too-few-public-methods
     """Login Response Object"""
     message = graphene.String()

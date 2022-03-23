@@ -643,3 +643,45 @@ def test_get_put_users():
     response2 = client.put(f"/v2/user/{initial_test_users['APIUser']['test_user_id']}",json=data,headers=headers_auth)
     assert response2.status_code == 403
     assert response2.json()["error"] == "Permission Denied"
+
+def check_user_profile(response):
+    '''default check for user profile response'''
+    assert response.status_code == 200
+    assert isinstance(response.json(), dict)
+    assert "userId" in response.json()
+    assert "traits" in response.json()
+    assert isinstance(response.json()["traits"], dict)
+    assert "name" in response.json()["traits"]
+    assert "email" in response.json()["traits"]
+    assert "userrole" in response.json()["traits"]
+    assert isinstance(response.json()["traits"]["userrole"], list)
+
+def test_get_user_profile():
+    """user profile get test"""
+    #without auth
+    response = client.get(f"/v2/user/{initial_test_users['APIUser']['test_user_id']}")
+    assert response.status_code == 401
+    assert response.json()["error"] == 'Authentication Error'
+    #with auth SA
+    data_SA = {"user_email": SUPER_USER,"password": SUPER_PASSWORD}
+    response = login(data_SA)
+    token =  response.json()['token']
+    #SA
+    headers_SA = {"contentType": "application/json",
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+token}
+    response = client.get(f"/v2/user/{initial_test_users['APIUser']['test_user_id']}",headers=headers_SA)
+    check_user_profile(response)
+    #with created user
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+    response = client.get(f"/v2/user/{initial_test_users['APIUser']['test_user_id']}",headers=headers_auth)
+    check_user_profile(response)
+    #with no permission user
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser2']['token']
+    response = client.get(f"/v2/user/{initial_test_users['APIUser']['test_user_id']}",headers=headers_auth)
+    assert response.status_code == 403
+    assert response.json()["error"] == "Permission Denied"
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    response = client.get(f"/v2/user/{initial_test_users['APIUser']['test_user_id']}",headers=headers_auth)
+    assert response.status_code == 403
+    assert response.json()["error"] == "Permission Denied"

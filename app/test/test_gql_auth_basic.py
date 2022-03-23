@@ -730,3 +730,52 @@ def test_get_put_users():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     executed5 = gql_request(query=qry_update_user, operation="mutation",variables=data,headers=headers_auth)
     assert "errors" in executed5
+
+def check_user_profile(executed):
+    '''default check for user profile response'''
+    assert isinstance(executed["data"]["getUserProfile"], dict)
+    assert "userId" in executed["data"]["getUserProfile"]
+    assert "traits" in executed["data"]["getUserProfile"]
+    assert isinstance(executed["data"]["getUserProfile"]["traits"], dict)
+    assert "name" in executed["data"]["getUserProfile"]["traits"]
+    assert "email" in executed["data"]["getUserProfile"]["traits"]
+    assert "userrole" in executed["data"]["getUserProfile"]["traits"]
+    assert isinstance(executed["data"]["getUserProfile"]["traits"]["userrole"], list)
+
+def test_get_user_profile():
+    """user profile get test"""
+    qry_get_profile = """
+        query getprofile($userid:String!){
+    getUserProfile(userId:$userid){
+        userId
+        traits}}
+    """
+    #without auth
+    var = {"userid": initial_test_users['APIUser']['test_user_id']}
+    executed = gql_request(query=qry_get_profile,variables=var,headers=headers_auth)
+    assert "errors" in executed
+
+    #with auth SA
+    data_SA = {"user_email": SUPER_USER,"password": SUPER_PASSWORD}
+    response = login(data_SA)
+    resp_sa = response["data"]["login"]
+    assert resp_sa["message"] == "Login Succesfull"
+    token = resp_sa['token']
+    headers_SA = {"contentType": "application/json",
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+token}
+
+    var = {"userid": initial_test_users['APIUser']['test_user_id']}
+    executed = gql_request(query=qry_get_profile,variables=var,headers=headers_SA)
+    check_user_profile(executed)
+    #with created user
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+    executed = gql_request(query=qry_get_profile,variables=var,headers=headers_auth)
+    check_user_profile(executed)
+    #with no permission user
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser2']['token']
+    executed = gql_request(query=qry_get_profile,variables=var,headers=headers_auth)
+    assert "errors" in executed
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    executed = gql_request(query=qry_get_profile,variables=var,headers=headers_auth)
+    assert "errors" in executed
