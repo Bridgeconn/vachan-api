@@ -1344,7 +1344,7 @@ class GenerateStopwords(graphene.Mutation):
         '''resolve'''
         log.info('In GraphQL Generate StopWords')
         db_ = info.context["request"].db_session
-        background_tasks = info.context["request"].background_tasks
+        background_tasks = info.context["background"]
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "POST"
         req.scope['path'] = "/v2/nlp/stopwords/generate"
