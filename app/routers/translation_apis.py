@@ -549,7 +549,7 @@ async def generate_stopwords(request: Request, background_tasks: BackgroundTasks
 @router.get('/v2/jobs', response_model=schemas_nlp.JobStatusResponse,
     response_model_exclude_none=True, status_code=200,
     responses={502: {"model": schemas.ErrorResponse},
-    422: {"model": schemas.ErrorResponse}},
+    422: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse}},
     tags=['Jobs'])
 @get_auth_access_check_decorator
 async def check_job_status(request: Request,

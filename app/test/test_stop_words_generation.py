@@ -203,6 +203,14 @@ def get_job_status(job_id):
     assert "status" in response.json()['data']
     return response
 
+def test_jobs():
+  """get job test"""
+  #not available jobid
+  headers_auth['Authorization'] = "Bearer"+" "+ initial_test_users['APIUser']['token']
+  response = client.get(JOBS_URL+'/?job_id='+str(999999999999999999),headers=headers_auth)
+  assert response.status_code == 404
+  assert response.json()["error"] == "Requested Content Not Available"
+
 def assert_positive_sw_out(item):
     '''Check for the properties in output of sw job'''
     assert "stopWord" in item

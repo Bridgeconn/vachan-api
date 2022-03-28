@@ -688,6 +688,21 @@ class Query(graphene.ObjectType):
         roles=roles,skip=skip,limit=limit, user_details=user_details,db_=db_)
         return response
 
+    get_user_profile = graphene.Field(types.UserProfileResponse,
+        description="""get user profile""",
+        user_id = graphene.String(required=True))
+    async def resolve_get_user_profile(self, info, user_id):
+        """resolve"""
+        log.info('In GraphQL get user profile')
+        db_ = info.context["request"].db_session
+        user_details , req = get_user_or_none_graphql(info)
+        req.scope['method'] = "GET"
+        req.scope['path'] = f"/v2/user/{user_id}"
+        req.path_params["user_id"] = user_id
+        response= await auth_api.get_user_profile(request=req, user_id=user_id,
+        user_details=user_details, db_=db_)
+        return response
+
     #Source Get-Sentence Extract Text Contents
     extract_text_contents = graphene.List(types.ExtractSentenceResposne,
         description="""A generic API for all content type tables to get just the text

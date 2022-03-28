@@ -356,6 +356,8 @@ def check_job_status(db_: Session, job_id):
     query = db_.query(db_models.Jobs)
     query_result = query.filter(db_models.Jobs.jobId == job_id).first()
     msg = ''
+    if query_result is None:
+        raise NotAvailableException("Job not found")
     if query_result.status == schemas_nlp.JobStatus.CREATED.value:
         msg = "Job is created, not started yet"
     elif query_result.status in [schemas_nlp.JobStatus.IN_PROGRESS.value,
