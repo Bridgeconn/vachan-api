@@ -2,12 +2,13 @@
 related to gitlab media operations'''
 import os
 from datetime import datetime
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 import gitlab
 
 access_token = os.environ.get("VACHAN_GITLAB_TOKEN")
 BYTES_PER_RESPONSE = 100000
 cached_media = []
+cached_media_download = []
 MEDIA_CACHE_LIMIT = 3
 
 gl = gitlab.Gitlab(url="https://gitlab.bridgeconn.com", private_token=access_token)
@@ -66,7 +67,7 @@ def get_gitlab_stream(request, repo, tag, file_path, permanent_link,**kwargs):
     end_byte_planned = min(start_byte_requested + BYTES_PER_RESPONSE, total_size)
 
     return StreamingResponse(
-        media_streamer(stream, chunk_size=BYTES_PER_RESPONSE, 
+        media_streamer(stream, chunk_size=BYTES_PER_RESPONSE,
                         start=start_byte_requested, size=total_size),
         headers={
             "Accept-Ranges": "bytes",
@@ -74,3 +75,29 @@ def get_gitlab_stream(request, repo, tag, file_path, permanent_link,**kwargs):
             "Content-Type": content_type
         },
         status_code=206)
+
+def get_gitlab_download(request, repo, tag, file_path,permanent_link):
+    """get downlaodable content from gtilab"""
+    if permanent_link is None or permanent_link == '':
+        url = f"https://gitlab.bridgeconn.com/{repo}/-/raw/{tag}/{file_path}"
+    else:
+        url = permanent_link
+   
+    stream = gl.http_get(url).content
+
+    print("name---->",url.split("/")[-1])
+    filename = url.split("/")[-1]
+    fn=url.split("/")[-1]
+    with open(fn, 'wb') as file:
+        file.write(stream)
+    filepath = os.path.join(os.getcwd(),url.split("/")[-1])
+    print("current cwd------------------->",filepath)
+    # response = FileResponse(filepath, media_type="application/octet-stream", filename=fn)
+    response = FileResponse(filepath)
+
+    # memfile = BytesIO(stream)
+    # response = StreamingResponse(memfile, media_type="")
+    # response.headers["Content-Disposition"] = f"inline; filename={filename}"
+    
+    return FileResponse(stream)
+    # return response
