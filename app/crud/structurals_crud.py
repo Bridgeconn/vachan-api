@@ -297,8 +297,9 @@ def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_
     if user_id:
         db_content.createdUser = user_id
     db_.add(db_content)
-    db_models.create_dynamic_table(source_name, table_name, content_type.contentType)
-    db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine, checkfirst=True)
+    if not content_type.contentType == db_models.ContentTypeName.GITLABREPO.value:
+        db_models.create_dynamic_table(source_name, table_name, content_type.contentType)
+        db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine, checkfirst=True)
     if content_type.contentType == db_models.ContentTypeName.BIBLE.value:
         db_models.dynamicTables[db_content.sourceName+'_cleaned'].__table__.create(
             bind=engine, checkfirst=True)
