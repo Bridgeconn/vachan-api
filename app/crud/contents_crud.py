@@ -2,11 +2,15 @@
 bible, commentary, infographic, biblevideo, dictionary etc'''
 import json
 import re
+from datetime import datetime
+from fastapi.encoders import jsonable_encoder
 import sqlalchemy
 from sqlalchemy.orm import Session, defer, joinedload
 from sqlalchemy.sql import text
 import db_models
 from crud import utils
+from crud.nlp_sw_crud import update_job
+from schema import schemas_nlp
 from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException
 
 def get_commentaries(db_:Session, *args,**kwargs):
@@ -43,13 +47,29 @@ def get_commentaries(db_:Session, *args,**kwargs):
         }
     return response
 
-def upload_commentaries(db_: Session, source_name, commentaries, user_id=None):
+def upload_commentaries(db_: Session, source_name, commentaries, job_id, user_id=None):
     '''Adds rows to the commentary table specified by source_name'''
+    update_args = {
+                    "status" : schemas_nlp.JobStatus.STARTED.value,
+                    "startTime": datetime.now()
+                   }
+    update_job(db_, job_id, user_id, update_args)
+
+    update_args = {
+                    "status" : schemas_nlp.JobStatus.ERROR.value,
+                    "endTime": datetime.now(),
+                    "output": {}
+                    }
+
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
-    if not source_db_content:
-        raise NotAvailableException('Source %s, not found in database'%source_name)
+
     if source_db_content.contentType.contentType != db_models.ContentTypeName.COMMENTARY.value:
+        update_args["output"]= {
+                "message": 'The operation is supported only on commentaries',
+                "source_name": source_name,"data": None
+                }
+        update_job(db_, job_id, user_id, update_args)
         raise TypeException('The operation is supported only on commentaries')
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
@@ -60,6 +80,11 @@ def upload_commentaries(db_: Session, source_name, commentaries, user_id=None):
                 db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
             prev_book_code = item.bookCode
             if not book:
+                update_args["output"]= {
+                "message": 'Bible Book code, %s, not found in database'%prev_book_code,
+                "source_name": source_name,"data": None
+                }
+                update_job(db_, job_id, user_id, update_args)
                 raise NotAvailableException('Bible Book code, %s, not found in database')
         if item.verseStart is not None and item.verseEnd is None:
             item.verseEnd = item.verseStart
@@ -74,11 +99,18 @@ def upload_commentaries(db_: Session, source_name, commentaries, user_id=None):
     db_.add_all(db_content)
     db_.expire_all()
     source_db_content.updatedUser = user_id
-    response = {
-        'db_content':db_content,
-        'source_content':source_db_content
-    }
-    return response
+    # response = {
+    #     'db_content':db_content,
+    #     'source_content':source_db_content
+    # }
+    db_content_dict = [jsonable_encoder(item) for item in db_content]
+    update_args = {
+        "status" : schemas_nlp.JobStatus.FINISHED.value,
+        "endTime": datetime.now(),
+        "output": {"message": "Commentaries added successfully","data": db_content_dict} 
+        }
+    update_job(db_, job_id, user_id, update_args)
+    # return response
 
 def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
     '''Update rows, that matches book, chapter and verse range fields in the commentary table

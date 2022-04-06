@@ -384,10 +384,32 @@ class CommentaryResponse(BaseModel):
             }
         }
 
+# class CommentaryCreateResponse(BaseModel):
+#     '''Response object for commentary update'''
+#     message: str = Field(..., example="Commentaries added successfully")
+#     data: List[CommentaryResponse] = None
+
+# for testinf circulat import error for job
+class Job(BaseModel):
+    '''Response objects of Job'''
+    jobId: int = Field(..., example=100000)
+    status: str = Field(..., example="job created")
+    output: dict = Field(None, example={
+        'language':'hi',
+        'data': [{"stopWord": "और",
+                  "stopwordType": "auto generated",
+                  "confidence": 0.8,
+                  "active": True,
+                  "metaData": {
+                         "type": "postposition"
+                   }
+                }]
+        })
+
 class CommentaryCreateResponse(BaseModel):
     '''Response object for commentary update'''
-    message: str = Field(..., example="Commentaries added successfully")
-    data: List[CommentaryResponse] = None
+    message: str = Field(..., example="Uploading Commentaries in background")
+    data: Job
 
 class CommentaryUpdateResponse(BaseModel):
     '''Response object for commentary update'''
