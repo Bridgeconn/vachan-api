@@ -289,6 +289,8 @@ def create_dynamic_table(source_name, table_name, content_type):
     elif content_type == ContentTypeName.BIBLEVIDEO.value:
         dynamicTables[source_name] = type(
             table_name,(BibleVideo, Base,),{"__tablename__": table_name})
+    elif content_type == ContentTypeName.GITLABREPO.value:
+        pass
     else:
         raise GenericException("Table structure not defined for this content type:%s"
             %content_type)

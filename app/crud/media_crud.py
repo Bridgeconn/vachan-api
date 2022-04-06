@@ -55,6 +55,7 @@ def get_gitlab_stream(request, repo, tag, file_path, permanent_link,**kwargs):
         # file_raw = project.files.raw(file_path=file_path, ref=file_obj.commit_id)
         # stream = file_raw
         stream = gl.http_get(url).content
+        # print("get stream data----->",stream)
         if len(cached_media) == MEDIA_CACHE_LIMIT:
             cached_media = sorted(cached_media, key=lambda x: x['last_access'], reverse=False)
             cached_media.pop(0)
