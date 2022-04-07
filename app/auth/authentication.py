@@ -269,6 +269,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                 else:
                     obj = response['data']
         log.debug("authenticated:%s", authenticated)
+        print("response ------->",response)
         if authenticated:
             # All no-auth and role based cases checked and appoved if applicable
             if db_:
@@ -279,6 +280,15 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                 if db_:
                     db_.commit()
             else:
+                # test delete job id if exist
+                if "jobId" in response["data"]:
+                    job_instance_row = db_.query(db_models.Jobs).filter(
+                        db_models.Jobs.jobId ==response["data"]["jobId"] ).first()
+                    if job_instance_row:
+                        db_.delete(job_instance_row)
+                        db_.flush()
+                # need to add check job id in update job also to avoid raise error job id not found
+
                 if user_details['user_id'] is None:
                     raise UnAuthorizedException("Access token not provided or user not recognized.")
                 raise PermissionException("Access Permission Denied for the URL")

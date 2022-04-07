@@ -49,6 +49,7 @@ def get_commentaries(db_:Session, *args,**kwargs):
 
 def upload_commentaries(db_: Session, source_name, commentaries, job_id, user_id=None):
     '''Adds rows to the commentary table specified by source_name'''
+    print("inside start upload task----------------------->")
     update_args = {
                     "status" : schemas_nlp.JobStatus.STARTED.value,
                     "startTime": datetime.now()
@@ -110,6 +111,7 @@ def upload_commentaries(db_: Session, source_name, commentaries, job_id, user_id
         "output": {"message": "Commentaries added successfully","data": db_content_dict} 
         }
     update_job(db_, job_id, user_id, update_args)
+    print("inside FINISHED upload task----------------------->")
     # return response
 
 def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=None):

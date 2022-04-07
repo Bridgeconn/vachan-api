@@ -569,7 +569,6 @@ async def add_commentary(request: Request,background_tasks: BackgroundTasks,
     verses fields can be null in these cases'''
     log.info('In add_commentary')
     log.debug('source_name: %s, commentaries: %s',source_name, commentaries)
-
     # verify source exist
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
@@ -577,8 +576,10 @@ async def add_commentary(request: Request,background_tasks: BackgroundTasks,
         raise NotAvailableException('Source %s, not found in database'%source_name)
     job_info = nlp_sw_crud.create_job(db_=db_, user_id=user_details['user_id'])
     job_id = job_info.jobId
+    print("call from graphql to router before----------------------->")
     background_tasks.add_task(contents_crud.upload_commentaries,db_=db_, source_name=source_name,
         commentaries=commentaries, job_id=job_id, user_id=user_details['user_id'])
+    print("call from graphql to router after----------------------->")
     data = {"jobId": job_info.jobId, "status": job_info.status}
     job_resp = {"message": "Uploading Commentaries in background", "data": data}
     return {'db_content':job_resp,'source_content':source_db_content}
