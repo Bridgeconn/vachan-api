@@ -411,10 +411,15 @@ class CommentaryCreateResponse(BaseModel):
     message: str = Field(..., example="Uploading Commentaries in background")
     data: Job
 
+# class CommentaryUpdateResponse(BaseModel):
+#     '''Response object for commentary update'''
+#     message: str = Field(..., example="Commentaries updated successfully")
+#     data: List[CommentaryResponse] = None
+
 class CommentaryUpdateResponse(BaseModel):
     '''Response object for commentary update'''
     message: str = Field(..., example="Commentaries updated successfully")
-    data: List[CommentaryResponse] = None
+    data: Job
 
 LetterPattern = constr(regex=r'^\w$')
 class DictionaryWordCreate(BaseModel):

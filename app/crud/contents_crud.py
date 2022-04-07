@@ -112,14 +112,22 @@ def upload_commentaries(db_: Session, source_name, commentaries, job_id, user_id
     update_job(db_, job_id, user_id, update_args)
     # return response
 
-def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
+def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=None):
     '''Update rows, that matches book, chapter and verse range fields in the commentary table
     specified by source_name'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
-    if not source_db_content:
-        raise NotAvailableException('Source %s, not found in database'%source_name)
+    update_args = {"status" : schemas_nlp.JobStatus.STARTED.value,
+                    "startTime": datetime.now()}
+    update_job(db_, job_id, user_id, update_args)
+
+    update_args = {"status" : schemas_nlp.JobStatus.ERROR.value,
+                    "endTime": datetime.now(),"output": {}}
+
     if source_db_content.contentType.contentType != db_models.ContentTypeName.COMMENTARY.value:
+        update_args["output"]= {"message": 'The operation is supported only on commentaries',
+                "source_name": source_name,"data": None}
+        update_job(db_, job_id, user_id, update_args)
         raise TypeException('The operation is supported only on commentaries')
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
@@ -130,6 +138,10 @@ def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
                 db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
             prev_book_code = item.bookCode
             if not book:
+                update_args["output"]= {
+                "message": 'Bible Book code, %s, not found in database'%prev_book_code,
+                "source_name": source_name,"data": None}
+                update_job(db_, job_id, user_id, update_args)
                 raise NotAvailableException('Bible Book code, %s, not found in database')
         row = db_.query(model_cls).filter(
             model_cls.book_id == book.bookId,
@@ -137,6 +149,12 @@ def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
             model_cls.verseStart == item.verseStart,
             model_cls.verseEnd == item.verseEnd).first()
         if not row:
+            update_args["output"]= {
+                "message": "Commentary row with bookCode:%s, chapter:%s, \
+                verseStart:%s, verseEnd:%s, not found for %s"%(
+                    item.bookCode, item.chapter, item.verseStart, item.verseEnd, source_name),
+                "source_name": source_name,"data": None}
+            update_job(db_, job_id, user_id, update_args)
             raise NotAvailableException("Commentary row with bookCode:%s, chapter:%s, \
                 verseStart:%s, verseEnd:%s, not found for %s"%(
                     item.bookCode, item.chapter, item.verseStart, item.verseEnd, source_name))
@@ -147,11 +165,18 @@ def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
         db_.flush()
         db_content.append(row)
     source_db_content.updatedUser = user_id
-    response = {
-        'db_content':db_content,
-        'source_content':source_db_content
-    }
-    return response
+    # response = {
+    #     'db_content':db_content,
+    #     'source_content':source_db_content
+    # }
+    db_content_dict = [jsonable_encoder(item) for item in db_content]
+    update_args = {
+        "status" : schemas_nlp.JobStatus.FINISHED.value,
+        "endTime": datetime.now(),
+        "output": {"message": "Commentaries updated successfully","data": db_content_dict}
+        }
+    update_job(db_, job_id, user_id, update_args)
+    # return response
 
 def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):#pylint: disable=too-many-locals
     '''Fetches rows of dictionary from the table specified by source_name'''

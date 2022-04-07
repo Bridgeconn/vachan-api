@@ -587,13 +587,13 @@ async def add_commentary(request: Request,background_tasks: BackgroundTasks,
     #     commentaries=commentaries, user_id=user_details['user_id'])}
 
 @router.put('/v2/commentaries/{source_name}',
-    response_model=schema_content.CommentaryUpdateResponse,
+    response_model=schema_content.CommentaryUpdateResponse,response_model_exclude_none=True,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
     401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
     status_code=201, tags=["Commentaries"])
 @get_auth_access_check_decorator
-async def edit_commentary(request: Request,
+async def edit_commentary(request: Request,background_tasks: BackgroundTasks,
     source_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
     commentaries: List[schema_content.CommentaryEdit] = Body(...),
     user_details =Depends(get_user_or_none),
@@ -604,9 +604,21 @@ async def edit_commentary(request: Request,
     Deactivated items are not included in normal fetch results if not specified otherwise'''
     log.info('In edit_commentary')
     log.debug('source_name: %s, commentaries: %s',source_name, commentaries)
-    return {'message': "Commentaries updated successfully",
-    "data": contents_crud.update_commentaries(db_=db_, source_name=source_name,
-        commentaries=commentaries, user_id=user_details['user_id'])}
+    # verify source exist
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    job_info = nlp_sw_crud.create_job(db_=db_, user_id=user_details['user_id'])
+    job_id = job_info.jobId
+    background_tasks.add_task(contents_crud.update_commentaries,db_=db_, source_name=source_name,
+        commentaries=commentaries, job_id=job_id, user_id=user_details['user_id'])
+    data = {"jobId": job_info.jobId, "status": job_info.status}
+    job_resp = {"message": "Uploading Commentaries in background", "data": data}
+    return {'db_content':job_resp,'source_content':source_db_content}
+    # return {'message': "Commentaries updated successfully",
+    # "data": contents_crud.update_commentaries(db_=db_, source_name=source_name,
+    #     commentaries=commentaries, user_id=user_details['user_id'])}
 
 # # ########### Dictionary ###################
 @router.get('/v2/dictionaries/{source_name}',
