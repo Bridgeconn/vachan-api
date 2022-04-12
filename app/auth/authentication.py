@@ -291,7 +291,6 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                 required_rights_thisitem = required_rights.copy()
                 access_tags = get_access_tag(db_, resource_type, path_params, item)
                 for tag in access_tags:
-                    print("respo access in check right----->",access_tags,permission)
                     if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
                         required_rights_thisitem += ACCESS_RULES[tag][permission]
                 if check_right(user_details, required_rights_thisitem, item, db_):

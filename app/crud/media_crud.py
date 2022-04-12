@@ -2,12 +2,13 @@
 related to gitlab media operations'''
 import os
 from datetime import datetime
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.responses import StreamingResponse, Response
 import gitlab
+import db_models
 
 access_token = os.environ.get("VACHAN_GITLAB_TOKEN")
 BYTES_PER_RESPONSE = 100000
-cached_media = []
+CACHEDMEDIA = []
 cached_media_download = []
 MEDIA_CACHE_LIMIT = 3
 
@@ -20,29 +21,29 @@ def media_streamer(stream, chunk_size, start, size):
     bytes_to_read = min(start+chunk_size, size)
     yield stream[start: start+bytes_to_read]
 
-def get_gitlab_stream(request, repo, tag, file_path, permanent_link,**kwargs):
+def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#pylint: disable=too-many-locals
     """get stream from gtilab"""
-    start_time = kwargs.get("start_time", None)
-    end_time = kwargs.get("end_time", None)
+    start_time = kwargs.get("start_time", None)#pylint: disable=W0612
+    end_time = kwargs.get("end_time", None)#pylint: disable=W0612
 
-    global cached_media
+    global CACHEDMEDIA #pylint: disable=W0603
     asked = request.headers.get("Range")
     print("comes in router func once with range:", asked)
 
     if permanent_link is None or permanent_link == '':
-        url = f"https://gitlab.bridgeconn.com/{repo}/-/raw/{tag}/{file_path}"
+        url = f"{repo}/-/raw/{tag}/{file_path}"
     else:
         url = permanent_link
 
     if url.endswith("mp4"):
         content_type =  "video/mp4"
-    elif url.endswith("mov"):
+    elif url.endswith("mov") or url.endswith("MOV"):
         content_type =  "video/quicktime"
     else:
         raise Exception("Unsupported video format!")
-    
+
     stream = None
-    for med in cached_media:
+    for med in CACHEDMEDIA:
         if url == med['url']:
             stream = med['stream']
             med['last_access'] = datetime.now()
@@ -55,12 +56,11 @@ def get_gitlab_stream(request, repo, tag, file_path, permanent_link,**kwargs):
         # file_raw = project.files.raw(file_path=file_path, ref=file_obj.commit_id)
         # stream = file_raw
         stream = gl.http_get(url).content
-        # print("get stream data----->",stream)
-        if len(cached_media) == MEDIA_CACHE_LIMIT:
-            cached_media = sorted(cached_media, key=lambda x: x['last_access'], reverse=False)
-            cached_media.pop(0)
-        cached_media.append({"url":url, "stream":stream, "last_access":datetime.now()})
-    
+        if len(CACHEDMEDIA) == MEDIA_CACHE_LIMIT:
+            CACHEDMEDIA = sorted(CACHEDMEDIA, key=lambda x: x['last_access'], reverse=False)
+            CACHEDMEDIA.pop(0)
+        CACHEDMEDIA.append({"url":url, "stream":stream, "last_access":datetime.now()})
+
     total_size = len(stream)
     print("file size with len:", total_size)
 
@@ -77,28 +77,26 @@ def get_gitlab_stream(request, repo, tag, file_path, permanent_link,**kwargs):
         },
         status_code=206)
 
-def get_gitlab_download(request, repo, tag, file_path,permanent_link):
+def get_gitlab_download(repo, tag, permanent_link, file_path):
     """get downlaodable content from gtilab"""
+
     if permanent_link is None or permanent_link == '':
-        url = f"https://gitlab.bridgeconn.com/{repo}/-/raw/{tag}/{file_path}"
+        url = f"{repo}/-/raw/{tag}/{file_path}"
     else:
         url = permanent_link
-   
+
     stream = gl.http_get(url).content
+    response = Response(stream)
 
-    print("name---->",url.split("/")[-1])
-    filename = url.split("/")[-1]
-    fn=url.split("/")[-1]
-    with open(fn, 'wb') as file:
-        file.write(stream)
-    filepath = os.path.join(os.getcwd(),url.split("/")[-1])
-    print("current cwd------------------->",filepath)
-    # response = FileResponse(filepath, media_type="application/octet-stream", filename=fn)
-    response = FileResponse(filepath)
+    response.headers["Content-Disposition"] = "attachment; filename=stream.mp4"
+    response.headers["Content-Type"] = "application/force-download"
+    response.headers["Content-Transfer-Encoding"] = "Binary"
+    response.headers["Content-Type"] = "application/octet-stream"
+    return response
 
-    # memfile = BytesIO(stream)
-    # response = StreamingResponse(memfile, media_type="")
-    # response.headers["Content-Disposition"] = f"inline; filename={filename}"
-    
-    return FileResponse(stream)
-    # return response
+
+def find_media_source(repo, db_):
+    """find source of requested gitlab media"""
+    query = db_.query(db_models.Source)
+    query = query.filter(db_models.Source.metaData.contains({"repo":repo})).first()
+    return query

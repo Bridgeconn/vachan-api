@@ -56,7 +56,8 @@
         "read":["registeredUser"]
     },
     "media":{
-        "stream":["noAuthRequired"]
+        "stream":["registeredUser"],
+        "download":["registeredUser"]
     },
     "user":{
         "create":["noAuthRequired"],

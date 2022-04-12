@@ -111,3 +111,4 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/lookup/stopwords/{language_code},POST,None,False,None,create
 /v2/jobs,GET,None,False,None,read
 /v2/media/gitlab/stream,GET,None,False,None,stream
+/v2/media/gitlab/download,GET,None,False,None,download
