@@ -1,4 +1,4 @@
-# pylint: disable=R0801
+# pylint: disable=duplicate-code
 '''Utility functions'''
 from dependencies import log
 from schema import schema_auth

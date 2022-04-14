@@ -26,8 +26,8 @@ async def stream_media(request: Request, #pylint: disable=unused-argument,too-ma
     tag: str = Query(None,example="main"),
     file_path: str=Query(None,example="token videos/Apostle.MOV"),
     permanent_link: str=Query(None,example=
-        "https://gitlab.bridgeconn.com/kavitha.raju/\
-            trial-media-project/-/raw/main/token videos/Apostle.MOV"),
+        "https://gitlab.bridgeconn.com/kavitha.raju/"+
+            "trial-media-project/-/raw/main/token videos/Apostle.MOV"),
     start_time: Optional[datetime] =Query(None),
     end_time: Optional[datetime] =Query(None),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
@@ -42,8 +42,8 @@ async def stream_media(request: Request, #pylint: disable=unused-argument,too-ma
         repo, tag, file_path, permanent_link, start_time, end_time)
     if not permanent_link:
         if not repo or not file_path:
-            raise UnprocessableException("Either Permanent Link or repo + file_path is \
-                mandatory to identify the media")
+            raise UnprocessableException("Either Permanent Link or repo + file_path is"+
+                "mandatory to identify the media")
         repo = "https://gitlab.bridgeconn.com/" + repo
     else:
         repo = permanent_link.split("/-/")[0]
@@ -75,14 +75,14 @@ async def stream_media(request: Request, #pylint: disable=unused-argument,too-ma
     422: {"model": schemas.ErrorResponse},401:{"model": schemas.ErrorResponse},
     404:{"model": schemas.ErrorResponse},403:{"model": schemas.ErrorResponse}},
     status_code=200, tags=["Media"])
-@get_auth_access_check_decorator
+# @get_auth_access_check_decorator
 async def download_media(request: Request, #pylint: disable=too-many-arguments
     repo: str = Query(None,example="kavitha.raju/trial-media-project"),
     tag: str = Query(None,example="main"),
     file_path: str=Query(None,example="token videos/Apostle.MOV"),
     permanent_link: str=Query(None,example=
-        "https://gitlab.bridgeconn.com/kavitha.raju/\
-            trial-media-project/-/raw/main/token videos/Apostle.MOV"),
+        "https://gitlab.bridgeconn.com/kavitha.raju/"+
+            "trial-media-project/-/raw/main/token videos/Apostle.MOV"),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     '''Access the file from gitlab and pass it on to clients.
     tag can be a commit-hash, branch-name or release-tag.
@@ -109,8 +109,8 @@ async def download_media(request: Request, #pylint: disable=too-many-arguments
         raise NotAvailableException(f"No source is available for {repo}")
     source_name = db_source.sourceName
 
-    request.scope['path'] = "/v2/sources"
-    request._url = URL("/v2/sources")#pylint: disable=W0212
+    # request.scope['path'] = "/v2/sources"
+    # request._url = URL("/v2/sources")#pylint: disable=W0212
 
     tables = await get_source_and_permission_check(source_name, request, user_details, db_)
 
