@@ -42,7 +42,8 @@ async def stream_media(request: Request, #pylint: disable=unused-argument,too-ma
         repo, tag, file_path, permanent_link, start_time, end_time)
     if not permanent_link:
         if not repo or not file_path:
-            raise UnprocessableException("Either Permanent Link or repo + file_path")
+            raise UnprocessableException("Either Permanent Link or repo + file_path is \
+                mandatory to identify the media")
         repo = "https://gitlab.bridgeconn.com/" + repo
     else:
         repo = permanent_link.split("/-/")[0]
@@ -93,7 +94,8 @@ async def download_media(request: Request, #pylint: disable=too-many-arguments
         repo, tag, file_path, permanent_link)
     if not permanent_link:
         if not repo or not file_path:
-            raise UnprocessableException("Either Permanent Link or repo + file_path")
+            raise UnprocessableException("Either Permanent Link or repo + file_path is\
+                 mandatory to identify the media")
         repo = "https://gitlab.bridgeconn.com/" + repo
     else:
         repo = permanent_link.split("/-/")[0]

@@ -24,7 +24,7 @@ class ContentTypeName(Enum):
     INFOGRAPHIC = "infographic"
     BIBLEVIDEO = "biblevideo"
     DICTIONARY = "dictionary"
-    GITLABREPO = "gitlab-repo"
+    GITLABREPO = "gitlabrepo"
 
 class TranslationDocumentType(Enum):
     '''Currently supports bible USFM only. Can be extended to

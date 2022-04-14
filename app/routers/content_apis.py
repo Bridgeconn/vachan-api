@@ -1,14 +1,17 @@
 '''API endpoints related to content management'''
+import json
 from typing import List
 from fastapi import APIRouter, Query, Body, Depends, Path , Request
 from sqlalchemy.orm import Session
 
 from schema import schemas,schemas_nlp, schema_auth, schema_content
 from dependencies import get_db, log, AddHiddenInput
-from custom_exceptions import NotAvailableException, AlreadyExistsException
+from custom_exceptions import NotAvailableException, AlreadyExistsException,\
+    UnprocessableException
 from crud import structurals_crud, contents_crud
 from auth.authentication import get_auth_access_check_decorator ,\
     get_user_or_none
+import db_models
 
 router = APIRouter()
 
@@ -284,6 +287,8 @@ async def add_source(request: Request, source_obj : schemas.SourceCreate = Body(
     * Revision, if not provided, will be assumed as 1
     * AccessPermissions is list of permissions ["content", "open-access", "publishable",
         "downloadable","derivable"]. Default will be ["content"]
+    * repo and defaultBranch should given in the metaData if contentType is gitlabrepo,
+        defaultBranch will be "main" if not mentioned in the metadata.
     '''
     log.info('In add_source')
     log.debug('source_obj: %s',source_obj)
@@ -296,6 +301,15 @@ async def add_source(request: Request, source_obj : schemas.SourceCreate = Body(
     if 'content' not in source_obj.accessPermissions:
         source_obj.accessPermissions.append(schemas.SourcePermissions.CONTENT)
     source_obj.metaData['accessPermissions'] = source_obj.accessPermissions
+    if source_obj.contentType == db_models.ContentTypeName.GITLABREPO.value:
+        if "repo" not in source_obj.metaData:
+            raise UnprocessableException("repo link in metadata is mandatory to create"+
+                " source with contentType gitlabrepo")
+        if len(structurals_crud.get_sources(db_, metadata =
+                json.dumps({"repo":source_obj.metaData["repo"]}))) > 0:
+            raise AlreadyExistsException("already present Source with same repo link")
+        if "defaultBranch" not in source_obj.metaData:
+            source_obj.metaData["defaultBranch"] = "main"
     return {'message': "Source created successfully",
     "data": structurals_crud.create_source(db_=db_, source=source_obj, source_name=source_name,
         user_id=user_details['user_id'])}
@@ -320,6 +334,19 @@ async def edit_source(request: Request,source_obj: schemas.SourceEdit = Body(...
     if 'content' not in source_obj.accessPermissions:
         source_obj.accessPermissions.append(schemas.SourcePermissions.CONTENT)
     source_obj.metaData['accessPermissions'] = source_obj.accessPermissions
+    if source_obj.sourceName.split("_")[-1] == \
+        db_models.ContentTypeName.GITLABREPO.value:
+        if "repo" not in source_obj.metaData:
+            raise UnprocessableException("repo link in metadata is mandatory to update"+
+                " source with contentType gitlabrepo")
+        current_source = structurals_crud.get_sources(db_, metadata =
+                json.dumps({"repo":source_obj.metaData["repo"]}))
+        if len(current_source)>0 and not current_source[0].sourceName ==\
+             source_obj.sourceName:
+            raise AlreadyExistsException("already present another source"+
+            " with same repo link")
+        if "defaultBranch" not in source_obj.metaData:
+            source_obj.metaData["defaultBranch"] = "main"
     return {'message': "Source edited successfully",
     "data": structurals_crud.update_source(db_=db_, source=source_obj,
         user_id=user_details['user_id'])}

@@ -365,7 +365,8 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
         db_content.updatedUser = user_id
     # db_.commit()
     # db_.refresh(db_content)
-    db_models.dynamicTables[db_content.sourceName] = db_models.dynamicTables[source.sourceName]
+    if not source.sourceName.split("_")[-1] == db_models.ContentTypeName.GITLABREPO.value:
+        db_models.dynamicTables[db_content.sourceName] = db_models.dynamicTables[source.sourceName]
     return db_content
 
 def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None,

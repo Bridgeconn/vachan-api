@@ -314,7 +314,7 @@ class VersionEdit(BaseModel):
             }
         }
 
-TableNamePattern = constr(regex=r"^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\w+_[a-z,-]+$")
+TableNamePattern = constr(regex=r"^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\w+_[a-z]+$")
 
 class SourceCreate(BaseModel):
     '''Input object of sources'''

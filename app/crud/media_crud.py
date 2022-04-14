@@ -16,7 +16,7 @@ gl = gitlab.Gitlab(url="https://gitlab.bridgeconn.com", private_token=access_tok
 
 def media_streamer(stream, chunk_size, start, size):
     '''chunk up the object and return in pieces'''
-    print("comes in streamer once with start:", start)
+    # print("comes in streamer once with start:", start)
 
     bytes_to_read = min(start+chunk_size, size)
     yield stream[start: start+bytes_to_read]
@@ -28,7 +28,7 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
 
     global CACHEDMEDIA #pylint: disable=W0603
     asked = request.headers.get("Range")
-    print("comes in router func once with range:", asked)
+    # print("comes in router func once with range:", asked)
 
     if permanent_link is None or permanent_link == '':
         url = f"{repo}/-/raw/{tag}/{file_path}"
@@ -62,7 +62,7 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
         CACHEDMEDIA.append({"url":url, "stream":stream, "last_access":datetime.now()})
 
     total_size = len(stream)
-    print("file size with len:", total_size)
+    # print("file size with len:", total_size)
 
     start_byte_requested = int(asked.split("=")[-1][:-1])
     end_byte_planned = min(start_byte_requested + BYTES_PER_RESPONSE, total_size)

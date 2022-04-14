@@ -13,7 +13,7 @@ INSERT INTO content_types(content_type) VALUES('commentary');
 INSERT INTO content_types(content_type) VALUES('dictionary');
 INSERT INTO content_types(content_type) VALUES('infographic');
 INSERT INTO content_types(content_type) VALUES('biblevideo');
-INSERT INTO content_types(content_type) VALUES('gitlab-repo');
+INSERT INTO content_types(content_type) VALUES('gitlabrepo');
 
 CREATE TABLE public.languages (
     language_id SERIAL PRIMARY KEY,
