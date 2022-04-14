@@ -3,10 +3,9 @@ import re
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Query, Request, Depends
-from starlette.datastructures import URL
 from sqlalchemy.orm import Session
-from schema import schemas
-from routers.utils import get_source_and_permission_check
+from schema import schemas,schema_auth
+from routers.content_apis import get_source
 from crud import media_crud
 from custom_exceptions import NotAvailableException, UnprocessableException
 from dependencies import log, get_db
@@ -14,6 +13,48 @@ from auth.authentication import get_auth_access_check_decorator ,\
     get_user_or_none
 
 router = APIRouter()
+
+async def get_and_accesscheck_for_repo(repo, file_path, tag, permanent_link, db_,*args):
+    """find repo and check access for source"""
+    request = args[0]
+    user_details = args[1]
+    if not permanent_link:
+        if not repo or not file_path:
+            raise UnprocessableException("Either Permanent Link or repo + file_path is\
+                 mandatory to identify the media")
+        repo = "https://gitlab.bridgeconn.com/" + repo
+    else:
+        repo = permanent_link.split("/-/")[0]
+        part2 = permanent_link.split("/-/")[1]
+        tag =  re.search(r'[^raw/]\w+',part2)[0]
+        file_path = re.search(f'[^raw/{tag}].+',part2)[0]
+
+    # find source
+    db_source = media_crud.find_media_source(repo, db_)
+    if db_source is None:
+        raise NotAvailableException(f"No source is available for {repo}")
+    source_name = db_source.sourceName
+
+    try:
+        tables = await get_source(request=request,source_name=source_name,
+        content_type=None, version_abbreviation=None,
+        revision=None,language_code=None,license_code=None,
+        metadata=None,access_tag = None, active= True, latest_revision= True,
+        skip=0, limit=1000, user_details=user_details, db_=db_,
+        operates_on=schema_auth.ResourceType.CONTENT.value,
+        filtering_required=True)
+    except Exception:
+        log.error("Error in getting sources list")
+        raise
+
+    if len(tables) == 0:
+        raise NotAvailableException("No sources available for the requested name or language")
+    if tag is None:
+        if not "defaultBranch" in tables[0].metaData:
+            raise NotAvailableException("Default Branch is Not in source metadata")
+        tag = tables[0].metaData["defaultBranch"]
+
+    return repo, tag, permanent_link, file_path
 
 @router.get("/v2/media/gitlab/stream",
     responses={502: {"model": schemas.ErrorResponse},
@@ -40,32 +81,10 @@ async def stream_media(request: Request, #pylint: disable=unused-argument,too-ma
     log.info('In get_stream_media')
     log.debug('repo:%s, tag %s, file_path: %s, permanent_link: %s, start_time: %s, end_time: %s',
         repo, tag, file_path, permanent_link, start_time, end_time)
-    if not permanent_link:
-        if not repo or not file_path:
-            raise UnprocessableException("Either Permanent Link or repo + file_path is"+
-                "mandatory to identify the media")
-        repo = "https://gitlab.bridgeconn.com/" + repo
-    else:
-        repo = permanent_link.split("/-/")[0]
-        part2 = permanent_link.split("/-/")[1]
-        tag =  re.search(r'[^raw/]\w+',part2)[0]
-        file_path = re.search(f'[^raw/{tag}].+',part2)[0]
 
-    # find source
-    db_source = media_crud.find_media_source(repo, db_)
-    if db_source is None:
-        raise NotAvailableException(f"No source is available for {repo}")
-    source_name = db_source.sourceName
-    request.scope['path'] = "/v2/sources"
-    request._url = URL("/v2/sources")#pylint: disable=W0212
+    repo, tag, permanent_link, file_path = await get_and_accesscheck_for_repo(repo, file_path,
+        tag, permanent_link, db_, request, user_details)
 
-    tables = await get_source_and_permission_check(source_name, request, user_details, db_)
-    if len(tables) == 0:
-        raise NotAvailableException("No sources available for the requested name or language")
-    if tag is None:
-        if not "defaultBranch" in tables[0].metaData:
-            raise NotAvailableException("Default Branch is Not in source metadata")
-        tag = tables[0].metaData["defaultBranch"]
     return media_crud.get_gitlab_stream(request, repo, tag, file_path,
         permanent_link, start_time=start_time, end_time=end_time)
 
@@ -75,7 +94,7 @@ async def stream_media(request: Request, #pylint: disable=unused-argument,too-ma
     422: {"model": schemas.ErrorResponse},401:{"model": schemas.ErrorResponse},
     404:{"model": schemas.ErrorResponse},403:{"model": schemas.ErrorResponse}},
     status_code=200, tags=["Media"])
-# @get_auth_access_check_decorator
+@get_auth_access_check_decorator
 async def download_media(request: Request, #pylint: disable=too-many-arguments
     repo: str = Query(None,example="kavitha.raju/trial-media-project"),
     tag: str = Query(None,example="main"),
@@ -92,32 +111,8 @@ async def download_media(request: Request, #pylint: disable=too-many-arguments
     log.info('In get_download_media')
     log.debug('repo:%s, tag %s, file_path: %s, permanent_link: %s',
         repo, tag, file_path, permanent_link)
-    if not permanent_link:
-        if not repo or not file_path:
-            raise UnprocessableException("Either Permanent Link or repo + file_path is\
-                 mandatory to identify the media")
-        repo = "https://gitlab.bridgeconn.com/" + repo
-    else:
-        repo = permanent_link.split("/-/")[0]
-        part2 = permanent_link.split("/-/")[1]
-        tag =  re.search(r'[^raw/]\w+',part2)[0]
-        file_path = re.search(f'[^raw/{tag}].+',part2)[0]
 
-    # find source
-    db_source = media_crud.find_media_source(repo, db_)
-    if db_source is None:
-        raise NotAvailableException(f"No source is available for {repo}")
-    source_name = db_source.sourceName
+    repo, tag, permanent_link, file_path = await get_and_accesscheck_for_repo(repo, file_path,
+        tag, permanent_link, db_, request, user_details)
 
-    # request.scope['path'] = "/v2/sources"
-    # request._url = URL("/v2/sources")#pylint: disable=W0212
-
-    tables = await get_source_and_permission_check(source_name, request, user_details, db_)
-
-    if len(tables) == 0:
-        raise NotAvailableException("No sources available for the requested name or language")
-    if tag is None:
-        if not "defaultBranch" in tables[0].metaData:
-            raise NotAvailableException("Default Branch is Not in source metadata")
-        tag = tables[0].metaData["defaultBranch"]
     return media_crud.get_gitlab_download(repo, tag, permanent_link, file_path)

@@ -264,9 +264,9 @@ async def get_source(request: Request, #pylint: disable=too-many-locals
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
     log.info('In get_source')
-    log.debug('sourceName:%s,contentType:%s, versionAbbreviation: %s, revision: %s, languageCode: %s,\
-        license_code:%s, metadata: %s, access_tag: %s, latest_revision: %s, active: %s,\
-             skip: %s, limit: %s',source_name,
+    log.debug('sourceName:%s,contentType:%s, versionAbbreviation: %s, revision: %s, \
+    languageCode: %s,license_code:%s, metadata: %s, access_tag: %s, latest_revision:\
+         %s, active: %s, skip: %s, limit: %s',source_name,
         content_type, version_abbreviation, revision, language_code, license_code, metadata,
         access_tag, latest_revision, active, skip, limit)
     return structurals_crud.get_sources(db_, content_type, version_abbreviation, revision=revision,
