@@ -861,24 +861,13 @@ async def extract_text_contents(request:Request, #pylint: disable=W0613
     If source_name is provided, only that filter will be considered over content_type & language.'''
     log.info('In extract_text_contents')
     log.debug('source_name: %s, language_code: %s',source_name, language_code)
-    version_abbreviation = None
-    revision = None
-    if source_name:
-        parts = source_name.split('_')
-        language_code = parts[0]
-        version_abbreviation = parts[1]
-        revision = parts[2]
-        content_type = parts[3]
     try:
-        tables = await get_source(request=request, content_type=content_type,
-            version_abbreviation=version_abbreviation,
-            revision=revision,
-            language_code=language_code,
+        tables = await get_source(request=request, source_name=source_name,
+            content_type=None, version_abbreviation=None,
+            revision=None, language_code=None,
             license_code=None, metadata=None,
-            access_tag = None,
-            active= True, latest_revision= True,
-            skip=0, limit=1000,
-            user_details=user_details, db_=db_,
+            access_tag = None, active= True, latest_revision= True,
+            skip=0, limit=1000, user_details=user_details, db_=db_,
             operates_on=schema_auth.ResourceType.CONTENT.value,
             filtering_required=True)
     except Exception:
