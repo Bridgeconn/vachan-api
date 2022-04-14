@@ -198,31 +198,33 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
     query = db_.query(db_models.Source)
-    if content_type:
-        query = query.filter(db_models.Source.contentType.has(contentType = content_type.strip()))
-    if version_abbreviation:
-        query = query.filter(
-            db_models.Source.version.has(versionAbbreviation = version_abbreviation.strip()))
-    if revision:
-        query = query.filter(
-            db_models.Source.version.has(revision = revision))
-    if license_abbreviation:
-        query = query.filter(db_models.Source.license.has(code = license_abbreviation.strip()))
-    if language_code:
-        query = query.filter(db_models.Source.language.has(code = language_code.strip()))
-    if metadata:
-        meta = json.loads(metadata)
-        for key in meta:
-            query = query.filter(db_models.Source.metaData.op('->>')(key) == meta[key])
+    if source_name:
+        query = query.filter(db_models.Source.sourceName == source_name)
+    else:
+        if content_type:
+            query = query.filter(db_models.Source.contentType.has
+            (contentType = content_type.strip()))
+        if version_abbreviation:
+            query = query.filter(
+                db_models.Source.version.has(versionAbbreviation = version_abbreviation.strip()))
+        if revision:
+            query = query.filter(
+                db_models.Source.version.has(revision = revision))
+        if license_abbreviation:
+            query = query.filter(db_models.Source.license.has(code = license_abbreviation.strip()))
+        if language_code:
+            query = query.filter(db_models.Source.language.has(code = language_code.strip()))
+        if metadata:
+            meta = json.loads(metadata)
+            for key in meta:
+                query = query.filter(db_models.Source.metaData.op('->>')(key) == meta[key])
+        if access_tags:
+            query = query.filter(db_models.Source.metaData.contains(
+                {"accessPermissions":[tag.value for tag in access_tags]}))
     if active:
         query = query.filter(db_models.Source.active)
     else:
         query = query.filter(db_models.Source.active == False) #pylint: disable=singleton-comparison
-    if source_name:
-        query = query.filter(db_models.Source.sourceName == source_name)
-    if access_tags:
-        query = query.filter(db_models.Source.metaData.contains(
-            {"accessPermissions":[tag.value for tag in access_tags]}))
 
     res = query.join(db_models.Version).order_by(db_models.Version.revision.desc()
         ).offset(skip).limit(limit).all()

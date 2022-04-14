@@ -240,7 +240,9 @@ async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse}},
     status_code=200, tags=["Sources"])
 @get_auth_access_check_decorator
-async def get_source(request: Request,content_type: str=Query(None, example="commentary"), #pylint: disable=too-many-locals
+async def get_source(request: Request, #pylint: disable=too-many-locals
+    source_name : schemas.TableNamePattern=Query(None, example="hi_IRV_1_bible"),
+    content_type: str=Query(None, example="commentary"),
     version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
     revision: int=Query(None, example=1),
     language_code: schemas.LangCodePattern=Query(None,example="en"),
@@ -262,14 +264,15 @@ async def get_source(request: Request,content_type: str=Query(None, example="com
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
     log.info('In get_source')
-    log.debug('contentType:%s, versionAbbreviation: %s, revision: %s, languageCode: %s,\
+    log.debug('sourceName:%s,contentType:%s, versionAbbreviation: %s, revision: %s, languageCode: %s,\
         license_code:%s, metadata: %s, access_tag: %s, latest_revision: %s, active: %s,\
-             skip: %s, limit: %s',
+             skip: %s, limit: %s',source_name,
         content_type, version_abbreviation, revision, language_code, license_code, metadata,
         access_tag, latest_revision, active, skip, limit)
     return structurals_crud.get_sources(db_, content_type, version_abbreviation, revision=revision,
         language_code=language_code, license_code=license_code, metadata=metadata,
-        access_tag=access_tag,latest_revision=latest_revision, active=active,skip=skip, limit=limit)
+        access_tag=access_tag,latest_revision=latest_revision, active=active,skip=skip, limit=limit,
+        source_name=source_name)
 
 @router.post('/v2/sources', response_model=schemas.SourceCreateResponse,
     responses={502: {"model": schemas.ErrorResponse},
