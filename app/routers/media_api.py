@@ -40,9 +40,9 @@ async def get_and_accesscheck_for_repo(repo, file_path, tag, permanent_link, db_
         content_type=None, version_abbreviation=None,
         revision=None,language_code=None,license_code=None,
         metadata=None,access_tag = None, active= True, latest_revision= True,
-        skip=0, limit=1000, user_details=user_details, db_=db_,
-        operates_on=schema_auth.ResourceType.CONTENT.value,
-        filtering_required=True)
+        limit=1000, skip=0, db_=db_, user_details=user_details,
+        filtering_required=True,
+        operates_on=schema_auth.ResourceType.CONTENT.value)
     except Exception:
         log.error("Error in getting sources list")
         raise
