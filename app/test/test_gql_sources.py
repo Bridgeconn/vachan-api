@@ -728,6 +728,49 @@ def test_get_after_adding_data():
     for item in items:
         assert_positive_get(item)
 
+  # filter with sourcename
+    query_source = """
+        {
+  contents(sourceName:"hi_TTT_1_commentary"){
+    sourceName
+    contentType{
+      contentId
+      contentType
+    }
+    language{
+      languageId
+      language
+      code
+      scriptDirection
+      metaData
+    }
+    version{
+      versionId
+      versionAbbreviation
+      versionName
+      revision
+      metaData
+    }
+    year
+    license{
+      name
+      code
+      license
+      permissions
+      active
+    }
+    metaData
+    active
+  }
+}
+    """
+    executed_source = gql_request(query=query_source,headers=headers_auth)
+    assert isinstance(executed_source, Dict)
+    assert len(executed_source["data"]["contents"]) == 1
+    items = executed_source["data"]["contents"]
+    for item in items:
+        assert_positive_get(item)
+
     # filter with license
     query5 = """
         {

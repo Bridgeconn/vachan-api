@@ -578,6 +578,13 @@ def test_get_after_adding_data():
     for item in response.json():
         assert_positive_get(item)
 
+    # filter with source name
+    response = client.get(UNIT_URL + "?source_name=hi_TTT_1_commentary",headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    for item in response.json():
+        assert_positive_get(item)
+
     # filter with version
     response = client.get(UNIT_URL + "?version_abbreviation=TTT&latest_revision=false",headers=headers_auth)
     assert response.status_code == 200
