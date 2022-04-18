@@ -863,8 +863,8 @@ async def extract_text_contents(request:Request, #pylint: disable=W0613
     log.debug('source_name: %s, language_code: %s',source_name, language_code)
     try:
         tables = await get_source(request=request, source_name=source_name,
-            content_type=None, version_abbreviation=None,
-            revision=None, language_code=None,
+            content_type=content_type, version_abbreviation=None,
+            revision=None, language_code=language_code,
             license_code=None, metadata=None,
             access_tag = None, active= True, latest_revision= True,
             skip=0, limit=1000, user_details=user_details, db_=db_,

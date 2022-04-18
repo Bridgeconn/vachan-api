@@ -286,6 +286,8 @@ def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_
             int(table_name.split("_")[-1]) > table_name_count):
             table_name_count = int(table_name.split("_")[-1])
     table_name = "table_"+str(table_name_count+1)
+    if content_type.contentType == db_models.ContentTypeName.GITLABREPO.value:
+        table_name = source.metaData["repo"]
     db_content = db_models.Source(
         year = source.year,
         sourceName = source_name,
