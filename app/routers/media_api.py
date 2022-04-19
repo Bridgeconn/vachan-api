@@ -25,9 +25,13 @@ async def get_and_accesscheck_for_repo(repo, file_path, tag, permanent_link, db_
         repo = "https://gitlab.bridgeconn.com/" + repo
     else:
         repo = permanent_link.split("/-/")[0]
-        part2 = permanent_link.split("/-/")[1]
-        tag =  re.search(r'[^raw/]\w+',part2)[0]
-        file_path = re.search(f'[^raw/{tag}].+',part2)[0]
+        # part2 = permanent_link.split("/-/")[1]
+        # tag =  re.search(r'[^raw/]\w+',part2)[0]
+        # file_path = re.search(f'[^raw/{tag}].+',part2)[0]
+        tag =  re.search(r'/-/[^/]+/[^/]+',permanent_link)[0].split("/")[-1]
+        file_path = re.findall(r'(/-/[^/]+/[^/]+/)(.+)',permanent_link)[0][-1]
+
+        permanent_link =  re.sub(r'/-/[^/]+',"/-/raw",permanent_link)
 
     # find source
     db_source = media_crud.find_media_source(repo, db_)
