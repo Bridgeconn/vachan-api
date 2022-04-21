@@ -1,6 +1,7 @@
 '''GraphQL queries and mutations'''
 #pylint: disable=too-many-lines
 import graphene
+from sqlalchemy import null
 from schema import schemas, schemas_nlp, schema_auth, schema_content
 from routers import translation_apis , content_apis, auth_api
 from graphql_api import types, utils
@@ -493,13 +494,11 @@ class AddCommentary(graphene.Mutation):
 #pylint: disable=no-self-use
     async def mutate(self,info,comm_arg):
         """resolve"""
-        print("inside graphql till here------>")
         log.info('In GraphQL Add Commentaries')
         db_ = info.context["request"].db_session
         source =comm_arg.source_name
         comm_data = comm_arg.commentary_data
         background_tasks = info.context["background"]
-        print("info---->",info.context)
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "POST"
         req.scope['path'] = f"/v2/commentaries/{source}"
@@ -509,11 +508,14 @@ class AddCommentary(graphene.Mutation):
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schema_content.CommentaryCreate)
             schema_list.append(schema_model)
-        response = await content_apis.add_commentary(request=req,
-            background_tasks=background_tasks,
-            source_name=source,commentaries= schema_list,
-            user_details=user_details, db_=db_)
-        print("------->",response['data'])
+
+        #disabled add commentary bcz of background task issue of graphql
+
+        # response = await content_apis.add_commentary(request=req,
+        #     background_tasks=background_tasks,
+        #     source_name=source,commentaries= schema_list,
+        #     user_details=user_details, db_=db_)
+        response = None
         # result = response['data']
         # comm_content_list = []
         # for item in result:
@@ -557,9 +559,13 @@ class EditCommentary(graphene.Mutation):
             schema_list.append(schema_model)
         # result =contents_crud.update_commentaries(db_=db_, source_name=source,
         # commentaries=schema_list, user_id=None)
-        response = await content_apis.edit_commentary(request=req,
-            source_name=source,commentaries= schema_list,
-            user_details=user_details, db_=db_)
+
+        #disabled edit commentary bcz of background task issue of graphql
+
+        # response = await content_apis.edit_commentary(request=req,
+        #     source_name=source,commentaries= schema_list,
+        #     user_details=user_details, db_=db_)
+        response = None 
         result = response['data']
         comm_content_list = []
         for item in result:

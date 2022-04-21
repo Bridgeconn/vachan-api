@@ -576,10 +576,8 @@ async def add_commentary(request: Request,background_tasks: BackgroundTasks,
         raise NotAvailableException('Source %s, not found in database'%source_name)
     job_info = nlp_sw_crud.create_job(db_=db_, user_id=user_details['user_id'])
     job_id = job_info.jobId
-    print("call from graphql to router before----------------------->")
     background_tasks.add_task(contents_crud.upload_commentaries,db_=db_, source_name=source_name,
         commentaries=commentaries, job_id=job_id, user_id=user_details['user_id'])
-    print("call from graphql to router after----------------------->")
     data = {"jobId": job_info.jobId, "status": job_info.status}
     job_resp = {"message": "Uploading Commentaries in background", "data": data}
     return {'db_content':job_resp,'source_content':source_db_content}
@@ -615,7 +613,7 @@ async def edit_commentary(request: Request,background_tasks: BackgroundTasks,
     background_tasks.add_task(contents_crud.update_commentaries,db_=db_, source_name=source_name,
         commentaries=commentaries, job_id=job_id, user_id=user_details['user_id'])
     data = {"jobId": job_info.jobId, "status": job_info.status}
-    job_resp = {"message": "Uploading Commentaries in background", "data": data}
+    job_resp = {"message": "Updating Commentaries in background", "data": data}
     return {'db_content':job_resp,'source_content':source_db_content}
     # return {'message': "Commentaries updated successfully",
     # "data": contents_crud.update_commentaries(db_=db_, source_name=source_name,

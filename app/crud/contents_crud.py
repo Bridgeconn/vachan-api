@@ -49,7 +49,6 @@ def get_commentaries(db_:Session, *args,**kwargs):
 
 def upload_commentaries(db_: Session, source_name, commentaries, job_id, user_id=None):
     '''Adds rows to the commentary table specified by source_name'''
-    print("inside start upload task----------------------->")
     update_args = {
                     "status" : schemas_nlp.JobStatus.STARTED.value,
                     "startTime": datetime.now()
@@ -74,8 +73,11 @@ def upload_commentaries(db_: Session, source_name, commentaries, job_id, user_id
         raise TypeException('The operation is supported only on commentaries')
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
+    db_content_out = []
     prev_book_code = None
     for item in commentaries:
+        if item.verseStart is not None and item.verseEnd is None:
+            item.verseEnd = item.verseStart
         if item.bookCode != prev_book_code:
             book = db_.query(db_models.BibleBook).filter(
                 db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
@@ -87,8 +89,22 @@ def upload_commentaries(db_: Session, source_name, commentaries, job_id, user_id
                 }
                 update_job(db_, job_id, user_id, update_args)
                 raise NotAvailableException('Bible Book code, %s, not found in database')
-        if item.verseStart is not None and item.verseEnd is None:
-            item.verseEnd = item.verseStart
+            else:
+                exist_check = db_.query(model_cls).filter(
+                    model_cls.book_id == book.bookId, model_cls.chapter == item.chapter,
+                    model_cls.verseStart == item.verseStart, model_cls.verseEnd == item.verseEnd,
+                ).first()
+                if exist_check:
+                    update_args["output"]= {
+                    "message": 'Already exist commentary with same values for reference range',
+                    "book_id": book.bookId, "chapter":item.chapter, "verseStart" : item.verseStart,
+                    "verseEnd" : item.verseEnd, "data": None}
+                    update_job(db_, job_id, user_id, update_args)
+                    err_str = f"bookId:{book.bookId}, chapter:{item.chapter},\
+                        verseStart:{item.verseStart},verseEnd:{item.verseEnd}"
+                    raise AlreadyExistsException('Already exist commentary with same values for\
+                        reference range %s'%err_str)
+
         row = model_cls(
             book_id = book.bookId,
             chapter = item.chapter,
@@ -96,22 +112,30 @@ def upload_commentaries(db_: Session, source_name, commentaries, job_id, user_id
             verseEnd = item.verseEnd,
             commentary = utils.normalize_unicode(item.commentary),
             active=item.active)
+        row_out = {
+            "book" : {
+                "bookId": book.bookId,
+                "bookName": book.bookName,
+                "bookCode": book.bookCode,
+                },
+            "chapter" :  item.chapter,
+            "verseStart" :  item.verseStart,
+            "verseEnd" :  item.verseEnd,
+            "commentary" :  utils.normalize_unicode(item.commentary),
+            "active": item.active
+        }
         db_content.append(row)
+        db_content_out.append(row_out)
     db_.add_all(db_content)
     db_.expire_all()
     source_db_content.updatedUser = user_id
-    # response = {
-    #     'db_content':db_content,
-    #     'source_content':source_db_content
-    # }
-    db_content_dict = [jsonable_encoder(item) for item in db_content]
+    # db_content_dict = [jsonable_encoder(item) for item in db_content]
     update_args = {
         "status" : schemas_nlp.JobStatus.FINISHED.value,
         "endTime": datetime.now(),
-        "output": {"message": "Commentaries added successfully","data": db_content_dict} 
+        "output": {"message": "Commentaries added successfully","data": db_content_out}
         }
     update_job(db_, job_id, user_id, update_args)
-    print("inside FINISHED upload task----------------------->")
     # return response
 
 def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=None):
@@ -133,6 +157,7 @@ def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=
         raise TypeException('The operation is supported only on commentaries')
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
+    db_content_out = []
     prev_book_code = None
     for item in commentaries:
         if item.bookCode != prev_book_code:
@@ -166,16 +191,25 @@ def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=
             row.active = item.active
         db_.flush()
         db_content.append(row)
+        row_out = {
+            "book" : {
+                "bookId": book.bookId,
+                "bookName": book.bookName,
+                "bookCode": book.bookCode,
+                },
+            "chapter" :  row.chapter,
+            "verseStart" :  row.verseStart,
+            "verseEnd" :  row.verseEnd,
+            "commentary" :  row.commentary,
+            "active": row.active
+        }
+        db_content_out.append(row_out)
     source_db_content.updatedUser = user_id
-    # response = {
-    #     'db_content':db_content,
-    #     'source_content':source_db_content
-    # }
-    db_content_dict = [jsonable_encoder(item) for item in db_content]
+    # db_content_dict = [jsonable_encoder(item) for item in db_content]
     update_args = {
         "status" : schemas_nlp.JobStatus.FINISHED.value,
         "endTime": datetime.now(),
-        "output": {"message": "Commentaries updated successfully","data": db_content_dict}
+        "output": {"message": "Commentaries updated successfully","data": db_content_out}
         }
     update_job(db_, job_id, user_id, update_args)
     # return response
