@@ -1,8 +1,10 @@
 ''' Place to define all data processing and operations
 related to gitlab media operations'''
+import json
 import os
 from datetime import datetime
 from fastapi.responses import StreamingResponse, Response
+from fastapi.encoders import jsonable_encoder
 import gitlab
 import db_models
 
@@ -86,13 +88,14 @@ def get_gitlab_download(repo, tag, permanent_link, file_path):
         url = permanent_link
 
     stream = gl.http_get(url).content
-    response = Response(stream)
+    # response = Response(stream)
 
-    response.headers["Content-Disposition"] = "attachment; filename=stream.mp4"
-    response.headers["Content-Type"] = "application/force-download"
-    response.headers["Content-Transfer-Encoding"] = "Binary"
-    response.headers["Content-Type"] = "application/octet-stream"
-    return response
+    # response.headers["Content-Disposition"] = "attachment; filename=stream.mp4"
+    # response.headers["Content-Type"] = "application/force-download"
+    # response.headers["Content-Transfer-Encoding"] = "Binary"
+    # response.headers["Content-Type"] = "application/octet-stream"
+    # return response
+    return stream
 
 
 def find_media_source(repo, db_):

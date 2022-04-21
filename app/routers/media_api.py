@@ -3,6 +3,7 @@ import re
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Query, Request, Depends
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from schema import schemas,schema_auth
 from routers.content_apis import get_source
@@ -11,6 +12,7 @@ from custom_exceptions import NotAvailableException, UnprocessableException
 from dependencies import log, get_db
 from auth.authentication import get_auth_access_check_decorator ,\
     get_user_or_none
+from redis_db.utils import validate_cache, get_routes_from_cache, set_routes_to_cache
 
 router = APIRouter()
 
@@ -23,11 +25,9 @@ async def get_and_accesscheck_for_repo(repo, file_path, tag, permanent_link, db_
             raise UnprocessableException("Either Permanent Link or repo + file_path is\
                  mandatory to identify the media")
         repo = "https://gitlab.bridgeconn.com/" + repo
+        permanent_link = f"{repo}/-/raw/{tag}/{file_path}"
     else:
         repo = permanent_link.split("/-/")[0]
-        # part2 = permanent_link.split("/-/")[1]
-        # tag =  re.search(r'[^raw/]\w+',part2)[0]
-        # file_path = re.search(f'[^raw/{tag}].+',part2)[0]
         tag =  re.search(r'/-/[^/]+/[^/]+',permanent_link)[0].split("/")[-1]
         file_path = re.findall(r'(/-/[^/]+/[^/]+/)(.+)',permanent_link)[0][-1]
 
@@ -119,4 +119,25 @@ async def download_media(request: Request, #pylint: disable=too-many-arguments
     repo, tag, permanent_link, file_path = await get_and_accesscheck_for_repo(repo, file_path,
         tag, permanent_link, db_, request, user_details)
 
-    return media_crud.get_gitlab_download(repo, tag, permanent_link, file_path)
+    # cache_response = await validate_cache(permanent_link,
+    #     media_crud.get_gitlab_download , repo, tag, permanent_link, file_path)
+    # return cache_response
+
+    # redis cache part 
+    data = get_routes_from_cache(key= permanent_link)
+
+    if data is None:
+        data = media_crud.get_gitlab_download(repo, tag, permanent_link, file_path)
+        state = set_routes_to_cache(key=permanent_link, value=data)
+        # if state is True:
+        #     return data
+        # else:
+        #     print("Data not stored in cache")
+      
+    response =  Response(data)
+    response.headers["Content-Disposition"] = "attachment; filename=stream.mp4"
+    response.headers["Content-Type"] = "application/force-download"
+    response.headers["Content-Transfer-Encoding"] = "Binary"
+    response.headers["Content-Type"] = "application/octet-stream"
+    return response
+    # return media_crud.get_gitlab_download(repo, tag, permanent_link, file_path)

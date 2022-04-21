@@ -138,9 +138,35 @@ services:
   networks:
    - my-network
 
+ #reddis
+ redis:
+  container_name: redis
+  image: "redis:alpine"
+  ports:
+    - "6379:6379"
+  volumes:
+    # save redisearch data to your current working directory
+    - ./redis-data:/data
+  command: redis-server
+  networks:
+   - my-network
+
+ # redis db visualization dashboard
+ redisinsight: 
+  container_name: redisinsight
+  image: redislabs/redisinsight:latest
+  ports:
+    - '8001:8001'
+  volumes:
+    - ./redisinsight:/db
+  networks:
+   - my-network
+
 networks:
  my-network:              
 volumes:
   vachan-db-vol:
   logs-vol:
   kratos-sqlite:
+  redis-data:
+  redisinsight:
