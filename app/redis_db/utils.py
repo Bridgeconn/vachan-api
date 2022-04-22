@@ -8,7 +8,8 @@ from custom_exceptions import UnAuthorizedException
 def redis_connect() -> redis.client.Redis:
     try:
         client = redis.Redis(
-            host="redis",
+            # host="redis",
+            host="localhost",
             port=6379,
             db=0,
             socket_timeout=5,

@@ -27,6 +27,7 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
     """get stream from gtilab"""
     start_time = kwargs.get("start_time", None)#pylint: disable=W0612
     end_time = kwargs.get("end_time", None)#pylint: disable=W0612
+    stream = kwargs.get("stream", None)#pylint: disable=W0612
 
     global CACHEDMEDIA #pylint: disable=W0603
     asked = request.headers.get("Range")
@@ -44,11 +45,11 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
     else:
         raise Exception("Unsupported video format!")
 
-    stream = None
-    for med in CACHEDMEDIA:
-        if url == med['url']:
-            stream = med['stream']
-            med['last_access'] = datetime.now()
+    # stream = None
+    # for med in CACHEDMEDIA:
+    #     if url == med['url']:
+    #         stream = med['stream']
+    #         med['last_access'] = datetime.now()
     if stream is None:
         # # Currently, it is not possible to fetch LFS-tracked files from the API at all.
         # # https://gitlab.com/gitlab-org/gitlab-foss/-/issues/41843
@@ -58,10 +59,10 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
         # file_raw = project.files.raw(file_path=file_path, ref=file_obj.commit_id)
         # stream = file_raw
         stream = gl.http_get(url).content
-        if len(CACHEDMEDIA) == MEDIA_CACHE_LIMIT:
-            CACHEDMEDIA = sorted(CACHEDMEDIA, key=lambda x: x['last_access'], reverse=False)
-            CACHEDMEDIA.pop(0)
-        CACHEDMEDIA.append({"url":url, "stream":stream, "last_access":datetime.now()})
+        # if len(CACHEDMEDIA) == MEDIA_CACHE_LIMIT:
+        #     CACHEDMEDIA = sorted(CACHEDMEDIA, key=lambda x: x['last_access'], reverse=False)
+        #     CACHEDMEDIA.pop(0)
+        # CACHEDMEDIA.append({"url":url, "stream":stream, "last_access":datetime.now()})
 
     total_size = len(stream)
     # print("file size with len:", total_size)

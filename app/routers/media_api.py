@@ -32,7 +32,6 @@ async def get_and_accesscheck_for_repo(repo, file_path, tag, permanent_link, db_
         file_path = re.findall(r'(/-/[^/]+/[^/]+/)(.+)',permanent_link)[0][-1]
 
         permanent_link =  re.sub(r'/-/[^/]+',"/-/raw",permanent_link)
-
     # find source
     db_source = media_crud.find_media_source(repo, db_)
     if db_source is None:
@@ -88,9 +87,17 @@ async def stream_media(request: Request, #pylint: disable=unused-argument,too-ma
 
     repo, tag, permanent_link, file_path = await get_and_accesscheck_for_repo(repo, file_path,
         tag, permanent_link, db_, request, user_details)
-
+    
+    # redis cache part 
+    stream = get_routes_from_cache(key= permanent_link)
+    print("stream type from cache --------------->",type(stream))
+    if stream is None:
+        stream = media_crud.get_gitlab_download(repo, tag, permanent_link, file_path)
+        print("stream type direct gitlab --------------->",type(stream))
+        state = set_routes_to_cache(key=permanent_link, value=stream)
+    
     return media_crud.get_gitlab_stream(request, repo, tag, file_path,
-        permanent_link, start_time=start_time, end_time=end_time)
+        permanent_link, start_time=start_time, end_time=end_time, stream = stream)
 
 
 @router.get("/v2/media/gitlab/download",
@@ -125,14 +132,11 @@ async def download_media(request: Request, #pylint: disable=too-many-arguments
 
     # redis cache part 
     data = get_routes_from_cache(key= permanent_link)
-
+    print("stream type from cache --------------->",type(data))
     if data is None:
         data = media_crud.get_gitlab_download(repo, tag, permanent_link, file_path)
+        print("stream type direct gitlab --------------->",type(data))
         state = set_routes_to_cache(key=permanent_link, value=data)
-        # if state is True:
-        #     return data
-        # else:
-        #     print("Data not stored in cache")
       
     response =  Response(data)
     response.headers["Content-Disposition"] = "attachment; filename=stream.mp4"
@@ -140,4 +144,5 @@ async def download_media(request: Request, #pylint: disable=too-many-arguments
     response.headers["Content-Transfer-Encoding"] = "Binary"
     response.headers["Content-Type"] = "application/octet-stream"
     return response
+
     # return media_crud.get_gitlab_download(repo, tag, permanent_link, file_path)
