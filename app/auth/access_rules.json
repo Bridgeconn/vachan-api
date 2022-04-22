@@ -55,6 +55,10 @@
     "jobs":{
         "read":["registeredUser"]
     },
+    "media":{
+        "stream":["registeredUser"],
+        "download":["registeredUser"]
+    },
     "user":{
         "create":["noAuthRequired"],
         "edit-role":["SuperAdmin"],

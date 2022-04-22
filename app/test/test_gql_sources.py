@@ -68,6 +68,46 @@ SOURCE_GLOBAL_QUERY = """
     }
     }
     """
+
+SOURCE_GLOBAL_QUERY_UPDATE="""
+        mutation editsource($object:InputEditSource){
+  editSource(sourceArg:$object){
+    message
+    data{
+      sourceName
+      contentType{
+        contentId
+        contentType
+      }
+      language{
+        languageId
+        language
+        code
+        scriptDirection
+        metaData
+      }
+      version{
+        versionId
+        versionAbbreviation
+        versionName
+        revision
+        metaData
+      }
+      year
+      license{
+        name
+        code
+        license
+        permissions
+        active
+      }
+      metaData
+      active
+    }
+  }
+}
+    """
+
 headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']    
 
 def check_post(query,variables):
@@ -688,6 +728,49 @@ def test_get_after_adding_data():
     for item in items:
         assert_positive_get(item)
 
+  # filter with sourcename
+    query_source = """
+        {
+  contents(sourceName:"hi_TTT_1_commentary"){
+    sourceName
+    contentType{
+      contentId
+      contentType
+    }
+    language{
+      languageId
+      language
+      code
+      scriptDirection
+      metaData
+    }
+    version{
+      versionId
+      versionAbbreviation
+      versionName
+      revision
+      metaData
+    }
+    year
+    license{
+      name
+      code
+      license
+      permissions
+      active
+    }
+    metaData
+    active
+  }
+}
+    """
+    executed_source = gql_request(query=query_source,headers=headers_auth)
+    assert isinstance(executed_source, Dict)
+    assert len(executed_source["data"]["contents"]) == 1
+    items = executed_source["data"]["contents"]
+    for item in items:
+        assert_positive_get(item)
+
     # filter with license
     query5 = """
         {
@@ -905,45 +988,45 @@ def test_put_default():
     }
     check_post(SOURCE_GLOBAL_QUERY,variables)
 
-    #data update
-    up_query="""
-        mutation editsource($object:InputEditSource){
-  editSource(sourceArg:$object){
-    message
-    data{
-      sourceName
-      contentType{
-        contentId
-        contentType
-      }
-      language{
-        languageId
-        language
-        code
-        scriptDirection
-        metaData
-      }
-      version{
-        versionId
-        versionAbbreviation
-        versionName
-        revision
-        metaData
-      }
-      year
-      license{
-        name
-        code
-        license
-        permissions
-        active
-      }
-      metaData
-      active
-    }
-  }
-}
-    """
+#     #data update
+#     up_query="""
+#         mutation editsource($object:InputEditSource){
+#   editSource(sourceArg:$object){
+#     message
+#     data{
+#       sourceName
+#       contentType{
+#         contentId
+#         contentType
+#       }
+#       language{
+#         languageId
+#         language
+#         code
+#         scriptDirection
+#         metaData
+#       }
+#       version{
+#         versionId
+#         versionAbbreviation
+#         versionName
+#         revision
+#         metaData
+#       }
+#       year
+#       license{
+#         name
+#         code
+#         license
+#         permissions
+#         active
+#       }
+#       metaData
+#       active
+#     }
+#   }
+# }
+#     """
     up_variables={
   "object": {
     "sourceName": "ml_TTT_1_commentary",
@@ -951,10 +1034,10 @@ def test_put_default():
   }
 }
     #without auth
-    executed = gql_request(query=up_query,operation="mutation", variables=up_variables)
+    executed = gql_request(query=SOURCE_GLOBAL_QUERY_UPDATE,operation="mutation", variables=up_variables)
     assert "errors" in executed
     #with auth
-    executed = gql_request(query=up_query,operation="mutation", variables=up_variables,
+    executed = gql_request(query=SOURCE_GLOBAL_QUERY_UPDATE,operation="mutation", variables=up_variables,
       headers=headers_auth)
     assert isinstance(executed, Dict)
     assert executed["data"]["editSource"]["message"] == "Source edited successfully"
@@ -969,13 +1052,70 @@ def test_put_default():
     "metaData": "{\"owner\":\"new owner\"}"
   }
 }
-    executed2 = gql_request(query=up_query,operation="mutation", variables=up_variables2,
+    executed2 = gql_request(query=SOURCE_GLOBAL_QUERY_UPDATE,operation="mutation", variables=up_variables2,
       headers=headers_auth)
     assert isinstance(executed2, Dict)
     assert executed2["data"]["editSource"]["message"] == "Source edited successfully"
     item =executed2["data"]["editSource"]["data"]
     assert_positive_get(item)
     assert item['metaData']['owner'] == "new owner"
+
+def test_post_put_gitlab_source():
+    '''Positive test for gitlab content type'''
+    version_variable = {
+        "object": {
+        "versionAbbreviation": "TTT",
+        "versionName": "test version"
+    }
+    }
+    #Create a version
+    version_add(version_query,version_variable)
+    variables = {
+    "object": {
+        "contentType": "gitlabrepo",
+        "version": "TTT",
+        'language': 'hi',
+        "year": 2021,
+    }}
+    # error for no repo link in metadata
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    executed = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables,
+      headers=headers_auth)
+    assert "errors" in executed
+
+    link ="https://gitlab/project/video"
+    link2 = "https://gitlab/project/videoNew"
+
+    # with repo link default branch is main
+    variables["object"]["metaData"] = "{\"repo\":\""+link+"\"}"
+    executed = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables,
+      headers=headers_auth)
+    assert isinstance(executed, Dict)
+    assert executed["data"]["addSource"]["message"] == "Source created successfully"
+    assert executed["data"]["addSource"]['data']["metaData"]["defaultBranch"] == "main"
+
+    # create another source with same repo link
+    variables["object"]["language"] = "ml"
+    executed = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables,
+      headers=headers_auth)
+    assert "errors" in executed
+
+    # update another source with exising repo link
+    variables["object"]["metaData"] = "{\"repo\":\""+link2+"\"}"
+    executed = gql_request(query=SOURCE_GLOBAL_QUERY,operation="mutation", variables=variables,
+      headers=headers_auth)
+    assert executed["data"]["addSource"]["message"] == "Source created successfully"
+
+    up_variables={
+  "object": {
+    "sourceName": "ml_TTT_1_gitlabrepo",
+    "metaData": "{\"repo\":\""+link+"\"}"
+  }
+}
+    executed2 = gql_request(query=SOURCE_GLOBAL_QUERY_UPDATE,operation="mutation", variables=up_variables,
+      headers=headers_auth)
+    assert "errors" in executed2
+    
 
 def test_soft_delete():
     '''Soft delete is achived by updating the active flag to Fasle'''

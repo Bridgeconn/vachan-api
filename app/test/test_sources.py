@@ -348,6 +348,61 @@ def test_put_default():
     assert response.json()['data']['metaData'] == \
         {'accessPermissions': [schemas.SourcePermissions.CONTENT], 'owner': 'new owner'}
 
+def test_post_put_gitlab_source():
+    '''Positive test for gitlab content type'''
+    version_data = {
+        "versionAbbreviation": "TTT",
+        "versionName": "test version",
+    }
+    add_version(version_data)
+    data = {
+        "contentType": "gitlabrepo",
+        "language": "hi",
+        "version": "TTT",
+        "year": 2020
+    }
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+
+    # error for no repo link in metadata
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
+    assert response.status_code == 422
+
+    link ="https://gitlab/project/video"
+    link2 = "https://gitlab/project/videoNew"
+    data["metaData"] = {"repo":link}
+
+    # with repo link default branch is main
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Source created successfully"
+    assert response.json()['data']["metaData"]["repo"] == link
+    assert response.json()['data']["metaData"]["defaultBranch"] == "main"
+
+    # create another source with same repo link
+    data["language"] = "ml"
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
+    assert response.status_code == 409
+    assert response.json()['details'] == "already present Source with same repo link"
+
+    # update another source with exising repo link
+    data["language"] = "af"
+    data["metaData"] = {"repo":link2}
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Source created successfully"
+    assert response.json()['data']["metaData"]["repo"] == link2
+
+    data_update = {
+        "sourceName": 'af_TTT_1_gitlabrepo',
+        "metaData": {
+            "repo": link}
+    }
+
+    response = client.put(UNIT_URL, headers=headers_auth, json=data_update)
+    assert response.status_code == 409
+    assert response.json()['details'] == "already present another source with same repo link"
+
+
 def test_created_user_can_only_edit():
     """source edit can do by created user and Super Admin"""
     SA_user_data = {
@@ -520,6 +575,13 @@ def test_get_after_adding_data():
     response = client.get(UNIT_URL + "?revision=2&version_abbreviation=TTT",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) >= 3
+    for item in response.json():
+        assert_positive_get(item)
+
+    # filter with source name
+    response = client.get(UNIT_URL + "?source_name=hi_TTT_1_commentary",headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
     for item in response.json():
         assert_positive_get(item)
 

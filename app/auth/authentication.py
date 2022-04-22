@@ -99,6 +99,8 @@ def api_resourcetype_map(endpoint, path_params=None):
         resource_type = schema_auth.ResourceType.LOOKUP.value
     elif endpoint.startswith("/v2/jobs"):
         resource_type = schema_auth.ResourceType.JOBS.value
+    elif endpoint.startswith("/v2/media"):
+        resource_type = schema_auth.ResourceType.MEDIA.value
     elif endpoint.startswith("/v2/sources") or (
         path_params is not None and "source_name" in path_params):
         resource_type = schema_auth.ResourceType.CONTENT.value
@@ -136,7 +138,8 @@ def get_access_tag(db_, resource_type, path_params=None, resource=None):
         schema_auth.ResourceType.LOOKUP: ['lookup-content'],
         schema_auth.ResourceType.METACONTENT: ["meta-content","open-access"],
         schema_auth.ResourceType.RESEARCH: ['content', 'research-use'],
-        schema_auth.ResourceType.JOBS: ['jobs']
+        schema_auth.ResourceType.JOBS: ['jobs'],
+        schema_auth.ResourceType.MEDIA: ['media']
         # schema_auth.ResourceType.CONTENT: None # excluded to use item specific tags in db
     }
     if resource_type in resource_tag_map:
@@ -231,7 +234,6 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
                 required_rights += ACCESS_RULES[tag][permission]
         authenticated = check_right(user_details, required_rights)
-
         if (resource_type == schema_auth.ResourceType.USER and not authenticated):
             # Need to raise error before function execution, as we cannot delay db commit
             # like we do in other cases as changes happen in Kratos db, not app db'''

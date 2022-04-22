@@ -89,7 +89,8 @@ class Query(graphene.ObjectType):
         # version_name, revision, skip = skip, limit = limit)
 
     contents = graphene.List(types.Source,
-        description="Query added contents in vachan-db", content_type=graphene.String(),
+        description="Query added contents in vachan-db",
+        source_name=graphene.String(), content_type=graphene.String(),
         version_abbreviation=graphene.String(), revision=graphene.Int(),
         language_code=graphene.String(
             description="language code as per bcp47(usually 2 letter code)"),
@@ -99,25 +100,23 @@ class Query(graphene.ObjectType):
         skip=graphene.Int(), limit=graphene.Int())
     def resolve_contents(self, info, content_type=None, version_abbreviation=None,#pylint: disable=too-many-locals
         revision=None, language_code=None, license_code=None, active=True,
-        latest_revision=True, skip=0, limit=100,metadata=None,
+        latest_revision=True, skip=0, limit=100,metadata=None, source_name = None,
         access_tag= types.SourcePermissions.CONTENT.name):#pylint: disable=no-member
         '''resolver'''
         log.info('In GraphQL Get Contents(Sources)')
         if access_tag:
-            # permission_list = [perm for perm in types.SourcePermissions.__enum__]
             permission_list = list(types.SourcePermissions.__enum__)#pylint: disable=no-member
             access_tag = [perm_tag for perm_tag in permission_list for tag in
                 access_tag if tag == perm_tag.value]
-        # print("------------------------------>>>",access_tag)
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
         req.scope['path'] = "/v2/sources"
-        results = content_apis.get_source(request=req, content_type=content_type,
+        results = content_apis.get_source(request=req,content_type=content_type,
         version_abbreviation=version_abbreviation, revision=revision, language_code=language_code
         ,license_code=license_code, metadata=metadata, access_tag=access_tag, active=active,
         latest_revision=latest_revision, skip=skip, limit=limit, user_details=user_details,
-        db_=db_, filtering_required=True)
+        db_=db_, filtering_required=True,source_name=source_name)
         return results
 
     bible_books = graphene.List(types.BibleBook,
