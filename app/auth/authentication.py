@@ -226,6 +226,12 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             client_app = request.headers['app']
         else:
             client_app = schema_auth.App.API.value
+        # accees_token check query params
+        # print("header in reques---------------->",request.headers)
+        if not "authorization" in request.headers and \
+            "access_token" in kwargs:
+            user_details = get_current_user_data(kwargs.get("access_token")) 
+
         resource_type, permission = search_api_permission_map(
             endpoint, method, client_app, path_params, resource=resource_type)
         required_rights = []

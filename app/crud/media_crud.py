@@ -4,7 +4,6 @@ import json
 import os
 from datetime import datetime
 from fastapi.responses import StreamingResponse, Response
-from fastapi.encoders import jsonable_encoder
 import gitlab
 import db_models
 
