@@ -31,6 +31,65 @@ services:
       - POSTGRES_HOST_AUTH_METHOD=md5
     networks:
       - vachan-auth-net
+  
+  # offen backup
+  offen-backup_kratos_daily: &backup_service
+    image: offen/docker-volume-backup:latest
+    restart: always
+    environment: &backup_environment
+      #Daily 00 : 00
+      BACKUP_CRON_EXPRESSION: "0 0 * * *"
+      BACKUP_FILENAME: backup-kratos-daily-%Y-%m-%dT%H-%M-%S.tar.gz
+      BACKUP_SOURCES: /docker_kratos-sqlite
+      BACKUP_PRUNING_PREFIX: backup-kratos-daily-
+      BACKUP_RETENTION_DAYS: 1
+    depends_on:
+      - kratos-migrate
+    volumes:
+      - kratos-sqlite:/docker_kratos-sqlite:ro
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/backups:/archive
+    networks:
+      - my-network
+ 
+  offen-backup_kratos_week:
+    <<: *backup_service
+    environment:
+      <<: *backup_environment
+      # SAT 00 : 00
+      BACKUP_CRON_EXPRESSION: "0 0 * * 6"
+      BACKUP_FILENAME: backup-kratos-week-%Y-%m-%dT%H-%M-%S.tar.gz
+      BACKUP_SOURCES: /docker_kratos-sqlite
+      BACKUP_PRUNING_PREFIX: backup-kratos-week-
+      BACKUP_RETENTION_DAYS: 7
+    depends_on:
+      - kratos-migrate
+    volumes:
+      - kratos-sqlite:/docker_kratos-sqlite:ro
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/backups:/archive
+    networks:
+      - my-network
+
+  offen-backup_kratos_month:
+    <<: *backup_service
+    environment:
+      <<: *backup_environment
+      # monthly on 28  00 : 00
+      BACKUP_CRON_EXPRESSION: "0 0 28 * *"
+      BACKUP_FILENAME: backup-kratos-month-%Y-%m-%dT%H-%M-%S.tar.gz
+      BACKUP_SOURCES: /docker_kratos-sqlite
+      BACKUP_PRUNING_PREFIX: backup-kratos-month-
+      BACKUP_RETENTION_DAYS: 30
+    depends_on:
+      - kratos-migrate
+    volumes:
+      - kratos-sqlite:/docker_kratos-sqlite:ro
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/backups:/archive
+    networks:
+      - my-network
+
 networks:
  vachan-auth-net:
 volumes:

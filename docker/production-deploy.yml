@@ -120,6 +120,64 @@ services:
    - ./certbot/conf/:/etc/letsencrypt/:rw
   networks:
    - my-network
+ 
+ # offen backup
+ offen-backup_vachan_daily: &backup_service
+  image: offen/docker-volume-backup:latest
+  restart: always
+  environment: &backup_environment
+      #Daily 00 : 00
+      BACKUP_CRON_EXPRESSION: "0 0 * * *"
+      BACKUP_FILENAME: backup-vachan-daily-%Y-%m-%dT%H-%M-%S.tar.gz
+      BACKUP_SOURCES: /docker_vachan-db-vol
+      BACKUP_PRUNING_PREFIX: backup-vachan-daily-
+      BACKUP_RETENTION_DAYS: 1
+  depends_on:
+   - vachan-db
+  volumes:
+      - vachan-db-vol:/docker_vachan-db-vol:ro
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/backups:/archive
+  networks:
+   - my-network
+ 
+ offen-backup_vachan_week:
+  <<: *backup_service
+  environment:
+      <<: *backup_environment
+      # SAT 00 : 00
+      BACKUP_CRON_EXPRESSION: "0 0 * * 6"
+      BACKUP_FILENAME: backup-vachan-week-%Y-%m-%dT%H-%M-%S.tar.gz
+      BACKUP_SOURCES: /docker_vachan-db-vol
+      BACKUP_PRUNING_PREFIX: backup-vachan-week-
+      BACKUP_RETENTION_DAYS: 7
+  depends_on:
+   - vachan-db
+  volumes:
+      - vachan-db-vol:/docker_vachan-db-vol:ro
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/backups:/archive
+  networks:
+   - my-network
+
+ offen-backup_vachan_month:
+  <<: *backup_service
+  environment:
+      <<: *backup_environment
+      # monthly 30th day 00 : 00
+      BACKUP_CRON_EXPRESSION: "0 0 28 * *"
+      BACKUP_FILENAME: backup-vachan-month-%Y-%m-%dT%H-%M-%S.tar.gz
+      BACKUP_SOURCES: /docker_vachan-db-vol
+      BACKUP_PRUNING_PREFIX: backup-vachan-month-
+      BACKUP_RETENTION_DAYS: 30
+  depends_on:
+   - vachan-db
+  volumes:
+      - vachan-db-vol:/docker_vachan-db-vol:ro
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/backups:/archive
+  networks:
+   - my-network
 
 networks:
  my-network:              
