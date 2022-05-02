@@ -66,6 +66,7 @@ async def get_and_accesscheck_for_repo(repo, file_path, tag, permanent_link, db_
     status_code=200, tags=["Media"])
 @get_auth_access_check_decorator
 async def stream_media(request: Request, #pylint: disable=unused-argument,too-many-arguments
+    access_token: str = Query(None),
     repo: str = Query(None,example="kavitha.raju/trial-media-project"),
     tag: str = Query(None,example="main"),
     file_path: str=Query(None,example="token videos/Apostle.MOV"),
@@ -74,7 +75,7 @@ async def stream_media(request: Request, #pylint: disable=unused-argument,too-ma
             "trial-media-project/-/raw/main/token videos/Apostle.MOV"),
     start_time: Optional[datetime] =Query(None),
     end_time: Optional[datetime] =Query(None),
-    user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
+    db_: Session = Depends(get_db)):
     '''Access the file from gitlab and pass it on to clients.
     * tag can be a commit-hash, branch-name or release-tag.
     * to access a content provide either (repo + tag+ file_path) or permanent_link
@@ -84,6 +85,8 @@ async def stream_media(request: Request, #pylint: disable=unused-argument,too-ma
     log.info('In get_stream_media')
     log.debug('repo:%s, tag %s, file_path: %s, permanent_link: %s, start_time: %s, end_time: %s',
         repo, tag, file_path, permanent_link, start_time, end_time)
+
+    user_details = get_current_user_data(access_token)
 
     repo, tag, permanent_link, file_path = await get_and_accesscheck_for_repo(repo, file_path,
         tag, permanent_link, db_, request, user_details)
