@@ -147,7 +147,8 @@ services:
     - "6379:6379"
   volumes:
     # save redisearch data to your current working directory
-    - ./redis-data:/data
+    # - ./redis-data:/data
+    - redis-data:/app/data
   command: redis-server
   networks:
    - my-network
@@ -159,7 +160,8 @@ services:
   ports:
     - '8001:8001'
   volumes:
-    - ./redisinsight:/db
+    # - ./redisinsight:/db
+    - redisinsight:app/db
   networks:
    - my-network
 
