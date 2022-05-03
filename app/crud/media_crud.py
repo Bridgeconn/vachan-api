@@ -39,7 +39,7 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
     if content_type is None:
         raise Exception("Unsupported media format!")
 
-    if not "image" in content_type[0]:
+    if "image" not in content_type[0]:
         if "Range" in request.headers:
             asked = request.headers.get("Range")
             # print("comes in router func once with range:", asked)
