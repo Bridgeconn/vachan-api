@@ -1,17 +1,19 @@
 ''' Place to define all data processing and operations
 related to gitlab media operations'''
-import json
 import os
-from datetime import datetime
-from fastapi.responses import StreamingResponse, Response
+import mimetypes
+from fastapi.responses import StreamingResponse
 import gitlab
 import db_models
 
 access_token = os.environ.get("VACHAN_GITLAB_TOKEN")
 BYTES_PER_RESPONSE = 100000
-CACHEDMEDIA = []
-cached_media_download = []
-MEDIA_CACHE_LIMIT = 3
+# CACHEDMEDIA = []
+# cached_media_download = []
+# MEDIA_CACHE_LIMIT = 3
+# VIDEO_FORMATS = ["MP4","AVI","FLV","WMV","MOV","MPEG","MKV","WEBM"]
+# AUDIO_FORMATS = ["PCM","WAV","AIFF","MP3","AAC","WMA ","FLAC","MP4"]
+# IMAGE_FORMATS = ["JPEG","PNG","GIF"]
 
 gl = gitlab.Gitlab(url="https://gitlab.bridgeconn.com", private_token=access_token)
 
@@ -28,7 +30,6 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
     end_time = kwargs.get("end_time", None)#pylint: disable=W0612
     stream = kwargs.get("stream", None)#pylint: disable=W0612
 
-    global CACHEDMEDIA #pylint: disable=W0603
     asked = request.headers.get("Range")
     # print("comes in router func once with range:", asked)
 
@@ -37,18 +38,10 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
     else:
         url = permanent_link
 
-    if url.endswith("mp4"):
-        content_type =  "video/mp4"
-    elif url.endswith("mov") or url.endswith("MOV"):
-        content_type =  "video/quicktime"
-    else:
+    content_type = mimetypes.guess_type(url.split("/")[-1], strict=True)
+    if content_type is None:
         raise Exception("Unsupported video format!")
 
-    # stream = None
-    # for med in CACHEDMEDIA:
-    #     if url == med['url']:
-    #         stream = med['stream']
-    #         med['last_access'] = datetime.now()
     if stream is None:
         # # Currently, it is not possible to fetch LFS-tracked files from the API at all.
         # # https://gitlab.com/gitlab-org/gitlab-foss/-/issues/41843
@@ -58,10 +51,6 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
         # file_raw = project.files.raw(file_path=file_path, ref=file_obj.commit_id)
         # stream = file_raw
         stream = gl.http_get(url).content
-        # if len(CACHEDMEDIA) == MEDIA_CACHE_LIMIT:
-        #     CACHEDMEDIA = sorted(CACHEDMEDIA, key=lambda x: x['last_access'], reverse=False)
-        #     CACHEDMEDIA.pop(0)
-        # CACHEDMEDIA.append({"url":url, "stream":stream, "last_access":datetime.now()})
 
     total_size = len(stream)
     # print("file size with len:", total_size)
