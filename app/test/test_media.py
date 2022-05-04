@@ -55,7 +55,7 @@ def media_common(endpoint,permanent_link, repo, file_path):
 
     # stream only support audio and video
     if endpoint == "/stream":
-        jpg_link = "https://gitlab.bridgeconn.com/Siju.Moncy/trial-media-project/-/blob/main/image/Bible_Timeline.jpg"
+        jpg_link = "https://gitlab.bridgeconn.com/Test.User/trial-media-project/-/blob/main/image/Bible_Timeline.jpg"
         response = response = client.get(UNIT_URL+"/stream"+"?permanent_link="+jpg_link+
         "&access_token="+initial_test_users['APIUser']['token'])
         assert response.status_code == 406
