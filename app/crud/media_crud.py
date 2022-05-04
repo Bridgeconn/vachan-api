@@ -27,7 +27,7 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
     """get stream from gtilab"""
     start_time = kwargs.get("start_time", None)#pylint: disable=W0612
     end_time = kwargs.get("end_time", None)#pylint: disable=W0612
-    asked = None
+    # asked = None
 
     global CACHEDMEDIA #pylint: disable=W0603
     if permanent_link is None or permanent_link == '':
@@ -39,14 +39,16 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
     if content_type is None:
         raise Exception("Unsupported media format!")
 
-    if "image" not in content_type[0]:
-        if "Range" in request.headers:
-            asked = request.headers.get("Range")
-            # print("comes in router func once with range:", asked)
-        else:
-            raise HTTPException(status_code=406,
-                detail="This is a Streaming api , Call it from supported players")
+    if "video" not in content_type[0] and "audio" not in content_type[0]:
+        raise HTTPException(status_code=406,
+            detail="Currently api supports only video and audio streams")
 
+    if "Range" in request.headers:
+        asked = request.headers.get("Range")
+        # print("comes in router func once with range:", asked)
+    else:
+        raise HTTPException(status_code=406,
+            detail="This is a Streaming api , Call it from supported players")
 
     stream = None
     for med in CACHEDMEDIA:
@@ -70,12 +72,8 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
     total_size = len(stream)
     # print("file size with len:", total_size)
 
-    if asked:
-        start_byte_requested = int(asked.split("=")[-1][:-1])
-        end_byte_planned = min(start_byte_requested + BYTES_PER_RESPONSE, total_size)
-    else:
-        start_byte_requested = 0
-        end_byte_planned = total_size
+    start_byte_requested = int(asked.split("=")[-1][:-1])
+    end_byte_planned = min(start_byte_requested + BYTES_PER_RESPONSE, total_size)
 
     return StreamingResponse(
         media_streamer(stream, chunk_size=BYTES_PER_RESPONSE,

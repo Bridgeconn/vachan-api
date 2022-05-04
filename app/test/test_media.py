@@ -6,7 +6,7 @@ from .test_auth_basic import login,SUPER_USER,SUPER_PASSWORD,logout_user
 from .conftest import initial_test_users
 
 UNIT_URL = '/v2/media/gitlab'
-REPO_PERMANENT_LINK = "https://gitlab.bridgeconn.com/Siju.Moncy/trial-media-project/-/blob/main/large videos/graphql.mp4"
+REPO_PERMANENT_LINK = "https://gitlab.bridgeconn.com/Test.User/trial-media-project/-/blob/main/large videos/graphql.mp4"
 
 headers = {"contentType": "application/json", "accept": "application/json"}
 
@@ -52,6 +52,21 @@ def media_common(endpoint,permanent_link, repo, file_path):
     response = client.get(UNIT_URL+"/download"+"?access_token="+initial_test_users['VachanAdmin']['token'])
     assert response.status_code == 422
     assert response.json()["error"] == "Unprocessable Data"
+
+    # stream only support audio and video
+    if endpoint == "/stream":
+        jpg_link = "https://gitlab.bridgeconn.com/Siju.Moncy/trial-media-project/-/blob/main/image/Bible_Timeline.jpg"
+        response = response = client.get(UNIT_URL+"/stream"+"?permanent_link="+jpg_link+
+        "&access_token="+initial_test_users['APIUser']['token'])
+        assert response.status_code == 406
+        assert response.json()["details"] == 'Currently api supports only video and audio streams'
+
+        # range header not present in request (request not from a player)
+        response = client.get(UNIT_URL+"/stream"+"?permanent_link="+REPO_PERMANENT_LINK+
+        "&access_token="+initial_test_users['VachanAdmin']['token'])
+        assert response.status_code == 406
+        assert response.json()["details"] ==\
+            'This is a Streaming api , Call it from supported players'
 
 def test_media_download_checks():
     """checks for download api"""
