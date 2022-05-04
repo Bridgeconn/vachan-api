@@ -1,7 +1,9 @@
 ''' Place to define all data processing and operations
 related to gitlab media operations'''
 import os
+import mimetypes
 from datetime import datetime
+from fastapi import HTTPException
 from fastapi.responses import StreamingResponse, Response
 import gitlab
 import db_models
@@ -25,22 +27,28 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
     """get stream from gtilab"""
     start_time = kwargs.get("start_time", None)#pylint: disable=W0612
     end_time = kwargs.get("end_time", None)#pylint: disable=W0612
+    # asked = None
 
     global CACHEDMEDIA #pylint: disable=W0603
-    asked = request.headers.get("Range")
-    # print("comes in router func once with range:", asked)
-
     if permanent_link is None or permanent_link == '':
         url = f"{repo}/-/raw/{tag}/{file_path}"
     else:
         url = permanent_link
 
-    if url.endswith("mp4"):
-        content_type =  "video/mp4"
-    elif url.endswith("mov") or url.endswith("MOV"):
-        content_type =  "video/quicktime"
+    content_type = mimetypes.guess_type(url.split("/")[-1], strict=True)
+    if content_type is None:
+        raise Exception("Unsupported media format!")
+
+    if "video" not in content_type[0] and "audio" not in content_type[0]:
+        raise HTTPException(status_code=406,
+            detail="Currently api supports only video and audio streams")
+
+    if "Range" in request.headers:
+        asked = request.headers.get("Range")
+        # print("comes in router func once with range:", asked)
     else:
-        raise Exception("Unsupported video format!")
+        raise HTTPException(status_code=406,
+            detail="This is a Streaming api , Call it from supported players")
 
     stream = None
     for med in CACHEDMEDIA:
@@ -73,7 +81,7 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
         headers={
             "Accept-Ranges": "bytes",
             "Content-Range": f"bytes {start_byte_requested}-{end_byte_planned}/{total_size}",
-            "Content-Type": content_type
+            "Content-Type": content_type[0]
         },
         status_code=206)
 
@@ -85,10 +93,11 @@ def get_gitlab_download(repo, tag, permanent_link, file_path):
     else:
         url = permanent_link
 
+    file_name = url.split("/")[-1]
     stream = gl.http_get(url).content
     response = Response(stream)
 
-    response.headers["Content-Disposition"] = "attachment; filename=stream.mp4"
+    response.headers["Content-Disposition"] = f"attachment; filename={file_name}"
     response.headers["Content-Type"] = "application/force-download"
     response.headers["Content-Transfer-Encoding"] = "Binary"
     response.headers["Content-Type"] = "application/octet-stream"
