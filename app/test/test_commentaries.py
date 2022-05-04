@@ -66,7 +66,7 @@ def check_commentary_job_finished(response):
         status = job_response.json()['data']['status']
         if status == 'job finished':
             break
-        log.info("sleeping for a minute in SW generate test")
+        log.info("sleeping for a minute in get commentary status")
         time.sleep(60)
     return job_response
 
@@ -113,17 +113,10 @@ def test_post_duplicate():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     data[0]['commentary'] = 'another commentary on first verse'
 
-    '''
-        duplicate check test fail due to  RuntimeError: Caught handled exception, but response already started.
-        its cause by raise exception in the background task. 
-        Duplication error work well in swagger and create error in job on manual test
-        Raise Alreadyexist cause error on test run
-    '''
-    # response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
-    # job_response = check_commentary_job_finished(response)
-    # assert job_response.json()['data']['status'] == 'job error'
-    # assert job_response.json()["message"] == \
-    #     "Already exist commentary with same values for reference range"
+    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    job_response = get_job_status(response.json()['data']['jobId'])
+    assert job_response.json()['data']['status'] == 'job error'
+    assert job_response.json()["message"] == "Job is terminated with an error"
 
 
 def test_post_incorrect_data():

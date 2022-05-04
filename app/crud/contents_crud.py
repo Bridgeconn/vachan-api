@@ -70,7 +70,8 @@ def upload_commentaries(db_: Session, source_name, commentaries, job_id, user_id
                 "source_name": source_name,"data": None
                 }
         update_job(db_, job_id, user_id, update_args)
-        raise TypeException('The operation is supported only on commentaries')
+        return None
+        # raise TypeException('The operation is supported only on commentaries')
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
     db_content_out = []
@@ -88,7 +89,8 @@ def upload_commentaries(db_: Session, source_name, commentaries, job_id, user_id
                 "source_name": source_name,"data": None
                 }
                 update_job(db_, job_id, user_id, update_args)
-                raise NotAvailableException('Bible Book code, %s, not found in database')
+                return None
+                # raise NotAvailableException('Bible Book code, %s, not found in database')
             else:
                 exist_check = db_.query(model_cls).filter(
                     model_cls.book_id == book.bookId, model_cls.chapter == item.chapter,
@@ -102,8 +104,9 @@ def upload_commentaries(db_: Session, source_name, commentaries, job_id, user_id
                     update_job(db_, job_id, user_id, update_args)
                     err_str = f"bookId:{book.bookId}, chapter:{item.chapter},\
                         verseStart:{item.verseStart},verseEnd:{item.verseEnd}"
-                    raise AlreadyExistsException('Already exist commentary with same values for\
-                        reference range %s'%err_str)
+                    return None
+                    # raise AlreadyExistsException('Already exist commentary with same values for\
+                    #     reference range %s'%err_str)
 
         row = model_cls(
             book_id = book.bookId,
