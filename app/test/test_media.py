@@ -57,7 +57,7 @@ def media_common(endpoint,permanent_link, repo, file_path):
     if endpoint == "/stream":
         jpg_link = "https://gitlab.bridgeconn.com/Test.User/trial-media-project/-/blob/main/image/Bible_Timeline.jpg"
         response = response = client.get(UNIT_URL+"/stream"+"?permanent_link="+jpg_link+
-        "&access_token="+initial_test_users['APIUser']['token'])
+        "&access_token="+initial_test_users['VachanAdmin']['token'])
         assert response.status_code == 406
         assert response.json()["details"] == 'Currently api supports only video and audio streams'
 
