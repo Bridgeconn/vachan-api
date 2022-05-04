@@ -4,7 +4,7 @@ import time
 from app.main import log
 from . import client, contetapi_get_accessrule_checks_app_userroles
 from . import assert_input_validation_error, assert_not_available_content
-from . import check_default_get, check_soft_delete
+from . import check_default_get
 from .test_versions import check_post as add_version
 from .test_sources import check_post as add_source
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER
@@ -382,11 +382,11 @@ def test_put_after_upload():
         #     assert item['verseEnd'] is None
 
     # not available PUT
-    #ERROR DUE TO RAISE IN BACKGROUN TASK CAUSE RUN TIME ERROR IN TESTS
-
-    # new_data[0]['chapter'] = 2
-    # response = client.put(UNIT_URL+source_name,headers=headers_auth, json=new_data)
-    # assert response.status_code == 404
+    new_data[0]['chapter'] = 2
+    response = client.put(UNIT_URL+source_name,headers=headers_auth, json=new_data)
+    job_response = get_job_status(response.json()['data']['jobId'])
+    assert job_response.json()['data']['status'] == 'job error'
+    assert job_response.json()["message"] == "Job is terminated with an error"
 
     source_name = source_name.replace('1', '2')
     response = client.put(UNIT_URL+source_name,headers=headers_auth, json=[])

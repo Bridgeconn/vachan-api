@@ -102,9 +102,9 @@ def upload_commentaries(db_: Session, source_name, commentaries, job_id, user_id
                     "book_id": book.bookId, "chapter":item.chapter, "verseStart" : item.verseStart,
                     "verseEnd" : item.verseEnd, "data": None}
                     update_job(db_, job_id, user_id, update_args)
-                    err_str = f"bookId:{book.bookId}, chapter:{item.chapter},\
-                        verseStart:{item.verseStart},verseEnd:{item.verseEnd}"
                     return None
+                    # err_str = f"bookId:{book.bookId}, chapter:{item.chapter},\
+                    #     verseStart:{item.verseStart},verseEnd:{item.verseEnd}"
                     # raise AlreadyExistsException('Already exist commentary with same values for\
                     #     reference range %s'%err_str)
 
@@ -157,7 +157,8 @@ def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=
         update_args["output"]= {"message": 'The operation is supported only on commentaries',
                 "source_name": source_name,"data": None}
         update_job(db_, job_id, user_id, update_args)
-        raise TypeException('The operation is supported only on commentaries')
+        return None
+        # raise TypeException('The operation is supported only on commentaries')
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
     db_content_out = []
@@ -172,7 +173,8 @@ def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=
                 "message": 'Bible Book code, %s, not found in database'%prev_book_code,
                 "source_name": source_name,"data": None}
                 update_job(db_, job_id, user_id, update_args)
-                raise NotAvailableException('Bible Book code, %s, not found in database')
+                return None
+                # raise NotAvailableException('Bible Book code, %s, not found in database')
         row = db_.query(model_cls).filter(
             model_cls.book_id == book.bookId,
             model_cls.chapter == item.chapter,
@@ -185,9 +187,10 @@ def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=
                     item.bookCode, item.chapter, item.verseStart, item.verseEnd, source_name),
                 "source_name": source_name,"data": None}
             update_job(db_, job_id, user_id, update_args)
-            raise NotAvailableException("Commentary row with bookCode:%s, chapter:%s, \
-                verseStart:%s, verseEnd:%s, not found for %s"%(
-                    item.bookCode, item.chapter, item.verseStart, item.verseEnd, source_name))
+            return None
+            # raise NotAvailableException("Commentary row with bookCode:%s, chapter:%s, \
+            #     verseStart:%s, verseEnd:%s, not found for %s"%(
+            #         item.bookCode, item.chapter, item.verseStart, item.verseEnd, source_name))
         if item.commentary:
             row.commentary = utils.normalize_unicode(item.commentary)
         if item.active is not None:
@@ -208,7 +211,6 @@ def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=
         }
         db_content_out.append(row_out)
     source_db_content.updatedUser = user_id
-    # db_content_dict = [jsonable_encoder(item) for item in db_content]
     update_args = {
         "status" : schemas_nlp.JobStatus.FINISHED.value,
         "endTime": datetime.now(),
