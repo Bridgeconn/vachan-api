@@ -13,7 +13,6 @@ from custom_exceptions import NotAvailableException, AlreadyExistsException,\
 
 from auth.authentication import get_auth_access_check_decorator ,\
     get_user_or_none
-import db_models
 
 router = APIRouter()
 
