@@ -1,9 +1,9 @@
 ''' Place to define all Database CRUD operations for content tables
 bible, commentary, infographic, biblevideo, dictionary etc'''
+#pylint: disable=too-many-lines
 import json
 import re
 from datetime import datetime
-from fastapi.encoders import jsonable_encoder
 import sqlalchemy
 from sqlalchemy.orm import Session, defer, joinedload
 from sqlalchemy.sql import text
@@ -38,37 +38,31 @@ def get_commentaries(db_:Session, *args,**kwargs):
             last_verse = verse
         query = query.filter(model_cls.verseStart <= verse, model_cls.verseEnd >= last_verse)
     query = query.filter(model_cls.active == active)
-    # return query.offset(skip).limit(limit).all()
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     response = {
         'db_content':query.offset(skip).limit(limit).all(),
-        'source_content':source_db_content
-        }
+        'source_content':source_db_content}
     return response
 
-def upload_commentaries(db_: Session, source_name, commentaries, job_id, user_id=None):
+def upload_commentaries(db_: Session, source_name, commentaries, job_id, user_id=None):#pylint: disable=too-many-locals,R1710
     '''Adds rows to the commentary table specified by source_name'''
     update_args = {
                     "status" : schemas_nlp.JobStatus.STARTED.value,
-                    "startTime": datetime.now()
-                   }
+                    "startTime": datetime.now()}
     update_job(db_, job_id, user_id, update_args)
 
     update_args = {
                     "status" : schemas_nlp.JobStatus.ERROR.value,
                     "endTime": datetime.now(),
-                    "output": {}
-                    }
+                    "output": {}}
 
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
-
     if source_db_content.contentType.contentType != db_models.ContentTypeName.COMMENTARY.value:
         update_args["output"]= {
                 "message": 'The operation is supported only on commentaries',
-                "source_name": source_name,"data": None
-                }
+                "source_name": source_name,"data": None}
         update_job(db_, job_id, user_id, update_args)
         return None
         # raise TypeException('The operation is supported only on commentaries')
@@ -86,27 +80,21 @@ def upload_commentaries(db_: Session, source_name, commentaries, job_id, user_id
             if not book:
                 update_args["output"]= {
                 "message": 'Bible Book code, %s, not found in database'%prev_book_code,
-                "source_name": source_name,"data": None
-                }
+                "source_name": source_name,"data": None}
                 update_job(db_, job_id, user_id, update_args)
                 return None
                 # raise NotAvailableException('Bible Book code, %s, not found in database')
-            else:
-                exist_check = db_.query(model_cls).filter(
-                    model_cls.book_id == book.bookId, model_cls.chapter == item.chapter,
-                    model_cls.verseStart == item.verseStart, model_cls.verseEnd == item.verseEnd,
-                ).first()
-                if exist_check:
-                    update_args["output"]= {
-                    "message": 'Already exist commentary with same values for reference range',
-                    "book_id": book.bookId, "chapter":item.chapter, "verseStart" : item.verseStart,
-                    "verseEnd" : item.verseEnd, "data": None}
-                    update_job(db_, job_id, user_id, update_args)
-                    return None
-                    # err_str = f"bookId:{book.bookId}, chapter:{item.chapter},\
-                    #     verseStart:{item.verseStart},verseEnd:{item.verseEnd}"
-                    # raise AlreadyExistsException('Already exist commentary with same values for\
-                    #     reference range %s'%err_str)
+            exist_check = db_.query(model_cls).filter(
+                model_cls.book_id == book.bookId, model_cls.chapter == item.chapter,
+                model_cls.verseStart == item.verseStart, model_cls.verseEnd == item.verseEnd,
+            ).first()
+            if exist_check:
+                update_args["output"]= {
+                "message": 'Already exist commentary with same values for reference range',
+                "book_id": book.bookId, "chapter":item.chapter, "verseStart" : item.verseStart,
+                "verseEnd" : item.verseEnd, "data": None}
+                update_job(db_, job_id, user_id, update_args)
+                return None
 
         row = model_cls(
             book_id = book.bookId,
@@ -119,29 +107,24 @@ def upload_commentaries(db_: Session, source_name, commentaries, job_id, user_id
             "book" : {
                 "bookId": book.bookId,
                 "bookName": book.bookName,
-                "bookCode": book.bookCode,
-                },
+                "bookCode": book.bookCode,},
             "chapter" :  item.chapter,
             "verseStart" :  item.verseStart,
             "verseEnd" :  item.verseEnd,
             "commentary" :  utils.normalize_unicode(item.commentary),
-            "active": item.active
-        }
+            "active": item.active}
         db_content.append(row)
         db_content_out.append(row_out)
     db_.add_all(db_content)
     db_.expire_all()
     source_db_content.updatedUser = user_id
-    # db_content_dict = [jsonable_encoder(item) for item in db_content]
     update_args = {
         "status" : schemas_nlp.JobStatus.FINISHED.value,
         "endTime": datetime.now(),
-        "output": {"message": "Commentaries added successfully","data": db_content_out}
-        }
+        "output": {"message": "Commentaries added successfully","data": db_content_out}}
     update_job(db_, job_id, user_id, update_args)
-    # return response
 
-def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=None):
+def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=None):#pylint: disable=R1710
     '''Update rows, that matches book, chapter and verse range fields in the commentary table
     specified by source_name'''
     source_db_content = db_.query(db_models.Source).filter(
@@ -149,16 +132,13 @@ def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=
     update_args = {"status" : schemas_nlp.JobStatus.STARTED.value,
                     "startTime": datetime.now()}
     update_job(db_, job_id, user_id, update_args)
-
     update_args = {"status" : schemas_nlp.JobStatus.ERROR.value,
                     "endTime": datetime.now(),"output": {}}
-
     if source_db_content.contentType.contentType != db_models.ContentTypeName.COMMENTARY.value:
         update_args["output"]= {"message": 'The operation is supported only on commentaries',
                 "source_name": source_name,"data": None}
         update_job(db_, job_id, user_id, update_args)
         return None
-        # raise TypeException('The operation is supported only on commentaries')
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
     db_content_out = []
@@ -174,7 +154,6 @@ def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=
                 "source_name": source_name,"data": None}
                 update_job(db_, job_id, user_id, update_args)
                 return None
-                # raise NotAvailableException('Bible Book code, %s, not found in database')
         row = db_.query(model_cls).filter(
             model_cls.book_id == book.bookId,
             model_cls.chapter == item.chapter,
@@ -188,9 +167,6 @@ def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=
                 "source_name": source_name,"data": None}
             update_job(db_, job_id, user_id, update_args)
             return None
-            # raise NotAvailableException("Commentary row with bookCode:%s, chapter:%s, \
-            #     verseStart:%s, verseEnd:%s, not found for %s"%(
-            #         item.bookCode, item.chapter, item.verseStart, item.verseEnd, source_name))
         if item.commentary:
             row.commentary = utils.normalize_unicode(item.commentary)
         if item.active is not None:
@@ -201,23 +177,19 @@ def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=
             "book" : {
                 "bookId": book.bookId,
                 "bookName": book.bookName,
-                "bookCode": book.bookCode,
-                },
+                "bookCode": book.bookCode,},
             "chapter" :  row.chapter,
             "verseStart" :  row.verseStart,
             "verseEnd" :  row.verseEnd,
             "commentary" :  row.commentary,
-            "active": row.active
-        }
+            "active": row.active}
         db_content_out.append(row_out)
     source_db_content.updatedUser = user_id
     update_args = {
         "status" : schemas_nlp.JobStatus.FINISHED.value,
         "endTime": datetime.now(),
-        "output": {"message": "Commentaries updated successfully","data": db_content_out}
-        }
+        "output": {"message": "Commentaries updated successfully","data": db_content_out}}
     update_job(db_, job_id, user_id, update_args)
-    # return response
 
 def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):#pylint: disable=too-many-locals
     '''Fetches rows of dictionary from the table specified by source_name'''
@@ -250,13 +222,11 @@ def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):#
             query = query.filter(model_cls.details.op('->>')(key) == det[key])
     query = query.filter(model_cls.active == active)
     res = query.offset(skip).limit(limit).all()
-    # return res
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     response = {
         'db_content':res,
-        'source_content':source_db_content
-        }
+        'source_content':source_db_content }
     return response
 
 def upload_dictionary_words(db_: Session, source_name, dictionary_words, user_id=None):

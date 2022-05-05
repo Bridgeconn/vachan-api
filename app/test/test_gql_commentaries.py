@@ -3,81 +3,81 @@
 #Disabled ALL TESTS BECAUSE OF GRAPHQL BACKGROUND TASK ISSUE . REST FUNCTIONS CHANGED TO BACKGROUND TASK
 # GRAPHQL NOT STOP POST OR PUT EVEN AFTER RAISE ERRORS . 
 
-# from typing import Dict
-# #pylint: disable=E0401
-# from .test_gql_versions import GLOBAL_QUERY as version_query
-# from .test_gql_sources import SOURCE_GLOBAL_QUERY as source_query
-# from .test_gql_versions import check_post as version_add
-# from .test_gql_sources import check_post as source_add
-# from .test_commentaries import assert_positive_get
-# #pylint: disable=E0611
-# #pylint: disable=R0914
-# #pylint: disable=R0915
-# from . import gql_request,assert_not_available_content_gql,check_skip_limit_gql\
-#   ,contetapi_get_accessrule_checks_app_userroles_gql
-# from .conftest import initial_test_users
-# from . test_gql_auth_basic import login,SUPER_PASSWORD,SUPER_USER
+from typing import Dict
+#pylint: disable=E0401
+from .test_gql_versions import GLOBAL_QUERY as version_query
+from .test_gql_sources import SOURCE_GLOBAL_QUERY as source_query
+from .test_gql_versions import check_post as version_add
+from .test_gql_sources import check_post as source_add
+from .test_commentaries import assert_positive_get
+#pylint: disable=E0611
+#pylint: disable=R0914
+#pylint: disable=R0915
+from . import gql_request,assert_not_available_content_gql,check_skip_limit_gql\
+  ,contetapi_get_accessrule_checks_app_userroles_gql
+from .conftest import initial_test_users
+from . test_gql_auth_basic import login,SUPER_PASSWORD,SUPER_USER
 
-# headers_auth = {"contentType": "application/json",
-#                 "accept": "application/json"}
-# headers = {"contentType": "application/json", "accept": "application/json"}
+headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
+headers = {"contentType": "application/json", "accept": "application/json"}
 
-# VERSION_VAR  = {
-#         "object": {
-#         "versionAbbreviation": "TTT",
-#         "versionName": "test version for bibles"
-#     }
-#     }
-# SOURCE_VAR = {
-#   "object": {
-#     "contentType": "commentary",
-#     "language": "gu",
-#     "version": "TTT",
-#     "revision": "1",
-#     "year": 2020,
-#   }
-# }
+VERSION_VAR  = {
+        "object": {
+        "versionAbbreviation": "TTT",
+        "versionName": "test version for bibles"
+    }
+    }
+SOURCE_VAR = {
+  "object": {
+    "contentType": "commentary",
+    "language": "gu",
+    "version": "TTT",
+    "revision": "1",
+    "year": 2020,
+  }
+}
 
-# ADD_COMMENTARY = """
-#     mutation createcommentary($object:InputAddCommentary){
-#   addCommentary(commArg:$object){
-#     message
-#     data{
-#       refString
-#       book{
-#         bookId
-#         bookName
-#         bookCode
-#       }
-#       chapter
-#       verseStart
-#       verseEnd
-#       commentary
-#       active
-#     }
-#   }
-# }
-# """
-# EDIT_COMMENTARY = """
-#     mutation Editcommentary($object:InputEditCommentary){
-#   editCommentary(commArg:$object){
-#     message
-#     data{
-#       refString
-#       book{
-#         bookId
-#         bookName
-#         bookCode
-#       }
-#       chapter
-#       verseStart
-#       verseEnd
-#       commentary
-#       active
-#     }
-#   }
-# }
-# """
+ADD_COMMENTARY = """
+    mutation createcommentary($object:InputAddCommentary){
+  addCommentary(commArg:$object){
+    message
+    data{
+      refString
+      book{
+        bookId
+        bookName
+        bookCode
+      }
+      chapter
+      verseStart
+      verseEnd
+      commentary
+      active
+    }
+  }
+}
+"""
+EDIT_COMMENTARY = """
+    mutation Editcommentary($object:InputEditCommentary){
+  editCommentary(commArg:$object){
+    message
+    data{
+      refString
+      book{
+        bookId
+        bookName
+        bookCode
+      }
+      chapter
+      verseStart
+      verseEnd
+      commentary
+      active
+    }
+  }
+}
+"""
 # headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
 # def check_post(query, variables):
 #     '''prior steps and post attempt, without checking the response'''

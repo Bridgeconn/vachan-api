@@ -389,21 +389,26 @@ class CommentaryResponse(BaseModel):
 #     message: str = Field(..., example="Commentaries added successfully")
 #     data: List[CommentaryResponse] = None
 
-# for testinf circulat import error for job
+# Again added to avoid circulat import error for job
 class Job(BaseModel):
     '''Response objects of Job'''
     jobId: int = Field(..., example=100000)
     status: str = Field(..., example="job created")
     output: dict = Field(None, example={
-        'language':'hi',
-        'data': [{"stopWord": "और",
-                  "stopwordType": "auto generated",
-                  "confidence": 0.8,
-                  "active": True,
-                  "metaData": {
-                         "type": "postposition"
-                   }
-                }]
+        'data': [{
+            "example": {
+                "book" : {
+                "bookId": 1,
+                "bookName": "genesis",
+                "bookCode": "gen",
+                },
+                "chapter": 10,
+                "verseStart": 1,
+                "verseEnd": 7,
+                "commentary": "It was customary at the time ...",
+                "active": True
+            }
+        }]
         })
 
 class CommentaryCreateResponse(BaseModel):
