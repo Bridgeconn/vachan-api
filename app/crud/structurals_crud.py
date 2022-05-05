@@ -199,7 +199,8 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
     limit = kwargs.get("limit",100)
     query = db_.query(db_models.Source)
     if content_type:
-        query = query.filter(db_models.Source.contentType.has(contentType = content_type.strip()))
+        query = query.filter(db_models.Source.contentType.has
+        (contentType = content_type.strip()))
     if version_abbreviation:
         query = query.filter(
             db_models.Source.version.has(versionAbbreviation = version_abbreviation.strip()))
@@ -284,6 +285,8 @@ def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_
             int(table_name.split("_")[-1]) > table_name_count):
             table_name_count = int(table_name.split("_")[-1])
     table_name = "table_"+str(table_name_count+1)
+    if content_type.contentType == db_models.ContentTypeName.GITLABREPO.value:
+        table_name = source.metaData["repo"]
     db_content = db_models.Source(
         year = source.year,
         sourceName = source_name,
@@ -297,8 +300,10 @@ def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_
     if user_id:
         db_content.createdUser = user_id
     db_.add(db_content)
-    db_models.create_dynamic_table(source_name, table_name, content_type.contentType)
-    db_models.dynamicTables[db_content.sourceName].__table__.create(bind=engine, checkfirst=True)
+    if not content_type.contentType == db_models.ContentTypeName.GITLABREPO.value:
+        db_models.create_dynamic_table(source_name, table_name, content_type.contentType)
+        db_models.dynamicTables[db_content.sourceName].\
+            __table__.create(bind=engine, checkfirst=True)
     if content_type.contentType == db_models.ContentTypeName.BIBLE.value:
         db_models.dynamicTables[db_content.sourceName+'_cleaned'].__table__.create(
             bind=engine, checkfirst=True)
@@ -363,7 +368,8 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
         db_content.updatedUser = user_id
     # db_.commit()
     # db_.refresh(db_content)
-    db_models.dynamicTables[db_content.sourceName] = db_models.dynamicTables[source.sourceName]
+    if not source.sourceName.split("_")[-1] == db_models.ContentTypeName.GITLABREPO.value:
+        db_models.dynamicTables[db_content.sourceName] = db_models.dynamicTables[source.sourceName]
     return db_content
 
 def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None,

@@ -1,4 +1,5 @@
 '''API endpoints related to content management'''
+import json
 from typing import List
 from fastapi import APIRouter, Query, Body, Depends, Path , Request,\
     BackgroundTasks
@@ -6,10 +7,13 @@ from sqlalchemy.orm import Session
 import db_models
 from schema import schemas,schemas_nlp, schema_auth, schema_content
 from dependencies import get_db, log, AddHiddenInput
-from custom_exceptions import NotAvailableException, AlreadyExistsException
 from crud import structurals_crud, contents_crud, nlp_sw_crud
+from custom_exceptions import NotAvailableException, AlreadyExistsException,\
+    UnprocessableException
+
 from auth.authentication import get_auth_access_check_decorator ,\
     get_user_or_none
+import db_models
 
 router = APIRouter()
 
@@ -238,7 +242,9 @@ async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse}},
     status_code=200, tags=["Sources"])
 @get_auth_access_check_decorator
-async def get_source(request: Request,content_type: str=Query(None, example="commentary"), #pylint: disable=too-many-locals
+async def get_source(request: Request, #pylint: disable=too-many-locals
+    source_name : schemas.TableNamePattern=Query(None, example="hi_IRV_1_bible"),
+    content_type: str=Query(None, example="commentary"),
     version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
     revision: int=Query(None, example=1),
     language_code: schemas.LangCodePattern=Query(None,example="en"),
@@ -260,14 +266,15 @@ async def get_source(request: Request,content_type: str=Query(None, example="com
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
     log.info('In get_source')
-    log.debug('contentType:%s, versionAbbreviation: %s, revision: %s, languageCode: %s,\
-        license_code:%s, metadata: %s, access_tag: %s, latest_revision: %s, active: %s,\
-             skip: %s, limit: %s',
+    log.debug('sourceName:%s,contentType:%s, versionAbbreviation: %s, revision: %s, \
+    languageCode: %s,license_code:%s, metadata: %s, access_tag: %s, latest_revision:\
+         %s, active: %s, skip: %s, limit: %s',source_name,
         content_type, version_abbreviation, revision, language_code, license_code, metadata,
         access_tag, latest_revision, active, skip, limit)
     return structurals_crud.get_sources(db_, content_type, version_abbreviation, revision=revision,
         language_code=language_code, license_code=license_code, metadata=metadata,
-        access_tag=access_tag,latest_revision=latest_revision, active=active,skip=skip, limit=limit)
+        access_tag=access_tag,latest_revision=latest_revision, active=active,skip=skip, limit=limit,
+        source_name=source_name)
 
 @router.post('/v2/sources', response_model=schemas.SourceCreateResponse,
     responses={502: {"model": schemas.ErrorResponse},
@@ -285,6 +292,8 @@ async def add_source(request: Request, source_obj : schemas.SourceCreate = Body(
     * Revision, if not provided, will be assumed as 1
     * AccessPermissions is list of permissions ["content", "open-access", "publishable",
         "downloadable","derivable"]. Default will be ["content"]
+    * repo and defaultBranch should given in the metaData if contentType is gitlabrepo,
+        defaultBranch will be "main" if not mentioned in the metadata.
     '''
     log.info('In add_source')
     log.debug('source_obj: %s',source_obj)
@@ -297,6 +306,15 @@ async def add_source(request: Request, source_obj : schemas.SourceCreate = Body(
     if 'content' not in source_obj.accessPermissions:
         source_obj.accessPermissions.append(schemas.SourcePermissions.CONTENT)
     source_obj.metaData['accessPermissions'] = source_obj.accessPermissions
+    if source_obj.contentType == db_models.ContentTypeName.GITLABREPO.value:
+        if "repo" not in source_obj.metaData:
+            raise UnprocessableException("repo link in metadata is mandatory to create"+
+                " source with contentType gitlabrepo")
+        if len(structurals_crud.get_sources(db_, metadata =
+                json.dumps({"repo":source_obj.metaData["repo"]}))) > 0:
+            raise AlreadyExistsException("already present Source with same repo link")
+        if "defaultBranch" not in source_obj.metaData:
+            source_obj.metaData["defaultBranch"] = "main"
     return {'message': "Source created successfully",
     "data": structurals_crud.create_source(db_=db_, source=source_obj, source_name=source_name,
         user_id=user_details['user_id'])}
@@ -321,6 +339,19 @@ async def edit_source(request: Request,source_obj: schemas.SourceEdit = Body(...
     if 'content' not in source_obj.accessPermissions:
         source_obj.accessPermissions.append(schemas.SourcePermissions.CONTENT)
     source_obj.metaData['accessPermissions'] = source_obj.accessPermissions
+    if source_obj.sourceName.split("_")[-1] == \
+        db_models.ContentTypeName.GITLABREPO.value:
+        if "repo" not in source_obj.metaData:
+            raise UnprocessableException("repo link in metadata is mandatory to update"+
+                " source with contentType gitlabrepo")
+        current_source = structurals_crud.get_sources(db_, metadata =
+                json.dumps({"repo":source_obj.metaData["repo"]}))
+        if len(current_source)>0 and not current_source[0].sourceName ==\
+             source_obj.sourceName:
+            raise AlreadyExistsException("already present another source"+
+            " with same repo link")
+        if "defaultBranch" not in source_obj.metaData:
+            source_obj.metaData["defaultBranch"] = "main"
     return {'message': "Source edited successfully",
     "data": structurals_crud.update_source(db_=db_, source=source_obj,
         user_id=user_details['user_id'])}
@@ -856,24 +887,13 @@ async def extract_text_contents(request:Request, #pylint: disable=W0613
     If source_name is provided, only that filter will be considered over content_type & language.'''
     log.info('In extract_text_contents')
     log.debug('source_name: %s, language_code: %s',source_name, language_code)
-    version_abbreviation = None
-    revision = None
-    if source_name:
-        parts = source_name.split('_')
-        language_code = parts[0]
-        version_abbreviation = parts[1]
-        revision = parts[2]
-        content_type = parts[3]
     try:
-        tables = await get_source(request=request, content_type=content_type,
-            version_abbreviation=version_abbreviation,
-            revision=revision,
-            language_code=language_code,
+        tables = await get_source(request=request, source_name=source_name,
+            content_type=content_type, version_abbreviation=None,
+            revision=None, language_code=language_code,
             license_code=None, metadata=None,
-            access_tag = None,
-            active= True, latest_revision= True,
-            skip=0, limit=1000,
-            user_details=user_details, db_=db_,
+            access_tag = None, active= True, latest_revision= True,
+            skip=0, limit=1000, user_details=user_details, db_=db_,
             operates_on=schema_auth.ResourceType.CONTENT.value,
             filtering_required=True)
     except Exception:

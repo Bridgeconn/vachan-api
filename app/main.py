@@ -14,7 +14,7 @@ import db_models
 from database import engine
 from dependencies import get_db, log
 from schema.schemas import NormalResponse
-from routers import content_apis, translation_apis, auth_api
+from routers import content_apis, translation_apis, auth_api, media_api
 from graphql_api import router as gql_router
 from auth.authentication import create_super_user
 # from auth.api_permission_map import initialize_apipermissions
@@ -196,3 +196,4 @@ app.include_router(auth_api.router)
 app.include_router(content_apis.router)
 app.include_router(translation_apis.router)
 app.include_router(gql_router)
+app.include_router(media_api.router)
