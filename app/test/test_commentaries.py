@@ -117,6 +117,8 @@ def test_post_duplicate():
     job_response = get_job_status(response.json()['data']['jobId'])
     assert job_response.json()['data']['status'] == 'job error'
     assert job_response.json()["message"] == "Job is terminated with an error"
+    assert job_response.json()["data"]["output"]["message"] ==\
+        "Already exist commentary with same values for reference range"
 
 
 def test_post_incorrect_data():
@@ -387,6 +389,7 @@ def test_put_after_upload():
     job_response = get_job_status(response.json()['data']['jobId'])
     assert job_response.json()['data']['status'] == 'job error'
     assert job_response.json()["message"] == "Job is terminated with an error"
+    assert "message" in job_response.json()["data"]["output"]
 
     source_name = source_name.replace('1', '2')
     response = client.put(UNIT_URL+source_name,headers=headers_auth, json=[])

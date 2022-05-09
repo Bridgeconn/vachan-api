@@ -161,9 +161,9 @@ def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=
             model_cls.verseEnd == item.verseEnd).first()
         if not row:
             update_args["output"]= {
-                "message": "Commentary row with bookCode:%s, chapter:%s, \
-                verseStart:%s, verseEnd:%s, not found for %s"%(
-                    item.bookCode, item.chapter, item.verseStart, item.verseEnd, source_name),
+                "message" : "Commentary row with bookCode:"+
+                    f"{item.bookCode},chapter:{item.chapter},verseStart:{item.verseStart},"+
+                    f"verseEnd:{item.verseEnd}, not found for {source_name}",
                 "source_name": source_name,"data": None}
             update_job(db_, job_id, user_id, update_args)
             return None

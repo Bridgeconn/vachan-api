@@ -395,20 +395,7 @@ class Job(BaseModel):
     jobId: int = Field(..., example=100000)
     status: str = Field(..., example="job created")
     output: dict = Field(None, example={
-        'data': [{
-            "example": {
-                "book" : {
-                "bookId": 1,
-                "bookName": "genesis",
-                "bookCode": "gen",
-                },
-                "chapter": 10,
-                "verseStart": 1,
-                "verseEnd": 7,
-                "commentary": "It was customary at the time ...",
-                "active": True
-            }
-        }]
+        'data': []
         })
 
 class CommentaryCreateResponse(BaseModel):
