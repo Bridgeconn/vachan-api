@@ -42,7 +42,7 @@ services:
       BACKUP_FILENAME: backup-kratos-daily-%Y-%m-%dT%H-%M-%S.tar.gz
       BACKUP_SOURCES: /docker_kratos-sqlite
       BACKUP_PRUNING_PREFIX: backup-kratos-daily-
-      BACKUP_RETENTION_DAYS: 1
+      BACKUP_RETENTION_DAYS: 5
     depends_on:
       - kratos-migrate
     volumes:
@@ -61,7 +61,7 @@ services:
       BACKUP_FILENAME: backup-kratos-week-%Y-%m-%dT%H-%M-%S.tar.gz
       BACKUP_SOURCES: /docker_kratos-sqlite
       BACKUP_PRUNING_PREFIX: backup-kratos-week-
-      BACKUP_RETENTION_DAYS: 7
+      BACKUP_RETENTION_DAYS: 49
     depends_on:
       - kratos-migrate
     volumes:
@@ -80,7 +80,26 @@ services:
       BACKUP_FILENAME: backup-kratos-month-%Y-%m-%dT%H-%M-%S.tar.gz
       BACKUP_SOURCES: /docker_kratos-sqlite
       BACKUP_PRUNING_PREFIX: backup-kratos-month-
-      BACKUP_RETENTION_DAYS: 30
+      BACKUP_RETENTION_DAYS: 365
+    depends_on:
+      - kratos-migrate
+    volumes:
+      - kratos-sqlite:/docker_kratos-sqlite:ro
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/backups:/archive
+    networks:
+      - my-network
+
+  offen-backup_kratos_year:
+    <<: *backup_service
+    environment:
+      <<: *backup_environment
+      # yearly DEC 31 day 00 : 00
+      BACKUP_CRON_EXPRESSION: "0 0 31 12 *"
+      BACKUP_FILENAME: backup-kratos-year-%Y-%m-%dT%H-%M-%S.tar.gz
+      BACKUP_SOURCES: /docker_kratos-sqlite
+      BACKUP_PRUNING_PREFIX: backup-kratos-year-
+      BACKUP_RETENTION_DAYS: 2555
     depends_on:
       - kratos-migrate
     volumes:

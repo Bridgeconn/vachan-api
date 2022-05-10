@@ -131,7 +131,7 @@ services:
       BACKUP_FILENAME: backup-vachan-daily-%Y-%m-%dT%H-%M-%S.tar.gz
       BACKUP_SOURCES: /docker_vachan-db-vol
       BACKUP_PRUNING_PREFIX: backup-vachan-daily-
-      BACKUP_RETENTION_DAYS: 1
+      BACKUP_RETENTION_DAYS: 5
   depends_on:
    - vachan-db
   volumes:
@@ -150,7 +150,7 @@ services:
       BACKUP_FILENAME: backup-vachan-week-%Y-%m-%dT%H-%M-%S.tar.gz
       BACKUP_SOURCES: /docker_vachan-db-vol
       BACKUP_PRUNING_PREFIX: backup-vachan-week-
-      BACKUP_RETENTION_DAYS: 7
+      BACKUP_RETENTION_DAYS: 49
   depends_on:
    - vachan-db
   volumes:
@@ -164,12 +164,31 @@ services:
   <<: *backup_service
   environment:
       <<: *backup_environment
-      # monthly 30th day 00 : 00
+      # monthly 28th day 00 : 00
       BACKUP_CRON_EXPRESSION: "0 0 28 * *"
       BACKUP_FILENAME: backup-vachan-month-%Y-%m-%dT%H-%M-%S.tar.gz
       BACKUP_SOURCES: /docker_vachan-db-vol
       BACKUP_PRUNING_PREFIX: backup-vachan-month-
-      BACKUP_RETENTION_DAYS: 30
+      BACKUP_RETENTION_DAYS: 365
+  depends_on:
+   - vachan-db
+  volumes:
+      - vachan-db-vol:/docker_vachan-db-vol:ro
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/backups:/archive
+  networks:
+   - my-network
+ 
+ offen-backup_vachan_year:
+  <<: *backup_service
+  environment:
+      <<: *backup_environment
+      # yearly DEC 31 day 00 : 00
+      BACKUP_CRON_EXPRESSION: "0 0 31 12 *"
+      BACKUP_FILENAME: backup-vachan-year-%Y-%m-%dT%H-%M-%S.tar.gz
+      BACKUP_SOURCES: /docker_vachan-db-vol
+      BACKUP_PRUNING_PREFIX: backup-vachan-year-
+      BACKUP_RETENTION_DAYS: 2555
   depends_on:
    - vachan-db
   volumes:
