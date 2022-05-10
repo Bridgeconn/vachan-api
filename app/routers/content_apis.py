@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 import db_models
 from schema import schemas,schemas_nlp, schema_auth, schema_content
 from dependencies import get_db, log, AddHiddenInput
-from crud import structurals_crud, contents_crud, nlp_sw_crud
+from crud import structurals_crud, contents_crud, nlp_sw_crud, media_crud
 from custom_exceptions import NotAvailableException, AlreadyExistsException,\
     UnprocessableException
 
@@ -822,7 +822,7 @@ async def get_biblevideo(request: Request,
     log.info('In get_biblevideo')
     log.debug('source_name: %s, book_code: %s, title: %s, theme: %s, skip: %s, limit: %s',
         source_name, book_code, title, series, skip, limit)
-    return contents_crud.get_bible_videos(db_, source_name, book_code, title, series,
+    return media_crud.get_bible_videos(db_, source_name, book_code, title, series,
     search_word=search_word,chapter=chapter,verse=verse,
     active=active, skip=skip, limit=limit)
 
@@ -844,7 +844,7 @@ async def add_biblevideo(request: Request,
     log.info('In add_biblevideo')
     log.debug('source_name: %s, videos: %s',source_name, videos)
     return {'message': "Bible videos added successfully",
-        "data": contents_crud.upload_bible_videos(db_=db_, source_name=source_name,
+        "data": media_crud.upload_bible_videos(db_=db_, source_name=source_name,
         videos=videos, user_id=user_details['user_id'])}
 
 @router.put('/v2/biblevideos/{source_name}', response_model=schema_content.BibleVideoUpdateResponse,
@@ -864,7 +864,7 @@ async def edit_biblevideo(request: Request,
     log.info('In edit_biblevideo')
     log.debug('source_name: %s, videos: %s',source_name, videos)
     return {'message': "Bible videos updated successfully",
-        "data": contents_crud.update_bible_videos(db_=db_, source_name=source_name,
+        "data": media_crud.update_bible_videos(db_=db_, source_name=source_name,
         videos=videos, user_id=user_details['user_id'])}
 
 @router.get('/v2/sources/get-sentence', response_model=List[schemas_nlp.SentenceInput],
