@@ -2,7 +2,8 @@
 related to gitlab media operations'''
 import os
 import mimetypes
-from fastapi.responses import StreamingResponse
+from fastapi import HTTPException
+from fastapi.responses import StreamingResponse, Response
 import gitlab
 import db_models
 
@@ -30,8 +31,10 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
     end_time = kwargs.get("end_time", None)#pylint: disable=W0612
     stream = kwargs.get("stream", None)#pylint: disable=W0612
 
-    asked = request.headers.get("Range")
+    # asked = request.headers.get("Range")
     # print("comes in router func once with range:", asked)
+
+    # asked = None
 
     if permanent_link is None or permanent_link == '':
         url = f"{repo}/-/raw/{tag}/{file_path}"
@@ -41,6 +44,17 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
     content_type = mimetypes.guess_type(url.split("/")[-1], strict=True)
     if content_type is None:
         raise Exception("Unsupported media format!")
+
+    if "video" not in content_type[0] and "audio" not in content_type[0]:
+        raise HTTPException(status_code=406,
+            detail="Currently api supports only video and audio streams")
+
+    if "Range" in request.headers:
+        asked = request.headers.get("Range")
+        # print("comes in router func once with range:", asked)
+    else:
+        raise HTTPException(status_code=406,
+            detail="This is a Streaming api , Call it from supported players")
 
     if stream is None:
         # # Currently, it is not possible to fetch LFS-tracked files from the API at all.
@@ -64,7 +78,7 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
         headers={
             "Accept-Ranges": "bytes",
             "Content-Range": f"bytes {start_byte_requested}-{end_byte_planned}/{total_size}",
-            "Content-Type": content_type
+            "Content-Type": content_type[0]
         },
         status_code=206)
 
@@ -76,8 +90,9 @@ def get_gitlab_download(repo, tag, permanent_link, file_path):
     else:
         url = permanent_link
 
+    file_name = url.split("/")[-1]
     stream = gl.http_get(url).content
-    # response = Response(stream)
+    response = Response(stream)
 
     # response.headers["Content-Disposition"] = "attachment; filename=stream.mp4"
     # response.headers["Content-Type"] = "application/force-download"

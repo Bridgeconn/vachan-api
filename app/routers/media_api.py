@@ -63,7 +63,8 @@ async def get_and_accesscheck_for_repo(repo, file_path, tag, permanent_link, db_
 @router.get("/v2/media/gitlab/stream",
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401:{"model": schemas.ErrorResponse},
-    404:{"model": schemas.ErrorResponse},403:{"model": schemas.ErrorResponse}},
+    404:{"model": schemas.ErrorResponse},403:{"model": schemas.ErrorResponse},
+    406:{"model": schemas.ErrorResponse}},
     status_code=200, tags=["Media"])
 @get_auth_access_check_decorator
 async def stream_media(request: Request, #pylint: disable=unused-argument,too-many-arguments
@@ -78,6 +79,7 @@ async def stream_media(request: Request, #pylint: disable=unused-argument,too-ma
     end_time: Optional[datetime] =Query(None),
     db_: Session = Depends(get_db)):
     '''Access the file from gitlab and pass it on to clients.
+    * Support Medias - Video , Audio, Image
     * tag can be a commit-hash, branch-name or release-tag.
     * to access a content provide either (repo + tag+ file_path) or permanent_link
     * permanent link will be considered if its given
