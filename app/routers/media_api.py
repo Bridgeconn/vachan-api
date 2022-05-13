@@ -1,7 +1,7 @@
 """API endpoints related to media"""
 import re
 from datetime import datetime
-from typing import Optional
+from typing import  Optional
 from fastapi import APIRouter, Query, Request, Depends
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
@@ -11,8 +11,9 @@ from crud import media_crud
 from custom_exceptions import NotAvailableException, UnprocessableException
 from dependencies import log, get_db
 from auth.authentication import get_auth_access_check_decorator ,\
-    get_user_or_none, get_current_user_data
-from redis_db.utils import validate_cache, get_routes_from_cache, set_routes_to_cache
+    get_current_user_data
+from redis_db.utils import  get_routes_from_cache, set_routes_to_cache,\
+    del_cache
 
 router = APIRouter()
 
@@ -151,4 +152,40 @@ async def download_media(request: Request, #pylint: disable=too-many-arguments
     response.headers["Content-Type"] = "application/octet-stream"
     return response
 
-    # return media_crud.get_gitlab_download(repo, tag, permanent_link, file_path)
+@router.put("/v2/media/gitlab/refresh-cache",
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401:{"model": schemas.ErrorResponse},
+    404:{"model": schemas.ErrorResponse},403:{"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Media"])
+# @get_auth_access_check_decorator
+async def refresh_cache(request: Request, #pylint: disable=too-many-arguments
+    media_list : schemas.RefreshCache,
+    access_token: str = Query(None)):
+    '''Refresh the cache content from gitlab.
+    * Input accept List of file path url
+    '''
+    log.info('In get_refresh_cache_media')
+    log.debug('content list :%s',media_list)
+    print("media list type---->",type(media_list))
+    print("media list---->",media_list)
+    for path in media_list.mediaList:
+
+        #permanent link validation
+        # repo = path.split("/-/")[0]
+        # tag =  re.search(r'/-/[^/]+/[^/]+',path)[0].split("/")[-1]
+        # file_path = re.findall(r'(/-/[^/]+/[^/]+/)(.+)',path)[0][-1]
+        path =  re.sub(r'/-/[^/]+',"/-/raw",path)
+        print("path---->",path)
+
+        # # redis cache part 
+        # data = get_routes_from_cache(key= path)
+        # if data:
+        #     val = del_cache(path)
+        #     if not val:
+        #         print("Val not deleted.... issue in delete")
+        # data = media_crud.get_gitlab_download(repo=None, tag=None,
+        #     permanent_link=path, file_path=None)
+        # set_routes_to_cache(key=path, value=data)
+
+    return {"message":"Success","data":media_list}
+

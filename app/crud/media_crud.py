@@ -40,7 +40,7 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
 
     content_type = mimetypes.guess_type(url.split("/")[-1], strict=True)
     if content_type is None:
-        raise Exception("Unsupported video format!")
+        raise Exception("Unsupported media format!")
 
     if stream is None:
         # # Currently, it is not possible to fetch LFS-tracked files from the API at all.
@@ -86,9 +86,9 @@ def get_gitlab_download(repo, tag, permanent_link, file_path):
     # return response
     return stream
 
-
 def find_media_source(repo, db_):
     """find source of requested gitlab media"""
     query = db_.query(db_models.Source)
     query = query.filter(db_models.Source.metaData.contains({"repo":repo})).first()
     return query
+

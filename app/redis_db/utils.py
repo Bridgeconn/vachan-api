@@ -8,8 +8,8 @@ from custom_exceptions import UnAuthorizedException
 def redis_connect() -> redis.client.Redis:
     try:
         client = redis.Redis(
-            host="redis",
-            # host="localhost",
+            # host="redis",
+            host="localhost",
             port=6379,
             db=0,
             socket_timeout=5,
@@ -34,18 +34,24 @@ def set_routes_to_cache(key: str, value: str):
     state = redis_client.setex(key, timedelta(seconds=180), value=value)
     return state
 
-async def validate_cache(route_url: str, source_func, *args):
-    """check cache present or not"""
-    data = get_routes_from_cache(key= route_url)
+def del_cache(key: str):
+    """del cache data"""
+    redis_client = redis_connect()
+    val = redis_client.delete(key)
+    return val
+
+# async def validate_cache(route_url: str, source_func, *args):
+#     """check cache present or not"""
+#     data = get_routes_from_cache(key= route_url)
     
-    if data is None:
-        data = source_func(*args)
-        state = set_routes_to_cache(key=route_url, value=data)
-        if state is True:
-            return data
-        else:
-            print("Data not stored in cache")
-    else:
-        data = json.loads(data)
-        return data
+#     if data is None:
+#         data = source_func(*args)
+#         state = set_routes_to_cache(key=route_url, value=data)
+#         if state is True:
+#             return data
+#         else:
+#             print("Data not stored in cache")
+#     else:
+#         data = json.loads(data)
+#         return data
 
