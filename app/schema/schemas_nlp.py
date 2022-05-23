@@ -4,7 +4,7 @@ from enum import Enum
 from pydantic import BaseModel, Field, constr, root_validator
 
 from schema.schemas import LangCodePattern, TableNamePattern, LanguageResponse
-from schema.schema_content import BookCodePattern
+from schema.schema_content import BookCodePattern, Job
 
 #pylint: disable=too-few-public-methods
 class TranslationDocumentType(Enum):
@@ -279,21 +279,21 @@ class StopWordsAddResponse(BaseModel):
     message: str = Field(..., example="3 stopwords added successfully")
     data:List[StopWords] = None
 
-class Job(BaseModel):
-    '''Response objects of Job'''
-    jobId: int = Field(..., example=100000)
-    status: str = Field(..., example="job created")
-    output: dict = Field(None, example={
-        'language':'hi',
-        'data': [{"stopWord": "और",
-                  "stopwordType": "auto generated",
-                  "confidence": 0.8,
-                  "active": True,
-                  "metaData": {
-                         "type": "postposition"
-                   }
-                }]
-        })
+# class Job(BaseModel):
+#     '''Response objects of Job'''
+#     jobId: int = Field(..., example=100000)
+#     status: str = Field(..., example="job created")
+#     output: dict = Field(None, example={
+#         'language':'hi',
+#         'data': [{"stopWord": "और",
+#                   "stopwordType": "auto generated",
+#                   "confidence": 0.8,
+#                   "active": True,
+#                   "metaData": {
+#                          "type": "postposition"
+#                    }
+#                 }]
+#         })
 
 class StopWordsGenerateResponse(BaseModel):
     '''Response object of auto-generate stopword API'''
