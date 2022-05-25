@@ -27,7 +27,7 @@ plac==0.9.6
 preshed==2.0.1
 psycopg2==2.8.3
 pycparser==2.19
-PyJWT==1.7.1
+PyJWT==2.4.0
 pyrsistent==0.15.2
 python-dateutil==2.8.0
 requests==2.22.0
