@@ -251,6 +251,11 @@ def test_learn_n_suggest():
     #with auth
     response = client.put(UNIT_URL+'/suggestions?source_language=en&target_language=ml',
         headers=headers_auth, json={"sentence_list":sentence_list})
+
+    # ensures that source is tokenized in draftmeta, even when there is no suggestion
+    assert len(response.json()[0]["draftMeta"]) > 7 
+    assert len([meta for meta in response.json()[0]["draftMeta"] if meta[2]=="untranslated"]) > 4
+    
     draft = client.put(UNIT_URL+'/draft?doc_type=text', headers=headers_auth, json=response.json())
     draft = draft.json()
     assert "ഒരു ടെസ്റ്റ് കേസ്." in draft
