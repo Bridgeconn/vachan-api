@@ -767,7 +767,9 @@ def auto_translate(db_, sentence_list, source_lang, target_lang, **kwargs):
     if stop_words:
         args['stop_words'] = stop_words
     for sent in sentence_list:
-        args['sent_list'] = [{"sentenceId":sent.sentenceId, "sentence":sent.sentence}]
+        args['sent_list'] = [{"sentenceId":sent.sentenceId,
+                                "sentence":sent.sentence,
+                                "draftMeta":sent.draftMeta if sent.draftMeta is not None else []}]
         tokens = nlp_utils.tokenize(**args)
 
         #auto tranaslte token loop
