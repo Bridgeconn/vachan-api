@@ -169,8 +169,27 @@ def tokenize(db_:Session, src_lang, sent_list, #pylint: disable=too-many-locals
             sent = sent.__dict__
         phrases = []
         src_text = re.sub(r'[\n\r]+', ' ', sent['sentence'])
-        #first split the text into chunks based on punctuations
-        chunks = [chunk.strip() for chunk in re.split(r'['+"".join(punctuations)+']+', src_text)]
+
+        #first remove "confirmed" portions from text
+        segments = []
+        prev_index = 0
+        if "draftMeta" in sent:
+            for meta in sent['draftMeta']:
+                if meta[2] == "confirmed":
+                    print("Meta with confirmed", meta)
+                    seg = sent['sentence'][prev_index:meta[0][0]]
+                    if len(seg) > 0:
+                        segments.append(seg)
+                    prev_index = meta[0][1]
+        seg = sent['sentence'][prev_index:]
+        if len(seg) > 0:
+            segments.append(seg)
+
+        #next split the text into chunks based on punctuations
+        chunks = []
+        for src_text in segments:
+            punct_wise_splits = re.split(r'['+"".join(punctuations)+']+', src_text)
+            chunks += [chunk.strip() for chunk in punct_wise_splits]
 
         if use_translation_memory and include_phrases:
             chunks = tokenize_get_longest_match(memory_trie,chunks)
@@ -178,6 +197,7 @@ def tokenize(db_:Session, src_lang, sent_list, #pylint: disable=too-many-locals
         phrases,stop_words = tokenize_logic(include_phrases,chunks,include_stopwords,stop_words)
 
         unique_tokens = tokenize_get_unique_token(phrases,sent,unique_tokens)
+        print(unique_tokens)
 
     return unique_tokens
 
