@@ -369,10 +369,10 @@ def check_job_status(db_: Session, job_id):
     if query_result.status == schemas_nlp.JobStatus.FINISHED.value:
         msg = query_result.output['message']
         del query_result.output['message']
-        result =  {'message': msg, 'data': {'jobId':job_id, 'status': query_result.status,
-                 'output': query_result.output}}
-    else:
-        result =  {'message': msg, 'data': {'jobId':job_id, 'status': query_result.status,
-                   'output': None}}
+    result =  {'message': msg, 'data': {'jobId':job_id, 'status': query_result.status,
+            'output': query_result.output}}
+    # else:
+    #     result =  {'message': msg, 'data': {'jobId':job_id, 'status': query_result.status,
+    #                'output': None}}
     return result
     

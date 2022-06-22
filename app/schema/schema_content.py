@@ -384,15 +384,34 @@ class CommentaryResponse(BaseModel):
             }
         }
 
+# class CommentaryCreateResponse(BaseModel):
+#     '''Response object for commentary update'''
+#     message: str = Field(..., example="Commentaries added successfully")
+#     data: List[CommentaryResponse] = None
+
+# Again added to avoid circulat import error for job
+class Job(BaseModel):
+    '''Response objects of Job'''
+    jobId: int = Field(..., example=100000)
+    status: str = Field(..., example="job created")
+    output: dict = Field(None, example={
+        'data': []
+        })
+
 class CommentaryCreateResponse(BaseModel):
     '''Response object for commentary update'''
-    message: str = Field(..., example="Commentaries added successfully")
-    data: List[CommentaryResponse] = None
+    message: str = Field(..., example="Uploading Commentaries in background")
+    data: Job
+
+# class CommentaryUpdateResponse(BaseModel):
+#     '''Response object for commentary update'''
+#     message: str = Field(..., example="Commentaries updated successfully")
+#     data: List[CommentaryResponse] = None
 
 class CommentaryUpdateResponse(BaseModel):
     '''Response object for commentary update'''
     message: str = Field(..., example="Commentaries updated successfully")
-    data: List[CommentaryResponse] = None
+    data: Job
 
 LetterPattern = constr(regex=r'^\w$')
 class DictionaryWordCreate(BaseModel):

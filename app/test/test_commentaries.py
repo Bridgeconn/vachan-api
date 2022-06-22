@@ -1,11 +1,15 @@
 '''Test cases for commentaries related APIs'''
+import json
+import time
+from app.main import log
 from . import client, contetapi_get_accessrule_checks_app_userroles
 from . import assert_input_validation_error, assert_not_available_content
-from . import check_default_get, check_soft_delete
+from . import check_default_get
 from .test_versions import check_post as add_version
 from .test_sources import check_post as add_source
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER
 from .conftest import initial_test_users
+from .test_stop_words_generation import get_job_status
 
 UNIT_URL = '/v2/commentaries/'
 headers = {"contentType": "application/json", "accept": "application/json"}
@@ -18,8 +22,8 @@ def assert_positive_get(item):
     assert "bookId" in item['book']
     assert "bookCode" in item['book']
     assert "chapter" in item
-    assert "verseStart" in item
-    assert "verseEnd" in item
+    # assert "verseStart" in item # optional params get_job remove null fields
+    # assert "verseEnd" in item
     assert "commentary" in item
     assert "active" in item
 
@@ -53,6 +57,19 @@ def check_post(data: list):
     response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
     return response, source_name
 
+def check_commentary_job_finished(response):
+    """check commentary upload finished or not"""
+    assert "jobId" in response.json()['data']
+    assert "status" in response.json()['data']
+    for i in range(10):
+        job_response = get_job_status(response.json()['data']['jobId'])
+        status = job_response.json()['data']['status']
+        if status == 'job finished':
+            break
+        log.info("sleeping for a minute in get commentary status")
+        time.sleep(60)
+    return job_response
+
 def test_post_default():
     '''Positive test to upload commentries, with various kins of ref ranges supported'''
     data = [
@@ -64,14 +81,19 @@ def test_post_default():
     	{'bookCode':'gen', 'chapter':1, 'verseStart':3, 'verseEnd': 30,
     		'commentary':'the creation'},
     	{'bookCode':'gen', 'chapter':1, 'verseStart':-1, 'verseEnd': -1,
-    		'commentary':'Chapter Epilogue. God completes creation in 6 days.'},
+    		'commentary':'Chapter Epilogue. God completes creation in 6 days.'}, 
     	{'bookCode':'gen', 'chapter':-1, 'commentary':'book Epilogue.'}
     ]
     response = check_post(data)[0]
     assert response.status_code == 201
-    assert response.json()['message'] == "Commentaries added successfully"
-    assert len(data) == len(response.json()['data'])
-    for item in response.json()['data']:
+    assert response.json()['message'] == "Uploading Commentaries in background"
+    job_response = check_commentary_job_finished(response)
+    assert job_response.json()['data']['status'] == 'job finished'
+    assert job_response.json()["message"] == "Commentaries added successfully"
+    assert 'output' in job_response.json()['data']
+    assert len(data) == len(job_response.json()['data']['output']['data'])
+    # print("resp=======>",job_response.json()["message"])
+    for item in job_response.json()['data']['output']['data']:
         assert_positive_get(item)
 
 
@@ -83,13 +105,21 @@ def test_post_duplicate():
     ]
     resp, source_name = check_post(data)
     assert resp.status_code == 201
-    assert resp.json()['message'] == "Commentaries added successfully"
+    assert resp.json()['message'] == "Uploading Commentaries in background"
+    job_response = check_commentary_job_finished(resp)
+    assert job_response.json()['data']['status'] == 'job finished'
+    assert job_response.json()["message"] == "Commentaries added successfully"
 
-    headers = {"contentType": "application/json", "accept": "application/json"}
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     data[0]['commentary'] = 'another commentary on first verse'
+
     response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
-    assert response.status_code == 409
-    assert response.json()['error'] == "Already Exists"
+    job_response = get_job_status(response.json()['data']['jobId'])
+    assert job_response.json()['data']['status'] == 'job error'
+    assert job_response.json()["message"] == "Job is terminated with an error"
+    assert job_response.json()["data"]["output"]["message"] ==\
+        "Already exist commentary with same values for reference range"
+
 
 def test_post_incorrect_data():
     ''' tests to check input validation in post API'''
@@ -194,6 +224,15 @@ def test_get_after_data_upload():
     resp, source_name = check_post(data)
 
     assert resp.status_code == 201
+    assert resp.json()['message'] == "Uploading Commentaries in background"
+    job_response = check_commentary_job_finished(resp)
+    assert job_response.json()['data']['status'] == 'job finished'
+    assert job_response.json()["message"] == "Commentaries added successfully"
+    assert 'output' in job_response.json()['data']
+    assert len(data) == len(job_response.json()['data']['output']['data'])
+    for item in job_response.json()['data']['output']['data']:
+        assert_positive_get(item)
+
     check_default_get(UNIT_URL+source_name, headers_auth,assert_positive_get)
 
     #filter by book
@@ -306,6 +345,14 @@ def test_put_after_upload():
     ]
     response, source_name = check_post(data)
     assert response.status_code == 201
+    assert response.json()['message'] == "Uploading Commentaries in background"
+    job_response = check_commentary_job_finished(response)
+    assert job_response.json()['data']['status'] == 'job finished'
+    assert job_response.json()["message"] == "Commentaries added successfully"
+    assert 'output' in job_response.json()['data']
+    assert len(data) == len(job_response.json()['data']['output']['data'])
+    for item in job_response.json()['data']['output']['data']:
+        assert_positive_get(item)
 
     # positive PUT
     new_data = [
@@ -320,23 +367,29 @@ def test_put_after_upload():
     #with auth
     response = client.put(UNIT_URL+source_name,headers=headers_auth, json=new_data)
     assert response.status_code == 201
-    assert response.json()['message'] == 'Commentaries updated successfully'
-    for i,item in enumerate(response.json()['data']):
+    assert response.json()['message'] == "Updating Commentaries in background"
+    job_response = check_commentary_job_finished(response)
+    assert job_response.json()['data']['status'] == 'job finished'
+    assert job_response.json()["message"] == "Commentaries updated successfully"
+    for i,item in enumerate(job_response.json()['data']['output']['data']):
         assert_positive_get(item)
-        assert response.json()['data'][i]['commentary'] == new_data[i]['commentary']
-        assert response.json()['data'][i]['book']['bookCode'] == data[i]['bookCode']
-        assert response.json()['data'][i]['chapter'] == data[i]['chapter']
+        assert item['commentary'] == new_data[i]['commentary']
+        assert item['book']['bookCode'] == data[i]['bookCode']
+        assert item['chapter'] == data[i]['chapter']
         if 'verseEnd' in data[i]:
-            assert response.json()['data'][i]['verseStart'] == data[i]['verseStart']
-            assert response.json()['data'][i]['verseEnd'] == data[i]['verseEnd']
-        else:
-            assert response.json()['data'][i]['verseStart'] is None
-            assert response.json()['data'][i]['verseEnd'] is None
+            assert item['verseStart'] == data[i]['verseStart']
+            assert item['verseEnd'] == data[i]['verseEnd']
+        # else:
+        #     assert item['verseStart'] is None
+        #     assert item['verseEnd'] is None
 
     # not available PUT
     new_data[0]['chapter'] = 2
     response = client.put(UNIT_URL+source_name,headers=headers_auth, json=new_data)
-    assert response.status_code == 404
+    job_response = get_job_status(response.json()['data']['jobId'])
+    assert job_response.json()['data']['status'] == 'job error'
+    assert job_response.json()["message"] == "Job is terminated with an error"
+    assert "message" in job_response.json()["data"]["output"]
 
     source_name = source_name.replace('1', '2')
     response = client.put(UNIT_URL+source_name,headers=headers_auth, json=[])
@@ -422,7 +475,31 @@ def test_soft_delete():
     delete_data = [
         {'bookCode':'mrk', 'chapter':1, 'verseStart':1, 'verseEnd':10}
     ]
-    check_soft_delete(UNIT_URL, check_post, data, delete_data, headers_auth)
+
+    response, source_name = check_post(data)
+    assert response.json()['message'] == "Uploading Commentaries in background"
+    job_response = check_commentary_job_finished(response)
+    assert job_response.json()['data']['status'] == 'job finished'
+    assert job_response.json()["message"] == "Commentaries added successfully"
+
+    get_response1 = client.get(UNIT_URL+source_name,headers=headers_auth)
+    assert len(get_response1.json()) == len(data)
+    delete_data[0]['active'] = False
+
+    response = client.put(UNIT_URL+source_name,headers=headers_auth, json=delete_data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Updating Commentaries in background"
+    job_response = check_commentary_job_finished(response)
+    assert job_response.json()['data']['status'] == 'job finished'
+    assert job_response.json()["message"] == "Commentaries updated successfully"
+    for i,item in enumerate(job_response.json()['data']['output']['data']):
+        assert not item['active']
+    
+    get_response2 = client.get(UNIT_URL+source_name, headers=headers_auth)
+    assert len(get_response2.json()) == len(data) - len(delete_data)
+
+    get_response3 = client.get(UNIT_URL+source_name+'?active=false',headers=headers_auth)
+    assert len(get_response3.json()) == len(delete_data)
 
 def test_created_user_can_only_edit():
     """only created user and SA can only edit"""
@@ -461,6 +538,10 @@ def test_created_user_can_only_edit():
     ]
     response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
     assert response.status_code == 201
+    assert response.json()['message'] == "Uploading Commentaries in background"
+    job_response = check_commentary_job_finished(response)
+    assert job_response.json()['data']['status'] == 'job finished'
+    assert job_response.json()["message"] == "Commentaries added successfully"
 
     #update commentary with created SA user
     new_data = [
@@ -470,7 +551,11 @@ def test_created_user_can_only_edit():
     ]
     response = client.put(UNIT_URL+source_name,headers=headers_auth, json=new_data)
     assert response.status_code == 201
-    assert response.json()['message'] == 'Commentaries updated successfully'
+    assert response.status_code == 201
+    assert response.json()['message'] == "Updating Commentaries in background"
+    job_response = check_commentary_job_finished(response)
+    assert job_response.json()['data']['status'] == 'job finished'
+    assert job_response.json()["message"] == "Commentaries updated successfully"
 
     #update with VA not created user
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']

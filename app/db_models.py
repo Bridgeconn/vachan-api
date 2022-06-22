@@ -135,10 +135,10 @@ class Commentary(): # pylint: disable=too-few-public-methods
     verseEnd = Column('verse_end', Integer)
     commentary = Column('commentary', String)
     active = Column('active', Boolean)
-    __table_args__ = (
-        UniqueConstraint('book_id', 'chapter', 'verse_start', 'verse_end'),
-        {'extend_existing': True}
-                     )
+    # __table_args__ = (
+    #     UniqueConstraint('book_id', 'chapter', 'verse_start', 'verse_end'),
+    #     {'extend_existing': True}
+    #                  )
 
 class Dictionary(): # pylint: disable=too-few-public-methods
     '''Corresponds to the dynamically created dictionary tables in vachan Db(postgres)'''
