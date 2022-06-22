@@ -12,8 +12,7 @@ from custom_exceptions import NotAvailableException, UnprocessableException
 from dependencies import log, get_db
 from auth.authentication import get_auth_access_check_decorator ,\
     get_current_user_data
-from redis_db.utils import  get_routes_from_cache, set_routes_to_cache,\
-    del_cache
+from redis_db.utils import  get_routes_from_cache, set_routes_to_cache
 
 router = APIRouter()
 
@@ -23,8 +22,8 @@ async def get_and_accesscheck_for_repo(repo, file_path, tag, permanent_link, db_
     user_details = args[1]
     if not permanent_link:
         if not repo or not file_path:
-            raise UnprocessableException("Either Permanent Link or repo + file_path is\
-                 mandatory to identify the media")
+            raise UnprocessableException("Either Permanent Link or repo + file_path is"+
+                 " mandatory to identify the media")
         repo = "https://gitlab.bridgeconn.com/" + repo
         permanent_link = f"{repo}/-/raw/{tag}/{file_path}"
     else:
@@ -35,6 +34,7 @@ async def get_and_accesscheck_for_repo(repo, file_path, tag, permanent_link, db_
         permanent_link =  re.sub(r'/-/[^/]+',"/-/raw",permanent_link)
     # find source
     db_source = media_crud.find_media_source(repo, db_)
+    # print("permanent link ======", db_source)
     if db_source is None:
         raise NotAvailableException(f"No source is available for {repo}")
     source_name = db_source.sourceName
@@ -93,15 +93,15 @@ async def stream_media(request: Request, #pylint: disable=unused-argument,too-ma
 
     repo, tag, permanent_link, file_path = await get_and_accesscheck_for_repo(repo, file_path,
         tag, permanent_link, db_, request, user_details)
-    
-    # redis cache part 
+
+    # redis cache part
     stream = get_routes_from_cache(key= permanent_link)
-    print("stream type from cache --------------->",type(stream))
+    # print("stream type from cache --------------->",type(stream))
     if stream is None:
         stream = media_crud.get_gitlab_download(repo, tag, permanent_link, file_path)
-        print("stream type direct gitlab --------------->",type(stream))
-        state = set_routes_to_cache(key=permanent_link, value=stream)
-    
+        # print("stream type direct gitlab --------------->",type(stream))
+        set_routes_to_cache(key=permanent_link, value=stream)
+
     return media_crud.get_gitlab_stream(request, repo, tag, file_path,
         permanent_link, start_time=start_time, end_time=end_time, stream = stream)
 
@@ -135,59 +135,17 @@ async def download_media(request: Request, #pylint: disable=too-many-arguments
     repo, tag, permanent_link, file_path = await get_and_accesscheck_for_repo(repo, file_path,
         tag, permanent_link, db_, request, user_details)
 
-    # cache_response = await validate_cache(permanent_link,
-    #     media_crud.get_gitlab_download , repo, tag, permanent_link, file_path)
-    # return cache_response
-
-    # redis cache part 
+    # redis cache part
     data = get_routes_from_cache(key= permanent_link)
-    print("stream type from cache --------------->",type(data))
+    # print("stream type from cache --------------->",type(data))
     if data is None:
         data = media_crud.get_gitlab_download(repo, tag, permanent_link, file_path)
-        print("stream type direct gitlab --------------->",type(data))
-        state = set_routes_to_cache(key=permanent_link, value=data)
-      
+        # print("stream type direct gitlab --------------->",type(data))
+        set_routes_to_cache(key=permanent_link, value=data)
+
     response =  Response(data)
     response.headers["Content-Disposition"] = "attachment; filename=stream.mp4"
     response.headers["Content-Type"] = "application/force-download"
     response.headers["Content-Transfer-Encoding"] = "Binary"
     response.headers["Content-Type"] = "application/octet-stream"
     return response
-
-@router.put("/v2/media/gitlab/refresh-cache",
-    responses={502: {"model": schemas.ErrorResponse},
-    422: {"model": schemas.ErrorResponse},401:{"model": schemas.ErrorResponse},
-    404:{"model": schemas.ErrorResponse},403:{"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Media"])
-# @get_auth_access_check_decorator
-async def refresh_cache(request: Request, #pylint: disable=too-many-arguments
-    media_list : schemas.RefreshCache,
-    access_token: str = Query(None)):
-    '''Refresh the cache content from gitlab.
-    * Input accept List of file path url
-    '''
-    log.info('In get_refresh_cache_media')
-    log.debug('content list :%s',media_list)
-    print("media list type---->",type(media_list))
-    print("media list---->",media_list)
-    for path in media_list.mediaList:
-
-        #permanent link validation
-        # repo = path.split("/-/")[0]
-        # tag =  re.search(r'/-/[^/]+/[^/]+',path)[0].split("/")[-1]
-        # file_path = re.findall(r'(/-/[^/]+/[^/]+/)(.+)',path)[0][-1]
-        path =  re.sub(r'/-/[^/]+',"/-/raw",path)
-        print("path---->",path)
-
-        # # redis cache part 
-        # data = get_routes_from_cache(key= path)
-        # if data:
-        #     val = del_cache(path)
-        #     if not val:
-        #         print("Val not deleted.... issue in delete")
-        # data = media_crud.get_gitlab_download(repo=None, tag=None,
-        #     permanent_link=path, file_path=None)
-        # set_routes_to_cache(key=path, value=data)
-
-    return {"message":"Success","data":media_list}
-

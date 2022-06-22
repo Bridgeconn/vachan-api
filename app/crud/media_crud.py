@@ -3,18 +3,12 @@ related to gitlab media operations'''
 import os
 import mimetypes
 from fastapi import HTTPException
-from fastapi.responses import StreamingResponse, Response
+from fastapi.responses import StreamingResponse
 import gitlab
 import db_models
 
 access_token = os.environ.get("VACHAN_GITLAB_TOKEN")
 BYTES_PER_RESPONSE = 100000
-# CACHEDMEDIA = []
-# cached_media_download = []
-# MEDIA_CACHE_LIMIT = 3
-# VIDEO_FORMATS = ["MP4","AVI","FLV","WMV","MOV","MPEG","MKV","WEBM"]
-# AUDIO_FORMATS = ["PCM","WAV","AIFF","MP3","AAC","WMA ","FLAC","MP4"]
-# IMAGE_FORMATS = ["JPEG","PNG","GIF"]
 
 gl = gitlab.Gitlab(url="https://gitlab.bridgeconn.com", private_token=access_token)
 
@@ -64,10 +58,10 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
         # file_obj = project.files.get(file_path=file_path, ref=tag)
         # file_raw = project.files.raw(file_path=file_path, ref=file_obj.commit_id)
         # stream = file_raw
+        # stream = gl.http_get(url).content
         stream = gl.http_get(url).content
 
     total_size = len(stream)
-    # print("file size with len:", total_size)
 
     start_byte_requested = int(asked.split("=")[-1][:-1])
     end_byte_planned = min(start_byte_requested + BYTES_PER_RESPONSE, total_size)
@@ -89,16 +83,8 @@ def get_gitlab_download(repo, tag, permanent_link, file_path):
         url = f"{repo}/-/raw/{tag}/{file_path}"
     else:
         url = permanent_link
-
-    file_name = url.split("/")[-1]
     stream = gl.http_get(url).content
-    response = Response(stream)
 
-    # response.headers["Content-Disposition"] = "attachment; filename=stream.mp4"
-    # response.headers["Content-Type"] = "application/force-download"
-    # response.headers["Content-Transfer-Encoding"] = "Binary"
-    # response.headers["Content-Type"] = "application/octet-stream"
-    # return response
     return stream
 
 def find_media_source(repo, db_):
@@ -106,4 +92,3 @@ def find_media_source(repo, db_):
     query = db_.query(db_models.Source)
     query = query.filter(db_models.Source.metaData.contains({"repo":repo})).first()
     return query
-
