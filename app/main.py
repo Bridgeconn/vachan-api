@@ -198,9 +198,3 @@ app.include_router(content_apis.router)
 app.include_router(translation_apis.router)
 app.include_router(gql_router)
 app.include_router(media_api.router)
-
-
-# @app.on_event("startup")
-# def startup():
-#     # only work in docker
-#     redis_client = redis_connect()
