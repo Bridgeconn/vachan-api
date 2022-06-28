@@ -20,6 +20,14 @@ class DatabaseException(Exception):
             self.detail = str(detail)
         self.status_code = 502
 
+class GitlabException(Exception):
+    '''Format for Gitlab error in media access APIs'''
+    def __init__(self, detail):
+        super().__init__()
+        self.name = "Gitlab Access Error"
+        self.detail = detail
+        self.status_code = 502
+
 class NotAvailableException(Exception):
     '''Format for not available Exception'''
     def __init__(self, detail: str):
