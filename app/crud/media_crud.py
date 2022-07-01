@@ -10,10 +10,12 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse, Response
+from bs4 import BeautifulSoup
 import db_models
+from dependencies import log
 from crud import utils
 from crud.contents_crud import ref_to_bcv, bcv_to_ref
-from custom_exceptions import NotAvailableException, TypeException
+from custom_exceptions import NotAvailableException, TypeException, GitlabException
 
 access_token = os.environ.get("VACHAN_GITLAB_TOKEN")
 BYTES_PER_RESPONSE = 100000
@@ -70,7 +72,16 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
         # file_obj = project.files.get(file_path=file_path, ref=tag)
         # file_raw = project.files.raw(file_path=file_path, ref=file_obj.commit_id)
         # stream = file_raw
-        stream = gl.http_get(url).content
+        try:
+            stream = gl.http_get(url).content
+        except gitlab.GitlabHttpError as exe:
+            soup = BeautifulSoup(str(exe), features="html.parser")
+            for script in soup(["script", "style"]):
+                script.decompose()
+            strips = list(soup.stripped_strings)
+            details = ".".join(strips)
+            log.error(details)
+            raise GitlabException(detail=details) from exe
         if len(CACHEDMEDIA) == MEDIA_CACHE_LIMIT:
             CACHEDMEDIA = sorted(CACHEDMEDIA, key=lambda x: x['last_access'], reverse=False)
             CACHEDMEDIA.pop(0)
@@ -101,7 +112,16 @@ def get_gitlab_download(repo, tag, permanent_link, file_path):
         url = permanent_link
 
     file_name = url.split("/")[-1]
-    stream = gl.http_get(url).content
+    try:
+        stream = gl.http_get(url).content
+    except gitlab.GitlabHttpError as exe:
+        soup = BeautifulSoup(str(exe), features="html.parser")
+        for script in soup(["script", "style"]):
+            script.decompose()
+        strips = list(soup.stripped_strings)
+        details = ".".join(strips)
+        log.error(details)
+        raise GitlabException(detail=details) from exe
     response = Response(stream)
 
     response.headers["Content-Disposition"] = f"attachment; filename={file_name}"

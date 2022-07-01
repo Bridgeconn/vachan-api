@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from custom_exceptions import GenericException,TypeException , PermissionException,\
     UnprocessableException,NotAvailableException, AlreadyExistsException,\
-        UnAuthorizedException
+        UnAuthorizedException, GitlabException
 import db_models
 from database import engine
 from dependencies import get_db, log
@@ -181,6 +181,16 @@ async def unique_violation_exception_handler(request, exc: IntegrityError):
         content={"error": "Already Exists", "details" : str(exc.orig).replace("DETAIL","")},
     )
 
+@app.exception_handler(GitlabException)
+async def gitlab_exception_handler(request, exc: GitlabException):
+    '''logs and returns error details'''
+    log.error("Request URL:%s %s,  from : %s",
+        request.method ,request.url.path, request.client.host)
+    log.exception("%s: %s","Gitlab Error", exc.__dict__)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": exc.name, "details": str(exc.detail)}
+    )
 ######################################################
 
 db_models.map_all_dynamic_tables(db_= next(get_db()))
