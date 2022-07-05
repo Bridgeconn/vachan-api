@@ -106,7 +106,7 @@ services:
    - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD}
    - VACHAN_TEST_MODE="False"
    - VACHAN_LOGGING_LEVEL=INFO
-   - VACHAN_GITLAB_TOKEN=${VACHAN_GITLAB_TOKEN}
+   - VACHAN_GITLAB_TOKEN=${VACHAN_GITLAB_TOKEN:-none}
   command: uvicorn main:app --host 0.0.0.0 --port 8000
   volumes:
    # - ./app:/app/app
@@ -139,9 +139,37 @@ services:
   networks:
    - my-network
 
+ #reddis
+ redis:
+  container_name: redis
+  image: "redis:alpine"
+  ports:
+    - "6379:6379"
+  volumes:
+    # save redisearch data to your current working directory
+    # - ./redis-data:/data
+    - redis-data:/app/data
+  command: redis-server
+  networks:
+   - my-network
+
+ # redis db visualization dashboard
+ redisinsight: 
+  container_name: redisinsight
+  image: redislabs/redisinsight:latest
+  ports:
+    - '8001:8001'
+  volumes:
+    # - ./redisinsight:/db
+    - redisinsight:/app/db
+  networks:
+   - my-network
+
 networks:
  my-network:              
 volumes:
   vachan-db-vol:
   logs-vol:
   kratos-sqlite:
+  redis-data:
+  redisinsight:

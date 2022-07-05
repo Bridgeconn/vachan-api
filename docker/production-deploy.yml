@@ -92,6 +92,20 @@ services:
   networks:
    - my-network
 
+#reddis
+ redis:
+  container_name: redis
+  image: "redis:alpine"
+  ports:
+    - "6379:6379"
+  volumes:
+    # save redisearch data to your current working directory
+    # - ./redis-data:/data
+    - redis-data:/app/data
+  command: redis-server
+  networks:
+   - my-network
+
 # Web Server
  web-server:
   image: nginx:latest
@@ -126,4 +140,5 @@ networks:
 volumes:
   vachan-db-vol:
   logs-vol:
+  redis-data:
   # kratos-sqlite:
