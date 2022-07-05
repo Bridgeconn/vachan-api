@@ -77,11 +77,6 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
             details = ".".join(strips)
             log.error(details)
             raise GitlabException(detail=details) from exe
-        if len(CACHEDMEDIA) == MEDIA_CACHE_LIMIT:
-            CACHEDMEDIA = sorted(CACHEDMEDIA, key=lambda x: x['last_access'], reverse=False)
-            CACHEDMEDIA.pop(0)
-        CACHEDMEDIA.append({"url":url, "stream":stream, "last_access":datetime.now()})
-
     total_size = len(stream)
 
     start_byte_requested = int(asked.split("=")[-1][:-1])
