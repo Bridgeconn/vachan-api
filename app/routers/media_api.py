@@ -97,11 +97,6 @@ async def stream_media(request: Request, #pylint: disable=unused-argument,too-ma
 
     # redis cache part
     stream = get_routes_from_cache(key= permanent_link)
-    # print("stream type from cache --------------->",type(stream))
-    if stream is None:
-        stream = media_crud.get_gitlab_download(repo, tag, permanent_link, file_path)
-        # print("stream type direct gitlab --------------->",type(stream))
-        set_routes_to_cache(key=permanent_link, value=stream)
 
     return media_crud.get_gitlab_stream(request, repo, tag, file_path,
         permanent_link, start_time=start_time, end_time=end_time, stream = stream)
