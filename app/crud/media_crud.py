@@ -100,7 +100,7 @@ def get_gitlab_download(repo, tag, permanent_link, file_path):
     else:
         url = permanent_link
 
-    file_name = url.split("/")[-1]
+    # file_name = url.split("/")[-1]
     try:
         stream = gl.http_get(url).content
     except gitlab.GitlabHttpError as exe:
@@ -111,13 +111,13 @@ def get_gitlab_download(repo, tag, permanent_link, file_path):
         details = ".".join(strips)
         log.error(details)
         raise GitlabException(detail=details) from exe
-    response = Response(stream)
+    # response = Response(stream)
 
-    response.headers["Content-Disposition"] = f"attachment; filename={file_name}"
-    response.headers["Content-Type"] = "application/force-download"
-    response.headers["Content-Transfer-Encoding"] = "Binary"
-    response.headers["Content-Type"] = "application/octet-stream"
-    return response
+    # response.headers["Content-Disposition"] = f"attachment; filename={file_name}"
+    # response.headers["Content-Type"] = "application/force-download"
+    # response.headers["Content-Transfer-Encoding"] = "Binary"
+    # response.headers["Content-Type"] = "application/octet-stream"
+    return stream
 
 
 def find_media_source(repo, db_):

@@ -95,7 +95,7 @@ async def stream_media(request: Request, #pylint: disable=unused-argument,too-ma
     repo, tag, permanent_link, file_path = await get_and_accesscheck_for_repo(repo, file_path,
         tag, permanent_link, db_, request, user_details)
 
-    # redis cache part
+    # redis cache check
     stream = get_routes_from_cache(key= permanent_link)
 
     return media_crud.get_gitlab_stream(request, repo, tag, file_path,
@@ -131,16 +131,15 @@ async def download_media(request: Request, #pylint: disable=too-many-arguments
     repo, tag, permanent_link, file_path = await get_and_accesscheck_for_repo(repo, file_path,
         tag, permanent_link, db_, request, user_details)
 
-    # redis cache part
+    # redis cache check
     data = get_routes_from_cache(key= permanent_link)
-    # print("stream type from cache --------------->",type(data))
     if data is None:
         data = media_crud.get_gitlab_download(repo, tag, permanent_link, file_path)
         # print("stream type direct gitlab --------------->",type(data))
         set_routes_to_cache(key=permanent_link, value=data)
 
     response =  Response(data)
-    response.headers["Content-Disposition"] = "attachment; filename=stream.mp4"
+    response.headers["Content-Disposition"]=f"attachment; filename={permanent_link.split('/')[-1]}"
     response.headers["Content-Type"] = "application/force-download"
     response.headers["Content-Transfer-Encoding"] = "Binary"
     response.headers["Content-Type"] = "application/octet-stream"
