@@ -119,7 +119,6 @@ def get_gitlab_download(repo, tag, permanent_link, file_path):
     response.headers["Content-Type"] = "application/octet-stream"
     return response
 
-    return stream
 
 def find_media_source(repo, db_):
     """find source of requested gitlab media"""
