@@ -173,7 +173,7 @@ services:
      - my-network
 
 networks:
-   my-network
+   my-network:
 
 volumes:
   vachan-db-vol:
