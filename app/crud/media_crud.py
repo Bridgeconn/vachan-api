@@ -8,7 +8,7 @@ import sqlalchemy
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
 from fastapi import HTTPException
-from fastapi.responses import StreamingResponse, Response
+from fastapi.responses import StreamingResponse
 from bs4 import BeautifulSoup
 import db_models
 from dependencies import log
