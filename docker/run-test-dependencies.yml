@@ -85,21 +85,9 @@ services:
    - ../db/csvs:/csvs
    - ../db/seed_DB.sql:/docker-entrypoint-initdb.d/seed_DB.sql
 
- redis:
-  container_name: redis
-  image: "redis:alpine"
-  ports:
-    - "6379:6379"
-  volumes:
-    # save redisearch data to your current working directory
-    # - ./redis-data:/data
-    - redis-data:/app/data
-  command: redis-server
-  networks:
-   - my-test-network
-
 networks:
- my-test-network:              
+ my-test-network
+
 volumes:
   vachan-db-test-vol:
   logs-test-vol:
