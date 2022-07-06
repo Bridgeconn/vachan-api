@@ -1,4 +1,5 @@
 ''' Redis Db Connection and util functions'''
+import os
 from datetime import timedelta
 import redis
 from dependencies import log
@@ -7,12 +8,16 @@ from custom_exceptions import UnAuthorizedException
 # redis connection
 def redis_connect() -> redis.client.Redis:
     """Connect Reddis"""
+    redis_host = os.environ.get("VACHAN_REDIS_HOST", "redis")
+    redis_port = os.environ.get("VACHAN_REDIS_PORT", 6379)
+    redis_pass = os.environ.get("VACHAN_REDIS_PASS", "XXX")
+    
     try:
         log.info('In redis connection util')
         client = redis.Redis(
-            host="redis",
-            # host="localhost",
-            port=6379,
+            host=redis_host,
+            password=redis_pass,
+            port=redis_port,
             db=0,
             socket_timeout=5,
         )
@@ -24,9 +29,9 @@ def redis_connect() -> redis.client.Redis:
     except redis.AuthenticationError as redis_auth_error:
         log.error("Auth error from Redis!!!")
         raise UnAuthorizedException("Redis Connection Failed") from redis_auth_error
-    except Exception as any_error:
-        log.error("Redis connection failed. May be Redis container is not running at redis:6379 \
-correct details below.")
+    except Exception as any_error: #pylint: disable=W0703
+        log.error(f"Redis connection failed. May be Redis container is not running at \
+{redis_host}:{redis_port}.")
         log.error(any_error)
         # not raisig error to be able to function even without redis, eg. local dev
         return None 
