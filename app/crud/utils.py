@@ -89,7 +89,7 @@ books = {
 67: {"book_code": "rev", "book_name": "revelation"}
 }
 
-BOOK_CODES = [ books[key]['book_code'] for key in books]
+BOOK_CODES = [ val['book_code'] for key, val in books.items()]
 
 
 def book_code(book_num):
