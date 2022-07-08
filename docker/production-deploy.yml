@@ -79,6 +79,10 @@ services:
    - VACHAN_TEST_MODE="False"
    - VACHAN_LOGGING_LEVEL=INFO
    - VACHAN_GITLAB_TOKEN=${VACHAN_GITLAB_TOKEN}
+   - VACHAN_REDIS_HOST=redis
+   - VACHAN_REDIS_PORT=6379
+   - VACHAN_REDIS_PASS=${VACHAN_REDIS_PASS}
+
   command: uvicorn main:app --host 0.0.0.0 --port 8000
   volumes:
    # - ./app:/app/app
@@ -89,6 +93,20 @@ services:
    # - kratos
   expose:
    - 8000
+  networks:
+   - my-network
+
+#reddis
+ redis:
+  container_name: redis
+  image: "redis:alpine"
+  expose:
+    - 6379
+  volumes:
+    # save redisearch data to your current working directory
+    # - ./redis-data:/data
+    - redis-data:/app/data
+  command: redis-server --requirepass ${VACHAN_REDIS_PASS}
   networks:
    - my-network
 
@@ -126,4 +144,5 @@ networks:
 volumes:
   vachan-db-vol:
   logs-vol:
+  redis-data:
   # kratos-sqlite:

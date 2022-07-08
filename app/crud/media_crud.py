@@ -3,13 +3,12 @@ related to gitlab media operations'''
 import os
 import re
 import mimetypes
-from datetime import datetime
 import gitlab
 import sqlalchemy
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
 from fastapi import HTTPException
-from fastapi.responses import StreamingResponse, Response
+from fastapi.responses import StreamingResponse
 from bs4 import BeautifulSoup
 import db_models
 from dependencies import log
@@ -19,9 +18,6 @@ from custom_exceptions import NotAvailableException, TypeException, GitlabExcept
 
 access_token = os.environ.get("VACHAN_GITLAB_TOKEN")
 BYTES_PER_RESPONSE = 100000
-CACHEDMEDIA = []
-cached_media_download = []
-MEDIA_CACHE_LIMIT = 3
 
 gl = gitlab.Gitlab(url="https://gitlab.bridgeconn.com", private_token=access_token)
 
@@ -36,9 +32,13 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
     """get stream from gtilab"""
     start_time = kwargs.get("start_time", None)#pylint: disable=W0612
     end_time = kwargs.get("end_time", None)#pylint: disable=W0612
+    stream = kwargs.get("stream", None)#pylint: disable=W0612
+
+    # asked = request.headers.get("Range")
+    # print("comes in router func once with range:", asked)
+
     # asked = None
 
-    global CACHEDMEDIA #pylint: disable=W0603
     if permanent_link is None or permanent_link == '':
         url = f"{repo}/-/raw/{tag}/{file_path}"
     else:
@@ -59,11 +59,6 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
         raise HTTPException(status_code=406,
             detail="This is a Streaming api , Call it from supported players")
 
-    stream = None
-    for med in CACHEDMEDIA:
-        if url == med['url']:
-            stream = med['stream']
-            med['last_access'] = datetime.now()
     if stream is None:
         # # Currently, it is not possible to fetch LFS-tracked files from the API at all.
         # # https://gitlab.com/gitlab-org/gitlab-foss/-/issues/41843
@@ -82,13 +77,7 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
             details = ".".join(strips)
             log.error(details)
             raise GitlabException(detail=details) from exe
-        if len(CACHEDMEDIA) == MEDIA_CACHE_LIMIT:
-            CACHEDMEDIA = sorted(CACHEDMEDIA, key=lambda x: x['last_access'], reverse=False)
-            CACHEDMEDIA.pop(0)
-        CACHEDMEDIA.append({"url":url, "stream":stream, "last_access":datetime.now()})
-
     total_size = len(stream)
-    # print("file size with len:", total_size)
 
     start_byte_requested = int(asked.split("=")[-1][:-1])
     end_byte_planned = min(start_byte_requested + BYTES_PER_RESPONSE, total_size)
@@ -111,7 +100,7 @@ def get_gitlab_download(repo, tag, permanent_link, file_path):
     else:
         url = permanent_link
 
-    file_name = url.split("/")[-1]
+    # file_name = url.split("/")[-1]
     try:
         stream = gl.http_get(url).content
     except gitlab.GitlabHttpError as exe:
@@ -122,13 +111,13 @@ def get_gitlab_download(repo, tag, permanent_link, file_path):
         details = ".".join(strips)
         log.error(details)
         raise GitlabException(detail=details) from exe
-    response = Response(stream)
+    # response = Response(stream)
 
-    response.headers["Content-Disposition"] = f"attachment; filename={file_name}"
-    response.headers["Content-Type"] = "application/force-download"
-    response.headers["Content-Transfer-Encoding"] = "Binary"
-    response.headers["Content-Type"] = "application/octet-stream"
-    return response
+    # response.headers["Content-Disposition"] = f"attachment; filename={file_name}"
+    # response.headers["Content-Type"] = "application/force-download"
+    # response.headers["Content-Transfer-Encoding"] = "Binary"
+    # response.headers["Content-Type"] = "application/octet-stream"
+    return stream
 
 
 def find_media_source(repo, db_):

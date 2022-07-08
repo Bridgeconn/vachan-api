@@ -6,7 +6,8 @@ from .test_auth_basic import login,SUPER_USER,SUPER_PASSWORD,logout_user
 from .conftest import initial_test_users
 
 UNIT_URL = '/v2/media/gitlab'
-REPO_PERMANENT_LINK = "https://gitlab.bridgeconn.com/Test.User/trial-media-project/-/blob/main/large videos/graphql.mp4"
+# REPO_PERMANENT_LINK = "https://gitlab.bridgeconn.com/Test.User/trial-media-project/-/blob/main/large videos/graphql.mp4"
+REPO_PERMANENT_LINK = "https://gitlab.bridgeconn.com/Siju.Moncy/trial-media-project/-/blob/main/large videos/graphql.mp4"
 
 headers = {"contentType": "application/json", "accept": "application/json"}
 
@@ -55,7 +56,7 @@ def media_common(endpoint,permanent_link, repo, file_path):
 
     # stream only support audio and video
     if endpoint == "/stream":
-        jpg_link = "https://gitlab.bridgeconn.com/Test.User/trial-media-project/-/blob/main/image/Bible_Timeline.jpg"
+        jpg_link = "https://gitlab.bridgeconn.com/Siju.Moncy/trial-media-project/-/blob/main/image/Bible_Timeline.jpg"
         response = response = client.get(UNIT_URL+"/stream"+"?permanent_link="+jpg_link+
         "&access_token="+initial_test_users['VachanAdmin']['token'])
         assert response.status_code == 406
@@ -70,7 +71,7 @@ def media_common(endpoint,permanent_link, repo, file_path):
 
 def test_media_download_checks():
     """checks for download api"""
-    media_common("/download", REPO_PERMANENT_LINK,
+    media_common("/download",REPO_PERMANENT_LINK,
         "https://gitlab.bridgeconn.com/Siju.Moncy/trial-media-project", "large videos/graphql.mp4")
 
 def test_media_stream_checks():
