@@ -89,6 +89,9 @@ books = {
 67: {"book_code": "rev", "book_name": "revelation"}
 }
 
+BOOK_CODES = [ books[key]['book_code'] for key in books]
+
+
 def book_code(book_num):
     '''get the book for for the input bokk number'''
     if book_num in books:
