@@ -48,7 +48,7 @@ def create_agmt_project(db_:Session, project, user_id=None):
     # db_.commit()
     return db_content
 
-book_pattern_in_surrogate_id = re.compile(r'^\w\w\w')
+book_pattern_in_surrogate_id = re.compile(r'^[\w\d]\w\w')
 def update_agmt_project_sentences(db_, project_obj, new_books, user_id):
     """bulk selected book update in update agmt project"""
     for sent in project_obj.sentenceList:
