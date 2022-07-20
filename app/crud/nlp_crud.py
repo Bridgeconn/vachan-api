@@ -578,11 +578,9 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0
             raise NotAvailableException("Language, %s, not available"%trg_lang)
     else:
         target_lang = trg_lang
-
     #function for gloss data process
     db_content= add_translation_memory_gloss_dataprocess(db_, gloss_list, source_lang,
             target_lang, default_val)
-
     cached_trie = get_routes_from_cache(key=f"token_trie/{src_lang}")
     space_pattern = re.compile(r'\s+')
     if cached_trie is not None:
@@ -591,7 +589,6 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0
             trie_key = re.sub(space_pattern,'/', item.token)
             memory_trie[trie_key] = 0
         set_routes_to_cache(key=f'token_trie/{src_lang}', value=pickle.dumps(memory_trie))
-
     result_dict = {}
     for item in db_content:
         db_.refresh(item)
@@ -611,7 +608,6 @@ def get_gloss_chop_word(db_, no_trie_match, trans, matched_word,*args):
     pass_no = args[2]
     source_lang = args[3]
     target_lang = args[4]
-
     if len(trans) == 0 and pass_no<3 and len(word)>4:
         # try chopping off the last letter
         chopped_word = word[:-1]
@@ -631,7 +627,6 @@ def get_gloss_chop_word(db_, no_trie_match, trans, matched_word,*args):
     else:
         result['token'] = word
     result['translations'] = scored_trans
-
     return result
 
 def gloss_forward_reverse_query(db_, word, source_lang, target_lang, total, *args):
@@ -785,7 +780,6 @@ def auto_translate(db_, sentence_list, source_lang, target_lang, **kwargs):
 
         #auto tranaslte token loop
         auto_translate_token_logic(db_,tokens, sent, source_lang, target_lang)
-
     return sentence_list
 
 def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range, sentence_id_list,

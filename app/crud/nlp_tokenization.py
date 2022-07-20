@@ -141,6 +141,22 @@ def tokenize_logic(include_phrases,chunks,include_stopwords,stop_words):
 
     return phrases,stop_words
 
+def get_token_trie(db_, src_lang):
+    '''either get trie from cache or build one'''
+    cached_trie = get_routes_from_cache(key= f"token_trie/{src_lang}")
+    if cached_trie is not None:
+        memory_trie = pickle.loads(cached_trie)
+    else:
+        translation_memory = db_.query(db_models.TranslationMemory.token).filter(
+            db_models.TranslationMemory.source_language.has(code=src_lang)).all()#pylint: disable=E1101
+        reverse_memory = db_.query(db_models.TranslationMemory.translation).filter(
+            db_models.TranslationMemory.target_language.has(code=src_lang)).all()#pylint: disable=E1101
+        memory_trie = build_memory_trie(translation_memory+reverse_memory)
+        value_to_cache = pickle.dumps(memory_trie)
+        set_routes_to_cache(key=f"token_trie/{src_lang}", value=value_to_cache)
+    return memory_trie
+
+
 def tokenize(db_:Session, src_lang, sent_list, #pylint: disable=too-many-locals
     use_translation_memory=True, include_phrases=True,**kwargs):
     '''Get phrase and single word tokens and their occurances from input sentence list.
@@ -163,18 +179,7 @@ def tokenize(db_:Session, src_lang, sent_list, #pylint: disable=too-many-locals
     # We do this fresh for every tokenization request. Can be optimized
     if use_translation_memory and include_phrases:
         # redis cache check
-        memory_trie = None
-        memory_trie = get_routes_from_cache(key= f"token_trie/{src_lang}")
-        if memory_trie is not None:
-            memory_trie = pickle.loads(memory_trie)
-        else:
-            translation_memory = db_.query(db_models.TranslationMemory.token).filter(
-                db_models.TranslationMemory.source_language.has(code=src_lang)).all()#pylint: disable=E1101
-            reverse_memory = db_.query(db_models.TranslationMemory.translation).filter(
-                db_models.TranslationMemory.target_language.has(code=src_lang)).all()#pylint: disable=E1101
-            memory_trie = build_memory_trie(translation_memory+reverse_memory)
-            value_to_cache = pickle.dumps(memory_trie)
-            set_routes_to_cache(key=f"token_trie/{src_lang}", value=value_to_cache)
+        memory_trie = get_token_trie(db_, src_lang)
     for sent in sent_list:
         if not isinstance(sent, dict):
             sent = sent.__dict__
