@@ -4,6 +4,7 @@ related to NLP operations and translation apps'''
 import re
 import os
 import json
+import pickle
 from datetime import datetime
 from math import floor, ceil
 from pathlib import Path
@@ -19,6 +20,7 @@ import db_models
 from dependencies import log
 from custom_exceptions import NotAvailableException, TypeException, GenericException
 from schema.schemas_nlp import TranslationDocumentType
+from redis_db.utils import  get_routes_from_cache, set_routes_to_cache
 
 #Based on sqlalchemy
 #pylint: disable=W0102,E1101,W0143,C0206
@@ -580,6 +582,15 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0
     #function for gloss data process
     db_content= add_translation_memory_gloss_dataprocess(db_, gloss_list, source_lang,
             target_lang, default_val)
+
+    cached_trie = get_routes_from_cache(key=f"token_trie/{src_lang}")
+    space_pattern = re.compile(r'\s+')
+    if cached_trie is not None:
+        memory_trie = pickle.loads(cached_trie)
+        for item in db_content:
+            trie_key = re.sub(space_pattern,'/', item.token)
+            memory_trie[trie_key] = 0
+        set_routes_to_cache(key=f'token_trie/{src_lang}', value=pickle.dumps(memory_trie))
 
     result_dict = {}
     for item in db_content:

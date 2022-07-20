@@ -43,6 +43,10 @@ def get_routes_from_cache(key: str):
     val = None
     if redis_client is not None:
         val = redis_client.get(key)
+    if val is not None:
+        log.info("Redis: cache hit!!!!!!!!")
+    else:
+        log.info("Redis: cache miss~~~~~~~~~~~")
     return val
 
 def set_routes_to_cache(key: str, value: str):
@@ -51,7 +55,8 @@ def set_routes_to_cache(key: str, value: str):
     redis_client = redis_connect()
     state = None
     if redis_client is not None:
-        state = redis_client.setex(key, timedelta(seconds=180), value=value)
+        state = redis_client.setex(key, timedelta(days=100), value=value)
+        log.info("Redis: cache update $$$$$$$$$$$$$")
     return state
 
 def del_cache(key: str):

@@ -1,12 +1,14 @@
 ''' Place to define all utitlity functions
 related to NLP operations and translation apps'''
 import re
+import pickle
 import pygtrie
 from sqlalchemy.orm import Session
 
 from crud import utils
 import db_models
 from custom_exceptions import NotAvailableException
+from redis_db.utils import  get_routes_from_cache, set_routes_to_cache
 
 
 def build_memory_trie(translation_memory):
@@ -18,9 +20,10 @@ def build_memory_trie(translation_memory):
         memory_trie[key] = 0
     return memory_trie
 
-mock_translation_memory = ["जीवन के वचन", "जीवन का", "अपनी आँखों से देखा", "पिता के साथ",
-                          "यीशु मसीह", "परमेश्‍वर ज्योति", "झूठा ठहराते",
-                          "Here is it", "hare", "no"]
+mock_translation_memory = [("जीवन के वचन",), ("जीवन का",), ("अपनी आँखों से देखा",),
+                          ("पिता के साथ",),
+                          ("यीशु मसीह",), ("परमेश्‍वर ज्योति",), ("झूठा ठहराते",),
+                          ("Here is it",), ("hare",), ("no",)]
 
 def find_phrases_loop(words,stop_words,phrases,current_phrase):
     """logic loop for find phrases"""
@@ -159,11 +162,19 @@ def tokenize(db_:Session, src_lang, sent_list, #pylint: disable=too-many-locals
     # fetch all known tokens for the language and build a trie with it
     # We do this fresh for every tokenization request. Can be optimized
     if use_translation_memory and include_phrases:
-        translation_memory = db_.query(db_models.TranslationMemory.token).filter(
-            db_models.TranslationMemory.source_language.has(code=src_lang)).all()#pylint: disable=E1101
-        reverse_memory = db_.query(db_models.TranslationMemory.translation).filter(
-            db_models.TranslationMemory.target_language.has(code=src_lang)).all()#pylint: disable=E1101
-        memory_trie = build_memory_trie(translation_memory+reverse_memory)
+        # redis cache check
+        memory_trie = None
+        memory_trie = get_routes_from_cache(key= f"token_trie/{src_lang}")
+        if memory_trie is not None:
+            memory_trie = pickle.loads(memory_trie)
+        else:
+            translation_memory = db_.query(db_models.TranslationMemory.token).filter(
+                db_models.TranslationMemory.source_language.has(code=src_lang)).all()#pylint: disable=E1101
+            reverse_memory = db_.query(db_models.TranslationMemory.translation).filter(
+                db_models.TranslationMemory.target_language.has(code=src_lang)).all()#pylint: disable=E1101
+            memory_trie = build_memory_trie(translation_memory+reverse_memory)
+            value_to_cache = pickle.dumps(memory_trie)
+            set_routes_to_cache(key=f"token_trie/{src_lang}", value=value_to_cache)
     for sent in sent_list:
         if not isinstance(sent, dict):
             sent = sent.__dict__
