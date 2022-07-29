@@ -19,6 +19,10 @@
         "refer-for-translation": ["SuperAdmin", "AgAdmin", "AgUser"],
         "translate":["SuperAdmin", "AgAdmin", "AgUser"]
     },
+    "editable":{
+        "create": ["SuperAdmin", "VachanAdmin", "AgAdmin", "AgUser"],
+        "edit": ["SuperAdmin", "VachanAdmin", "AgAdmin", "AgUser"]
+    },
     "publishable":{
         "read-via-api":["registeredUser"],
         "view-on-web":["noAuthRequired"],

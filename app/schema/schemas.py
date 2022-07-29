@@ -137,6 +137,7 @@ class SourcePermissions(str, Enum):
     DOWNLOADABLE = "downloadable"
     DERIVABLE = "derivable"
     RESEARCHUSE = "research-use"
+    EDITABLE = "editable"
 
 LicenseCodePattern =constr(regex=r"^[a-zA-Z0-9\.\_\-]+$")
 
