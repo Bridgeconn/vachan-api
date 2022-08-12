@@ -99,6 +99,8 @@ To re-create SSL certificates, follow instructions [here](https://mindsers.blog/
 docker-compose -f production.yml run --rm certbot renew
 ```
 
+After this make sure the certificate folder in the app root has access permission. or change it with `sudo chmod -R 777 certbot/`
+
 ### To start the app
 
 ```
