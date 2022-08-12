@@ -11,7 +11,7 @@ def redis_connect() -> redis.client.Redis:
     redis_host = os.environ.get("VACHAN_REDIS_HOST", "redis")
     redis_port = os.environ.get("VACHAN_REDIS_PORT", 6379)
     redis_pass = os.environ.get("VACHAN_REDIS_PASS", "XXX")
-    
+
     try:
         log.info('In redis connection util')
         client = redis.Redis(
@@ -30,11 +30,11 @@ def redis_connect() -> redis.client.Redis:
         log.error("Auth error from Redis!!!")
         raise UnAuthorizedException("Redis Connection Failed") from redis_auth_error
     except Exception as any_error: #pylint: disable=W0703
-        log.error(f"Redis connection failed. May be Redis container is not running at \
-{redis_host}:{redis_port}.")
+        log.error("Redis connection failed. May be Redis container is not running at %s:%s.",
+            redis_host, redis_port)
         log.error(any_error)
         # not raisig error to be able to function even without redis, eg. local dev
-        return None 
+        return None
 
 def get_routes_from_cache(key: str):
     """Data from redis."""
