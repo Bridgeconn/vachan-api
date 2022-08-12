@@ -137,6 +137,7 @@ class SourcePermissions(str, Enum):
     DOWNLOADABLE = "downloadable"
     DERIVABLE = "derivable"
     RESEARCHUSE = "research-use"
+    EDITABLE = "editable"
 
 LicenseCodePattern =constr(regex=r"^[a-zA-Z0-9\.\_\-]+$")
 
@@ -409,3 +410,7 @@ class SourceEdit(BaseModel):
         }
 
 BookCodePattern = constr(regex=r"^[a-zA-Z1-9][a-zA-Z][a-zA-Z]$")
+
+class RefreshCache(BaseModel):
+    '''List of file paths'''
+    mediaList: List[str] = None

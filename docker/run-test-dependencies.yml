@@ -86,8 +86,10 @@ services:
    - ../db/seed_DB.sql:/docker-entrypoint-initdb.d/seed_DB.sql
 
 networks:
- my-test-network:              
+ my-test-network:
+
 volumes:
   vachan-db-test-vol:
   logs-test-vol:
   kratos-sqlite-test:
+  redis-data:

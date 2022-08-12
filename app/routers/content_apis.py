@@ -1,17 +1,18 @@
 '''API endpoints related to content management'''
 import json
 from typing import List
-from fastapi import APIRouter, Query, Body, Depends, Path , Request
+from fastapi import APIRouter, Query, Body, Depends, Path , Request,\
+    BackgroundTasks
 from sqlalchemy.orm import Session
-
+import db_models
 from schema import schemas,schemas_nlp, schema_auth, schema_content
 from dependencies import get_db, log, AddHiddenInput
+from crud import structurals_crud, contents_crud, nlp_sw_crud, media_crud
 from custom_exceptions import NotAvailableException, AlreadyExistsException,\
     UnprocessableException
-from crud import structurals_crud, contents_crud
+
 from auth.authentication import get_auth_access_check_decorator ,\
     get_user_or_none
-import db_models
 
 router = APIRouter()
 
@@ -574,14 +575,14 @@ async def get_commentary(request: Request,
         active=active, skip = skip, limit = limit)
 
 @router.post('/v2/commentaries/{source_name}',
-    response_model=schema_content.CommentaryCreateResponse,
+    response_model=schema_content.CommentaryCreateResponse, response_model_exclude_none=True,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
     401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
     415:{"model": schemas.ErrorResponse}},
     status_code=201, tags=["Commentaries"])
 @get_auth_access_check_decorator
-async def add_commentary(request: Request,
+async def add_commentary(request: Request,background_tasks: BackgroundTasks,
     source_name : schemas.TableNamePattern=Path(...,example="en_BBC_1_commentary"),
     commentaries: List[schema_content.CommentaryCreate] = Body(...),
     user_details =Depends(get_user_or_none),
@@ -598,18 +599,30 @@ async def add_commentary(request: Request,
     verses fields can be null in these cases'''
     log.info('In add_commentary')
     log.debug('source_name: %s, commentaries: %s',source_name, commentaries)
-    return {'message': "Commentaries added successfully",
-    "data": contents_crud.upload_commentaries(db_=db_, source_name=source_name,
-        commentaries=commentaries, user_id=user_details['user_id'])}
+    # verify source exist
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    job_info = nlp_sw_crud.create_job(db_=db_, user_id=user_details['user_id'])
+    job_id = job_info.jobId
+    background_tasks.add_task(contents_crud.upload_commentaries,db_=db_, source_name=source_name,
+        commentaries=commentaries, job_id=job_id, user_id=user_details['user_id'])
+    data = {"jobId": job_info.jobId, "status": job_info.status}
+    job_resp = {"message": "Uploading Commentaries in background", "data": data}
+    return {'db_content':job_resp,'source_content':source_db_content}
+    # return {'message': "Commentaries added successfully",
+    # "data": contents_crud.upload_commentaries(db_=db_, source_name=source_name,
+    #     commentaries=commentaries, user_id=user_details['user_id'])}
 
 @router.put('/v2/commentaries/{source_name}',
-    response_model=schema_content.CommentaryUpdateResponse,
+    response_model=schema_content.CommentaryUpdateResponse,response_model_exclude_none=True,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
     401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
     status_code=201, tags=["Commentaries"])
 @get_auth_access_check_decorator
-async def edit_commentary(request: Request,
+async def edit_commentary(request: Request,background_tasks: BackgroundTasks,
     source_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
     commentaries: List[schema_content.CommentaryEdit] = Body(...),
     user_details =Depends(get_user_or_none),
@@ -620,9 +633,21 @@ async def edit_commentary(request: Request,
     Deactivated items are not included in normal fetch results if not specified otherwise'''
     log.info('In edit_commentary')
     log.debug('source_name: %s, commentaries: %s',source_name, commentaries)
-    return {'message': "Commentaries updated successfully",
-    "data": contents_crud.update_commentaries(db_=db_, source_name=source_name,
-        commentaries=commentaries, user_id=user_details['user_id'])}
+    # verify source exist
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    if not source_db_content:
+        raise NotAvailableException('Source %s, not found in database'%source_name)
+    job_info = nlp_sw_crud.create_job(db_=db_, user_id=user_details['user_id'])
+    job_id = job_info.jobId
+    background_tasks.add_task(contents_crud.update_commentaries,db_=db_, source_name=source_name,
+        commentaries=commentaries, job_id=job_id, user_id=user_details['user_id'])
+    data = {"jobId": job_info.jobId, "status": job_info.status}
+    job_resp = {"message": "Updating Commentaries in background", "data": data}
+    return {'db_content':job_resp,'source_content':source_db_content}
+    # return {'message': "Commentaries updated successfully",
+    # "data": contents_crud.update_commentaries(db_=db_, source_name=source_name,
+    #     commentaries=commentaries, user_id=user_details['user_id'])}
 
 # # ########### Dictionary ###################
 @router.get('/v2/dictionaries/{source_name}',
@@ -797,7 +822,7 @@ async def get_biblevideo(request: Request,
     log.info('In get_biblevideo')
     log.debug('source_name: %s, book_code: %s, title: %s, theme: %s, skip: %s, limit: %s',
         source_name, book_code, title, series, skip, limit)
-    return contents_crud.get_bible_videos(db_, source_name, book_code, title, series,
+    return media_crud.get_bible_videos(db_, source_name, book_code, title, series,
     search_word=search_word,chapter=chapter,verse=verse,
     active=active, skip=skip, limit=limit)
 
@@ -819,7 +844,7 @@ async def add_biblevideo(request: Request,
     log.info('In add_biblevideo')
     log.debug('source_name: %s, videos: %s',source_name, videos)
     return {'message': "Bible videos added successfully",
-        "data": contents_crud.upload_bible_videos(db_=db_, source_name=source_name,
+        "data": media_crud.upload_bible_videos(db_=db_, source_name=source_name,
         videos=videos, user_id=user_details['user_id'])}
 
 @router.put('/v2/biblevideos/{source_name}', response_model=schema_content.BibleVideoUpdateResponse,
@@ -839,7 +864,7 @@ async def edit_biblevideo(request: Request,
     log.info('In edit_biblevideo')
     log.debug('source_name: %s, videos: %s',source_name, videos)
     return {'message': "Bible videos updated successfully",
-        "data": contents_crud.update_bible_videos(db_=db_, source_name=source_name,
+        "data": media_crud.update_bible_videos(db_=db_, source_name=source_name,
         videos=videos, user_id=user_details['user_id'])}
 
 @router.get('/v2/sources/get-sentence', response_model=List[schemas_nlp.SentenceInput],

@@ -2,11 +2,14 @@
 bible, commentary, infographic, biblevideo, dictionary etc'''
 import json
 import re
+from datetime import datetime
 import sqlalchemy
 from sqlalchemy.orm import Session, defer, joinedload
 from sqlalchemy.sql import text
 import db_models
 from crud import utils
+from crud.nlp_sw_crud import update_job
+from schema import schemas_nlp
 from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException
 
 def get_commentaries(db_:Session, *args,**kwargs):
@@ -34,35 +37,64 @@ def get_commentaries(db_:Session, *args,**kwargs):
             last_verse = verse
         query = query.filter(model_cls.verseStart <= verse, model_cls.verseEnd >= last_verse)
     query = query.filter(model_cls.active == active)
-    # return query.offset(skip).limit(limit).all()
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     response = {
         'db_content':query.offset(skip).limit(limit).all(),
-        'source_content':source_db_content
-        }
+        'source_content':source_db_content}
     return response
 
-def upload_commentaries(db_: Session, source_name, commentaries, user_id=None):
+def upload_commentaries(db_: Session, source_name, commentaries, job_id, user_id=None):#pylint: disable=too-many-locals,R1710
     '''Adds rows to the commentary table specified by source_name'''
+    update_args = {
+                    "status" : schemas_nlp.JobStatus.STARTED.value,
+                    "startTime": datetime.now()}
+    update_job(db_, job_id, user_id, update_args)
+
+    update_args = {
+                    "status" : schemas_nlp.JobStatus.ERROR.value,
+                    "endTime": datetime.now(),
+                    "output": {}}
+
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
-    if not source_db_content:
-        raise NotAvailableException('Source %s, not found in database'%source_name)
     if source_db_content.contentType.contentType != db_models.ContentTypeName.COMMENTARY.value:
-        raise TypeException('The operation is supported only on commentaries')
+        update_args["output"]= {
+                "message": 'The operation is supported only on commentaries',
+                "source_name": source_name,"data": None}
+        update_job(db_, job_id, user_id, update_args)
+        return None
+        # raise TypeException('The operation is supported only on commentaries')
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
+    db_content_out = []
     prev_book_code = None
     for item in commentaries:
+        if item.verseStart is not None and item.verseEnd is None:
+            item.verseEnd = item.verseStart
         if item.bookCode != prev_book_code:
             book = db_.query(db_models.BibleBook).filter(
                 db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
             prev_book_code = item.bookCode
             if not book:
-                raise NotAvailableException('Bible Book code, %s, not found in database')
-        if item.verseStart is not None and item.verseEnd is None:
-            item.verseEnd = item.verseStart
+                update_args["output"]= {
+                "message": 'Bible Book code, %s, not found in database'%prev_book_code,
+                "source_name": source_name,"data": None}
+                update_job(db_, job_id, user_id, update_args)
+                return None
+                # raise NotAvailableException('Bible Book code, %s, not found in database')
+            exist_check = db_.query(model_cls).filter(
+                model_cls.book_id == book.bookId, model_cls.chapter == item.chapter,
+                model_cls.verseStart == item.verseStart, model_cls.verseEnd == item.verseEnd,
+            ).first()
+            if exist_check:
+                update_args["output"]= {
+                "message": 'Already exist commentary with same values for reference range',
+                "book_id": book.bookId, "chapter":item.chapter, "verseStart" : item.verseStart,
+                "verseEnd" : item.verseEnd, "data": None}
+                update_job(db_, job_id, user_id, update_args)
+                return None
+
         row = model_cls(
             book_id = book.bookId,
             chapter = item.chapter,
@@ -70,27 +102,45 @@ def upload_commentaries(db_: Session, source_name, commentaries, user_id=None):
             verseEnd = item.verseEnd,
             commentary = utils.normalize_unicode(item.commentary),
             active=item.active)
+        row_out = {
+            "book" : {
+                "bookId": book.bookId,
+                "bookName": book.bookName,
+                "bookCode": book.bookCode,},
+            "chapter" :  item.chapter,
+            "verseStart" :  item.verseStart,
+            "verseEnd" :  item.verseEnd,
+            "commentary" :  utils.normalize_unicode(item.commentary),
+            "active": item.active}
         db_content.append(row)
+        db_content_out.append(row_out)
     db_.add_all(db_content)
     db_.expire_all()
     source_db_content.updatedUser = user_id
-    response = {
-        'db_content':db_content,
-        'source_content':source_db_content
-    }
-    return response
+    update_args = {
+        "status" : schemas_nlp.JobStatus.FINISHED.value,
+        "endTime": datetime.now(),
+        "output": {"message": "Commentaries added successfully","data": db_content_out}}
+    update_job(db_, job_id, user_id, update_args)
 
-def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
+def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=None):#pylint: disable=R1710
     '''Update rows, that matches book, chapter and verse range fields in the commentary table
     specified by source_name'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
-    if not source_db_content:
-        raise NotAvailableException('Source %s, not found in database'%source_name)
+    update_args = {"status" : schemas_nlp.JobStatus.STARTED.value,
+                    "startTime": datetime.now()}
+    update_job(db_, job_id, user_id, update_args)
+    update_args = {"status" : schemas_nlp.JobStatus.ERROR.value,
+                    "endTime": datetime.now(),"output": {}}
     if source_db_content.contentType.contentType != db_models.ContentTypeName.COMMENTARY.value:
-        raise TypeException('The operation is supported only on commentaries')
+        update_args["output"]= {"message": 'The operation is supported only on commentaries',
+                "source_name": source_name,"data": None}
+        update_job(db_, job_id, user_id, update_args)
+        return None
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
+    db_content_out = []
     prev_book_code = None
     for item in commentaries:
         if item.bookCode != prev_book_code:
@@ -98,28 +148,47 @@ def update_commentaries(db_: Session, source_name, commentaries, user_id=None):
                 db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
             prev_book_code = item.bookCode
             if not book:
-                raise NotAvailableException('Bible Book code, %s, not found in database')
+                update_args["output"]= {
+                "message": 'Bible Book code, %s, not found in database'%prev_book_code,
+                "source_name": source_name,"data": None}
+                update_job(db_, job_id, user_id, update_args)
+                return None
         row = db_.query(model_cls).filter(
             model_cls.book_id == book.bookId,
             model_cls.chapter == item.chapter,
             model_cls.verseStart == item.verseStart,
             model_cls.verseEnd == item.verseEnd).first()
         if not row:
-            raise NotAvailableException("Commentary row with bookCode:%s, chapter:%s, \
-                verseStart:%s, verseEnd:%s, not found for %s"%(
-                    item.bookCode, item.chapter, item.verseStart, item.verseEnd, source_name))
+            update_args["output"]= {
+                "message" : "Commentary row with bookCode:"+
+                    f"{item.bookCode},chapter:{item.chapter},verseStart:{item.verseStart},"+
+                    f"verseEnd:{item.verseEnd}, not found for {source_name}",
+                "source_name": source_name,"data": None}
+            update_job(db_, job_id, user_id, update_args)
+            return None
         if item.commentary:
             row.commentary = utils.normalize_unicode(item.commentary)
         if item.active is not None:
             row.active = item.active
         db_.flush()
         db_content.append(row)
+        row_out = {
+            "book" : {
+                "bookId": book.bookId,
+                "bookName": book.bookName,
+                "bookCode": book.bookCode,},
+            "chapter" :  row.chapter,
+            "verseStart" :  row.verseStart,
+            "verseEnd" :  row.verseEnd,
+            "commentary" :  row.commentary,
+            "active": row.active}
+        db_content_out.append(row_out)
     source_db_content.updatedUser = user_id
-    response = {
-        'db_content':db_content,
-        'source_content':source_db_content
-    }
-    return response
+    update_args = {
+        "status" : schemas_nlp.JobStatus.FINISHED.value,
+        "endTime": datetime.now(),
+        "output": {"message": "Commentaries updated successfully","data": db_content_out}}
+    update_job(db_, job_id, user_id, update_args)
 
 def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):#pylint: disable=too-many-locals
     '''Fetches rows of dictionary from the table specified by source_name'''
@@ -152,13 +221,11 @@ def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):#
             query = query.filter(model_cls.details.op('->>')(key) == det[key])
     query = query.filter(model_cls.active == active)
     res = query.offset(skip).limit(limit).all()
-    # return res
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     response = {
         'db_content':res,
-        'source_content':source_db_content
-        }
+        'source_content':source_db_content }
     return response
 
 def upload_dictionary_words(db_: Session, source_name, dictionary_words, user_id=None):
@@ -333,172 +400,6 @@ def bcv_to_ref(bcvref,db_):
         "verseNumber": str(bcvref)[-3:]
       }
     return ref
-
-def get_bible_videos(db_:Session, source_name, book_code=None, title=None, series=None,**kwargs):#pylint: disable=too-many-locals
-    '''fetches rows of bible videos as per provided source_name and filters'''
-    search_word = kwargs.get("search_word",None)
-    chapter = kwargs.get("chapter",None)
-    verse = kwargs.get("verse",None)
-    active = kwargs.get("active",True)
-    skip = kwargs.get("skip",0)
-    limit = kwargs.get("limit",100)
-    if source_name not in db_models.dynamicTables:
-        raise NotAvailableException('%s not found in database.'%source_name)
-    if not source_name.endswith(db_models.ContentTypeName.BIBLEVIDEO.value):
-        raise TypeException('The operation is supported only on biblevideo')
-    model_cls = db_models.dynamicTables[source_name]
-    query = db_.query(model_cls)
-    if title:
-        query = query.filter(model_cls.title == utils.normalize_unicode(title.strip()))
-    if series:
-        query = query.filter(model_cls.series == utils.normalize_unicode(series.strip()))
-    if search_word:
-        search_pattern = " & ".join(re.findall(r'\w+', search_word))
-        search_pattern += ":*"
-        query = query.filter(text("to_tsvector('simple', title || ' ' ||"+\
-            " series || ' ' || description || ' ')"+\
-            " @@ to_tsquery('simple', :pattern)").bindparams(pattern=search_pattern))
-    if book_code:
-        book = db_.query(db_models.BibleBook).filter(
-                db_models.BibleBook.bookCode == book_code.lower() ).first()
-        if book_code and chapter and verse:
-            bcv = ref_to_bcv(book.bookId,chapter,verse)
-            fullbook = int(str(book.bookId)+'000000')
-            book_chapter = book.bookId * 1000000 + chapter*1000
-            query = query.filter(sqlalchemy.or_(model_cls.refIds.any(int(bcv)),
-                model_cls.refIds.any(fullbook),model_cls.refIds.any(book_chapter)))
-        elif book_code and chapter:
-            book_chapter = book.bookId * 1000000 + chapter*1000
-            fullbook = int(str(book.bookId)+'000000')
-            raw_sql = f'''SELECT * FROM {model_cls.__tablename__}
-                WHERE EXISTS (SELECT 1 FROM unnest(
-                {model_cls.__tablename__}.ref_ids) AS ele WHERE
-                ele BETWEEN {book_chapter} and {book_chapter+1000} OR ele={fullbook})'''
-            result = db_.execute(raw_sql)
-            id_list = [row[0] for row in result]
-            query = query.filter(model_cls.bibleVideoId.in_(id_list))
-        elif book_code:
-            code = int(str(book.bookId) + "000000")
-            raw_sql = f'''SELECT * FROM {model_cls.__tablename__}
-             WHERE EXISTS (SELECT 1 FROM unnest(
-                {model_cls.__tablename__}.ref_ids) AS ele
-                WHERE ele >= {code} AND ele < {code+1000000})'''
-            result = db_.execute(raw_sql)
-            id_list = [row[0] for row in result]
-            query = query.filter(model_cls.bibleVideoId.in_(id_list))
-
-    query = query.filter(model_cls.active == active)
-    db_content = query.offset(skip).limit(limit).all()
-    source_db_content = db_.query(db_models.Source).filter(
-        db_models.Source.sourceName == source_name).first()
-    db_content_dict = [item.__dict__ for item in db_content]
-    for content in db_content_dict:
-        content['references'] = []
-        for ref in content['refIds']:
-            content['references'].append(bcv_to_ref(ref,db_))
-    response = {
-        'db_content':db_content_dict,
-        'source_content':source_db_content
-        }
-    return response
-
-def bible_video_db_content_generate(item,db_):
-    """db content for post and put for bible video"""
-    ref_id_list = set()
-    for buk in item.references:
-        # verifying if the book codes are valid as we dont use FK for this field
-        book = db_.query(db_models.BibleBook).filter(
-            db_models.BibleBook.bookCode == buk.bookCode.lower() ).first()
-        if not book:
-            raise NotAvailableException\
-                ('Bible Book code, %s, not found in database'%buk.bookCode)
-        #generate refid value in BCV
-        if buk.verseEnd is None:
-            buk.verseStart = 0 if buk.verseStart is None else buk.verseStart
-            bcvcode = ref_to_bcv(book.bookId,buk.chapter,buk.verseStart)
-            ref_id_list.add(int(bcvcode))
-        else:
-            for count in range(buk.verseStart,buk.verseEnd+1):
-                current_verse = count
-                bcvcode = ref_to_bcv(book.bookId,buk.chapter,current_verse)
-                ref_id_list.add(int(bcvcode))
-    return list(ref_id_list)
-
-def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
-    '''Adds rows to the bible videos table specified by source_name'''
-    source_db_content = db_.query(db_models.Source).filter(
-        db_models.Source.sourceName == source_name).first()
-    if not source_db_content:
-        raise NotAvailableException('Source %s, not found in database'%source_name)
-    if source_db_content.contentType.contentType != db_models.ContentTypeName.BIBLEVIDEO.value:
-        raise TypeException('The operation is supported only on biblevideo')
-    model_cls = db_models.dynamicTables[source_name]
-    db_content = []
-    for item in videos:
-        ref_id_list = bible_video_db_content_generate(item,db_)
-        row = model_cls(
-            title = utils.normalize_unicode(item.title.strip()),
-            series = utils.normalize_unicode(item.series.strip()),
-            description = utils.normalize_unicode(item.description.strip()),
-            active = item.active,
-            refIds = ref_id_list,
-            videoLink = item.videoLink)
-        db_content.append(row)
-    db_content_dict = [item.__dict__ for item in db_content]
-    for content in db_content_dict:
-        content['references'] = []
-        for ref in content['refIds']:
-            content['references'].append(bcv_to_ref(ref,db_))
-    db_.add_all(db_content)
-    db_.expire_all()
-    source_db_content.updatedUser = user_id
-    response = {
-        'db_content':db_content_dict,
-        'source_content':source_db_content
-        }
-    return response
-
-def update_bible_videos(db_: Session, source_name, videos, user_id=None):
-    '''Update rows, that matches title in the bible videos table
-    specified by source_name'''
-    source_db_content = db_.query(db_models.Source).filter(
-        db_models.Source.sourceName == source_name).first()
-    if not source_db_content:
-        raise NotAvailableException('Source %s, not found in database'%source_name)
-    if source_db_content.contentType.contentType != db_models.ContentTypeName.BIBLEVIDEO.value:
-        raise TypeException('The operation is supported only on biblevideo')
-    model_cls = db_models.dynamicTables[source_name]
-    db_content = []
-    for item in videos:
-        row = db_.query(model_cls).filter(
-            model_cls.title == utils.normalize_unicode(item.title.strip())).first()
-        if not row:
-            raise NotAvailableException("Bible Video row with title:%s, \
-                not found for %s"%(
-                    item.title, source_name))
-        if item.references:
-            row.refIds = bible_video_db_content_generate(item,db_)
-        if item.series:
-            row.series = utils.normalize_unicode(item.series.strip())
-        if item.description:
-            row.description = utils.normalize_unicode(item.description.strip())
-        if item.active is not None:
-            row.active = item.active
-        if item.videoLink:
-            row.videoLink = item.videoLink
-        db_.flush()
-        db_content.append(row)
-    source_db_content.updatedUser = user_id
-    db_content_dict = [item.__dict__ for item in db_content]
-    for content in db_content_dict:
-        content['references'] = []
-        for ref in content['refIds']:
-            content['references'].append(bcv_to_ref(ref,db_))
-    response = {
-        'db_content':db_content_dict,
-        'source_content':source_db_content
-        }
-    return response
 
 def bible_split_verse_completion(db_content2,split_indexs):
     """create split verse entry in db object"""

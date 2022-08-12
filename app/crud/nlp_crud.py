@@ -747,12 +747,13 @@ def auto_translate_token_logic(db_,tokens, sent, source_lang, target_lang):
             if len(suggestions) > 0:
                 draft, meta = nlp_utils.replace_token(sent.sentence, offset,
                     suggestions[0], sent.draftMeta, "suggestion",draft=sent.draft)
-                sent.draft = draft
-                sent.draftMeta = meta
-            elif (sent.draft is None or sent.draft == ''):
-                sent.draft = sent.sentence
-                offset = [0,len(sent.sentence)]
-                sent.draftMeta = [[offset, offset, "untranslated"]]
+            else:
+                # splits the source sentence into tokens(in draftmeta)
+                # even if there is no transltion suggestion available.
+                draft, meta = nlp_utils.replace_token(sent.sentence, offset,
+                    token, sent.draftMeta, "untranslated",draft=sent.draft)
+            sent.draft = draft
+            sent.draftMeta = meta
 
 def auto_translate(db_, sentence_list, source_lang, target_lang, **kwargs):
     '''Attempts to tokenize the input sentence and replace each token with top suggestion.
@@ -766,7 +767,9 @@ def auto_translate(db_, sentence_list, source_lang, target_lang, **kwargs):
     if stop_words:
         args['stop_words'] = stop_words
     for sent in sentence_list:
-        args['sent_list'] = [{"sentenceId":sent.sentenceId, "sentence":sent.sentence}]
+        args['sent_list'] = [{"sentenceId":sent.sentenceId,
+                                "sentence":sent.sentence,
+                                "draftMeta":sent.draftMeta if sent.draftMeta is not None else []}]
         tokens = nlp_utils.tokenize(**args)
 
         #auto tranaslte token loop

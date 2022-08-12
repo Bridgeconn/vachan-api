@@ -2,6 +2,7 @@
 AgMT Project Management. The translation or NLP related functions of these
 projects are included in nlp_crud module'''
 
+import re
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -47,11 +48,16 @@ def create_agmt_project(db_:Session, project, user_id=None):
     # db_.commit()
     return db_content
 
-def update_agmt_project_sentences(db_, project_obj, user_id):
+book_pattern_in_surrogate_id = re.compile(r'^[\w\d]\w\w')
+def update_agmt_project_sentences(db_, project_obj, new_books, user_id):
     """bulk selected book update in update agmt project"""
     for sent in project_obj.sentenceList:
         norm_sent = utils.normalize_unicode(sent.sentence)
         offsets = [0, len(norm_sent)]
+        if re.search(book_pattern_in_surrogate_id, sent.surrogateId):
+            book_code =  re.search(book_pattern_in_surrogate_id, sent.surrogateId).group(0).lower()
+            if book_code not in new_books and book_code in utils.BOOK_CODES:
+                new_books.append(book_code)
         draft_row = db_models.TranslationDraft(
             project_id=project_obj.projectId,
             sentenceId=sent.sentenceId,
@@ -100,8 +106,7 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
     if project_obj.selectedBooks:
         new_books += project_obj.selectedBooks.books
     if project_obj.sentenceList:
-        update_agmt_project_sentences(db_, project_obj, user_id)
-
+        update_agmt_project_sentences(db_, project_obj, new_books, user_id)
     if project_obj.uploadedUSFMs:
         #uploaded usfm book add to project
         update_agmt_project_uploaded_book(db_,project_obj,new_books,user_id)

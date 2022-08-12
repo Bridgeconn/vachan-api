@@ -481,6 +481,7 @@ class EditAudioBible(graphene.Mutation):
         return EditAudioBible(message=message,data=audio_content_list)
 
 ########## Add Commentaries ########
+# added pylint fixes because of graphql background issue (function call to REST is removed)
 class AddCommentary(graphene.Mutation):
     "Mutations for Add Commentary"
     class Arguments:
@@ -488,15 +489,17 @@ class AddCommentary(graphene.Mutation):
         comm_arg = types.InputAddCommentary()
 
     message = graphene.String()
+    # data = graphene.Field(types.Job)
     data = graphene.List(types.Commentary)
 #pylint: disable=no-self-use
     async def mutate(self,info,comm_arg):
         """resolve"""
         log.info('In GraphQL Add Commentaries')
-        db_ = info.context["request"].db_session
+        db_ = info.context["request"].db_session#pylint: disable=unused-variable
         source =comm_arg.source_name
         comm_data = comm_arg.commentary_data
-        user_details , req = get_user_or_none_graphql(info)
+        background_tasks = info.context["background"]#pylint: disable=unused-variable
+        user_details , req = get_user_or_none_graphql(info)#pylint: disable=unused-variable
         req.scope['method'] = "POST"
         req.scope['path'] = f"/v2/commentaries/{source}"
         req.path_params["source_name"] = source
@@ -505,25 +508,29 @@ class AddCommentary(graphene.Mutation):
             schema_model = utils.convert_graphene_obj_to_pydantic\
             (item,schema_content.CommentaryCreate)
             schema_list.append(schema_model)
-        # result =contents_crud.upload_commentaries(db_=db_, source_name=source,
-        # commentaries=schema_list, user_id=None)
-        response = await content_apis.add_commentary(request=req,
-            source_name=source,commentaries= schema_list,
-            user_details=user_details, db_=db_)
-        result = response['data']
-        comm_content_list = []
-        for item in result:
-            comm_var = types.Commentary(
-                book = item.book,
-                chapter = item.chapter,
-                verseStart = item.verseStart,
-                verseEnd = item.verseEnd,
-                commentary = item.commentary,
-                active = item.active
-            )
-            comm_content_list.append(comm_var)
-        message = response['message']
-        return AddCommentary(message=message,data=comm_content_list)
+
+        #disabled add commentary bcz of background task issue of graphql
+
+        # response = await content_apis.add_commentary(request=req,
+        #     background_tasks=background_tasks,
+        #     source_name=source,commentaries= schema_list,
+        #     user_details=user_details, db_=db_)
+        response = {}
+        # result = response['data']
+        # comm_content_list = []
+        # for item in result:
+        #     comm_var = types.Commentary(
+        #         book = item.book,
+        #         chapter = item.chapter,
+        #         verseStart = item.verseStart,
+        #         verseEnd = item.verseEnd,
+        #         commentary = item.commentary,
+        #         active = item.active
+        #     )
+        #     comm_content_list.append(comm_var)
+        # message = response['message']
+        return AddCommentary(message=response['message'],
+            data=response["data"])
 
 ########## Edit Commentaries #######
 class EditCommentary(graphene.Mutation):
@@ -538,10 +545,10 @@ class EditCommentary(graphene.Mutation):
     async def mutate(self,info,comm_arg):
         """resolve"""
         log.info('In GraphQL Edit Commentaries')
-        db_ = info.context["request"].db_session
+        db_ = info.context["request"].db_session#pylint: disable=unused-variable
         source =comm_arg.source_name
         comm_data = comm_arg.commentary_data
-        user_details , req = get_user_or_none_graphql(info)
+        user_details , req = get_user_or_none_graphql(info)#pylint: disable=unused-variable
         req.scope['method'] = "PUT"
         req.scope['path'] = f"/v2/commentaries/{source}"
         req.path_params["source_name"] = source
@@ -552,9 +559,13 @@ class EditCommentary(graphene.Mutation):
             schema_list.append(schema_model)
         # result =contents_crud.update_commentaries(db_=db_, source_name=source,
         # commentaries=schema_list, user_id=None)
-        response = await content_apis.edit_commentary(request=req,
-            source_name=source,commentaries= schema_list,
-            user_details=user_details, db_=db_)
+
+        #disabled edit commentary bcz of background task issue of graphql
+
+        # response = await content_apis.edit_commentary(request=req,
+        #     source_name=source,commentaries= schema_list,
+        #     user_details=user_details, db_=db_)
+        response = {}
         result = response['data']
         comm_content_list = []
         for item in result:
