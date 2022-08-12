@@ -123,7 +123,8 @@ def test_get_after_data_upload():
     	"link":UNIT_URL+'dictionary?word=three'}},
     	{"word": "four", "details":{"digit": 4, "type":"even",
     	"link":UNIT_URL+'dictionary?word=four'}},
-    	{"word": "five", "details":{"digit": 5, "type":"odd", "link":UNIT_URL+'dictionary?word=five'}}
+    	{"word": "five", "details":{"digit": 5, "type":"odd", "link":UNIT_URL+'dictionary?word=five'}},
+        {"word": "another", "details":{"empty-field": ""}}
     ]
     resp, source_name = check_post(data)
     assert resp.status_code == 201
@@ -158,7 +159,7 @@ def test_get_after_data_upload():
     # with only words flag
     response = client.get(UNIT_URL+source_name+'?word_list_only=True',headers=headers_auth)
     assert response.status_code == 200
-    assert len(response.json()) == 5
+    assert len(response.json()) == 6
     for item in response.json():
         assert "details" not in item
 
@@ -174,6 +175,13 @@ def test_get_after_data_upload():
     assert len(response.json()) == 2
     for item in response.json():
         assert item['details']['type'] == "even"
+
+   # search details having empty value
+    response = client.get(UNIT_URL+source_name+'?details={"empty-field":""}',headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    for item in response.json():
+        assert item['details']['empty-field'] == ""
 
     # search word from details
     response = client.get(UNIT_URL+source_name+'?search_word=odd',headers=headers_auth)
