@@ -244,8 +244,8 @@ class LicenseEdit (BaseModel):
         }
 
 MetaDataPattern = constr(
-    regex=r"^\{\s*[\"\'][^\"]+[\"\']\s*:\s*[\"\'][^\"]+[\"\']\s*" +
-        r"(,\s*[\"\'][^\"]+[\"\']\s*:\s*[\"\'][^\"]+[\"\']\s*)*")
+    regex=r"^\{\s*[\"\'][^\"]+[\"\']\s*:\s*[\"\'][^\"]*[\"\']\s*" +
+        r"(,\s*[\"\'][^\"]+[\"\']\s*:\s*[\"\'][^\"]*[\"\']\s*)*")
 
 VersionPattern = constr(regex=r"^[A-Z]+$")
 class VersionCreate(BaseModel):
