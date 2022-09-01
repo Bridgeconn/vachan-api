@@ -25,7 +25,7 @@ if os.environ.get("VACHAN_TEST_MODE", "False") != 'True':
 
     create_super_user()
 
-app = FastAPI(title="Vachan-API", version="2.0.0-alpha.2",
+app = FastAPI(title="Vachan-API", version="2.0.0-beta.1",
     description="The server application that provides APIs to interact \
 with the underlying Databases and modules in Vachan-Engine.")
 
