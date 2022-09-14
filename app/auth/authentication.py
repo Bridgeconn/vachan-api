@@ -111,11 +111,14 @@ def api_resourcetype_map(endpoint, path_params=None):
 
 def search_api_permission_map(endpoint, method, client_app, path_params=None, resource=None):
     '''look up request params in the api-permission table loaded from CSV'''
+    log.debug("Looking up api permission map for\n>>>>endpoint:%s, \n>>>method:%s, "+\
+        "client_app:%s",endpoint, method,client_app)
     req_url = endpoint
     for key in path_params:
         req_url = req_url.replace(path_params[key], "*")
     if resource is None:
         resource = api_resourcetype_map(endpoint, path_params)
+    log.debug("\n>>>>resource:%s", resource)
     for row in APIPERMISSIONTABLE:
         table_url = row[0]
         for key in path_params:
@@ -125,11 +128,12 @@ def search_api_permission_map(endpoint, method, client_app, path_params=None, re
                 if row[2] == "None" or row[2] == client_app:
                     # print("url, method and app matched")
                     if row[4] == 'None' or row[4] == resource:
+                        log.debug("API-Permission map:%s, resource:%s", row[5], resource)
                         return (resource, row[5])
     log.error("No permisions map found for:%s, %s, %s, %s", endpoint, method, client_app, resource)
     raise PermissionException("API-Permission map not defined for the request!")
 
-def get_access_tag(db_, resource_type, path_params=None, resource=None):
+def get_access_tag(db_, resource_type, path_params=None, kw_args = None, resource=None):
     '''obtain access tag based on resource-url direct link or value stored in DB'''
     resource_tag_map = {
         schema_auth.ResourceType.USER: ['user'],
@@ -147,6 +151,11 @@ def get_access_tag(db_, resource_type, path_params=None, resource=None):
     if path_params is not None and "source_name" in path_params:
         db_entry = db_.query(db_models.Source.metaData['accessPermissions']).filter(
             db_models.Source.sourceName == path_params['source_name']).first()
+        if db_entry is not None:
+            return db_entry[0]
+    if kw_args is not None and "source_name" in kw_args:
+        db_entry = db_.query(db_models.Source.metaData['accessPermissions']).filter(
+            db_models.Source.sourceName == kw_args['source_name']).first()
         if db_entry is not None:
             return db_entry[0]
     if resource:
@@ -214,6 +223,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
     """Decorator function for auth and access check for all routers"""
     @wraps(func)
     async def wrapper(*args, **kwargs):#pylint: disable=too-many-branches,too-many-statements, too-many-locals
+        log.debug("\n\n\n********New auth check, for a resource access or operation************")
         request = kwargs.get('request')
         db_ = kwargs.get("db_")
         endpoint = request.url.path
@@ -234,7 +244,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         resource_type, permission = search_api_permission_map(
             endpoint, method, client_app, path_params, resource=resource_type)
         required_rights = []
-        access_tags = get_access_tag(db_, resource_type, path_params)
+        access_tags = get_access_tag(db_, resource_type, path_params, kwargs)
         for tag in access_tags:
             if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
                 required_rights += ACCESS_RULES[tag][permission]
@@ -276,6 +286,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                 else:
                     obj = response['data']
         log.debug("authenticated:%s", authenticated)
+        log.debug("OBJ:"+str(obj))
         if authenticated:
             # All no-auth and role based cases checked and appoved if applicable
             if db_:
@@ -295,7 +306,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             filtered_response = []
             for item in response:
                 required_rights_thisitem = required_rights.copy()
-                access_tags = get_access_tag(db_, resource_type, path_params, item)
+                access_tags = get_access_tag(db_, resource_type, path_params, kwargs, item)
                 for tag in access_tags:
                     if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
                         required_rights_thisitem += ACCESS_RULES[tag][permission]
