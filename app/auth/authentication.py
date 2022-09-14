@@ -111,8 +111,8 @@ def api_resourcetype_map(endpoint, path_params=None):
 
 def search_api_permission_map(endpoint, method, client_app, path_params=None, resource=None):
     '''look up request params in the api-permission table loaded from CSV'''
-    log.debug("Looking up api permission map for\n>>>>endpoint:%s, \n>>>method:%s, "+\
-        "client_app:%s",endpoint, method,client_app)
+    log.debug("Looking up api permission map for\n>>>>endpoint:%s, \n>>>method:%s, client_app:%s",
+        endpoint, method,client_app)
     req_url = endpoint
     for key in path_params:
         req_url = req_url.replace(path_params[key], "*")
@@ -286,7 +286,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                 else:
                     obj = response['data']
         log.debug("authenticated:%s", authenticated)
-        log.debug("OBJ:"+str(obj))
+        log.debug("OBJ:%s",obj)
         if authenticated:
             # All no-auth and role based cases checked and appoved if applicable
             if db_:
