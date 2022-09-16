@@ -433,3 +433,35 @@ class Jobs(Base): # pylint: disable=too-few-public-methods
     output = Column('output', JSON)
     startTime = Column('start_time', DateTime)
     endTime = Column('end_time', DateTime)
+
+class ApiPermissions(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table api permissions for auth  in vachan DB(postgres)'''
+    __tablename__ = 'api_permissions'
+
+    permissionId = Column('permission_id', Integer, primary_key=True)
+    endpoints = Column('endpoints', String, unique=True, index=True)
+    method = Column('method', String)
+    requestApp = Column('request_app', String)
+    filterResults = Column('filter_results', Boolean)
+    resourceType = Column('resource_type', String)
+    permission = Column('permission', String)
+    active = Column('active', Boolean)
+    createdUser = Column('created_user', String)
+    updatedUser = Column('last_updated_user', String)
+    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+
+class AccessRules(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table access rules of auth in vachan DB(postgres)'''
+    __tablename__ = 'access_rules'
+
+    ruleId = Column('rule_id', Integer, primary_key=True)
+    entitlement = Column('entitlement', String)
+    tags = Column('tags', String)
+    roles = Column('roles', ARRAY(String))
+    active = Column('active', Boolean)
+    createdUser = Column('created_user', String)
+    updatedUser = Column('last_updated_user', String)
+    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+
+
+

@@ -1,0 +1,116 @@
+endpoints,method,request_app,filter_results,resource_type,permission
+/v2/user/register,POST,None,FALSE,None,create
+/v2/user/login,GET,None,FALSE,None,login
+/v2/user/{user_id},PUT,None,FALSE,None,edit
+/v2/users,GET,None,FALSE,None,read
+/v2/user/{user_id},GET,None,FALSE,None,view-profile
+/v2/user/logout,GET,None,FALSE,None,logout
+/v2/user/role,PUT,None,FALSE,None,edit-role
+/v2/user/delete-identity,DELETE,None,FALSE,None,delete/deactivate
+/v2/contents,GET,Autographa,FALSE,None,refer-for-translation
+/v2/contents,GET,Vachan-online or vachan-app,FALSE,None,view-on-web
+/v2/contents,GET,VachanAdmin,FALSE,None,read-via-vachanadmin
+/v2/contents,GET,API-user,FALSE,None,read-via-api
+/v2/contents,POST,None,FALSE,None,create
+/v2/languages,GET,Autographa,FALSE,None,refer-for-translation
+/v2/languages,GET,Vachan-online or vachan-app,FALSE,None,view-on-web
+/v2/languages,GET,VachanAdmin,FALSE,None,read-via-vachanadmin
+/v2/languages,GET,API-user,FALSE,None,read-via-api
+/v2/languages,POST,None,FALSE,None,create
+/v2/languages,PUT,None,FALSE,None,edit
+/v2/licenses,GET,Autographa,FALSE,None,refer-for-translation
+/v2/licenses,GET,Vachan-online or vachan-app,FALSE,None,view-on-web
+/v2/licenses,GET,VachanAdmin,FALSE,None,read-via-vachanadmin
+/v2/licenses,GET,API-user,FALSE,None,read-via-api
+/v2/licenses,POST,None,FALSE,None,create
+/v2/licenses,PUT,None,FALSE,None,edit
+/v2/versions,GET,Autographa,FALSE,None,refer-for-translation
+/v2/versions,GET,Vachan-online or vachan-app,FALSE,None,view-on-web
+/v2/versions,GET,VachanAdmin,FALSE,None,read-via-vachanadmin
+/v2/versions,GET,API-user,FALSE,None,read-via-api
+/v2/versions,POST,None,FALSE,None,create
+/v2/versions,PUT,None,FALSE,None,edit
+/v2/sources,GET,Autographa,TRUE,None,refer-for-translation
+/v2/sources,GET,Vachan-online or vachan-app,TRUE,None,view-on-web
+/v2/sources,GET,VachanAdmin,TRUE,None,read-via-vachanadmin
+/v2/sources,GET,API-user,TRUE,None,read-via-api
+/v2/sources,POST,None,FALSE,None,create
+/v2/sources,PUT,None,FALSE,None,edit
+/v2/sources/get-sentence,GET,Autographa,FALSE,"contents like bibles, commentaries, infographics, dictionary or videos",refer-for-translation
+/v2/sources/get-sentence,GET,Vachan-online or vachan-app,FALSE,"contents like bibles, commentaries, infographics, dictionary or videos",view-on-web
+/v2/sources/get-sentence,GET,VachanAdmin,FALSE,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-vachanadmin
+/v2/sources/get-sentence,GET,API-user,FALSE,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-api
+/v2/sources/get-sentence,GET,None,FALSE,Research-Material,read-via-api
+/v2/lookup/bible/books,GET,None,FALSE,None,read
+/v2/bibles/{source_name}/books,GET,Autographa,FALSE,None,refer-for-translation
+/v2/bibles/{source_name}/books,GET,Vachan-online or vachan-app,FALSE,None,view-on-web
+/v2/bibles/{source_name}/books,GET,VachanAdmin,FALSE,None,read-via-vachanadmin
+/v2/bibles/{source_name}/books,GET,API-user,FALSE,None,read-via-api
+/v2/bibles/{source_name}/books,POST,None,FALSE,None,create
+/v2/bibles/{source_name}/books,PUT,None,FALSE,None,edit
+/v2/bibles/{source_name}/versification,GET,Autographa,FALSE,None,refer-for-translation
+/v2/bibles/{source_name}/versification,GET,Vachan-online or vachan-app,FALSE,None,view-on-web
+/v2/bibles/{source_name}/versification,GET,VachanAdmin,FALSE,None,read-via-vachanadmin
+/v2/bibles/{source_name}/versification,GET,API-user,FALSE,None,read-via-api
+/v2/bibles/{source_name}/verses,GET,Autographa,FALSE,None,refer-for-translation
+/v2/bibles/{source_name}/verses,GET,Vachan-online or vachan-app,FALSE,None,view-on-web
+/v2/bibles/{source_name}/verses,GET,VachanAdmin,FALSE,None,read-via-vachanadmin
+/v2/bibles/{source_name}/verses,GET,API-user,FALSE,None,read-via-api
+/v2/bibles/{source_name}/audios,POST,None,FALSE,None,create
+/v2/bibles/{source_name}/audios,PUT,None,FALSE,None,edit
+/v2/commentaries/{source_name},GET,Autographa,FALSE,None,refer-for-translation
+/v2/commentaries/{source_name},GET,Vachan-online or vachan-app,FALSE,None,view-on-web
+/v2/commentaries/{source_name},GET,VachanAdmin,FALSE,None,read-via-vachanadmin
+/v2/commentaries/{source_name},GET,API-user,FALSE,None,read-via-api
+/v2/commentaries/{source_name},POST,None,FALSE,None,create
+/v2/commentaries/{source_name},PUT,None,FALSE,None,edit
+/v2/dictionaries/{source_name},GET,Autographa,FALSE,None,refer-for-translation
+/v2/dictionaries/{source_name},GET,Vachan-online or vachan-app,FALSE,None,view-on-web
+/v2/dictionaries/{source_name},GET,VachanAdmin,FALSE,None,read-via-vachanadmin
+/v2/dictionaries/{source_name},GET,API-user,FALSE,None,read-via-api
+/v2/dictionaries/{source_name},POST,None,FALSE,None,create
+/v2/dictionaries/{source_name},PUT,None,FALSE,None,edit
+/v2/infographics/{source_name},GET,Autographa,FALSE,None,refer-for-translation
+/v2/infographics/{source_name},GET,Vachan-online or vachan-app,FALSE,None,view-on-web
+/v2/infographics/{source_name},GET,VachanAdmin,FALSE,None,read-via-vachanadmin
+/v2/infographics/{source_name},GET,API-user,FALSE,None,read-via-api
+/v2/infographics/{source_name},POST,None,FALSE,None,create
+/v2/infographics/{source_name},PUT,None,FALSE,None,edit
+/v2/biblevideos/{source_name},GET,Autographa,FALSE,None,refer-for-translation
+/v2/biblevideos/{source_name},GET,Vachan-online or vachan-app,FALSE,None,view-on-web
+/v2/biblevideos/{source_name},GET,VachanAdmin,FALSE,None,read-via-vachanadmin
+/v2/biblevideos/{source_name},GET,API-user,FALSE,None,read-via-api
+/v2/biblevideos/{source_name},POST,None,FALSE,None,create
+/v2/biblevideos/{source_name},PUT,None,FALSE,None,edit
+/v2/autographa/projects,GET,Autographa,TRUE,None,view-project
+/v2/autographa/projects,POST,Autographa,FALSE,None,create
+/v2/autographa/projects,PUT,Autographa,FALSE,"contents like bibles, commentaries, infographics, dictionary or videos",translate
+/v2/autographa/projects,PUT,Autographa,FALSE,Ag or translation project,edit-Settings
+/v2/autographa/project/user,POST,Autographa,FALSE,None,create-user
+/v2/autographa/project/user,PUT,Autographa,FALSE,None,edit-Settings
+/v2/autographa/project/tokens,GET,Autographa,FALSE,None,read-draft
+/v2/autographa/project/tokens,PUT,Autographa,FALSE,None,edit-draft
+/v2/autographa/project/token-translations,GET,Autographa,FALSE,None,read-draft
+/v2/autographa/project/token-sentences,PUT,Autographa,FALSE,None,edit-draft
+/v2/autographa/project/draft,GET,Autographa,FALSE,None,read-draft
+/v2/autographa/project/sentences,GET,Autographa,FALSE,None,view-project
+/v2/autographa/project/progress,GET,Autographa,FALSE,None,view-project
+/v2/autographa/project/versification,GET,Autographa,FALSE,None,view-project
+/v2/autographa/project/suggestions,PUT,Autographa,FALSE,None,edit-draft
+/v2/translation/suggestions,PUT,None,FALSE,None,process
+/v2/translation/tokens,PUT,None,FALSE,None,process
+/v2/translation/token-translate,PUT,None,FALSE,None,process
+/v2/translation/draft,PUT,None,FALSE,None,process
+/v2/nlp/gloss,GET,None,FALSE,None,read
+/v2/nlp/learn/gloss,POST,None,FALSE,None,create
+/v2/nlp/learn/alignment,POST,None,FALSE,None,create
+/v2/nlp/stopwords/generate,POST,None,FALSE,Lookup contents,create
+/v2/nlp/stopwords/generate,POST,None,FALSE,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-api
+/v2/lookup/stopwords/{language_code},GET,None,FALSE,None,read
+/v2/lookup/stopwords/{language_code},PUT,None,FALSE,None,edit
+/v2/lookup/stopwords/{language_code},POST,None,FALSE,None,create
+/v2/jobs,GET,None,FALSE,None,read
+/v2/media/gitlab/stream,GET,None,FALSE,Media contents,stream
+/v2/media/gitlab/stream,GET,None,FALSE,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-api
+/v2/media/gitlab/download,GET,None,FALSE,Media contents,download
+/v2/media/gitlab/download,GET,None,FALSE,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-api

@@ -206,3 +206,39 @@ CREATE TABLE public.jobs(
 
 ALTER SEQUENCE public.jobs_job_id_seq RESTART WITH 100000;
 
+CREATE TABLE public.api_permissions (
+    permission_id SERIAL PRIMARY KEY,
+    endpoints text NOT NULL,
+    method text NOT NULL,
+    request_app	 text NOT NULL,
+    filter_results boolean DEFAULT false NOT NULL,
+    resource_type text NOT NULL,
+    permission text NOT NULL,
+    created_at timestamp with time zone DEFAULT NOW(),
+    created_user text NULL,
+    last_updated_at  timestamp with time zone DEFAULT NOW(),
+    last_updated_user text NULL,
+    active boolean DEFAULT true NOT NULL,
+    UNIQUE(permission_id)
+);
+
+ALTER SEQUENCE public.api_permissions_permission_id_seq RESTART WITH 100000;
+
+\COPY api_permissions(endpoints,method,request_app,filter_results,resource_type,permission) FROM 'csvs/api_permissions.csv' DELIMITER ',' CSV HEADER;
+
+CREATE TABLE public.access_rules (
+    rule_id SERIAL PRIMARY KEY,
+    entitlement text NOT NULL,
+    tags text NOT NULL,
+    roles text[],
+    created_at timestamp with time zone DEFAULT NOW(),
+    created_user text NULL,
+    last_updated_at  timestamp with time zone DEFAULT NOW(),
+    last_updated_user text NULL,
+    active boolean DEFAULT true NOT NULL,
+    UNIQUE(rule_id)
+);
+
+ALTER SEQUENCE public.access_rules_rule_id_seq RESTART WITH 100000;
+
+\COPY access_rules(entitlement,tags,roles) FROM 'csvs/access_rules.csv' DELIMITER ',' CSV HEADER;
