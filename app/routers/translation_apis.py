@@ -82,7 +82,8 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
             content_type='bible',
             skip=0, limit=100000,
             user_details = user_details,
-            db_=db_)
+            db_=db_,
+            operates_on=schema_auth.ResourceType.CONTENT.value)
         if "error" in response:
             raise GenericException(response['error'])
         for item in response:
