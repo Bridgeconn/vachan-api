@@ -1,8 +1,8 @@
-FROM tiangolo/uvicorn-gunicorn-fastapi:python3.7
+FROM python:3.10
 
 COPY ./app /app/app
 COPY ./requirements.txt requirements.txt
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
 WORKDIR /app/app
 
 RUN adduser vachan_user

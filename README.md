@@ -7,11 +7,12 @@ Currently serving 3 client applications, VachanOnline website, the Vachan Mobile
 ## Implementation Details
 
 Implemented Using
-- Python 3.7.5
+- Python 3.10.6
 - Fastapi framework
 - Postgresql Database
-- Ory Kratos
-- Usfm-grammar node library
+- Ory Kratos for Authentication
+- Redis for caching and job queueing 
+- Usfm-grammar
 
 ## Start App (with docker)
 
