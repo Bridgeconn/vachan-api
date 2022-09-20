@@ -30,7 +30,7 @@ def get_current_user_data(recieve_token):
     headers = {}
     headers["Accept"] = "application/json"
     headers["Authorization"] = f"Bearer {recieve_token}"
-    user_data = requests.get(USER_SESSION_URL, headers=headers)
+    user_data = requests.get(USER_SESSION_URL, headers=headers, timeout=10)
     data = json.loads(user_data.content)
     if user_data.status_code == 200:
         user_details["user_id"] = data["identity"]["id"]
@@ -71,13 +71,13 @@ def get_user_or_none_graphql(info):
 
 
 ####################### Access control logics ######################################
-with open('auth/access_rules.json','r') as file:
+with open('auth/access_rules.json','r', encoding='utf-8') as file:
     ACCESS_RULES = json.load(file)
     log.warning("Startup event to read Access Rules")
     log.debug(ACCESS_RULES)
 
 APIPERMISSIONTABLE = []
-with open('auth/api-permissions.csv','r') as file:
+with open('auth/api-permissions.csv','r', encoding='utf-8') as file:
     csvreader = csv.reader(file)
     header = next(csvreader)
     for table_row in csvreader:
@@ -334,7 +334,7 @@ def kratos_logout(recieve_token):
     headers["Accept"] = "application/json"
     headers["Content-Type"] = "application/json"
     logout_url = PUBLIC_BASE_URL + "logout/api"
-    response = requests.delete(logout_url, headers=headers, json=payload)
+    response = requests.delete(logout_url, headers=headers, json=payload, timeout=10)
     if response.status_code == 204:
         data = {"message":"Successfully Logged out"}
     elif response.status_code == 400:
@@ -351,7 +351,7 @@ def kratos_logout(recieve_token):
 #pylint: disable=R1703
 def get_users_kratos_filter(base_url,name,roles,limit,skip):#pylint: disable=too-many-locals
     """v2/users filter block"""
-    response = requests.get(base_url)
+    response = requests.get(base_url, timeout=10)
     if response.status_code == 200:
         user_data = []
         for data in json.loads(response.content):
@@ -384,7 +384,9 @@ def get_users_kratos_filter(base_url,name,roles,limit,skip):#pylint: disable=too
                 role_list = [x.name.lower() for x in temp_role]
                 kratos_role = [x.lower() for x in data["traits"]["userrole"]]
                 for k_role in kratos_role:
-                    res = list(filter(k_role.startswith, role_list)) != []
+                    # res = list(filter(k_role.startswith, role_list)) != []
+                    # changed this as per pylint suggestion
+                    res = list(filter(k_role.startswith, role_list))
                     if res:
                         role_status = True
                         break
@@ -403,7 +405,7 @@ def get_all_or_one_kratos_users(rec_user_id=None,skip=None,limit=None,name=None,
     #all users
     if rec_user_id is None:
         if skip is None and limit is None:
-            response = requests.get(base_url)
+            response = requests.get(base_url, timeout=10)
             if response.status_code == 200:
                 user_data = json.loads(response.content)
             else:
@@ -413,7 +415,7 @@ def get_all_or_one_kratos_users(rec_user_id=None,skip=None,limit=None,name=None,
             user_data = get_users_kratos_filter(base_url,name,roles,limit,skip)
     #single user
     else:
-        response = requests.get(base_url+rec_user_id)
+        response = requests.get(base_url+rec_user_id, timeout=10)
         if response.status_code == 200:
             data = json.loads(response.content)
             user_data = [{
@@ -438,7 +440,7 @@ def update_kratos_user(rec_user_id,data):
     fetch_data["name"]["first"] = data.firstname
     payload = json.dumps({"traits":fetch_data, "schema_id":"default"})
     headers = {'Content-Type': 'application/json'}
-    response = requests.put(base_url, headers=headers, data=payload)
+    response = requests.put(base_url, headers=headers, data=payload, timeout=10)
     if response.status_code == 200:
         response = json.loads(response.content)
         user_data = {
@@ -548,7 +550,7 @@ def user_register_kratos(register_details,app_type):
     user_role =  switcher.get(app_type, schema_auth.AdminRoles.APIUSER.value)
 
     register_url = PUBLIC_BASE_URL+"registration/api"
-    reg_flow = requests.get(register_url)
+    reg_flow = requests.get(register_url, timeout=10)
     if reg_flow.status_code == 200:
         flow_res = json.loads(reg_flow.content)
         reg_flow_id = flow_res["ui"]["action"]
@@ -561,7 +563,7 @@ def user_register_kratos(register_details,app_type):
         headers = {}
         headers["Accept"] = "application/json"
         headers["Content-Type"] = "application/json"
-        reg_req = requests.post(reg_flow_id,headers=headers,json=reg_data)
+        reg_req = requests.post(reg_flow_id,headers=headers,json=reg_data, timeout=10)
         reg_response = json.loads(reg_req.content)
         if reg_req.status_code == 200:
             data = register_check_success(reg_response)
@@ -579,14 +581,14 @@ def user_login_kratos(user_email,password):#pylint: disable=R1710
     "kratos login"
     data = {"details":"","token":""}
     login_url = PUBLIC_BASE_URL+"login/api/"
-    flow_res = requests.get(login_url)
+    flow_res = requests.get(login_url, timeout=10)
     if flow_res.status_code == 200:
         flow_res = json.loads(flow_res.content)
         flow_id = flow_res["ui"]["action"]
         password = password.get_secret_value() if not isinstance(password, str) else password
         cred_data = {"password_identifier": user_email,
             "password": password, "method": "password"}
-        login_req = requests.post(flow_id, json=cred_data)
+        login_req = requests.post(flow_id, json=cred_data, timeout=10)
         login_req_content = json.loads(login_req.content)
         if login_req.status_code == 200:
             session_id = login_req_content["session_token"]
@@ -601,7 +603,7 @@ def user_login_kratos(user_email,password):#pylint: disable=R1710
 def delete_identity(user_id):
     """delete identity"""
     base_url = ADMIN_BASE_URL+"identities/"+user_id
-    response = requests.delete(base_url)
+    response = requests.delete(base_url, timeout=10)
     if response.status_code == 404:
         raise NotAvailableException("Unable to locate the resource")
     # log.warning(response)
@@ -614,7 +616,7 @@ def user_role_add(user_id,roles_list):
     base_url = ADMIN_BASE_URL+"identities/"
     url = base_url + str(user_id)
 
-    response = requests.get(url)
+    response = requests.get(url, timeout=10)
     if response.status_code == 200:
         user_data = json.loads(response.content)
 
@@ -643,11 +645,11 @@ def user_role_add(user_id,roles_list):
     }
 
     if len(exist_roles) > 0:
-        raise AlreadyExistsException("Already Exist permisions %s"%exist_roles)
+        raise AlreadyExistsException(f"Already Exist permisions {exist_roles}")
 
     headers = {}
     headers["Content-Type"] = "application/json"
-    response = requests.put(url,headers=headers,json=data)
+    response = requests.put(url,headers=headers,json=data, timeout=10)
 
     if response.status_code == 200:
         resp_data = json.loads(response.content)
@@ -667,7 +669,7 @@ def create_super_user():
     """function to create super user on startup"""
     super_user_url = ADMIN_BASE_URL+ "identities"
     found = False
-    response = requests.get(super_user_url)
+    response = requests.get(super_user_url, timeout=10)
     if response.status_code == 200:
         identity_data = json.loads(response.content)
         for identity in identity_data:
@@ -679,7 +681,7 @@ def create_super_user():
 
     if not found:
         register_url = PUBLIC_BASE_URL+"registration/api"
-        reg_flow = requests.get(register_url)
+        reg_flow = requests.get(register_url, timeout=10)
         if reg_flow.status_code == 200:
             flow_res = json.loads(reg_flow.content)
             reg_flow_id = flow_res["ui"]["action"]
@@ -692,7 +694,7 @@ def create_super_user():
             headers = {}
             headers["Accept"] = "application/json"
             headers["Content-Type"] = "application/json"
-            reg_req = requests.post(reg_flow_id,headers=headers,json=reg_data)
+            reg_req = requests.post(reg_flow_id,headers=headers,json=reg_data, timeout=10)
             if reg_req.status_code == 200:
                 log.info('Super Admin created')
             elif reg_req.status_code == 400:

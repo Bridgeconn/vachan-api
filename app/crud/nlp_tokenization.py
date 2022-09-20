@@ -112,8 +112,8 @@ def tokenize_get_unique_token(phrases,sent,unique_tokens):
             continue
         offset = sent['sentence'].find(phrase, start)
         if offset == -1:
-            raise NotAvailableException("Tokenization: token, %s, not found in sentence: %s" %(
-                phrase, sent['sentence']))
+            raise NotAvailableException(f"Tokenization: token, {phrase}, "+\
+                f"not found in sentence: {sent['sentence']}")
         start = offset+len(phrase)
         if phrase not in unique_tokens:
             unique_tokens[phrase] = {

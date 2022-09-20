@@ -33,7 +33,7 @@ def retrieve_stopwords(db_: Session, language_code, **kwargs):
     query = db_.query(db_models.Language.languageId)
     language_id = query.filter(func.lower(db_models.Language.code) == language_code.lower()).first()
     if not language_id:
-        raise NotAvailableException("Language with code %s, not in database"%language_code)
+        raise NotAvailableException(f"Language with code {language_code}, not in database")
     query = db_.query(db_models.StopWords)
     query = query.filter(db_models.StopWords.languageId == language_id[0])
     if not include_system_defined:
@@ -52,7 +52,7 @@ def update_stopword_info(db_: Session, language_code, sw_json, user_id=None):
     query = db_.query(db_models.Language.languageId)
     language_id = query.filter(func.lower(db_models.Language.code) == language_code.lower()).first()
     if not language_id:
-        raise NotAvailableException("Language with code %s, not in database"%language_code)
+        raise NotAvailableException(f"Language with code {language_code}, not in database")
     language_id = language_id[0]
     stopword = sw_json.stopWord
     value_dic = {}
@@ -66,8 +66,8 @@ def update_stopword_info(db_: Session, language_code, sw_json, user_id=None):
     result = db_.execute(update_stmt)
     db_.flush()
     if result.rowcount == 0:
-        raise NotAvailableException("Language with code %s, does not have stopword %s \
-            in database"%(language_code,stopword))
+        raise NotAvailableException(f"Language with code {language_code}, "+\
+            f"does not have stopword {stopword} in database")
     query = db_.query(db_models.StopWords)
     row = query.filter(db_models.StopWords.stopWord == stopword,
             db_models.StopWords.languageId == language_id).first()
@@ -79,7 +79,7 @@ def add_stopwords(db_: Session, language_code, stopwords_list, user_id=None):
         func.lower(db_models.Language.code) == language_code.lower()).first()
     language_id = language_id[0]
     if not language_id:
-        raise NotAvailableException("Language with code %s, not in database"%language_code)
+        raise NotAvailableException(f"Language with code {language_code}, not in database")
     db_content = []
     for word in stopwords_list:
         word = utils.normalize_unicode(word)
@@ -295,11 +295,11 @@ async def generate_stopwords(db_: Session, request: Request, *args, user_details
                     }
         if source_name not in db_models.dynamicTables:
             update_args["output"]= {
-                "message": '%s not found in database.'%source_name,
+                "message": f'{source_name} not found in database.',
                 "source_name": source_name,"data": None
                 }
             update_job(db_, job_id, user_id, update_args)
-            raise NotAvailableException('%s not found in database.'%source_name)
+            raise NotAvailableException(f'{source_name} not found in database.')
         if not source_name.endswith(db_models.ContentTypeName.DICTIONARY.value):
             update_args["output"]= {
                 "message": 'The operation is supported only on dictionaries',
@@ -311,11 +311,11 @@ async def generate_stopwords(db_: Session, request: Request, *args, user_details
         update_args = {
                     "status" : schemas_nlp.JobStatus.ERROR.value,
                     "endTime": datetime.now(),
-                    "output": {"message": "Language with code %s, not in database"%language_code,
+                    "output": {"message": f"Language with code {language_code}, not in database",
                      "language": language_code,"data": None}
                     }
         update_job(db_, job_id, user_id, update_args)
-        raise NotAvailableException("Language with code %s, not in database"%language_code)
+        raise NotAvailableException(f"Language with code {language_code}, not in database")
     language_id = language_id[0]
     kwargs['user_details'] = user_details
     sentences = []

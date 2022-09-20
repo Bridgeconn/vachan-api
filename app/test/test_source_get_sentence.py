@@ -97,7 +97,7 @@ def test_get_poisitive():
 	bible_name, commentary_name = create_sources()
 
 	headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
-	headers_auth['App'] = schema_auth.App.API
+	headers_auth['App'] = schema_auth.App.API.value
 	check_default_get(SENT_URL, headers_auth, assert_positive_get)
 
 	# filtering with various params
@@ -172,7 +172,7 @@ def test_get_negatives():
 	# Add data
 	bible_name, commentary_name = create_sources()
 	headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
-	headers_auth['App'] = schema_auth.App.API
+	headers_auth['App'] = schema_auth.App.API.value
 
 	for buk in ['mat','mrk','luk','jhn']:
 		resp = client.get(SENT_URL+'?source_name='+commentary_name+'&books='+buk, headers=headers_auth)
