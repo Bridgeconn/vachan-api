@@ -165,7 +165,7 @@ def to_eng(data):
 def validate_language_tag(tag):
     '''uses an external service to validate newly added language sub tags'''
     url = "https://schneegans.de/lv/?tags=%s&format=json"
-    resp = requests.get(url%(tag))
+    resp = requests.get(url%(tag), timeout=10)
     if resp.status_code != 200:
         resp.raise_for_status()
     return resp.json()[0]['Valid'], ' '.join(resp.json()[0]['Messages'])

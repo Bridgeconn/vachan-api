@@ -136,7 +136,7 @@ def get_bible_videos(db_:Session, source_name, book_code=None, title=None, serie
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
     if source_name not in db_models.dynamicTables:
-        raise NotAvailableException('%s not found in database.'%source_name)
+        raise NotAvailableException(f'{source_name} not found in database.')
     if not source_name.endswith(db_models.ContentTypeName.BIBLEVIDEO.value):
         raise TypeException('The operation is supported only on biblevideo')
     model_cls = db_models.dynamicTables[source_name]
@@ -204,7 +204,7 @@ def bible_video_db_content_generate(item,db_):
             db_models.BibleBook.bookCode == buk.bookCode.lower() ).first()
         if not book:
             raise NotAvailableException\
-                ('Bible Book code, %s, not found in database'%buk.bookCode)
+                (f'Bible Book code, {buk.bookCode}, not found in database')
         #generate refid value in BCV
         if buk.verseEnd is None:
             buk.verseStart = 0 if buk.verseStart is None else buk.verseStart
@@ -222,7 +222,7 @@ def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
-        raise NotAvailableException('Source %s, not found in database'%source_name)
+        raise NotAvailableException(f'Source {source_name}, not found in database')
     if source_db_content.contentType.contentType != db_models.ContentTypeName.BIBLEVIDEO.value:
         raise TypeException('The operation is supported only on biblevideo')
     model_cls = db_models.dynamicTables[source_name]
@@ -257,7 +257,7 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
-        raise NotAvailableException('Source %s, not found in database'%source_name)
+        raise NotAvailableException(f'Source {source_name}, not found in database')
     if source_db_content.contentType.contentType != db_models.ContentTypeName.BIBLEVIDEO.value:
         raise TypeException('The operation is supported only on biblevideo')
     model_cls = db_models.dynamicTables[source_name]
@@ -266,9 +266,8 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
         row = db_.query(model_cls).filter(
             model_cls.title == utils.normalize_unicode(item.title.strip())).first()
         if not row:
-            raise NotAvailableException("Bible Video row with title:%s, \
-                not found for %s"%(
-                    item.title, source_name))
+            raise NotAvailableException(f"Bible Video row with title:{item.title}, "+\
+                "not found for {source_name}")
         if item.references:
             row.refIds = bible_video_db_content_generate(item,db_)
         if item.series:

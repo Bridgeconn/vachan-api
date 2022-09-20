@@ -154,4 +154,4 @@ user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint:
     log.debug('identity-delete:%s',user)
     user_id = user.userid
     delete_identity(user.userid)
-    return {"message":"deleted identity %s"%user_id}
+    return {"message":f"deleted identity {user_id}"}

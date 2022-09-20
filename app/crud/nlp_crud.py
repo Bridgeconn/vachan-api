@@ -56,13 +56,13 @@ def get_generic_tokens(db_:Session, src_language, sentence_list, trg_language=No
         src_language = db_.query(db_models.Language).filter(
             db_models.Language.code == language_code).first()
         if not src_language:
-            raise NotAvailableException("Language, %s, not present in DB"%language_code)
+            raise NotAvailableException(f"Language, {language_code}, not present in DB")
     if isinstance(trg_language, str):
         language_code = trg_language
         trg_language = db_.query(db_models.Language).filter(
             db_models.Language.code == language_code).first()
         if not trg_language:
-            raise NotAvailableException("Language, %s, not present in DB"%language_code)
+            raise NotAvailableException(f"Language, {language_code}, not present in DB")
     args = {"db_":db_, "src_lang":src_language.code, "sent_list":sentence_list,
         "use_translation_memory":use_translation_memory, "include_phrases":include_phrases,
         "include_stopwords":include_stopwords}
@@ -82,7 +82,7 @@ def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_
     include_stopwords = kwargs.get("include_stopwords",False)
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
-        raise NotAvailableException("Project with id, %s, not found"%project_id)
+        raise NotAvailableException(f"Project with id, {project_id}, not found")
     sentences = obtain_agmt_source(db_, project_id, books, sentence_id_range,sentence_id_list)
     sentences = sentences['db_content']
     args = {"db_":db_, "src_language":project_row.sourceLanguage, "sentence_list":sentences,
@@ -108,11 +108,10 @@ def replace_bulk_tokens_gloss_list(token_translations, updated_sentences):
         for occur in token.occurrences:
             draft_row = updated_sentences[occur.sentenceId]
             if not draft_row:
-                raise NotAvailableException("Sentence id, %s, not found in the sentence_list"
-                    %occur.sentenceId)
+                raise NotAvailableException(f"Sentence id, {occur.sentenceId}, "+\
+                    "not found in the sentence_list")
             if token.token != draft_row.sentence[occur.offset[0]:occur.offset[1]]:
-                raise GenericException("Token, %s, and its occurence, not matching"%(
-                    token.token))
+                raise GenericException(f"Token, {token.token}, and its occurence, not matching")
             draft, meta = nlp_utils.replace_token(draft_row.sentence, occur.offset,
                  token.translation,draft_row.draftMeta, draft=draft_row.draft)
             draft_row.draft = draft
@@ -130,11 +129,11 @@ def replace_bulk_tokens(db_, sentence_list, token_translations, src_code, trg_co
     source = db_.query(db_models.Language).filter(
         db_models.Language.code == src_code).first()
     if not source:
-        raise NotAvailableException("Language, %s, not in DB. Please create if required"%src_code)
+        raise NotAvailableException(f"Language, {src_code}, not in DB. Please create if required")
     target = db_.query(db_models.Language).filter(
         db_models.Language.code == trg_code).first()
     if not source:
-        raise NotAvailableException("Language, %s, not in DB. Please create if required"%trg_code)
+        raise NotAvailableException(f"Language, {trg_code}, not in DB. Please create if required")
     updated_sentences = {sent.sentenceId:sent for sent in sentence_list}
 
     #get gloss list
@@ -155,11 +154,10 @@ def save_agmt_translations__gloss_list(db_, token_translations, project_id, user
                 db_models.TranslationDraft.project_id == project_id,
                 db_models.TranslationDraft.sentenceId == occur.sentenceId).first()
             if not draft_row:
-                raise NotAvailableException("Sentence id, %s, not found for the selected project"
-                    %occur.sentenceId)
+                raise NotAvailableException(f"Sentence id, {occur.sentenceId}, "+\
+                    "not found for the selected project")
             if token.token != draft_row.sentence[occur.offset[0]:occur.offset[1]]:
-                raise GenericException("Token, %s, and its occurence, not matching"%(
-                    token.token))
+                raise GenericException(f"Token, {token.token}, and its occurence, not matching")
             draft, meta = nlp_utils.replace_token(draft_row.sentence, occur.offset,
             token.translation, draft_row.draftMeta, draft=draft_row.draft)
             draft_row.draft = draft
@@ -176,7 +174,7 @@ def save_agmt_translations(db_, project_id, token_translations, return_drafts=Tr
     '''replace tokens with provided translation in the drafts and update translation memory'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
-        raise NotAvailableException("Project with id, %s, not present"%project_id)
+        raise NotAvailableException(f"Project with id, {project_id}, not present")
     use_data = True
     if project_row.metaData is not None and "useDataForLearning" in project_row.metaData:
         use_data = project_row.metaData['useDataForLearning']
@@ -289,8 +287,8 @@ def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
                         old_align = obj
                         break
                 if not old_align:
-                    raise NotAvailableException("Can't find source token, %s, in %s"%(
-                        src_tok_list[align.sourceTokenIndex], phrases))
+                    raise NotAvailableException("Can't find source token, "+\
+                        f"{src_tok_list[align.sourceTokenIndex]}, in {phrases}")
                 trg_indices = sorted(old_align['trg_indices']+ [align.targetTokenIndex])
                 translation = " ".join(trg_tok_list[trg_indices[0]:trg_indices[-1]+1])
                 phrases.remove(old_align)
@@ -304,8 +302,8 @@ def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
                         old_align = obj
                         break
                 if not old_align:
-                    raise NotAvailableException("Cant find target token, %s, in %s"%(
-                        trg_tok_list[align.targetTokenIndex], phrases))
+                    raise NotAvailableException("Cant find target token,"+\
+                        f" {trg_tok_list[align.targetTokenIndex]}, in {phrases}")
                 src_indices = sorted(old_align['src_indices']+ [align.sourceTokenIndex])
                 new_token = " ".join(src_tok_list[src_indices[0]:src_indices[-1]+1])
                 phrases.remove(old_align)
@@ -568,14 +566,14 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0
         source_lang = db_.query(db_models.Language).filter(
             db_models.Language.code == src_lang).first()
         if not source_lang:
-            raise NotAvailableException("Language, %s, not available"%src_lang)
+            raise NotAvailableException(f"Language, {src_lang}, not available")
     else:
         source_lang = src_lang
     if isinstance(trg_lang, str):
         target_lang = db_.query(db_models.Language).filter(
             db_models.Language.code == trg_lang).first()
         if not target_lang:
-            raise NotAvailableException("Language, %s, not available"%trg_lang)
+            raise NotAvailableException(f"Language, {trg_lang}, not available")
     else:
         target_lang = trg_lang
     #function for gloss data process
@@ -788,7 +786,7 @@ def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range,
     confirm_all= kwargs.get("confirm_all",False)
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
-        raise NotAvailableException("Project with id, %s, not found"%project_id)
+        raise NotAvailableException(f"Project with id, {project_id}, not found")
     draft_rows = obtain_agmt_source(db_, project_id, books, sentence_id_range,sentence_id_list,
         with_draft=True)
     draft_rows = draft_rows['db_content']
@@ -871,7 +869,7 @@ def create_usfm(sent_drafts):
     for sent in sentences:
         if sent.sentenceId < 1001001 or sent.sentenceId > 66999999:
             raise TypeException("SentenceIds should be of bbbcccvvv pattern for creating USFM,"+
-                "doesn't support %s"%sent.sentenceId)
+                f"doesn't support {sent.sentenceId}")
         verse_num = sent.sentenceId % 1000
         chapter_num = int((sent.sentenceId /1000) % 1000)
         book_num = int(sent.sentenceId / 1000000)
@@ -880,7 +878,7 @@ def create_usfm(sent_drafts):
                 usfm_files.append(file)
             book_code = utils.book_code(book_num)
             if book_code is None:
-                raise NotAvailableException("Book number %s not a valid one" %book_num)
+                raise NotAvailableException(f"Book number {book_num} not a valid one")
             file = book_start.format(book_code)
             prev_book = book_num
         if chapter_num != prev_chapter:
@@ -962,7 +960,7 @@ def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=No
     with_draft= kwargs.get("with_draft",False)
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
-        raise NotAvailableException("Project with id, %s, not found"%project_id)
+        raise NotAvailableException(f"Project with id, {project_id}, not found")
     sentence_query = db_.query(db_models.TranslationDraft).filter(
         db_models.TranslationDraft.project_id == project_id)
     if books:
@@ -971,7 +969,7 @@ def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=No
             book_id = db_.query(db_models.BibleBook.bookId).filter(
                 db_models.BibleBook.bookCode==buk).first()
             if not book_id:
-                raise NotAvailableException("Book, %s, not in database"%buk)
+                raise NotAvailableException(f"Book, {buk}, not in database")
             book_filters.append(
                 db_models.TranslationDraft.sentenceId.between(
                     book_id[0]*1000000, book_id[0]*1000000 + 999999))

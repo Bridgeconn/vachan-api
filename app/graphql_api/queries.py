@@ -7,8 +7,6 @@ from routers import content_apis, auth_api, translation_apis
 from auth.authentication import get_user_or_none_graphql
 from dependencies import log
 
-#Pylint error :- Query class have all resolver functions
-#pylint: disable=R0201
 #pylint: disable=too-many-arguments,too-many-public-methods
 class Query(graphene.ObjectType):
     '''All defined queries'''
