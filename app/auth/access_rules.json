@@ -63,6 +63,9 @@
         "stream":["registeredUser"],
         "download":["registeredUser"]
     },
+    "file-ops":{
+        "access-via-api":["noAuthRequired"]
+    },
     "user":{
         "create":["noAuthRequired"],
         "edit-role":["SuperAdmin"],
