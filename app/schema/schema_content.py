@@ -136,7 +136,7 @@ class BibleBookContent(BaseModel):
                             {"chapterNumber": "1",
                              "contents": [ {
                                 "verseNumber": "1",
-                                "verseText": "इब्राहीम की सन्‍तान, दाऊद की ..."}]}
+                 "verseText": "इब्राहीम की सन्‍तान, दाऊद की ..."}]}
                         ]
                     },
                 "AudioBible": {
@@ -667,5 +667,16 @@ class BibleVideoEdit(BaseModel):
                     "its flow of thought.",
                 "series": "Old Testament, Poetic Book",
                 "active": True
+            }
+        }
+
+class UploadedUsfm(BaseModel):
+    '''Input object to upload a usfm string'''
+    USFM :str
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "USFM": "\\id MAT\n\\c 1\n\\p\n\\v 1 इब्राहीम की सन्‍तान, दाऊद की ...",
             }
         }
