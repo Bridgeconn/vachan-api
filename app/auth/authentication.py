@@ -101,6 +101,8 @@ def api_resourcetype_map(endpoint, path_params=None):
         resource_type = schema_auth.ResourceType.JOBS.value
     elif endpoint.startswith("/v2/media"):
         resource_type = schema_auth.ResourceType.MEDIA.value
+    elif endpoint.startswith("/v2/files"):
+        resource_type = schema_auth.ResourceType.FILE.value
     elif endpoint.startswith("/v2/sources") or (
         path_params is not None and "source_name" in path_params):
         resource_type = schema_auth.ResourceType.CONTENT.value
@@ -111,16 +113,20 @@ def api_resourcetype_map(endpoint, path_params=None):
 
 def search_api_permission_map(endpoint, method, client_app, path_params=None, resource=None):
     '''look up request params in the api-permission table loaded from CSV'''
-    log.debug("Looking up api permission map for\n>>>>endpoint:%s, \n>>>method:%s, client_app:%s",
-        endpoint, method,client_app)
+    # log.debug("Looking up api permission map for\n>>>>endpoint:%s, \n>>>method:%s, client_app:%s",
+    #     endpoint, method,client_app)
     req_url = endpoint
+    if not req_url.endswith("/"):
+        req_url += "/"
     for key in path_params:
-        req_url = req_url.replace(path_params[key], "*")
+        req_url = req_url.replace("/"+path_params[key]+"/", "/*/")
     if resource is None:
         resource = api_resourcetype_map(endpoint, path_params)
-    log.debug("\n>>>>resource:%s", resource)
+    # log.debug("\n>>>>resource:%s", resource)
     for row in APIPERMISSIONTABLE:
         table_url = row[0]
+        if not table_url.endswith("/"):
+            table_url += "/"
         for key in path_params:
             table_url = table_url.replace("{"+key+"}", "*")
         if table_url == req_url:
@@ -143,7 +149,8 @@ def get_access_tag(db_, resource_type, path_params=None, kw_args = None, resourc
         schema_auth.ResourceType.METACONTENT: ["meta-content","open-access"],
         schema_auth.ResourceType.RESEARCH: ['content', 'research-use'],
         schema_auth.ResourceType.JOBS: ['jobs'],
-        schema_auth.ResourceType.MEDIA: ['media']
+        schema_auth.ResourceType.MEDIA: ['media'],
+        schema_auth.ResourceType.FILE: ['file-ops']
         # schema_auth.ResourceType.CONTENT: None # excluded to use item specific tags in db
     }
     if resource_type in resource_tag_map:
@@ -188,8 +195,8 @@ def is_project_member(db_:Session, db_resource, user_id):
 
 def check_right(user_details, required_rights, resp_obj=None, db_=None):
     '''Use user details and info about requested action or resource to ensure right'''
-    log.debug("In check_right with user_details: %s, required_rights:%s, resp_obj:%s",
-        user_details, required_rights, resp_obj)
+    # log.debug("In check_right with user_details: %s, required_rights:%s, resp_obj:%s",
+    #     user_details, required_rights, resp_obj)
     valid = False
     if "noAuthRequired" in required_rights:
         valid =  True
@@ -223,7 +230,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
     """Decorator function for auth and access check for all routers"""
     @wraps(func)
     async def wrapper(*args, **kwargs):#pylint: disable=too-many-branches,too-many-statements, too-many-locals
-        log.debug("\n\n\n********New auth check, for a resource access or operation************")
+        # log.debug("\n\n\n********New auth check, for a resource access or operation************")
         request = kwargs.get('request')
         db_ = kwargs.get("db_")
         endpoint = request.url.path
@@ -285,8 +292,8 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                     response['data'] = response['data']['db_content']
                 else:
                     obj = response['data']
-        log.debug("authenticated:%s", authenticated)
-        log.debug("OBJ:%s",obj)
+        # log.debug("authenticated:%s", authenticated)
+        # log.debug("OBJ:%s",obj)
         if authenticated:
             # All no-auth and role based cases checked and appoved if applicable
             if db_:
