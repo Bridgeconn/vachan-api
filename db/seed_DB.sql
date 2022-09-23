@@ -208,7 +208,7 @@ ALTER SEQUENCE public.jobs_job_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.api_permissions (
     permission_id SERIAL PRIMARY KEY,
-    endpoints text NOT NULL,
+    api_endpoint text NOT NULL,
     method text NOT NULL,
     request_app	 text NOT NULL,
     filter_results boolean DEFAULT false NOT NULL,
@@ -223,6 +223,8 @@ CREATE TABLE public.api_permissions (
 );
 
 ALTER SEQUENCE public.api_permissions_permission_id_seq RESTART WITH 100000;
+-- restrict values of a column
+ALTER TABLE public.api_permissions ADD CONSTRAINT check_type CHECK (public.api_permissions.method IN ('GET', 'POST', 'PUT', 'DELETE', 'PATCH'))
 
 \COPY api_permissions(endpoints,method,request_app,filter_results,resource_type,permission) FROM 'csvs/api_permissions.csv' DELIMITER ',' CSV HEADER;
 
