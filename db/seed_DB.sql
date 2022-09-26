@@ -224,9 +224,9 @@ CREATE TABLE public.api_permissions (
 
 ALTER SEQUENCE public.api_permissions_permission_id_seq RESTART WITH 100000;
 -- restrict values of a column
-ALTER TABLE public.api_permissions ADD CONSTRAINT check_type CHECK (public.api_permissions.method IN ('GET', 'POST', 'PUT', 'DELETE', 'PATCH'))
+ALTER TABLE public.api_permissions ADD CONSTRAINT check_type CHECK (public.api_permissions.method IN ('GET', 'POST', 'PUT', 'DELETE', 'PATCH'));
 
-\COPY api_permissions(endpoints,method,request_app,filter_results,resource_type,permission) FROM 'csvs/api_permissions.csv' DELIMITER ',' CSV HEADER;
+\COPY api_permissions(api_endpoint,method,request_app,filter_results,resource_type,permission) FROM 'csvs/api_permissions.csv' DELIMITER ',' CSV HEADER;
 
 CREATE TABLE public.access_rules (
     rule_id SERIAL PRIMARY KEY,

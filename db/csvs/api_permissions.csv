@@ -1,4 +1,4 @@
-endpoints,method,request_app,filter_results,resource_type,permission
+api_endpoint,method,request_app,filter_results,resource_type,permission
 /v2/user/register,POST,None,FALSE,None,create
 /v2/user/login,GET,None,FALSE,None,login
 /v2/user/{user_id},PUT,None,FALSE,None,edit
