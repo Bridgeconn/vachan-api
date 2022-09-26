@@ -439,7 +439,7 @@ class ApiPermissions(Base): # pylint: disable=too-few-public-methods
     __tablename__ = 'api_permissions'
 
     permissionId = Column('permission_id', Integer, primary_key=True)
-    endpoints = Column('endpoints', String, unique=True, index=True)
+    api_endpoint = Column('api_endpoint', String, unique=True, index=True)
     method = Column('method', String)
     requestApp = Column('request_app', String)
     filterResults = Column('filter_results', Boolean)
