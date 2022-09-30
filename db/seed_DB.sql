@@ -206,6 +206,51 @@ CREATE TABLE public.jobs(
 
 ALTER SEQUENCE public.jobs_job_id_seq RESTART WITH 100000;
 
+-- authentication tables
+
+CREATE TABLE public.roles (
+    role_id SERIAL PRIMARY KEY,
+    role_name text NOT NULL,
+    created_at timestamp with time zone DEFAULT NOW(),
+    created_user text NULL,
+    last_updated_at  timestamp with time zone DEFAULT NOW(),
+    last_updated_user text NULL,
+    active boolean DEFAULT true NOT NULL,
+    UNIQUE(role_id)
+);
+
+ALTER SEQUENCE public.roles_role_id_seq RESTART WITH 100000;
+
+CREATE TABLE public.resource_types (
+    resource_type_id SERIAL PRIMARY KEY,
+    resource_type_name text NOT NULL,
+    resource_type_description text NOT NULL,
+    created_at timestamp with time zone DEFAULT NOW(),
+    created_user text NULL,
+    last_updated_at  timestamp with time zone DEFAULT NOW(),
+    last_updated_user text NULL,
+    active boolean DEFAULT true NOT NULL,
+    UNIQUE(resource_type_id)
+);
+
+ALTER SEQUENCE public.resource_types_resource_type_id_seq RESTART WITH 100000;
+
+CREATE TABLE public.apps (
+    app_id SERIAL PRIMARY KEY,
+    app_name text NOT NULL,
+    associated_role text NOT NULL,
+    use_for_input boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT NOW(),
+    created_user text NULL,
+    last_updated_at  timestamp with time zone DEFAULT NOW(),
+    last_updated_user text NULL,
+    active boolean DEFAULT true NOT NULL,
+    UNIQUE(app_id)
+);
+
+ALTER SEQUENCE public.apps_app_id_seq RESTART WITH 100000;
+ALTER TABLE public.apps ADD CONSTRAINT associated_role_value CHECK (public.apps.associated_role IN (public.roles.role_name OR NULL));
+
 CREATE TABLE public.api_permissions (
     permission_id SERIAL PRIMARY KEY,
     api_endpoint text NOT NULL,
