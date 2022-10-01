@@ -263,6 +263,7 @@ CREATE TABLE public.apps (
     app_id SERIAL PRIMARY KEY,
     app_name text NOT NULL UNIQUE,
     associated_role text NOT NULL,
+    app_key text NOT NULL,
     use_for_input boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT NOW(),
     created_user text NULL,
@@ -272,10 +273,10 @@ CREATE TABLE public.apps (
     UNIQUE(app_id),
     CONSTRAINT fk_assocaited_role FOREIGN KEY(associated_role) REFERENCES public.roles(role_name)
 );
-INSERT INTO apps(app_name,associated_role) VALUES('Autographa', 'AgUser');
-INSERT INTO apps(app_name,associated_role) VALUES('Vachan-online or vachan-app', 'VachanUser');
-INSERT INTO apps(app_name,associated_role) VALUES('VachanAdmin', 'VachanAdmin');
-INSERT INTO apps(app_name,associated_role) VALUES('API-user', 'APIUser');
+INSERT INTO apps(app_name,associated_role,app_key) VALUES('Autographa', 'AgUser','temp_key');
+INSERT INTO apps(app_name,associated_role,app_key) VALUES('Vachan-online or vachan-app', 'VachanUser','temp_key');
+INSERT INTO apps(app_name,associated_role,app_key) VALUES('VachanAdmin', 'VachanAdmin','temp_key');
+INSERT INTO apps(app_name,associated_role,app_key) VALUES('API-user', 'APIUser','temp_key');
 
 ALTER SEQUENCE public.apps_app_id_seq RESTART WITH 100000;
 -- ALTER TABLE public.apps ADD CONSTRAINT associated_role_value CHECK (public.apps.associated_role IN (SELECT role_name FROM public.roles));
