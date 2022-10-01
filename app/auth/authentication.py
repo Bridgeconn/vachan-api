@@ -465,6 +465,8 @@ def update_kratos_user(rec_user_id,data):
 def register_check_success(reg_response):
     """register reqirement success"""
     name_path = reg_response["identity"]["traits"]["name"]
+    name_path["first"] = '' if 'first' not in name_path else name_path["first"]
+    name_path["last"] = '' if 'last' not in name_path else name_path["last"]
     data={
         "message":"Registration Successfull",
         "registered_details":{
