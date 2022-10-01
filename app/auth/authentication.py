@@ -69,6 +69,10 @@ def get_user_or_none_graphql(info):
     user_details = get_current_user_data(token)
     return user_details, req
 
+################## Access control & permsision map from db on startup ########################
+DBAPIPERMISSIONTABLE = []
+DBACCESS_RULES = {}
+
 
 ####################### Access control logics ######################################
 with open('auth/access_rules.json','r') as file:
