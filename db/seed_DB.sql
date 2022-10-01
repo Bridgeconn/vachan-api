@@ -210,7 +210,7 @@ ALTER SEQUENCE public.jobs_job_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.roles (
     role_id SERIAL PRIMARY KEY,
-    role_name text NOT NULL,
+    role_name text NOT NULL UNIQUE,
     created_at timestamp with time zone DEFAULT NOW(),
     created_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
@@ -221,10 +221,18 @@ CREATE TABLE public.roles (
 
 ALTER SEQUENCE public.roles_role_id_seq RESTART WITH 100000;
 
+INSERT INTO roles(role_name) VALUES('SuperAdmin');
+INSERT INTO roles(role_name) VALUES('VachanAdmin');
+INSERT INTO roles(role_name) VALUES('AgAdmin');
+INSERT INTO roles(role_name) VALUES('AgUser');
+INSERT INTO roles(role_name) VALUES('VachanUser');
+INSERT INTO roles(role_name) VALUES('APIUser');
+INSERT INTO roles(role_name) VALUES('BcsDeveloper');
+
 CREATE TABLE public.resource_types (
     resource_type_id SERIAL PRIMARY KEY,
-    resource_type_name text NOT NULL,
-    resource_type_description text NOT NULL,
+    resource_type_name text NOT NULL UNIQUE,
+    resource_type_description text,
     created_at timestamp with time zone DEFAULT NOW(),
     created_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
@@ -234,10 +242,26 @@ CREATE TABLE public.resource_types (
 );
 
 ALTER SEQUENCE public.resource_types_resource_type_id_seq RESTART WITH 100000;
+\COPY resource_types(resource_type_name,resource_type_description) FROM 'csvs/auth_resource_types.csv' DELIMITER ',' CSV HEADER;
+
+CREATE TABLE public.permissions (
+    permission_id SERIAL PRIMARY KEY,
+    permission_name text NOT NULL UNIQUE,
+    permission_description text,
+    created_at timestamp with time zone DEFAULT NOW(),
+    created_user text NULL,
+    last_updated_at  timestamp with time zone DEFAULT NOW(),
+    last_updated_user text NULL,
+    active boolean DEFAULT true NOT NULL,
+    UNIQUE(permission_id)
+);
+
+ALTER SEQUENCE public.permissions_permission_id_seq RESTART WITH 100000;
+\COPY permissions(permission_name) FROM 'csvs/auth_permissions.csv' DELIMITER ',' CSV HEADER;
 
 CREATE TABLE public.apps (
     app_id SERIAL PRIMARY KEY,
-    app_name text NOT NULL,
+    app_name text NOT NULL UNIQUE,
     associated_role text NOT NULL,
     use_for_input boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT NOW(),
@@ -245,13 +269,37 @@ CREATE TABLE public.apps (
     last_updated_at  timestamp with time zone DEFAULT NOW(),
     last_updated_user text NULL,
     active boolean DEFAULT true NOT NULL,
-    UNIQUE(app_id)
+    UNIQUE(app_id),
+    CONSTRAINT fk_assocaited_role FOREIGN KEY(associated_role) REFERENCES public.roles(role_name)
 );
+INSERT INTO apps(app_name,associated_role) VALUES('Autographa', 'AgUser');
+INSERT INTO apps(app_name,associated_role) VALUES('Vachan-online or vachan-app', 'VachanUser');
+INSERT INTO apps(app_name,associated_role) VALUES('VachanAdmin', 'VachanAdmin');
+INSERT INTO apps(app_name,associated_role) VALUES('API-user', 'APIUser');
 
 ALTER SEQUENCE public.apps_app_id_seq RESTART WITH 100000;
-ALTER TABLE public.apps ADD CONSTRAINT associated_role_value CHECK (public.apps.associated_role IN (public.roles.role_name OR NULL));
+-- ALTER TABLE public.apps ADD CONSTRAINT associated_role_value CHECK (public.apps.associated_role IN (SELECT role_name FROM public.roles));
 
-CREATE TABLE public.api_permissions (
+CREATE TABLE public.access_rules (
+    rule_id SERIAL PRIMARY KEY,
+    entitlement text NOT NULL,
+    tag text NOT NULL,
+    roles text[],
+    created_at timestamp with time zone DEFAULT NOW(),
+    created_user text NULL,
+    last_updated_at  timestamp with time zone DEFAULT NOW(),
+    last_updated_user text NULL,
+    active boolean DEFAULT true NOT NULL,
+    UNIQUE(rule_id),
+    CONSTRAINT fk_entitlement FOREIGN KEY(entitlement) REFERENCES public.resource_types(resource_type_name),
+    CONSTRAINT fk_tag FOREIGN KEY(tag) REFERENCES public.permissions(permission_name)
+);
+
+ALTER SEQUENCE public.access_rules_rule_id_seq RESTART WITH 100000;
+
+\COPY access_rules(entitlement,tag,roles) FROM 'csvs/access_rules.csv' DELIMITER ',' CSV HEADER;
+
+CREATE TABLE public.api_permissions_map (
     permission_id SERIAL PRIMARY KEY,
     api_endpoint text NOT NULL,
     method text NOT NULL,
@@ -264,28 +312,14 @@ CREATE TABLE public.api_permissions (
     last_updated_at  timestamp with time zone DEFAULT NOW(),
     last_updated_user text NULL,
     active boolean DEFAULT true NOT NULL,
-    UNIQUE(permission_id)
+    UNIQUE(permission_id),
+    CONSTRAINT fk_request_app FOREIGN KEY(request_app) REFERENCES public.apps(app_name),
+    CONSTRAINT fk_resource_type FOREIGN KEY(resource_type) REFERENCES public.resource_types(resource_type_name),
+    CONSTRAINT fk_permission FOREIGN KEY(permission) REFERENCES public.permissions(permission_name)
 );
 
-ALTER SEQUENCE public.api_permissions_permission_id_seq RESTART WITH 100000;
+ALTER SEQUENCE public.api_permissions_map_permission_id_seq RESTART WITH 100000;
 -- restrict values of a column
-ALTER TABLE public.api_permissions ADD CONSTRAINT check_type CHECK (public.api_permissions.method IN ('GET', 'POST', 'PUT', 'DELETE', 'PATCH'));
+ALTER TABLE public.api_permissions_map ADD CONSTRAINT check_type CHECK (public.api_permissions_map.method IN ('GET', 'POST', 'PUT', 'DELETE', 'PATCH'));
 
-\COPY api_permissions(api_endpoint,method,request_app,filter_results,resource_type,permission) FROM 'csvs/api_permissions.csv' DELIMITER ',' CSV HEADER;
-
-CREATE TABLE public.access_rules (
-    rule_id SERIAL PRIMARY KEY,
-    entitlement text NOT NULL,
-    tags text NOT NULL,
-    roles text[],
-    created_at timestamp with time zone DEFAULT NOW(),
-    created_user text NULL,
-    last_updated_at  timestamp with time zone DEFAULT NOW(),
-    last_updated_user text NULL,
-    active boolean DEFAULT true NOT NULL,
-    UNIQUE(rule_id)
-);
-
-ALTER SEQUENCE public.access_rules_rule_id_seq RESTART WITH 100000;
-
-\COPY access_rules(entitlement,tags,roles) FROM 'csvs/access_rules.csv' DELIMITER ',' CSV HEADER;
+\COPY api_permissions_map(api_endpoint,method,request_app,filter_results,resource_type,permission) FROM 'csvs/api_permissions.csv' DELIMITER ',' CSV HEADER;

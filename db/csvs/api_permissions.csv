@@ -1,116 +1,307 @@
-api_endpoint,method,request_app,filter_results,resource_type,permission
-/v2/user/register,POST,None,FALSE,None,create
-/v2/user/login,GET,None,FALSE,None,login
-/v2/user/{user_id},PUT,None,FALSE,None,edit
-/v2/users,GET,None,FALSE,None,read
-/v2/user/{user_id},GET,None,FALSE,None,view-profile
-/v2/user/logout,GET,None,FALSE,None,logout
-/v2/user/role,PUT,None,FALSE,None,edit-role
-/v2/user/delete-identity,DELETE,None,FALSE,None,delete/deactivate
-/v2/contents,GET,Autographa,FALSE,None,refer-for-translation
-/v2/contents,GET,Vachan-online or vachan-app,FALSE,None,view-on-web
-/v2/contents,GET,VachanAdmin,FALSE,None,read-via-vachanadmin
-/v2/contents,GET,API-user,FALSE,None,read-via-api
-/v2/contents,POST,None,FALSE,None,create
-/v2/languages,GET,Autographa,FALSE,None,refer-for-translation
-/v2/languages,GET,Vachan-online or vachan-app,FALSE,None,view-on-web
-/v2/languages,GET,VachanAdmin,FALSE,None,read-via-vachanadmin
-/v2/languages,GET,API-user,FALSE,None,read-via-api
-/v2/languages,POST,None,FALSE,None,create
-/v2/languages,PUT,None,FALSE,None,edit
-/v2/licenses,GET,Autographa,FALSE,None,refer-for-translation
-/v2/licenses,GET,Vachan-online or vachan-app,FALSE,None,view-on-web
-/v2/licenses,GET,VachanAdmin,FALSE,None,read-via-vachanadmin
-/v2/licenses,GET,API-user,FALSE,None,read-via-api
-/v2/licenses,POST,None,FALSE,None,create
-/v2/licenses,PUT,None,FALSE,None,edit
-/v2/versions,GET,Autographa,FALSE,None,refer-for-translation
-/v2/versions,GET,Vachan-online or vachan-app,FALSE,None,view-on-web
-/v2/versions,GET,VachanAdmin,FALSE,None,read-via-vachanadmin
-/v2/versions,GET,API-user,FALSE,None,read-via-api
-/v2/versions,POST,None,FALSE,None,create
-/v2/versions,PUT,None,FALSE,None,edit
-/v2/sources,GET,Autographa,TRUE,None,refer-for-translation
-/v2/sources,GET,Vachan-online or vachan-app,TRUE,None,view-on-web
-/v2/sources,GET,VachanAdmin,TRUE,None,read-via-vachanadmin
-/v2/sources,GET,API-user,TRUE,None,read-via-api
-/v2/sources,POST,None,FALSE,None,create
-/v2/sources,PUT,None,FALSE,None,edit
-/v2/sources/get-sentence,GET,Autographa,FALSE,"contents like bibles, commentaries, infographics, dictionary or videos",refer-for-translation
-/v2/sources/get-sentence,GET,Vachan-online or vachan-app,FALSE,"contents like bibles, commentaries, infographics, dictionary or videos",view-on-web
-/v2/sources/get-sentence,GET,VachanAdmin,FALSE,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-vachanadmin
-/v2/sources/get-sentence,GET,API-user,FALSE,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-api
-/v2/sources/get-sentence,GET,None,FALSE,Research-Material,read-via-api
-/v2/lookup/bible/books,GET,None,FALSE,None,read
-/v2/bibles/{source_name}/books,GET,Autographa,FALSE,None,refer-for-translation
-/v2/bibles/{source_name}/books,GET,Vachan-online or vachan-app,FALSE,None,view-on-web
-/v2/bibles/{source_name}/books,GET,VachanAdmin,FALSE,None,read-via-vachanadmin
-/v2/bibles/{source_name}/books,GET,API-user,FALSE,None,read-via-api
-/v2/bibles/{source_name}/books,POST,None,FALSE,None,create
-/v2/bibles/{source_name}/books,PUT,None,FALSE,None,edit
-/v2/bibles/{source_name}/versification,GET,Autographa,FALSE,None,refer-for-translation
-/v2/bibles/{source_name}/versification,GET,Vachan-online or vachan-app,FALSE,None,view-on-web
-/v2/bibles/{source_name}/versification,GET,VachanAdmin,FALSE,None,read-via-vachanadmin
-/v2/bibles/{source_name}/versification,GET,API-user,FALSE,None,read-via-api
-/v2/bibles/{source_name}/verses,GET,Autographa,FALSE,None,refer-for-translation
-/v2/bibles/{source_name}/verses,GET,Vachan-online or vachan-app,FALSE,None,view-on-web
-/v2/bibles/{source_name}/verses,GET,VachanAdmin,FALSE,None,read-via-vachanadmin
-/v2/bibles/{source_name}/verses,GET,API-user,FALSE,None,read-via-api
-/v2/bibles/{source_name}/audios,POST,None,FALSE,None,create
-/v2/bibles/{source_name}/audios,PUT,None,FALSE,None,edit
-/v2/commentaries/{source_name},GET,Autographa,FALSE,None,refer-for-translation
-/v2/commentaries/{source_name},GET,Vachan-online or vachan-app,FALSE,None,view-on-web
-/v2/commentaries/{source_name},GET,VachanAdmin,FALSE,None,read-via-vachanadmin
-/v2/commentaries/{source_name},GET,API-user,FALSE,None,read-via-api
-/v2/commentaries/{source_name},POST,None,FALSE,None,create
-/v2/commentaries/{source_name},PUT,None,FALSE,None,edit
-/v2/dictionaries/{source_name},GET,Autographa,FALSE,None,refer-for-translation
-/v2/dictionaries/{source_name},GET,Vachan-online or vachan-app,FALSE,None,view-on-web
-/v2/dictionaries/{source_name},GET,VachanAdmin,FALSE,None,read-via-vachanadmin
-/v2/dictionaries/{source_name},GET,API-user,FALSE,None,read-via-api
-/v2/dictionaries/{source_name},POST,None,FALSE,None,create
-/v2/dictionaries/{source_name},PUT,None,FALSE,None,edit
-/v2/infographics/{source_name},GET,Autographa,FALSE,None,refer-for-translation
-/v2/infographics/{source_name},GET,Vachan-online or vachan-app,FALSE,None,view-on-web
-/v2/infographics/{source_name},GET,VachanAdmin,FALSE,None,read-via-vachanadmin
-/v2/infographics/{source_name},GET,API-user,FALSE,None,read-via-api
-/v2/infographics/{source_name},POST,None,FALSE,None,create
-/v2/infographics/{source_name},PUT,None,FALSE,None,edit
-/v2/biblevideos/{source_name},GET,Autographa,FALSE,None,refer-for-translation
-/v2/biblevideos/{source_name},GET,Vachan-online or vachan-app,FALSE,None,view-on-web
-/v2/biblevideos/{source_name},GET,VachanAdmin,FALSE,None,read-via-vachanadmin
-/v2/biblevideos/{source_name},GET,API-user,FALSE,None,read-via-api
-/v2/biblevideos/{source_name},POST,None,FALSE,None,create
-/v2/biblevideos/{source_name},PUT,None,FALSE,None,edit
-/v2/autographa/projects,GET,Autographa,TRUE,None,view-project
-/v2/autographa/projects,POST,Autographa,FALSE,None,create
-/v2/autographa/projects,PUT,Autographa,FALSE,"contents like bibles, commentaries, infographics, dictionary or videos",translate
-/v2/autographa/projects,PUT,Autographa,FALSE,Ag or translation project,edit-Settings
-/v2/autographa/project/user,POST,Autographa,FALSE,None,create-user
-/v2/autographa/project/user,PUT,Autographa,FALSE,None,edit-Settings
-/v2/autographa/project/tokens,GET,Autographa,FALSE,None,read-draft
-/v2/autographa/project/tokens,PUT,Autographa,FALSE,None,edit-draft
-/v2/autographa/project/token-translations,GET,Autographa,FALSE,None,read-draft
-/v2/autographa/project/token-sentences,PUT,Autographa,FALSE,None,edit-draft
-/v2/autographa/project/draft,GET,Autographa,FALSE,None,read-draft
-/v2/autographa/project/sentences,GET,Autographa,FALSE,None,view-project
-/v2/autographa/project/progress,GET,Autographa,FALSE,None,view-project
-/v2/autographa/project/versification,GET,Autographa,FALSE,None,view-project
-/v2/autographa/project/suggestions,PUT,Autographa,FALSE,None,edit-draft
-/v2/translation/suggestions,PUT,None,FALSE,None,process
-/v2/translation/tokens,PUT,None,FALSE,None,process
-/v2/translation/token-translate,PUT,None,FALSE,None,process
-/v2/translation/draft,PUT,None,FALSE,None,process
-/v2/nlp/gloss,GET,None,FALSE,None,read
-/v2/nlp/learn/gloss,POST,None,FALSE,None,create
-/v2/nlp/learn/alignment,POST,None,FALSE,None,create
-/v2/nlp/stopwords/generate,POST,None,FALSE,Lookup contents,create
-/v2/nlp/stopwords/generate,POST,None,FALSE,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-api
-/v2/lookup/stopwords/{language_code},GET,None,FALSE,None,read
-/v2/lookup/stopwords/{language_code},PUT,None,FALSE,None,edit
-/v2/lookup/stopwords/{language_code},POST,None,FALSE,None,create
-/v2/jobs,GET,None,FALSE,None,read
-/v2/media/gitlab/stream,GET,None,FALSE,Media contents,stream
-/v2/media/gitlab/stream,GET,None,FALSE,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-api
-/v2/media/gitlab/download,GET,None,FALSE,Media contents,download
-/v2/media/gitlab/download,GET,None,FALSE,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-api
+/v2/user/register,POST,Autographa,FALSE,user,create
+/v2/user/register,POST,Vachan-online or vachan-app,FALSE,user,create
+/v2/user/register,POST,VachanAdmin,FALSE,user,create
+/v2/user/register,POST,API-user,FALSE,user,create
+/v2/user/register,POST,API-user,FALSE,user,create
+/v2/user/login,GET,Autographa,FALSE,user,login
+/v2/user/login,GET,Vachan-online or vachan-app,FALSE,user,login
+/v2/user/login,GET,VachanAdmin,FALSE,user,login
+/v2/user/login,GET,API-user,FALSE,user,login
+/v2/user/login,GET,API-user,FALSE,user,login
+/v2/user/{user_id},PUT,Autographa,FALSE,user,edit
+/v2/user/{user_id},PUT,Vachan-online or vachan-app,FALSE,user,edit
+/v2/user/{user_id},PUT,VachanAdmin,FALSE,user,edit
+/v2/user/{user_id},PUT,API-user,FALSE,user,edit
+/v2/user/{user_id},PUT,API-user,FALSE,user,edit
+/v2/users,GET,Autographa,FALSE,user,read
+/v2/users,GET,Vachan-online or vachan-app,FALSE,user,read
+/v2/users,GET,VachanAdmin,FALSE,user,read
+/v2/users,GET,API-user,FALSE,user,read
+/v2/users,GET,API-user,FALSE,user,read
+/v2/user/{user_id},GET,Autographa,FALSE,user,view-profile
+/v2/user/{user_id},GET,Vachan-online or vachan-app,FALSE,user,view-profile
+/v2/user/{user_id},GET,VachanAdmin,FALSE,user,view-profile
+/v2/user/{user_id},GET,API-user,FALSE,user,view-profile
+/v2/user/{user_id},GET,API-user,FALSE,user,view-profile
+/v2/user/logout,GET,Autographa,FALSE,user,logout
+/v2/user/logout,GET,Vachan-online or vachan-app,FALSE,user,logout
+/v2/user/logout,GET,VachanAdmin,FALSE,user,logout
+/v2/user/logout,GET,API-user,FALSE,user,logout
+/v2/user/logout,GET,API-user,FALSE,user,logout
+/v2/user/role,PUT,Autographa,FALSE,user,edit-role
+/v2/user/role,PUT,Vachan-online or vachan-app,FALSE,user,edit-role
+/v2/user/role,PUT,VachanAdmin,FALSE,user,edit-role
+/v2/user/role,PUT,API-user,FALSE,user,edit-role
+/v2/user/role,PUT,API-user,FALSE,user,edit-role
+/v2/user/delete-identity,DELETE,Autographa,FALSE,user,delete/deactivate
+/v2/user/delete-identity,DELETE,Vachan-online or vachan-app,FALSE,user,delete/deactivate
+/v2/user/delete-identity,DELETE,VachanAdmin,FALSE,user,delete/deactivate
+/v2/user/delete-identity,DELETE,API-user,FALSE,user,delete/deactivate
+/v2/user/delete-identity,DELETE,API-user,FALSE,user,delete/deactivate
+/v2/contents,GET,Autographa,FALSE,content,refer-for-translation
+/v2/contents,GET,Vachan-online or vachan-app,FALSE,content,view-on-web
+/v2/contents,GET,VachanAdmin,FALSE,content,read-via-vachanadmin
+/v2/contents,GET,API-user,FALSE,content,read-via-api
+/v2/contents,POST,Autographa,FALSE,content,create
+/v2/contents,POST,Vachan-online or vachan-app,FALSE,content,create
+/v2/contents,POST,VachanAdmin,FALSE,content,create
+/v2/contents,POST,API-user,FALSE,content,create
+/v2/contents,POST,API-user,FALSE,content,create
+/v2/languages,GET,Autographa,FALSE,content,refer-for-translation
+/v2/languages,GET,Vachan-online or vachan-app,FALSE,content,view-on-web
+/v2/languages,GET,VachanAdmin,FALSE,content,read-via-vachanadmin
+/v2/languages,GET,API-user,FALSE,content,read-via-api
+/v2/languages,POST,Autographa,FALSE,content,create
+/v2/languages,POST,Vachan-online or vachan-app,FALSE,content,create
+/v2/languages,POST,VachanAdmin,FALSE,content,create
+/v2/languages,POST,API-user,FALSE,content,create
+/v2/languages,POST,API-user,FALSE,content,create
+/v2/languages,PUT,Autographa,FALSE,content,edit
+/v2/languages,PUT,Vachan-online or vachan-app,FALSE,content,edit
+/v2/languages,PUT,VachanAdmin,FALSE,content,edit
+/v2/languages,PUT,API-user,FALSE,content,edit
+/v2/languages,PUT,API-user,FALSE,content,edit
+/v2/licenses,GET,Autographa,FALSE,content,refer-for-translation
+/v2/licenses,GET,Vachan-online or vachan-app,FALSE,content,view-on-web
+/v2/licenses,GET,VachanAdmin,FALSE,content,read-via-vachanadmin
+/v2/licenses,GET,API-user,FALSE,content,read-via-api
+/v2/licenses,POST,Autographa,FALSE,content,create
+/v2/licenses,POST,Vachan-online or vachan-app,FALSE,content,create
+/v2/licenses,POST,VachanAdmin,FALSE,content,create
+/v2/licenses,POST,API-user,FALSE,content,create
+/v2/licenses,POST,API-user,FALSE,content,create
+/v2/licenses,PUT,Autographa,FALSE,content,edit
+/v2/licenses,PUT,Vachan-online or vachan-app,FALSE,content,edit
+/v2/licenses,PUT,VachanAdmin,FALSE,content,edit
+/v2/licenses,PUT,API-user,FALSE,content,edit
+/v2/licenses,PUT,API-user,FALSE,content,edit
+/v2/versions,GET,Autographa,FALSE,content,refer-for-translation
+/v2/versions,GET,Vachan-online or vachan-app,FALSE,content,view-on-web
+/v2/versions,GET,VachanAdmin,FALSE,content,read-via-vachanadmin
+/v2/versions,GET,API-user,FALSE,content,read-via-api
+/v2/versions,POST,Autographa,FALSE,content,create
+/v2/versions,POST,Vachan-online or vachan-app,FALSE,content,create
+/v2/versions,POST,VachanAdmin,FALSE,content,create
+/v2/versions,POST,API-user,FALSE,content,create
+/v2/versions,POST,API-user,FALSE,content,create
+/v2/versions,PUT,Autographa,FALSE,content,edit
+/v2/versions,PUT,Vachan-online or vachan-app,FALSE,content,edit
+/v2/versions,PUT,VachanAdmin,FALSE,content,edit
+/v2/versions,PUT,API-user,FALSE,content,edit
+/v2/versions,PUT,API-user,FALSE,content,edit
+/v2/sources,GET,Autographa,TRUE,content,refer-for-translation
+/v2/sources,GET,Vachan-online or vachan-app,TRUE,content,view-on-web
+/v2/sources,GET,VachanAdmin,TRUE,content,read-via-vachanadmin
+/v2/sources,GET,API-user,TRUE,content,read-via-api
+/v2/sources,POST,Autographa,FALSE,content,create
+/v2/sources,POST,Vachan-online or vachan-app,FALSE,content,create
+/v2/sources,POST,VachanAdmin,FALSE,content,create
+/v2/sources,POST,API-user,FALSE,content,create
+/v2/sources,POST,API-user,FALSE,content,create
+/v2/sources,PUT,Autographa,FALSE,content,edit
+/v2/sources,PUT,Vachan-online or vachan-app,FALSE,content,edit
+/v2/sources,PUT,VachanAdmin,FALSE,content,edit
+/v2/sources,PUT,API-user,FALSE,content,edit
+/v2/sources,PUT,API-user,FALSE,content,edit
+/v2/sources/get-sentence,GET,Autographa,FALSE,content,refer-for-translation
+/v2/sources/get-sentence,GET,Vachan-online or vachan-app,FALSE,content,view-on-web
+/v2/sources/get-sentence,GET,VachanAdmin,FALSE,content,read-via-vachanadmin
+/v2/sources/get-sentence,GET,API-user,FALSE,content,read-via-api
+/v2/sources/get-sentence,GET,Autographa,FALSE,content,read-via-api
+/v2/sources/get-sentence,GET,Vachan-online or vachan-app,FALSE,content,read-via-api
+/v2/sources/get-sentence,GET,VachanAdmin,FALSE,content,read-via-api
+/v2/sources/get-sentence,GET,API-user,FALSE,content,read-via-api
+/v2/sources/get-sentence,GET,API-user,FALSE,content,read-via-api
+/v2/lookup/bible/books,GET,Autographa,FALSE,lookup-content,read
+/v2/lookup/bible/books,GET,Vachan-online or vachan-app,FALSE,lookup-content,read
+/v2/lookup/bible/books,GET,VachanAdmin,FALSE,lookup-content,read
+/v2/lookup/bible/books,GET,API-user,FALSE,lookup-content,read
+/v2/lookup/bible/books,GET,API-user,FALSE,lookup-content,read
+/v2/bibles/{source_name}/books,GET,Autographa,FALSE,content,refer-for-translation
+/v2/bibles/{source_name}/books,GET,Vachan-online or vachan-app,FALSE,content,view-on-web
+/v2/bibles/{source_name}/books,GET,VachanAdmin,FALSE,content,read-via-vachanadmin
+/v2/bibles/{source_name}/books,GET,API-user,FALSE,content,read-via-api
+/v2/bibles/{source_name}/books,POST,Autographa,FALSE,content,create
+/v2/bibles/{source_name}/books,POST,Vachan-online or vachan-app,FALSE,content,create
+/v2/bibles/{source_name}/books,POST,VachanAdmin,FALSE,content,create
+/v2/bibles/{source_name}/books,POST,API-user,FALSE,content,create
+/v2/bibles/{source_name}/books,POST,API-user,FALSE,content,create
+/v2/bibles/{source_name}/books,PUT,Autographa,FALSE,content,edit
+/v2/bibles/{source_name}/books,PUT,Vachan-online or vachan-app,FALSE,content,edit
+/v2/bibles/{source_name}/books,PUT,VachanAdmin,FALSE,content,edit
+/v2/bibles/{source_name}/books,PUT,API-user,FALSE,content,edit
+/v2/bibles/{source_name}/books,PUT,API-user,FALSE,content,edit
+/v2/bibles/{source_name}/versification,GET,Autographa,FALSE,content,refer-for-translation
+/v2/bibles/{source_name}/versification,GET,Vachan-online or vachan-app,FALSE,content,view-on-web
+/v2/bibles/{source_name}/versification,GET,VachanAdmin,FALSE,content,read-via-vachanadmin
+/v2/bibles/{source_name}/versification,GET,API-user,FALSE,content,read-via-api
+/v2/bibles/{source_name}/verses,GET,Autographa,FALSE,content,refer-for-translation
+/v2/bibles/{source_name}/verses,GET,Vachan-online or vachan-app,FALSE,content,view-on-web
+/v2/bibles/{source_name}/verses,GET,VachanAdmin,FALSE,content,read-via-vachanadmin
+/v2/bibles/{source_name}/verses,GET,API-user,FALSE,content,read-via-api
+/v2/bibles/{source_name}/audios,POST,Autographa,FALSE,content,create
+/v2/bibles/{source_name}/audios,POST,Vachan-online or vachan-app,FALSE,content,create
+/v2/bibles/{source_name}/audios,POST,VachanAdmin,FALSE,content,create
+/v2/bibles/{source_name}/audios,POST,API-user,FALSE,content,create
+/v2/bibles/{source_name}/audios,POST,API-user,FALSE,content,create
+/v2/bibles/{source_name}/audios,PUT,Autographa,FALSE,content,edit
+/v2/bibles/{source_name}/audios,PUT,Vachan-online or vachan-app,FALSE,content,edit
+/v2/bibles/{source_name}/audios,PUT,VachanAdmin,FALSE,content,edit
+/v2/bibles/{source_name}/audios,PUT,API-user,FALSE,content,edit
+/v2/bibles/{source_name}/audios,PUT,API-user,FALSE,content,edit
+/v2/commentaries/{source_name},GET,Autographa,FALSE,content,refer-for-translation
+/v2/commentaries/{source_name},GET,Vachan-online or vachan-app,FALSE,content,view-on-web
+/v2/commentaries/{source_name},GET,VachanAdmin,FALSE,content,read-via-vachanadmin
+/v2/commentaries/{source_name},GET,API-user,FALSE,content,read-via-api
+/v2/commentaries/{source_name},POST,Autographa,FALSE,content,create
+/v2/commentaries/{source_name},POST,Vachan-online or vachan-app,FALSE,content,create
+/v2/commentaries/{source_name},POST,VachanAdmin,FALSE,content,create
+/v2/commentaries/{source_name},POST,API-user,FALSE,content,create
+/v2/commentaries/{source_name},POST,API-user,FALSE,content,create
+/v2/commentaries/{source_name},PUT,Autographa,FALSE,content,edit
+/v2/commentaries/{source_name},PUT,Vachan-online or vachan-app,FALSE,content,edit
+/v2/commentaries/{source_name},PUT,VachanAdmin,FALSE,content,edit
+/v2/commentaries/{source_name},PUT,API-user,FALSE,content,edit
+/v2/commentaries/{source_name},PUT,API-user,FALSE,content,edit
+/v2/dictionaries/{source_name},GET,Autographa,FALSE,content,refer-for-translation
+/v2/dictionaries/{source_name},GET,Vachan-online or vachan-app,FALSE,content,view-on-web
+/v2/dictionaries/{source_name},GET,VachanAdmin,FALSE,content,read-via-vachanadmin
+/v2/dictionaries/{source_name},GET,API-user,FALSE,content,read-via-api
+/v2/dictionaries/{source_name},POST,Autographa,FALSE,content,create
+/v2/dictionaries/{source_name},POST,Vachan-online or vachan-app,FALSE,content,create
+/v2/dictionaries/{source_name},POST,VachanAdmin,FALSE,content,create
+/v2/dictionaries/{source_name},POST,API-user,FALSE,content,create
+/v2/dictionaries/{source_name},POST,API-user,FALSE,content,create
+/v2/dictionaries/{source_name},PUT,Autographa,FALSE,content,edit
+/v2/dictionaries/{source_name},PUT,Vachan-online or vachan-app,FALSE,content,edit
+/v2/dictionaries/{source_name},PUT,VachanAdmin,FALSE,content,edit
+/v2/dictionaries/{source_name},PUT,API-user,FALSE,content,edit
+/v2/dictionaries/{source_name},PUT,API-user,FALSE,content,edit
+/v2/infographics/{source_name},GET,Autographa,FALSE,content,refer-for-translation
+/v2/infographics/{source_name},GET,Vachan-online or vachan-app,FALSE,content,view-on-web
+/v2/infographics/{source_name},GET,VachanAdmin,FALSE,content,read-via-vachanadmin
+/v2/infographics/{source_name},GET,API-user,FALSE,content,read-via-api
+/v2/infographics/{source_name},POST,Autographa,FALSE,content,create
+/v2/infographics/{source_name},POST,Vachan-online or vachan-app,FALSE,content,create
+/v2/infographics/{source_name},POST,VachanAdmin,FALSE,content,create
+/v2/infographics/{source_name},POST,API-user,FALSE,content,create
+/v2/infographics/{source_name},POST,API-user,FALSE,content,create
+/v2/infographics/{source_name},PUT,Autographa,FALSE,content,edit
+/v2/infographics/{source_name},PUT,Vachan-online or vachan-app,FALSE,content,edit
+/v2/infographics/{source_name},PUT,VachanAdmin,FALSE,content,edit
+/v2/infographics/{source_name},PUT,API-user,FALSE,content,edit
+/v2/infographics/{source_name},PUT,API-user,FALSE,content,edit
+/v2/biblevideos/{source_name},GET,Autographa,FALSE,content,refer-for-translation
+/v2/biblevideos/{source_name},GET,Vachan-online or vachan-app,FALSE,content,view-on-web
+/v2/biblevideos/{source_name},GET,VachanAdmin,FALSE,content,read-via-vachanadmin
+/v2/biblevideos/{source_name},GET,API-user,FALSE,content,read-via-api
+/v2/biblevideos/{source_name},POST,Autographa,FALSE,content,create
+/v2/biblevideos/{source_name},POST,Vachan-online or vachan-app,FALSE,content,create
+/v2/biblevideos/{source_name},POST,VachanAdmin,FALSE,content,create
+/v2/biblevideos/{source_name},POST,API-user,FALSE,content,create
+/v2/biblevideos/{source_name},POST,API-user,FALSE,content,create
+/v2/biblevideos/{source_name},PUT,Autographa,FALSE,content,edit
+/v2/biblevideos/{source_name},PUT,Vachan-online or vachan-app,FALSE,content,edit
+/v2/biblevideos/{source_name},PUT,VachanAdmin,FALSE,content,edit
+/v2/biblevideos/{source_name},PUT,API-user,FALSE,content,edit
+/v2/biblevideos/{source_name},PUT,API-user,FALSE,content,edit
+/v2/autographa/projects,GET,Autographa,TRUE,project,view-project
+/v2/autographa/projects,POST,Autographa,FALSE,project,create
+/v2/autographa/projects,PUT,Autographa,FALSE,project,translate
+/v2/autographa/projects,PUT,Autographa,FALSE,project,edit-Settings
+/v2/autographa/project/user,POST,Autographa,FALSE,project,create-user
+/v2/autographa/project/user,PUT,Autographa,FALSE,project,edit-Settings
+/v2/autographa/project/tokens,GET,Autographa,FALSE,project,read-draft
+/v2/autographa/project/tokens,PUT,Autographa,FALSE,project,edit-draft
+/v2/autographa/project/token-translations,GET,Autographa,FALSE,project,read-draft
+/v2/autographa/project/token-sentences,PUT,Autographa,FALSE,project,edit-draft
+/v2/autographa/project/draft,GET,Autographa,FALSE,project,read-draft
+/v2/autographa/project/sentences,GET,Autographa,FALSE,project,view-project
+/v2/autographa/project/progress,GET,Autographa,FALSE,project,view-project
+/v2/autographa/project/versification,GET,Autographa,FALSE,project,view-project
+/v2/autographa/project/suggestions,PUT,Autographa,FALSE,project,edit-draft
+/v2/translation/suggestions,PUT,Autographa,FALSE,translation,process
+/v2/translation/suggestions,PUT,Vachan-online or vachan-app,FALSE,translation,process
+/v2/translation/suggestions,PUT,VachanAdmin,FALSE,translation,process
+/v2/translation/suggestions,PUT,API-user,FALSE,translation,process
+/v2/translation/suggestions,PUT,API-user,FALSE,translation,process
+/v2/translation/tokens,PUT,Autographa,FALSE,translation,process
+/v2/translation/tokens,PUT,Vachan-online or vachan-app,FALSE,translation,process
+/v2/translation/tokens,PUT,VachanAdmin,FALSE,translation,process
+/v2/translation/tokens,PUT,API-user,FALSE,translation,process
+/v2/translation/tokens,PUT,API-user,FALSE,translation,process
+/v2/translation/token-translate,PUT,Autographa,FALSE,translation,process
+/v2/translation/token-translate,PUT,Vachan-online or vachan-app,FALSE,translation,process
+/v2/translation/token-translate,PUT,VachanAdmin,FALSE,translation,process
+/v2/translation/token-translate,PUT,API-user,FALSE,translation,process
+/v2/translation/token-translate,PUT,API-user,FALSE,translation,process
+/v2/translation/draft,PUT,Autographa,FALSE,translation,process
+/v2/translation/draft,PUT,Vachan-online or vachan-app,FALSE,translation,process
+/v2/translation/draft,PUT,VachanAdmin,FALSE,translation,process
+/v2/translation/draft,PUT,API-user,FALSE,translation,process
+/v2/translation/draft,PUT,API-user,FALSE,translation,process
+/v2/nlp/gloss,GET,Autographa,FALSE,translation,read
+/v2/nlp/gloss,GET,Vachan-online or vachan-app,FALSE,translation,read
+/v2/nlp/gloss,GET,VachanAdmin,FALSE,translation,read
+/v2/nlp/gloss,GET,API-user,FALSE,translation,read
+/v2/nlp/gloss,GET,API-user,FALSE,translation,read
+/v2/nlp/learn/gloss,POST,Autographa,FALSE,translation,create
+/v2/nlp/learn/gloss,POST,Vachan-online or vachan-app,FALSE,translation,create
+/v2/nlp/learn/gloss,POST,VachanAdmin,FALSE,translation,create
+/v2/nlp/learn/gloss,POST,API-user,FALSE,translation,create
+/v2/nlp/learn/gloss,POST,API-user,FALSE,translation,create
+/v2/nlp/learn/alignment,POST,Autographa,FALSE,translation,create
+/v2/nlp/learn/alignment,POST,Vachan-online or vachan-app,FALSE,translation,create
+/v2/nlp/learn/alignment,POST,VachanAdmin,FALSE,translation,create
+/v2/nlp/learn/alignment,POST,API-user,FALSE,translation,create
+/v2/nlp/learn/alignment,POST,API-user,FALSE,translation,create
+/v2/nlp/stopwords/generate,POST,Autographa,FALSE,translation,create
+/v2/nlp/stopwords/generate,POST,Vachan-online or vachan-app,FALSE,translation,create
+/v2/nlp/stopwords/generate,POST,VachanAdmin,FALSE,translation,create
+/v2/nlp/stopwords/generate,POST,API-user,FALSE,translation,create
+/v2/nlp/stopwords/generate,POST,API-user,FALSE,translation,create
+/v2/nlp/stopwords/generate,POST,Autographa,FALSE,translation,read-via-api
+/v2/nlp/stopwords/generate,POST,Vachan-online or vachan-app,FALSE,translation,read-via-api
+/v2/nlp/stopwords/generate,POST,VachanAdmin,FALSE,translation,read-via-api
+/v2/nlp/stopwords/generate,POST,API-user,FALSE,translation,read-via-api
+/v2/nlp/stopwords/generate,POST,API-user,FALSE,translation,read-via-api
+/v2/lookup/stopwords/{language_code},GET,Autographa,FALSE,lookup-content,read
+/v2/lookup/stopwords/{language_code},GET,Vachan-online or vachan-app,FALSE,lookup-content,read
+/v2/lookup/stopwords/{language_code},GET,VachanAdmin,FALSE,lookup-content,read
+/v2/lookup/stopwords/{language_code},GET,API-user,FALSE,lookup-content,read
+/v2/lookup/stopwords/{language_code},GET,API-user,FALSE,lookup-content,read
+/v2/lookup/stopwords/{language_code},PUT,Autographa,FALSE,lookup-content,edit
+/v2/lookup/stopwords/{language_code},PUT,Vachan-online or vachan-app,FALSE,lookup-content,edit
+/v2/lookup/stopwords/{language_code},PUT,VachanAdmin,FALSE,lookup-content,edit
+/v2/lookup/stopwords/{language_code},PUT,API-user,FALSE,lookup-content,edit
+/v2/lookup/stopwords/{language_code},PUT,API-user,FALSE,lookup-content,edit
+/v2/lookup/stopwords/{language_code},POST,Autographa,FALSE,lookup-content,create
+/v2/lookup/stopwords/{language_code},POST,Vachan-online or vachan-app,FALSE,lookup-content,create
+/v2/lookup/stopwords/{language_code},POST,VachanAdmin,FALSE,lookup-content,create
+/v2/lookup/stopwords/{language_code},POST,API-user,FALSE,lookup-content,create
+/v2/lookup/stopwords/{language_code},POST,API-user,FALSE,lookup-content,create
+/v2/jobs,GET,Autographa,FALSE,jobs,read
+/v2/jobs,GET,Vachan-online or vachan-app,FALSE,jobs,read
+/v2/jobs,GET,VachanAdmin,FALSE,jobs,read
+/v2/jobs,GET,API-user,FALSE,jobs,read
+/v2/jobs,GET,API-user,FALSE,jobs,read
+/v2/media/gitlab/stream,GET,Autographa,FALSE,media,stream
+/v2/media/gitlab/stream,GET,Vachan-online or vachan-app,FALSE,media,stream
+/v2/media/gitlab/stream,GET,VachanAdmin,FALSE,media,stream
+/v2/media/gitlab/stream,GET,API-user,FALSE,media,stream
+/v2/media/gitlab/stream,GET,API-user,FALSE,media,stream
+/v2/media/gitlab/stream,GET,Autographa,FALSE,media,read-via-api
+/v2/media/gitlab/stream,GET,Vachan-online or vachan-app,FALSE,media,read-via-api
+/v2/media/gitlab/stream,GET,VachanAdmin,FALSE,media,read-via-api
+/v2/media/gitlab/stream,GET,API-user,FALSE,media,read-via-api
+/v2/media/gitlab/stream,GET,API-user,FALSE,media,read-via-api
+/v2/media/gitlab/download,GET,Autographa,FALSE,media,download
+/v2/media/gitlab/download,GET,Vachan-online or vachan-app,FALSE,media,download
+/v2/media/gitlab/download,GET,VachanAdmin,FALSE,media,download
+/v2/media/gitlab/download,GET,API-user,FALSE,media,download
+/v2/media/gitlab/download,GET,API-user,FALSE,media,download
+/v2/media/gitlab/download,GET,Autographa,FALSE,media,read-via-api
+/v2/media/gitlab/download,GET,Vachan-online or vachan-app,FALSE,media,read-via-api
+/v2/media/gitlab/download,GET,VachanAdmin,FALSE,media,read-via-api
+/v2/media/gitlab/download,GET,API-user,FALSE,media,read-via-api
+/v2/media/gitlab/download,GET,API-user,FALSE,media,read-via-api
