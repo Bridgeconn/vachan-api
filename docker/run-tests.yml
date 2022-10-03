@@ -1,37 +1,37 @@
-version: '3.9'
+version: "3.9"
 services:
- vachan-api:
-  build:
-   context: ../
-   dockerfile: ./docker/Dockerfile
-  healthcheck:
-   timeout: 45s
-   interval: 10s
-   retries: 10
-  environment: 
-   - VACHAN_POSTGRES_HOST=vachan-db-test
-   - VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
-   - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
-   - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_test}
-   - VACHAN_POSTGRES_PORT=5432
-   - VACHAN_KRATOS_PUBLIC_URL=http://kratos:4433/
-   - VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
-   - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME:-super@admin.com}
-   - VACHAN_GITLAB_TOKEN=${VACHAN_GITLAB_TOKEN}
-   - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD:-Just4Complexity!}
-   - VACHAN_TEST_MODE="False"
-   - VACHAN_LOGGING_LEVEL=INFO
-  command: python -m pytest
-  volumes:
-   - logs-test-vol:/app/logs
-  restart: "no"
-  expose:
-   - 8000
-  networks:
-   - my-test-network
+  vachan-api:
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile
+    healthcheck:
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    environment:
+      - VACHAN_POSTGRES_HOST=vachan-db-test
+      - VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
+      - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
+      - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_test}
+      - VACHAN_POSTGRES_PORT=5432
+      - VACHAN_KRATOS_PUBLIC_URL=http://kratos:4433/
+      - VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
+      - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME:-super@admin.com}
+      - VACHAN_GITLAB_TOKEN=${VACHAN_GITLAB_TOKEN}
+      - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD:-Just4Complexity!}
+      - VACHAN_TEST_MODE="False"
+      - VACHAN_LOGGING_LEVEL=INFO
+    command: python -m pytest
+    volumes:
+      - logs-test-vol:/app/logs
+    restart: "no"
+    expose:
+      - 8000
+    networks:
+      - my-test-network
 
 networks:
- my-test-network:              
+  my-test-network:
 volumes:
   vachan-db-test-vol:
   logs-test-vol:

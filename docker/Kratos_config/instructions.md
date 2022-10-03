@@ -1,6 +1,7 @@
 # Configure Ory Kratos Instance Locally
 
 ## Ory kratos official documentation
+
 [Ory Kratos](https://www.ory.sh/kratos/docs/)
 
 ## How to set up Kratos
@@ -9,33 +10,33 @@
 
 - Clone Ory kratos git repo
 
-    ```git clone https://github.com/ory/kratos.git```
+  `git clone https://github.com/ory/kratos.git`
 
-    ```cd kratos```
+  `cd kratos`
 
-    ```git checkout v0.7.4-alpha.1```
+    <!-- ```git checkout v0.7.4-alpha.1``` -->
 
-    ```docker-compose -f quickstart.yml -f quickstart-standalone.yml up --build --force-recreate```
+  `docker-compose -f quickstart.yml -f quickstart-standalone.yml up --build --force-recreate`
 
 - Once the output slows down and logs indicate a healthy system you're ready to roll! A healthy system will show something along the lines of (the order of messages might be reversed)
 
-    ```
-    kratos_1 | time="2020-01-20T14:52:13Z" level=info msg="Starting the public httpd on: 0.0.0.0:4433"
-    kratos_1 | time="2020-01-20T14:52:13Z" level=info msg="Starting the admin httpd on: 0.0.0.0:4434"
-    ```
+  ```
+  kratos_1 | time="2020-01-20T14:52:13Z" level=info msg="Starting the public httpd on: 0.0.0.0:4433"
+  kratos_1 | time="2020-01-20T14:52:13Z" level=info msg="Starting the admin httpd on: 0.0.0.0:4434"
+  ```
 
-----
+---
 
 ## Set up Kratos for Vachan-api Authentication
 
--   Replace the ***email-password*** folder in the localtion ***Kratos/contrib/quickstart/kratos/email-password*** 
-with folder ***Kratos_config/email-password*** provided in the vachan-api repo
+- Replace the **_email-password_** folder in the localtion **_Kratos/contrib/quickstart/kratos/email-password_**
+  with folder **_Kratos_config/email-password_** provided in the vachan-api repo
 
-- replace the ***quickstart.yml*** of Ory Kratos  with ***quickstart.yml** in ***Kratos_config***
+- replace the **_quickstart.yml_** of Ory Kratos with **\*quickstart.yml** in **_Kratos_config_**
 
 - If you want to change the port for postgresDB,
-you can change it here
-***Kratos/contrib/quickstart/kratos/email-password/Kratos.yml***
+  you can change it here
+  **_Kratos/contrib/quickstart/kratos/email-password/Kratos.yml_**
 
 ```
 postgresd:
@@ -58,8 +59,9 @@ VACHAN_SUPER_USERNAME = <email for super user>
 VACHAN_SUPER_PASSWORD = <password for super user>
 ```
 
-----
-## Run and test 
+---
+
+## Run and test
 
 - Now Run kratos local instace as mentioned above
 
@@ -71,4 +73,4 @@ VACHAN_SUPER_PASSWORD = <password for super user>
 }
 ```
 
-- Run the Vachan-api and test the endpoints under the tag *Authentication* at http://127.0.0.1:8000/docs
+- Run the Vachan-api and test the endpoints under the tag _Authentication_ at http://127.0.0.1:8000/docs

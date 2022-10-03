@@ -1,7 +1,7 @@
-version: '3.9'
+version: "3.9"
 services:
- kratos-migrate:
-    image: oryd/kratos:v0.7.0-alpha.1
+  kratos-migrate:
+    image: oryd/kratos:v0.10.1
     environment:
       - DSN=postgres://kratos:secret@postgresd-test:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
     volumes:
@@ -17,7 +17,7 @@ services:
     networks:
       - my-test-network
 
- postgresd-test:
+  postgresd-test:
     image: postgres:9.6
     ports:
       - "5432:5432"
@@ -29,64 +29,66 @@ services:
     networks:
       - my-test-network
 
- kratos:
-  image: oryd/kratos:v0.7.0-alpha.1
-  ports:
-    - '4433:4433' # public
-    - '4434:4434' # admin
-  restart: unless-stopped
-  environment:
-    - DSN=postgres://kratos:secret@postgresd-test:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
-    - LOG_LEVEL=trace
-    - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS:-smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true}
-    - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL:-EMAIL_ADDRESS@bridgeconn.com}
-  command: serve -c /etc/config/kratos/kratos.yml --dev --watch-courier
-  volumes:
-    # - type: volume
-    #   source: kratos-sqlite
-    #   target: /var/lib/sqlite
-    #   read_only: false
-    - type: bind
-      source: ./Kratos_config/email-password
-      target: /etc/config/kratos
-  expose:
-    - 4434
-    - 4433
-  networks:
-    - my-test-network
+  kratos:
+    depends_on:
+      - kratos-migrate
+    image: oryd/kratos:v0.10.1
+    ports:
+      - "4433:4433" # public
+      - "4434:4434" # admin
+    restart: unless-stopped
+    environment:
+      - DSN=postgres://kratos:secret@postgresd-test:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
+      - LOG_LEVEL=trace
+      - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS:-smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true}
+      - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL:-EMAIL_ADDRESS@bridgeconn.com}
+    command: serve -c /etc/config/kratos/kratos.yml --dev --watch-courier
+    volumes:
+      # - type: volume
+      #   source: kratos-sqlite
+      #   target: /var/lib/sqlite
+      #   read_only: false
+      - type: bind
+        source: ./Kratos_config/email-password
+        target: /etc/config/kratos
+    expose:
+      - 4434
+      - 4433
+    networks:
+      - my-test-network
 
- vachan-db-test:
-  image: postgres:12.7
-  healthcheck:
-   test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "postgres" ]
-   timeout: 45s
-   interval: 10s
-   retries: 10
-  restart: always
-  environment: 
-   - POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
-   - POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
-   - POSTGRES_DB=${VACHAN_POSTGRES_DATABASE:-vachan_test}
-   - POSTGRES_HOST_AUTH_METHOD=trust
-  logging:
-   options:
-    max-size: 10m
-    max-file: "3"
-  expose:
-   - 5432
-  ports:
-   # HOST:CONTAINER
-   - "5433:5432"
-  networks:
-   - my-test-network
-  volumes: 
-   # - ${VACHAN_POSTGRES_DATA_DIR:-./pgdata}:/var/lib/postgresql/data
-   - vachan-db-test-vol:/var/lib/postgresql/data
-   - ../db/csvs:/csvs
-   - ../db/seed_DB.sql:/docker-entrypoint-initdb.d/seed_DB.sql
+  vachan-db-test:
+    image: postgres:12.7
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "postgres", "-U", "postgres"]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    restart: always
+    environment:
+      - POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${VACHAN_POSTGRES_DATABASE:-vachan_test}
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    expose:
+      - 5432
+    ports:
+      # HOST:CONTAINER
+      - "5433:5432"
+    networks:
+      - my-test-network
+    volumes:
+      # - ${VACHAN_POSTGRES_DATA_DIR:-./pgdata}:/var/lib/postgresql/data
+      - vachan-db-test-vol:/var/lib/postgresql/data
+      - ../db/csvs:/csvs
+      - ../db/seed_DB.sql:/docker-entrypoint-initdb.d/seed_DB.sql
 
 networks:
- my-test-network:
+  my-test-network:
 
 volumes:
   vachan-db-test-vol:

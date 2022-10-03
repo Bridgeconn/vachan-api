@@ -1,167 +1,165 @@
-version: '3.9'
+version: "3.9"
 services:
- kratos:
-  image: oryd/kratos:v0.7.0-alpha.1
-  ports:
-    - '4433:4433' # public
-    # - '4434:4434' # admin
-  restart: unless-stopped
-  environment:
-    - DSN=${VACHAN_AUTH_DATABASE}
-    - LOG_LEVEL=trace
-    - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS}
-    - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL}
-    - SERVE_PUBLIC_BASE_URL=http://${VACHAN_DOMAIN:-kratos}:4433
-  command: serve -c /etc/config/kratos/kratos.yml --watch-courier
-  volumes:
-    # - type: volume
-    #   source: kratos-sqlite
-    #   target: /var/lib/sqlite
-    #   read_only: false
-    - type: bind
-      source: ./Kratos_config/email-password
-      target: /etc/config/kratos
-  expose:
-    - 4434
-    - 4433
-  networks:
-    - my-network
+  kratos:
+    image: oryd/kratos:v0.10.1
+    ports:
+      - "4433:4433" # public
+      # - '4434:4434' # admin
+    restart: unless-stopped
+    environment:
+      - DSN=${VACHAN_AUTH_DATABASE}
+      - LOG_LEVEL=trace
+      - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS}
+      - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL}
+      - SERVE_PUBLIC_BASE_URL=http://${VACHAN_DOMAIN:-kratos}:4433
+    command: serve -c /etc/config/kratos/kratos.yml --watch-courier
+    volumes:
+      # - type: volume
+      #   source: kratos-sqlite
+      #   target: /var/lib/sqlite
+      #   read_only: false
+      - type: bind
+        source: ./Kratos_config/email-password
+        target: /etc/config/kratos
+    expose:
+      - 4434
+      - 4433
+    networks:
+      - my-network
 
- vachan-db:
-  image: postgres:12.7
-  healthcheck:
-   test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "postgres" ]
-   timeout: 45s
-   interval: 10s
-   retries: 10
-  restart: always
-  environment: 
-   - POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
-   - POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-newpassword}
-   - POSTGRES_DB=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
-   - POSTGRES_HOST_AUTH_METHOD=md5
-  logging:
-   options:
-    max-size: 10m
-    max-file: "3"
-  #expose:
-   #- 5432
-  ports:
-   # HOST:CONTAINER
-   - "5434:5432"
-  networks:
-   - my-network
-  volumes: 
-   # - ${VACHAN_POSTGRES_DATA_DIR:-./pgdata}:/var/lib/postgresql/data
-   - vachan-db-vol:/var/lib/postgresql/data
-   - ../db/csvs:/csvs
-   - ../db/seed_DB.sql:/docker-entrypoint-initdb.d/seed_DB.sql
+  vachan-db:
+    image: postgres:12.7
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "postgres", "-U", "postgres"]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    restart: always
+    environment:
+      - POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-newpassword}
+      - POSTGRES_DB=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
+      - POSTGRES_HOST_AUTH_METHOD=md5
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    #expose:
+    #- 5432
+    ports:
+      # HOST:CONTAINER
+      - "5434:5432"
+    networks:
+      - my-network
+    volumes:
+      # - ${VACHAN_POSTGRES_DATA_DIR:-./pgdata}:/var/lib/postgresql/data
+      - vachan-db-vol:/var/lib/postgresql/data
+      - ../db/csvs:/csvs
+      - ../db/seed_DB.sql:/docker-entrypoint-initdb.d/seed_DB.sql
 
-# vachan-api app
- vachan-api:
-  build:
-   context: ../
-   dockerfile: ./docker/Dockerfile
-  healthcheck:
-   timeout: 45s
-   interval: 10s
-   retries: 10
-  environment: 
-   - VACHAN_POSTGRES_HOST=vachan-db
-   - VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
-   - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
-   - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
-   - VACHAN_POSTGRES_PORT=5432
-   - VACHAN_KRATOS_PUBLIC_URL=${VACHAN_KRATOS_PUBLIC_URL:-http://kratos:4433/}
-   - VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
-   - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME}
-   - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD}
-   - VACHAN_TEST_MODE="False"
-   - VACHAN_LOGGING_LEVEL=INFO
-   - VACHAN_GITLAB_TOKEN=${VACHAN_GITLAB_TOKEN}
-   - VACHAN_REDIS_HOST=redis
-   - VACHAN_REDIS_PORT=6379
-   - VACHAN_REDIS_PASS=${VACHAN_REDIS_PASS}
+  # vachan-api app
+  vachan-api:
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile
+    healthcheck:
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    environment:
+      - VACHAN_POSTGRES_HOST=vachan-db
+      - VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
+      - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
+      - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
+      - VACHAN_POSTGRES_PORT=5432
+      - VACHAN_KRATOS_PUBLIC_URL=${VACHAN_KRATOS_PUBLIC_URL:-http://kratos:4433/}
+      - VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
+      - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME}
+      - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD}
+      - VACHAN_TEST_MODE="False"
+      - VACHAN_LOGGING_LEVEL=INFO
+      - VACHAN_GITLAB_TOKEN=${VACHAN_GITLAB_TOKEN}
+      - VACHAN_REDIS_HOST=redis
+      - VACHAN_REDIS_PORT=6379
+      - VACHAN_REDIS_PASS=${VACHAN_REDIS_PASS}
 
-  command: uvicorn main:app --host 0.0.0.0 --port 8000
-  volumes:
-   # - ./app:/app/app
-   - logs-vol:/app/logs
-  restart: always
-  links:
-   - vachan-db
-   # - kratos
-  expose:
-   - 8000
-  networks:
-   - my-network
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    volumes:
+      # - ./app:/app/app
+      - logs-vol:/app/logs
+    restart: always
+    links:
+      - vachan-db
+      # - kratos
+    expose:
+      - 8000
+    networks:
+      - my-network
 
-#reddis
- redis:
-  container_name: redis
-  image: "redis:alpine"
-  expose:
-    - 6379
-  volumes:
-    # save redisearch data to your current working directory
-    # - ./redis-data:/data
-    - redis-data:/app/data
-  command: redis-server --requirepass ${VACHAN_REDIS_PASS}
-  networks:
-   - my-network
+  #reddis
+  redis:
+    container_name: redis
+    image: "redis:alpine"
+    expose:
+      - 6379
+    volumes:
+      # save redisearch data to your current working directory
+      # - ./redis-data:/data
+      - redis-data:/app/data
+    command: redis-server --requirepass ${VACHAN_REDIS_PASS}
+    networks:
+      - my-network
 
-# Web Server
- web-server:
-  image: nginx:latest
-  ports:
-   - 80:80
-   - 443:443
-  restart: always
-  expose:
-   - 80
-   - 443
-  depends_on:
-   - vachan-api
-  volumes:
-   - ./nginx/prod/app.conf:/etc/nginx/conf.d/default.conf:ro
-   - ./certbot/www:/var/www/certbot/:ro
-   - ./certbot/conf/:/etc/nginx/ssl/:ro
-   - logs-vol:/var/log/nginx/
-  networks:
-   - my-network
+  # Web Server
+  web-server:
+    image: nginx:latest
+    ports:
+      - 80:80
+      - 443:443
+    restart: always
+    expose:
+      - 80
+      - 443
+    depends_on:
+      - vachan-api
+    volumes:
+      - ./nginx/prod/app.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certbot/www:/var/www/certbot/:ro
+      - ./certbot/conf/:/etc/nginx/ssl/:ro
+      - logs-vol:/var/log/nginx/
+    networks:
+      - my-network
 
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./certbot/www/:/var/www/certbot/:rw
+      - ./certbot/conf/:/etc/letsencrypt/:rw
+    networks:
+      - my-network
 
- certbot:
-  image: certbot/certbot:latest
-  volumes:
-   - ./certbot/www/:/var/www/certbot/:rw
-   - ./certbot/conf/:/etc/letsencrypt/:rw
-  networks:
-   - my-network
- 
- # offen backup
- offen-backup_vachan_daily: &backup_service
-  image: offen/docker-volume-backup:latest
-  restart: always
-  environment: &backup_environment
-      #Daily 00 : 00
+  # offen backup
+  offen-backup_vachan_daily: &backup_service
+    image: offen/docker-volume-backup:latest
+    restart: always
+    environment: &backup_environment #Daily 00 : 00
       BACKUP_CRON_EXPRESSION: "0 0 * * *"
       BACKUP_FILENAME: backup-vachan-daily-%Y-%m-%dT%H-%M-%S.tar.gz
       BACKUP_SOURCES: /docker_vachan-db-vol
       BACKUP_PRUNING_PREFIX: backup-vachan-daily-
       BACKUP_RETENTION_DAYS: 5
-  depends_on:
-   - vachan-db
-  volumes:
+    depends_on:
+      - vachan-db
+    volumes:
       - vachan-db-vol:/docker_vachan-db-vol:ro
       # - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/backups:/archive
-  networks:
-   - my-network
- 
- offen-backup_vachan_week:
-  <<: *backup_service
-  environment:
+    networks:
+      - my-network
+
+  offen-backup_vachan_week:
+    <<: *backup_service
+    environment:
       <<: *backup_environment
       # SAT 00 : 00
       BACKUP_CRON_EXPRESSION: "0 0 * * 6"
@@ -169,18 +167,18 @@ services:
       BACKUP_SOURCES: /docker_vachan-db-vol
       BACKUP_PRUNING_PREFIX: backup-vachan-week-
       BACKUP_RETENTION_DAYS: 49
-  depends_on:
-   - vachan-db
-  volumes:
+    depends_on:
+      - vachan-db
+    volumes:
       - vachan-db-vol:/docker_vachan-db-vol:ro
       # - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/backups:/archive
-  networks:
-   - my-network
+    networks:
+      - my-network
 
- offen-backup_vachan_month:
-  <<: *backup_service
-  environment:
+  offen-backup_vachan_month:
+    <<: *backup_service
+    environment:
       <<: *backup_environment
       # monthly 28th day 00 : 00
       BACKUP_CRON_EXPRESSION: "0 0 28 * *"
@@ -188,18 +186,18 @@ services:
       BACKUP_SOURCES: /docker_vachan-db-vol
       BACKUP_PRUNING_PREFIX: backup-vachan-month-
       BACKUP_RETENTION_DAYS: 365
-  depends_on:
-   - vachan-db
-  volumes:
+    depends_on:
+      - vachan-db
+    volumes:
       - vachan-db-vol:/docker_vachan-db-vol:ro
       # - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/backups:/archive
-  networks:
-   - my-network
- 
- offen-backup_vachan_year:
-  <<: *backup_service
-  environment:
+    networks:
+      - my-network
+
+  offen-backup_vachan_year:
+    <<: *backup_service
+    environment:
       <<: *backup_environment
       # yearly DEC 31 day 00 : 00
       BACKUP_CRON_EXPRESSION: "0 0 31 12 *"
@@ -207,17 +205,17 @@ services:
       BACKUP_SOURCES: /docker_vachan-db-vol
       BACKUP_PRUNING_PREFIX: backup-vachan-year-
       BACKUP_RETENTION_DAYS: 2555
-  depends_on:
-   - vachan-db
-  volumes:
+    depends_on:
+      - vachan-db
+    volumes:
       - vachan-db-vol:/docker_vachan-db-vol:ro
       # - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/backups:/archive
-  networks:
-   - my-network
+    networks:
+      - my-network
 
 networks:
- my-network:              
+  my-network:
 volumes:
   vachan-db-vol:
   logs-vol:
