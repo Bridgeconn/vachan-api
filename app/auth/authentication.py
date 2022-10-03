@@ -368,6 +368,8 @@ def get_users_kratos_filter(base_url,name,roles,limit,skip):#pylint: disable=too
                 "userId":data["id"],
                 "name":data["traits"]["name"]
             }
+            kratos_user["name"]["first"] = '' if 'first' not in kratos_user["name"] else kratos_user["name"]["first"]
+            kratos_user["name"]["last"] = '' if 'last' not in kratos_user["name"] else kratos_user["name"]["last"]
             kratos_user["name"]["fullname"] = data["traits"]["name"]["first"].capitalize() \
                 + " "+ data["traits"]["name"]["last"].capitalize()
             if not name is None:
