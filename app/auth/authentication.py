@@ -8,6 +8,7 @@ from fastapi import HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 import db_models
+from dependencies import get_db
 # from auth.api_permission_map import api_permission_map
 from auth import utils
 from schema import schema_auth
@@ -15,6 +16,7 @@ from dependencies import log
 from custom_exceptions import GenericException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
     UnprocessableException, PermissionException
+from database import SessionLocal
 
 PUBLIC_BASE_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL",
                                     "http://127.0.0.1:4433/")+"self-service/"
@@ -70,24 +72,73 @@ def get_user_or_none_graphql(info):
     return user_details, req
 
 ################## Access control & permsision map from db on startup ########################
-DBAPIPERMISSIONTABLE = []
-DBACCESS_RULES = {}
+APIPERMISSIONTABLE = []
+ACCESS_RULES = {}
 
+def auth_selection(selection = 'file'):
+    try:
+        db_instance = SessionLocal()
+        if selection == 'db':
+            # permisison map
+            db_apiPermisison = db_instance.query(db_models.ApiPermissionsMap).all()
+            for permisison_row in db_apiPermisison:
+                temp_row = [
+                    permisison_row.apiEndpoint,
+                    permisison_row.method,
+                    permisison_row.requestApp,
+                    permisison_row.filterResults,
+                    permisison_row.resourceType,
+                    permisison_row.permission]
+                APIPERMISSIONTABLE.append(temp_row[:])
+            #access rules json
+            from collections import defaultdict
+            ACCESS_RULES = defaultdict(lambda:defaultdict())
+            db_access_rule = db_instance.query(db_models.AccessRules).all()
+            for rules_row in db_access_rule:
+                # print("rules list  : ", rules_row.__dict__)
+                ACCESS_RULES[rules_row.entitlement][rules_row.tag]= rules_row.roles
+
+        elif selection == 'file':
+            ####################### Access control logics ######################################
+            with open('auth/access_rules.json','r') as file:
+                ACCESS_RULES = json.load(file)
+                log.warning("Startup event to read Access Rules")
+                log.debug(ACCESS_RULES)
+
+            with open('auth/api-permissions.csv','r') as file:
+                csvreader = csv.reader(file)
+                header = next(csvreader)
+                for table_row in csvreader:
+                    APIPERMISSIONTABLE.append(table_row)
+                log.warning("Startup event to load permission table")
+                log.debug(APIPERMISSIONTABLE)
+    finally:
+        db_instance.close()
+        return APIPERMISSIONTABLE, ACCESS_RULES
+        # print("permsision table in final : ", len(APIPERMISSIONTABLE))
+        # print("access rules dict in final: ", len(ACCESS_RULES))
+
+# --------------call map and rule function -------------------
+# pass db to use db values or file to use local file
+APIPERMISSIONTABLE, ACCESS_RULES = auth_selection(selection = 'db')
+print("permsision table : ", len(APIPERMISSIONTABLE))
+print("access rules dict : ", len(ACCESS_RULES))
+# print("permsision table : ", ACCESS_RULES)
 
 ####################### Access control logics ######################################
-with open('auth/access_rules.json','r') as file:
-    ACCESS_RULES = json.load(file)
-    log.warning("Startup event to read Access Rules")
-    log.debug(ACCESS_RULES)
+# with open('auth/access_rules.json','r') as file:
+#     ACCESS_RULES = json.load(file)
+#     log.warning("Startup event to read Access Rules")
+#     log.debug(ACCESS_RULES)
 
-APIPERMISSIONTABLE = []
-with open('auth/api-permissions.csv','r') as file:
-    csvreader = csv.reader(file)
-    header = next(csvreader)
-    for table_row in csvreader:
-        APIPERMISSIONTABLE.append(table_row)
-    log.warning("Startup event to load permission table")
-    log.debug(APIPERMISSIONTABLE)
+# APIPERMISSIONTABLE = []
+# with open('auth/api-permissions.csv','r') as file:
+#     csvreader = csv.reader(file)
+#     header = next(csvreader)
+#     for table_row in csvreader:
+#         APIPERMISSIONTABLE.append(table_row)
+#     log.warning("Startup event to load permission table")
+#     log.debug(APIPERMISSIONTABLE)
 
 def api_resourcetype_map(endpoint, path_params=None):
     '''Default correlation between API endpoints and resource they act upon'''
