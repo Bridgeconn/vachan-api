@@ -31,6 +31,9 @@ services:
       - POSTGRES_HOST_AUTH_METHOD=md5
     networks:
       - vachan-auth-net
+    volumes: 
+      - kratos-postgres-vol:/var/lib/postgresql/data
+
 
   # offen backup
   offen-backup_kratos_daily: &backup_service
@@ -45,7 +48,7 @@ services:
     depends_on:
       - kratos-migrate
     volumes:
-      - kratos-sqlite:/docker_kratos-sqlite:ro
+      - kratos-postgres-vol:/docker_kratos-sqlite:ro
       # - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/backups:/archive
     networks:
@@ -64,7 +67,7 @@ services:
     depends_on:
       - kratos-migrate
     volumes:
-      - kratos-sqlite:/docker_kratos-sqlite:ro
+      - kratos-postgres-vol:/docker_kratos-sqlite:ro
       # - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/backups:/archive
     networks:
@@ -83,7 +86,7 @@ services:
     depends_on:
       - kratos-migrate
     volumes:
-      - kratos-sqlite:/docker_kratos-sqlite:ro
+      - kratos-postgres-vol:/docker_kratos-sqlite:ro
       # - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/backups:/archive
     networks:
@@ -102,7 +105,7 @@ services:
     depends_on:
       - kratos-migrate
     volumes:
-      - kratos-sqlite:/docker_kratos-sqlite:ro
+      - kratos-postgres-vol:/docker_kratos-sqlite:ro
       # - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/backups:/archive
     networks:
@@ -112,3 +115,4 @@ networks:
   vachan-auth-net:
 volumes:
   kratos-sqlite:
+  kratos-postgres-vol:

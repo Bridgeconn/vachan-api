@@ -28,6 +28,8 @@ services:
       - POSTGRES_HOST_AUTH_METHOD=trust
     networks:
       - my-network
+    volumes: 
+      - kratos-postgres-vol:/var/lib/postgresql/data
 
  kratos:
     image: oryd/kratos:v0.7.0-alpha.1
@@ -181,3 +183,4 @@ volumes:
   kratos-sqlite:
   redis-data:
   redisinsight:
+  kratos-postgres-vol:
