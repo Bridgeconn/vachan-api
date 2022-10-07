@@ -123,7 +123,7 @@ def auth_selection(selection = 'file'):
 APIPERMISSIONTABLE, ACCESS_RULES = auth_selection(selection = 'db')
 print("permsision table : ", len(APIPERMISSIONTABLE))
 print("access rules dict : ", len(ACCESS_RULES))
-# print("permsision table : ", ACCESS_RULES)
+# print("permsision table : ", APIPERMISSIONTABLE)
 
 ####################### Access control logics ######################################
 # with open('auth/access_rules.json','r') as file:
@@ -147,7 +147,8 @@ def api_resourcetype_map(endpoint, path_params=None):
     elif endpoint.startswith('/v2/autographa/project'):
         resource_type = schema_auth.ResourceType.PROJECT.value
     elif endpoint.startswith('/v2/user'):
-        resource_type = schema_auth.ResourceType.USER.value
+        # resource_type = schema_auth.ResourceType.USER.value
+        resource_type = schema_auth.ResourceType.USER.name
     elif endpoint.startswith("/v2/translation") or endpoint.startswith("/v2/nlp"):
         resource_type = schema_auth.ResourceType.TRANSLATION.value
     elif endpoint.startswith("/v2/lookup"):
@@ -179,7 +180,8 @@ def search_api_permission_map(endpoint, method, client_app, path_params=None, re
             if row[1] == method:
                 if row[2] == "None" or row[2] == client_app:
                     # print("url, method and app matched")
-                    if row[4] == 'None' or row[4] == resource:
+                    print("row : ", row, "| resource : ", resource)
+                    if row[4] == 'None' or row[4].lower() == resource.lower():
                         return (resource, row[5])
     log.error("No permisions map found for:%s, %s, %s, %s", endpoint, method, client_app, resource)
     raise PermissionException("API-Permission map not defined for the request!")
@@ -187,7 +189,7 @@ def search_api_permission_map(endpoint, method, client_app, path_params=None, re
 def get_access_tag(db_, resource_type, path_params=None, resource=None):
     '''obtain access tag based on resource-url direct link or value stored in DB'''
     resource_tag_map = {
-        schema_auth.ResourceType.USER: ['user'],
+        schema_auth.ResourceType.USER.name: ['user'],
         schema_auth.ResourceType.PROJECT: ['translation-project'],
         schema_auth.ResourceType.TRANSLATION: ['generic-translation'],
         schema_auth.ResourceType.LOOKUP: ['lookup-content'],
@@ -285,7 +287,6 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         if not "authorization" in request.headers and \
             "access_token" in kwargs:
             user_details = get_current_user_data(kwargs.get("access_token"))
-
         resource_type, permission = search_api_permission_map(
             endpoint, method, client_app, path_params, resource=resource_type)
         required_rights = []
@@ -294,6 +295,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
                 required_rights += ACCESS_RULES[tag][permission]
         authenticated = check_right(user_details, required_rights)
+        print("AUTH DETAILS DICT : ----> ",{"required_rights":required_rights,"access_tags":access_tags,"permission":permission,"resource_type":resource_type,"endpoint":endpoint,"method":method,"path_params":path_params,"user_details":user_details,"resource_type":resource_type,"filtering_required":filtering_required, "client_app":client_app, "user_details":user_details})
         if (resource_type == schema_auth.ResourceType.USER and not authenticated):
             # Need to raise error before function execution, as we cannot delay db commit
             # like we do in other cases as changes happen in Kratos db, not app db'''
