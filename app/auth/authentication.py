@@ -14,7 +14,7 @@ from dependencies import log
 from custom_exceptions import GenericException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
     UnprocessableException, PermissionException
-from auth.auth_globals import APIPERMISSIONTABLE, ACCESS_RULES
+from auth.auth_globals import APIPERMISSIONTABLE, ACCESS_RULES, ROLES, RESOURCE_TYPE, APPS
 
 PUBLIC_BASE_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL",
                                     "http://127.0.0.1:4433/")+"self-service/"
@@ -87,25 +87,27 @@ def get_user_or_none_graphql(info):
 def api_resourcetype_map(endpoint, path_params=None):
     '''Default correlation between API endpoints and resource they act upon'''
     if endpoint.split('/')[2] in ["contents", "languages", "licenses", 'versions']:
-        resource_type = schema_auth.ResourceType.METACONTENT.value
+        resource_type = 'meta-content'
     elif endpoint.startswith('/v2/autographa/project'):
-        resource_type = schema_auth.ResourceType.PROJECT.value
+        resource_type = 'project'
     elif endpoint.startswith('/v2/user'):
         # resource_type = schema_auth.ResourceType.USER.value
-        resource_type = schema_auth.ResourceType.USER.name
+        resource_type = 'user'
     elif endpoint.startswith("/v2/translation") or endpoint.startswith("/v2/nlp"):
-        resource_type = schema_auth.ResourceType.TRANSLATION.value
+        resource_type = 'translation'
     elif endpoint.startswith("/v2/lookup"):
-        resource_type = schema_auth.ResourceType.LOOKUP.value
+        resource_type = 'lookup-content'
     elif endpoint.startswith("/v2/jobs"):
-        resource_type = schema_auth.ResourceType.JOBS.value
+        resource_type = 'jobs'
     elif endpoint.startswith("/v2/media"):
-        resource_type = schema_auth.ResourceType.MEDIA.value
+        resource_type = 'media'
     elif endpoint.startswith("/v2/sources") or (
         path_params is not None and "source_name" in path_params):
-        resource_type = schema_auth.ResourceType.CONTENT.value
+        resource_type = 'content'
     else:
         raise GenericException("Resource Type of API not defined")
+    if not resource_type.lower() in [key.lower() for key in RESOURCE_TYPE.keys()]:
+        raise GenericException("Resource Type not defined in DB")
     return resource_type
 
 
@@ -121,38 +123,41 @@ def search_api_permission_map(endpoint, method, client_app, path_params=None, re
         for key in path_params:
             table_url = table_url.replace("{"+key+"}", "*")
         if table_url == req_url:
-            if row[1] == method:
-                if row[2] == "None" or row[2] == client_app:
-                    # print("url, method and app matched")
-                    print("row : ", row, "| resource : ", resource)
-                    if row[4] == 'None' or row[4].lower() == resource.lower():
+            if row[1].upper() == method.upper():
+                # if row[2] == "None" or row[2].lower() == client_app.lower():
+                if row[2].lower() == client_app.lower():
+                    # if row[4] == 'None' or row[4].lower() == resource.lower():
+                    if row[4].lower() == resource.lower():
                         return (resource, row[5])
     log.error("No permisions map found for:%s, %s, %s, %s", endpoint, method, client_app, resource)
     raise PermissionException("API-Permission map not defined for the request!")
 
 def get_access_tag(db_, resource_type, path_params=None, resource=None):
     '''obtain access tag based on resource-url direct link or value stored in DB'''
+    db_resources = [key.lower() for key in RESOURCE_TYPE.keys()]
     resource_tag_map = {
-        schema_auth.ResourceType.USER.name: ['user'],
-        schema_auth.ResourceType.PROJECT: ['translation-project'],
-        schema_auth.ResourceType.TRANSLATION: ['generic-translation'],
-        schema_auth.ResourceType.LOOKUP: ['lookup-content'],
-        schema_auth.ResourceType.METACONTENT: ["meta-content","open-access"],
-        schema_auth.ResourceType.RESEARCH: ['content', 'research-use'],
-        schema_auth.ResourceType.JOBS: ['jobs'],
-        schema_auth.ResourceType.MEDIA: ['media']
+        # schema_auth.ResourceType.METACONTENT: ["meta-content","open-access"],
+        'user': ['user'],
+        'project': ['translation-project'],
+        'translation': ['generic-translation'],
+        'lookup-content': ['lookup-content'],
+        'meta-content': ["meta-content","open-access"],
+        'research-use': ['content', 'research-use'],
+        'jobs': ['jobs'],
+        'media': ['media']
         # schema_auth.ResourceType.CONTENT: None # excluded to use item specific tags in db
     }
-    if resource_type in resource_tag_map:
+    if resource_type.lower() in resource_tag_map and resource_type.lower() in db_resources:
         return resource_tag_map[resource_type]
     if path_params is not None and "source_name" in path_params:
         db_entry = db_.query(db_models.Source.metaData['accessPermissions']).filter(
             db_models.Source.sourceName == path_params['source_name']).first()
         if db_entry is not None:
-            return db_entry[0]
+            return db_entry[0] if len([x for x in db_entry if x.lower in db_resources]) > 0 else []
     if resource:
-        return resource.metaData['accessPermissions']
-    if resource_type == schema_auth.ResourceType.CONTENT:
+        return resource.metaData['accessPermissions'] if len([x for x in resource.metaData['accessPermissions']\
+             if x.lower in db_resources]) > 0 else []
+    if resource_type == 'content':
         return ['content']
     return []
 
@@ -223,21 +228,28 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         user_details = kwargs.get('user_details')
         resource_type = kwargs.get("operates_on", None)
         filtering_required = kwargs.get("filtering_required", False)
+        # checking Requested App
         if 'app' in request.headers:
-            client_app = request.headers['app']
-        else:
-            client_app = schema_auth.App.API.value
+            client_app = request.headers['app'].lower()
+        else: 
+            client_app = 'API-user' if 'API-user' in APPS.keys() else NotAvailableException('Requested App not registred')
 
+        # Getting user details if no auth header and have token
         if not "authorization" in request.headers and \
             "access_token" in kwargs:
             user_details = get_current_user_data(kwargs.get("access_token"))
+        # checking resource type  and permission requiered for request
         resource_type, permission = search_api_permission_map(
             endpoint, method, client_app, path_params, resource=resource_type)
+            
+        # print("resource_type : ", resource_type, "| permisison : ", permission)
+
         required_rights = []
         access_tags = get_access_tag(db_, resource_type, path_params)
         for tag in access_tags:
             if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
                 required_rights += ACCESS_RULES[tag][permission]
+        print("req rights ==== : ", required_rights)
         authenticated = check_right(user_details, required_rights)
         print("AUTH DETAILS DICT : ----> ",{"required_rights":required_rights,"access_tags":access_tags,"permission":permission,"resource_type":resource_type,"endpoint":endpoint,"method":method,"path_params":path_params,"user_details":user_details,"resource_type":resource_type,"filtering_required":filtering_required, "client_app":client_app, "user_details":user_details})
         if (resource_type == schema_auth.ResourceType.USER and not authenticated):
