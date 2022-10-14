@@ -32,7 +32,7 @@ services:
     networks:
       - vachan-auth-net
     volumes: 
-      - kratos-postgres-vol:/var/lib/postgresql/data
+      - kratos-postgres-vol:/data
 
 
   # offen backup
