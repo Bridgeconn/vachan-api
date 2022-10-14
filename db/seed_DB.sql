@@ -262,24 +262,24 @@ ALTER SEQUENCE public.permissions_permission_id_seq RESTART WITH 100000;
 CREATE TABLE public.apps (
     app_id SERIAL PRIMARY KEY,
     app_name text NOT NULL UNIQUE,
-    associated_role text NOT NULL,
+    default_role text NOT NULL,
     app_key text NOT NULL,
-    use_for_input boolean DEFAULT false NOT NULL,
+    use_for_registration boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT NOW(),
     created_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
     last_updated_user text NULL,
     active boolean DEFAULT true NOT NULL,
     UNIQUE(app_id),
-    CONSTRAINT fk_assocaited_role FOREIGN KEY(associated_role) REFERENCES public.roles(role_name)
+    CONSTRAINT fk_assocaited_role FOREIGN KEY(default_role) REFERENCES public.roles(role_name)
 );
-INSERT INTO apps(app_name,associated_role,app_key,use_for_input) VALUES('Autographa', 'AgUser','temp_key', true);
-INSERT INTO apps(app_name,associated_role,app_key,use_for_input) VALUES('Vachan-online or vachan-app', 'VachanUser','temp_key', true);
-INSERT INTO apps(app_name,associated_role,app_key,use_for_input) VALUES('VachanAdmin', 'VachanAdmin','temp_key', false);
-INSERT INTO apps(app_name,associated_role,app_key,use_for_input) VALUES('API-user', 'APIUser','temp_key', true);
+INSERT INTO apps(app_name,default_role,app_key,use_for_registration) VALUES('Autographa', 'AgUser','temp_key', true);
+INSERT INTO apps(app_name,default_role,app_key,use_for_registration) VALUES('Vachan-online or vachan-app', 'VachanUser','temp_key', true);
+INSERT INTO apps(app_name,default_role,app_key,use_for_registration) VALUES('VachanAdmin', 'VachanAdmin','temp_key', false);
+INSERT INTO apps(app_name,default_role,app_key,use_for_registration) VALUES('API-user', 'APIUser','temp_key', true);
 
 ALTER SEQUENCE public.apps_app_id_seq RESTART WITH 100000;
--- ALTER TABLE public.apps ADD CONSTRAINT associated_role_value CHECK (public.apps.associated_role IN (SELECT role_name FROM public.roles));
+-- ALTER TABLE public.apps ADD CONSTRAINT default_role_value CHECK (public.apps.default_role IN (SELECT role_name FROM public.roles));
 
 CREATE TABLE public.access_rules (
     rule_id SERIAL PRIMARY KEY,

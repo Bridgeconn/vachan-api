@@ -476,9 +476,9 @@ class Apps(Base): # pylint: disable=too-few-public-methods
 
     appId = Column('app_id', Integer, primary_key=True)
     appName = Column('app_name', String, unique=True, index=True)
-    associatedRole = Column('associated_role', String, ForeignKey('roles.role_name'))
+    defaultRole = Column('default_role', String, ForeignKey('roles.role_name'))
     appKey = Column('app_key', String)
-    useForInput = Column('use_for_input', String)
+    useForRegistration = Column('use_for_registration', String)
     createdUser = Column('created_user', String)
     updatedUser = Column('last_updated_user', String)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())

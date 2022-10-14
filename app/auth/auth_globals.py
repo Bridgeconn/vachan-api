@@ -74,9 +74,9 @@ def generate_apps():
         INPUT_APPS.clear()
         db_apps = db_instance.query(db_models.Apps).all()
         for app in db_apps:
-            APPS[app.appName]= app.associatedRole
-            if app.useForInput:
-                INPUT_APPS[app.appName]= app.associatedRole
+            APPS[app.appName]= app.defaultRole
+            if app.useForRegistration:
+                INPUT_APPS[app.appName]= app.defaultRole
         print("Apps : ", len(APPS))
         print("Input Apps : ", len(INPUT_APPS))
     except Exception as e:

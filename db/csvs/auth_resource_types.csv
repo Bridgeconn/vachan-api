@@ -15,3 +15,4 @@ derivable,derivable contents for projects - source related
 editable,editable contents
 translation-project,translation project
 generic-translation, general translation
+file-ops,file operations
