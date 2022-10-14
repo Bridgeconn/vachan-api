@@ -33,6 +33,7 @@ services:
       - vachan-auth-net
     volumes: 
       - kratos-postgres-vol:/data
+    restart: always
 
 
   # offen backup
@@ -46,7 +47,7 @@ services:
       BACKUP_PRUNING_PREFIX: backup-kratos-daily-
       BACKUP_RETENTION_DAYS: 5
     depends_on:
-      - kratos-migrate
+      - postgresd
     volumes:
       - kratos-postgres-vol:/docker_kratos-postgres:ro
       # - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -65,7 +66,7 @@ services:
       BACKUP_PRUNING_PREFIX: backup-kratos-week-
       BACKUP_RETENTION_DAYS: 49
     depends_on:
-      - kratos-migrate
+      - postgresd
     volumes:
       - kratos-postgres-vol:/docker_kratos-postgres:ro
       # - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -84,7 +85,7 @@ services:
       BACKUP_PRUNING_PREFIX: backup-kratos-month-
       BACKUP_RETENTION_DAYS: 365
     depends_on:
-      - kratos-migrate
+      - postgresd
     volumes:
       - kratos-postgres-vol:/docker_kratos-postgres:ro
       # - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -103,7 +104,7 @@ services:
       BACKUP_PRUNING_PREFIX: backup-kratos-year-
       BACKUP_RETENTION_DAYS: 2555
     depends_on:
-      - kratos-migrate
+      - postgresd
     volumes:
       - kratos-postgres-vol:/docker_kratos-postgres:ro
       # - /var/run/docker.sock:/var/run/docker.sock:ro
