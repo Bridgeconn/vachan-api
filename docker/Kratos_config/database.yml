@@ -31,8 +31,13 @@ services:
       - POSTGRES_HOST_AUTH_METHOD=md5
     networks:
       - vachan-auth-net
-    volumes: 
-      - kratos-postgres-vol:/data
+    volumes:
+      - type: volume
+        source: kratos-postgres-vol
+        target: /var/lib/postgresql/data
+        read_only: false
+    # volumes: 
+    #   - kratos-postgres-vol:/data
     restart: always
 
 

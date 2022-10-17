@@ -28,8 +28,13 @@ services:
       - POSTGRES_HOST_AUTH_METHOD=trust
     networks:
       - my-test-network
-    volumes: 
-      - kratos-postgres-vol:/data
+    volumes:
+      - type: volume
+        source: kratos-postgres-vol
+        target: /var/lib/postgresql/data
+        read_only: false
+    # volumes: 
+    #   - kratos-postgres-vol:/data
     restart: always
 
  kratos:
