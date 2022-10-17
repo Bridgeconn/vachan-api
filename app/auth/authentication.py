@@ -14,7 +14,7 @@ from dependencies import log
 from custom_exceptions import GenericException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
     UnprocessableException, PermissionException
-from auth.auth_globals import APIPERMISSIONTABLE, ACCESS_RULES, ROLES, RESOURCE_TYPE, APPS
+from auth.auth_globals import APIPERMISSIONTABLE, ACCESS_RULES, ROLES, RESOURCE_TYPE, APPS, INPUT_APPS
 
 PUBLIC_BASE_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL",
                                     "http://127.0.0.1:4433/")+"self-service/"
@@ -125,6 +125,7 @@ def search_api_permission_map(endpoint, method, client_app, path_params=None, re
         if table_url == req_url:
             if row[1].upper() == method.upper():
                 # if row[2] == "None" or row[2].lower() == client_app.lower():
+                # print("appname : ", row[2].lower(), client_app.lower())
                 if row[2].lower() == client_app.lower():
                     # if row[4] == 'None' or row[4].lower() == resource.lower():
                     if row[4].lower() == resource.lower():
@@ -185,7 +186,9 @@ def is_project_member(db_:Session, db_resource, user_id):
 
 def check_right(user_details, required_rights, resp_obj=None, db_=None):
     '''Use user details and info about requested action or resource to ensure right'''
-    log.debug("In check_right with user_details: %s, required_rights:%s, resp_obj:%s",
+    # log.debug("In check_right with user_details: %s, required_rights:%s, resp_obj:%s",
+    #     user_details, required_rights, resp_obj)
+    log.warning("In check_right with user_details: %s, required_rights:%s, resp_obj:%s",
         user_details, required_rights, resp_obj)
     valid = False
     if "noAuthRequired" in required_rights:
@@ -231,8 +234,11 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         # checking Requested App
         if 'app' in request.headers:
             client_app = request.headers['app'].lower()
-        else: 
-            client_app = 'API-user' if 'API-user' in APPS.keys() else NotAvailableException('Requested App not registred')
+            if client_app in [ key.lower() for key in INPUT_APPS.keys()]:
+                print(" ERROR : -----> Not a Valid app , app is not registred ")
+                raise UnAuthorizedException("Requesting app is not registered")
+        else:             
+            client_app = 'API-user' if 'API-user' in APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
 
         # Getting user details if no auth header and have token
         if not "authorization" in request.headers and \
@@ -251,8 +257,9 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                 required_rights += ACCESS_RULES[tag][permission]
         print("req rights ==== : ", required_rights)
         authenticated = check_right(user_details, required_rights)
-        print("AUTH DETAILS DICT : ----> ",{"required_rights":required_rights,"access_tags":access_tags,"permission":permission,"resource_type":resource_type,"endpoint":endpoint,"method":method,"path_params":path_params,"user_details":user_details,"resource_type":resource_type,"filtering_required":filtering_required, "client_app":client_app, "user_details":user_details})
-        if (resource_type == schema_auth.ResourceType.USER and not authenticated):
+        print("AUTH DETAILS DICT : ----> ",{"required_rights":required_rights,"| access_tags":access_tags,"| permission":permission," | resource_type":resource_type," | endpoint":endpoint," | method":method," | path_params":path_params," | user_details":user_details," | resource_type":resource_type," | filtering_required":filtering_required," | client_app":client_app," | user_details":user_details," | authenticated":authenticated})
+        # if (resource_type == schema_auth.ResourceType.USER and not authenticated):
+        if ('user' in RESOURCE_TYPE.keys() and resource_type == 'user' and not authenticated):
             # Need to raise error before function execution, as we cannot delay db commit
             # like we do in other cases as changes happen in Kratos db, not app db'''
             if user_details['user_id'] is None:
@@ -300,7 +307,6 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                 if db_:
                     db_.commit()
             else:
-
                 if user_details['user_id'] is None:
                     raise UnAuthorizedException("Access token not provided or user not recognized.")
                 raise PermissionException("Access Permission Denied for the URL")
@@ -565,8 +571,10 @@ def user_register_kratos(register_details,app_type):
         headers["Content-Type"] = "application/json"
         reg_req = requests.post(reg_flow_id,headers=headers,json=reg_data)
         reg_response = json.loads(reg_req.content)
+        print("in reg response  -->: ", reg_response)
         if reg_req.status_code == 200:
             data = register_check_success(reg_response)
+            print("in reg check success -->: ", data)
         elif reg_req.status_code == 400:
             data = register_flow_fail(reg_response,email,user_role,reg_req)
         else:
