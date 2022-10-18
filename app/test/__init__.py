@@ -1,10 +1,15 @@
 '''Set testing environment and define common tests'''
 from typing import Dict
 from fastapi.testclient import TestClient
+from app.custom_exceptions import NotAvailableException
 from app.main import app
 from app.schema import schema_auth
+from app.auth.auth_globals import generate_apps
 
 client = TestClient(app)
+
+ALL_APPS, ALL_INPUT_APPS = generate_apps()
+# print("-------------------gneerated apps data in init.py--- '''''''''''''''''''''''' ==> ", ALL_APPS, ALL_INPUT_APPS)
 
 def gql_request(query, operation="query", variables=None, headers=None):
     '''common format for gql reqests with test db session in context'''
@@ -251,11 +256,15 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
             response = client.post(contentapi_post_url, headers=headers_auth, json=data)
             assert response.status_code == 201
 
-    API = schema_auth.App.API.value
-    AG = schema_auth.App.AG.value
-    VACHAN = schema_auth.App.VACHAN.value
-    VACHANADMIN = schema_auth.AdminRoles.VACHANADMIN.value
-    Apps = [ API,AG,VACHAN,VACHANADMIN]
+    # API = schema_auth.App.API.value
+    # AG = schema_auth.App.AG.value
+    # VACHAN = schema_auth.App.VACHAN.value
+    # VACHANADMIN = schema_auth.AdminRoles.VACHANADMIN.value
+    API = 'API-user' if 'API-user' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
+    AG = 'Autographa' if 'Autographa' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
+    VACHAN = 'Vachan-online or vachan-app' if 'Vachan-online or vachan-app' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
+    VACHANADMIN = 'VachanAdmin' if 'VachanAdmin' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
+    Apps = [API,AG,VACHAN,VACHANADMIN]
 
     #Get without Login headers=headers_auth
     #permision -------------------------> content , downloadable , derivable
@@ -266,7 +275,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
     for i in range(len(test_permissions_list)):
         headers_auth = {"contentType": "application/json",
                 "accept": "application/json"}  
-        print(f"permisioln source-------------------------> {test_permissions_list[i]}")
+        print(f"permission source-------------------------> {test_permissions_list[i]}")
         
         for num in range(4):
             headers_auth['app'] = Apps[num]
@@ -954,10 +963,14 @@ def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, 
             headers=headers_auth)
         assert not "errors" in executed
 
-    API = types.App.API.value
-    AG = types.App.AG.value
-    VACHAN = types.App.VACHAN.value
-    VACHANADMIN = types.App.VACHANADMIN.value
+    # API = types.App.API.value
+    # AG = types.App.AG.value
+    # VACHAN = types.App.VACHAN.value
+    # VACHANADMIN = types.App.VACHANADMIN.value
+    API = 'API-user' if 'API-user' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
+    AG = 'Autographa' if 'Autographa' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
+    VACHAN = 'Vachan-online or vachan-app' if 'Vachan-online or vachan-app' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
+    VACHANADMIN = 'VachanAdmin' if 'VachanAdmin' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
     Apps = [ API,AG,VACHAN,VACHANADMIN]
 
     #Get without Login headers=headers_auth

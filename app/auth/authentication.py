@@ -234,7 +234,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         # checking Requested App
         if 'app' in request.headers:
             client_app = request.headers['app'].lower()
-            if client_app in [ key.lower() for key in INPUT_APPS.keys()]:
+            if not client_app in [ key.lower() for key in INPUT_APPS.keys()]:
                 print(" ERROR : -----> Not a Valid app , app is not registred ")
                 raise UnAuthorizedException("Requesting app is not registered")
         else:             
@@ -571,7 +571,6 @@ def user_register_kratos(register_details,app_type):
         headers["Content-Type"] = "application/json"
         reg_req = requests.post(reg_flow_id,headers=headers,json=reg_data)
         reg_response = json.loads(reg_req.content)
-        print("in reg response  -->: ", reg_response)
         if reg_req.status_code == 200:
             data = register_check_success(reg_response)
             print("in reg check success -->: ", data)

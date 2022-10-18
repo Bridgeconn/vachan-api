@@ -46,6 +46,7 @@ def generate_access_rules_dict():
         for rules_row in db_access_rule:
             ACCESS_RULES[rules_row.entitlement][rules_row.tag]= rules_row.roles
         print("access rules : ", len(ACCESS_RULES))
+        return ACCESS_RULES
     except Exception as e:
         print("Error Generating Access Rules from DB :", e)
     finally:
@@ -61,6 +62,7 @@ def generate_resource_types():
         for resource_row in db_resource_type:
             RESOURCE_TYPE[resource_row.resourceTypeName]= resource_row.resourceTypeDescription
         print("resource type : ", len(RESOURCE_TYPE))
+        return RESOURCE_TYPE
     except Exception as e:
         print("Error Generating resource types from DB :", e)
     finally:
@@ -79,6 +81,7 @@ def generate_apps():
                 INPUT_APPS[app.appName]= app.defaultRole
         print("Apps : ", len(APPS))
         print("Input Apps : ", len(INPUT_APPS))
+        return APPS, INPUT_APPS
     except Exception as e:
         print("Error Generating app and input apps from DB :", e)
     finally:
@@ -93,10 +96,12 @@ def generate_roles():
         for role in db_roles:
             ROLES.append(role.roleName)
         print("Roles : ", len(ROLES))
+        return ROLES
     except Exception as e:
         print("Error Generating roles from DB :", e)
     finally:
         db_instance.close()
+
 
 # reference fun to get db data
 # def auth_selection(selection = 'file'):

@@ -2,9 +2,16 @@
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from app.custom_exceptions import NotAvailableException
 from app.main import app, get_db, log
 from app.database import SQLALCHEMY_DATABASE_URL
 from app.schema import schema_auth
+from app.auth.auth_globals import generate_apps, generate_roles
+
+ALL_APPS, ALL_INPUT_APPS = generate_apps()
+ALL_ROLES = generate_roles()
+# print("-------------------gneerated apps data in conftest --- '''''''''''''''''''''''' ==> ", ALL_APPS, ALL_INPUT_APPS)
+# print("-------------------gneerated roles data in conftest --- '''''''''''''''''''''''' ==> ", ALL_ROLES)
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 Session = sessionmaker()
@@ -47,7 +54,8 @@ initial_test_users = {
                 "lastname": "Admin",
                 "token":"",
                 "test_user_id": "",
-                "app" : schema_auth.App.AG.value
+                # "app" : schema_auth.App.AG.value
+                "app" : 'Autographa' if 'Autographa' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
             },
             "BcsDev":{
                 "user_email": "bcsdevtest@mail.test",
@@ -56,7 +64,8 @@ initial_test_users = {
                 "lastname": "Developer",
                 "token":"",
                 "test_user_id": "",
-                "app" : schema_auth.App.API.value
+                # "app" : schema_auth.App.API.value
+                "app" : 'API-user' if 'API-user' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
             },
             "AgUser":{
                 "user_email": "agtest@mail.test",
@@ -65,7 +74,8 @@ initial_test_users = {
                 "lastname": "User",
                 "token":"",
                 "test_user_id": "",
-                "app" : schema_auth.App.AG.value
+                # "app" : schema_auth.App.AG.value
+                "app" : 'Autographa' if 'Autographa' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
             },
             "VachanUser":{ 
                 "user_email": "vachantest@mail.test",
@@ -74,7 +84,8 @@ initial_test_users = {
                 "lastname": "user",
                 "token":"",
                 "test_user_id": "",
-                "app" : schema_auth.App.VACHAN.value
+                # "app" : schema_auth.App.VACHAN.value
+                "app" : 'Vachan-online or vachan-app' if 'Vachan-online or vachan-app' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
             },
             "APIUser":{
                 "user_email": "apitest@mail.test",
@@ -83,7 +94,8 @@ initial_test_users = {
                 "lastname": "User",
                 "token":"",
                 "test_user_id": "",
-                "app" : schema_auth.App.API.value
+                # "app" : schema_auth.App.API.value
+                "app" : 'API-user' if 'API-user' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
             },
             "VachanAdmin":{
                 "user_email": "vachanadmintest@mail.test",
@@ -92,7 +104,8 @@ initial_test_users = {
                 "lastname": "Admin",
                 "token":"",
                 "test_user_id": "",
-                "app" : schema_auth.App.VACHAN.value
+                # "app" : schema_auth.App.VACHAN.value
+                "app" : 'Vachan-online or vachan-app' if 'Vachan-online or vachan-app' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
             },
             "APIUser2":{
                 "user_email": "abctest@mail.test",
@@ -101,7 +114,8 @@ initial_test_users = {
                 "lastname": "User two",
                 "token":"",
                 "test_user_id": "",
-                "app" : schema_auth.App.API.value
+                # "app" : schema_auth.App.API.value
+                "app" : 'API-user' if 'API-user' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
             },
             "AgUser2":{
                 "user_email": "agtest2@mail.test",
@@ -110,7 +124,8 @@ initial_test_users = {
                 "lastname": "User Two",
                 "token":"",
                 "test_user_id": "",
-                "app" : schema_auth.App.AG.value
+                # "app" : schema_auth.App.AG.value
+                "app" : 'Autographa' if 'Autographa' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
             }
         }
 
@@ -139,25 +154,31 @@ def create_user_session_run_at_start():
         }
         #AgAdmin
         role_user_id = initial_test_users["AgAdmin"]["test_user_id"]
-        role_list = [schema_auth.AdminRoles.AGADMIN.value]
+        # role_list = [schema_auth.AdminRoles.AGADMIN.value]
+        role_list = ['AgAdmin'] if 'AgAdmin' in ALL_ROLES else NotAvailableException('Not a Valid role , role is not registred ')
         response = assign_roles(super_data,role_user_id,role_list)
         assert response.status_code == 201
         assert response.json()["role_list"] == \
-            [schema_auth.AdminRoles.AGUSER.value, schema_auth.AdminRoles.AGADMIN.value]
+            ['AgUser', 'AgAdmin']
+            # [schema_auth.AdminRoles.AGUSER.value, schema_auth.AdminRoles.AGADMIN.value]
         #VachanAdmin
         role_user_id = initial_test_users["VachanAdmin"]["test_user_id"]
-        role_list = [schema_auth.AdminRoles.VACHANADMIN.value]
+        # role_list = [schema_auth.AdminRoles.VACHANADMIN.value]
+        role_list = ['VachanAdmin'] if 'VachanAdmin' in ALL_ROLES else NotAvailableException('Not a Valid role , role is not registred ')
         response = assign_roles(super_data,role_user_id,role_list)
         assert response.status_code == 201
         assert response.json()["role_list"] == \
-            [schema_auth.AdminRoles.VACHANUSER.value, schema_auth.AdminRoles.VACHANADMIN.value]
+            ['VachanUser', 'VachanAdmin']
+            # [schema_auth.AdminRoles.VACHANUSER.value, schema_auth.AdminRoles.VACHANADMIN.value]
         #BcsDeveloper
         role_user_id = initial_test_users["BcsDev"]["test_user_id"]
-        role_list = [schema_auth.AdminRoles.BCSDEV.value]
+        # role_list = [schema_auth.AdminRoles.BCSDEV.value]
+        role_list = ['BcsDeveloper'] if 'BcsDeveloper' in ALL_ROLES else NotAvailableException('Not a Valid role , role is not registred ')
         response = assign_roles(super_data,role_user_id,role_list)
         assert response.status_code == 201
         assert response.json()["role_list"] == \
-            [schema_auth.AdminRoles.APIUSER.value, schema_auth.AdminRoles.BCSDEV.value]
+            ['APIUser','BcsDeveloper']
+            # [schema_auth.AdminRoles.APIUSER.value, schema_auth.AdminRoles.BCSDEV.value]
         yield initial_test_users
     finally:
         delete_list = []
