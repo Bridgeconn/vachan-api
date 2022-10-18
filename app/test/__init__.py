@@ -4,12 +4,28 @@ from fastapi.testclient import TestClient
 from app.custom_exceptions import NotAvailableException
 from app.main import app
 from app.schema import schema_auth
-from app.auth.auth_globals import generate_apps
+from app.auth.auth_globals import generate_apps, generate_roles
 
 client = TestClient(app)
 
 ALL_APPS, ALL_INPUT_APPS = generate_apps()
-# print("-------------------gneerated apps data in init.py--- '''''''''''''''''''''''' ==> ", ALL_APPS, ALL_INPUT_APPS)
+ALL_ROLES = generate_roles()
+
+TEST_APPS_LIST = {
+    'API' : 'API-user' if 'API-user' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred '),
+    'AG' : 'Autographa' if 'Autographa' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred '),
+    'VACHAN' : 'Vachan-online or vachan-app' if 'Vachan-online or vachan-app' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred '),
+    'VACHANADMIN' : 'VachanAdmin' if 'VachanAdmin' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
+}
+TEST_ROLE_LIST = {
+    'SUPERADMIN' : 'AgAdmin' if 'AgAdmin' in ALL_ROLES else NotAvailableException('Not a Valid role , role is not registred '),
+    'VACHANADMIN' : 'VachanAdmin' if 'VachanAdmin' in ALL_ROLES else NotAvailableException('Not a Valid role , role is not registred '),
+    'AGADMIN' : 'AgAdmin' if 'AgAdmin' in ALL_ROLES else NotAvailableException('Not a Valid role , role is not registred '),
+    'AGUSER' : 'AgUser' if 'AgUser' in ALL_ROLES else NotAvailableException('Not a Valid role , role is not registred '),
+    'VACHANUSER' : 'VachanUser' if 'VachanUser' in ALL_ROLES else NotAvailableException('Not a Valid role , role is not registred '),
+    'APIUSER' : 'APIUser' if 'APIUser' in ALL_ROLES else NotAvailableException('Not a Valid role , role is not registred '),
+    'BCSDEV' : 'BcsDeveloper' if 'BcsDeveloper' in ALL_ROLES else NotAvailableException('Not a Valid role , role is not registred ')
+}
 
 def gql_request(query, operation="query", variables=None, headers=None):
     '''common format for gql reqests with test db session in context'''

@@ -255,9 +255,9 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         for tag in access_tags:
             if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
                 required_rights += ACCESS_RULES[tag][permission]
-        print("req rights ==== : ", required_rights)
+        # print("req rights ==== : ", required_rights)
         authenticated = check_right(user_details, required_rights)
-        print("AUTH DETAILS DICT : ----> ",{"required_rights":required_rights,"| access_tags":access_tags,"| permission":permission," | resource_type":resource_type," | endpoint":endpoint," | method":method," | path_params":path_params," | user_details":user_details," | resource_type":resource_type," | filtering_required":filtering_required," | client_app":client_app," | user_details":user_details," | authenticated":authenticated})
+        # print("AUTH DETAILS DICT : ----> ",{"required_rights":required_rights,"| access_tags":access_tags,"| permission":permission," | resource_type":resource_type," | endpoint":endpoint," | method":method," | path_params":path_params," | user_details":user_details," | resource_type":resource_type," | filtering_required":filtering_required," | client_app":client_app," | user_details":user_details," | authenticated":authenticated})
         # if (resource_type == schema_auth.ResourceType.USER and not authenticated):
         if ('user' in RESOURCE_TYPE.keys() and resource_type == 'user' and not authenticated):
             # Need to raise error before function execution, as we cannot delay db commit
@@ -331,7 +331,6 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
 
 
 ######################################### Kratos Auth Functions ####################
-
 
 #kratos Logout
 def kratos_logout(recieve_token):
@@ -573,7 +572,7 @@ def user_register_kratos(register_details,app_type):
         reg_response = json.loads(reg_req.content)
         if reg_req.status_code == 200:
             data = register_check_success(reg_response)
-            print("in reg check success -->: ", data)
+            # print("in reg check success -->: ", data)
         elif reg_req.status_code == 400:
             data = register_flow_fail(reg_response,email,user_role,reg_req)
         else:
