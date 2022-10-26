@@ -107,10 +107,22 @@ def tokenize_get_longest_match(memory_trie,chunks):
 def tokenize_get_unique_token(phrases,sent,unique_tokens):
     """get unique tokens for tokenize function"""
     start = 0
+    dummy_sent = sent['sentence']
+    if 'draftMeta' in sent:
+        for meta in sent['draftMeta']:
+            if meta[2] == "confirmed":
+                # changing the confirmed portions to avoid a phrase being matched in it
+                dummy_list = list(dummy_sent)
+                for pos in range(meta[0][0], meta[0][1]):
+                    dummy_list[pos] = "#"
+                dummy_sent = "".join(dummy_list)
     for phrase in phrases:
         if phrase.strip() == '':
             continue
-        offset = sent['sentence'].find(phrase, start)
+        # whole_word_pattern = re.compile(r"\b"+phrase+r"\b")
+        # find = re.search(whole_word_pattern, dummy_sent)
+        # offset = find.start()
+        offset = dummy_sent.find(phrase, start)
         if offset == -1:
             raise NotAvailableException(f"Tokenization: token, {phrase}, "+\
                 f"not found in sentence: {sent['sentence']}")
@@ -213,7 +225,6 @@ def tokenize(db_:Session, src_lang, sent_list, #pylint: disable=too-many-locals
         phrases,stop_words = tokenize_logic(include_phrases,chunks,include_stopwords,stop_words)
 
         unique_tokens = tokenize_get_unique_token(phrases,sent,unique_tokens)
-        print(unique_tokens)
 
     return unique_tokens
 
