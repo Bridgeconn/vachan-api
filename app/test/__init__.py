@@ -3,7 +3,7 @@ from typing import Dict
 from fastapi.testclient import TestClient
 from app.custom_exceptions import NotAvailableException
 from app.main import app
-from app.schema import schema_auth
+# from app.schema import schema_auth
 from app.auth.auth_globals import generate_apps, generate_roles
 
 client = TestClient(app)

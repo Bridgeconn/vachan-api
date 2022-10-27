@@ -10,12 +10,12 @@ from .test_gql_versions import check_post as version_add
 #pylint: disable=E0611
 #pylint: disable=R0914
 #pylint: disable=R0915
-from . import check_skip_limit_gql, gql_request,assert_not_available_content_gql
+from . import check_skip_limit_gql, gql_request,assert_not_available_content_gql, TEST_APPS_LIST
 from .conftest import initial_test_users
 from . test_gql_auth_basic import login,SUPER_PASSWORD,SUPER_USER
 
 headers_auth = {"contentType": "application/json",
-                "accept": "application/json", "App":schema_auth.App.VACHANADMIN.value}
+                "accept": "application/json", "App":TEST_APPS_LIST["VACHANADMIN"]}
 headers = {"contentType": "application/json", "accept": "application/json"}
 
 SOURCE_GLOBAL_VARIABLES = {
@@ -112,7 +112,8 @@ headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['
 
 def check_post(query,variables):
     """positive post test"""
-    headers_auth['App'] = schema_auth.App.VACHANADMIN.value
+    # headers_auth['App'] = schema_auth.App.VACHANADMIN.value
+    headers_auth['App'] = TEST_APPS_LIST["VACHANADMIN"]
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     #without auth
     executed = gql_request(query=query,operation="mutation", variables=variables)
@@ -1328,10 +1329,14 @@ def test_diffrernt_sources_with_app_and_roles():
                 "accept": "application/json"
             }
     #app names
-    API = types.App.API
-    AG =  types.App.AG
-    VACHAN = types.App.VACHAN
-    VACHANADMIN = types.App.VACHANADMIN
+    # API = types.App.API
+    # AG =  types.App.AG
+    # VACHAN = types.App.VACHAN
+    # VACHANADMIN = types.App.VACHANADMIN
+    API = TEST_APPS_LIST['API']
+    AG = TEST_APPS_LIST['AG']
+    VACHAN = TEST_APPS_LIST['VACHAN']
+    VACHANADMIN = TEST_APPS_LIST['VACHANADMIN']
 
     #create sources for test with different access permissions
     #content is default
@@ -1431,11 +1436,11 @@ def test_diffrernt_sources_with_app_and_roles():
     check_list = [permission.OPENACCESS.value]
     check_resp_permission(resp_data,check_list)
     #APP : Autographa
-    headers_auth['app'] = types.App.AG.value
+    headers_auth['app'] = AG
     executed = gql_request(query=filter_qry, headers=headers_auth)
     assert_not_available_content_gql(executed["data"]["contents"])
     #APP : Vachan Online
-    headers_auth['app'] = types.App.VACHAN.value
+    headers_auth['app'] = VACHAN
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
@@ -1444,7 +1449,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
     check_resp_permission(resp_data,check_list)
     #APP : Vachan Admin
-    headers_auth['app'] = types.App.VACHANADMIN.value
+    headers_auth['app'] = VACHANADMIN
     executed = gql_request(query=filter_qry, headers=headers_auth)
     assert_not_available_content_gql(executed["data"]["contents"])
 
@@ -1460,7 +1465,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
     check_resp_permission(resp_data,check_list)
     #APP : Autographa
-    headers_auth['app'] = types.App.AG.value
+    headers_auth['app'] = AG
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
@@ -1469,7 +1474,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
     check_resp_permission(resp_data,check_list)
     #APP : Vachan Online
-    headers_auth['app'] = types.App.VACHAN.value
+    headers_auth['app'] = VACHAN
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
@@ -1478,7 +1483,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
     check_resp_permission(resp_data,check_list)
     #APP : Vachan Admin
-    headers_auth['app'] = types.App.VACHANADMIN.value
+    headers_auth['app'] = VACHANADMIN
     executed = gql_request(query=filter_qry, headers=headers_auth)
     assert_not_available_content_gql(executed["data"]["contents"])
 
@@ -1494,11 +1499,11 @@ def test_diffrernt_sources_with_app_and_roles():
     check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
     check_resp_permission(resp_data,check_list)
     #APP : Autographa
-    headers_auth['app'] = types.App.AG.value
+    headers_auth['app'] = AG
     executed = gql_request(query=filter_qry, headers=headers_auth)
     assert_not_available_content_gql(executed["data"]["contents"])    
     #APP : Vachan Online
-    headers_auth['app'] = types.App.VACHAN.value
+    headers_auth['app'] = VACHAN
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
@@ -1507,7 +1512,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
     check_resp_permission(resp_data,check_list)
     #APP : Vachan Admin
-    headers_auth['app'] = types.App.VACHANADMIN.value
+    headers_auth['app'] = VACHANADMIN
     executed = gql_request(query=filter_qry, headers=headers_auth)
     assert_not_available_content_gql(executed["data"]["contents"])    
 
@@ -1527,11 +1532,11 @@ def test_diffrernt_sources_with_app_and_roles():
       permission.DOWNLOADABLE.value, permission.DERIVABLE.value]
     check_resp_permission(resp_data,check_list)
     #APP : Autographa
-    headers_auth['app'] = types.App.AG.value
+    headers_auth['app'] = AG
     executed = gql_request(query=filter_qry, headers=headers_auth)
     assert_not_available_content_gql(executed["data"]["contents"])    
     #APP : Vachan Online
-    headers_auth['app'] = types.App.VACHAN.value
+    headers_auth['app'] = VACHAN
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
@@ -1540,7 +1545,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
     check_resp_permission(resp_data,check_list)
     #APP : Vachan Admin
-    headers_auth['app'] = types.App.VACHANADMIN.value
+    headers_auth['app'] = VACHANADMIN
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 5
@@ -1565,11 +1570,11 @@ def test_diffrernt_sources_with_app_and_roles():
     check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
     check_resp_permission(resp_data,check_list)
     #APP : Autographa
-    headers_auth['app'] = types.App.AG.value
+    headers_auth['app'] = AG
     executed = gql_request(query=filter_qry, headers=headers_auth)
     assert_not_available_content_gql(executed["data"]["contents"])    
     #APP : Vachan Online
-    headers_auth['app'] = types.App.VACHAN.value
+    headers_auth['app'] = VACHAN
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
@@ -1578,7 +1583,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
     check_resp_permission(resp_data,check_list)
     #APP : Vachan Admin
-    headers_auth['app'] = types.App.VACHANADMIN.value
+    headers_auth['app'] = VACHANADMIN
     executed = gql_request(query=filter_qry, headers=headers_auth)
     assert_not_available_content_gql(executed["data"]["contents"])    
 
@@ -1594,7 +1599,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
     check_resp_permission(resp_data,check_list)
     #APP : Autographa
-    headers_auth['app'] = types.App.AG.value
+    headers_auth['app'] = AG
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
@@ -1603,7 +1608,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
     check_resp_permission(resp_data,check_list)
     #APP : Vachan Online
-    headers_auth['app'] = types.App.VACHAN.value
+    headers_auth['app'] = VACHAN
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
@@ -1612,7 +1617,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
     check_resp_permission(resp_data,check_list)
     #APP : Vachan Admin
-    headers_auth['app'] = types.App.VACHANADMIN.value
+    headers_auth['app'] = VACHANADMIN
     executed = gql_request(query=filter_qry, headers=headers_auth)
     assert len(executed["data"]["contents"]) == 0
 
@@ -1632,11 +1637,11 @@ def test_diffrernt_sources_with_app_and_roles():
       permission.DOWNLOADABLE.value, permission.DERIVABLE.value]
     check_resp_permission(resp_data,check_list)
     #APP : Autographa
-    headers_auth['app'] = types.App.AG.value
+    headers_auth['app'] = AG
     executed = gql_request(query=filter_qry, headers=headers_auth)
     assert_not_available_content_gql(executed["data"]["contents"])    
     #APP : Vachan Online
-    headers_auth['app'] = types.App.VACHAN.value
+    headers_auth['app'] = VACHAN
     executed = gql_request(query=filter_qry, headers=headers_auth)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
@@ -1645,7 +1650,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
     check_resp_permission(resp_data,check_list)
     #APP : Vachan Admin
-    headers_auth['app'] = types.App.VACHANADMIN.value
+    headers_auth['app'] = VACHANADMIN
     executed = gql_request(query=filter_qry, headers=headers_auth)
     assert_not_available_content_gql(executed["data"]["contents"])
 
@@ -1676,7 +1681,7 @@ def test_diffrernt_sources_with_app_and_roles():
       permission.DOWNLOADABLE.value, permission.DERIVABLE.value]
     check_resp_permission(resp_data,check_list)
     #APP : Autographa
-    headers_SA['app'] = types.App.AG.value
+    headers_SA['app'] = AG
     executed = gql_request(query=filter_qry, headers=headers_SA)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
@@ -1685,7 +1690,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
     check_resp_permission(resp_data,check_list)
     #APP : Vachan Online
-    headers_SA['app'] = types.App.VACHAN.value
+    headers_SA['app'] = VACHAN
     executed = gql_request(query=filter_qry, headers=headers_SA)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 2
@@ -1694,7 +1699,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_list = [permission.OPENACCESS.value,permission.PUBLISHABLE.value]
     check_resp_permission(resp_data,check_list)
     #APP : Vachan Admin
-    headers_SA['app'] = types.App.VACHANADMIN.value
+    headers_SA['app'] = VACHANADMIN
     executed = gql_request(query=filter_qry, headers=headers_SA)
     resp_data = executed["data"]["contents"]
     assert len(resp_data) == 5

@@ -135,7 +135,9 @@ async def get_data(db_, request, language_code, sentence_list, **kwargs):
             content_type=None,
             skip=0, limit=100000,
             user_details=kwargs.get('user_details'),
-            db_=db_, operates_on=schema_auth.ResourceType.CONTENT.value)
+            db_=db_,
+            operates_on='content')
+            # operates_on=schema_auth.ResourceType.CONTENT.value
         if server_data:
             if "error" not in server_data:
                 sentences += [item[2] for item in server_data]
@@ -180,7 +182,9 @@ async def filter_translation_words(db_, request, source_name, stopwords, user_de
             active=True,
             skip=0, limit=100000,
             user_details=user_details,
-            db_=db_, operates_on=schema_auth.ResourceType.CONTENT.value)
+            db_=db_,
+            operates_on='content')
+            # operates_on=schema_auth.ResourceType.CONTENT.value
     except Exception as exe: #pylint: disable=W0703
         log.exception(exe)
         log.error("Error in accessing translation_words")

@@ -1,8 +1,7 @@
 '''Test cases for versions related APIs'''
 from app.schema import schemas, schema_auth
 from . import client
-from . import assert_input_validation_error, assert_not_available_content
-from . import check_default_get
+from . import assert_input_validation_error, assert_not_available_content, TEST_APPS_LIST, check_default_get
 from .test_versions import check_post as add_version
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER
 from .conftest import initial_test_users
@@ -485,7 +484,6 @@ def test_soft_delete():
     assert response.json()['message'] == "Source edited successfully"
     assert_positive_get(response.json()['data'])
     assert not response.json()['data']['active']
-
     response = client.get(UNIT_URL + '?active=False',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) > 0
@@ -689,10 +687,10 @@ def test_diffrernt_sources_with_app_and_roles():
                 "accept": "application/json"
             }
     #app names
-    API = schema_auth.App.API.value
-    AG = schema_auth.App.AG.value
-    VACHAN = schema_auth.App.VACHAN.value
-    VACHANADMIN = schema_auth.AdminRoles.VACHANADMIN.value
+    API = TEST_APPS_LIST['API']
+    AG = TEST_APPS_LIST['AG']
+    VACHAN = TEST_APPS_LIST['VACHAN']
+    VACHANADMIN = TEST_APPS_LIST['VACHANADMIN']
 
     #create sources for test with different access permissions
     #content is default

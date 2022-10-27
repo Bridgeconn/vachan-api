@@ -5,7 +5,7 @@ from app.main import log
 from app.schema import schema_auth, schemas
 from . import client
 from . import check_default_get
-from . import assert_not_available_content
+from . import assert_not_available_content, TEST_APPS_LIST
 from .conftest import initial_test_users
 
 
@@ -225,7 +225,8 @@ def add_version():
         "versionName": "test version",
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    headers_auth['app'] = schema_auth.AdminRoles.VACHANADMIN.value
+    # headers_auth['app'] = schema_auth.AdminRoles.VACHANADMIN.value
+    headers_auth['app'] = TEST_APPS_LIST["VACHANADMIN"]
     result = client.post('/v2/versions', headers=headers_auth, json=version_data)
     assert result.status_code == 201
 

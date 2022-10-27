@@ -141,7 +141,7 @@ def get_access_tag(db_, resource_type, path_params=None, resource=None):
         'user': ['user'],
         'project': ['translation-project'],
         'translation': ['generic-translation'],
-        'lookup-content': ['lookup-content'],
+        'lookup-content': ['lookup-content'],   
         'meta-content': ["meta-content","open-access"],
         'research-use': ['content', 'research-use'],
         'jobs': ['jobs'],
@@ -154,10 +154,10 @@ def get_access_tag(db_, resource_type, path_params=None, resource=None):
         db_entry = db_.query(db_models.Source.metaData['accessPermissions']).filter(
             db_models.Source.sourceName == path_params['source_name']).first()
         if db_entry is not None:
-            return db_entry[0] if len([x for x in db_entry if x.lower in db_resources]) > 0 else []
+            return db_entry[0] if len([x for x in db_entry[0] if x.lower() in db_resources]) > 0 else []
     if resource:
         return resource.metaData['accessPermissions'] if len([x for x in resource.metaData['accessPermissions']\
-             if x.lower in db_resources]) > 0 else []
+             if x.lower() in db_resources]) > 0 else []
     if resource_type == 'content':
         return ['content']
     return []
@@ -234,7 +234,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         # checking Requested App
         if 'app' in request.headers:
             client_app = request.headers['app'].lower()
-            if not client_app in [ key.lower() for key in INPUT_APPS.keys()]:
+            if not client_app in [ key.lower() for key in APPS.keys()]:
                 print(" ERROR : -----> Not a Valid app , app is not registred ")
                 raise UnAuthorizedException("Requesting app is not registered")
         else:             
@@ -247,17 +247,19 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         # checking resource type  and permission requiered for request
         resource_type, permission = search_api_permission_map(
             endpoint, method, client_app, path_params, resource=resource_type)
-            
-        # print("resource_type : ", resource_type, "| permisison : ", permission)
+        if not endpoint.startswith('/v2/user'):
+            print("resource_type : ", resource_type, "| permisison : ", permission, "endpoint : ", endpoint)
 
         required_rights = []
         access_tags = get_access_tag(db_, resource_type, path_params)
         for tag in access_tags:
             if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
                 required_rights += ACCESS_RULES[tag][permission]
-        # print("req rights ==== : ", required_rights)
+        if not endpoint.startswith('/v2/user'):
+            print("req rights ==== : ", required_rights)
         authenticated = check_right(user_details, required_rights)
-        # print("AUTH DETAILS DICT : ----> ",{"required_rights":required_rights,"| access_tags":access_tags,"| permission":permission," | resource_type":resource_type," | endpoint":endpoint," | method":method," | path_params":path_params," | user_details":user_details," | resource_type":resource_type," | filtering_required":filtering_required," | client_app":client_app," | user_details":user_details," | authenticated":authenticated})
+        if not endpoint.startswith('/v2/user'):
+            print("AUTH DETAILS DICT : ----> ",{"required_rights":required_rights,"| access_tags":access_tags,"| permission":permission," | resource_type":resource_type," | endpoint":endpoint," | method":method," | path_params":path_params," | user_details":user_details," | resource_type":resource_type," | filtering_required":filtering_required," | client_app":client_app," | user_details":user_details," | authenticated":authenticated})
         # if (resource_type == schema_auth.ResourceType.USER and not authenticated):
         if ('user' in RESOURCE_TYPE.keys() and resource_type == 'user' and not authenticated):
             # Need to raise error before function execution, as we cannot delay db commit
@@ -315,6 +317,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             for item in response:
                 required_rights_thisitem = required_rights.copy()
                 access_tags = get_access_tag(db_, resource_type, path_params, item)
+                print("access_tags :: ======= > :: ", access_tags, "path params : ", path_params, "resource : ", resource_type, "item : ", item)
                 for tag in access_tags:
                     if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
                         required_rights_thisitem += ACCESS_RULES[tag][permission]

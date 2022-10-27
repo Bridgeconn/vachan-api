@@ -61,7 +61,8 @@ async def create_project(request: Request,
 @get_auth_access_check_decorator
 async def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectEdit,
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db),
-    operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.PROJECT.value))):
+    # operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.PROJECT.value))):
+    operates_on=Depends(AddHiddenInput(value='project'))):
     # operates_on=schema_auth.ResourceType.PROJECT.value):
     '''Adds more books to a autographa MT project's source. Delete or activate project.'''
     log.info('In update_project')
@@ -515,7 +516,8 @@ async def generate_stopwords(request: Request, background_tasks: BackgroundTasks
     source_name: schemas.TableNamePattern=Query(None,example="en_TW_1_dictionary"),
     user_details =Depends(get_user_or_none),
     sentence_list:List[schemas_nlp.SentenceInput]=Body(None), db_:Session=Depends(get_db),
-    operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.LOOKUP.value))):#pylint: disable=unused-argument
+    operates_on=Depends(AddHiddenInput(value='lookup-content'))):#pylint: disable=unused-argument
+    # operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.LOOKUP.value))):#pylint: disable=unused-argument
     '''Auto generate stop words for a given language'''
     log.info('In generate_stopwords')
     log.debug('language_code:%s, use_server_data:%s, source_name:%s, sentence_list:%s',
