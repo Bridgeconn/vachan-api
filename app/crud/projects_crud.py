@@ -3,6 +3,7 @@ AgMT Project Management. The translation or NLP related functions of these
 projects are included in nlp_crud module'''
 
 import re
+import itertools
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -225,6 +226,60 @@ def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence
         'project_content':project_row
         }
     return response
+
+def validate_draft_meta(sentence, draft, draft_meta):
+    '''Check if indices are proper in draftMeta, as per values in sentence and draft'''
+    src_segs = [meta[0] for meta in draft_meta]
+    trg_segs = [meta[0] for meta in draft_meta]
+    try:
+        #Ensure the offset ranges dont overlap
+        for seg1, seg2 in itertools.product(src_segs, src_segs):
+            if seg1 != seg2:
+                intersection = set(range(seg1[0],seg1[1])).intersection(
+                    range(seg2[0],seg2[1]))
+                assert not intersection, f"Source segments {seg1} and {seg2} overlaps!"
+        for seg1, seg2 in itertools.product(trg_segs, trg_segs):
+            if seg1 != seg2:
+                intersection = set(range(seg1[0],seg1[1])).intersection(
+                    range(seg2[0],seg2[1]))
+                assert not intersection, f"Target segments {seg1} and {seg2} overlaps!"
+        # Ensure the index values are within the range of string length and from left to right
+        # and non empty
+        src_len = len(sentence)
+        for seg in src_segs:
+            assert 0 <= seg[0] < seg[1] <= src_len, f"Source segment {seg}, is improper!"
+        trg_len = len(draft)
+        for seg in src_segs:
+            assert 0 <= seg[0] < seg[1] <= trg_len, f"Target segment {seg}, is improper!"
+    except AssertionError as exe:
+        raise TypeException("Incorrect metadata:"+str(exe)) from exe
+    except Exception as exe:
+        raise TypeException("Incorrect metadata.") from exe
+
+def update_agmt_draft(db_:Session, project_id, sentence_list, user_id):
+    '''Directly write to the draft and draftMeta fields of project sentences'''
+    sentence_id_list = [sent.sentenceId for sent in sentence_list]
+    source_resp = nlp_crud.obtain_agmt_source(db_, project_id,
+        sentence_id_list=sentence_id_list, with_draft=True)
+    project_row = source_resp['project_content']
+    sentences = source_resp['db_content']
+    for sent in sentences:
+        input_sent = None
+        for in_sent in sentence_list:
+            if in_sent.sentenceId == sent.sentenceId:
+                input_sent = in_sent
+                sentence_list.remove(in_sent)
+                break
+        validate_draft_meta(sentence=sent.sentence, draft=input_sent.draft,
+            draft_meta=input_sent.draftMeta)
+        sent.draft = input_sent.draft
+        sent.draftMeta = input_sent.draftMeta
+        sent.updatedUser = user_id
+    response_result = {
+        'db_content':sentences,
+        'project_content':project_row
+        }
+    return response_result
 
 def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_range):#pylint: disable=too-many-locals
     '''Calculate project translation progress in terms of how much of draft is translated'''
