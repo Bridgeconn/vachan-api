@@ -119,13 +119,12 @@ def tokenize_get_unique_token(phrases,sent,unique_tokens):
     for phrase in phrases:
         if phrase.strip() == '':
             continue
-        # whole_word_pattern = re.compile(r"\b"+phrase+r"\b")
-        # find = re.search(whole_word_pattern, dummy_sent)
-        # offset = find.start()
-        offset = dummy_sent.find(phrase, start)
-        if offset == -1:
+        whole_word_pattern = re.compile(f"(^|\\W)({phrase})(\\W|$)")
+        find = re.search(whole_word_pattern, dummy_sent[start:])
+        if not find:
             raise NotAvailableException(f"Tokenization: token, {phrase}, "+\
                 f"not found in sentence: {sent['sentence']}")
+        offset = find.start(2) + start
         start = offset+len(phrase)
         if phrase not in unique_tokens:
             unique_tokens[phrase] = {
