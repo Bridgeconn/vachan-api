@@ -76,7 +76,7 @@ def update_agmt_project_uploaded_book(db_,project_obj,new_books,user_id):
         book = db_.query(db_models.BibleBook).filter(
             db_models.BibleBook.bookCode == book_code).first()
         if not book:
-            raise NotAvailableException("Book, %s, not found in database"% book_code)
+            raise NotAvailableException(f"Book, {book_code}, not found in database")
         new_books.append(book_code)
         for chap in usfm_json['chapters']:
             chapter_number = chap['chapterNumber']
@@ -101,7 +101,7 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
     adding all new verses to the drafts table'''
     project_row = db_.query(db_models.TranslationProject).get(project_obj.projectId)
     if not project_row:
-        raise NotAvailableException("Project with id, %s, not found"%project_obj.projectId)
+        raise NotAvailableException(f"Project with id, {project_obj.projectId}, not found")
     new_books = []
     if project_obj.selectedBooks:
         new_books += project_obj.selectedBooks.books
@@ -149,13 +149,13 @@ def get_agmt_projects(db_:Session, project_name=None, source_language=None, targ
         source = db_.query(db_models.Language).filter(db_models.Language.code == source_language
             ).first()
         if not source:
-            raise NotAvailableException("Language, %s, not found"%source_language)
+            raise NotAvailableException(f"Language, {source_language}, not found")
         query = query.filter(db_models.TranslationProject.source_lang_id == source.languageId)
     if target_language:
         target = db_.query(db_models.Language).filter(db_models.Language.code == target_language
             ).first()
         if not target:
-            raise NotAvailableException("Language, %s, not found"%target_language)
+            raise NotAvailableException(f"Language, {target_language}, not found")
         query = query.filter(db_models.TranslationProject.target_lang_id == target.languageId)
     if user_id:
         query = query.filter(db_models.TranslationProject.users.any(userId=user_id))
@@ -166,7 +166,7 @@ def add_agmt_user(db_:Session, project_id, user_id, current_user=None):
     '''Add an additional user(not the created user) to a project, in translation_project_users'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
-        raise NotAvailableException("Project with id, %s, not found"%project_id)
+        raise NotAvailableException(f"Project with id, {project_id}, not found")
     get_all_or_one_kratos_users(user_id)
     db_content = db_models.TranslationProjectUser(
         project_id=project_id,
@@ -207,7 +207,7 @@ def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence
     output_format = kwargs.get("output_format","usfm")
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
-        raise NotAvailableException("Project with id, %s, not found"%project_id)
+        raise NotAvailableException(f"Project with id, {project_id}, not found")
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_list,
     	sentence_id_range, with_draft=True)
     draft_rows = draft_rows['db_content']
@@ -219,7 +219,7 @@ def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence
     elif output_format == schemas_nlp.DraftFormats.PRINT:
         draft_out = nlp_crud.export_to_print(draft_rows)
     else:
-        raise TypeException("Unsupported output format: %s"%output_format)
+        raise TypeException(f"Unsupported output format: {output_format}")
     response = {
         'db_content':draft_out,
         'project_content':project_row
@@ -230,7 +230,7 @@ def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_r
     '''Calculate project translation progress in terms of how much of draft is translated'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
-        raise NotAvailableException("Project with id, %s, not found"%project_id)
+        raise NotAvailableException(f"Project with id, {project_id}, not found")
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_list,
     	sentence_id_range, with_draft=True)
     draft_rows = draft_rows["db_content"]
@@ -265,7 +265,7 @@ def obtain_agmt_token_translation(db_, project_id, token, occurrences): # pylint
     '''Get the current translation for specific tokens providing their occurence in source'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
-        raise NotAvailableException("Project with id, %s, not found"%project_id)
+        raise NotAvailableException(f"Project with id, {project_id}, not found")
     new_occurences = []
     for occur in occurrences:
         if not isinstance(occur, dict):
@@ -307,7 +307,7 @@ def versification_check(row, prev_book_code, versification, prev_verse, prev_cha
         prev_chapter = chapter
     elif verse != prev_verse + 1:
         for i in range(prev_verse+1, verse):
-            versification['excludedVerses'].append('%s %s:%s'%(prev_book_code, chapter, i))
+            versification['excludedVerses'].append(f'{prev_book_code} {chapter}:{i}')
     prev_verse = verse
     return prev_book_code, versification, prev_verse
 
@@ -315,7 +315,7 @@ def get_agmt_source_versification(db_, project_id):
     '''considering the AgMT source is always bible verses, get their versification structure'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
-        raise NotAvailableException("Project with id, %s, not found"%project_id)
+        raise NotAvailableException(f"Project with id, {project_id}, not found")
     query = db_.query(db_models.TranslationDraft).filter(
         db_models.TranslationDraft.project_id==project_id)
     verse_rows = query.order_by(db_models.TranslationDraft.sentenceId).all()
@@ -341,7 +341,7 @@ def get_agmt_source_per_token(db_:Session, project_id, token, occurrences): #pyl
     allowing it to be easily identifiable and highlightable at UI'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
-        raise NotAvailableException("Project with id, %s, not present"%project_id)
+        raise NotAvailableException(f"Project with id, {project_id}, not present")
     sent_ids = [occur.sentenceId for occur in occurrences]
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id,
         sentence_id_list=sent_ids, with_draft=True)

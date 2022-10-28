@@ -124,10 +124,11 @@ class BibleVerse(graphene.ObjectType):
         '''resolver'''
         if ('verseNumberEnd' in parent['reference'] and
             parent['reference']['verseNumberEnd'] is not None):
-            return '%s %s:%s-%s'%(parent['reference']['book'], parent['reference']['chapter'],
-                parent['reference']['verseNumber'], parent['reference']['verseNumberEnd'])
-        return '%s %s:%s'%(parent['reference']['book'], parent['reference']['chapter'],
-            parent['reference']['verseNumber'])
+            return f"{parent['reference']['book']} "+\
+                f"{parent['reference']['chapter']}:{parent['reference']['verseNumber']}-"+\
+                f"{parent['reference']['verseNumberEnd']}"
+        return f"{parent['reference']['book']} {parent['reference']['chapter']}:"+\
+            f"{parent['reference']['verseNumber']}"
 
 class Commentary(graphene.ObjectType):
     '''Response for Commentary'''
@@ -143,17 +144,16 @@ class Commentary(graphene.ObjectType):
     def resolve_refstring(parent, _):#pylint: disable=E0213
         '''resolver'''
         if parent.chapter == 0:
-            return '%s introduction'%(parent.book.bookCode)
+            return f'{parent.book.bookCode} introduction'
         if parent.chapter == -1:
-            return '%s epilogue'%(parent.book.bookCode)
+            return f'{parent.book.bookCode} epilogue'
         if parent.verseStart == 0:
-            return '%s %s introduction'%(parent.book.bookCode, parent.chapter)
+            return f'{parent.book.bookCode} {parent.chapter} introduction'
         if parent.verseStart == -1:
-            return '%s %s epilogue'%(parent.book.bookCode, parent.chapter)
+            return f"{parent.book.bookCode} {parent.chapter} epilogue"
         if parent.verseEnd is None or parent.verseEnd == 0:
-            return '%s %s:%s'%(parent.book.bookCode, parent.chapter, parent.verseStart)
-        return '%s %s:%s-%s'%(parent.book.bookCode, parent.chapter, parent.verseStart,
-            parent.verseEnd)
+            return f"{parent.book.bookCode} {parent.chapter}:{parent.verseStart}"
+        return f"{parent.book.bookCode} {parent.chapter}:{parent.verseStart}-{parent.verseEnd}"
     def resolve_book(parent, _):#pylint: disable=E0213
         '''resolver'''
         return parent.book

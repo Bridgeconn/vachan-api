@@ -72,3 +72,4 @@ temp.usfm
 temp.json
 ENV/*
 *.env
+ENV*/*

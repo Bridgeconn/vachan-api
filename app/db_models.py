@@ -292,8 +292,7 @@ def create_dynamic_table(source_name, table_name, content_type):
     elif content_type == ContentTypeName.GITLABREPO.value:
         pass
     else:
-        raise GenericException("Table structure not defined for this content type:%s"
-            %content_type)
+        raise GenericException("Table structure not defined for this content type:{content_type}")
 
 
 def map_all_dynamic_tables(db_: Session):

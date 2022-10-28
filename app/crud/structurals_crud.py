@@ -55,7 +55,7 @@ def create_language(db_: Session, lang: schemas.LanguageCreate, user_id=None):
     '''Adds a row to languages table'''
     valid, message = utils.validate_language_tag(lang.code)
     if not valid:
-        raise TypeException("%s is not a valid BCP 47 tag. %s."%(lang.code, message) +\
+        raise TypeException(f"{lang.code} is not a valid BCP 47 tag. {message}."+\
             "Refer https://tools.ietf.org/html/bcp47.")
     db_content = db_models.Language(code = lang.code,
         language = lang.language.lower(),
@@ -74,7 +74,7 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
     if lang.code:
         valid, message = utils.validate_language_tag(lang.code)
         if not valid:
-            raise TypeException("%s is not a valid BCP 47 tag. %s."%(lang.code, message) +\
+            raise TypeException(f"{lang.code} is not a valid BCP 47 tag. {message}."+\
                 "Refer https://tools.ietf.org/html/bcp47.")
         db_content.code = lang.code
     if lang.language:
@@ -121,7 +121,8 @@ def update_license(db_: Session, license_obj: schemas.LicenseEdit, user_id=None)
     db_content = db_.query(db_models.License).filter(
         db_models.License.code == license_obj.code.strip().upper()).first()
     if not db_content:
-        raise NotAvailableException("License with code, %s, not found in database"%license_obj.code)
+        raise NotAvailableException(f"License with code, {license_obj.code}, "+\
+            "not found in database")
     if license_obj.name:
         db_content.name = license_obj.name
     if license_obj.license:
@@ -262,22 +263,22 @@ def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_
     content_type = db_.query(db_models.ContentType).filter(
         db_models.ContentType.contentType == source.contentType.strip()).first()
     if not content_type:
-        raise NotAvailableException("ContentType, %s, not found in Database"
-            %source.contentType.strip())
+        raise NotAvailableException(f"ContentType, {source.contentType.strip()},"+\
+            " not found in Database")
     version = db_.query(db_models.Version).filter(
         db_models.Version.versionAbbreviation == source.version,
         db_models.Version.revision == source.revision).first()
     if not version:
-        raise NotAvailableException("Version, %s %s, not found in Database"%(source.version,
-            source.revision))
+        raise NotAvailableException(f"Version, {source.version} {source.revision},"+\
+            " not found in Database")
     language = db_.query(db_models.Language).filter(
         db_models.Language.code == source.language).first()
     if not language:
-        raise NotAvailableException("Language code, %s, not found in Database"%source.language)
+        raise NotAvailableException(f"Language code, {source.language}, not found in Database")
     license_obj = db_.query(db_models.License).filter(
         db_models.License.code == source.license).first()
     if not license_obj:
-        raise NotAvailableException("License code, %s, not found in Database"%source.license)
+        raise NotAvailableException(f"License code, {source.license}, not found in Database")
     table_name_count = 0
     dynamic_tablename_pattern = re.compile(r"table_\d+$")
     for table_name in engine.table_names():
@@ -330,8 +331,7 @@ def update_source_sourcename(db_, source, db_content):
         db_models.Version.versionAbbreviation == ver,
         db_models.Version.revision == rev).first()
     if not version:
-        raise NotAvailableException("Version, %s %s, not found in Database"%(ver,
-            rev))
+        raise NotAvailableException(f"Version, {ver} {rev}, not found in Database")
     db_content.versionId = version.versionId
     table_name_parts = db_content.sourceName.split("_")
     db_content.sourceName = "_".join([table_name_parts[0],ver, rev, table_name_parts[-1]])
@@ -348,7 +348,7 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
         language = db_.query(db_models.Language).filter(
             db_models.Language.code == source.language).first()
         if not language:
-            raise NotAvailableException("Language code, %s, not found in Database"%source.language)
+            raise NotAvailableException(f"Language code, {source.language}, not found in Database")
         db_content.languageId = language.languageId
         source_name_parts = db_content.sourceName.split("_")
         db_content.sourceName = "_".join([source.language]+source_name_parts[1:])
@@ -356,7 +356,7 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
         license_obj = db_.query(db_models.License).filter(
             db_models.License.code == source.license).first()
         if not license_obj:
-            raise NotAvailableException("License code, %s, not found in Database"%source.license)
+            raise NotAvailableException(f"License code, {source.license}, not found in Database")
         db_content.licenseId = license_obj.licenseId
     if source.year:
         db_content.year = source.year

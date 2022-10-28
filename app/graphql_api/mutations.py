@@ -17,7 +17,7 @@ class AddLanguage(graphene.Mutation):
 
     data = graphene.Field(types.Language)
     message = graphene.String()
-#pylint: disable=R0201
+
     async def mutate(self,info,language_addargs):
         '''resolve'''
         log.info('In GraphQL Add Language')
@@ -51,7 +51,7 @@ class UpdateLanguage(graphene.Mutation):
 
     data = graphene.Field(types.Language)
     message = graphene.String()
-#pylint: disable=R0201
+
     async def mutate(self,info,language_updateargs):
         """resolver"""
         log.info('In GraphQL Update Language')
@@ -83,7 +83,7 @@ class CreateContentTypes(graphene.Mutation):
 
     data = graphene.Field(types.ContentType)
     message = graphene.String()
-#pylint: disable=R0201
+
     async def mutate(self,info,content_type):
         """resolver"""
         log.info('In GraphQL Add Content Type')
@@ -113,7 +113,7 @@ class AddLicense(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.Field(types.License)
-#pylint: disable=R0201
+
     async def mutate(self,info,license_args):
         '''resolve'''
         log.info('In GraphQL Add Licenses')
@@ -146,7 +146,7 @@ class EditLicense(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.Field(types.License)
-#pylint: disable=R0201
+
     async def mutate(self,info,license_args):
         '''resolve'''
         log.info('In GraphQL Update Licenses')
@@ -178,7 +178,7 @@ class AddVersion(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.Field(types.Version)
-#pylint: disable=R0201
+
     async def mutate(self,info,version_arg):
         """resolve"""
         log.info('In GraphQL Add Versions')
@@ -210,7 +210,7 @@ class EditVersion(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.Field(types.Version)
-#pylint: disable=R0201
+
     async def mutate(self,info,version_arg):
         """resolve"""
         log.info('In GraphQL Edit Versions')
@@ -242,7 +242,7 @@ class AddSource(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.Field(types.Source)
-#pylint: disable=R0201
+
     async def mutate(self,info,source_arg):
         """resolve"""
         log.info('In GraphQL Add Source')
@@ -279,7 +279,7 @@ class EditSource(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.Field(types.Source)
-#pylint: disable=R0201
+
     async def mutate(self,info,source_arg):
         """resolve"""
         log.info('In GraphQL Edit Sources')
@@ -315,7 +315,7 @@ class AddBible(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.List(types.BibleContent)
-#pylint: disable=no-self-use
+
     async def mutate(self,info,bible_arg):
         """resolve"""
         log.info('In GraphQL Add Bible books')
@@ -359,7 +359,7 @@ class EditBible(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.List(types.BibleContent)
-    #pylint: disable=no-self-use
+
     async def mutate(self,info,bible_arg):
         """resolve"""
         log.info('In GraphQL Edit Bible Books')
@@ -403,7 +403,7 @@ class AddAudioBible(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.List(types.AudioBible)
-#pylint: disable=R0201
+
     async def mutate(self,info,audio_bible_arg):
         """resolve"""
         log.info('In GraphQL Add Audio Bible')
@@ -446,7 +446,7 @@ class EditAudioBible(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.List(types.AudioBible)
-#pylint: disable=no-self-use
+
     async def mutate(self,info,audio_bible_arg):
         """resolve"""
         log.info('In GraphQL Edit Audio Bible')
@@ -491,7 +491,7 @@ class AddCommentary(graphene.Mutation):
     message = graphene.String()
     # data = graphene.Field(types.Job)
     data = graphene.List(types.Commentary)
-#pylint: disable=no-self-use
+
     async def mutate(self,info,comm_arg):
         """resolve"""
         log.info('In GraphQL Add Commentaries')
@@ -541,7 +541,7 @@ class EditCommentary(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.List(types.Commentary)
-#pylint: disable=no-self-use
+
     async def mutate(self,info,comm_arg):
         """resolve"""
         log.info('In GraphQL Edit Commentaries')
@@ -590,7 +590,7 @@ class CreateAGMTProject(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.Field(types.TranslationProject)
-#pylint: disable=no-self-use
+
     async def mutate(self,info,project_arg):
         """resolve"""
         log.info('In GraphQL Add AGMT Project')
@@ -625,7 +625,7 @@ class EditAGMTProject(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.Field(types.TranslationProject)
-#pylint: disable=no-self-use
+
     async def mutate(self,info,project_arg):
         """resolve"""
         log.info('In GraphQL Edit AGMT Project')
@@ -653,7 +653,7 @@ class AGMTUserCreate(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.Field(types.ProjectUser)
-#pylint: disable=no-self-use
+
     async def mutate(self,info,user_arg):
         """resolve"""
         log.info('In GraphQL Add AGMT User')
@@ -687,7 +687,7 @@ class AGMTUserEdit(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.Field(types.ProjectUser)
-#pylint: disable=no-self-use
+
     async def mutate(self,info,user_arg):
         """resolve"""
         log.info('In GraphQL Edit AGMT User')
@@ -720,7 +720,7 @@ class AddBibleVideo(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.List(types.BibleVideo)
-#pylint: disable=no-self-use
+
     async def mutate(self,info,video_arg):
         """resolve"""
         log.info('In GraphQL Add Bible Video')
@@ -765,7 +765,7 @@ class EditBibleVideo(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.List(types.BibleVideo)
-#pylint: disable=no-self-use
+
     async def mutate(self,info,video_arg):
         """resolve"""
         log.info('In GraphQL Edit Bible Video')
@@ -810,7 +810,7 @@ class AddDictionary(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.List(types.DictionaryWord)
-#pylint: disable=no-self-use
+
     async def mutate(self,info,dict_arg):
         """resolve"""
         log.info('In GraphQL Add Dictionary')
@@ -852,7 +852,7 @@ class EditDictionary(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.List(types.DictionaryWord)
-#pylint: disable=no-self-use
+
     async def mutate(self,info,dict_arg):
         """resolve"""
         log.info('In GraphQL Edit Dictionary')
@@ -894,7 +894,7 @@ class AddInfographic(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.List(types.Infographic)
-#pylint: disable=no-self-use
+
     async def mutate(self,info,info_arg):
         """resolve"""
         log.info('In GraphQL Add Infographics')
@@ -935,7 +935,7 @@ class EditInfographic(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.List(types.Infographic)
-#pylint: disable=no-self-use
+
     async def mutate(self,info,info_arg):
         """resolve"""
         log.info('In GraphQL Edit Infographics')
@@ -979,7 +979,7 @@ class AgmtTokenApply(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.List(types.Sentence)
-#pylint: disable=no-self-use
+
     async def mutate(self,info,token_arg):
         """resolve"""
         log.info('In GraphQL Apply Tokens')
@@ -1023,7 +1023,7 @@ class AutoTranslationSuggetion(graphene.Mutation):
         translation_arg = types.InputAutoTranslation()
 
     Output = graphene.List(types.Sentence)
-#pylint: disable=no-self-use
+
     async def mutate(self,info,translation_arg):
         """resolve"""
         log.info('In GraphQL Translation Auto Suggestions')
@@ -1065,7 +1065,7 @@ class AddGloss(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.List(types.Gloss)
-#pylint: disable=no-self-use
+
     async def mutate(self,info,gloss_arg):
         """resolve"""
         log.info('In GraphQL Add Gloss')
@@ -1119,7 +1119,7 @@ class AddAlignment(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.List(types.Gloss)
-#pylint: disable=no-self-use
+
     async def mutate(self,info,alignment_arg):
         """resolve"""
         log.info('In GraphQL Add Alignment')
@@ -1177,7 +1177,7 @@ class Register(graphene.Mutation):
     registered_details = graphene.Field(types.RegisterResponse)
     message = graphene.String()
     token  = graphene.String()
-#pylint: disable=R0201
+
     async def mutate(self,info,registration_args,app_type):
         '''resolve'''
         log.info('In GraphQL Register User')
@@ -1209,7 +1209,7 @@ class UpdateUserRole(graphene.Mutation):
 
     message = graphene.String()
     role_list = graphene.List(types.AdminRoles)
-#pylint: disable=R0201
+
     async def mutate(self,info,user_roles_args):
         '''resolve'''
         log.info('In GraphQL User Role Update')
@@ -1235,7 +1235,7 @@ class UpdateUser(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.Field(types.IdentitityListResponse)
-#pylint: disable=R0201
+
     async def mutate(self,info,user_id, user_data):
         '''resolve'''
         log.info('In GraphQL User Role Update')
@@ -1260,7 +1260,7 @@ class DeleteIdentity(graphene.Mutation):
         identity = types.UserIdentity()
 
     message = graphene.String()
-#pylint: disable=R0201
+
     async def mutate(self,info,identity):
         '''resolve'''
         log.info('In GraphQL Identity Delete')
@@ -1288,7 +1288,7 @@ class AddStopwords(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.List(types.SWResponse)
-#pylint: disable=R0201
+
     async def mutate(self,info,sw_list,language_code):
         '''resolve'''
         log.info('In GraphQL Add StopWords')
@@ -1317,7 +1317,7 @@ class EditStopwords(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.Field(types.SWResponse)
-#pylint: disable=R0201
+
     async def mutate(self,info,sw_data,language_code):
         '''resolve'''
         log.info('In GraphQL Add StopWords')
@@ -1349,7 +1349,7 @@ class GenerateStopwords(graphene.Mutation):
 
     message = graphene.String()
     data = graphene.Field(types.Job)
-#pylint: disable=R0201,R0913
+#pylint: disable=R0913
     async def mutate(self,info,language_code,use_server_data,
         source_name=None,sentence_list=None):
         '''resolve'''

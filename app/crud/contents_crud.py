@@ -23,7 +23,7 @@ def get_commentaries(db_:Session, *args,**kwargs):
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
     if source_name not in db_models.dynamicTables:
-        raise NotAvailableException('%s not found in database.'%source_name)
+        raise NotAvailableException(f'{source_name} not found in database.')
     if not source_name.endswith(db_models.ContentTypeName.COMMENTARY.value):
         raise TypeException('The operation is supported only on commentaries')
     model_cls = db_models.dynamicTables[source_name]
@@ -78,7 +78,7 @@ def upload_commentaries(db_: Session, source_name, commentaries, job_id, user_id
             prev_book_code = item.bookCode
             if not book:
                 update_args["output"]= {
-                "message": 'Bible Book code, %s, not found in database'%prev_book_code,
+                "message": f'Bible Book code, {prev_book_code}, not found in database',
                 "source_name": source_name,"data": None}
                 update_job(db_, job_id, user_id, update_args)
                 return None
@@ -149,7 +149,7 @@ def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=
             prev_book_code = item.bookCode
             if not book:
                 update_args["output"]= {
-                "message": 'Bible Book code, %s, not found in database'%prev_book_code,
+                "message": f'Bible Book code, {prev_book_code}, not found in database',
                 "source_name": source_name,"data": None}
                 update_job(db_, job_id, user_id, update_args)
                 return None
@@ -199,7 +199,7 @@ def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):#
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
     if source_name not in db_models.dynamicTables:
-        raise NotAvailableException('%s not found in database.'%source_name)
+        raise NotAvailableException(f'{source_name} not found in database.')
     if not source_name.endswith(db_models.ContentTypeName.DICTIONARY.value):
         raise TypeException('The operation is supported only on dictionaries')
     model_cls = db_models.dynamicTables[source_name]
@@ -233,7 +233,7 @@ def upload_dictionary_words(db_: Session, source_name, dictionary_words, user_id
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
-        raise NotAvailableException('Source %s, not found in database'%source_name)
+        raise NotAvailableException(f'Source {source_name}, not found in database')
     if source_db_content.contentType.contentType != db_models.ContentTypeName.DICTIONARY.value:
         raise TypeException('The operation is supported only on dictionaries')
     model_cls = db_models.dynamicTables[source_name]
@@ -258,7 +258,7 @@ def update_dictionary_words(db_: Session, source_name, dictionary_words, user_id
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
-        raise NotAvailableException('Source %s, not found in database'%source_name)
+        raise NotAvailableException(f'Source {source_name}, not found in database')
     if source_db_content.contentType.contentType != db_models.ContentTypeName.DICTIONARY.value:
         raise TypeException('The operation is supported only on dictionaries')
     model_cls = db_models.dynamicTables[source_name]
@@ -266,8 +266,8 @@ def update_dictionary_words(db_: Session, source_name, dictionary_words, user_id
     for item in dictionary_words:
         row = db_.query(model_cls).filter(model_cls.word == item.word).first()
         if not row:
-            raise NotAvailableException("Dictionary row with word:%s, not found for %s"%(
-                    item.word, source_name))
+            raise NotAvailableException(f"Dictionary row with word:{item.word},"+\
+                f"not found for {source_name}")
         if item.details:
             row.details = item.details
         if item.active is not None:
@@ -287,7 +287,7 @@ def get_infographics(db_:Session, source_name, book_code=None, title=None,**kwar
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
     if source_name not in db_models.dynamicTables:
-        raise NotAvailableException('%s not found in database.'%source_name)
+        raise NotAvailableException(f'{source_name} not found in database.')
     if not source_name.endswith(db_models.ContentTypeName.INFOGRAPHIC.value):
         raise TypeException('The operation is supported only on infographics')
     model_cls = db_models.dynamicTables[source_name]
@@ -310,7 +310,7 @@ def upload_infographics(db_: Session, source_name, infographics, user_id=None):
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
-        raise NotAvailableException('Source %s, not found in database'%source_name)
+        raise NotAvailableException(f'Source {source_name}, not found in database')
     if source_db_content.contentType.contentType != db_models.ContentTypeName.INFOGRAPHIC.value:
         raise TypeException('The operation is supported only on infographics')
     model_cls = db_models.dynamicTables[source_name]
@@ -322,8 +322,8 @@ def upload_infographics(db_: Session, source_name, infographics, user_id=None):
                 db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
             prev_book_code = item.bookCode
             if not book:
-                raise NotAvailableException('Bible Book code, %s, not found in database'
-                    %item.bookCode)
+                raise NotAvailableException(f'Bible Book code, {item.bookCode}, '+\
+                    'not found in database')
         row = model_cls(
             book_id = book.bookId,
             title = utils.normalize_unicode(item.title.strip()),
@@ -348,7 +348,7 @@ def update_infographics(db_: Session, source_name, infographics, user_id=None):
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
-        raise NotAvailableException('Source %s, not found in database'%source_name)
+        raise NotAvailableException(f'Source {source_name}, not found in database')
     if source_db_content.contentType.contentType != db_models.ContentTypeName.INFOGRAPHIC.value:
         raise TypeException('The operation is supported only on infographics')
     model_cls = db_models.dynamicTables[source_name]
@@ -360,15 +360,15 @@ def update_infographics(db_: Session, source_name, infographics, user_id=None):
                 db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
             prev_book_code = item.bookCode
             if not book:
-                raise NotAvailableException('Bible Book code, %s, not found in database'
-                    %item.bookCode)
+                raise NotAvailableException(f'Bible Book code, {item.bookCode}, '+\
+                    'not found in database')
         row = db_.query(model_cls).filter(
             model_cls.book_id == book.bookId,
             model_cls.title == utils.normalize_unicode(item.title.strip())).first()
         if not row:
-            raise NotAvailableException("Infographics row with bookCode:%s, title:%s, \
-                not found for %s"%(
-                    item.bookCode, item.title, source_name))
+            raise NotAvailableException(f"Infographics row with bookCode:{item.bookCode}, "+\
+                f"title:{item.title}, "+\
+                f"not found for {source_name}")
         if item.infographicLink:
             row.infographicLink = item.infographicLink
         if item.active is not None:
@@ -501,7 +501,7 @@ def upload_bible_books(db_: Session, source_name, books, user_id=None):#pylint: 
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
-        raise NotAvailableException('Source %s, not found in database'%source_name)
+        raise NotAvailableException(f'Source {source_name}, not found in database')
     if source_db_content.contentType.contentType != db_models.ContentTypeName.BIBLE.value:
         raise TypeException('The operation is supported only on bible')
     model_cls_2 = db_models.dynamicTables[source_name+'_cleaned']
@@ -565,12 +565,11 @@ def upload_bible_books_checks(db_, item, source_name, db_content):
     book = db_.query(db_models.BibleBook).filter(
             db_models.BibleBook.bookCode == book_code.lower() ).first()
     if not book:
-        raise NotAvailableException('Bible Book code, %s, not found in database'
-            %book_code)
+        raise NotAvailableException(f'Bible Book code, {book_code}, not found in database')
     row = db_.query(model_cls).filter(model_cls.book_id == book.bookId).first()
     if row:
         if row.USFM:
-            raise AlreadyExistsException("Bible book, %s, already present in DB"%book.bookCode)
+            raise AlreadyExistsException(f"Bible book, {book.bookCode}, already present in DB")
         row.USFM = utils.normalize_unicode(item.USFM)
         row.JSON = item.JSON
         row.active = True
@@ -589,7 +588,7 @@ def update_bible_books(db_: Session, source_name, books, user_id=None):
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
-        raise NotAvailableException('Source %s, not found in database'%source_name)
+        raise NotAvailableException(f'Source {source_name}, not found in database')
     if source_db_content.contentType.contentType != db_models.ContentTypeName.BIBLE.value:
         raise TypeException('The operation is supported only on bible')
     # update the bible table
@@ -600,7 +599,7 @@ def update_bible_books(db_: Session, source_name, books, user_id=None):
             db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
         row = db_.query(model_cls).filter(model_cls.book_id == book.bookId).first()
         if not row:
-            raise NotAvailableException("Bible book, %s, not found in Database"%item.bookCode)
+            raise NotAvailableException(f"Bible book, {item.bookCode}, not found in Database")
         if item.USFM:
             item.JSON = utils.parse_usfm(item.USFM)
             row.USFM = utils.normalize_unicode(item.USFM)
@@ -661,7 +660,7 @@ def upload_bible_audios(db_:Session, source_name, audios, user_id=None):
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
-        raise NotAvailableException('Source %s, not found in database'%source_name)
+        raise NotAvailableException(f'Source {source_name}, not found in database')
     if source_db_content.contentType.contentType != 'bible':
         raise TypeException('The operation is supported only on bible')
     model_cls_audio = db_models.dynamicTables[source_name+'_audio']
@@ -673,7 +672,7 @@ def upload_bible_audios(db_:Session, source_name, audios, user_id=None):
             book = db_.query(db_models.BibleBook).filter(
                 db_models.BibleBook.bookCode == buk.strip().lower()).first()
             if not book:
-                raise NotAvailableException('Bible Book code, %s, not found in database')
+                raise NotAvailableException(f'Bible Book code, {buk}, not found in database')
             bible_table_row = db_.query(model_cls_bible).filter(
                 model_cls_bible.book_id == book.bookId).first()
             if not bible_table_row:
@@ -705,7 +704,7 @@ def update_bible_audios(db_: Session, source_name, audios, user_id=None):
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
-        raise NotAvailableException('Source %s, not found in database'%source_name)
+        raise NotAvailableException(f'Source {source_name}, not found in database')
     if source_db_content.contentType.contentType != 'bible':
         raise TypeException('The operation is supported only on bible')
     model_cls = db_models.dynamicTables[source_name+'_audio']
@@ -715,10 +714,10 @@ def update_bible_audios(db_: Session, source_name, audios, user_id=None):
             book = db_.query(db_models.BibleBook).filter(
                 db_models.BibleBook.bookCode == buk.strip().lower()).first()
             if not book:
-                raise NotAvailableException('Bible Book code, %s, not found in database')
+                raise NotAvailableException(f'Bible Book code, {buk}, not found in database')
             row = db_.query(model_cls).filter(model_cls.book_id == book.bookId).first()
             if not row:
-                raise NotAvailableException("Bible audio for, %s, not found in database"%item.name)
+                raise NotAvailableException(f"Bible audio for, {item.name}, not found in database")
             if item.name:
                 row.name = utils.normalize_unicode(item.name.strip())
             if item.url:
@@ -763,7 +762,7 @@ def get_bible_versification(db_, source_name):
             prev_chapter = row.chapter
         elif row.verseNumber != prev_verse + 1:
             for i in range(prev_verse+1, row.verseNumber):
-                versification['excludedVerses'].append('%s %s:%s'%(prev_book_code, row.chapter, i))
+                versification['excludedVerses'].append(f'{prev_book_code} {row.chapter}:{i}')
         prev_verse = row.verseNumber
     if prev_book_code is not None:
         versification['maxVerses'][prev_book_code].append(prev_verse)
@@ -784,7 +783,7 @@ def get_available_bible_books(db_, source_name, book_code=None, content_type=Non
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
     if source_name not in db_models.dynamicTables:
-        raise NotAvailableException('%s not found in database.'%source_name)
+        raise NotAvailableException(f'{source_name} not found in database.')
     if not source_name.endswith('_bible'):
         raise TypeException('The operation is supported only on bible')
     model_cls = db_models.dynamicTables[source_name]
@@ -826,7 +825,7 @@ def get_bible_verses(db_:Session, source_name, book_code=None, chapter=None, ver
     last_verse = kwargs.get("last_verse",None)
     search_phrase = kwargs.get("search_phrase",None)
     if source_name not in db_models.dynamicTables:
-        raise NotAvailableException('%s not found in database.'%source_name)
+        raise NotAvailableException(f'{source_name} not found in database.')
     if not source_name.endswith('_bible'):
         raise TypeException('The operation is supported only on bible')
     model_cls = db_models.dynamicTables[source_name+'_cleaned']

@@ -129,7 +129,7 @@ def parse_usfm(usfm_string):
     file= open("temp.usfm", "w", encoding='utf-8')
     file.write(normalize_unicode(usfm_string))
     file.close()
-    process = subprocess.Popen('usfm-grammar temp.usfm',
+    process = subprocess.Popen('$(npm -g root)/usfm-grammar/cli.js temp.usfm',
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          shell=True)
@@ -145,7 +145,7 @@ def form_usfm(json_obj):
     json.dump(json_obj, file)
     # file.write(json_obj)
     file.close()
-    process = subprocess.Popen('usfm-grammar --output=usfm temp.json',
+    process = subprocess.Popen('$(npm -g root)/usfm-grammar/cli.js --output=usfm temp.json',
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          shell=True)
@@ -165,7 +165,7 @@ def to_eng(data):
 def validate_language_tag(tag):
     '''uses an external service to validate newly added language sub tags'''
     url = "https://schneegans.de/lv/?tags=%s&format=json"
-    resp = requests.get(url%(tag))
+    resp = requests.get(url%(tag), timeout=10)
     if resp.status_code != 200:
         resp.raise_for_status()
     return resp.json()[0]['Valid'], ' '.join(resp.json()[0]['Messages'])

@@ -52,7 +52,7 @@ async def add_contents(request: Request, content: schemas.ContentTypeCreate,
     log.info('In add_contents')
     log.debug('content: %s',content)
     if len(structurals_crud.get_content_types(db_, content.contentType)) > 0:
-        raise AlreadyExistsException("%s already present"%(content.contentType))
+        raise AlreadyExistsException(f"{content.contentType} already present")
     data = structurals_crud.create_content_type(db_=db_, content=content)
     return {'message': "Content type created successfully",
             "data": data}
@@ -93,7 +93,7 @@ async def add_language(request: Request, lang_obj : schemas.LanguageCreate = Bod
     log.info('In add_language')
     log.debug('lang_obj: %s',lang_obj)
     if len(structurals_crud.get_languages(db_, language_code = lang_obj.code)) > 0:
-        raise AlreadyExistsException("%s already present"%(lang_obj.code))
+        raise AlreadyExistsException(f"{lang_obj.code} already present")
     return {'message': "Language created successfully",
         "data": structurals_crud.create_language(db_=db_, lang=lang_obj,
         user_id=user_details['user_id'])}
@@ -110,7 +110,7 @@ async def edit_language(request: Request, lang_obj: schemas.LanguageEdit = Body(
     log.info('In edit_language')
     log.debug('lang_obj: %s',lang_obj)
     if len(structurals_crud.get_languages(db_, language_id = lang_obj.languageId)) == 0:
-        raise NotAvailableException("Language id %s not found"%(lang_obj.languageId))
+        raise NotAvailableException(f"Language id {lang_obj.languageId} not found")
     return {'message': "Language edited successfully",
             "data": structurals_crud.update_language(db_=db_, lang=lang_obj,
             user_id=user_details['user_id'])}
@@ -208,8 +208,8 @@ async def add_version(request: Request, version_obj : schemas.VersionCreate = Bo
         version_obj.revision = 1
     if len(structurals_crud.get_versions(db_, version_obj.versionAbbreviation,
         revision =version_obj.revision)) > 0:
-        raise AlreadyExistsException("%s, %s already present"%(
-            version_obj.versionAbbreviation, version_obj.revision))
+        raise AlreadyExistsException(f"{version_obj.versionAbbreviation}, "+\
+            f"{version_obj.revision} already present")
     return {'message': "Version created successfully",
         "data": structurals_crud.create_version(db_=db_, version=version_obj,
         user_id=user_details['user_id'])}
@@ -229,7 +229,7 @@ async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...
     log.info('In edit_version')
     log.debug('ver_obj: %s',ver_obj)
     if len(structurals_crud.get_versions(db_, version_id = ver_obj.versionId)) == 0:
-        raise NotAvailableException("Version id %s not found"%(ver_obj.versionId))
+        raise NotAvailableException(f"Version id {ver_obj.versionId} not found")
     return {'message': "Version edited successfully",
         "data": structurals_crud.update_version(db_=db_, version=ver_obj,
         user_id=user_details['user_id'])}
@@ -302,7 +302,7 @@ async def add_source(request: Request, source_obj : schemas.SourceCreate = Body(
     source_name = source_obj.language + "_" + source_obj.version + "_" +\
     source_obj.revision + "_" + source_obj.contentType
     if len(structurals_crud.get_sources(db_, source_name = source_name)) > 0:
-        raise AlreadyExistsException("%s already present"%source_name)
+        raise AlreadyExistsException(f"{source_name} already present")
     if 'content' not in source_obj.accessPermissions:
         source_obj.accessPermissions.append(schemas.SourcePermissions.CONTENT)
     source_obj.metaData['accessPermissions'] = source_obj.accessPermissions
@@ -335,7 +335,7 @@ async def edit_source(request: Request,source_obj: schemas.SourceEdit = Body(...
     log.info('In edit_source')
     log.debug('source_obj: %s',source_obj)
     if len(structurals_crud.get_sources(db_, source_name = source_obj.sourceName)) == 0:
-        raise NotAvailableException("Source %s not found"%(source_obj.sourceName))
+        raise NotAvailableException(f"Source {source_obj.sourceName} not found")
     if 'content' not in source_obj.accessPermissions:
         source_obj.accessPermissions.append(schemas.SourcePermissions.CONTENT)
     source_obj.metaData['accessPermissions'] = source_obj.accessPermissions
@@ -604,7 +604,7 @@ async def add_commentary(request: Request,background_tasks: BackgroundTasks,
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
-        raise NotAvailableException('Source %s, not found in database'%source_name)
+        raise NotAvailableException(f'Source {source_name}, not found in database')
     job_info = nlp_sw_crud.create_job(db_=db_, user_id=user_details['user_id'])
     job_id = job_info.jobId
     background_tasks.add_task(contents_crud.upload_commentaries,db_=db_, source_name=source_name,
@@ -638,7 +638,7 @@ async def edit_commentary(request: Request,background_tasks: BackgroundTasks,
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
-        raise NotAvailableException('Source %s, not found in database'%source_name)
+        raise NotAvailableException(f'Source {source_name}, not found in database')
     job_info = nlp_sw_crud.create_job(db_=db_, user_id=user_details['user_id'])
     job_id = job_info.jobId
     background_tasks.add_task(contents_crud.update_commentaries,db_=db_, source_name=source_name,
