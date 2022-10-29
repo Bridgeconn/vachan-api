@@ -177,11 +177,6 @@ class ProjectDraftInput(BaseModel):
         example=[[[0,8], [0,8],"confirmed"],
             [[8,64],[8,64],"untranslated"]])
 
-class ProjectDraftUpdateOutput(BaseModel):
-    '''Response object of draft update API'''
-    message: str
-    data: List[Sentence]
-
 class DraftFormats(Enum):
     '''Specify various export,view,download formats for project/draft'''
     USFM = 'usfm'
