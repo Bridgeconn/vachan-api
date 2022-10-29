@@ -170,12 +170,17 @@ class DraftInput(BaseModel):
 
 class ProjectDraftInput(BaseModel):
     '''Input Draft for directly updating translation project'''
-    sentenceId: str = Field(..., example=41001001)
+    sentenceId: int = Field(..., example=41001001)
     draft: str = Field(...,
         example="അബ്രാഹാം के वंशज दाऊद के पुत्र यीशु मसीह की वंशावली इस प्रकार है")
-    draftMeta: List[Tuple[Tuple[int, int], Tuple[int,int],'str']] = Field(None,
+    draftMeta: List[Tuple[Tuple[int, int], Tuple[int,int],str]] = Field(...,
         example=[[[0,8], [0,8],"confirmed"],
             [[8,64],[8,64],"untranslated"]])
+
+class ProjectDraftUpdateOutput(BaseModel):
+    '''Response object of draft update API'''
+    message: str
+    data: List[Sentence]
 
 class DraftFormats(Enum):
     '''Specify various export,view,download formats for project/draft'''

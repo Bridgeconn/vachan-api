@@ -10,7 +10,8 @@ from sqlalchemy.orm.attributes import flag_modified
 import db_models
 from schema import schemas_nlp
 from crud import utils, nlp_crud
-from custom_exceptions import NotAvailableException, TypeException
+from custom_exceptions import NotAvailableException, TypeException,\
+    UnprocessableException
 from auth.authentication import get_all_or_one_kratos_users
 
 #pylint: disable=W0143,E1101
@@ -230,7 +231,7 @@ def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence
 def validate_draft_meta(sentence, draft, draft_meta):
     '''Check if indices are proper in draftMeta, as per values in sentence and draft'''
     src_segs = [meta[0] for meta in draft_meta]
-    trg_segs = [meta[0] for meta in draft_meta]
+    trg_segs = [meta[1] for meta in draft_meta]
     try:
         #Ensure the offset ranges dont overlap
         for seg1, seg2 in itertools.product(src_segs, src_segs):
@@ -249,12 +250,15 @@ def validate_draft_meta(sentence, draft, draft_meta):
         for seg in src_segs:
             assert 0 <= seg[0] < seg[1] <= src_len, f"Source segment {seg}, is improper!"
         trg_len = len(draft)
-        for seg in src_segs:
+        for seg in trg_segs:
             assert 0 <= seg[0] < seg[1] <= trg_len, f"Target segment {seg}, is improper!"
+        for meta in draft_meta:
+                    assert meta[2] in ['confirmed', 'suggestion', 'untranslated'],\
+                "invalid value where confirmed, suggestion or untranslated is expected"
     except AssertionError as exe:
-        raise TypeException("Incorrect metadata:"+str(exe)) from exe
+        raise UnprocessableException("Incorrect metadata:"+str(exe)) from exe
     except Exception as exe:
-        raise TypeException("Incorrect metadata.") from exe
+        raise UnprocessableException("Incorrect metadata.") from exe
 
 def update_agmt_draft(db_:Session, project_id, sentence_list, user_id):
     '''Directly write to the draft and draftMeta fields of project sentences'''
@@ -263,13 +267,15 @@ def update_agmt_draft(db_:Session, project_id, sentence_list, user_id):
         sentence_id_list=sentence_id_list, with_draft=True)
     project_row = source_resp['project_content']
     sentences = source_resp['db_content']
-    for sent in sentences:
-        input_sent = None
-        for in_sent in sentence_list:
-            if in_sent.sentenceId == sent.sentenceId:
-                input_sent = in_sent
-                sentence_list.remove(in_sent)
+    for input_sent in sentence_list:
+        sent = None
+        for read_sent in sentences:
+            if input_sent.sentenceId == read_sent.sentenceId:
+                sent = read_sent
                 break
+        if not sent:
+            raise NotAvailableException(f"Sentence id: {input_sent.sentenceId},"+\
+                " not found in project")
         validate_draft_meta(sentence=sent.sentence, draft=input_sent.draft,
             draft_meta=input_sent.draftMeta)
         sent.draft = input_sent.draft

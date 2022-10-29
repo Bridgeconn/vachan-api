@@ -48,12 +48,15 @@ def assert_positive_get(item):
     assert isinstance(item['users'], list)
 
 
-def check_post(data):
+def check_post(data, auth_token=None):
     '''creates a projects'''
     headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
                 "app":"Autographa"}
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    if not auth_token:
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    else:
+        headers_auth['Authorization'] = "Bearer"+" "+auth_token
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     return response
 

@@ -231,6 +231,7 @@ async def get_draft(request: Request,project_id:int=Query(...,example="1022004")
         sentence_id_list, sentence_id_range, output_format=output_format)
 
 @router.put('/v2/autographa/project/draft', status_code=201,
+    response_model = List[schemas_nlp.Sentence],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     415: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
