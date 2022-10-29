@@ -211,7 +211,7 @@ def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_list,
-    	sentence_id_range, with_draft=True)
+        sentence_id_range, with_draft=True)
     draft_rows = draft_rows['db_content']
     if output_format == schemas_nlp.DraftFormats.USFM :
         draft_out = nlp_crud.create_usfm(draft_rows)
@@ -293,7 +293,7 @@ def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_r
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_list,
-    	sentence_id_range, with_draft=True)
+        sentence_id_range, with_draft=True)
     draft_rows = draft_rows["db_content"]
     confirmed_length = 0
     suggestions_length = 0
