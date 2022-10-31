@@ -231,6 +231,23 @@ async def get_draft(request: Request,project_id:int=Query(...,example="1022004")
     return projects_crud.obtain_agmt_draft(db_, project_id, books,
         sentence_id_list, sentence_id_range, output_format=output_format)
 
+@router.put('/v2/autographa/project/draft', status_code=201,
+    response_model = List[schemas_nlp.Sentence],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    415: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
+    tags=['Autographa-Translation'])
+@get_auth_access_check_decorator
+async def update_draft(request: Request,project_id:int=Query(...,example="1022004"),
+    sentence_list:List[schemas_nlp.ProjectDraftInput]=Body(...),
+    user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):
+    '''Obtains draft, as per current project status, in any of the formats:
+    text for UI display, usfm for downloading, or alignment-json for project export'''
+    log.info('In update_draft')
+    log.debug('project_id: %s, sentence_list:%s, user_details:%s',
+        project_id, sentence_list, user_details)
+    return projects_crud.update_agmt_draft(db_, project_id, sentence_list, user_details['user_id'])
+
 @router.get('/v2/autographa/project/sentences', status_code=200,
     response_model_exclude_unset=True, response_model=List[schemas_nlp.Sentence],
     responses={502: {"model": schemas.ErrorResponse},

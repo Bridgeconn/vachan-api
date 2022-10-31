@@ -93,6 +93,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/autographa/project/token-translations,GET,Autographa,False,None,read-draft
 /v2/autographa/project/token-sentences,PUT,Autographa,False,None,edit-draft
 /v2/autographa/project/draft,GET,Autographa,False,None,read-draft
+/v2/autographa/project/draft,PUT,Autographa,False,None,edit-draft
 /v2/autographa/project/sentences,GET,Autographa,False,None,view-project
 /v2/autographa/project/progress,GET,Autographa,False,None,view-project
 /v2/autographa/project/versification,GET,Autographa,False,None,view-project
