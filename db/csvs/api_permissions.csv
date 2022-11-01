@@ -186,6 +186,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/autographa/project/token-translations,GET,Autographa,FALSE,project,read-draft
 /v2/autographa/project/token-sentences,PUT,Autographa,FALSE,project,edit-draft
 /v2/autographa/project/draft,GET,Autographa,FALSE,project,read-draft
+/v2/autographa/project/draft,PUT,Autographa,FALSE,project,edit-draft
 /v2/autographa/project/sentences,GET,Autographa,FALSE,project,view-project
 /v2/autographa/project/progress,GET,Autographa,FALSE,project,view-project
 /v2/autographa/project/versification,GET,Autographa,FALSE,project,view-project
