@@ -14,7 +14,8 @@ from dependencies import log
 from custom_exceptions import GenericException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
     UnprocessableException, PermissionException
-from auth.auth_globals import APIPERMISSIONTABLE, ACCESS_RULES, ROLES, RESOURCE_TYPE, APPS, INPUT_APPS
+from auth.auth_globals import APIPERMISSIONTABLE, ACCESS_RULES, ROLES, \
+    RESOURCE_TYPE, APPS, INPUT_APPS#pylint: disable=ungrouped-imports, unused-import
 
 PUBLIC_BASE_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL",
                                     "http://127.0.0.1:4433/")+"self-service/"
@@ -108,7 +109,7 @@ def api_resourcetype_map(endpoint, path_params=None):
         resource_type = 'content'
     else:
         raise GenericException("Resource Type of API not defined")
-    if not resource_type.lower() in [key.lower() for key in RESOURCE_TYPE.keys()]:
+    if not resource_type.lower() in [key.lower() for key in RESOURCE_TYPE]:
         raise GenericException("Resource Type not defined in DB")
     return resource_type
 
@@ -145,13 +146,13 @@ def search_api_permission_map(endpoint, method, client_app, path_params=None, re
 
 def get_access_tag(db_, resource_type, path_params=None, kw_args = None, resource=None):
     '''obtain access tag based on resource-url direct link or value stored in DB'''
-    db_resources = [key.lower() for key in RESOURCE_TYPE.keys()]
+    db_resources = [key.lower() for key in RESOURCE_TYPE]
     resource_tag_map = {
         # schema_auth.ResourceType.METACONTENT: ["meta-content","open-access"],
         'user': ['user'],
         'project': ['translation-project'],
         'translation': ['generic-translation'],
-        'lookup-content': ['lookup-content'],   
+        'lookup-content': ['lookup-content'],
         'meta-content': ["meta-content","open-access"],
         'research-use': ['content', 'research-use'],
         'jobs': ['jobs'],
@@ -165,15 +166,18 @@ def get_access_tag(db_, resource_type, path_params=None, kw_args = None, resourc
         db_entry = db_.query(db_models.Source.metaData['accessPermissions']).filter(
             db_models.Source.sourceName == path_params['source_name']).first()
         if db_entry is not None:
-            return db_entry[0] if len([x for x in db_entry[0] if x.lower() in db_resources]) > 0 else []
+            return db_entry[0] if len([x for x in db_entry[0] if x.lower()\
+                in db_resources]) > 0 else []
     if kw_args is not None and "source_name" in kw_args:
         db_entry = db_.query(db_models.Source.metaData['accessPermissions']).filter(
             db_models.Source.sourceName == kw_args['source_name']).first()
         if db_entry is not None:
-            return db_entry[0] if len([x for x in db_entry[0] if x.lower() in db_resources]) > 0 else []
+            return db_entry[0] if len([x for x in db_entry[0] if x.lower()\
+                in db_resources]) > 0 else []
     if resource:
-        return resource.metaData['accessPermissions'] if len([x for x in resource.metaData['accessPermissions']\
-             if x.lower() in db_resources]) > 0 else []
+        return resource.metaData['accessPermissions'] if len([x for x in \
+            resource.metaData['accessPermissions']\
+            if x.lower() in db_resources]) > 0 else []
     if resource_type == 'content':
         return ['content']
     return []
@@ -249,11 +253,12 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         # checking Requested App
         if 'app' in request.headers:
             client_app = request.headers['app'].lower()
-            if not client_app in [ key.lower() for key in APPS.keys()]:
+            if not client_app in [key.lower() for key in APPS]:
                 print(" ERROR : -----> Not a Valid app , app is not registred ")
                 raise UnAuthorizedException("Requesting app is not registered")
-        else:             
-            client_app = 'API-user' if 'API-user' in APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
+        else:
+            client_app = 'API-user' if 'API-user' in APPS else\
+                NotAvailableException('Not a Valid app , app is not registred ')
 
         # Getting user details if no auth header and have token
         if not "authorization" in request.headers and \
@@ -263,7 +268,8 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         resource_type, permission = search_api_permission_map(
             endpoint, method, client_app, path_params, resource=resource_type)
         if not endpoint.startswith('/v2/user'):
-            print("resource_type : ", resource_type, "| permisison : ", permission, "endpoint : ", endpoint)
+            print("resource_type : ", resource_type, "| permisison : ",\
+                permission, "endpoint : ", endpoint)
 
         required_rights = []
         access_tags = get_access_tag(db_, resource_type, path_params, kwargs)
@@ -274,9 +280,14 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             print("req rights ==== : ", required_rights)
         authenticated = check_right(user_details, required_rights)
         if not endpoint.startswith('/v2/user'):
-            print("AUTH DETAILS DICT : ----> ",{"required_rights":required_rights,"| access_tags":access_tags,"| permission":permission," | resource_type":resource_type," | endpoint":endpoint," | method":method," | path_params":path_params," | user_details":user_details," | resource_type":resource_type," | filtering_required":filtering_required," | client_app":client_app," | user_details":user_details," | authenticated":authenticated})
+            print("AUTH DETAILS DICT : ----> ",{"required_rights":required_rights,\
+                "| access_tags":access_tags,\
+                "| permission":permission," | resource_type":resource_type," | endpoint":endpoint,"\
+                | method":method," | path_params":path_params," | user_details":user_details,"\
+                | resource_type":resource_type," | filtering_required":filtering_required," | \
+                client_app":client_app,"| authenticated":authenticated})
         # if (resource_type == schema_auth.ResourceType.USER and not authenticated):
-        if ('user' in RESOURCE_TYPE.keys() and resource_type == 'user' and not authenticated):
+        if ('user' in RESOURCE_TYPE and resource_type == 'user' and not authenticated):
             # Need to raise error before function execution, as we cannot delay db commit
             # like we do in other cases as changes happen in Kratos db, not app db'''
             if user_details['user_id'] is None:
@@ -333,7 +344,8 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             for item in response:
                 required_rights_thisitem = required_rights.copy()
                 access_tags = get_access_tag(db_, resource_type, path_params, kwargs, item)
-                print("access_tags :: ======= > :: ", access_tags, "path params : ", path_params, "resource : ", resource_type, "item : ", item)
+                print("access_tags :: ======= > :: ", access_tags, "path params : ", \
+                    path_params, "resource : ", resource_type, "item : ", item)
                 for tag in access_tags:
                     if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
                         required_rights_thisitem += ACCESS_RULES[tag][permission]
@@ -562,7 +574,7 @@ def register_flow_fail(reg_response,email,user_role,reg_req):
                 raise UnprocessableException(error_base[i]['messages'][0]['text'])
     return data
 
-def user_register_kratos(register_details,app_type):
+def user_register_kratos(register_details, app_type):
     """user registration kratos"""
     data = {}
     email = register_details.email
@@ -700,7 +712,8 @@ def create_super_user():
     if response.status_code == 200:
         identity_data = json.loads(response.content)
         for identity in identity_data:
-            if schema_auth.AdminRoles.SUPERADMIN.value in identity["traits"]["userrole"]:
+            if "userrole" in  identity["traits"] and \
+            schema_auth.AdminRoles.SUPERADMIN.value in identity["traits"]["userrole"]:
                 found = True
                 break
     else:

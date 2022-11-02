@@ -10,6 +10,7 @@ from dependencies import log , get_db
 from auth.authentication import user_register_kratos,user_login_kratos,user_role_add ,\
     delete_identity , get_auth_access_check_decorator , get_user_or_none, kratos_logout,\
     get_all_or_one_kratos_users,update_kratos_user
+from auth.auth_app import app_register_kratos
 
 router = APIRouter()
 
@@ -155,3 +156,19 @@ user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint:
     user_id = user.userid
     delete_identity(user.userid)
     return {"message":f"deleted identity {user_id}"}
+
+# Authentication for Apps
+@router.post('/v2/app/register',response_model=schema_auth.RegisterAppResponse,
+    responses={400: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
+    500: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    status_code=201,tags=["App"])
+# @get_auth_access_check_decorator
+async def register_app(register_details:schema_auth.RegistrationAppIn,request: Request,#pylint: disable=unused-argument
+user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+    '''Registration for Apps
+    * email, name, organization, password fiels are mandatory
+    * One of the contact details is mandatory'''
+    log.info('In App Registration')
+    log.debug('APp registration:%s',register_details)
+    return app_register_kratos(register_details, db_)

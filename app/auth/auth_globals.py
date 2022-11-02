@@ -1,16 +1,20 @@
 """Authentication related Global varaibles and functions"""
-from enum import Enum
-from database import SessionLocal
 from collections import defaultdict
+from database import SessionLocal
 import db_models
+from dependencies import log
+from custom_exceptions import GenericException
 
 # Global Varialbles
 APIPERMISSIONTABLE = []
-ACCESS_RULES = defaultdict(lambda:defaultdict())
+ACCESS_RULES = defaultdict(lambda:defaultdict())#pylint: disable=unnecessary-lambda
+#pylint: disable=use-dict-literal
 RESOURCE_TYPE = dict()
 APPS = dict()
 INPUT_APPS = dict()
 ROLES = []
+
+#pylint: disable=broad-except, inconsistent-return-statements
 
 # Functions
 def generate_permission_map_table():
@@ -30,10 +34,10 @@ def generate_permission_map_table():
             APIPERMISSIONTABLE.append(temp_row[:])
         print("APi permisison map  : ", len(APIPERMISSIONTABLE))
         if len(APIPERMISSIONTABLE) <= 0:
-            raise 
+            raise GenericException("Permission table loaded as empty")
         return APIPERMISSIONTABLE
-    except Exception as e:
-        print("Error Reading API permission table from DB :", e)
+    except Exception as err:
+        print("Error Reading API permission table from DB :", err)
     finally:
         db_instance.close()
 
@@ -47,8 +51,9 @@ def generate_access_rules_dict():
             ACCESS_RULES[rules_row.entitlement][rules_row.tag]= rules_row.roles
         print("access rules : ", len(ACCESS_RULES))
         return ACCESS_RULES
-    except Exception as e:
-        print("Error Generating Access Rules from DB :", e)
+    except Exception as err:
+        # print("Error Generating Access Rules from DB :", e)
+        log.error("Error Generating Access Rules from DB:%s", err)
     finally:
         db_instance.close()
 
@@ -63,8 +68,9 @@ def generate_resource_types():
             RESOURCE_TYPE[resource_row.resourceTypeName]= resource_row.resourceTypeDescription
         print("resource type : ", len(RESOURCE_TYPE))
         return RESOURCE_TYPE
-    except Exception as e:
-        print("Error Generating resource types from DB :", e)
+    except Exception as err:
+        # print("Error Generating resource types from DB :", err)
+        log.error("Error Generating resource types from DB:%s", err)
     finally:
         db_instance.close()
 
@@ -82,8 +88,9 @@ def generate_apps():
         print("Apps : ", len(APPS))
         print("Input Apps : ", len(INPUT_APPS))
         return APPS, INPUT_APPS
-    except Exception as e:
-        print("Error Generating app and input apps from DB :", e)
+    except Exception as err:
+        # print("Error Generating app and input apps from DB :", err)
+        log.error("Error Generating app and input apps from DB:%s", err)
     finally:
         db_instance.close()
 
@@ -97,8 +104,9 @@ def generate_roles():
             ROLES.append(role.roleName)
         print("Roles : ", len(ROLES))
         return ROLES
-    except Exception as e:
-        print("Error Generating roles from DB :", e)
+    except Exception as err:
+        # print("Error Generating roles from DB :", err)
+        log.error("Error Generating roles from DB:%s", err)
     finally:
         db_instance.close()
 

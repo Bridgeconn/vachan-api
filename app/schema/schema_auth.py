@@ -1,8 +1,8 @@
 """schema for auth related"""
 from enum import Enum
 from typing import List
-from pydantic import BaseModel
-from pydantic import types
+from pydantic import BaseModel, validator
+from pydantic import types, EmailStr
 
 #pylint: disable=too-few-public-methods
 class ResourceType(str, Enum):
@@ -150,3 +150,56 @@ class UserUpdateResponse(BaseModel):
     """Response object of User Update"""
     message:str
     data: IdentitityListResponse
+
+class RegistrationAppContacts(BaseModel):
+    """registration App output"""
+    email:EmailStr = None
+    phone:str = None
+
+class RegistrationAppOut(BaseModel):
+    """registration App output"""
+    id:str
+    name:str
+    email:str
+    organization:str
+    contacts:RegistrationAppContacts
+
+class RegisterAppResponse(BaseModel):
+    """Response object of App registration"""
+    message:str
+    registered_details:RegistrationAppOut
+    key:str
+
+class RegistrationAppIn(BaseModel):
+    """kratos app registration input"""
+    email:str
+    name:str
+    organization:str
+    password:types.SecretStr
+    contacts:RegistrationAppContacts
+
+    @validator('contacts')
+    def check_email_or_phone(cls, val):#pylint: disable=no-self-argument, inconsistent-return-statements
+        '''check for email or phone is present'''
+        if val.email is None:
+            if val.phone is not None:
+                if len(val.phone) <= 0:
+                    raise ValueError('filed Phone Should not be blank')
+            else:
+                raise ValueError('either email or phone is requiered')
+        else :
+            return {"email" : val.email, "phone" : val.phone}
+
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example":{
+            "email": "myapp@vachan",
+            "name": "my app",
+            "organization": "BCS",
+            "password": "my secret",
+            "contacts": {
+                "email": "myappofficial@vachan.org",
+                "phone": "+91 1234567890"
+            }
+        }}
