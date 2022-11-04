@@ -54,6 +54,33 @@ services:
     networks:
       - intranet
 
+  kratos-app:
+    depends_on:
+      - kratos-migrate
+    image: oryd/kratos:v0.10.1
+    ports:
+      - "4443:4433" # public
+      - "4444:4434" # admin
+    restart: unless-stopped
+    environment:
+      - SERVE_PUBLIC_BASE_URL=http://127.0.0.1:4443/
+      - SERVE_PUBLIC_ADMIN_URL=http://127.0.0.1:4444/
+      - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS:-smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true}
+      - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL:-EMAIL_ADDRESS@bridgeconn.com}
+      - DSN=postgres://kratos:secret@postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
+      - LOG_LEVEL=trace
+    command: serve -c /etc/config/kratos/kratos-app.yml --dev --watch-courier
+    volumes:
+      - type: volume
+        source: kratos-sqlite
+        target: /var/lib/sqlite
+        read_only: false
+      - type: bind
+        source: ./email-password
+        target: /etc/config/kratos
+    networks:
+      - intranet
+
   mailslurper:
     image: oryd/mailslurper:latest-smtps
     ports:
