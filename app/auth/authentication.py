@@ -13,8 +13,7 @@ from schema import schema_auth
 from dependencies import log
 from custom_exceptions import GenericException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
-    UnprocessableException, PermissionException
-from auth.auth_app import get_validate_requesting_app_key
+    UnprocessableException, PermissionException, NotAcceptableException
 from auth.auth_globals import APIPERMISSIONTABLE, ACCESS_RULES, ROLES, \
     RESOURCE_TYPE, APPS, INPUT_APPS#pylint: disable=ungrouped-imports, unused-import
 
@@ -90,6 +89,16 @@ def get_user_or_none_graphql(info):
 #         APIPERMISSIONTABLE.append(table_row)
 #     log.warning("Startup event to load permission table")
 #     log.debug(APIPERMISSIONTABLE)
+
+def get_default_role_for_app(app_key):
+    """get defaulr user role for app"""
+    client_app = get_current_user_data(app_key, app=True)["app_name"].lower()
+    user_role = [role for app, role in INPUT_APPS if app.lower() == client_app.lower()]
+    if len(user_role) > 0:
+        user_role = user_role[0]
+    else:
+        raise NotAcceptableException("The requested app Not allowed to register Users")
+    return user_role
 
 def api_resourcetype_map(endpoint, path_params=None):
     '''Default correlation between API endpoints and resource they act upon'''
@@ -263,7 +272,6 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                 print(" ERROR : -----> Not a Valid app , app is not registred ")
                 raise UnAuthorizedException("Requesting app is not registered")
         else:
-            print("in else block for API-User")
             client_app = 'API-user' if 'API-user' in APPS else\
                 NotAvailableException('Not a Valid app , app is not registred ')
 
@@ -582,18 +590,17 @@ def register_flow_fail(reg_response,email,user_role,reg_req):
                 raise UnprocessableException(error_base[i]['messages'][0]['text'])
     return data
 
-def user_register_kratos(register_details, app_type):
+def user_register_kratos(register_details, request):
     """user registration kratos"""
     data = {}
     email = register_details.email
     password = register_details.password
 
-    switcher = {
-        schema_auth.App.AG : schema_auth.AdminRoles.AGUSER.value,
-        schema_auth.App.VACHAN: schema_auth.AdminRoles.VACHANUSER.value,
-        # schema_auth.App.VACHANADMIN: schema_auth.AdminRoles.VACHANADMIN.value
-            }
-    user_role =  switcher.get(app_type, schema_auth.AdminRoles.APIUSER.value)
+    # get  user role
+    if 'app' in request.headers:
+        user_role = get_default_role_for_app(request.headers["app"])
+    else:
+        user_role = 'APIUser'
 
     register_url = PUBLIC_BASE_URL+"registration/api"
     reg_flow = requests.get(register_url, timeout=10)

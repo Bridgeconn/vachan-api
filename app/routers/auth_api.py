@@ -24,11 +24,12 @@ async def form_login(form_data: OAuth2PasswordRequestForm = Depends()):
 #Authentication apis
 @router.post('/v2/user/register',response_model=schema_auth.RegisterResponse,
     responses={400: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
-    500: {"model": schemas.ErrorResponse}},
+    500: {"model": schemas.ErrorResponse},406: {"model": schemas.ErrorResponse}},
     status_code=201,tags=["Authentication"])
 @get_auth_access_check_decorator
 async def register(register_details:schema_auth.Registration,request: Request,#pylint: disable=unused-argument
-app_type: schema_auth.AppInput=Query(schema_auth.App.API),user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+# app_type: schema_auth.AppInput=Query(schema_auth.App.API),
+user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
 db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Registration for Users
     * user_email and password fiels are mandatory
@@ -37,7 +38,7 @@ db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     * first and last name fields are optional'''
     log.info('In User Registration')
     log.debug('registration:%s',register_details)
-    return user_register_kratos(register_details,app_type)
+    return user_register_kratos(register_details, request)
 
 @router.get('/v2/user/login',response_model=schema_auth.LoginResponse,
 responses={401: {"model": schemas.ErrorResponse}}

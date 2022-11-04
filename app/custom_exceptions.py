@@ -36,6 +36,14 @@ class NotAvailableException(Exception):
         self.detail = detail
         self.status_code = 404
 
+class NotAcceptableException(Exception):
+    '''Format for not Acceptable Exception'''
+    def __init__(self, detail: str):
+        super().__init__()
+        self.name = "Requested Operation Is Not Acceptable"
+        self.detail = detail
+        self.status_code = 406
+
 class AlreadyExistsException(Exception):
     '''Format for already exists error'''
     def __init__(self, detail: str):
