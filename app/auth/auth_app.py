@@ -7,86 +7,83 @@ from custom_exceptions import GenericException, UnprocessableException, AlreadyE
     NotAvailableException
 from dependencies import log
 
-PUBLIC_BASE_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL",
-                                    "http://127.0.0.1:4433/")+"self-service/"
-ADMIN_BASE_URL = os.environ.get("VACHAN_KRATOS_ADMIN_URL", "http://127.0.0.1:4434/")
+PUBLIC_BASE_URL_APP = os.environ.get("VACHAN_KRATOS_APP_PUBLIC_URL",
+                                    "http://127.0.0.1:4443/")+"self-service/"
+ADMIN_BASE_URL_APP = os.environ.get("VACHAN_KRATOS_APP_ADMIN_URL", "http://127.0.0.1:4444/")
 
 def app_register_kratos(register_details, db_):#pylint: disable=too-many-locals, inconsistent-return-statements, unused-argument
     """register app with kratos"""
     # https://github.com/ory/kratos/issues/765 - not yet implemented to select schema in
     #reg flow creation
     # work around for obtaining the same
-    registerapp_url = PUBLIC_BASE_URL+"registration/api"
+    registerapp_url = PUBLIC_BASE_URL_APP+"registration/api"
     reg_flow = requests.get(registerapp_url, timeout=10)
+    print("register -------------: ", register_details.contacts["phone"])
     if reg_flow.status_code == 200:
         password = register_details["password"] if \
-            isinstance(register_details["password"], str) else \
-                register_details["password"].get_secret_value()
-        flow_res = json.loads(reg_flow.content)
-        reg_flow_id = flow_res["ui"]["action"]
-        reg_data = {"traits.email": register_details["email"],
-                    "method": "password",
-                    "password": password
-                }
+            "password" in register_details else \
+            register_details.password.get_secret_value()
+        if "email" in register_details:
+            email = register_details["email"]
+            name = register_details["name"]
+            org = register_details["organization"]
+            contact_email = register_details["contacts"]["email"]
+            contact_phone = register_details["contacts"]["phone"]
+        else:
+            email = register_details.email
+            name = register_details.name
+            org = register_details.organization
+            contact_email = register_details.contacts["email"]
+            contact_phone = "" if register_details.contacts["phone"] is None\
+                else register_details.contacts["phone"]
+        app_reg_flow_res = json.loads(reg_flow.content)
+        app_reg_flow_id = app_reg_flow_res["ui"]["action"]
+        app_reg_data = {
+                "traits.email": email,
+                "traits.name": name,
+                "traits.organization": org,
+                "traits.contacts.phone": contact_phone,
+                "traits.contacts.email": contact_email,
+                "password": password,
+                "method": "password"
+                    }
         headers = {}
         headers["Content-Type"] = "application/json"
         headers["Accept"] = "application/json"
-        reg_req = requests.post(reg_flow_id,headers=headers,json=reg_data, timeout=10)
-        reg_response = json.loads(reg_req.content)
-        if reg_req.status_code == 200:
-            # update schema to app
-            contact_email = register_details["contacts"]["email"]
-            contact_phone = register_details["contacts"]["phone"]
-            update_data = {
-                "id":reg_response["identity"]["id"],
-                "state":reg_response["identity"]["state"],
-                "schema_id": "app",
-                "traits":{
-                "email": register_details["email"],
-                "name": register_details["name"],
-                "organization": register_details["organization"],
-                "contacts": {
-                    "email": contact_email,
-                    "phone": contact_phone
-                        }
+        app_reg_req = requests.post(app_reg_flow_id,headers=headers,json=app_reg_data, timeout=10)
+        app_reg_response = json.loads(app_reg_req.content)
+        if app_reg_req.status_code == 200:
+            # call apis/crud for db -> new app (with default role), new role -> here
+            #call functions for refresh global var of APP , ROLES --> here
+            #if _db value is None
+            #no need to update the DB tables (default apps register on)'''
+            # register success return data
+            app_data = app_reg_response["session"]["identity"]
+            return {
+                "message":"Registration Successfull",
+                "registered_details":{
+                    "id":app_data["id"],
+                    "email":app_data["traits"]["email"],
+                    "name": app_data["traits"]["name"],
+                    "organization": app_data["traits"]["organization"],
+                    "contacts": {
+                        "email": app_data["traits"]["contacts"]["email"],
+                        "phone": app_data["traits"]["contacts"]["phone"]\
+                            if "phone" in app_data["traits"]["contacts"]\
+                            else None
                     }
-                }
-            update_url = f"{ADMIN_BASE_URL}admin/identities/{reg_response['identity']['id']}"
-            update_req = requests.put(update_url, headers=headers,\
-                json=update_data, timeout=10)
-            update_response = json.loads(update_req.content)
-            if update_req.status_code == 200:
-                # call apis for db -> new app (with default role), new role -> here
-                #call functions for refresh global var of APP , ROLES --> here
-                #if _db value is None
-                #no need to update the DB tables (default apps register on)'''
-                # register success return data
-                return {
-                    "message":"Registration Successfull",
-                    "registered_details":{
-                        "id":update_response["id"],
-                        "email":update_response["traits"]["email"],
-                        "name": update_response["traits"]["name"],
-                        "organization": update_response["traits"]["organization"],
-                        "contacts": {
-                            "email": update_response["traits"]["contacts"]["email"],
-                            "phone": update_response["traits"]["contacts"]["phone"]
-                        }
-                    },
-                    "key":reg_response["session_token"]
-                }
-            requests.delete(update_url, headers=headers, timeout=10)
-            log.error('Register App Failed: %s', update_response['error']['message'])
-            raise GenericException(update_response['error']["message"])
-        if "messages" in reg_response["ui"]:
-            err_txt = reg_response["ui"]["messages"][0]["text"]
+                },
+                "key":app_reg_response["session_token"]
+            }
+        if "messages" in app_reg_response["ui"]:
+            err_txt = app_reg_response["ui"]["messages"][0]["text"]
             err_msg = \
         "An account with the same identifier (email, phone, username, ...) exists already."
             if err_txt == err_msg:
                 log.error('Register App Failed: %s', err_txt)
                 raise AlreadyExistsException(err_txt)
         else :
-            error_base = reg_response['ui']['nodes']
+            error_base = app_reg_response['ui']['nodes']
             for field in error_base:
                 if field['messages'] != []:
                     log.error("Reg app failed %s", field['messages'][0]['text'])
@@ -97,7 +94,7 @@ def app_register_kratos(register_details, db_):#pylint: disable=too-many-locals,
 
 def get_filter_apps(name=None, app_id=None, org=None):
     """filters apps data from kratos db"""
-    base_url = f"{ADMIN_BASE_URL}admin/identities"
+    base_url = f"{ADMIN_BASE_URL_APP}admin/identities"
     app_data = []
     if app_id is not None:
         response = requests.get(base_url+"/"+app_id, timeout=10)
@@ -138,8 +135,8 @@ def register_default_apps_on_startup():
         "organization": "BCS",
         "password": os.environ.get("AG_APP_SECRET", "secret@!@#$"),
         "contacts": {
-            "email": "",
-            "phone": ""
+            "email": "None",
+            "phone": "None"
         }
     },
     {
@@ -148,8 +145,8 @@ def register_default_apps_on_startup():
         "organization": "BCS",
         "password": os.environ.get("VACHANONLINE_APP_SECRET", "secret@!@#$"),
         "contacts": {
-            "email": "",
-            "phone": ""
+            "email": "None",
+            "phone": "None"
         }
     },
     {
@@ -158,8 +155,8 @@ def register_default_apps_on_startup():
         "organization": "BCS",
         "password": os.environ.get("VACHANADMIN_APP_SECRET", "secret@!@#$"),
         "contacts": {
-            "email": "",
-            "phone": ""
+            "email": "None",
+            "phone": "None"
         }
     },
     {
@@ -168,8 +165,8 @@ def register_default_apps_on_startup():
         "organization": "BCS",
         "password": os.environ.get("APIUSER_APP_SECRET", "secret@!@#$"),
         "contacts": {
-            "email": "",
-            "phone": ""
+            "email": "None",
+            "phone": "None"
         }
     }]
 

@@ -153,7 +153,7 @@ class UserUpdateResponse(BaseModel):
 
 class RegistrationAppContacts(BaseModel):
     """registration App output"""
-    email:EmailStr = None
+    email:EmailStr
     phone:str = None
 
 class RegistrationAppOut(BaseModel):
@@ -181,14 +181,10 @@ class RegistrationAppIn(BaseModel):
     @validator('contacts')
     def check_email_or_phone(cls, val):#pylint: disable=no-self-argument, inconsistent-return-statements
         '''check for email or phone is present'''
-        if val.email is None:
-            if val.phone is not None:
-                if len(val.phone) <= 0:
-                    raise ValueError('filed Phone Should not be blank')
-            else:
-                raise ValueError('either email or phone is requiered')
-        else :
-            return {"email" : val.email, "phone" : val.phone}
+        if val.phone is not None:
+            if len(val.phone) <= 0:
+                raise ValueError('Phone Should not be blank')
+        return {"email" : val.email, "phone" : val.phone}
 
     class Config:
         '''display example value in API documentation'''
