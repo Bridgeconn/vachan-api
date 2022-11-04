@@ -14,6 +14,7 @@ from dependencies import log
 from custom_exceptions import GenericException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
     UnprocessableException, PermissionException
+from auth.auth_app import get_validate_requesting_app_key
 from auth.auth_globals import APIPERMISSIONTABLE, ACCESS_RULES, ROLES, \
     RESOURCE_TYPE, APPS, INPUT_APPS#pylint: disable=ungrouped-imports, unused-import
 
@@ -25,29 +26,34 @@ USER_SESSION_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL",
 SUPER_USER = os.environ.get("VACHAN_SUPER_USERNAME")
 SUPER_PASSWORD = os.environ.get("VACHAN_SUPER_PASSWORD")
 
-def get_current_user_data(recieve_token):
+def get_current_user_data(recieve_token, app=False):
     """get current user details"""
-    user_details = {"user_id":"", "user_roles":""}
+    details = {}
     headers = {}
     headers["Accept"] = "application/json"
     headers["Authorization"] = f"Bearer {recieve_token}"
     user_data = requests.get(USER_SESSION_URL, headers=headers, timeout=10)
     data = json.loads(user_data.content)
-    if user_data.status_code == 200:
-        user_details["user_id"] = data["identity"]["id"]
+    if user_data.status_code == 200 and not app:
+        details["user_id"] = data["identity"]["id"]
         if "userrole" in data["identity"]["traits"]:
-            user_details["user_roles"] = data["identity"]["traits"]["userrole"]
+            details["user_roles"] = data["identity"]["traits"]["userrole"]
+        else:
+            details["user_roles"] = ""
+    elif user_data.status_code == 200 and app:
+        details["app_id"] = data["identity"]["id"]
+        details["app_name"] = data["identity"]["traits"]["name"]
     elif user_data.status_code == 401:
         # raise UnAuthorizedException(detail=data["error"])
-        user_details["user_id"] =None
-        user_details["user_roles"] = ['noAuthRequired']
-        user_details["error"] = UnAuthorizedException(detail=data["error"])
+        details["user_id"] =None
+        details["user_roles"] = ['noAuthRequired']
+        details["error"] = UnAuthorizedException(detail=data["error"])
     elif user_data.status_code == 500:
         # raise GenericException(data["error"])
-        user_details["user_id"] =None
-        user_details["user_roles"] = ['noAuthRequired']
-        user_details["error"] = GenericException(detail=data["error"])
-    return user_details
+        details["user_id"] =None
+        details["user_roles"] = ['noAuthRequired']
+        details["error"] = GenericException(detail=data["error"])
+    return details
 
 #optional authentication with token or none
 optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
@@ -252,11 +258,12 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         filtering_required = kwargs.get("filtering_required", False)
         # checking Requested App
         if 'app' in request.headers:
-            client_app = request.headers['app'].lower()
+            client_app = get_current_user_data(request.headers['app'], app=True)["app_name"].lower()
             if not client_app in [key.lower() for key in APPS]:
                 print(" ERROR : -----> Not a Valid app , app is not registred ")
                 raise UnAuthorizedException("Requesting app is not registered")
         else:
+            print("in else block for API-User")
             client_app = 'API-user' if 'API-user' in APPS else\
                 NotAvailableException('Not a Valid app , app is not registred ')
 
