@@ -19,6 +19,7 @@ from graphql_api import router as gql_router
 from auth.authentication import create_super_user
 from auth.auth_globals import generate_access_rules_dict, generate_permission_map_table,\
     generate_apps, generate_resource_types, generate_roles
+from auth.auth_app import register_default_apps_on_startup
 
 # from auth.api_permission_map import initialize_apipermissions
 
@@ -37,6 +38,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# register default apps
+register_default_apps_on_startup()
 
 #get permission map and accessRules on startup
 generate_roles()

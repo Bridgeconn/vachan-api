@@ -390,47 +390,48 @@ def kratos_logout(recieve_token):
 def get_users_kratos_filter(base_url,name,roles,limit,skip):#pylint: disable=too-many-locals
     """v2/users filter block"""
     response = requests.get(base_url, timeout=10)
-    if response.status_code == 200:
+    if response.status_code == 200:#pylint: disable=too-many-nested-blocks
         user_data = []
         for data in json.loads(response.content):
-            name_status = True
-            role_status = True
-            kratos_user = {
-                "userId":data["id"],
-                "name":data["traits"]["name"]
-            }
-            kratos_user["name"]["fullname"] = data["traits"]["name"]["first"].capitalize() \
-                + " "+ data["traits"]["name"]["last"].capitalize()
-            if not name is None:
-                if name.lower() == kratos_user["name"]["fullname"].lower() or\
-                    name.lower() == kratos_user["name"]["last"].lower() or\
-                        name.lower() == kratos_user["name"]["first"].lower():
-                    name_status = True
-                else:
-                    name_status = False
+            if not data["schema_id"] == 'app':
+                name_status = True
+                role_status = True
+                kratos_user = {
+                    "userId":data["id"],
+                    "name":data["traits"]["name"]
+                }
+                kratos_user["name"]["fullname"] = data["traits"]["name"]["first"].capitalize() \
+                    + " "+ data["traits"]["name"]["last"].capitalize()
+                if not name is None:
+                    if name.lower() == kratos_user["name"]["fullname"].lower() or\
+                        name.lower() == kratos_user["name"]["last"].lower() or\
+                            name.lower() == kratos_user["name"]["first"].lower():
+                        name_status = True
+                    else:
+                        name_status = False
 
-            if not schema_auth.FilterRoles.ALL in roles:
-                temp_role = []
-                switcher = {
-                    schema_auth.FilterRoles.AG.value : schema_auth.FilterRoles.AG,
-                    schema_auth.FilterRoles.VACHAN.value : schema_auth.FilterRoles.VACHAN,
-                    schema_auth.FilterRoles.API.value : schema_auth.FilterRoles.API
-                        }
-                for role in roles:
-                    user_role =  switcher.get(role)
-                    temp_role.append(user_role)
-                role_list = [x.name.lower() for x in temp_role]
-                kratos_role = [x.lower() for x in data["traits"]["userrole"]]
-                for k_role in kratos_role:
-                    # res = list(filter(k_role.startswith, role_list)) != []
-                    # changed this as per pylint suggestion
-                    res = list(filter(k_role.startswith, role_list))
-                    if res:
-                        role_status = True
-                        break
-                    role_status = False
-            if name_status and role_status:
-                user_data.append(kratos_user)
+                if not schema_auth.FilterRoles.ALL in roles:
+                    temp_role = []
+                    switcher = {
+                        schema_auth.FilterRoles.AG.value : schema_auth.FilterRoles.AG,
+                        schema_auth.FilterRoles.VACHAN.value : schema_auth.FilterRoles.VACHAN,
+                        schema_auth.FilterRoles.API.value : schema_auth.FilterRoles.API
+                            }
+                    for role in roles:
+                        user_role =  switcher.get(role)
+                        temp_role.append(user_role)
+                    role_list = [x.name.lower() for x in temp_role]
+                    kratos_role = [x.lower() for x in data["traits"]["userrole"]]
+                    for k_role in kratos_role:
+                        # res = list(filter(k_role.startswith, role_list)) != []
+                        # changed this as per pylint suggestion
+                        res = list(filter(k_role.startswith, role_list))
+                        if res:
+                            role_status = True
+                            break
+                        role_status = False
+                if name_status and role_status:
+                    user_data.append(kratos_user)
         user_data = user_data[skip:skip+limit] if skip>=0 and limit>=0 else []
         # user_data = user_data[skip:skip+limit]
         return user_data
