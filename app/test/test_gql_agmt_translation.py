@@ -715,7 +715,8 @@ def test_get_sentence():
   assert len(executed["data"]["agmtProjectSource"]) > 0
   for item in executed["data"]["agmtProjectSource"]:
         assert_positive_get_sentence(item)
-        assert item['sentence'] == item['draft']
+        assert item['draft'] == ""
+        assert item['sentence'] != ""
 
   # translate all tokens at once
   post_obj_list = []
