@@ -106,6 +106,8 @@ def api_resourcetype_map(endpoint, path_params=None):
     elif endpoint.startswith("/v2/sources") or (
         path_params is not None and "source_name" in path_params):
         resource_type = schema_auth.ResourceType.CONTENT.value
+    elif endpoint.split('/')[2] == "restore":
+        resource_type = schema_auth.ResourceType.DATAMANIPULATION.value
     else:
         raise GenericException("Resource Type of API not defined")
     return resource_type
@@ -150,7 +152,8 @@ def get_access_tag(db_, resource_type, path_params=None, kw_args = None, resourc
         schema_auth.ResourceType.RESEARCH: ['content', 'research-use'],
         schema_auth.ResourceType.JOBS: ['jobs'],
         schema_auth.ResourceType.MEDIA: ['media'],
-        schema_auth.ResourceType.FILE: ['file-ops']
+        schema_auth.ResourceType.FILE: ['file-ops'],
+        schema_auth.ResourceType.DATAMANIPULATION: ['data-manipulation']
         # schema_auth.ResourceType.CONTENT: None # excluded to use item specific tags in db
     }
     if resource_type in resource_tag_map:

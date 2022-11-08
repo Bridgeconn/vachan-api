@@ -72,6 +72,7 @@ class LanguageCreate(BaseModel):
             }
         }
 
+
 class LanguageResponse(BaseModel):
     '''Return object of languages'''
     languageId : int
@@ -126,6 +127,51 @@ class LanguageEdit (BaseModel):
                     "alternate-names": ["Khadi Boli", "Khari Boli", "Dakhini", "Khariboli"],
                     "suppress-script": "Deva", "is-gateway-language": True}
 
+            }
+        }
+
+class LanguageDeleteResponse(BaseModel):
+    """Language delete response"""
+    message:str
+
+class LanguageIdentity(BaseModel):
+    """kratos language ID input"""
+    languageId:int
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "languageId": 100057
+            }
+        }
+
+class RestoreIdentity(BaseModel):
+    """kratos item ID input"""
+    itemId:int
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "itemId": 40
+            }
+        }
+
+class DataRestoreResponse(BaseModel):
+    """Content delete response"""
+    message:str
+
+class ContentDeleteResponse(BaseModel):
+    """Content delete response"""
+    message:str
+
+class ContentIdentity(BaseModel):
+    """kratos content ID input"""
+    contentId:int
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "contentId": 100000
             }
         }
 

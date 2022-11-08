@@ -3,17 +3,20 @@ Content_types, Languages, Licenses, versions, sources and bible_book_loopup'''
 
 import json
 import re
+from datetime import datetime
+import db_models
+import jsonpickle
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
-
-import db_models
 from schema import schemas
-from crud import utils
 from custom_exceptions import NotAvailableException, TypeException
 from database import engine
 from dependencies import log
+from crud import utils
+
+
 
 def get_content_types(db_: Session, content_type: str =None, skip: int = 0, limit: int = 100):
     '''Fetches all content types, with pagination'''
@@ -26,9 +29,18 @@ def create_content_type(db_: Session, content: schemas.ContentTypeCreate):
     '''Adds a row to content_types table'''
     db_content = db_models.ContentType(contentType = content.contentType)
     db_.add(db_content)
+    db_.execute('''INSERT INTO content_types(content_type) VALUES ('testdata')''')
     # db_.commit()
     # db_.refresh(db_content)
     return db_content
+
+def delete_content(db_: Session, content: schemas.ContentIdentity):
+    '''delete particular content, selected via content id'''
+    db_content = db_.query(db_models.ContentType).get(content.contentId)
+    deleted_content = db_content
+    db_.delete(db_content)
+    #db_.commit()
+    return deleted_content
 
 def get_languages(db_: Session, language_code = None, language_name = None, search_word=None,
     language_id = None, **kwargs):
@@ -88,6 +100,56 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
     # db_.commit()
     # db_.refresh(db_content)
     return db_content
+
+def add_deleted_data(db_: Session, del_content : db_models.Language,
+    user_id = None, table_name : str = None):
+    '''backup deleted items from any table'''
+    json_string = jsonpickle.encode(del_content)#, unpicklable=False
+    json_string = re.sub(r'^.*?}}}, ' ,'{', json_string)
+    json_string = json.loads(json_string)
+    db_content =  db_models.DeletedItem(deletedData = json_string,
+        deletedUser = user_id,
+        deletedTime = datetime.now(),
+        deletedFrom = table_name)
+    db_.add(db_content)
+    #db_.commit()
+    return del_content
+
+def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
+    '''Restore deleted record back to the original table'''
+    restore_content = db_.query(db_models.DeletedItem).get(restored_item.itemId)
+    db_content = restore_content
+    json_string = db_content.deletedData
+    db_.delete(restore_content)
+    db_.commit()
+    if db_content.deletedFrom == 'content_types':
+        db_content = db_models.ContentType(contentId = json_string['contentId'],
+        contentType = json_string['contentType'])
+    elif db_content.deletedFrom == 'languages':
+        db_content = db_models.Language(scriptDirection = json_string['scriptDirection'],
+        code= json_string['code'],
+        language= json_string['language'],
+        languageId = json_string['languageId'],
+        metaData= json_string['metaData'],
+        createdUser= json_string['createdUser'],
+        updatedUser= json_string['updatedUser'],
+        updateTime = datetime.now())
+    db_.add(db_content)
+    #db_.commit()
+    return db_content
+    #with open('/home/shimil/vachan-api/db/deleted_contents.json', 'a+', encoding='utf-8') as f:
+        #json.dump(json_string, f, ensure_ascii=False, indent=4)
+        #f.close()
+        #f.write(json_string+"\n")
+        #f.close()
+
+def delete_language(db_: Session, lang: schemas.LanguageIdentity, user_id=None):
+    '''delete particular language, selected via language id'''
+    db_content = db_.query(db_models.Language).get(lang.languageId)
+    deleted_content = db_content
+    db_.delete(db_content)
+    #db_.commit()
+    return deleted_content
 
 def get_licenses(db_: Session, license_code = None, license_name = None,
     permission = None, active=True, **kwargs):

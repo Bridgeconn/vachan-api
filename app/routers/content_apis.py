@@ -10,9 +10,10 @@ from dependencies import get_db, log, AddHiddenInput
 from crud import structurals_crud, contents_crud, nlp_sw_crud, media_crud
 from custom_exceptions import NotAvailableException, AlreadyExistsException,\
     UnprocessableException
-
 from auth.authentication import get_auth_access_check_decorator ,\
     get_user_or_none
+
+
 
 router = APIRouter()
 
@@ -56,6 +57,43 @@ async def add_contents(request: Request, content: schemas.ContentTypeCreate,
     data = structurals_crud.create_content_type(db_=db_, content=content)
     return {'message': "Content type created successfully",
             "data": data}
+
+@router.delete('/v2/contents',response_model=schemas.ContentDeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse},409: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Contents Types"])
+@get_auth_access_check_decorator
+async def delete_contents(request: Request, content_obj: schemas.ContentIdentity = Body(...),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Delete Content
+    * unique Content Id can be used to delete an exisiting identity'''
+    log.info('In delete_contents')
+    log.debug('content-delete:%s',content_obj)
+    content_id= content_obj.contentId
+    dbtable_name = "content_types"
+    deleted_content = structurals_crud.delete_content(db_=db_, content=content_obj)
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
+             user_id=user_details['user_id'],table_name = dbtable_name)
+    return {'message': f"Content with identity {content_id} deleted successfully",
+            "data": delcont}
+
+@router.post('/v2/restore', response_model=schemas.DataRestoreResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse},401:{"model": schemas.ErrorResponse},
+    409: {"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Contents Types"])
+@get_auth_access_check_decorator
+async def restore_content(request: Request, content: schemas.RestoreIdentity,
+    user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
+    ''' Restore deleted data.
+    * Unique deleted item ID can be used to restore data'''
+    log.info('In restore_content')
+    log.debug('restore: %s',content)
+    data = structurals_crud.restore_data(db_=db_, restored_item=content)
+    return {'message': f"Deleted Item with identity {content.itemId} restored successfully",
+    "data": data}
 
 ##### languages #####
 @router.get('/v2/languages',
@@ -114,6 +152,26 @@ async def edit_language(request: Request, lang_obj: schemas.LanguageEdit = Body(
     return {'message': "Language edited successfully",
             "data": structurals_crud.update_language(db_=db_, lang=lang_obj,
             user_id=user_details['user_id'])}
+
+@router.delete('/v2/languages',response_model=schemas.LanguageDeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Languages"])
+@get_auth_access_check_decorator
+async def delete_languages(request: Request, lang_obj: schemas.LanguageIdentity = Body(...),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Delete Language
+    * unique Language Code can be used to delete an exisiting identity'''
+    log.info('In delete_languages')
+    log.debug('language-delete:%s',lang_obj)
+    language_id= lang_obj.languageId
+    dbtable_name = "languages"
+    deleted_content = structurals_crud.delete_language(db_=db_, lang=lang_obj,
+            user_id=user_details['user_id'])
+    structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
+    user_id=user_details['user_id'],table_name = dbtable_name)
+    return {'message': f"Language with identity {language_id} deleted successfully",
+            "data": deleted_content}
 
 ########### Licenses ######################
 @router.get('/v2/licenses',

@@ -1,0 +1,9 @@
+{"contentType": "contenti", "contentId": 100032}
+{"contentType": "contentx", "contentId": 100062}
+{"contentType": "contente", "contentId": 100069}
+{"scriptDirection": "left-to-right", "languageId": 100053, "createdUser": null, "updateTime": {"py/object": "datetime.datetime", "__reduce__": [{"py/type": "datetime.datetime"}, ["B+YKBgoEDAYf7Q==", {"py/reduce": [{"py/type": "datetime.timezone"}, {"py/tuple": [{"py/reduce": [{"py/type": "datetime.timedelta"}, {"py/tuple": [0, 19800, 0]}]}]}]}]]}, "code": "gu", "language": "Gujarati", "metaData": {"region": "India, Asia", "alternate-names": ["Gujerathi", "Gujerati", "Gujrathi", "Kathiyawadi (Bhawnagari)", "Standard Gujarati (Mumbai Gujarati)", "Sorathi", "Patidari", "Patani", "Gamadia (Ahmedabad Gamadia)", "Naga", "Surati", "Vadodari", "Holadi", "Gohilwadi", "Eastern Broach Gujarati", "Charotari", "Brathela", "Anawla", "Jhalawadi", "Gramya"], "suppress-script": "Gujr", "is-gateway-language": true}, "updatedUser": null}
+{"contentType": "commentagtygtgry", "contentId": 100080}
+{"contentType": "contenta", "contentId": 100065}
+{"contentType": "contentb", "contentId": 100066}
+{"contentType": "contentc", "contentId": 100067}
+{"contentType": "contentcd", "contentId": 100068}

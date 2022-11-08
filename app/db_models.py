@@ -432,3 +432,13 @@ class Jobs(Base): # pylint: disable=too-few-public-methods
     output = Column('output', JSON)
     startTime = Column('start_time', DateTime)
     endTime = Column('end_time', DateTime)
+
+class DeletedItem(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table deleted_items in vachan DB '''
+    __tablename__ = 'deleted_items'
+
+    itemId = Column('item_id', Integer, primary_key=True,autoincrement=True)
+    deletedData = Column('deleted_data', JSON)
+    deletedUser = Column('deleted_user', String)
+    deletedTime = Column('deleted_time', DateTime, onupdate=func.now())
+    deletedFrom = Column('deleted_from', String)

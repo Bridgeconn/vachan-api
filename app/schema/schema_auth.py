@@ -17,6 +17,7 @@ class ResourceType(str, Enum):
     JOBS = "Background-jobs"
     MEDIA = "Media contents"
     FILE = "File Manipulation Ops"
+    DATAMANIPULATION = "Manipulate Data"
 
 class App(str, Enum):
     '''Defined apps'''

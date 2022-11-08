@@ -5,8 +5,9 @@
         "read-via-api":["noAuthRequired"],
         "read-via-vachanadmin":["SuperAdmin", "VachanAdmin"],
         "view-on-web":["noAuthRequired"],
-        "refer-for-translation": ["registeredUser"]
-    },
+        "refer-for-translation": ["registeredUser"],
+        "delete/deactivate":["registeredUser"]
+    }, 
     "content":{
         "read-via-api":["SuperAdmin", "VachanAdmin", "BcsDeveloper"],
         "read-via-vachanadmin":["SuperAdmin", "VachanAdmin"],
@@ -75,5 +76,8 @@
        "login":["noAuthRequired"],
         "logout":["createdUser"],
         "delete/deactivate":["SuperAdmin"]
+    },
+    "data-manipulation": {
+        "data-restore" : ["SuperAdmin"]   
     }
 }

@@ -166,4 +166,3 @@ def create_user_session_run_at_start():
             delete_list.append(current_user["test_user_id"])
         delete_user_identity(delete_list)
         print("Session fixture for create user END------------------>")
-
