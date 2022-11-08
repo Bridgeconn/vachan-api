@@ -65,8 +65,8 @@ def update_agmt_project_sentences(db_, project_obj, new_books, user_id):
             sentenceId=sent.sentenceId,
             surrogateId=sent.surrogateId,
             sentence=norm_sent,
-            draft=norm_sent,
-            draftMeta=[[offsets,offsets,"untranslated"]],
+            draft="",
+            draftMeta=[[offsets,[0,0], "untranslated"]],
             updatedUser=user_id)
         db_.add(draft_row)
 
@@ -93,8 +93,8 @@ def update_agmt_project_uploaded_book(db_,project_obj,new_books,user_id):
                             int(chapter_number)*1000+int(verse_number),
                         surrogateId=book_code+" "+str(chapter_number)+":"+str(verse_number),
                         sentence=verse_text,
-                        draft=verse_text,
-                        draftMeta=[[offsets,offsets,'untranslated']],
+                        draft="",
+                        draftMeta=[[offsets,[0,0], "untranslated"]],
                         updatedUser=user_id)
                     db_.add(draft_row)
 
