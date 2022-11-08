@@ -442,3 +442,4 @@ class DeletedItem(Base): # pylint: disable=too-few-public-methods
     deletedUser = Column('deleted_user', String)
     deletedTime = Column('deleted_time', DateTime, onupdate=func.now())
     deletedFrom = Column('deleted_from', String)
+    

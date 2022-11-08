@@ -166,8 +166,7 @@ async def delete_languages(request: Request, lang_obj: schemas.LanguageIdentity 
     log.debug('language-delete:%s',lang_obj)
     language_id= lang_obj.languageId
     dbtable_name = "languages"
-    deleted_content = structurals_crud.delete_language(db_=db_, lang=lang_obj,
-            user_id=user_details['user_id'])
+    deleted_content = structurals_crud.delete_language(db_=db_, lang=lang_obj)
     structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
     user_id=user_details['user_id'],table_name = dbtable_name)
     return {'message': f"Language with identity {language_id} deleted successfully",
@@ -964,3 +963,4 @@ async def extract_text_contents(request:Request, #pylint: disable=W0613
     if len(tables) == 0:
         raise NotAvailableException("No sources available for the requested name or language")
     return contents_crud.extract_text(db_, tables, books, skip=skip, limit=limit)
+    

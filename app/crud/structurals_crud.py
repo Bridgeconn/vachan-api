@@ -4,12 +4,12 @@ Content_types, Languages, Licenses, versions, sources and bible_book_loopup'''
 import json
 import re
 from datetime import datetime
-import db_models
 import jsonpickle
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
+import db_models
 from schema import schemas
 from custom_exceptions import NotAvailableException, TypeException
 from database import engine
@@ -137,13 +137,8 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
     db_.add(db_content)
     #db_.commit()
     return db_content
-    #with open('/home/shimil/vachan-api/db/deleted_contents.json', 'a+', encoding='utf-8') as f:
-        #json.dump(json_string, f, ensure_ascii=False, indent=4)
-        #f.close()
-        #f.write(json_string+"\n")
-        #f.close()
 
-def delete_language(db_: Session, lang: schemas.LanguageIdentity, user_id=None):
+def delete_language(db_: Session, lang: schemas.LanguageIdentity):
     '''delete particular language, selected via language id'''
     db_content = db_.query(db_models.Language).get(lang.languageId)
     deleted_content = db_content

@@ -118,7 +118,7 @@ def test_post_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.post(UNIT_URL, headers=headers, json=data)        
+    response = client.post(UNIT_URL, headers=headers, json=data)
     assert response.status_code == 201
     assert response.json()['message'] == "Language created successfully"
     assert_positive_get(response.json()['data'])
@@ -138,10 +138,10 @@ def test_post_upper_case_code():
     assert response.json()['error'] == 'Authentication Error'
     #Add with Auth
     headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.post(UNIT_URL, headers=headers, json=data)        
+    response = client.post(UNIT_URL, headers=headers, json=data)
     assert response.status_code == 201
     assert response.json()['message'] == "Language created successfully"
     assert_positive_get(response.json()['data'])
@@ -163,7 +163,7 @@ def test_post_optional_script_direction():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.post(UNIT_URL, headers=headers, json=data)        
+    response = client.post(UNIT_URL, headers=headers, json=data)
     assert response.status_code == 201
     assert response.json()['message'] == "Language created successfully"
     assert_positive_get(response.json()['data'])
@@ -181,7 +181,7 @@ def test_post_incorrectdatatype1():
     headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
-            }        
+            }
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
 
@@ -259,7 +259,6 @@ def test_put_languages():
     assert response.json()['error'] == "Authentication Error"
 
     #create a new user and edit the previous user created content
-    
     headers_auth2 = {"contentType": "application/json",
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['APIUser']['token']
@@ -272,13 +271,13 @@ def test_put_languages():
     data_admin   = {
     "user_email": SUPER_USER,
     "password": SUPER_PASSWORD
-    }      
+    }
     response =login(data_admin)
     assert response.json()['message'] == "Login Succesfull"
     token_admin =  response.json()['token']
 
     data = {
-      "languageId": language_id,  
+      "languageId": language_id,
       "language": "new-lang-test-edited-by-admin",
       "code": "x-abc"
     }
@@ -313,8 +312,7 @@ def test_searching():
         assert_positive_get(lang)
         if lang['code'] == "hi":
             found = True
-    assert found    
-
+    assert found
     response = client.get(UNIT_URL+"?search_word=sri%20lanka")
     assert len(response.json()) > 0
     found = False
@@ -322,7 +320,7 @@ def test_searching():
         assert_positive_get(lang)
         if lang['language'] == "Sinhala":
             found = True
-    assert found    
+    assert found
 
     # search word with special symbols in them
     response = client.get(UNIT_URL+"?search_word=sri%20lanka(Asia)")
@@ -332,7 +330,7 @@ def test_searching():
         assert_positive_get(lang)
         if lang['language'] == "Sinhala":
             found = True
-    assert found    
+    assert found
 
     response = client.get(UNIT_URL+"?search_word=sri-lanka-asia!")
     assert len(response.json()) > 0
@@ -341,7 +339,7 @@ def test_searching():
         assert_positive_get(lang)
         if lang['language'] == "Sinhala":
             found = True
-    assert found    
+    assert found
 
     # ensure search words are not stemmed as per rules of english
     response = client.get(UNIT_URL+"?search_word=chinese")

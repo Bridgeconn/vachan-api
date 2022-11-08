@@ -1,17 +1,12 @@
 '''Test cases for contentType related APIs'''
+import json
+from sqlalchemy.orm import Session
+from database import SessionLocal
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
 from .test_auth_basic import SUPER_USER,SUPER_PASSWORD, login, logout_user
 from .conftest import initial_test_users
-from crud import structurals_crud
-from schema import schemas
-import db_models
-from sqlalchemy.orm import Session
-from fastapi import Depends
-from dependencies import get_db
-from database import SessionLocal
-import json
 
 UNIT_URL = '/v2/contents'
 RESTORE_URL = '/v2/restore'
@@ -102,28 +97,31 @@ def test_post_incorrectvalue_contenttype():
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
 
-def populate_db(db_ : Session):
-     db_.execute('''INSERT INTO content_types(content_type) VALUES ('testdata')''')
-     db_.commit()
-     content_id = db_.execute('''SELECT content_type_id FROM content_types WHERE (content_type = 'testdata')''')
-     db_.commit()
-     [test_content_id] = content_id.fetchone()
-     test_id = test_content_id
-     return(test_id)
+def populate_db(db_ : Session): # pylint: disable=C0116
+    db_.execute('''INSERT INTO content_types(content_type) VALUES ('testdata')''')
+    db_.commit()
+    content_id = db_.execute('''SELECT content_type_id FROM content_types \
+    WHERE (content_type = 'testdata')''')
+    db_.commit()
+    [test_content_id] = content_id.fetchone()
+    test_id = test_content_id
+    return test_id
 
-def delete_db(db_ : Session):
-     test_id = populate_db(db_=db_)
-     data = {'contentType': "testdata", 'contentId': test_id}
-     del_data = json.dumps(data)
-     db_.execute(f'''INSERT INTO deleted_items(deleted_data,deleted_user,deleted_from) VALUES('{del_data}','registred_user','content_types')''')
-     db_.commit()
-     deleted_item_id = db_.execute('''SELECT item_id FROM deleted_items WHERE (deleted_data::text LIKE '%test%')''')
-     db_.commit()
-     [deleted_id] = deleted_item_id.fetchone()
-     db_.execute(f'''DELETE FROM content_types WHERE content_type_id = {test_id}''')
-     db_.commit()
-     return(deleted_id)
-    
+def delete_db(db_ : Session): # pylint: disable=C0116
+    test_id = populate_db(db_=db_)
+    data = {'contentType': "testdata", 'contentId': test_id}
+    del_data = json.dumps(data)
+    db_.execute(f'''INSERT INTO deleted_items(deleted_data,deleted_user,deleted_from) \
+    VALUES('{del_data}','registred_user','content_types')''')
+    db_.commit()
+    deleted_item_id = db_.execute('''SELECT item_id FROM deleted_items \
+    WHERE (deleted_data::text LIKE '%test%')''')
+    db_.commit()
+    [deleted_id] = deleted_item_id.fetchone()
+    db_.execute(f'''DELETE FROM content_types WHERE content_type_id = {test_id}''')
+    db_.commit()
+    return deleted_id
+
 def test_delete_default():
     ''' positive test case, checking for correct return of deleted content ID'''
     db_= SessionLocal()
@@ -144,7 +142,7 @@ def test_delete_default():
     response = client.delete(UNIT_URL, headers=headers, json=data)
     assert response.status_code == 200
     assert response.json()['message'] == f"Content with identity {t_id} deleted successfully"
-    
+
 def test_delete_content_id_string():
     '''positive test case, content id as string'''
     db_= SessionLocal()
@@ -152,8 +150,8 @@ def test_delete_content_id_string():
     testid = str(t_id)
     data = {"contentId":testid}
     headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
     response = client.delete(UNIT_URL, headers=headers, json=data)
     assert response.status_code == 200
@@ -165,8 +163,8 @@ def test_delete_incorrectdatatype():
     test_id = populate_db(db_=db_)
     data = test_id
     headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
     response = client.delete(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
@@ -175,8 +173,8 @@ def test_delete_missingvalue_content_id():
     '''contentId is mandatory in input data object'''
     data = {}
     headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
     response = client.delete(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
@@ -185,8 +183,8 @@ def test_delete_notavailable_content_id():
     ''' request a non existing content ID, Ensure there is no partial matching'''
     data = {"contentId":1000}
     headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
     response = client.delete(UNIT_URL,headers=headers,json=data)
     assert response.status_code == 502
@@ -197,7 +195,6 @@ def test_restore_default():
     db_= SessionLocal()
     deleted_item_id = delete_db(db_=db_)
     data = {"itemId": deleted_item_id}
-   
     #Add content with auth
     #Super Admin can only restore data
     data_admin   = {
@@ -213,7 +210,8 @@ def test_restore_default():
                 }
     response = client.post(RESTORE_URL, headers=headers_admin, json=data)
     assert response.status_code == 201
-    assert response.json()['message'] == f"Deleted Item with identity {deleted_item_id} restored successfully"
+    assert response.json()['message'] == f"Deleted Item with identity \
+    {deleted_item_id} restored successfully"
     logout_user(token_admin)
 
 def test_restore_incorrect_login():
@@ -221,7 +219,6 @@ def test_restore_incorrect_login():
     db_= SessionLocal()
     deleted_item_id = delete_db(db_=db_)
     data = {"itemId": deleted_item_id}
-    
     #Add test without login
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(RESTORE_URL, headers=headers, json=data)
