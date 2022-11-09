@@ -98,7 +98,8 @@ def test_post_incorrectvalue_contenttype():
     assert_input_validation_error(response)
 
 def populate_db(db_ : Session): # pylint: disable=C0116
-    db_.execute('''INSERT INTO content_types(content_type) VALUES ('testdata')''')
+    db_.execute('''INSERT INTO content_types(content_type) \
+    VALUES ('testdata')''')
     db_.commit()
     content_id = db_.execute('''SELECT content_type_id FROM content_types \
     WHERE (content_type = 'testdata')''')
@@ -108,8 +109,10 @@ def populate_db(db_ : Session): # pylint: disable=C0116
     return test_id
 
 def delete_db(db_ : Session): # pylint: disable=C0116
-    content_test_id = populate_db(db_=db_)
-    data = {'contentType': "testdata", 'contentId': content_test_id}
+    db_.execute('''DELETE FROM content_types WHERE content_type = 'testdata' ''')
+    db_.commit()
+    test_id = populate_db(db_=db_)
+    data = {'contentType': "testdata", 'contentId': test_id}
     del_data = json.dumps(data)
     db_.execute(f'''INSERT INTO deleted_items(deleted_data,deleted_user,deleted_from) \
     VALUES('{del_data}','registred_user','content_types')''')
@@ -118,47 +121,36 @@ def delete_db(db_ : Session): # pylint: disable=C0116
     WHERE (deleted_data::text LIKE '%test%')''')
     db_.commit()
     [deleted_id] = deleted_item_id.fetchone()
-    db_.execute(f'''DELETE FROM content_types WHERE content_type_id = {content_test_id}''')
+    db_.execute(f'''DELETE FROM content_types WHERE content_type_id = {test_id}''')
     db_.commit()
     return deleted_id
 
 def test_delete_default():
     ''' positive test case, checking for correct return of deleted content ID'''
-    # db_= SessionLocal()
-    # t_id = populate_db(db_=db_)
-    # data = {"contentId":t_id}
-    data = {
-        "contentType":"altbible"
-        }
+    db_= SessionLocal()
+    t_id = populate_db(db_=db_)
+    data = {"contentId":t_id}
     #Registerd User can only delete content type
     #Delete content without auth
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.delete(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 422
-    #assert response.json()['error'] == 'Authentication Error'
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
 
     #Delete content with auth
     headers = {"contentType": "application/json",
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.post(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 201
-
-    response = client.get(UNIT_URL+'?content_type=altbible')
-    assert response.status_code == 200
-    print("*******************************")
-    print(response.json())
-    content_id = response.json()[0]['contentId']
-
     response = client.delete(UNIT_URL, headers=headers, json=data)
     assert response.status_code == 200
-    print(response.json())
-    assert response.json()['message'] == f"Content with identity {content_id} deleted successfully"
+    assert response.json()['message'] == f"Content with identity {t_id} deleted successfully"
 
 def test_delete_content_id_string():
     '''positive test case, content id as string'''
     db_= SessionLocal()
+    db_.execute('''DELETE FROM content_types WHERE content_type= 'testdata' ''')
+    db_.commit()
     t_id = populate_db(db_=db_)
     testid = str(t_id)
     data = {"contentId":testid}
@@ -173,6 +165,8 @@ def test_delete_content_id_string():
 def test_delete_incorrectdatatype():
     '''the input data object should a json with "contentId" key within it'''
     db_= SessionLocal()
+    db_.execute('''DELETE FROM content_types WHERE content_type= 'testdata' ''')
+    db_.commit()
     test_id = populate_db(db_=db_)
     data = test_id
     headers = {"contentType": "application/json",
@@ -223,8 +217,8 @@ def test_restore_default():
                 }
     response = client.post(RESTORE_URL, headers=headers_admin, json=data)
     assert response.status_code == 201
-    assert response.json()['message'] == f"Deleted Item with identity \
-    {deleted_item_id} restored successfully"
+    assert response.json()['message'] == \
+    f"Deleted Item with identity {deleted_item_id} restored successfully"
     logout_user(token_admin)
 
 def test_restore_incorrect_login():
@@ -257,7 +251,8 @@ def test_restore_item_id_string():
                      }
     response = client.post(RESTORE_URL, headers=headers_admin, json=data)
     assert response.status_code == 201
-    assert response.json()['message'] == "Deleted Item with identity 60 restored successfully"
+    assert response.json()['message'] == \
+    f"Deleted Item with identity {item_id} restored successfully"
     logout_user(token_admin)
 
 def test_restore_incorrectdatatype():
