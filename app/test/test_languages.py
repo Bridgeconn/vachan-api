@@ -1,4 +1,5 @@
 '''Test cases for language related APIs'''
+from sqlalchemy.orm import Session
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
@@ -118,7 +119,7 @@ def test_post_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.post(UNIT_URL, headers=headers, json=data)        
+    response = client.post(UNIT_URL, headers=headers, json=data)
     assert response.status_code == 201
     assert response.json()['message'] == "Language created successfully"
     assert_positive_get(response.json()['data'])
@@ -138,10 +139,10 @@ def test_post_upper_case_code():
     assert response.json()['error'] == 'Authentication Error'
     #Add with Auth
     headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.post(UNIT_URL, headers=headers, json=data)        
+    response = client.post(UNIT_URL, headers=headers, json=data)
     assert response.status_code == 201
     assert response.json()['message'] == "Language created successfully"
     assert_positive_get(response.json()['data'])
@@ -163,7 +164,7 @@ def test_post_optional_script_direction():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.post(UNIT_URL, headers=headers, json=data)        
+    response = client.post(UNIT_URL, headers=headers, json=data)
     assert response.status_code == 201
     assert response.json()['message'] == "Language created successfully"
     assert_positive_get(response.json()['data'])
@@ -181,7 +182,7 @@ def test_post_incorrectdatatype1():
     headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
-            }        
+            }
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
 
@@ -239,7 +240,7 @@ def test_put_languages():
 
     #edit with created user
     data = {
-      "languageId": language_id,  
+      "languageId": language_id,
       "language": "new-lang-test-edited",
       "code": "x-abc"
     }
@@ -259,7 +260,6 @@ def test_put_languages():
     assert response.json()['error'] == "Authentication Error"
 
     #create a new user and edit the previous user created content
-    
     headers_auth2 = {"contentType": "application/json",
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['APIUser']['token']
@@ -272,13 +272,13 @@ def test_put_languages():
     data_admin   = {
     "user_email": SUPER_USER,
     "password": SUPER_PASSWORD
-    }      
+    }
     response =login(data_admin)
     assert response.json()['message'] == "Login Succesfull"
     token_admin =  response.json()['token']
 
     data = {
-      "languageId": language_id,  
+      "languageId": language_id,
       "language": "new-lang-test-edited-by-admin",
       "code": "x-abc"
     }
@@ -313,8 +313,7 @@ def test_searching():
         assert_positive_get(lang)
         if lang['code'] == "hi":
             found = True
-    assert found    
-
+    assert found
     response = client.get(UNIT_URL+"?search_word=sri%20lanka")
     assert len(response.json()) > 0
     found = False
@@ -322,7 +321,7 @@ def test_searching():
         assert_positive_get(lang)
         if lang['language'] == "Sinhala":
             found = True
-    assert found    
+    assert found
 
     # search word with special symbols in them
     response = client.get(UNIT_URL+"?search_word=sri%20lanka(Asia)")
@@ -332,7 +331,7 @@ def test_searching():
         assert_positive_get(lang)
         if lang['language'] == "Sinhala":
             found = True
-    assert found    
+    assert found
 
     response = client.get(UNIT_URL+"?search_word=sri-lanka-asia!")
     assert len(response.json()) > 0
@@ -341,8 +340,111 @@ def test_searching():
         assert_positive_get(lang)
         if lang['language'] == "Sinhala":
             found = True
-    assert found    
+    assert found
 
     # ensure search words are not stemmed as per rules of english
     response = client.get(UNIT_URL+"?search_word=chinese")
     assert len(response.json()) > 5
+
+def populate_language_db(db_ : Session): # pylint: disable=C0116
+    db_.execute('''INSERT INTO languages(language_code,language_name,script_direction)\
+     VALUES ('x-aaj','new-lang','left-to-right')''')
+    db_.commit()
+    lang_id = db_.execute('''SELECT language_id FROM languages \
+    WHERE (language_code = 'x-aaj')''')
+    db_.commit()
+    [test_language_id] = lang_id.fetchone()
+    return test_language_id
+
+def test_delete_default():
+    ''' positive test case, checking for correct return of deleted content ID'''
+    #Registerd User can only delete language
+    #Delete language without auth
+    data = {
+      "language": "new-lang",
+      "code": "x-abc",
+      "scriptDirection": "left-to-right"
+    }
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    response = client.delete(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 422
+    #Delete Language with Auth
+    #Insert New Language
+    headers = {"contentType": "application/json",
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+            }
+    response = client.post(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 201
+
+    #get language id
+    response = client.get(UNIT_URL+'?language_code=x-abc')
+    assert response.status_code == 200
+    language_id = response.json()[0]['languageId']
+    #delete language
+    delete_data = {"languageId":language_id}
+    response = client.delete(UNIT_URL, headers=headers, json=delete_data)
+    assert response.status_code == 200
+    assert response.json()['message'] ==\
+    f"Language with identity {language_id} deleted successfully"
+
+def test_delete_language_id_string():
+    '''positive test case, language id as string'''
+    data = {
+      "language": "new-lang",
+      "code": "x-abc",
+      "scriptDirection": "left-to-right"
+    }
+    headers = {"contentType": "application/json",
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+            }
+    response = client.post(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 201
+
+    #get language id
+    response = client.get(UNIT_URL+'?language_code=x-abc')
+    assert response.status_code == 200
+    language_id = response.json()[0]['languageId']
+    #delete language
+    lang_id = str(language_id)
+    data = {"languageId": lang_id}
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+            }
+    response = client.delete(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 200
+    assert response.json()['message'] == f"Language with identity {lang_id} deleted successfully"
+
+
+def test_delete_incorrectdatatype():
+    '''the input data object should a json with "languageId" key within it'''
+    data = 100100
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+            }
+    response = client.delete(UNIT_URL, headers=headers, json=data)
+    assert_input_validation_error(response)
+
+def test_delete_missingvalue_language_id():
+    '''languageId is mandatory in input data object'''
+    data = {}
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+            }
+    response = client.delete(UNIT_URL, headers=headers, json=data)
+    assert_input_validation_error(response)
+
+def test_delete_notavailable_language_id():
+    ''' request a non existing content ID, Ensure there is not partial matching'''
+    data = {"languageId":1000}
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+            }
+    response = client.delete(UNIT_URL,headers=headers,json=data)
+    assert response.status_code == 502
+    assert response.json()['error'] == "Database Error"
