@@ -108,8 +108,8 @@ def populate_db(db_ : Session): # pylint: disable=C0116
     return test_id
 
 def delete_db(db_ : Session): # pylint: disable=C0116
-    test_id = populate_db(db_=db_)
-    data = {'contentType': "testdata", 'contentId': test_id}
+    content_test_id = populate_db(db_=db_)
+    data = {'contentType': "testdata", 'contentId': content_test_id}
     del_data = json.dumps(data)
     db_.execute(f'''INSERT INTO deleted_items(deleted_data,deleted_user,deleted_from) \
     VALUES('{del_data}','registred_user','content_types')''')
@@ -118,30 +118,43 @@ def delete_db(db_ : Session): # pylint: disable=C0116
     WHERE (deleted_data::text LIKE '%test%')''')
     db_.commit()
     [deleted_id] = deleted_item_id.fetchone()
-    db_.execute(f'''DELETE FROM content_types WHERE content_type_id = {test_id}''')
+    db_.execute(f'''DELETE FROM content_types WHERE content_type_id = {content_test_id}''')
     db_.commit()
     return deleted_id
 
 def test_delete_default():
     ''' positive test case, checking for correct return of deleted content ID'''
-    db_= SessionLocal()
-    t_id = populate_db(db_=db_)
-    data = {"contentId":t_id}
+    # db_= SessionLocal()
+    # t_id = populate_db(db_=db_)
+    # data = {"contentId":t_id}
+    data = {
+        "contentType":"altbible"
+        }
     #Registerd User can only delete content type
     #Delete content without auth
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.delete(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 401
-    assert response.json()['error'] == 'Authentication Error'
+    assert response.status_code == 422
+    #assert response.json()['error'] == 'Authentication Error'
 
     #Delete content with auth
     headers = {"contentType": "application/json",
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
+    response = client.post(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 201
+
+    response = client.get(UNIT_URL+'?content_type=altbible')
+    assert response.status_code == 200
+    print("*******************************")
+    print(response.json())
+    content_id = response.json()[0]['contentId']
+
     response = client.delete(UNIT_URL, headers=headers, json=data)
     assert response.status_code == 200
-    assert response.json()['message'] == f"Content with identity {t_id} deleted successfully"
+    print(response.json())
+    assert response.json()['message'] == f"Content with identity {content_id} deleted successfully"
 
 def test_delete_content_id_string():
     '''positive test case, content id as string'''

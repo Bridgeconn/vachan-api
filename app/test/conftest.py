@@ -67,7 +67,7 @@ initial_test_users = {
                 "test_user_id": "",
                 "app" : schema_auth.App.AG.value
             },
-            "VachanUser":{
+            "VachanUser":{ 
                 "user_email": "vachantest@mail.test",
                 "password": "passwordtest@1",
                 "firstname": "Vachan",
@@ -119,8 +119,8 @@ initial_test_users = {
 def create_user_session_run_at_start():
     try:
         print("Session fixture for create user------------------>")
-        from .test_auth_basic import register,delete_user_identity,\
-        assign_roles,SUPER_USER,SUPER_PASSWORD
+        from .test_auth_basic import register,delete_user_identity,assign_roles,SUPER_USER,SUPER_PASSWORD
+        
         for user_data in initial_test_users:
             current_user = initial_test_users[user_data]
             data = {
