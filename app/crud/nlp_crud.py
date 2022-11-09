@@ -640,7 +640,8 @@ def gloss_forward_reverse_query(db_, word, source_lang, target_lang, total, *arg
             db_models.TranslationMemory.target_language.has(code=target_lang),
             text("soundex(source_token_romanized) = soundex(:word2)").\
                 bindparams(word2=utils.to_eng(word)),
-            text("levenshtein(source_token,:word3) < 4").bindparams(word3=word))
+            text("levenshtein(source_token,:word3) < 4").bindparams(word3=word)
+            ).order_by(text("lev_score"))
     reverse_query = db_.query(db_models.TranslationMemory).with_entities(
         db_models.TranslationMemory.translation,
         db_models.TranslationMemory.token,
@@ -651,7 +652,8 @@ def gloss_forward_reverse_query(db_, word, source_lang, target_lang, total, *arg
             db_models.TranslationMemory.target_language.has(code=source_lang),
             text("soundex(translation_romanized) = soundex(:word2)").\
                 bindparams(word2=utils.to_eng(word)),
-            text("levenshtein(translation,:word3) < 4").bindparams(word3=word))
+            text("levenshtein(translation,:word3) < 4").bindparams(word3=word)
+            ).order_by(text("lev_score"))
     forward_dict_entires =  forward_query.all()
     reverse_dict_entires = reverse_query.all()
     matched_word = None
