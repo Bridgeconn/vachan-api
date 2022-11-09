@@ -29,7 +29,6 @@ def create_content_type(db_: Session, content: schemas.ContentTypeCreate):
     '''Adds a row to content_types table'''
     db_content = db_models.ContentType(contentType = content.contentType)
     db_.add(db_content)
-    db_.execute('''INSERT INTO content_types(content_type) VALUES ('testdata')''')
     # db_.commit()
     # db_.refresh(db_content)
     return db_content
