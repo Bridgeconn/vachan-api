@@ -203,7 +203,6 @@ def tokenize(db_:Session, src_lang, sent_list, #pylint: disable=too-many-locals
         if "draftMeta" in sent:
             for meta in sent['draftMeta']:
                 if meta[2] == "confirmed":
-                    print("Meta with confirmed", meta)
                     seg = sent['sentence'][prev_index:meta[0][0]]
                     if len(seg) > 0:
                         segments.append(seg)
@@ -277,8 +276,8 @@ def replace_token(source, token_offset, translation,draft_meta, tag="confirmed",
     trans_length = len(translation)
     translation_offset = [None, None]
     if draft_meta is None or len(draft_meta) == 0:
-        draft = source
-        draft_meta = [((0,len(source)), (0,len(source)), "untranslated")]
+        draft = ""
+        draft_meta = [[[0,len(source)], [0,0], "untranslated"]]
     for meta in draft_meta:
         tkn_offset = meta[0]
         trans_offset = meta[1]
@@ -295,8 +294,9 @@ def replace_token(source, token_offset, translation,draft_meta, tag="confirmed",
                 translation_offset[0] = trans_offset[0]
                 updated_draft += translation
             elif token_offset[0] > tkn_offset[0]: # begins within this segment
-                updated_draft += source[tkn_offset[0]: token_offset[0]]
-                new_seg_len = token_offset[0] - tkn_offset[0]
+                # updated_draft += source[tkn_offset[0]: token_offset[0]]
+                # new_seg_len = token_offset[0] - tkn_offset[0]
+                new_seg_len = 0
                 updated_meta.append(((tkn_offset[0], token_offset[0]),
                     (trans_offset[0], trans_offset[0]+new_seg_len),"untranslated"))
                 translation_offset[0] = trans_offset[0]+new_seg_len
@@ -308,14 +308,14 @@ def replace_token(source, token_offset, translation,draft_meta, tag="confirmed",
                 updated_meta.append((token_offset, translation_offset, tag))
                 offset_diff = translation_offset[1] - trans_offset[1]
             elif token_offset[1] < tkn_offset[1]: # ends within this segment
-                trailing_seg = source[token_offset[1]: tkn_offset[1]]
+                # trailing_seg = source[token_offset[1]: tkn_offset[1]]
                 translation_offset[1] = translation_offset[0]+trans_length
                 updated_meta.append((token_offset, translation_offset, tag))
-                updated_draft += trailing_seg
+                # updated_draft += trailing_seg
                 updated_meta.append(((token_offset[1], tkn_offset[1]),
-                    (translation_offset[1],translation_offset[1]+len(trailing_seg)),
+                    (translation_offset[1],translation_offset[1]),
                     "untranslated"))
-                offset_diff = translation_offset[1]+len(trailing_seg) - trans_offset[1]
+                offset_diff = translation_offset[1] - trans_offset[1]
             else: # ends after this segment
                 pass
 
