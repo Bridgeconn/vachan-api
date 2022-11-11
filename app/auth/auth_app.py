@@ -1,5 +1,4 @@
 """App Authentication related functions related to Kratos API"""
-
 import os
 import json
 import requests
@@ -14,11 +13,8 @@ ADMIN_BASE_URL_APP = os.environ.get("VACHAN_KRATOS_APP_ADMIN_URL", "http://127.0
 def app_register_kratos(register_details, db_):#pylint: disable=too-many-locals, inconsistent-return-statements, unused-argument
     """register app with kratos"""
     # https://github.com/ory/kratos/issues/765 - not yet implemented to select schema in
-    #reg flow creation
-    # work around for obtaining the same
     registerapp_url = PUBLIC_BASE_URL_APP+"registration/api"
     reg_flow = requests.get(registerapp_url, timeout=10)
-    print("register -------------: ", register_details.contacts["phone"])
     if reg_flow.status_code == 200:
         password = register_details["password"] if \
             "password" in register_details else \

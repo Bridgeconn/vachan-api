@@ -42,7 +42,7 @@ db_: Session = Depends(get_db)):#pylint: disable=unused-argument
 
 @router.get('/v2/user/login',response_model=schema_auth.LoginResponse,
 responses={401: {"model": schemas.ErrorResponse}}
-,tags=["Authentication", "App"])
+,tags=["Authentication"])
 @get_auth_access_check_decorator
 async def login(user_email: str,password: types.SecretStr,
     request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
@@ -57,7 +57,7 @@ async def login(user_email: str,password: types.SecretStr,
 @router.get('/v2/user/logout',response_model=schema_auth.LogoutResponse,
 responses={403: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
 401: {"model": schemas.ErrorResponse}}
-,tags=["Authentication", "App"])
+,tags=["Authentication"])
 def logout(request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
     db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Logout
@@ -146,7 +146,7 @@ async def edit_user(request: Request,#pylint: disable=unused-argument
 @router.delete('/v2/user/delete-identity',response_model=schema_auth.IdentityDeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
-    status_code=200,tags=["Authentication",  "App"])
+    status_code=200,tags=["Authentication"])
 @get_auth_access_check_decorator
 async def delete_user(user:schema_auth.UserIdentity,request: Request,#pylint: disable=unused-argument
 user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
@@ -173,3 +173,17 @@ db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     log.info('In App Registration')
     log.debug('APp registration:%s',register_details)
     return app_register_kratos(register_details, db_)
+
+@router.get('/v2/app/key',response_model=schema_auth.LoginResponse,
+responses={401: {"model": schemas.ErrorResponse}}
+,tags=["App"])
+@get_auth_access_check_decorator
+async def login(user_email: str,password: types.SecretStr,
+    request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+    db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+    '''Generate new Key
+    * user_email and password fiels are mandatory
+    * Successful login will return a key for user for a time period'''
+    log.info('In key Login')
+    log.debug('login:%s',user_email)
+    return user_login_kratos(user_email,password)

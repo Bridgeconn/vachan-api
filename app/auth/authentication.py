@@ -34,6 +34,8 @@ def get_current_user_data(recieve_token, app=False):
     user_data = requests.get(USER_SESSION_URL, headers=headers, timeout=10)
     data = json.loads(user_data.content)
     if user_data.status_code == 200 and not app:
+        if data["identity"]["schema_id"] == "app":
+            raise UnprocessableException("The User or token is not a valid type")
         details["user_id"] = data["identity"]["id"]
         if "userrole" in data["identity"]["traits"]:
             details["user_roles"] = data["identity"]["traits"]["userrole"]
@@ -43,12 +45,14 @@ def get_current_user_data(recieve_token, app=False):
         details["app_id"] = data["identity"]["id"]
         details["app_name"] = data["identity"]["traits"]["name"]
     elif user_data.status_code == 401:
-        # raise UnAuthorizedException(detail=data["error"])
+        if app:
+            raise UnAuthorizedException("Requesting app is not registered")
         details["user_id"] =None
         details["user_roles"] = ['noAuthRequired']
         details["error"] = UnAuthorizedException(detail=data["error"])
     elif user_data.status_code == 500:
-        # raise GenericException(data["error"])
+        if app:
+            raise UnAuthorizedException("Requesting app is not registered")
         details["user_id"] =None
         details["user_roles"] = ['noAuthRequired']
         details["error"] = GenericException(detail=data["error"])
@@ -58,7 +62,6 @@ def get_current_user_data(recieve_token, app=False):
 optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 async def get_user_or_none(token: str = Depends(optional_oauth2_scheme)):
     """optional auth for getting token of logined user not raise error if no auth"""
-    # print("token===>",token)
     user_details = get_current_user_data(token)
     return user_details
 
@@ -74,21 +77,6 @@ def get_user_or_none_graphql(info):
         token = None
     user_details = get_current_user_data(token)
     return user_details, req
-
-####################### Access control logics old ######################################
-# with open('auth/access_rules.json','r') as file:
-#     ACCESS_RULES = json.load(file)
-#     log.warning("Startup event to read Access Rules")
-#     log.debug(ACCESS_RULES)
-
-# APIPERMISSIONTABLE = []
-# with open('auth/api-permissions.csv','r') as file:
-#     csvreader = csv.reader(file)
-#     header = next(csvreader)
-#     for table_row in csvreader:
-#         APIPERMISSIONTABLE.append(table_row)
-#     log.warning("Startup event to load permission table")
-#     log.debug(APIPERMISSIONTABLE)
 
 def get_default_role_for_app(app_key):
     """get defaulr user role for app"""
@@ -107,7 +95,6 @@ def api_resourcetype_map(endpoint, path_params=None):
     elif endpoint.startswith('/v2/autographa/project'):
         resource_type = 'project'
     elif endpoint.startswith('/v2/user'):
-        # resource_type = schema_auth.ResourceType.USER.value
         resource_type = 'user'
     elif endpoint.startswith("/v2/translation") or endpoint.startswith("/v2/nlp"):
         resource_type = 'translation'
@@ -149,10 +136,7 @@ def search_api_permission_map(endpoint, method, client_app, path_params=None, re
             table_url = table_url.replace("{"+key+"}", "*")
         if table_url == req_url:
             if row[1].upper() == method.upper():
-                # if row[2] == "None" or row[2].lower() == client_app.lower():
-                # print("appname : ", row[2].lower(), client_app.lower())
                 if row[2].lower() == client_app.lower():
-                    # if row[4] == 'None' or row[4].lower() == resource.lower():
                     if row[4].lower() == resource.lower():
                         log.debug("API-Permission map:%s, resource:%s", row[5], resource)
                         return (resource, row[5])
@@ -163,7 +147,6 @@ def get_access_tag(db_, resource_type, path_params=None, kw_args = None, resourc
     '''obtain access tag based on resource-url direct link or value stored in DB'''
     db_resources = [key.lower() for key in RESOURCE_TYPE]
     resource_tag_map = {
-        # schema_auth.ResourceType.METACONTENT: ["meta-content","open-access"],
         'user': ['user'],
         'project': ['translation-project'],
         'translation': ['generic-translation'],
@@ -267,7 +250,8 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         filtering_required = kwargs.get("filtering_required", False)
         # checking Requested App
         if 'app' in request.headers:
-            client_app = get_current_user_data(request.headers['app'], app=True)["app_name"].lower()
+            client_app = get_current_user_data(request.headers['app'], app=True)
+            print("app name ---------->", client_app)
             if not client_app in [key.lower() for key in APPS]:
                 print(" ERROR : -----> Not a Valid app , app is not registred ")
                 raise UnAuthorizedException("Requesting app is not registered")
