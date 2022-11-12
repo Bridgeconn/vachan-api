@@ -256,7 +256,10 @@ def test_empty_draft_initalization():
     for meta in resp.json()[0]['draftMeta']:
         if meta[0] == [5,11] and meta[2] == "suggestion":
             found_jungle_meta = True
-            assert meta[1] == [resp.json()[0]['draft'].index("കാട്"), len("കാട്")]
+            print("draft:", resp.json()[0]['draft'])
+            print("draft.index('കാട്'')",resp.json()[0]['draft'].index("കാട്"))
+            trans_index = resp.json()[0]['draft'].index("കാട്")
+            assert meta[1][0] == trans_index
         elif meta[2] == "untranslated":
             found_untranslated = True
     assert found_jungle_meta
