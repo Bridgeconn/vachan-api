@@ -757,7 +757,7 @@ def auto_translate_token_logic(db_,tokens, sent, source_lang, target_lang):
                 # splits the source sentence into tokens(in draftmeta)
                 # even if there is no transltion suggestion available.
                 draft, meta = nlp_utils.replace_token(sent.sentence, offset,
-                    token, sent.draftMeta, "untranslated",draft=sent.draft)
+                    "", sent.draftMeta, "untranslated",draft=sent.draft)
             sent.draft = draft
             sent.draftMeta = meta
 
