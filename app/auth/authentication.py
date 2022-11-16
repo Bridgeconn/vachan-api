@@ -249,11 +249,14 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         path_params = request.path_params
         user_details = kwargs.get('user_details')
         resource_type = kwargs.get("operates_on", None)
+        requested_app_key = kwargs.get("app_key", None)
         filtering_required = kwargs.get("filtering_required", False)
         # checking Requested App
-        if 'app' in request.headers:
-            client_app = get_current_user_data(request.headers['app'], app=True)
-            print("app name ---------->", client_app)
+        if requested_app_key is not None :
+            print("-------------->", requested_app_key.get_secret_value())
+            client_app = get_current_user_data(requested_app_key.get_secret_value()\
+                , app=True)
+            print("request from app name ---------->", client_app)
             if not client_app in [key.lower() for key in APPS]:
                 print(" ERROR : -----> Not a Valid app , app is not registred ")
                 raise UnAuthorizedException("Requesting app is not registered")
@@ -585,15 +588,15 @@ def register_flow_fail(reg_response,email,user_role,reg_req):
                 raise UnprocessableException(error_base[i]['messages'][0]['text'])
     return data
 
-def user_register_kratos(register_details, request):
+def user_register_kratos(register_details, request, app_key=None):
     """user registration kratos"""
     data = {}
     email = register_details.email
     password = register_details.password
 
     # get  user role
-    if 'app' in request.headers:
-        user_role = get_default_role_for_app(request.headers["app"])
+    if app_key is not None:
+        user_role = get_default_role_for_app(app_key)
     else:
         user_role = 'APIUser'
 

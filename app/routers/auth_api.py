@@ -28,6 +28,7 @@ async def form_login(form_data: OAuth2PasswordRequestForm = Depends()):
     status_code=201,tags=["Authentication"])
 @get_auth_access_check_decorator
 async def register(register_details:schema_auth.Registration,request: Request,#pylint: disable=unused-argument
+app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
 # app_type: schema_auth.AppInput=Query(schema_auth.App.API),
 user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
 db_: Session = Depends(get_db)):#pylint: disable=unused-argument
@@ -38,7 +39,7 @@ db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     * first and last name fields are optional'''
     log.info('In User Registration')
     log.debug('registration:%s',register_details)
-    return user_register_kratos(register_details, request)
+    return user_register_kratos(register_details, request, app_key)
 
 @router.get('/v2/user/login',response_model=schema_auth.LoginResponse,
 responses={401: {"model": schemas.ErrorResponse}}
@@ -46,6 +47,7 @@ responses={401: {"model": schemas.ErrorResponse}}
 @get_auth_access_check_decorator
 async def login(user_email: str,password: types.SecretStr,
     request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Login for All Users
     * user_email and password fiels are mandatory
@@ -59,6 +61,7 @@ responses={403: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResp
 401: {"model": schemas.ErrorResponse}}
 ,tags=["Authentication"])
 def logout(request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Logout
     * Loging out will end the expiry of a token even if the time period not expired.'''
@@ -78,6 +81,7 @@ responses={401: {"model": schemas.ErrorResponse}}
 ,tags=["Authentication"])
 @get_auth_access_check_decorator
 async def get_identities_list(request: Request,#pylint: disable=unused-argument
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     name: str = Query(None, example="Bridgeconn"),
     user_id: str = Query(None, example="ecf57420-9rg0-40t8-b56b-dce1fc52c452"),
     roles:List[schema_auth.FilterRoles]=Query([schema_auth.FilterRoles.ALL]),
@@ -101,6 +105,7 @@ responses={401: {"model": schemas.ErrorResponse}}
 ,tags=["Authentication"])
 @get_auth_access_check_decorator
 async def get_user_profile(request: Request,#pylint: disable=unused-argument
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     user_id:str =Path(...,example="4bd012fd-7de8-4d66-928f-4925ee9bb"),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''fetches user profile Data'''
@@ -115,6 +120,7 @@ responses={403: {"model": schemas.ErrorResponse},
 status_code=201,tags=["Authentication"])
 @get_auth_access_check_decorator
 async def userrole(role_data:schema_auth.UserRole,request: Request,#pylint: disable=unused-argument
+app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
 user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Update User Roles.
     * User roles should provide in an ARRAY
@@ -132,6 +138,7 @@ responses={401: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorRes
 500: {"model": schemas.ErrorResponse}},status_code=201,tags=["Authentication"])
 @get_auth_access_check_decorator
 async def edit_user(request: Request,#pylint: disable=unused-argument
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     user_id:str =Path(...,example="4bd012fd-7de8-4d66-928f-4925ee9bb"),
     edit_details:schema_auth.EditUser = Body(...),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
@@ -147,6 +154,7 @@ async def edit_user(request: Request,#pylint: disable=unused-argument
     status_code=200,tags=["Authentication"])
 @get_auth_access_check_decorator
 async def delete_user(user:schema_auth.UserIdentity,request: Request,#pylint: disable=unused-argument
+app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
 user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Delete Identity
     * unique Identity key can be used to delete an exisiting identity'''
@@ -163,6 +171,7 @@ user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint:
     status_code=201,tags=["App"])
 # @get_auth_access_check_decorator
 async def register_app(register_details:schema_auth.RegistrationAppIn,request: Request,#pylint: disable=unused-argument
+app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
 user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
 db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Registration for Apps
@@ -178,6 +187,7 @@ responses={401: {"model": schemas.ErrorResponse}}
 @get_auth_access_check_decorator
 async def generate_key(app_email: str,password: types.SecretStr,
     request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument,
     db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Generate new Key
     * app_email and password fiels are mandatory
@@ -206,6 +216,7 @@ responses={401: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorRes
 500: {"model": schemas.ErrorResponse}},status_code=201,tags=["App"])
 @get_auth_access_check_decorator
 async def edit_app(request: Request,#pylint: disable=unused-argument
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     app_id:str =Path(...,example="4bd012fd-7de8-4d66-928f-4925ee9bb"),
     edit_details:schema_auth.EditApp = Body(...),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
@@ -220,6 +231,7 @@ responses={401: {"model": schemas.ErrorResponse}}
 ,tags=["App"])
 @get_auth_access_check_decorator
 async def get_apps_list(request: Request,#pylint: disable=unused-argument
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     name: str = Query(None, example="Vachan-online"),
     app_id: str = Query(None, example="ecf57420-9rg0-40t8-b56b-dce1fc52c452"),
     organization: str = Query(None, example="Bridgeconn"),
@@ -244,6 +256,7 @@ async def get_apps_list(request: Request,#pylint: disable=unused-argument
     status_code=200,tags=["App"])
 @get_auth_access_check_decorator
 async def delete_app(app_id:str,request: Request,#pylint: disable=unused-argument
+app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
 user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Delete App
     * unique app id can be used to delete an exisiting app'''

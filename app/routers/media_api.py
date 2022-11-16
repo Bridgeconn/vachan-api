@@ -5,6 +5,7 @@ from typing import  Optional
 from fastapi import APIRouter, Query, Request, Depends
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
+from pydantic import types
 from schema import schemas,schema_auth
 from routers.content_apis import get_source
 from crud import media_crud
@@ -70,6 +71,7 @@ accessible to the user")
     status_code=200, tags=["Media"])
 @get_auth_access_check_decorator
 async def stream_media(request: Request, #pylint: disable=unused-argument,too-many-arguments
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     access_token: str = Query(None),
     repo: str = Query(None,example="kavitha.raju/trial-media-project"),
     tag: str = Query(None,example="main"),
@@ -110,6 +112,7 @@ async def stream_media(request: Request, #pylint: disable=unused-argument,too-ma
     status_code=200, tags=["Media"])
 @get_auth_access_check_decorator
 async def download_media(request: Request, #pylint: disable=too-many-arguments
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     access_token: str = Query(None),
     repo: str = Query(None,example="kavitha.raju/trial-media-project"),
     tag: str = Query(None,example="main"),

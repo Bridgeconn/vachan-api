@@ -2,6 +2,7 @@
 from fastapi import APIRouter, Request, Path, Query, Depends, Body
 from sqlalchemy.orm import Session
 import usfm_grammar
+from pydantic import types
 from dependencies import get_db, log
 from routers import content_apis
 from schema import schemas, schema_content
@@ -21,6 +22,7 @@ router = APIRouter()
     status_code=200, tags=['File Handling', 'Bibles'])
 @get_auth_access_check_decorator
 async def usfm_parse_source_bible(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name: schemas.TableNamePattern = Path(..., example="hi_IRV_1_bible"),
     book_code: schemas.BookCodePattern=Path(..., example="mat"),
     output_format: usfm_grammar.Format = Path(..., example="usx"),
@@ -35,6 +37,7 @@ async def usfm_parse_source_bible(request: Request,
     log.info("In usfm_parse_source_bible router function")
     log.debug('source_name: %s, format: %s, filter: %s', source_name,output_format,content_filter)
     src_response = await content_apis.get_available_bible_book(
+        app_key=app_key,
         request=request,
         source_name=source_name,
         book_code=book_code,
@@ -57,6 +60,7 @@ async def usfm_parse_source_bible(request: Request,
     status_code=200, tags=['File Handling'])
 @get_auth_access_check_decorator
 async def parse_uploaded_usfm(request:Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     output_format: usfm_grammar.Format = Path(..., example="usx"),
     content_filter: usfm_grammar.Filter = Query(usfm_grammar.Filter.SCRIPTURE_PARAGRAPHS),
     input_usfm: schema_content.UploadedUsfm = Body(...),

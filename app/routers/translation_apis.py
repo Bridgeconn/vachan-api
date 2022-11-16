@@ -4,7 +4,7 @@ from typing import List
 from fastapi import APIRouter, Query, Body, Depends, Request, Path, BackgroundTasks
 from sqlalchemy.orm import Session
 
-
+from pydantic import types
 from dependencies import get_db, log, AddHiddenInput
 from schema import schemas, schemas_nlp, schema_auth, schema_content
 from crud import nlp_crud, projects_crud, nlp_sw_crud
@@ -22,6 +22,7 @@ router = APIRouter()
     status_code=200, tags=['Autographa-Project management'])
 @get_auth_access_check_decorator
 async def get_projects(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     project_name:str=Query(None,example="Hindi-Bilaspuri Gospels"),
     source_language:schemas.LangCodePattern=Query(None,example='en'),
     target_language:schemas.LangCodePattern=Query(None,example='ml'),
@@ -44,6 +45,7 @@ async def get_projects(request: Request,
 @get_auth_access_check_decorator
 async def create_project(request: Request,
     project_obj:schemas_nlp.TranslationProjectCreate,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Creates a new autographa MT project'''
     log.info('In create_project')
@@ -60,6 +62,7 @@ async def create_project(request: Request,
     tags=['Autographa-Project management'])
 @get_auth_access_check_decorator
 async def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectEdit,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db),
     # operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.PROJECT.value))):
     operates_on=Depends(AddHiddenInput(value='project'))):
@@ -76,6 +79,7 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
         # request.scope['method'] = 'GET'
         # request._url = URL('/v2/sources')#pylint: disable=protected-access
         response = await content_apis.extract_text_contents(
+            app_key=app_key,
             request=request,
             source_name=project_obj.selectedBooks.bible,
             books=project_obj.selectedBooks.books,
@@ -107,6 +111,7 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
     tags=['Autographa-Project management'])
 @get_auth_access_check_decorator
 async def add_user(request: Request,project_id:int, user_id:str,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Adds new user to a project.'''
     log.info('In add_user')
@@ -122,6 +127,7 @@ async def add_user(request: Request,project_id:int, user_id:str,
     404: {"model": schemas.ErrorResponse}},tags=['Autographa-Project management'])
 @get_auth_access_check_decorator
 async def update_user(request: Request,user_obj:schemas_nlp.ProjectUser,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):
     '''Changes role, metadata or active status of user of a project.'''
     log.info('In update_user')
@@ -139,6 +145,7 @@ async def update_user(request: Request,user_obj:schemas_nlp.ProjectUser,
     status_code=200, tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def get_tokens(request: Request, project_id:int=Query(...,example="1022004"),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=(410010001, 41001999)),
     sentence_id_list:List[int]=Query(None, example=[41001001,41001002,41001003]),
@@ -166,6 +173,7 @@ async def get_tokens(request: Request, project_id:int=Query(...,example="1022004
     status_code=201, tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def apply_token_translations(request: Request,project_id:int=Query(...,example="1022004"),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     token_translations:List[schemas_nlp.TokenUpdate]=Body(...), return_drafts:bool=True,
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Updates drafts using the provided token translations and returns updated verses'''
@@ -183,6 +191,7 @@ async def apply_token_translations(request: Request,project_id:int=Query(...,exa
     tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def get_token_translation(request: Request,project_id:int=Query(...,example="1022004"),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     token:str=Query(...,example="duck"),
     sentence_id:int=Query(..., example="41001001"),
     offset:List[int]=Query(..., max_items=2,min_items=2,example=[0,4]),
@@ -201,6 +210,7 @@ async def get_token_translation(request: Request,project_id:int=Query(...,exampl
     tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def get_token_sentences(request: Request,project_id:int=Query(...,example="1022004"),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     token:str=Query(...,example="duck"),
     occurrences:List[schemas_nlp.TokenOccurence]=Body(..., example=[
         {"sentenceId":41001001, "offset":[0,4]}]),
@@ -218,6 +228,7 @@ async def get_token_sentences(request: Request,project_id:int=Query(...,example=
     tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def get_draft(request: Request,project_id:int=Query(...,example="1022004"),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
@@ -240,6 +251,7 @@ async def get_draft(request: Request,project_id:int=Query(...,example="1022004")
     tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def update_draft(request: Request,project_id:int=Query(...,example="1022004"),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     sentence_list:List[schemas_nlp.ProjectDraftInput]=Body(...),
     user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):
     '''Obtains draft, as per current project status, in any of the formats:
@@ -257,6 +269,7 @@ async def update_draft(request: Request,project_id:int=Query(...,example="102200
     tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def get_project_source(request: Request,project_id:int=Query(...,example="1022004"),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
@@ -276,6 +289,7 @@ async def get_project_source(request: Request,project_id:int=Query(...,example="
     tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def get_progress(request: Request,project_id:int=Query(...,example="1022004"),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
@@ -295,6 +309,7 @@ async def get_progress(request: Request,project_id:int=Query(...,example="102200
     tags=['Autographa-Translation'])
 @get_auth_access_check_decorator
 async def get_project_versification(request: Request,project_id:int=Query(...,example="1022004"),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Obtains versification structure for source sentences or verses'''
     log.info('In get_project_versification')
@@ -309,6 +324,7 @@ async def get_project_versification(request: Request,project_id:int=Query(...,ex
     tags=["Translation Suggestion"])
 @get_auth_access_check_decorator
 async def suggest_auto_translation(request: Request,project_id:int=Query(...,example="1022004"),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
@@ -331,6 +347,7 @@ async def suggest_auto_translation(request: Request,project_id:int=Query(...,exa
     tags=['Generic Translation'])
 @get_auth_access_check_decorator
 async def tokenize(request: Request,source_language:schemas.LangCodePattern=Query(...,example="hi"),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     sentence_list:List[schemas_nlp.SentenceInput]=Body(...),
     target_language:schemas.LangCodePattern=Query(None,example="ml"),
     use_translation_memory:bool=True, include_phrases:bool=True, include_stopwords:bool=False,
@@ -358,6 +375,7 @@ async def tokenize(request: Request,source_language:schemas.LangCodePattern=Quer
     tags=['Generic Translation'])
 @get_auth_access_check_decorator
 async def token_replace(request: Request,sentence_list:List[schemas_nlp.DraftInput]=Body(...),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     token_translations:List[schemas_nlp.TokenUpdate]=Body(...),
     source_language:schemas.LangCodePattern=Query(...,example='hi'),
     target_language:schemas.LangCodePattern=Query(...,example='ml'),
@@ -380,6 +398,7 @@ async def token_replace(request: Request,sentence_list:List[schemas_nlp.DraftInp
     tags=['Generic Translation'])
 @get_auth_access_check_decorator
 async def generate_draft(request: Request,sentence_list:List[schemas_nlp.DraftInput]=Body(...),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     doc_type:schemas_nlp.TranslationDocumentType=Query(schemas_nlp.TranslationDocumentType.USFM),
     user_details =Depends(get_user_or_none)):
     '''Converts the drafts in input sentences to following output formats:
@@ -394,6 +413,7 @@ async def generate_draft(request: Request,sentence_list:List[schemas_nlp.DraftIn
     tags=["Translation Suggestion"])
 @get_auth_access_check_decorator
 async def suggest_translation(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_language:schemas.LangCodePattern=Query(...,example="hi"),
     target_language:schemas.LangCodePattern=Query(...,example="ml"),
     sentence_list:List[schemas_nlp.DraftInput]=Body(...),
@@ -414,6 +434,7 @@ async def suggest_translation(request: Request,
     tags=["Nlp"])
 @get_auth_access_check_decorator
 async def get_glossary(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_language:schemas.LangCodePattern=Query(...,example="en"),
     target_language:schemas.LangCodePattern=Query(...,example="hi"),
     token:str=Query(...,example="duck"),
@@ -435,6 +456,7 @@ async def get_glossary(request: Request,
     tags=["Nlp"])
 @get_auth_access_check_decorator
 async def add_gloss(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_language:schemas.LangCodePattern=Query(...,example='en'),
     target_language:schemas.LangCodePattern=Query(..., example="hi"),
     token_translations:List[schemas_nlp.GlossInput]=Body(...),
@@ -455,6 +477,7 @@ async def add_gloss(request: Request,
 async def add_alignments(request: Request,
     source_language:schemas.LangCodePattern, target_language:schemas.LangCodePattern,
     alignments:List[schemas_nlp.Alignment],
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Prepares training data with alignments and update translation memory & suggestion models'''
     log.info('In add_alignments')
@@ -472,6 +495,7 @@ async def add_alignments(request: Request,
     tags=["Lookups"])
 @get_auth_access_check_decorator
 async def get_stop_words(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     language_code:schemas.LangCodePattern=Path(...,example="hi"),
     include_system_defined:bool=True, include_user_defined:bool=True,
     include_auto_generated :bool=True, only_active:bool=True, skip: int=Query(0, ge=0),
@@ -495,6 +519,7 @@ async def get_stop_words(request: Request,
     tags=['Lookups'])
 @get_auth_access_check_decorator
 async def update_stop_words(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     language_code:schemas.LangCodePattern=Path(...,example="hi"),
     sw_info:schemas_nlp.StopWordUpdate=Body(...),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
@@ -512,6 +537,7 @@ async def update_stop_words(request: Request,
     tags=['Lookups'])
 @get_auth_access_check_decorator
 async def add_stopwords(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-arguments
     language_code:schemas.LangCodePattern=Path(...,example="hi"),
     stopwords_list:List[str]=Body(..., example=["और", "के", "उसका"]),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
@@ -530,6 +556,7 @@ async def add_stopwords(request: Request,
     tags=['Nlp'])
 @get_auth_access_check_decorator
 async def generate_stopwords(request: Request, background_tasks: BackgroundTasks,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     language_code:schemas.LangCodePattern=Query(...,example="bi"),
     use_server_data:bool=True,
     source_name: schemas.TableNamePattern=Query(None,example="en_TW_1_dictionary"),
@@ -574,6 +601,7 @@ async def generate_stopwords(request: Request, background_tasks: BackgroundTasks
     tags=['Jobs'])
 @get_auth_access_check_decorator
 async def check_job_status(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     job_id:int=Query(...,example="100000"),user_details =Depends(get_user_or_none),
     db_:Session=Depends(get_db)):
     '''Checking the status of a job'''
