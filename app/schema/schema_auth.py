@@ -179,8 +179,8 @@ class RegistrationAppIn(BaseModel):
     contacts:RegistrationAppContacts
 
     @validator('contacts')
-    def check_email_or_phone(cls, val):#pylint: disable=no-self-argument, inconsistent-return-statements
-        '''check for email or phone is present'''
+    def check_phone(cls, val):#pylint: disable=no-self-argument, inconsistent-return-statements
+        '''check for phone is present'''
         if val.phone is not None:
             if len(val.phone) <= 0:
                 raise ValueError('Phone Should not be blank')
@@ -199,3 +199,27 @@ class RegistrationAppIn(BaseModel):
                 "phone": "+91 1234567890"
             }
         }}
+
+class LoginResponseApp(BaseModel):
+    """Response object of login for app"""
+    message:str
+    key:str
+    appId:str
+
+class AppUpdateResponse(BaseModel):
+    """Response object of App data Update"""
+    message:str
+    data: RegistrationAppOut
+
+class EditApp(BaseModel):
+    """kratos App update input"""
+    ContactEmail:EmailStr
+    organization:str
+    phone:str = None
+    @validator('phone')
+    def check_phone(cls, val):#pylint: disable=no-self-argument, inconsistent-return-statements
+        '''check for phone is present'''
+        if val is not None:
+            if len(val) <= 0:
+                raise ValueError('Phone Should not be blank')
+        return val

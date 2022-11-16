@@ -23,3 +23,5 @@ download
 download-n-save
 read-settings
 access-via-api
+generate-key
+delete-key

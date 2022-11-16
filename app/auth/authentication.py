@@ -96,6 +96,8 @@ def api_resourcetype_map(endpoint, path_params=None):
         resource_type = 'project'
     elif endpoint.startswith('/v2/user'):
         resource_type = 'user'
+    elif endpoint.startswith('/v2/app'):
+        resource_type = 'app'
     elif endpoint.startswith("/v2/translation") or endpoint.startswith("/v2/nlp"):
         resource_type = 'translation'
     elif endpoint.startswith("/v2/lookup"):
@@ -615,7 +617,7 @@ def user_register_kratos(register_details, request):
     return data
 
 
-def user_login_kratos(user_email,password):#pylint: disable=R1710
+def login_kratos(user_email,password,from_app=False):#pylint: disable=R1710
     "kratos login"
     data = {"details":"","token":""}
     login_url = PUBLIC_BASE_URL+"login/api/"
@@ -631,8 +633,12 @@ def user_login_kratos(user_email,password):#pylint: disable=R1710
         if login_req.status_code == 200:
             session_id = login_req_content["session_token"]
             data["message"] = "Login Succesfull"
-            data["token"] = session_id
-            data["userId"] = login_req_content["session"]["identity"]["id"]
+            if from_app:
+                data["key"] = session_id
+                data["appId"] = login_req_content["session"]["identity"]["id"]
+            else:
+                data["token"] = session_id
+                data["userId"] = login_req_content["session"]["identity"]["id"]
         else:
             raise UnAuthorizedException(login_req_content["ui"]["messages"][0]["text"])
     return data

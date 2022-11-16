@@ -85,10 +85,7 @@ def app_register_kratos(register_details, db_):#pylint: disable=too-many-locals,
                     log.error("Reg app failed %s", field['messages'][0]['text'])
                     raise UnprocessableException(field['messages'][0]['text'])
 
-# def app_update_kratos(update_data):
-#     """update app data with kratos"""
-
-def get_filter_apps(name=None, app_id=None, org=None):
+def get_filter_apps(name=None, app_id=None, org=None, skip=None,limit=None):#pylint: disable=too-many-branches
     """filters apps data from kratos db"""
     base_url = f"{ADMIN_BASE_URL_APP}admin/identities"
     app_data = []
@@ -117,10 +114,50 @@ def get_filter_apps(name=None, app_id=None, org=None):
                         org_status = org.lower() == data["traits"]["organization"]
                     if name_status and org_status:
                         app_data.append(data["traits"])
+                    if skip is not None and limit is not None:
+                        app_data = app_data[skip:skip+limit] if skip>=0 and limit>=0 else []
         else:
             raise GenericException(detail=json.loads(response.content))
     return app_data
 
+def app_update_kratos(app_id, update_data):
+    """update app data with kratos"""
+    data = get_filter_apps(app_id=app_id)[0]
+    if update_data.phone:
+        phone = update_data.phone
+    else:
+        phone = data["contacts"]["phone"]
+    data["organization"] = update_data.organization
+    data["contacts"]["email"] = update_data.ContactEmail
+    data["contacts"]["phone"] = phone
+    update_traits = {
+        "schema_id": "app",
+        "state": "active",
+        "traits": data
+    }
+    base_url = f"{ADMIN_BASE_URL_APP}admin/identities/{app_id}"
+    headers={}
+    headers["Content-Type"] = "application/json"
+    headers["Accept"] = "application/json"
+    app_update_req = requests.put(base_url,headers=headers,json=update_traits, timeout=10)
+    app_update_response = json.loads(app_update_req.content)
+    if app_update_req.status_code == 200:
+        app_updated_data = {}
+        app_updated_data["id"] =app_update_response["id"]
+        app_updated_data["email"] =app_update_response["traits"]["email"]
+        app_updated_data["name"] =app_update_response["traits"]["name"]
+        app_updated_data["organization"] =app_update_response["traits"]["organization"]
+        app_updated_data["contacts"] ={
+            "email": app_update_response["traits"]["contacts"]["email"],
+            "phone": app_update_response["traits"]["contacts"]["phone"]\
+                if "phone" in app_update_response["traits"]["contacts"]\
+                else None
+        }
+    elif app_update_req.status_code in (404, 400):
+        raise NotAvailableException(app_update_response["error"]["message"])
+    elif app_update_req.status_code == 500:
+        raise GenericException(app_update_response["error"]["status"])
+    return app_updated_data
 
 def register_default_apps_on_startup():
     """register default apps on startup of vachan"""

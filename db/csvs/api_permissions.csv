@@ -31,6 +31,12 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/user/delete-identity,DELETE,Vachan-online or vachan-app,FALSE,user,delete/deactivate
 /v2/user/delete-identity,DELETE,VachanAdmin,FALSE,user,delete/deactivate
 /v2/user/delete-identity,DELETE,API-user,FALSE,user,delete/deactivate
+/v2/app/register,POST,VachanAdmin,FALSE,app,create
+/v2/app/key,GET,VachanAdmin,FALSE,app,generate-key
+/v2/app/delete-key,GET,VachanAdmin,FALSE,app,delete-key
+/v2/app/{app_id},PUT,VachanAdmin,FALSE,app,edit
+/v2/apps,GET,VachanAdmin,FALSE,app,read
+/v2/app/delete-app,DELETE,VachanAdmin,FALSE,app,delete/deactivate
 /v2/contents,GET,Autographa,FALSE,meta-content,refer-for-translation
 /v2/contents,GET,Vachan-online or vachan-app,FALSE,meta-content,view-on-web
 /v2/contents,GET,VachanAdmin,FALSE,meta-content,read-via-vachanadmin

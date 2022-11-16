@@ -16,3 +16,4 @@ editable,editable contents
 translation-project,translation project
 generic-translation, general translation
 file-ops,file operations
+app,"application related operations"
