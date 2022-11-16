@@ -81,9 +81,9 @@ def get_user_or_none_graphql(info):
 def get_default_role_for_app(app_key):
     """get defaulr user role for app"""
     client_app = get_current_user_data(app_key, app=True)["app_name"].lower()
-    user_role = [role for app, role in INPUT_APPS if app.lower() == client_app.lower()]
+    user_role = [(app, role) for app, role in INPUT_APPS.items() if app.lower() == client_app.lower() ]
     if len(user_role) > 0:
-        user_role = user_role[0]
+        user_role = user_role[0][1]
     else:
         raise NotAcceptableException("The requested app Not allowed to register Users")
     return user_role
@@ -252,17 +252,18 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         requested_app_key = kwargs.get("app_key", None)
         filtering_required = kwargs.get("filtering_required", False)
         # checking Requested App
-        if requested_app_key is not None :
-            print("-------------->", requested_app_key.get_secret_value())
+        if requested_app_key is not None and \
+            requested_app_key.get_secret_value() not in ('None',''):
+            print("app key ==============> ", requested_app_key.get_secret_value())
             client_app = get_current_user_data(requested_app_key.get_secret_value()\
-                , app=True)
+                , app=True)['app_name']
             print("request from app name ---------->", client_app)
-            if not client_app in [key.lower() for key in APPS]:
+            if not client_app.lower() in [key.lower() for key in APPS]:
                 print(" ERROR : -----> Not a Valid app , app is not registred ")
                 raise UnAuthorizedException("Requesting app is not registered")
         else:
             if 'API-user' in APPS: 
-                client_app = 'API-user' 
+                client_app = 'API-user'
             else:
                 raise NotAvailableException('Not a Valid app , app is not registred ')
 
@@ -503,6 +504,8 @@ def update_kratos_user(rec_user_id,data):
 def register_check_success(reg_response):
     """register reqirement success"""
     name_path = reg_response["identity"]["traits"]["name"]
+    name_path["first"] = '' if 'first' not in name_path else name_path["first"]
+    name_path["last"] = '' if 'last' not in name_path else name_path["last"]
     data={
         "message":"Registration Successfull",
         "registered_details":{
@@ -521,7 +524,7 @@ def register_check_success(reg_response):
     #         }
     # user_role =  switcher.get(user_permision[0], schema_auth.App.API.value)
     if user_permision[0] in list(INPUT_APPS.values()):
-        user_role = list(data.keys())[list(data.values()).index(user_permision[0])]
+        user_role = list(INPUT_APPS.keys())[list(INPUT_APPS.values()).index(user_permision[0])]
     else:
         if "API-user" in list(INPUT_APPS.keys()):
             user_role = "API-user" 
@@ -570,7 +573,7 @@ def register_flow_fail(reg_response,email,user_role,reg_req):
             conv_permission = []
             for perm in user_permision:
                 if perm in list(INPUT_APPS.values()):
-                    role = list(data.keys())[list(data.values()).index(perm)]
+                    role = list(INPUT_APPS.keys())[list(INPUT_APPS.values()).index(perm)]
                 else:
                     if "API-user" in list(INPUT_APPS.keys()):
                         role = "API-user"
@@ -594,9 +597,9 @@ def user_register_kratos(register_details, request, app_key=None):
     email = register_details.email
     password = register_details.password
 
-    # get  user role
-    if app_key is not None:
-        user_role = get_default_role_for_app(app_key)
+    # get user role
+    if app_key is not None and app_key.get_secret_value() not in ('None',''):
+        user_role = get_default_role_for_app(app_key.get_secret_value())
     else:
         user_role = 'APIUser'
 
@@ -689,7 +692,7 @@ def user_role_add(user_id,roles_list):
 
     for role in roles_list:
         if role not in ROLES:
-            raise NotAvailableException("Role %s is not a valid one",role)
+            raise NotAvailableException(f"Role {role} is not a valid one")
         if role in traits["userrole"]:
             exist_roles.append(role)
         else:

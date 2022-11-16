@@ -42,7 +42,7 @@ def db_transaction():
 #Users data with apps
 initial_test_users = {
             "AgAdmin": {
-                "user_email": "agadmintest@mail.test",
+                "user_email": "agadmintest@mail.testing",
                 "password": "passwordtest@1",
                 "firstname": "Autographa",
                 "lastname": "Admin",
@@ -123,13 +123,27 @@ initial_test_users = {
             }
         }
 
+default_app_keys = {}
+
 #session fixture for access checks working
 @pytest.fixture(scope="session", autouse=True)
 def create_user_session_run_at_start():
     try:
-        print("Session fixture for create user------------------>")
-        from .test_auth_basic import register,delete_user_identity,assign_roles,SUPER_USER,SUPER_PASSWORD
+        print("Session fixture for default apps and create user------------------>")
+        from .test_auth_basic import register,delete_user_identity,assign_roles,SUPER_USER,SUPER_PASSWORD\
+            ,login
+        from .test_auth_app import delete_app_key
+        from app.auth.auth_app import DEFAULT_APPS
         
+        # Generate appkey for default apps
+        for app in DEFAULT_APPS:
+            data = {
+                "user_email": app["email"],
+                "password": app["password"]
+            }
+            response = login(data)
+            default_app_keys[app["name"]] = response.json()['token']
+        #userTokens
         for user_data in initial_test_users:
             current_user = initial_test_users[user_data]
             data = {
@@ -138,7 +152,7 @@ def create_user_session_run_at_start():
                 "firstname": current_user['firstname'],
                 "lastname": current_user['firstname']
             }
-            response = register(data, apptype=current_user['app'])
+            response = register(data, app_key= default_app_keys[current_user['app']])
             current_user['test_user_id'] = response.json()["registered_details"]["id"]
             current_user['token'] = response.json()["token"]
         #admin roles provide for
@@ -180,5 +194,10 @@ def create_user_session_run_at_start():
             current_user = initial_test_users[user_data]
             delete_list.append(current_user["test_user_id"])
         delete_user_identity(delete_list)
+
+        # delete keys of default apps
+        for app in default_app_keys:
+            response = delete_app_key(default_app_keys[app])
+            assert response.status_code == 200
         print("Session fixture for create user END------------------>")
 

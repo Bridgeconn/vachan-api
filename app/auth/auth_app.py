@@ -159,9 +159,7 @@ def app_update_kratos(app_id, update_data):
         raise GenericException(app_update_response["error"]["status"])
     return app_updated_data
 
-def register_default_apps_on_startup():
-    """register default apps on startup of vachan"""
-    default_apps = [
+DEFAULT_APPS = [
     {
         "email": os.environ.get("AG_APP_EMAIL", "Autographa@vachan.testing"),
         "name": "Autographa",
@@ -203,7 +201,10 @@ def register_default_apps_on_startup():
         }
     }]
 
-    for app in default_apps:
+def register_default_apps_on_startup():
+    """register default apps on startup of vachan"""
+
+    for app in DEFAULT_APPS:
         data = get_filter_apps(app["name"])
         if len(data) > 0:
             print(f"exist app {app['name']}")

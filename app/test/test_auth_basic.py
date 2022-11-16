@@ -6,7 +6,7 @@ from urllib.parse import quote
 
 from app.schema import schema_auth
 from . import assert_input_validation_error, client, check_skip, check_limit, TEST_APPS_LIST, TEST_ROLE_LIST
-from .conftest import initial_test_users
+from .conftest import initial_test_users, default_app_keys
 
 LOGIN_URL = '/v2/user/login'
 REGISTER_URL = '/v2/user/register'
@@ -51,10 +51,10 @@ def login(data):
     return response
 
 #registration check
-def register(data,apptype):
+def register(data,app_key=None):
     """test for registration"""
     headers = {"contentType": "application/json", "accept": "application/json"}
-    params = f"?app_type={apptype}"
+    params = f"?app_key={app_key}"
     response = client.post(REGISTER_URL+params, headers=headers, json=data)
     if response.status_code == 200:
         assert response.json()["message"] == "Registration Successfull"
@@ -68,10 +68,10 @@ def register(data,apptype):
     return response
 
 #appending roles to same user on duplicate registration
-def register_role_appending(data,apptype):
+def register_role_appending(data,app_key=None):
     """test for appending roles for same user registration"""
     headers = {"contentType": "application/json", "accept": "application/json"}
-    params = f"?app_type={apptype}"
+    params = f"?app_key={app_key}"
     response = client.post(REGISTER_URL+params, headers=headers, json=data)
     if response.status_code == 200:
         assert response.json()["message"] == "User Already Registered, New Permission updated"
@@ -181,7 +181,7 @@ def test_login_register(create_user_fixture):
         "firstname": "user registration",
         "lastname": "ABC Test"
     }
-    response = register(data,apptype=TEST_APPS_LIST['API'])
+    response = register(data, app_key=default_app_keys[TEST_APPS_LIST['API']])
     abc_id = response.json()["registered_details"]["id"]
 
     #test user ABC login after register
@@ -199,12 +199,11 @@ def test_login_register(create_user_fixture):
         "firstname": "user registration",
         "lastname": "ABC Test"
     }
-    response = register(data,apptype=TEST_APPS_LIST['API'])
+    response = register(data)
     assert response.status_code == 400
     assert response.json()['error'] == "HTTP Error"
     assert response.json()['details'] == \
       "An account with the same identifier (email, phone, username, ...) exists already."
-
     users_list = create_user_fixture
     users_list.append(abc_id)
 
@@ -216,7 +215,7 @@ def test_incorrect_email():
         "email": "incorrectemail",
         "password": "passwordabc@1"
     }
-    response = register(data,apptype=TEST_APPS_LIST['API'])
+    response = register(data)
     assert response.status_code == 422
     assert response.json()['error'] == "Unprocessable Data"
 
@@ -228,7 +227,7 @@ def test_validate_password():
         "email": "PQR@gmail.com",
         "password": "test"
     }
-    response = register(data,apptype=TEST_APPS_LIST['API'])
+    response = register(data)
     assert response.status_code == 422
     assert response.json()['error'] == "Unprocessable Data"
 
@@ -237,7 +236,7 @@ def test_validate_password():
         "email": "PQR@gmail.com",
         "password": "password"
     }
-    response = register(data,apptype=TEST_APPS_LIST['API'])
+    response = register(data,app_key=default_app_keys[TEST_APPS_LIST['API']])
     assert response.status_code == 422
     assert response.json()['error'] == "Unprocessable Data"
 
@@ -251,7 +250,7 @@ def test_optional_register_params(create_user_fixture):
         "firstname": "user registration",
         "lastname": "ABC Test"
     }
-    response = register(data,apptype=TEST_APPS_LIST['API'])
+    response = register(data)
     assert response.json()["registered_details"]["Permissions"] == \
         [TEST_APPS_LIST['API']]
     abc_id = response.json()["registered_details"]["id"]
@@ -261,7 +260,7 @@ def test_optional_register_params(create_user_fixture):
         "email": "abc1@gmail.com",
         "password": "passwordabc@1"
     }
-    response1 = register(data,apptype=TEST_APPS_LIST['API'])
+    response1 = register(data)
     abc1_id = response1.json()["registered_details"]["id"]
 
     users_list = create_user_fixture
@@ -275,19 +274,19 @@ def test_register_incorrectdatas():
   "firstname": "user registration",
   "lastname": "ABC Test"
 }
-    response = register(data,apptype=TEST_APPS_LIST['API'])
+    response = register(data)
     assert_input_validation_error(response)
 
     data = {
   "email": "abc@gmail.com"
 }
-    response = register(data,apptype=TEST_APPS_LIST['API'])
+    response = register(data)
     assert_input_validation_error(response)
 
     data = {
   "password": "passwordabc@1"
 }
-    response = register(data,apptype=TEST_APPS_LIST['API'])
+    response = register(data)
     assert_input_validation_error(response)
 
 
@@ -302,7 +301,7 @@ def test_register_roles(create_user_fixture):
         "firstname": "user XYZ1",
         "lastname": "Vachan role Test"
     }
-    response1 = register(data_xyz1,apptype=TEST_APPS_LIST['VACHAN'])
+    response1 = register(data_xyz1,app_key=default_app_keys[TEST_APPS_LIST['VACHAN']])
     xyz1_id = response1.json()["registered_details"]["id"]
     assert response1.json()["registered_details"]["Permissions"] == [TEST_APPS_LIST['VACHAN']]
 
@@ -312,7 +311,7 @@ def test_register_roles(create_user_fixture):
         "firstname": "user XYZ2",
         "lastname": "Ag role Test"
     }
-    response2 = register(data_xyz2,apptype= TEST_APPS_LIST['AG'])
+    response2 = register(data_xyz2,app_key=default_app_keys[TEST_APPS_LIST['AG']])
     xyz2_id = response2.json()["registered_details"]["id"]
     assert response2.json()["registered_details"]["Permissions"] == [TEST_APPS_LIST['AG']]
     data_xyz3 = \
@@ -322,7 +321,7 @@ def test_register_roles(create_user_fixture):
         "firstname": "user XYZ3",
         "lastname": "No role Test"
     }
-    response3 = register(data_xyz3,apptype=TEST_APPS_LIST['API'])
+    response3 = register(data_xyz3)
     xyz3_id = response3.json()["registered_details"]["id"]
     assert response3.json()["registered_details"]["Permissions"] == [TEST_APPS_LIST['API']]
 
@@ -376,7 +375,7 @@ def test_register_roles(create_user_fixture):
         "firstname": "user XYZ1",
         "lastname": "Vachan role Test",
     }
-    response1 = register_role_appending(data_xyz1,apptype=TEST_APPS_LIST['API'])
+    response1 = register_role_appending(data_xyz1)
     assert response1.json()["registered_details"]["Permissions"] == [TEST_APPS_LIST['VACHAN'],TEST_APPS_LIST['API']]
 
     # #role changed ag --> vachan
@@ -384,7 +383,7 @@ def test_register_roles(create_user_fixture):
         "email": "xyz2@gmail.com",
         "password": "passwordxyz2@1"
     }
-    response2 = register_role_appending(data_xyz2,apptype=TEST_APPS_LIST['VACHAN'])
+    response2 = register_role_appending(data_xyz2,app_key=default_app_keys[TEST_APPS_LIST['VACHAN']])
     assert response2.json()["registered_details"]["Permissions"] == [TEST_APPS_LIST['AG'],TEST_APPS_LIST['VACHAN']]
 
     #role changed none --> ag
@@ -392,7 +391,7 @@ def test_register_roles(create_user_fixture):
         "email": "xyz3@gmail.com",
         "password": "passwordxyz3@1"
     }
-    response3 = register_role_appending(data_xyz3,apptype=TEST_APPS_LIST['AG'])
+    response3 = register_role_appending(data_xyz3,app_key=default_app_keys[TEST_APPS_LIST['AG']])
     assert response3.json()["registered_details"]["Permissions"] == [TEST_APPS_LIST['API'],TEST_APPS_LIST['AG']]
 
     # #role changed Vachan Admin --> ag
@@ -421,7 +420,7 @@ def test_role_assignment_superadmin(create_user_fixture):
         "email": "vachan@gmail.com",
         "password": "passwordvachan@1"
     }
-    response1 = register(user1,apptype=TEST_APPS_LIST['API'])
+    response1 = register(user1)
     user1_id = response1.json()["registered_details"]["id"]
     assert response1.json()["registered_details"]["Permissions"] == [TEST_APPS_LIST['API']]
 
@@ -429,7 +428,7 @@ def test_role_assignment_superadmin(create_user_fixture):
         "email": "ag@gmail.com",
         "password": "passwordag@1"
     }
-    response2 = register(user2,apptype=TEST_APPS_LIST['API'])
+    response2 = register(user2,app_key=default_app_keys[TEST_APPS_LIST['API']])
     user2_id = response2.json()["registered_details"]["id"]
     assert response2.json()["registered_details"]["Permissions"] == [TEST_APPS_LIST['API']]
 
@@ -465,8 +464,8 @@ def test_role_assignment_superadmin(create_user_fixture):
     #assigning a wrong role that is not allowed
     role_list = ["AllAdmin"]
     response3 = assign_roles(data,user2_id,role_list)
-    assert response3.status_code == 422
-    assert response3.json()['error'] == "Input Validation Error"
+    assert response3.status_code == 404
+    assert response3.json()['error'] == "Requested Content Not Available"
 
     users_list = create_user_fixture
     users_list.append(user1_id)
@@ -493,7 +492,7 @@ def test_token_expiry(create_user_fixture):
         "email": "user@gmail.com",
         "password": "passworduser@1"
     }
-    response2 = register(user,apptype=TEST_APPS_LIST['API'])
+    response2 = register(user)
     user_id = response2.json()["registered_details"]["id"]
     assert response2.json()["registered_details"]["Permissions"] == [TEST_APPS_LIST['API']]
 
