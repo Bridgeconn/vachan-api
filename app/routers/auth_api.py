@@ -120,8 +120,7 @@ user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint:
     * User roles should provide in an ARRAY
     * Array values will overwrite the exisitng array of roles
     * No roles will be allocated on registration , will be consider as a normal user.
-    * avaialable roles are
-    * [VachanAdmin , AgAdmin , AgUser , VachanUser] '''
+    * Roles should be registered one'''
     log.info('In User Role')
     log.debug('role:%s',role_data)
     user_id = role_data.userid

@@ -5,31 +5,31 @@ from pydantic import BaseModel, validator
 from pydantic import types, EmailStr
 
 #pylint: disable=too-few-public-methods
-class ResourceType(str, Enum):
-    '''Classify DB resources for defineing access rights on them'''
-    METACONTENT = "meta contents like licences, languages, versions or content types"
-    CONTENT = "contents like bibles, commentaries, infographics, dictionary or videos"
-    PROJECT = "Ag or translation project"
-    USER = "all users in our system (Kratos)"
-    TRANSLATION = "generic translation apis"
-    LOOKUP = "Lookup contents"
-    RESEARCH = "Research-Material"
-    JOBS = "Background-jobs"
-    MEDIA = "Media contents"
-    FILE = "File Manipulation Ops"
+# class ResourceType(str, Enum):
+#     '''Classify DB resources for defineing access rights on them'''
+#     METACONTENT = "meta contents like licences, languages, versions or content types"
+#     CONTENT = "contents like bibles, commentaries, infographics, dictionary or videos"
+#     PROJECT = "Ag or translation project"
+#     USER = "all users in our system (Kratos)"
+#     TRANSLATION = "generic translation apis"
+#     LOOKUP = "Lookup contents"
+#     RESEARCH = "Research-Material"
+#     JOBS = "Background-jobs"
+#     MEDIA = "Media contents"
+#     FILE = "File Manipulation Ops"
 
-class App(str, Enum):
-    '''Defined apps'''
-    AG = "Autographa"
-    VACHAN = "Vachan-online or vachan-app"
-    API = "API-user"
-    VACHANADMIN = "VachanAdmin"
+# class App(str, Enum):
+#     '''Defined apps'''
+#     AG = "Autographa"
+#     VACHAN = "Vachan-online or vachan-app"
+#     API = "API-user"
+#     VACHANADMIN = "VachanAdmin"
 
-class AppInput(str, Enum):
-    '''Input fields for App in Registration'''
-    AG = "Autographa"
-    VACHAN = "Vachan-online or vachan-app"
-    API = "API-user"
+# class AppInput(str, Enum):
+#     '''Input fields for App in Registration'''
+#     AG = "Autographa"
+#     VACHAN = "Vachan-online or vachan-app"
+#     API = "API-user"
 
 class Registration(BaseModel):
     """kratos registration input"""
@@ -43,15 +43,15 @@ class EditUser(BaseModel):
     firstname:str
     lastname:str
 
-class AdminRoles(str, Enum):
-    '''Admin Roles'''
-    SUPERADMIN = 'SuperAdmin'
-    VACHANADMIN = 'VachanAdmin'
-    AGADMIN = 'AgAdmin'
-    AGUSER = 'AgUser'
-    VACHANUSER = 'VachanUser'
-    APIUSER = 'APIUser'
-    BCSDEV = 'BcsDeveloper'
+# class AdminRoles(str, Enum):
+#     '''Admin Roles'''
+#     SUPERADMIN = 'SuperAdmin'
+#     VACHANADMIN = 'VachanAdmin'
+#     AGADMIN = 'AgAdmin'
+#     AGUSER = 'AgUser'
+#     VACHANUSER = 'VachanUser'
+#     APIUSER = 'APIUser'
+#     BCSDEV = 'BcsDeveloper'
 
 class FilterRoles(str, Enum):
     '''Filter roles for get users'''
@@ -63,7 +63,7 @@ class FilterRoles(str, Enum):
 class UserRole(BaseModel):
     """kratos user role input"""
     userid:str
-    roles:List[AdminRoles]
+    roles:list[str]
 
 class UserIdentity(BaseModel):
     """kratos user role input"""
@@ -73,7 +73,7 @@ class RegistrationOut(BaseModel):
     """registration output"""
     id:str
     email:str
-    Permissions:List[App]
+    Permissions:list
 
 class RegisterResponse(BaseModel):
     """Response object of registration"""
@@ -105,14 +105,14 @@ class IdentityDeleteResponse(BaseModel):
     """user identity delete response"""
     message:str
 
-class TableHeading(int, Enum):
-    """Heading of permission table"""
-    ENDPOINT = 0
-    METHOD = 1
-    REQUESTAPP = 2
-    USERNEEDED = 3
-    RESOURCETYPE = 4
-    PERMISSION = 5
+# class TableHeading(int, Enum):
+#     """Heading of permission table"""
+#     ENDPOINT = 0
+#     METHOD = 1
+#     REQUESTAPP = 2
+#     USERNEEDED = 3
+#     RESOURCETYPE = 4
+#     PERMISSION = 5
 
 class IdentitityListResponse(BaseModel):
     """Response object of list of identities"""

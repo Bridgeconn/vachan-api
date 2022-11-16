@@ -258,8 +258,10 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                 print(" ERROR : -----> Not a Valid app , app is not registred ")
                 raise UnAuthorizedException("Requesting app is not registered")
         else:
-            client_app = 'API-user' if 'API-user' in APPS else\
-                NotAvailableException('Not a Valid app , app is not registred ')
+            if 'API-user' in APPS: 
+                client_app = 'API-user' 
+            else:
+                raise NotAvailableException('Not a Valid app , app is not registred ')
 
         # Getting user details if no auth header and have token
         if not "authorization" in request.headers and \
@@ -510,12 +512,18 @@ def register_check_success(reg_response):
     }
 
     user_permision = data["registered_details"]['Permissions']
-    switcher = {
-        schema_auth.AdminRoles.AGUSER.value : schema_auth.App.AG.value,
-        schema_auth.AdminRoles.VACHANUSER.value : schema_auth.App.VACHAN.value,
-        # schema_auth.AdminRoles.VACHANADMIN.value : schema_auth.AdminRoles.VACHANADMIN.value
-            }
-    user_role =  switcher.get(user_permision[0], schema_auth.App.API.value)
+    # switcher = {
+    #     schema_auth.AdminRoles.AGUSER.value : schema_auth.App.AG.value,
+    #     schema_auth.AdminRoles.VACHANUSER.value : schema_auth.App.VACHAN.value,
+    #         }
+    # user_role =  switcher.get(user_permision[0], schema_auth.App.API.value)
+    if user_permision[0] in list(INPUT_APPS.values()):
+        user_role = list(data.keys())[list(data.values()).index(user_permision[0])]
+    else:
+        if "API-user" in list(INPUT_APPS.keys()):
+            user_role = "API-user" 
+        else:
+            raise NotAvailableException('No app is associated to the role')
     data["registered_details"]['Permissions'] = [user_role]
     return data
 
@@ -558,12 +566,13 @@ def register_flow_fail(reg_response,email,user_role,reg_req):
             user_permision = data["registered_details"]['Permissions']
             conv_permission = []
             for perm in user_permision:
-                switcher = {
-                    schema_auth.AdminRoles.AGUSER.value : schema_auth.App.AG.value,
-                    schema_auth.AdminRoles.VACHANUSER.value : schema_auth.App.VACHAN.value,
-                    # schema_auth.AdminRoles.VACHANADMIN.value : schema_auth.App.VACHANADMIN.value
-                    }
-                role =  switcher.get(perm, schema_auth.App.API.value)
+                if perm in list(INPUT_APPS.values()):
+                    role = list(data.keys())[list(data.values()).index(perm)]
+                else:
+                    if "API-user" in list(INPUT_APPS.keys()):
+                        role = "API-user"
+                    else:
+                        raise NotAvailableException('No app is associated to the role')
                 conv_permission.append(role)
                 data["registered_details"]['Permissions'] = conv_permission
         else:
@@ -676,6 +685,8 @@ def user_role_add(user_id,roles_list):
         roles_list = ['']
 
     for role in roles_list:
+        if role not in ROLES:
+            raise NotAvailableException("Role %s is not a valid one",role)
         if role in traits["userrole"]:
             exist_roles.append(role)
         else:
@@ -718,12 +729,11 @@ def create_super_user():
         identity_data = json.loads(response.content)
         for identity in identity_data:
             if "userrole" in  identity["traits"] and \
-            schema_auth.AdminRoles.SUPERADMIN.value in identity["traits"]["userrole"]:
+            "SuperAdmin" in identity["traits"]["userrole"]:
                 found = True
                 break
     else:
         raise HTTPException(status_code=401, detail=json.loads(response.content))
-
     if not found:
         register_url = PUBLIC_BASE_URL+"registration/api"
         reg_flow = requests.get(register_url, timeout=10)
@@ -734,7 +744,7 @@ def create_super_user():
                         "traits.name.first": "Super",
                         "traits.name.last": "Admin",
                         "password": SUPER_PASSWORD,
-                        "traits.userrole":schema_auth.AdminRoles.SUPERADMIN.value,
+                        "traits.userrole":"SuperAdmin",
                         "method": "password"}
             headers = {}
             headers["Accept"] = "application/json"
