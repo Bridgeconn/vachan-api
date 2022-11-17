@@ -1,7 +1,7 @@
 version: '3.9'
 services:
  kratos-migrate:
-    image: oryd/kratos:v0.7.0-alpha.1
+    image: oryd/kratos:v0.10.1
     environment:
       - DSN=postgres://kratos:secret@postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
     volumes:
@@ -32,7 +32,7 @@ services:
       - kratos-postgres-vol:/var/lib/postgresql/data
 
  kratos:
-    image: oryd/kratos:v0.7.0-alpha.1
+    image: oryd/kratos:v0.10.1
     ports:
       - '4433:4433' # public
       # - '4434:4434' # admin
@@ -54,6 +54,32 @@ services:
     expose:
       - 4434
       - 4433
+    networks:
+      - my-network
+
+ kratos-app:
+    image: oryd/kratos:v0.10.1
+    ports:
+      - "4443:4433" # public
+      # - "4444:4434" # admin
+    restart: unless-stopped
+    environment:
+      - DSN=postgres://kratos:secret@postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
+      - LOG_LEVEL=trace
+      - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS:-smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true}
+      - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL:-EMAIL_ADDRESS@bridgeconn.com}
+    command: serve -c /etc/config/kratos/kratos-app.yml --dev --watch-courier
+    volumes:
+      # - type: volume
+      #   source: kratos-sqlite
+      #   target: /var/lib/sqlite
+      #   read_only: false
+      - type: bind
+        source: ./Kratos_config/email-password
+        target: /etc/config/kratos
+    expose:
+      - 4444
+      - 4443
     networks:
       - my-network
 
@@ -104,6 +130,8 @@ services:
      - VACHAN_POSTGRES_PORT=5432
      - VACHAN_KRATOS_PUBLIC_URL=http://kratos:4433/
      - VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
+     - VACHAN_KRATOS_APP_PUBLIC_URL=http://kratos:4443/
+     - VACHAN_KRATOS_APP_ADMIN_URL=http://kratos:4444/
      - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME}
      - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD}
      - VACHAN_TEST_MODE="False"

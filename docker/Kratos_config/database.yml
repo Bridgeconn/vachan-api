@@ -2,7 +2,7 @@ version: "3.7"
 
 services:
   kratos-migrate:
-    image: oryd/kratos:v0.7.0-alpha.1
+    image: oryd/kratos:v0.10.1
     environment:
       - DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
     volumes:
@@ -23,7 +23,7 @@ services:
   postgresd:
     image: postgres:9.6
     ports:
-      - "5432:5432"
+      - "5435:5432"
     environment:
       - POSTGRES_USER=${VACHAN_KRATOS_DB_USER:-kratos}
       - POSTGRES_PASSWORD=${VACHAN_KRATOS_DB_PASSWORD:-secret}
@@ -31,9 +31,8 @@ services:
       - POSTGRES_HOST_AUTH_METHOD=md5
     networks:
       - vachan-auth-net
-    volumes: 
+    volumes:
       - kratos-postgres-vol:/var/lib/postgresql/data
-
 
   # offen backup
   offen-backup_kratos_daily: &backup_service
