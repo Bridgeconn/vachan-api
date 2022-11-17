@@ -1,12 +1,12 @@
 {
     "meta-content":{
-        "create": ["registeredUser"],
+        "create": ["registeredUser","SuperAdmin"],
         "edit":["SuperAdmin", "resourceCreatedUser"],
         "read-via-api":["noAuthRequired"],
         "read-via-vachanadmin":["SuperAdmin", "VachanAdmin"],
         "view-on-web":["noAuthRequired"],
         "refer-for-translation": ["registeredUser"],
-        "delete/deactivate":["registeredUser"]
+        "delete/deactivate":["SuperAdmin", "createdUser"]
     }, 
     "content":{
         "read-via-api":["SuperAdmin", "VachanAdmin", "BcsDeveloper"],
@@ -75,7 +75,7 @@
         "read":["registeredUser"],
        "login":["noAuthRequired"],
         "logout":["createdUser"],
-        "delete/deactivate":["SuperAdmin"]
+        "delete/deactivate":["SuperAdmin", "createdUser"]
     },
     "data-manipulation": {
         "data-restore" : ["SuperAdmin"]   

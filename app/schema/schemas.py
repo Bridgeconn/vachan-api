@@ -130,23 +130,8 @@ class LanguageEdit (BaseModel):
             }
         }
 
-class LanguageDeleteResponse(BaseModel):
-    """Language delete response"""
-    message:str
-
-class LanguageIdentity(BaseModel):
-    """kratos language ID input"""
-    languageId:int
-    class Config:
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "languageId": 100057
-            }
-        }
-
 class RestoreIdentity(BaseModel):
-    """kratos item ID input"""
+    """ item ID input"""
     itemId:int
     class Config:
         '''display example value in API documentation'''
@@ -159,19 +144,22 @@ class RestoreIdentity(BaseModel):
 class DataRestoreResponse(BaseModel):
     """Content delete response"""
     message:str
+    data: dict = None
 
-class ContentDeleteResponse(BaseModel):
+class DeleteResponse(BaseModel):
     """Content delete response"""
     message:str
+    data: dict = None
+    deleted_item_id: int
 
-class ContentIdentity(BaseModel):
-    """kratos content ID input"""
-    contentId:int
+class DeleteIdentity(BaseModel):
+    """ ID input of item to be deleted"""
+    itemId: int
     class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "contentId": 100000
+                "itemId": 100000
             }
         }
 

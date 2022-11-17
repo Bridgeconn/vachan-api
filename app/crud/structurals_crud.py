@@ -29,14 +29,13 @@ def create_content_type(db_: Session, content: schemas.ContentTypeCreate):
     '''Adds a row to content_types table'''
     db_content = db_models.ContentType(contentType = content.contentType)
     db_.add(db_content)
-    db_.execute('''INSERT INTO content_types(content_type) VALUES ('testdata')''')
     # db_.commit()
     # db_.refresh(db_content)
     return db_content
 
-def delete_content(db_: Session, content: schemas.ContentIdentity):
+def delete_content(db_: Session, content: schemas.DeleteIdentity):
     '''delete particular content, selected via content id'''
-    db_content = db_.query(db_models.ContentType).get(content.contentId)
+    db_content = db_.query(db_models.ContentType).get(content.itemId)
     deleted_content = db_content
     db_.delete(db_content)
     #db_.commit()
@@ -101,7 +100,7 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
     # db_.refresh(db_content)
     return db_content
 
-def add_deleted_data(db_: Session, del_content : db_models.Language,
+def add_deleted_data(db_: Session, del_content,
     user_id = None, table_name : str = None):
     '''backup deleted items from any table'''
     json_string = jsonpickle.encode(del_content)#, unpicklable=False
@@ -112,16 +111,33 @@ def add_deleted_data(db_: Session, del_content : db_models.Language,
         deletedTime = datetime.now(),
         deletedFrom = table_name)
     db_.add(db_content)
-    #db_.commit()
-    return del_content
+    db_.flush()
+    print("Item ID in deleted_items table : ",db_content.itemId)
+    return db_content
 
 def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
     '''Restore deleted record back to the original table'''
     restore_content = db_.query(db_models.DeletedItem).get(restored_item.itemId)
     db_content = restore_content
+    #print(db_content.itemId)
     json_string = db_content.deletedData
     db_.delete(restore_content)
-    db_.commit()
+    #db_.commit()
+
+    # table_name = db_content.deletedFrom
+    # print(table_name)
+    # json_data = db_content.deletedData
+    # if db_content.deletedFrom == table_name:
+    #     value_str = ",".join([f"{key}={json_data[key]}" for key in json_data])
+    #     print(value_str)
+    #     x = value_str.split(",")
+    #     print(x)
+    #     print(type(db_content))
+    #     for i in x:
+    #         db_content = db_models.ContentType(i,(i+1))
+    #     db_.add(db_content)
+      
+    
     if db_content.deletedFrom == 'content_types':
         db_content = db_models.ContentType(contentId = json_string['contentId'],
         contentType = json_string['contentType'])
@@ -136,11 +152,12 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
         updateTime = datetime.now())
     db_.add(db_content)
     #db_.commit()
+    
     return db_content
 
-def delete_language(db_: Session, lang: schemas.LanguageIdentity):
+def delete_language(db_: Session, lang: schemas.DeleteIdentity):
     '''delete particular language, selected via language id'''
-    db_content = db_.query(db_models.Language).get(lang.languageId)
+    db_content = db_.query(db_models.Language).get(lang.itemId)
     deleted_content = db_content
     db_.delete(db_content)
     #db_.commit()

@@ -1,5 +1,7 @@
 '''API endpoints related to content management'''
 import json
+import re
+import jsonpickle
 from typing import List
 from fastapi import APIRouter, Query, Body, Depends, Path , Request,\
     BackgroundTasks
@@ -58,31 +60,31 @@ async def add_contents(request: Request, content: schemas.ContentTypeCreate,
     return {'message': "Content type created successfully",
             "data": data}
 
-@router.delete('/v2/contents',response_model=schemas.ContentDeleteResponse,
+@router.delete('/v2/contents',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
-    502: {"model": schemas.ErrorResponse},409: {"model": schemas.ErrorResponse}},
+    502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Contents Types"])
 @get_auth_access_check_decorator
-async def delete_contents(request: Request, content_obj: schemas.ContentIdentity = Body(...),
+async def delete_contents(request: Request, content_obj: schemas.DeleteIdentity = Body(...),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Content
     * unique Content Id can be used to delete an exisiting identity'''
     log.info('In delete_contents')
     log.debug('content-delete:%s',content_obj)
-    content_id= content_obj.contentId
+    content_id= content_obj.itemId
     dbtable_name = "content_types"
     deleted_content = structurals_crud.delete_content(db_=db_, content=content_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
              user_id=user_details['user_id'],table_name = dbtable_name)
     return {'message': f"Content with identity {content_id} deleted successfully",
-            "data": delcont}
+            "data": delcont.deletedData,"deleted_item_id": delcont.itemId}
 
-@router.post('/v2/restore', response_model=schemas.DataRestoreResponse,
-    responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse},401:{"model": schemas.ErrorResponse},
-    409: {"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Contents Types"])
+@router.put('/v2/restore', response_model=schemas.DataRestoreResponse,
+    responses={502:{"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Data Manipulation"])
 @get_auth_access_check_decorator
 async def restore_content(request: Request, content: schemas.RestoreIdentity,
     user_details =Depends(get_user_or_none),
@@ -92,6 +94,9 @@ async def restore_content(request: Request, content: schemas.RestoreIdentity,
     log.info('In restore_content')
     log.debug('restore: %s',content)
     data = structurals_crud.restore_data(db_=db_, restored_item=content)
+    data = jsonpickle.encode(data)
+    data = re.sub(r'^.*?}}}, ' ,'{', data)
+    data = json.loads(data)
     return {'message': f"Deleted Item with identity {content.itemId} restored successfully",
     "data": data}
 
@@ -153,22 +158,25 @@ async def edit_language(request: Request, lang_obj: schemas.LanguageEdit = Body(
             "data": structurals_crud.update_language(db_=db_, lang=lang_obj,
             user_id=user_details['user_id'])}
 
-@router.delete('/v2/languages',response_model=schemas.LanguageDeleteResponse,
+@router.delete('/v2/languages',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Languages"])
 @get_auth_access_check_decorator
-async def delete_languages(request: Request, lang_obj: schemas.LanguageIdentity = Body(...),
+async def delete_languages(request: Request, lang_obj: schemas.DeleteIdentity = Body(...),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Language
     * unique Language Code can be used to delete an exisiting identity'''
     log.info('In delete_languages')
     log.debug('language-delete:%s',lang_obj)
-    language_id= lang_obj.languageId
+    language_id= lang_obj.itemId
     dbtable_name = "languages"
     deleted_content = structurals_crud.delete_language(db_=db_, lang=lang_obj)
     structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
     user_id=user_details['user_id'],table_name = dbtable_name)
+    deleted_content = jsonpickle.encode(deleted_content)
+    deleted_content = re.sub(r'^.*?}}}, ' ,'{', deleted_content)
+    deleted_content = json.loads(deleted_content)
     return {'message': f"Language with identity {language_id} deleted successfully",
             "data": deleted_content}
 
