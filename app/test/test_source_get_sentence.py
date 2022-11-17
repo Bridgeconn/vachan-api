@@ -7,7 +7,7 @@ from . import check_default_get
 from .test_versions import check_post as add_version
 from .test_sources import check_post as add_source
 from .test_bibles import gospel_books_data
-from .conftest import initial_test_users 
+from .conftest import initial_test_users , default_app_keys
 
 UNIT_URL = 'v2/sources/'
 SENT_URL = UNIT_URL+ "get-sentence"
@@ -52,7 +52,7 @@ commentary_data = [
 def create_sources():
     '''prior steps and post attempt, without checking the response'''
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    headers_auth["App"] = TEST_APPS_LIST
+    # headers_auth["App"] = TEST_APPS_LIST["VACHAN"]
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version for get sentence",
@@ -68,7 +68,8 @@ def create_sources():
     }
     source = add_source(source_data)
     bible_name = source.json()['data']['sourceName']
-    resp = client.post(f'/v2/bibles/{bible_name}/books', headers=headers_auth, json=gospel_books_data)
+    resp = client.post(f"/v2/bibles/{bible_name}/books?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]}",
+		headers=headers_auth, json=gospel_books_data)
     assert resp.status_code == 201
 
     source_data = {
@@ -82,7 +83,8 @@ def create_sources():
     }
     source = add_source(source_data)
     commentary_name = source.json()['data']['sourceName']
-    resp = client.post(f'/v2/commentaries/{commentary_name}', headers=headers_auth, json=commentary_data)
+    resp = client.post(f"/v2/commentaries/{commentary_name}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+		headers=headers_auth, json=commentary_data)
     assert resp.status_code == 201
 
     return bible_name, commentary_name
@@ -97,7 +99,7 @@ def test_get_poisitive():
 	bible_name, commentary_name = create_sources()
 
 	headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
-	headers_auth['App'] = TEST_APPS_LIST["API"]
+	# headers_auth['App'] = TEST_APPS_LIST["API"]
 	check_default_get(SENT_URL, headers_auth, assert_positive_get)
 
 	# filtering with various params
@@ -172,7 +174,7 @@ def test_get_negatives():
 	# Add data
 	bible_name, commentary_name = create_sources()
 	headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
-	headers_auth['App'] = TEST_APPS_LIST["API"]
+	# headers_auth['App'] = TEST_APPS_LIST["API"]
 
 	for buk in ['mat','mrk','luk','jhn']:
 		resp = client.get(SENT_URL+'?source_name='+commentary_name+'&books='+buk, headers=headers_auth)

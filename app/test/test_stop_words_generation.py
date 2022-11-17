@@ -6,7 +6,7 @@ from app.schema import schema_auth, schemas
 from . import client
 from . import check_default_get
 from . import assert_not_available_content, TEST_APPS_LIST
-from .conftest import initial_test_users
+from .conftest import initial_test_users, default_app_keys
 
 
 UNIT_URL = '/v2/lookup/stopwords'
@@ -226,8 +226,9 @@ def add_version():
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     # headers_auth['app'] = schema_auth.AdminRoles.VACHANADMIN.value
-    headers_auth['app'] = TEST_APPS_LIST["VACHANADMIN"]
-    result = client.post('/v2/versions', headers=headers_auth, json=version_data)
+    # headers_auth['app'] = TEST_APPS_LIST["VACHANADMIN"]
+    result = client.post(f"/v2/versions?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]}", 
+        headers=headers_auth, json=version_data)
     assert result.status_code == 201
 
 def add_bible_source():

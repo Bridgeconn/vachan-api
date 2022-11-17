@@ -18,7 +18,6 @@ SUPER_USER = os.environ.get("VACHAN_SUPER_USERNAME")
 SUPER_PASSWORD = os.environ.get("VACHAN_SUPER_PASSWORD")
 ADMIN_BASE_URL = os.environ.get("VACHAN_KRATOS_ADMIN_URL")
 
-
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json"}
 
