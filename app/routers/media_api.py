@@ -6,7 +6,7 @@ from fastapi import APIRouter, Query, Request, Depends
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from pydantic import types
-from schema import schemas,schema_auth
+from schema import schemas
 from routers.content_apis import get_source
 from crud import media_crud
 from custom_exceptions import NotAvailableException, UnprocessableException

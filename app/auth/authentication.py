@@ -81,7 +81,8 @@ def get_user_or_none_graphql(info):
 def get_default_role_for_app(app_key):
     """get defaulr user role for app"""
     client_app = get_current_user_data(app_key, app=True)["app_name"].lower()
-    user_role = [(app, role) for app, role in INPUT_APPS.items() if app.lower() == client_app.lower() ]
+    user_role = [(app, role) for app, role in INPUT_APPS.items()\
+        if app.lower() == client_app.lower() ]
     if len(user_role) > 0:
         user_role = user_role[0][1]
     else:
@@ -262,7 +263,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                 print(" ERROR : -----> Not a Valid app , app is not registred ")
                 raise UnAuthorizedException("Requesting app is not registered")
         else:
-            if 'API-user' in APPS: 
+            if 'API-user' in APPS:
                 client_app = 'API-user'
             else:
                 raise NotAvailableException('Not a Valid app , app is not registred ')
@@ -526,8 +527,8 @@ def register_check_success(reg_response):
     if user_permision[0] in list(INPUT_APPS.values()):
         user_role = list(INPUT_APPS.keys())[list(INPUT_APPS.values()).index(user_permision[0])]
     else:
-        if "API-user" in list(INPUT_APPS.keys()):
-            user_role = "API-user" 
+        if "API-user" in list(INPUT_APPS.keys()):#pylint: disable=C0201
+            user_role = "API-user"
         else:
             raise NotAvailableException('No app is associated to the role')
     data["registered_details"]['Permissions'] = [user_role]
@@ -575,7 +576,7 @@ def register_flow_fail(reg_response,email,user_role,reg_req):
                 if perm in list(INPUT_APPS.values()):
                     role = list(INPUT_APPS.keys())[list(INPUT_APPS.values()).index(perm)]
                 else:
-                    if "API-user" in list(INPUT_APPS.keys()):
+                    if "API-user" in list(INPUT_APPS.keys()):#pylint: disable=C0201
                         role = "API-user"
                     else:
                         raise NotAvailableException('No app is associated to the role')
@@ -591,7 +592,7 @@ def register_flow_fail(reg_response,email,user_role,reg_req):
                 raise UnprocessableException(error_base[i]['messages'][0]['text'])
     return data
 
-def user_register_kratos(register_details, request, app_key=None):
+def user_register_kratos(register_details, request, app_key=None):#pylint: disable=unused-argument
     """user registration kratos"""
     data = {}
     email = register_details.email

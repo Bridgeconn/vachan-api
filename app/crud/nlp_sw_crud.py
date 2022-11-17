@@ -12,7 +12,7 @@ from custom_exceptions import NotAvailableException,TypeException
 
 import db_models
 from dependencies import log
-from schema import schemas_nlp, schema_auth
+from schema import schemas_nlp
 from crud import utils
 from routers import content_apis
 

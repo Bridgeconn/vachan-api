@@ -6,7 +6,7 @@ from fastapi import APIRouter, Query, Body, Depends, Path , Request,\
 from sqlalchemy.orm import Session
 from pydantic import types
 import db_models
-from schema import schemas,schemas_nlp, schema_auth, schema_content
+from schema import schemas,schemas_nlp, schema_content
 from dependencies import get_db, log, AddHiddenInput
 from crud import structurals_crud, contents_crud, nlp_sw_crud, media_crud
 from custom_exceptions import NotAvailableException, AlreadyExistsException,\

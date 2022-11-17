@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from pydantic import types
 from dependencies import get_db, log, AddHiddenInput
-from schema import schemas, schemas_nlp, schema_auth, schema_content
+from schema import schemas, schemas_nlp, schema_content
 from crud import nlp_crud, projects_crud, nlp_sw_crud
 from custom_exceptions import GenericException
 from routers import content_apis
@@ -537,7 +537,7 @@ async def update_stop_words(request: Request,
     tags=['Lookups'])
 @get_auth_access_check_decorator
 async def add_stopwords(request: Request,
-    app_key: types.SecretStr = Query(None),#pylint: disable=unused-arguments
+    app_key: types.SecretStr = Query(None),
     language_code:schemas.LangCodePattern=Path(...,example="hi"),
     stopwords_list:List[str]=Body(..., example=["और", "के", "उसका"]),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
