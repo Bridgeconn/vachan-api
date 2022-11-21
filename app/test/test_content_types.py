@@ -1,6 +1,5 @@
 '''Test cases for contentType related APIs'''
-import json
-from sqlalchemy.orm import Session
+import csv
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
@@ -97,87 +96,128 @@ def test_post_incorrectvalue_contenttype():
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
 
-def test_delete_content_default():
+def test_delete_default():
     ''' positive test case, checking for correct return of deleted content ID'''
-    #Created User or Super Admin can only delete content type
-    #creating one data
+    #create new data
     response = test_post_default()
-    
-    #Deleting created data
-    content_id = response.json()['data']['contentId']
-    data = {
-      "itemId":content_id
-    }
+    content_id = response.json()["data"]["contentId"]
 
-    #Delete content without auth
+    data = {"itemId":content_id}
+
+    #Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.delete(UNIT_URL, headers=headers, json=data)
-    print("Without Auth-",response.json())
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
-    #Delete content with another user
+    #Delete content with other API user
     headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser']['token']
             }
     response = client.delete(UNIT_URL, headers=headers, json=data)
-    print("ANother User-",response.json())
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
 
-    #Delete content with vachanAdmin
+    # Delete content with VachanAdmin
     headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
     response = client.delete(UNIT_URL, headers=headers, json=data)
-    print("Vachan Admin-",response.json())
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
 
-    #Delete content with agAdmin
+     #Delete content with AgAdmin
     headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['AgAdmin']['token']
             }
     response = client.delete(UNIT_URL, headers=headers, json=data)
-    print("Agadmin - ",response.json())
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
 
-    #Delete content with auth
-    SA_user_data = {
+    #Delete content with AgUser
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['AgUser']['token']
+            }
+    response = client.delete(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 403
+    assert response.json()['error'] == 'Permission Denied'
+
+    #Delete content with Vachanuser
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['VachanUser']['token']
+            }
+    response = client.delete(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 403
+    assert response.json()['error'] == 'Permission Denied'
+
+    #Delete content with BcsDeveloper
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['BcsDev']['token']
+            }
+    response = client.delete(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 403
+    assert response.json()['error'] == 'Permission Denied'
+
+    #Delete content with item created API User
+
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+            }
+
+    response = client.delete(UNIT_URL, headers=headers, json=data)
+    print("DELETE RESPONSE : ",response.json())
+    assert response.status_code == 200
+    assert response.json()['message'] ==  \
+        f"Content with identity {content_id} deleted successfully"
+
+def test_delete_default_superadmin():
+    ''' positive test case, checking for correct return of deleted content ID'''
+    #Created User or Super Admin can only delete content
+    #creating data
+    response = test_post_default()
+    content_id = response.json()['data']['contentId']
+    data = {"itemId":content_id}
+
+    #Delete content with Super Admin
+     #Login as Super Admin
+    as_data = {
             "user_email": SUPER_USER,
             "password": SUPER_PASSWORD
         }
-    response = login(SA_user_data)
+    response = login(as_data)
     assert response.json()['message'] == "Login Succesfull"
     test_user_token = response.json()["token"]
     headers_auth = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
+    #Delete content
     response = client.delete(UNIT_URL, headers=headers_auth, json=data)
-    print("With Auth-",response.json())
     assert response.status_code == 200
-    assert response.json()['message'] == f"Content with identity {content_id} deleted successfully"
+    assert response.json()['message'] == \
+    f"Content with identity {content_id} deleted successfully"
     logout_user(test_user_token)
     return response
-
 
 def test_delete_content_id_string():
     '''positive test case, content id as string'''
     response = test_post_default()
-    #Deleting created data 
+    #Deleting created data
     content_id = response.json()['data']['contentId']
     content_id = str(content_id)
     data = {"itemId":content_id}
-    SA_user_data = {
+    as_data = {
             "user_email": SUPER_USER,
             "password": SUPER_PASSWORD
         }
-    response = login(SA_user_data)
+    response = login(as_data)
     assert response.json()['message'] == "Login Succesfull"
     test_user_token = response.json()["token"]
     headers_auth = {"contentType": "application/json",
@@ -186,13 +226,14 @@ def test_delete_content_id_string():
             }
     response = client.delete(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 200
-    assert response.json()['message'] == f"Content with identity {content_id} deleted successfully"
+    assert response.json()['message'] == \
+        f"Content with identity {content_id} deleted successfully"
     logout_user(test_user_token)
 
 def test_delete_incorrectdatatype():
     '''negative testcase. Passing input data not in json format'''
     response = test_post_default()
-    #Deleting created data 
+    #Deleting created data
     content_id = response.json()['data']['contentId']
     data = content_id
     headers = {"contentType": "application/json",
@@ -206,88 +247,131 @@ def test_delete_missingvalue_content_id():
     '''Negative Testcase. Passing input data without contentId'''
     data = {}
     headers = {"contentType": "application/json",
-                "accept": "application/json",
-                'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
     response = client.delete(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
 
-def test_delete_notavailable_content_id():
-    ''' request a non existing content ID, Ensure there is no partial matching'''
-    data = {"itemId":1000}
-    headers = {"contentType": "application/json",
-                "accept": "application/json",
-                'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
-            }
-    response = client.delete(UNIT_URL,headers=headers,json=data)
-    assert response.status_code == 502
-    assert response.json()['error'] == "Database Error"
-'''
-def test_restore_default():
-    positive test case, checking for correct return object
-    response = test_delete_content_default()
+def test_delete_seed_data():
+    '''negative test case, trying to delete a content that is the part of seed db'''
+    response = client.get(UNIT_URL+'?content_type=bible')
     print(response.json())
-    
-    #Restoring deleted data
-    content_id = response.json()['data']['contentId']
-    content_type = response.json()['data']['contentType']
-    
-    # db_= SessionLocal()
-    # deleted_item_id = delete_db(db_=db_)
-    # data = {"itemId": deleted_item_id}
-    #Add content with auth
-    #Super Admin can only restore data
-    data_admin   = {
-    "user_email": SUPER_USER,
-    "password": SUPER_PASSWORD
-    }
-    response =login(data_admin)
-    assert response.json()['message'] == "Login Succesfull"
-    print(response.json())
-    token_admin =  response.json()['token']
-    headers_admin = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+token_admin
-                }
-    user_id = response.json()['userId']
-    print(user_id)
-    data = {
-      "deleted_data":{"contentType":content_type ,"contentId":content_id},
-      "deleted_user":user_id,
-      "deleted_from":"content_types"
-    }
-    print(data)
-    # deleted_item_id = db_.execute(f'''SELECT item_id FROM deleted_items WHERE (deleted_data::text LIKE '%altbible%')''')
-    # db_.commit()
-    # deleted_id = deleted_item_id.fetchone()
-    # print("deleted item id :  ",deleted_id)
-    
-    data = {
-        "itemId":deleted_id
-    }
-    response = client.post(RESTORE_URL, headers=headers_admin, json=data)
-    assert response.status_code == 201
-    #assert response.json()['message'] == \
-    #f"Deleted Item with identity {deleted_item_id} restored successfully"
-    logout_user(token_admin)
+    content_type = response.json()[0]['contentType']
+    data_present = False
+    for content in ['bible','commentary','dictionary','infographic','biblevideo','gitlabrepo']:
+        if content_type == content:
+            data_present = True
+            if data_present:
+                try:
+                    raise Exception
+                except Exception: # pylint: disable=W0703
+                    print('Seed data cannot be deleted')
+    if not data_present:
+        response = client.delete(UNIT_URL+'?content_type=bible')
 
-def test_restore_incorrect_login():
-    #negative test case, login withouth ahj muthentication
-    db_= SessionLocal()
-    deleted_item_id = delete_db(db_=db_)
-    data = {"itemId": deleted_item_id}
-    #Add test without login
+def test_restore_default():
+    '''positive test case, checking for correct return object'''
+    #only Super Admin can restore deleted data
+    #Creating and Deelting data
+    response = test_delete_default_superadmin()
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Restoring data
+    #Restore without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}
-    response = client.post(RESTORE_URL, headers=headers, json=data)
+    response = client.put(RESTORE_URL, headers=headers, json=data)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
+    #Restore content with API user
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['APIUser']['token']
+            }
+    response = client.put(RESTORE_URL, headers=headers, json=data)
+    assert response.status_code == 403
+    assert response.json()['error'] == 'Permission Denied'
+
+    #Restore content with VachanAdmin
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+            }
+    response = client.put(RESTORE_URL, headers=headers, json=data)
+    assert response.status_code == 403
+    assert response.json()['error'] == 'Permission Denied'
+
+    #Restore content with AgAdmin
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['AgAdmin']['token']
+            }
+    response = client.put(RESTORE_URL, headers=headers, json=data)
+    assert response.status_code == 403
+    assert response.json()['error'] == 'Permission Denied'
+
+    #Restore content with AgUser
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['AgUser']['token']
+            }
+    response = client.put(RESTORE_URL, headers=headers, json=data)
+    assert response.status_code == 403
+    assert response.json()['error'] == 'Permission Denied'
+
+    #Restore content with Vachanuser
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['VachanUser']['token']
+            }
+    response = client.put(RESTORE_URL, headers=headers, json=data)
+    assert response.status_code == 403
+    assert response.json()['error'] == 'Permission Denied'
+
+    #Restore content with BcsDeveloper
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['BcsDev']['token']
+            }
+    response = client.put(RESTORE_URL, headers=headers, json=data)
+    assert response.status_code == 403
+    assert response.json()['error'] == 'Permission Denied'
+
+    #Restore content with Super Admin
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_auth = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == \
+    f"Deleted Item with identity {deleteditem_id} restored successfully"
+    logout_user(test_user_token)
+
 def test_restore_item_id_string():
-    #positive test case, item id as string
-    db_= SessionLocal()
-    deleted_item_id = delete_db(db_=db_)
-    item_id = str(deleted_item_id)
-    data = {"itemId": item_id}
+    '''positive test case, passing deleted item id as string'''
+    #only Super Admin can restore deleted data
+    #Creating and Deleting data
+    response = test_delete_default_superadmin()
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Restoring string data
+    deleteditem_id = str(deleteditem_id)
+    data = {"itemId": deleteditem_id}
+
+#Login as Super Admin
     data_admin   = {
     "user_email": SUPER_USER,
     "password": SUPER_PASSWORD
@@ -295,21 +379,25 @@ def test_restore_item_id_string():
     response =login(data_admin)
     assert response.json()['message'] == "Login Succesfull"
     token_admin =  response.json()['token']
-    headers_admin = {"contentType": "application/json",
+    headers_auth = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+token_admin
                      }
-    response = client.post(RESTORE_URL, headers=headers_admin, json=data)
+
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
     assert response.status_code == 201
     assert response.json()['message'] == \
-    f"Deleted Item with identity {item_id} restored successfully"
+    f"Deleted Item with identity {deleteditem_id} restored successfully"
     logout_user(token_admin)
 
 def test_restore_incorrectdatatype():
-    '''the input data object should a json with "itemId" key within it'''
-    db_= SessionLocal()
-    deleted_item_id = delete_db(db_=db_)
-    data = deleted_item_id
+    '''Negative Test Case. Passing input data not in json format'''
+    #Creating and Deleting data
+    response = test_delete_default_superadmin()
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Login as Super Admin
     data_admin   = {
     "user_email": SUPER_USER,
     "password": SUPER_PASSWORD
@@ -317,15 +405,19 @@ def test_restore_incorrectdatatype():
     response =login(data_admin)
     assert response.json()['message'] == "Login Succesfull"
     token_admin =  response.json()['token']
-    headers_admin = {"contentType": "application/json",
+    headers_auth = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+token_admin
-                }
-    response = client.post(RESTORE_URL, headers=headers_admin, json=data)
+                     }
+
+    #Passing input data not in json format
+    data = deleteditem_id
+
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
     logout_user(token_admin)
 
-def test_restore_missingvalue_contenttype():
+def test_restore_missingvalue_itemid():
     '''itemId is mandatory in input data object'''
     data = {}
     data_admin   = {
@@ -339,7 +431,6 @@ def test_restore_missingvalue_contenttype():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+token_admin
                     }
-    response = client.post(RESTORE_URL, headers=headers_admin, json=data)
+    response = client.put(RESTORE_URL, headers=headers_admin, json=data)
     assert_input_validation_error(response)
     logout_user(token_admin)
-'''

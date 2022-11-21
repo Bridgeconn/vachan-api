@@ -1,8 +1,8 @@
 '''API endpoints related to content management'''
 import json
 import re
-import jsonpickle
 from typing import List
+import jsonpickle
 from fastapi import APIRouter, Query, Body, Depends, Path , Request,\
     BackgroundTasks
 from sqlalchemy.orm import Session
@@ -56,9 +56,10 @@ async def add_contents(request: Request, content: schemas.ContentTypeCreate,
     log.debug('content: %s',content)
     if len(structurals_crud.get_content_types(db_, content.contentType)) > 0:
         raise AlreadyExistsException(f"{content.contentType} already present")
-    data = structurals_crud.create_content_type(db_=db_, content=content)
+    data = structurals_crud.create_content_type(db_=db_, \
+        content=content,user_id=user_details['user_id'])
     return {'message': "Content type created successfully",
-            "data": data}
+            "data": data,"createdUser": user_details['user_id']}
 
 @router.delete('/v2/contents',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
@@ -78,7 +79,7 @@ async def delete_contents(request: Request, content_obj: schemas.DeleteIdentity 
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
              user_id=user_details['user_id'],table_name = dbtable_name)
     return {'message': f"Content with identity {content_id} deleted successfully",
-            "data": delcont.deletedData,"deleted_item_id": delcont.itemId}
+            "data": delcont,"deletedUserData": user_details['user_id']}
 
 @router.put('/v2/restore', response_model=schemas.DataRestoreResponse,
     responses={502:{"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
@@ -137,9 +138,10 @@ async def add_language(request: Request, lang_obj : schemas.LanguageCreate = Bod
     log.debug('lang_obj: %s',lang_obj)
     if len(structurals_crud.get_languages(db_, language_code = lang_obj.code)) > 0:
         raise AlreadyExistsException(f"{lang_obj.code} already present")
+    data =  structurals_crud.create_language(db_=db_, lang=lang_obj,
+        user_id=user_details['user_id'])
     return {'message': "Language created successfully",
-        "data": structurals_crud.create_language(db_=db_, lang=lang_obj,
-        user_id=user_details['user_id'])}
+            "data": data,"createdUserData": user_details['user_id']}
 
 @router.put('/v2/languages', response_model=schemas.LanguageUpdateResponse,
     responses={502:{"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
@@ -172,13 +174,10 @@ async def delete_languages(request: Request, lang_obj: schemas.DeleteIdentity = 
     language_id= lang_obj.itemId
     dbtable_name = "languages"
     deleted_content = structurals_crud.delete_language(db_=db_, lang=lang_obj)
-    structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
     user_id=user_details['user_id'],table_name = dbtable_name)
-    deleted_content = jsonpickle.encode(deleted_content)
-    deleted_content = re.sub(r'^.*?}}}, ' ,'{', deleted_content)
-    deleted_content = json.loads(deleted_content)
     return {'message': f"Language with identity {language_id} deleted successfully",
-            "data": deleted_content}
+            "data": delcont,"deletedUserData": user_details['user_id']}
 
 ########### Licenses ######################
 @router.get('/v2/licenses',

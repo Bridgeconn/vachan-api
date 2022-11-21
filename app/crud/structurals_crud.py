@@ -25,9 +25,9 @@ def get_content_types(db_: Session, content_type: str =None, skip: int = 0, limi
             db_models.ContentType.contentType == content_type).offset(skip).limit(limit).all()
     return db_.query(db_models.ContentType).offset(skip).limit(limit).all()
 
-def create_content_type(db_: Session, content: schemas.ContentTypeCreate):
+def create_content_type(db_: Session, content: schemas.ContentTypeCreate,user_id=None):
     '''Adds a row to content_types table'''
-    db_content = db_models.ContentType(contentType = content.contentType)
+    db_content = db_models.ContentType(contentType = content.contentType,createdUser= user_id)
     db_.add(db_content)
     # db_.commit()
     # db_.refresh(db_content)
@@ -107,37 +107,19 @@ def add_deleted_data(db_: Session, del_content,
     json_string = re.sub(r'^.*?}}}, ' ,'{', json_string)
     json_string = json.loads(json_string)
     db_content =  db_models.DeletedItem(deletedData = json_string,
+        createdUser = del_content.createdUser,
         deletedUser = user_id,
         deletedTime = datetime.now(),
         deletedFrom = table_name)
     db_.add(db_content)
-    db_.flush()
-    print("Item ID in deleted_items table : ",db_content.itemId)
     return db_content
 
 def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
     '''Restore deleted record back to the original table'''
     restore_content = db_.query(db_models.DeletedItem).get(restored_item.itemId)
     db_content = restore_content
-    #print(db_content.itemId)
     json_string = db_content.deletedData
     db_.delete(restore_content)
-    #db_.commit()
-
-    # table_name = db_content.deletedFrom
-    # print(table_name)
-    # json_data = db_content.deletedData
-    # if db_content.deletedFrom == table_name:
-    #     value_str = ",".join([f"{key}={json_data[key]}" for key in json_data])
-    #     print(value_str)
-    #     x = value_str.split(",")
-    #     print(x)
-    #     print(type(db_content))
-    #     for i in x:
-    #         db_content = db_models.ContentType(i,(i+1))
-    #     db_.add(db_content)
-      
-    
     if db_content.deletedFrom == 'content_types':
         db_content = db_models.ContentType(contentId = json_string['contentId'],
         contentType = json_string['contentType'])
@@ -152,7 +134,6 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
         updateTime = datetime.now())
     db_.add(db_content)
     #db_.commit()
-    
     return db_content
 
 def delete_language(db_: Session, lang: schemas.DeleteIdentity):
