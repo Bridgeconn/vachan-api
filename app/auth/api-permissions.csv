@@ -12,12 +12,15 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/contents,GET,VachanAdmin,False,None,read-via-vachanadmin
 /v2/contents,GET,API-user,False,None,read-via-api
 /v2/contents,POST,None,False,None,create
+/v2/contents,DELETE,None,False,None,delete/deactivate
 /v2/languages,GET,Autographa,False,None,refer-for-translation
 /v2/languages,GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/languages,GET,VachanAdmin,False,None,read-via-vachanadmin
 /v2/languages,GET,API-user,False,None,read-via-api
 /v2/languages,POST,None,False,None,create
 /v2/languages,PUT,None,False,None,edit
+/v2/languages,DELETE,None,False,None,delete/deactivate
+/v2/restore,PUT,None,False,None,data-restore
 /v2/licenses,GET,Autographa,False,None,refer-for-translation
 /v2/licenses,GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/licenses,GET,VachanAdmin,False,None,read-via-vachanadmin
@@ -93,6 +96,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/autographa/project/token-translations,GET,Autographa,False,None,read-draft
 /v2/autographa/project/token-sentences,PUT,Autographa,False,None,edit-draft
 /v2/autographa/project/draft,GET,Autographa,False,None,read-draft
+/v2/autographa/project/draft,PUT,Autographa,False,None,edit-draft
 /v2/autographa/project/sentences,GET,Autographa,False,None,view-project
 /v2/autographa/project/progress,GET,Autographa,False,None,view-project
 /v2/autographa/project/versification,GET,Autographa,False,None,view-project

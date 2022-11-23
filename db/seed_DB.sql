@@ -3,7 +3,8 @@
 
 CREATE TABLE public.content_types (
     content_type_id SERIAL PRIMARY KEY ,
-    content_type text UNIQUE NOT NULL
+    content_type text UNIQUE NOT NULL,
+    created_user text NULL
 );
 
 ALTER SEQUENCE public.content_types_content_type_id_seq RESTART WITH 100000;
@@ -181,7 +182,7 @@ CREATE TABLE public.stopwords_look_up(
 
 ALTER SEQUENCE public.stopwords_look_up_sw_id_seq RESTART WITH 100000;
 
--- \COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM PROGRAM 'awk FNR-1 ./csvs/stop_words/*.csv | cat' csv NULL AS 'NULL'
+-- COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM PROGRAM 'awk FNR-1 ./csvs/stop_words/*.csv | cat' csv NULL AS 'NULL'
 \COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/assamese.csv' DELIMITER ',' CSV HEADER;
 \COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/bengali.csv' DELIMITER ',' CSV HEADER;
 \COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/gujarati.csv' DELIMITER ',' CSV HEADER;
@@ -206,3 +207,12 @@ CREATE TABLE public.jobs(
 
 ALTER SEQUENCE public.jobs_job_id_seq RESTART WITH 100000;
 
+CREATE TABLE public.deleted_items (
+    item_id  SERIAL PRIMARY KEY,
+    deleted_data JSON,
+    --created_user text NULL,
+    deleted_user text NULL,
+    deleted_time timestamp with time zone DEFAULT NOW(),
+    deleted_from text NOT NULL,
+    UNIQUE(item_id)
+    );

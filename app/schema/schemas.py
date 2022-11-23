@@ -31,6 +31,7 @@ class ContentType(BaseModel):
     '''output object for content types'''
     contentId : int
     contentType : str
+    createdUser : str = None
     class Config:
         '''For SQL Alchemy'''
         orm_mode = True
@@ -38,7 +39,8 @@ class ContentType(BaseModel):
         schema_extra = {
             "example": {
                 "contentId": 1,
-                "contentType": "commentary"
+                "contentType": "commentary",
+                "createdUser": "token"
             }
         }
 
@@ -72,11 +74,13 @@ class LanguageCreate(BaseModel):
             }
         }
 
+
 class LanguageResponse(BaseModel):
     '''Return object of languages'''
     languageId : int
     language : str
     code : LangCodePattern
+    createdUser : str = None
     scriptDirection : Direction = None
     metaData: dict = None
     class Config:
@@ -89,6 +93,7 @@ class LanguageResponse(BaseModel):
                 "languageId": 100057,
                 "language": "Hindi",
                 "code": "hi",
+                "createdUser": "token",
                 "scriptDirection": "left-to-right",
                 "metaData": {"region": "India, Asia",
                     "alternate-names": ["Khadi Boli", "Khari Boli", "Dakhini", "Khariboli"],
@@ -126,6 +131,58 @@ class LanguageEdit (BaseModel):
                     "alternate-names": ["Khadi Boli", "Khari Boli", "Dakhini", "Khariboli"],
                     "suppress-script": "Deva", "is-gateway-language": True}
 
+            }
+        }
+
+class RestoreIdentity(BaseModel):
+    """ item ID input"""
+    itemId:int
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "itemId": 40
+            }
+        }
+
+class DataRestoreResponse(BaseModel):
+    """Content delete response"""
+    message:str
+    data: dict = None
+
+class DeletedItemResponse(BaseModel):
+    '''returns object of deleted items'''
+    itemId : int
+    createdUser :str = None
+    deletedFrom :str
+    class Config:
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "itemId": 100057,
+                "createdUser": "access_token",
+                "deletedFrom": "languages",
+                "scriptDirection": "left-to-right"
+
+            }
+        }
+
+class DeleteResponse(BaseModel):
+    """Content delete response"""
+    message:str
+    data: DeletedItemResponse = None
+
+class DeleteIdentity(BaseModel):
+    """ ID input of item to be deleted"""
+    itemId: int
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "itemId": 100000
             }
         }
 

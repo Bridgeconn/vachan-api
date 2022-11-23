@@ -31,6 +31,9 @@ services:
       - POSTGRES_HOST_AUTH_METHOD=md5
     networks:
       - vachan-auth-net
+    volumes: 
+      - kratos-postgres-vol:/var/lib/postgresql/data
+
 
   # offen backup
   offen-backup_kratos_daily: &backup_service
@@ -39,13 +42,13 @@ services:
     environment: &backup_environment #Daily 00 : 00
       BACKUP_CRON_EXPRESSION: "0 0 * * *"
       BACKUP_FILENAME: backup-kratos-daily-%Y-%m-%dT%H-%M-%S.tar.gz
-      BACKUP_SOURCES: /docker_kratos-sqlite
+      BACKUP_SOURCES: /docker_kratos-postgres
       BACKUP_PRUNING_PREFIX: backup-kratos-daily-
       BACKUP_RETENTION_DAYS: 5
     depends_on:
       - kratos-migrate
     volumes:
-      - kratos-sqlite:/docker_kratos-sqlite:ro
+      - kratos-postgres-vol:/docker_kratos-postgres:ro
       # - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/backups:/archive
     networks:
@@ -58,13 +61,13 @@ services:
       # SAT 00 : 00
       BACKUP_CRON_EXPRESSION: "0 0 * * 6"
       BACKUP_FILENAME: backup-kratos-week-%Y-%m-%dT%H-%M-%S.tar.gz
-      BACKUP_SOURCES: /docker_kratos-sqlite
+      BACKUP_SOURCES: /docker_kratos-postgres
       BACKUP_PRUNING_PREFIX: backup-kratos-week-
       BACKUP_RETENTION_DAYS: 49
     depends_on:
       - kratos-migrate
     volumes:
-      - kratos-sqlite:/docker_kratos-sqlite:ro
+      - kratos-postgres-vol:/docker_kratos-postgres:ro
       # - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/backups:/archive
     networks:
@@ -77,13 +80,13 @@ services:
       # monthly on 28  00 : 00
       BACKUP_CRON_EXPRESSION: "0 0 28 * *"
       BACKUP_FILENAME: backup-kratos-month-%Y-%m-%dT%H-%M-%S.tar.gz
-      BACKUP_SOURCES: /docker_kratos-sqlite
+      BACKUP_SOURCES: /docker_kratos-postgres
       BACKUP_PRUNING_PREFIX: backup-kratos-month-
       BACKUP_RETENTION_DAYS: 365
     depends_on:
       - kratos-migrate
     volumes:
-      - kratos-sqlite:/docker_kratos-sqlite:ro
+      - kratos-postgres-vol:/docker_kratos-postgres:ro
       # - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/backups:/archive
     networks:
@@ -96,13 +99,13 @@ services:
       # yearly DEC 31 day 00 : 00
       BACKUP_CRON_EXPRESSION: "0 0 31 12 *"
       BACKUP_FILENAME: backup-kratos-year-%Y-%m-%dT%H-%M-%S.tar.gz
-      BACKUP_SOURCES: /docker_kratos-sqlite
+      BACKUP_SOURCES: /docker_kratos-postgres
       BACKUP_PRUNING_PREFIX: backup-kratos-year-
       BACKUP_RETENTION_DAYS: 2555
     depends_on:
       - kratos-migrate
     volumes:
-      - kratos-sqlite:/docker_kratos-sqlite:ro
+      - kratos-postgres-vol:/docker_kratos-postgres:ro
       # - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/backups:/archive
     networks:
@@ -112,3 +115,4 @@ networks:
   vachan-auth-net:
 volumes:
   kratos-sqlite:
+  kratos-postgres-vol:

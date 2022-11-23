@@ -3,13 +3,15 @@ AgMT Project Management. The translation or NLP related functions of these
 projects are included in nlp_crud module'''
 
 import re
+import itertools
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
 import db_models
 from schema import schemas_nlp
 from crud import utils, nlp_crud
-from custom_exceptions import NotAvailableException, TypeException
+from custom_exceptions import NotAvailableException, TypeException,\
+    UnprocessableException
 from auth.authentication import get_all_or_one_kratos_users
 
 #pylint: disable=W0143,E1101
@@ -209,7 +211,7 @@ def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_list,
-    	sentence_id_range, with_draft=True)
+        sentence_id_range, with_draft=True)
     draft_rows = draft_rows['db_content']
     if output_format == schemas_nlp.DraftFormats.USFM :
         draft_out = nlp_crud.create_usfm(draft_rows)
@@ -226,13 +228,72 @@ def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence
         }
     return response
 
+def validate_draft_meta(sentence, draft, draft_meta):
+    '''Check if indices are proper in draftMeta, as per values in sentence and draft'''
+    src_segs = [meta[0] for meta in draft_meta]
+    trg_segs = [meta[1] for meta in draft_meta]
+    try:
+        #Ensure the offset ranges dont overlap
+        for seg1, seg2 in itertools.product(src_segs, src_segs):
+            if seg1 != seg2:
+                intersection = set(range(seg1[0],seg1[1])).intersection(
+                    range(seg2[0],seg2[1]))
+                assert not intersection, f"Source segments {seg1} and {seg2} overlaps!"
+        for seg1, seg2 in itertools.product(trg_segs, trg_segs):
+            if seg1 != seg2:
+                intersection = set(range(seg1[0],seg1[1])).intersection(
+                    range(seg2[0],seg2[1]))
+                assert not intersection, f"Target segments {seg1} and {seg2} overlaps!"
+        # Ensure the index values are within the range of string length and from left to right
+        # and non empty
+        src_len = len(sentence)
+        for seg in src_segs:
+            assert 0 <= seg[0] < seg[1] <= src_len, f"Source segment {seg}, is improper!"
+        trg_len = len(draft)
+        for seg in trg_segs:
+            assert 0 <= seg[0] < seg[1] <= trg_len, f"Target segment {seg}, is improper!"
+        for meta in draft_meta:
+            assert meta[2] in ['confirmed', 'suggestion', 'untranslated'],\
+                "invalid value where confirmed, suggestion or untranslated is expected"
+    except AssertionError as exe:
+        raise UnprocessableException("Incorrect metadata:"+str(exe)) from exe
+    except Exception as exe:
+        raise UnprocessableException("Incorrect metadata.") from exe
+
+def update_agmt_draft(db_:Session, project_id, sentence_list, user_id):
+    '''Directly write to the draft and draftMeta fields of project sentences'''
+    sentence_id_list = [sent.sentenceId for sent in sentence_list]
+    source_resp = nlp_crud.obtain_agmt_source(db_, project_id,
+        sentence_id_list=sentence_id_list, with_draft=True)
+    project_row = source_resp['project_content']
+    sentences = source_resp['db_content']
+    for input_sent in sentence_list:
+        sent = None
+        for read_sent in sentences:
+            if input_sent.sentenceId == read_sent.sentenceId:
+                sent = read_sent
+                break
+        if not sent:
+            raise NotAvailableException(f"Sentence id: {input_sent.sentenceId},"+\
+                " not found in project")
+        validate_draft_meta(sentence=sent.sentence, draft=input_sent.draft,
+            draft_meta=input_sent.draftMeta)
+        sent.draft = input_sent.draft
+        sent.draftMeta = input_sent.draftMeta
+        sent.updatedUser = user_id
+    response_result = {
+        'db_content':sentences,
+        'project_content':project_row
+        }
+    return response_result
+
 def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_range):#pylint: disable=too-many-locals
     '''Calculate project translation progress in terms of how much of draft is translated'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
     draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_list,
-    	sentence_id_range, with_draft=True)
+        sentence_id_range, with_draft=True)
     draft_rows = draft_rows["db_content"]
     confirmed_length = 0
     suggestions_length = 0
