@@ -1,6 +1,6 @@
 {
     "meta-content":{
-        "create": ["registeredUser","SuperAdmin"],
+        "create": ["registeredUser"],
         "edit":["SuperAdmin", "resourceCreatedUser"],
         "read-via-api":["noAuthRequired"],
         "read-via-vachanadmin":["SuperAdmin", "VachanAdmin"],

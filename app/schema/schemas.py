@@ -48,7 +48,6 @@ class ContentTypeUpdateResponse(BaseModel):
     '''Object usedtTo update content type'''
     message: str = Field(...,example="Content type created successfully")
     data: ContentType = None
-    createdUser: str = None
 
 LangCodePattern =constr(regex=r"^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
 class Direction(str, Enum):
@@ -107,7 +106,6 @@ class LanguageCreateResponse(BaseModel):
     '''Return object of language update'''
     message: str = Field(..., example="Language created successfully")
     data: LanguageResponse = None
-    createdUserData: str = None
 
 class LanguageUpdateResponse(BaseModel):
     '''Return object of language update'''
@@ -156,7 +154,6 @@ class DeletedItemResponse(BaseModel):
     '''returns object of deleted items'''
     itemId : int
     createdUser :str = None
-    deletedUser : str
     deletedFrom :str
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
@@ -167,7 +164,6 @@ class DeletedItemResponse(BaseModel):
             "example": {
                 "itemId": 100057,
                 "createdUser": "access_token",
-                "deletedUser": "access_token2",
                 "deletedFrom": "languages",
                 "scriptDirection": "left-to-right"
 
@@ -178,7 +174,6 @@ class DeleteResponse(BaseModel):
     """Content delete response"""
     message:str
     data: DeletedItemResponse = None
-    deletedUserData : str = None
 
 class DeleteIdentity(BaseModel):
     """ ID input of item to be deleted"""

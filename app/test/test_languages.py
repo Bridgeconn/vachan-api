@@ -249,7 +249,6 @@ def test_put_languages():
     response = client.put(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 201
     assert response.json()['message'] == "Language edited successfully"
-    print("edited with created user")
     assert_positive_get(response.json()['data'])
     assert response.json()["data"]["language"] == "new-lang-test-edited"
 
@@ -363,71 +362,28 @@ def test_delete_default():
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
-    #Delete language with other API user
-    headers = {"contentType": "application/json",
+     #Delete language with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev']:
+        headers = {"contentType": "application/json",
                     "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['APIUser']['token']
-            }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-    # Delete language with VachanAdmin
-    headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-            }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-     #Delete language with AgAdmin
-    headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['AgAdmin']['token']
-            }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-    #Delete language with AgUser
-    headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['AgUser']['token']
-            }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-    #Delete language with Vachanuser
-    headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['VachanUser']['token']
-            }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-    #Delete language with BcsDeveloper
-    headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['BcsDev']['token']
-            }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
+        }
+        response = client.delete(UNIT_URL, headers=headers, json=data)
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
 
     #Delete language with item created API User
-
     headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
     response = client.delete(UNIT_URL, headers=headers, json=data)
-    print("DELETE RESPONSE : ",response.json())
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Language with identity {language_id} deleted successfully"
+    #Check language is deleted from languages table
+    check_language_code = client.get(UNIT_URL+"?language_code=x-aaj")
+    assert_not_available_content(check_language_code)
 
 def test_delete_default_superadmin():
     ''' positive test case, checking for correct return of deleted language ID'''
@@ -505,6 +461,17 @@ def test_delete_missingvalue_language_id():
     response = client.delete(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
 
+def test_delete_notavailable_language():
+    ''' request a non existing content ID, Ensure there is no partial matching'''
+    data = {"itemId":20000}
+    headers = {"contentType": "application/json",
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+            }
+    response = client.delete(UNIT_URL,headers=headers,json=data)
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"
+
 
 def test_delete_seed_data():
     '''negative test case, trying to delete a langauge that is the part of seed db'''
@@ -539,56 +506,13 @@ def test_restore_default():
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
-    #Restore language with API user
-    headers = {"contentType": "application/json",
+    #Restore language with other API user,VachanAdmin,AgAdmin, \
+    # AgUser,VachanUser,BcsDev and resoursecreatedUser
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2']:
+        headers = {"contentType": "application/json",
                     "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['APIUser']['token']
-            }
-    response = client.put(RESTORE_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-    #Restore language with VachanAdmin
-    headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-            }
-    response = client.put(RESTORE_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-    #Restore language with AgAdmin
-    headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['AgAdmin']['token']
-            }
-    response = client.put(RESTORE_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-    #Restore language with AgUser
-    headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['AgUser']['token']
-            }
-    response = client.put(RESTORE_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-    #Restore language with Vachanuser
-    headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['VachanUser']['token']
-            }
-    response = client.put(RESTORE_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-    #Restore language with BcsDeveloper
-    headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['BcsDev']['token']
-            }
+                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
+        }
     response = client.put(RESTORE_URL, headers=headers, json=data)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
@@ -612,6 +536,7 @@ def test_restore_default():
     assert response.json()['message'] == \
     f"Deleted Item with identity {deleteditem_id} restored successfully"
     logout_user(test_user_token)
+    assert_positive_get(response.json()['data'])
 
 def test_restore_item_id_string():
     '''positive test case, passing deleted item id as string'''
@@ -688,3 +613,21 @@ def test_restore_missingvalue_itemid():
     response = client.put(RESTORE_URL, headers=headers_admin, json=data)
     assert_input_validation_error(response)
     logout_user(token_admin)
+
+def test_restore_notavailable_item():
+    ''' request a non existing restore ID, Ensure there is no partial matching'''
+    data = {"itemId":20000}
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_admin = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                    }
+    response = client.put(RESTORE_URL, headers=headers_admin, json=data)
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"

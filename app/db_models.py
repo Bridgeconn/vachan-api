@@ -440,8 +440,8 @@ class DeletedItem(Base): # pylint: disable=too-few-public-methods
 
     itemId = Column('item_id', Integer, primary_key=True,autoincrement=True)
     deletedData = Column('deleted_data', JSON)
-    createdUser = Column('created_user', String)
-    deletedUser = Column('deleted_user', String)
-    deletedTime = Column('deleted_time', DateTime, onupdate=func.now())
+    #createdUser = Column('deleted_user', String)
+    createdUser = Column('deleted_user', String)
+    deletedTime = Column('deleted_time', DateTime, default=func.now())
     deletedFrom = Column('deleted_from', String)
     

@@ -1,5 +1,4 @@
 '''Test cases for contentType related APIs'''
-import csv
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
@@ -110,59 +109,15 @@ def test_delete_default():
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
-    #Delete content with other API user
-    headers = {"contentType": "application/json",
+    #Delete content with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev']:
+        headers = {"contentType": "application/json",
                     "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['APIUser']['token']
-            }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-    # Delete content with VachanAdmin
-    headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-            }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-     #Delete content with AgAdmin
-    headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['AgAdmin']['token']
-            }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-    #Delete content with AgUser
-    headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['AgUser']['token']
-            }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-    #Delete content with Vachanuser
-    headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['VachanUser']['token']
-            }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-    #Delete content with BcsDeveloper
-    headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['BcsDev']['token']
-            }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
+        }
+        response = client.delete(UNIT_URL, headers=headers, json=data)
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
 
     #Delete content with item created API User
 
@@ -172,10 +127,12 @@ def test_delete_default():
             }
 
     response = client.delete(UNIT_URL, headers=headers, json=data)
-    print("DELETE RESPONSE : ",response.json())
     assert response.status_code == 200
     assert response.json()['message'] ==  \
         f"Content with identity {content_id} deleted successfully"
+    #Check content is deleted from content_types table
+    check_content_type = client.get(UNIT_URL+"?content_type={content_type}")
+    assert_not_available_content(check_content_type)
 
 def test_delete_default_superadmin():
     ''' positive test case, checking for correct return of deleted content ID'''
@@ -256,7 +213,6 @@ def test_delete_missingvalue_content_id():
 def test_delete_seed_data():
     '''negative test case, trying to delete a content that is the part of seed db'''
     response = client.get(UNIT_URL+'?content_type=bible')
-    print(response.json())
     content_type = response.json()[0]['contentType']
     data_present = False
     for content in ['bible','commentary','dictionary','infographic','biblevideo','gitlabrepo']:
@@ -269,11 +225,21 @@ def test_delete_seed_data():
                     print('Seed data cannot be deleted')
     if not data_present:
         response = client.delete(UNIT_URL+'?content_type=bible')
+def test_delete_notavailable_content():
+    ''' request a non existing content ID, Ensure there is no partial matching'''
+    data = {"itemId":20000}
+    headers = {"contentType": "application/json",
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+            }
+    response = client.delete(UNIT_URL,headers=headers,json=data)
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"
 
 def test_restore_default():
     '''positive test case, checking for correct return object'''
     #only Super Admin can restore deleted data
-    #Creating and Deelting data
+    #Creating and Deleting data
     response = test_delete_default_superadmin()
     deleteditem_id = response.json()['data']['itemId']
     data = {"itemId": deleteditem_id}
@@ -285,56 +251,12 @@ def test_restore_default():
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
-    #Restore content with API user
-    headers = {"contentType": "application/json",
+    #Restore content with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev']:
+        headers = {"contentType": "application/json",
                     "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['APIUser']['token']
-            }
-    response = client.put(RESTORE_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-    #Restore content with VachanAdmin
-    headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-            }
-    response = client.put(RESTORE_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-    #Restore content with AgAdmin
-    headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['AgAdmin']['token']
-            }
-    response = client.put(RESTORE_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-    #Restore content with AgUser
-    headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['AgUser']['token']
-            }
-    response = client.put(RESTORE_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-    #Restore content with Vachanuser
-    headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['VachanUser']['token']
-            }
-    response = client.put(RESTORE_URL, headers=headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-    #Restore content with BcsDeveloper
-    headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users['BcsDev']['token']
-            }
+                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
+        }
     response = client.put(RESTORE_URL, headers=headers, json=data)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
@@ -357,7 +279,11 @@ def test_restore_default():
     assert response.status_code == 201
     assert response.json()['message'] == \
     f"Deleted Item with identity {deleteditem_id} restored successfully"
+    assert_positive_get(response.json()['data'])
     logout_user(test_user_token)
+    #Check content is available in content_types table after restore
+    check_content_type = client.get(UNIT_URL+"?content_type=altbibile")
+    assert check_content_type.status_code == 200
 
 def test_restore_item_id_string():
     '''positive test case, passing deleted item id as string'''
@@ -434,3 +360,21 @@ def test_restore_missingvalue_itemid():
     response = client.put(RESTORE_URL, headers=headers_admin, json=data)
     assert_input_validation_error(response)
     logout_user(token_admin)
+
+def test_restore_notavailable_item():
+    ''' request a non existing restore ID, Ensure there is no partial matching'''
+    data = {"itemId":20000}
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_admin = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                    }
+    response = client.put(RESTORE_URL, headers=headers_admin, json=data)
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"

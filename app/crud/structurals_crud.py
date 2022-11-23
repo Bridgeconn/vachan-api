@@ -25,6 +25,15 @@ def get_content_types(db_: Session, content_type: str =None, skip: int = 0, limi
             db_models.ContentType.contentType == content_type).offset(skip).limit(limit).all()
     return db_.query(db_models.ContentType).offset(skip).limit(limit).all()
 
+def get_content_id(db_: Session, content_id = None, **kwargs):
+    '''Fetches row of content type'''
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
+    query = db_.query(db_models.ContentType)
+    if content_id is not None:
+        query = query.filter(db_models.ContentType.contentId == content_id)
+    return query.offset(skip).limit(limit).all()
+
 def create_content_type(db_: Session, content: schemas.ContentTypeCreate,user_id=None):
     '''Adds a row to content_types table'''
     db_content = db_models.ContentType(contentType = content.contentType,createdUser= user_id)
@@ -100,19 +109,27 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
     # db_.refresh(db_content)
     return db_content
 
-def add_deleted_data(db_: Session, del_content,
-    user_id = None, table_name : str = None):
+def add_deleted_data(db_: Session, del_content, table_name : str = None):
     '''backup deleted items from any table'''
     json_string = jsonpickle.encode(del_content)#, unpicklable=False
     json_string = re.sub(r'^.*?}}}, ' ,'{', json_string)
     json_string = json.loads(json_string)
     db_content =  db_models.DeletedItem(deletedData = json_string,
+        #createdUser = del_content.createdUser,
         createdUser = del_content.createdUser,
-        deletedUser = user_id,
         deletedTime = datetime.now(),
         deletedFrom = table_name)
     db_.add(db_content)
     return db_content
+
+def get_restore_item_id(db_: Session, restore_item_id = None, **kwargs):
+    '''Fetches row of deleted item'''
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
+    query = db_.query(db_models.ContentType)
+    if restore_item_id is not None:
+        query = query.filter(db_models.DeletedItem.itemId == restore_item_id)
+    return query.offset(skip).limit(limit).all()
 
 def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
     '''Restore deleted record back to the original table'''
