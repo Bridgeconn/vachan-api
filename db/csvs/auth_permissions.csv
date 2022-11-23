@@ -25,3 +25,4 @@ read-settings
 access-via-api
 generate-key
 delete-key
+generate-key-via-api

@@ -25,6 +25,15 @@ USER_SESSION_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL",
 SUPER_USER = os.environ.get("VACHAN_SUPER_USERNAME")
 SUPER_PASSWORD = os.environ.get("VACHAN_SUPER_PASSWORD")
 
+def get_token_schema_type(recieve_token):
+    """get current token is app or user"""
+    headers = {}
+    headers["Accept"] = "application/json"
+    headers["Authorization"] = f"Bearer {recieve_token}"
+    user_data = requests.get(USER_SESSION_URL, headers=headers, timeout=10)
+    schema_type = json.loads(user_data.content)["identity"]["schema_id"]
+    return schema_type
+
 def get_current_user_data(recieve_token, app=False):
     """get current user details"""
     details = {}
@@ -42,6 +51,8 @@ def get_current_user_data(recieve_token, app=False):
         else:
             details["user_roles"] = ""
     elif user_data.status_code == 200 and app:
+        if data["identity"]["schema_id"] != "app":
+            raise UnprocessableException("The token is not a valid type")
         details["app_id"] = data["identity"]["id"]
         details["app_name"] = data["identity"]["traits"]["name"]
     elif user_data.status_code == 401:
@@ -151,6 +162,7 @@ def get_access_tag(db_, resource_type, path_params=None, kw_args = None, resourc
     db_resources = [key.lower() for key in RESOURCE_TYPE]
     resource_tag_map = {
         'user': ['user'],
+        'app': ['app'],
         'project': ['translation-project'],
         'translation': ['generic-translation'],
         'lookup-content': ['lookup-content'],
@@ -264,6 +276,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                 raise UnAuthorizedException("Requesting app is not registered")
         else:
             if 'API-user' in APPS:
+                print("app key in else ==============> ", "API User")
                 client_app = 'API-user'
             else:
                 raise NotAvailableException('Not a Valid app , app is not registred ')
@@ -372,27 +385,30 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
 ######################################### Kratos Auth Functions ####################
 
 #kratos Logout
-def kratos_logout(recieve_token):
+def kratos_logout(recieve_token, app=False):
     """logout function"""
     # recieve_token = auth.credentials
-    payload = {"session_token": recieve_token}
-    headers = {}
-    headers["Accept"] = "application/json"
-    headers["Content-Type"] = "application/json"
-    logout_url = PUBLIC_BASE_URL + "logout/api"
-    response = requests.delete(logout_url, headers=headers, json=payload, timeout=10)
-    if response.status_code == 204:
-        data = {"message":"Successfully Logged out"}
-    elif response.status_code == 400:
-        data = json.loads(response.content)
-    elif response.status_code == 403:
-        data = "The provided Session Token could not be found,"+\
-                "is invalid, or otherwise malformed"
-        raise HTTPException(status_code=403, detail=data)
-    elif response.status_code == 500:
-        data = json.loads(response.content)
-        raise GenericException(data["error"])
-    return data
+    schema_type = get_token_schema_type(recieve_token=recieve_token)
+    if (app and schema_type == 'app') or (not app and schema_type != 'app') :
+        payload = {"session_token": recieve_token}
+        headers = {}
+        headers["Accept"] = "application/json"
+        headers["Content-Type"] = "application/json"
+        logout_url = PUBLIC_BASE_URL + "logout/api"
+        response = requests.delete(logout_url, headers=headers, json=payload, timeout=10)
+        if response.status_code == 204:
+            data = {"message":"Successfully Logged out"}
+        elif response.status_code == 400:
+            data = json.loads(response.content)
+        elif response.status_code == 403:
+            data = "The provided Session Token could not be found,"+\
+                    "is invalid, or otherwise malformed"
+            raise HTTPException(status_code=403, detail=data)
+        elif response.status_code == 500:
+            data = json.loads(response.content)
+            raise GenericException(data["error"])
+        return data
+    raise UnprocessableException("Token is not the requiered type")
 
 #pylint: disable=R1703
 def get_users_kratos_filter(base_url,name,roles,limit,skip):#pylint: disable=too-many-locals
@@ -649,26 +665,35 @@ def login_kratos(user_email,password,from_app=False):#pylint: disable=R1710
         if login_req.status_code == 200:
             session_id = login_req_content["session_token"]
             data["message"] = "Login Succesfull"
-            if from_app:
-                data["key"] = session_id
-                data["appId"] = login_req_content["session"]["identity"]["id"]
+            if (from_app and login_req_content["session"]["identity"]["schema_id"] == 'app') or \
+                (not from_app and login_req_content["session"]["identity"]["schema_id"] != 'app'):
+                if from_app:
+                    data["key"] = session_id
+                    data["appId"] = login_req_content["session"]["identity"]["id"]
+                else:
+                    data["token"] = session_id
+                    data["userId"] = login_req_content["session"]["identity"]["id"]
             else:
-                data["token"] = session_id
-                data["userId"] = login_req_content["session"]["identity"]["id"]
+                raise UnprocessableException\
+                    ("can not perform operation, input is not expected type for the api")
         else:
             raise UnAuthorizedException(login_req_content["ui"]["messages"][0]["text"])
     return data
 
 #delete an identity
-def delete_identity(user_id):
+def delete_identity(user_id, app=False):
     """delete identity"""
     base_url = ADMIN_BASE_URL+"identities/"+user_id
-    response = requests.delete(base_url, timeout=10)
-    if response.status_code == 404:
-        raise NotAvailableException("Unable to locate the resource")
-    # log.warning(response)
-    # log.warning(response.content)
-    return response
+    get_details = requests.get(base_url, timeout=10)
+    schema_type = json.loads(get_details.content)["schema_id"]
+    if (app and schema_type == 'app') or (not app and schema_type != 'app') :
+        response = requests.delete(base_url, timeout=10)
+        if response.status_code == 404:
+            raise NotAvailableException("Unable to locate the resource")
+        # log.warning(response)
+        # log.warning(response.content)
+        return response
+    raise UnprocessableException("can not perform operation, ID not the requiered type")
 
 #user role add
 def user_role_add(user_id,roles_list):

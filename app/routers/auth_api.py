@@ -58,9 +58,8 @@ async def login(user_email: str,password: types.SecretStr,
 
 @router.get('/v2/user/logout',response_model=schema_auth.LogoutResponse,
 responses={403: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
-401: {"model": schemas.ErrorResponse}}
+401: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}}
 ,tags=["Authentication"])
-
 def logout(request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
     app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     db_: Session = Depends(get_db)):#pylint: disable=unused-argument
@@ -199,17 +198,18 @@ async def generate_key(app_email: str,password: types.SecretStr,
 
 @router.get('/v2/app/delete-key',response_model=schema_auth.LogoutResponse,
 responses={403: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
-401: {"model": schemas.ErrorResponse}}
+401: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}}
 ,tags=["App"])
 @get_auth_access_check_decorator
-def delete_key(app_key: types.SecretStr,
+def delete_key(application_key: types.SecretStr,
     request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
     db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''delete app Key
     * delete app key will end the validity of a key even if the time period not expired.'''
     log.info('In app Logout')
-    token = app_key.get_secret_value() if not isinstance(app_key, str) else app_key
-    message = kratos_logout(token)
+    token = application_key.get_secret_value() if not\
+        isinstance(application_key, str) else application_key
+    message = kratos_logout(token, app=True)
     log.debug('logout:%s',message)
     return message
 
@@ -264,5 +264,5 @@ user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint:
     * unique app id can be used to delete an exisiting app'''
     log.info('In app Delete')
     log.debug('app-delete:%s',app_id)
-    delete_identity(app_id)
+    delete_identity(app_id, app=True)
     return {"message":f"deleted identity {app_id}"}
