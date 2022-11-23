@@ -180,7 +180,7 @@ def test_login_register(create_user_fixture):
         "firstname": "user registration",
         "lastname": "ABC Test"
     }
-    response = register(data, app_key=default_app_keys[TEST_APPS_LIST['API']])
+    response = register(data)
     abc_id = response.json()["registered_details"]["id"]
 
     #test user ABC login after register
@@ -235,7 +235,7 @@ def test_validate_password():
         "email": "PQR@gmail.com",
         "password": "password"
     }
-    response = register(data,app_key=default_app_keys[TEST_APPS_LIST['API']])
+    response = register(data)
     assert response.status_code == 422
     assert response.json()['error'] == "Unprocessable Data"
 
@@ -427,7 +427,7 @@ def test_role_assignment_superadmin(create_user_fixture):
         "email": "ag@gmail.com",
         "password": "passwordag@1"
     }
-    response2 = register(user2,app_key=default_app_keys[TEST_APPS_LIST['API']])
+    response2 = register(user2)
     user2_id = response2.json()["registered_details"]["id"]
     assert response2.json()["registered_details"]["Permissions"] == [TEST_APPS_LIST['API']]
 

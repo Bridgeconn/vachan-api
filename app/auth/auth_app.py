@@ -189,17 +189,19 @@ DEFAULT_APPS = [
             "email": "None",
             "phone": "None"
         }
-    },
-    {
-        "email": os.environ.get("APIUSER_APP_EMAIL", "apiuser@vachan.testing"),
-        "name": "API-user",
-        "organization": "BCS",
-        "password": os.environ.get("APIUSER_APP_SECRET", "secret@!@#$"),
-        "contacts": {
-            "email": "None",
-            "phone": "None"
-        }
-    }]
+    }
+    ]
+
+# {
+#     "email": os.environ.get("APIUSER_APP_EMAIL", "apiuser@vachan.testing"),
+#     "name": "API-user",
+#     "organization": "BCS",
+#     "password": os.environ.get("APIUSER_APP_SECRET", "secret@!@#$"),
+#     "contacts": {
+#         "email": "None",
+#         "phone": "None"
+#     }
+# }
 
 def register_default_apps_on_startup():
     """register default apps on startup of vachan"""

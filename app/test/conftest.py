@@ -152,7 +152,11 @@ def create_user_session_run_at_start():
                 "firstname": current_user['firstname'],
                 "lastname": current_user['firstname']
             }
-            response = register(data, app_key= default_app_keys[current_user['app']])
+            if current_user['app'] == TEST_APPS_LIST['API']:
+                current_app_key = None
+            else:
+                current_app_key = default_app_keys[current_user['app']]
+            response = register(data, app_key= current_app_key)
             current_user['test_user_id'] = response.json()["registered_details"]["id"]
             current_user['token'] = response.json()["token"]
         #admin roles provide for

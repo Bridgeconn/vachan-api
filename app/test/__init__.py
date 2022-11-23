@@ -272,10 +272,6 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
             response = client.post(contentapi_post_url, headers=headers_auth, json=data)
             assert response.status_code == 201
 
-    # API = schema_auth.App.API.value
-    # AG = schema_auth.App.AG.value
-    # VACHAN = schema_auth.App.VACHAN.value
-    # VACHANADMIN = schema_auth.AdminRoles.VACHANADMIN.value
     API = 'API-user' if 'API-user' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
     AG = 'Autographa' if 'Autographa' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
     VACHAN = 'Vachan-online or vachan-app' if 'Vachan-online or vachan-app' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')

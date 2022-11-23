@@ -3,33 +3,6 @@ from enum import Enum
 from pydantic import BaseModel, validator
 from pydantic import types, EmailStr
 
-#pylint: disable=too-few-public-methods
-# class ResourceType(str, Enum):
-#     '''Classify DB resources for defineing access rights on them'''
-#     METACONTENT = "meta contents like licences, languages, versions or content types"
-#     CONTENT = "contents like bibles, commentaries, infographics, dictionary or videos"
-#     PROJECT = "Ag or translation project"
-#     USER = "all users in our system (Kratos)"
-#     TRANSLATION = "generic translation apis"
-#     LOOKUP = "Lookup contents"
-#     RESEARCH = "Research-Material"
-#     JOBS = "Background-jobs"
-#     MEDIA = "Media contents"
-#     FILE = "File Manipulation Ops"
-
-# class App(str, Enum):
-#     '''Defined apps'''
-#     AG = "Autographa"
-#     VACHAN = "Vachan-online or vachan-app"
-#     API = "API-user"
-#     VACHANADMIN = "VachanAdmin"
-
-# class AppInput(str, Enum):
-#     '''Input fields for App in Registration'''
-#     AG = "Autographa"
-#     VACHAN = "Vachan-online or vachan-app"
-#     API = "API-user"
-
 class Registration(BaseModel):
     """kratos registration input"""
     email:str
@@ -41,16 +14,6 @@ class EditUser(BaseModel):
     """kratos registration input"""
     firstname:str
     lastname:str
-
-# class AdminRoles(str, Enum):
-#     '''Admin Roles'''
-#     SUPERADMIN = 'SuperAdmin'
-#     VACHANADMIN = 'VachanAdmin'
-#     AGADMIN = 'AgAdmin'
-#     AGUSER = 'AgUser'
-#     VACHANUSER = 'VachanUser'
-#     APIUSER = 'APIUser'
-#     BCSDEV = 'BcsDeveloper'
 
 class FilterRoles(str, Enum):
     '''Filter roles for get users'''

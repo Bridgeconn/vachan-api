@@ -599,7 +599,7 @@ def test_agmt_projects_access_rule():
     post_data["projectName"] = "Test project 2"
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     # headers_auth["app"] = "API-user"
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['API']]}",
+    response = client.post(f"{UNIT_URL}",
         headers=headers_auth, json=post_data)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
@@ -722,7 +722,7 @@ def test_agmt_projects_access_rule():
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
     # headers_auth["app"] = "API-user"
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['API']]}"
+    response = client.post(f"{UNIT_URL}"
         +'&project_id='+str(project1_id)+
         '&user_id='+str(new_user_id),headers=headers_auth)
     assert response.status_code == 403
@@ -818,7 +818,7 @@ def test_get_project_access_rules():
     #get project from apps other than autographa
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     # headers_auth["app"] = "API-user"
-    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['API']]}",
+    response = client.get(f"{UNIT_URL}",
         headers=headers_auth)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
