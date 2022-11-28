@@ -18,7 +18,7 @@ TEST_APPS_LIST = {
     'VACHANADMIN' : 'VachanAdmin' if 'VachanAdmin' in ALL_APPS.keys() else NotAvailableException('Not a Valid app , app is not registred ')
 }
 TEST_ROLE_LIST = {
-    'SUPERADMIN' : 'AgAdmin' if 'AgAdmin' in ALL_ROLES else NotAvailableException('Not a Valid role , role is not registred '),
+    'SUPERADMIN' : 'SuperAdmin' if 'SuperAdmin' in ALL_ROLES else NotAvailableException('Not a Valid role , role is not registred '),
     'VACHANADMIN' : 'VachanAdmin' if 'VachanAdmin' in ALL_ROLES else NotAvailableException('Not a Valid role , role is not registred '),
     'AGADMIN' : 'AgAdmin' if 'AgAdmin' in ALL_ROLES else NotAvailableException('Not a Valid role , role is not registred '),
     'AGUSER' : 'AgUser' if 'AgUser' in ALL_ROLES else NotAvailableException('Not a Valid role , role is not registred '),

@@ -17,12 +17,12 @@ class EditUser(BaseModel):
     firstname:str
     lastname:str
 
-class FilterRoles(str, Enum):
-    '''Filter roles for get users'''
-    ALL = "All"
-    AG = "Autographa"
-    VACHAN = "Vachan-online or vachan-app"
-    API = "API-user"
+# class FilterRoles(str, Enum):
+#     '''Filter roles for get users'''
+#     ALL = "All"
+#     AG = "Autographa"
+#     VACHAN = "Vachan-online or vachan-app"
+#     API = "API-user"
 
 class UserRole(BaseModel):
     """kratos user role input"""

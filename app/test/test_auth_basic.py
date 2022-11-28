@@ -534,33 +534,37 @@ def test_get_put_users():
     check_limit(GETUSERURL,headers_auth)
 
     #filter with name
-    params = f"?name=api&roles={schema_auth.FilterRoles.ALL}"
+    params = f"?name=api"
     response = client.get(GETUSERURL+params,headers=headers_auth)
     assert len(response.json()) >= 2
 
     #filter with not available name in initial test user
-    params = f"?name=aqsdwerfgtyuiolkj&roles={schema_auth.FilterRoles.ALL}"
+    params = f"?name=aqsdwerfgtyuiolkj"
     response = client.get(GETUSERURL+params,headers=headers_auth)
     assert len(response.json()) == 0
 
     #filter with roles
-    params = f"?roles={schema_auth.FilterRoles.ALL}"
+    # params = f"?roles={schema_auth.FilterRoles.ALL}"
+    params = ""
     response = client.get(GETUSERURL+params,headers=headers_auth)
     assert len(response.json()) >=8
 
-    params = f"?roles={TEST_APPS_LIST['API']}"
+    # params = f"?roles={TEST_APPS_LIST['API']}"
+    params = f"?roles={TEST_ROLE_LIST['APIUSER']}"
     response = client.get(GETUSERURL+params,headers=headers_auth)
     assert len(response.json()) >=3
 
-    params = f"?roles={TEST_APPS_LIST['AG']}"
+    params = f"?roles={TEST_ROLE_LIST['AGUSER']}"
+    # params = f"?roles={TEST_APPS_LIST['AG']}"
     response = client.get(GETUSERURL+params,headers=headers_auth)
     assert len(response.json()) >=2
 
-    params = f"?roles={TEST_APPS_LIST['VACHAN']}"
+    # params = f"?roles={TEST_APPS_LIST['VACHAN']}"
+    params = f"?roles={TEST_ROLE_LIST['VACHANUSER']}"
     response = client.get(GETUSERURL+params,headers=headers_auth)
     assert len(response.json()) >=2
 
-    params = f"?roles={TEST_APPS_LIST['VACHAN']}&roles={TEST_APPS_LIST['AG']}"
+    params = f"?roles={TEST_ROLE_LIST['VACHANUSER']}&roles={TEST_ROLE_LIST['AGUSER']}"
     response = client.get(GETUSERURL+params,headers=headers_auth)
     assert len(response.json()) >=4
 
@@ -613,7 +617,7 @@ def test_get_put_users():
     assert "userId" in response.json()["data"]
     assert "name" in response.json()["data"]
     assert response.json()["data"]["name"]["first"] == data["firstname"]
-    assert response.json()["data"]["name"]["last"] == data["lastname"]  
+    assert response.json()["data"]["name"]["last"] == data["lastname"]
     assert response.json()["data"]["name"]["first"] != initial_test_users['APIUser']['firstname']
     assert response.json()["data"]["name"]["last"] != initial_test_users['APIUser']['firstname']
     #Created User

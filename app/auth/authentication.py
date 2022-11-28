@@ -440,26 +440,15 @@ def get_users_kratos_filter(base_url,name,roles,limit,skip):#pylint: disable=too
                     else:
                         name_status = False
 
-                if not schema_auth.FilterRoles.ALL in roles:
-                    temp_role = []
-                    switcher = {
-                        schema_auth.FilterRoles.AG.value : schema_auth.FilterRoles.AG,
-                        schema_auth.FilterRoles.VACHAN.value : schema_auth.FilterRoles.VACHAN,
-                        schema_auth.FilterRoles.API.value : schema_auth.FilterRoles.API
-                            }
-                    for role in roles:
-                        user_role =  switcher.get(role)
-                        temp_role.append(user_role)
-                    role_list = [x.name.lower() for x in temp_role]
+                if roles is not None and len(roles) > 0:
                     kratos_role = [x.lower() for x in data["traits"]["userrole"]]
-                    for k_role in kratos_role:
-                        # res = list(filter(k_role.startswith, role_list)) != []
-                        # changed this as per pylint suggestion
-                        res = list(filter(k_role.startswith, role_list))
-                        if res:
+                    role_status = False
+                    for role in roles:
+                        if role.lower() not in [db_role.lower() for db_role in  ROLES]:
+                            raise NotAvailableException(f"Role {role} is not a valid one")
+                        if role.lower() in kratos_role:
                             role_status = True
                             break
-                        role_status = False
                 if name_status and role_status:
                     user_data.append(kratos_user)
         user_data = user_data[skip:skip+limit] if skip>=0 and limit>=0 else []

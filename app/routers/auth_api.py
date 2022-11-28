@@ -84,14 +84,14 @@ async def get_identities_list(request: Request,#pylint: disable=unused-argument
     app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     name: str = Query(None, example="Bridgeconn"),
     user_id: str = Query(None, example="ecf57420-9rg0-40t8-b56b-dce1fc52c452"),
-    roles:List[schema_auth.FilterRoles]=Query([schema_auth.FilterRoles.ALL]),
+    roles:List[str]=Query([]),
     skip: int = Query(0, ge=0),limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''fetches all the users
     * the optional query parameter can be used to filter the result set
     * name = fullname, firstname or lastname to search
     * user_id = user_id will not consider other filter params
-    * roles= None, select one or more type
+    * roles= [] or [] of role names
     * limit=n: limits the no. of items to be returned to n
     * skip=n: skips the first n objects in return list'''
     log.info('In User List Identities')
