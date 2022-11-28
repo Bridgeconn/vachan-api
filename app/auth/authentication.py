@@ -9,7 +9,6 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 import db_models
 from auth import utils
-from schema import schema_auth
 from dependencies import log
 from custom_exceptions import GenericException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
