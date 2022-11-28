@@ -211,6 +211,8 @@ ALTER SEQUENCE public.jobs_job_id_seq RESTART WITH 100000;
 CREATE TABLE public.roles (
     role_id SERIAL PRIMARY KEY,
     role_name text NOT NULL UNIQUE,
+    role_of_app text NULL,
+    role_description text NULL,
     created_at timestamp with time zone DEFAULT NOW(),
     created_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),

@@ -440,6 +440,8 @@ class Roles(Base): # pylint: disable=too-few-public-methods
 
     roleId = Column('role_id', Integer, primary_key=True)
     roleName = Column('role_name', String, unique=True, index=True)
+    roleOfApp = Column('role_of_app', String)
+    roleDescription = Column('role_description', String)
     createdUser = Column('created_user', String)
     updatedUser = Column('last_updated_user', String)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
