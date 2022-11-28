@@ -68,7 +68,7 @@ def create_sources():
     }
     source = add_source(source_data)
     bible_name = source.json()['data']['sourceName']
-    resp = client.post(f"/v2/bibles/{bible_name}/books?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]}",
+    resp = client.post(f"/v2/bibles/{bible_name}/books?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]['key']}",
 		headers=headers_auth, json=gospel_books_data)
     assert resp.status_code == 201
 
@@ -83,7 +83,7 @@ def create_sources():
     }
     source = add_source(source_data)
     commentary_name = source.json()['data']['sourceName']
-    resp = client.post(f"/v2/commentaries/{commentary_name}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    resp = client.post(f"/v2/commentaries/{commentary_name}?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]['key']}",
 		headers=headers_auth, json=commentary_data)
     assert resp.status_code == 201
 

@@ -31,7 +31,10 @@ def get_token_schema_type(recieve_token):
     headers["Accept"] = "application/json"
     headers["Authorization"] = f"Bearer {recieve_token}"
     user_data = requests.get(USER_SESSION_URL, headers=headers, timeout=10)
-    schema_type = json.loads(user_data.content)["identity"]["schema_id"]
+    if user_data.status_code == 200:
+        schema_type = json.loads(user_data.content)["identity"]["schema_id"]
+    else:
+        schema_type = None
     return schema_type
 
 def get_current_user_data(recieve_token, app=False):
@@ -397,7 +400,10 @@ def kratos_logout(recieve_token, app=False):
         logout_url = PUBLIC_BASE_URL + "logout/api"
         response = requests.delete(logout_url, headers=headers, json=payload, timeout=10)
         if response.status_code == 204:
-            data = {"message":"Successfully Logged out"}
+            if schema_type == 'app':
+                data = {"message":"Key deleted Successfully"}
+            else:
+                data = {"message":"Successfully Logged out"}
         elif response.status_code == 400:
             data = json.loads(response.content)
         elif response.status_code == 403:
@@ -408,7 +414,7 @@ def kratos_logout(recieve_token, app=False):
             data = json.loads(response.content)
             raise GenericException(data["error"])
         return data
-    raise UnprocessableException("Token is not the requiered type")
+    raise UnprocessableException("Token is not the requiered type , malformed or Invalid")
 
 #pylint: disable=R1703
 def get_users_kratos_filter(base_url,name,roles,limit,skip):#pylint: disable=too-many-locals
@@ -664,13 +670,14 @@ def login_kratos(user_email,password,from_app=False):#pylint: disable=R1710
         login_req_content = json.loads(login_req.content)
         if login_req.status_code == 200:
             session_id = login_req_content["session_token"]
-            data["message"] = "Login Succesfull"
             if (from_app and login_req_content["session"]["identity"]["schema_id"] == 'app') or \
                 (not from_app and login_req_content["session"]["identity"]["schema_id"] != 'app'):
                 if from_app:
+                    data["message"] = "Key generated successfully"
                     data["key"] = session_id
                     data["appId"] = login_req_content["session"]["identity"]["id"]
                 else:
+                    data["message"] = "Login Succesfull"
                     data["token"] = session_id
                     data["userId"] = login_req_content["session"]["identity"]["id"]
             else:

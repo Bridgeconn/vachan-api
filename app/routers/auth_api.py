@@ -201,10 +201,13 @@ responses={403: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResp
 401: {"model": schemas.ErrorResponse}, 422: {"model": schemas.ErrorResponse}}
 ,tags=["App"])
 @get_auth_access_check_decorator
-def delete_key(application_key: types.SecretStr,
-    request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+async def delete_key(application_key: types.SecretStr,
+    request: Request,app_key:types.SecretStr= Query(None),#pylint: disable=unused-argument
+    user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
     db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''delete app Key
+    * application key : key of app need to be deleted
+    * app_key: key of app from which the request send
     * delete app key will end the validity of a key even if the time period not expired.'''
     log.info('In app Logout')
     token = application_key.get_secret_value() if not\
@@ -265,4 +268,4 @@ user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint:
     log.info('In app Delete')
     log.debug('app-delete:%s',app_id)
     delete_identity(app_id, app=True)
-    return {"message":f"deleted identity {app_id}"}
+    return {"message":f"deleted app with id : {app_id}"}

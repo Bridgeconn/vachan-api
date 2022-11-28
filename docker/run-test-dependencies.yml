@@ -68,7 +68,7 @@ services:
       - LOG_LEVEL=trace
       - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS:-smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true}
       - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL:-EMAIL_ADDRESS@bridgeconn.com}
-      - SERVE_PUBLIC_BASE_URL=http://${VACHAN_DOMAIN:-kratos}:4443
+      - SERVE_PUBLIC_BASE_URL=http://${VACHAN_DOMAIN:-kratos-app}:4433
     command: serve -c /etc/config/kratos/kratos-app.yml --dev --watch-courier
     volumes:
       # - type: volume

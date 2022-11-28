@@ -775,12 +775,12 @@ def test_diffrernt_sources_with_app_and_roles():
     check_resp_permission(response, check_list)
     #APP : Autographa
     # headers_auth['app'] = AG
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&version_abbreviation=TTT",
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&version_abbreviation=TTT",
         headers=headers_auth)
     assert_not_available_content(response)
     #APP : Vachan Online
     # headers_auth['app'] = VACHAN
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]}&version_abbreviation=TTT", 
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]['key']}&version_abbreviation=TTT", 
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -790,7 +790,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_resp_permission(response, check_list)
     #APP : Vachan Admin
     # headers_auth['app'] = VACHANADMIN
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]}&version_abbreviation=TTT", 
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]['key']}&version_abbreviation=TTT", 
         headers=headers_auth)
     assert_not_available_content(response)
 
@@ -807,7 +807,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_resp_permission(response, check_list)
     #APP : Autographa
     # headers_auth['app'] = AG
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&version_abbreviation=TTT", 
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&version_abbreviation=TTT", 
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -817,7 +817,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_resp_permission(response, check_list)
     #APP : Vachan Online
     # headers_auth['app'] = VACHAN
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]}&version_abbreviation=TTT", 
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]['key']}&version_abbreviation=TTT", 
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -827,7 +827,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_resp_permission(response, check_list)
     #APP : Vachan Admin
     # headers_auth['app'] = VACHANADMIN
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]}&version_abbreviation=TTT", 
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]['key']}&version_abbreviation=TTT", 
         headers=headers_auth)
     assert_not_available_content(response)
 
@@ -844,12 +844,12 @@ def test_diffrernt_sources_with_app_and_roles():
     check_resp_permission(response, check_list)
     #APP : Autographa
     # headers_auth['app'] = AG
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&version_abbreviation=TTT",
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&version_abbreviation=TTT",
         headers=headers_auth)
     assert_not_available_content(response)
     #APP : Vachan Online
     # headers_auth['app'] = VACHAN
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]}&version_abbreviation=TTT",
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]['key']}&version_abbreviation=TTT",
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -859,7 +859,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_resp_permission(response, check_list)
     #APP : Vachan Admin
     # headers_auth['app'] = VACHANADMIN
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]}&version_abbreviation=TTT",
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]['key']}&version_abbreviation=TTT",
         headers=headers_auth)
     assert_not_available_content(response)
 
@@ -879,12 +879,12 @@ def test_diffrernt_sources_with_app_and_roles():
     check_resp_permission(response, check_list)
     #APP : Autographa
     # headers_auth['app'] = AG
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&version_abbreviation=TTT", 
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&version_abbreviation=TTT", 
         headers=headers_auth)
     assert_not_available_content(response)
     #APP : Vachan Online
     # headers_auth['app'] = VACHAN
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]}&version_abbreviation=TTT", 
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]['key']}&version_abbreviation=TTT", 
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -894,7 +894,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_resp_permission(response, check_list)
     #APP : Vachan Admin
     # headers_auth['app'] = VACHANADMIN
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]}&version_abbreviation=TTT", 
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]['key']}&version_abbreviation=TTT", 
         headers=headers_auth)
     assert len(response.json()) == 5
     # assert 'content' in response.json()[0]['metaData']['accessPermissions']
@@ -918,12 +918,12 @@ def test_diffrernt_sources_with_app_and_roles():
     check_resp_permission(response, check_list)
     #APP : Autographa
     # headers_auth['app'] = AG
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&version_abbreviation=TTT", 
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&version_abbreviation=TTT", 
         headers=headers_auth)
     assert_not_available_content(response)
     #APP : Vachan Online
     # headers_auth['app'] = VACHAN
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]}&version_abbreviation=TTT", 
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]['key']}&version_abbreviation=TTT", 
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -933,7 +933,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_resp_permission(response, check_list)
     #APP : Vachan Admin
     # headers_auth['app'] = VACHANADMIN
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]}&version_abbreviation=TTT", 
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]['key']}&version_abbreviation=TTT", 
         headers=headers_auth)
     assert_not_available_content(response)
 
@@ -950,7 +950,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_resp_permission(response, check_list)
     #APP : Autographa
     # headers_auth['app'] = AG
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&version_abbreviation=TTT", 
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&version_abbreviation=TTT", 
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -960,7 +960,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_resp_permission(response, check_list)
     #APP : Vachan Online
     # headers_auth['app'] = VACHAN
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]}&version_abbreviation=TTT", 
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]['key']}&version_abbreviation=TTT", 
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -970,7 +970,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_resp_permission(response, check_list)
     #APP : Vachan Admin
     # headers_auth['app'] = VACHANADMIN
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]}&version_abbreviation=TTT", 
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]['key']}&version_abbreviation=TTT", 
         headers=headers_auth)
     assert_not_available_content(response)
 
@@ -990,12 +990,12 @@ def test_diffrernt_sources_with_app_and_roles():
     check_resp_permission(response, check_list)
     #APP : Autographa
     # headers_auth['app'] = AG
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&version_abbreviation=TTT", 
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&version_abbreviation=TTT", 
         headers=headers_auth)
     assert_not_available_content(response)
     #APP : Vachan Online
     # headers_auth['app'] = VACHAN
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]}&version_abbreviation=TTT", 
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]['key']}&version_abbreviation=TTT", 
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -1005,7 +1005,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_resp_permission(response, check_list)
     #APP : Vachan Admin
     # headers_auth['app'] = VACHANADMIN
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]}&version_abbreviation=TTT", 
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]['key']}&version_abbreviation=TTT", 
         headers=headers_auth)
     assert_not_available_content(response)
 
@@ -1034,7 +1034,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_resp_permission(response, check_list)
     #APP : Autographa
     # headers_auth['app'] = AG
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&version_abbreviation=TTT", 
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&version_abbreviation=TTT", 
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -1044,7 +1044,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_resp_permission(response, check_list)
     #APP : Vachan Online
     # headers_auth['app'] = VACHAN
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]}&version_abbreviation=TTT", 
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]['key']}&version_abbreviation=TTT", 
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -1054,7 +1054,7 @@ def test_diffrernt_sources_with_app_and_roles():
     check_resp_permission(response, check_list)
     #APP : Vachan Admin
     # headers_auth['app'] = VACHANADMIN
-    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]}&version_abbreviation=TTT", 
+    response = client.get(UNIT_URL+ f"?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]['key']}&version_abbreviation=TTT", 
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 5

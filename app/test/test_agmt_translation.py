@@ -53,7 +53,7 @@ def test_get_tokens():
     project_id = resp.json()['data']['projectId']
 
     # before adding booksf
-    get_response1 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="
+    get_response1 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="
         +str(project_id),headers=headers_auth)
     assert_not_available_content(get_response1)
 
@@ -61,20 +61,20 @@ def test_get_tokens():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put(f"/v2/autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", headers=headers_auth, json=put_data)
+    resp = client.put(f"/v2/autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # after adding books
     #without auth
-    get_response2 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    get_response2 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id), headers=headers)
     assert get_response2.json()['error'] == 'Authentication Error'
-    get_response2 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    get_response2 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers)
     assert get_response2.status_code == 401
     assert get_response2.json()['error'] == 'Authentication Error'
     #with auth
-    get_response2 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    get_response2 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth)
     assert get_response2.status_code == 200
     assert isinstance(get_response2.json(), list)
@@ -82,13 +82,13 @@ def test_get_tokens():
         assert_positive_get_tokens(item)
 
     # with book filter
-    get_response3 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    get_response3 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+"&books=mat"
     ,headers=headers_auth)
     assert get_response3.status_code == 200
     assert len(get_response3.json()) < len(get_response2.json())
 
-    get_response4 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    get_response4 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+"&books=mrk"
     ,headers=headers_auth)
     assert get_response4.status_code == 200
@@ -96,49 +96,49 @@ def test_get_tokens():
     assert len(get_response2.json()) == len(set(all_tokens))
 
     # with range filter
-    get_response5 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    get_response5 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&sentence_id_range=0&sentence_id_range=10",headers=headers_auth)
     # print(get_response5.json())
     assert_not_available_content(get_response5)
 
-    get_response6 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    get_response6 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&sentence_id_range=41000000&sentence_id_range=41999999",headers=headers_auth)
     assert get_response6.status_code ==200
     assert get_response6.json() == get_response3.json()
 
     # with list filter
-    get_response7 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    get_response7 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&sentence_id_list=41000000",headers=headers_auth)
     assert_not_available_content(get_response7)
 
-    get_response7 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    get_response7 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&sentence_id_list=41001001",headers=headers_auth)
     assert get_response7.status_code == 200
     assert 0 < len(get_response7.json()) < 25
 
     # translation_memory flag
-    get_response8 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    get_response8 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&use_translation_memory=true",headers=headers_auth)
     assert get_response8.json() == get_response2.json()
 
-    get_response9 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    get_response9 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&use_translation_memory=false",headers=headers_auth)
     assert get_response9.status_code == 200
     assert len(get_response9.json()) > 0
 
     # include_phrases flag
-    get_response10 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    get_response10 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&include_phrases=true",headers=headers_auth)
     assert get_response10.json() == get_response2.json()
 
-    get_response11 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    get_response11 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&include_phrases=false",headers=headers_auth)
     assert get_response11.status_code == 200
@@ -147,14 +147,14 @@ def test_get_tokens():
         assert " " not in item['token']
 
     # include_stopwords flag
-    get_response12 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    get_response12 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&include_stopwords=false",headers=headers_auth)
     assert get_response12.json() == get_response2.json()
     for item in get_response12.json():
         assert item['token'] not in sample_stopwords
 
-    get_response13 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    get_response13 = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&include_stopwords=True&include_phrases=false",headers=headers_auth)
     all_tokens = [item['token'] for item in get_response13.json()]
@@ -168,48 +168,48 @@ def test_tokenization_invalid():
     project_id = resp.json()['data']['projectId']
 
     # non existant project
-    response = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id+1),headers=headers_auth)
     assert response.status_code == 404
     assert response.json()['details'] == "Project with id, %s, not found"%(project_id+1)
 
     #invalid book
-    response = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+"&books=mmm"
     ,headers=headers_auth)
     assert response.status_code == 404
     assert response.json()['details'] == 'Book, mmm, not in database'
 
     # only one value for range
-    response = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&sentence_id_range=41000000",headers=headers_auth)
     assert_input_validation_error(response)
 
     # incorrect value for range
-    response = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&sentence_id_range=gen&sentence_id_range=num",headers=headers_auth)
     assert_input_validation_error(response)
 
     # incorrect value for id
-    response = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&sentence_id_list=first",headers=headers_auth)
     assert_input_validation_error(response)
 
     # incorrect value for flags
-    response = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&include_stopwords=Few",headers=headers_auth)
     assert_input_validation_error(response)
 
-    response = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&include_phrases=10",headers=headers_auth)
     assert_input_validation_error(response)
 
-    response = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&use_translation_memory=always",headers=headers_auth)
     assert_input_validation_error(response)
@@ -225,10 +225,10 @@ def test_save_translation():
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
 
-    resp = client.put(f"/v2/autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", headers=headers_auth, json=put_data)
+    resp = client.put(f"/v2/autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
-    resp = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    resp = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&include_stopwords=true",headers=headers_auth)
     assert resp.status_code == 200
@@ -242,7 +242,7 @@ def test_save_translation():
         "translation": "test translation"
       }
     ]
-    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth, json=post_obj_list)
     assert response.status_code == 201
     assert response.json()['message'] == 'Token translations saved'
@@ -259,7 +259,7 @@ def test_save_translation():
         "translation": "test translation"
       }
     ]
-    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),
         headers=headers_auth, json=post_obj_list)
     assert response.status_code == 201
@@ -268,7 +268,7 @@ def test_save_translation():
         assert "test translation" in sent['draft']
 
     #Without auth
-    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),
     json=post_obj_list, headers=headers)
     assert response.json()['error'] == 'Authentication Error'
@@ -282,7 +282,7 @@ def test_save_translation():
             "translation": "test"
         }
         post_obj_list.append(obj)
-    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),
         headers=headers_auth, json=post_obj_list)
     assert response.status_code == 201
@@ -301,11 +301,11 @@ def test_save_translation_invalid():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put(f"/v2/autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    resp = client.put(f"/v2/autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
-    resp = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    resp = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&include_stopwords=true",headers=headers_auth)
     assert resp.status_code == 200
@@ -317,7 +317,7 @@ def test_save_translation_invalid():
         "occurrences": all_tokens[0]["occurrences"],
         "translation": "sample translation"
     }
-    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id+1),
         headers=headers_auth, json=[obj])
     assert response.status_code == 404
@@ -328,7 +328,7 @@ def test_save_translation_invalid():
         "occurrences": all_tokens[0]["occurrences"],
         "translation": "sample translation"
     }
-    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id+1),
         headers=headers_auth, json=[obj])
     assert_input_validation_error(response)
@@ -338,7 +338,7 @@ def test_save_translation_invalid():
         "token": all_tokens[0]['token'],
         "translation": "sample translation"
     }
-    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id+1),
         headers=headers_auth, json=[obj])
     assert_input_validation_error(response)
@@ -348,7 +348,7 @@ def test_save_translation_invalid():
         "token": all_tokens[0]['token'],
         "occurrences": all_tokens[0]["occurrences"]
     }
-    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id+1),
         headers=headers_auth, json=[obj])
     assert_input_validation_error(response)
@@ -361,7 +361,7 @@ def test_save_translation_invalid():
         "occurrences": [wrong_occur],
         "translation": "sample translation"
     }
-    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),
         headers=headers_auth, json=[obj])
     assert response.status_code ==404
@@ -373,7 +373,7 @@ def test_save_translation_invalid():
         "occurrences": all_tokens[1]['occurrences'],
         "translation": "sample translation"
     }
-    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),
         headers=headers_auth, json=[obj])
     assert response.status_code == 500
@@ -390,11 +390,11 @@ def test_drafts():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put(f"/v2/autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    resp = client.put(f"/v2/autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
-    resp = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    resp = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&include_stopwords=true",headers=headers_auth)
     assert resp.status_code == 200
@@ -409,37 +409,37 @@ def test_drafts():
             "translation": "test"
         }
         post_obj_list.append(obj)
-    resp = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    resp = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),
         headers=headers_auth, json=post_obj_list)
     assert resp.status_code == 201
     assert resp.json()['message'] == "Token translations saved"
 
-    response = client.get(UNIT_URL+f"/draft?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/draft?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth)
     assert response.status_code ==200
     assert isinstance(response.json(), list)
     assert "\\v 1 test test test" in response.json()[0]
 
-    response = client.get(UNIT_URL+f"/draft?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/draft?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&books=mat",headers=headers_auth)
     assert len(response.json()) == 1
     assert "\\id MAT" in response.json()[0]
 
     #Without Auth
-    response = client.get(UNIT_URL+f"/draft?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/draft?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&books=mat", headers=headers)
     assert response.json()['error'] == 'Authentication Error'
-    response = client.get(UNIT_URL+f"/draft?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/draft?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&books=mat",headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
     # To be added: proper tests for alignment json drafts
-    response = client.get(UNIT_URL+f"/draft?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/draft?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&output_format=alignment-json",headers=headers_auth)
     assert response.status_code == 200
@@ -456,18 +456,18 @@ def test_get_token_sentences():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put(f"/v2/autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    resp = client.put(f"/v2/autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
-    resp = client.get(f"/v2/autographa/project/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    resp = client.get(f"/v2/autographa/project/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth)
     tokens = resp.json()
     our_token = tokens[0]['token']
     occurrences = tokens[0]['occurrences']
 
     #before translating
-    response = client.put(f"/v2/autographa/project/token-sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(f"/v2/autographa/project/token-sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+'&token='+our_token,
         json=occurrences, headers=headers_auth)
     assert response.status_code == 200
@@ -487,13 +487,13 @@ def test_get_token_sentences():
         "translation": "sample"
       }
     ]
-    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth, json=post_obj_list)
     assert response.status_code == 201
     assert response.json()['message'] == 'Token translations saved'
 
     # after translation
-    response2 = client.put(f"/v2/autographa/project/token-sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response2 = client.put(f"/v2/autographa/project/token-sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+'&token='+our_token, headers=headers_auth,
         json=occurrences)
     assert response2.status_code == 200
@@ -518,7 +518,7 @@ def test_get_sentence():
     project_id = resp.json()['data']['projectId']
 
     # before adding books
-    response = client.get(UNIT_URL+f"/sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth)
     assert_not_available_content(response)
 
@@ -526,12 +526,12 @@ def test_get_sentence():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put(f"/v2/autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    resp = client.put(f"/v2/autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # before translation
-    response = client.get(UNIT_URL+f"/sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+"&with_draft=True",headers=headers_auth)
     assert response.status_code ==200
     assert len(response.json()) > 1
@@ -541,7 +541,7 @@ def test_get_sentence():
 
 
     # translate all tokens at once
-    resp = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    resp = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+"&include_stopwords=true",headers=headers_auth)
     assert resp.status_code == 200
     all_tokens = resp.json()
@@ -553,13 +553,13 @@ def test_get_sentence():
             "translation": "test"
         }
         post_obj_list.append(obj)
-    resp = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    resp = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth, json=post_obj_list)
     assert resp.status_code == 201
     assert resp.json()['message'] == "Token translations saved"
 
     # after token translation
-    response = client.get(UNIT_URL+f"/sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+"&with_draft=True",headers=headers_auth)
     assert response.status_code ==200
     for item in response.json():
@@ -569,10 +569,10 @@ def test_get_sentence():
             assert wrd == "test"
 
     #without auth        
-    response = client.get(UNIT_URL+f"/sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+"&with_draft=True", headers=headers)
     assert response.json()['error'] == 'Authentication Error'
-    response = client.get(UNIT_URL+f"/sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+"&with_draft=True",headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
@@ -584,7 +584,7 @@ def test_progress_n_suggestion():
     project_id = resp.json()['data']['projectId']
 
     # before adding books
-    response = client.get(UNIT_URL+f"/progress?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/progress?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth)
     assert response.status_code ==200
     assert response.json()['confirmed'] == 0
@@ -595,12 +595,12 @@ def test_progress_n_suggestion():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put(f"/v2/autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    resp = client.put(f"/v2/autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # before translation
-    response = client.get(UNIT_URL+"/progress?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/progress?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth)
     assert response.status_code ==200
     assert response.json()['confirmed'] == 0
@@ -625,7 +625,7 @@ def test_progress_n_suggestion():
     # assert response.json()['suggestion'] > 0
 
     # translate all tokens at once
-    resp = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    resp = client.get(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+"&include_stopwords=true",headers=headers_auth)
     assert resp.status_code == 200
     all_tokens = resp.json()
@@ -637,23 +637,23 @@ def test_progress_n_suggestion():
             "translation": "test"
         }
         post_obj_list.append(obj)
-    resp = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    resp = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth, json=post_obj_list)
     assert resp.status_code == 201
     assert resp.json()['message'] == "Token translations saved"
 
     # after token translation
-    response = client.get(UNIT_URL+f"/progress?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/progress?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth)
     assert response.status_code ==200
     assert ceil(response.json()['confirmed']) == 1
     assert floor(response.json()['untranslated']) == 0
 
     #Without Auth
-    response = client.get(UNIT_URL+f"/progress?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/progress?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id), headers=headers)
     assert response.json()['error'] == 'Authentication Error'
-    response = client.get(UNIT_URL+f"/progress?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/progress?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)
     ,headers=headers)
     assert response.status_code == 401
@@ -666,7 +666,7 @@ def test_get_versification():
     project_id = resp.json()['data']['projectId']
 
     # before adding books
-    response = client.get(UNIT_URL+f"/versification?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/versification?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth)
     for key in response.json():
         assert len(response.json()[key]) == 0
@@ -675,11 +675,11 @@ def test_get_versification():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put(f"/v2/autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    resp = client.put(f"/v2/autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
-    response = client.get(UNIT_URL+f"/versification?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/versification?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth)
     found_mat = False
     found_mrk = False
@@ -691,11 +691,11 @@ def test_get_versification():
     assert found_mat and found_mrk
 
     #without auth
-    response = client.get(UNIT_URL+f"/versification?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/versification?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id), headers=headers)
     assert response.json()['error'] == 'Authentication Error'
     #without auth but from Autographa
-    response = client.get(UNIT_URL+f"/versification?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/versification?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
@@ -713,7 +713,7 @@ def test_agmt_translation_access_rule_app():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put(f"/v2/autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", headers=headers_auth, json=put_data)
+    resp = client.put(f"/v2/autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     #get tokens
@@ -721,12 +721,12 @@ def test_agmt_translation_access_rule_app():
     resp = client.get(f"/v2/autographa/project/tokens?project_id="+str(project_id))
     assert resp.json()['error'] == "Permission Denied"
     #without auth and from Autographa
-    resp = client.get(f"/v2/autographa/project/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    resp = client.get(f"/v2/autographa/project/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers)
     assert resp.status_code == 401
     assert resp.json()['error'] == 'Authentication Error'
     #With Auth and From Autographa
-    resp = client.get(f"/v2/autographa/project/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    resp = client.get(f"/v2/autographa/project/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth)
     assert resp.status_code == 200
     assert isinstance(resp.json(), list)
@@ -745,12 +745,12 @@ def test_agmt_translation_access_rule_app():
         "translation": "test translation"
       }
     ]
-    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth, json=post_obj_list)
     assert response.status_code == 201
     assert response.json()['message'] == 'Token translations saved'
     #Wihout Auth from Autographa
-    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers, json=post_obj_list)
     assert response.json()['error'] == "Authentication Error"
     #Outside Autographa wihtou Auth
@@ -758,14 +758,14 @@ def test_agmt_translation_access_rule_app():
     assert response.json()['error'] == "Permission Denied"
 
     #get token translation
-    response = client.get(UNIT_URL+f"/token-translations?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/token-translations?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&token="+all_tokens[0]['token']+"&sentence_id=41001001&offset=0&offset=4",
         headers=headers_auth, json=post_obj_list)
     assert response.status_code == 200
     assert len(response.json()) > 0
     #Without Auth from Autographa
-    response = client.get(UNIT_URL+f"/token-translations?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/token-translations?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+
         "&token="+all_tokens[0]['token']+"&sentence_id=41001001&offset=0&offset=4",
         headers=headers, json=post_obj_list)
@@ -778,11 +778,11 @@ def test_agmt_translation_access_rule_app():
     assert response.json()['error'] == "Permission Denied"
 
     #Get Token Sentences PUT
-    response = client.put(f"/v2/autographa/project/token-sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(f"/v2/autographa/project/token-sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+'&token='+our_token,json=occurrences, headers=headers_auth)
     assert response.status_code == 200
     #Without Auth and from Autographa
-    response = client.put(f"/v2/autographa/project/token-sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(f"/v2/autographa/project/token-sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+'&token='+our_token,json=occurrences, headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == "Authentication Error"
@@ -793,11 +793,11 @@ def test_agmt_translation_access_rule_app():
     assert response.json()['error'] == "Permission Denied"
 
     #Get Draft
-    response = client.get(UNIT_URL+f"/draft?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="
+    response = client.get(UNIT_URL+f"/draft?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="
         +str(project_id)+"&output_format=alignment-json",headers=headers_auth)
     assert response.status_code == 200
     #Without Auth and From Autographa
-    response = client.get(UNIT_URL+f"/draft?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="
+    response = client.get(UNIT_URL+f"/draft?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="
         +str(project_id)+"&output_format=alignment-json",headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
@@ -808,11 +808,11 @@ def test_agmt_translation_access_rule_app():
     assert response.json()['error'] == "Permission Denied"
 
     #Project Source Get
-    response = client.get(UNIT_URL+f"/sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="
+    response = client.get(UNIT_URL+f"/sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="
         +str(project_id)+"&with_draft=True",headers=headers_auth)
     assert response.status_code ==200
     #Without Auth and From Autographa
-    response = client.get(UNIT_URL+f"/sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="
+    response = client.get(UNIT_URL+f"/sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="
         +str(project_id)+"&with_draft=True",headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
@@ -823,11 +823,11 @@ def test_agmt_translation_access_rule_app():
     assert response.json()['error'] == "Permission Denied"
 
     #Project Progress -----------------------------------------------------------------------till here
-    response = client.get(UNIT_URL+f"/progress?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/progress?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth)
     assert response.status_code ==200
     #Without Auth and From Autographa
-    response = client.get(UNIT_URL+f"/progress?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/progress?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
@@ -837,11 +837,11 @@ def test_agmt_translation_access_rule_app():
     assert response.json()['error'] == "Permission Denied"
 
     #Project Versification
-    response = client.get(UNIT_URL+f"/versification?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/versification?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth)
     assert response.status_code ==200
     #Without Auth and From Autographa
-    response = client.get(UNIT_URL+f"/versification?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.get(UNIT_URL+f"/versification?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
@@ -863,11 +863,11 @@ def test_agmt_translation_access_permissions():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put(f"/v2/autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    resp = client.put(f"/v2/autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
-    resp = client.get(f"/v2/autographa/project/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    resp = client.get(f"/v2/autographa/project/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth)
     assert resp.status_code == 200
     assert isinstance(resp.json(), list)
@@ -900,25 +900,25 @@ def test_agmt_translation_access_permissions():
     #PUT Permission in agmt translations
     #"SuperAdmin", "AgAdmin", "projectOwner", "projectMember"
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth, json=post_obj_list)
     assert response.status_code == 201
     assert response.json()['message'] == 'Token translations saved'
 
     headers_auth['Authorization'] = "Bearer"+" "+test_SA_token
-    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth, json=post_obj_list)
     assert response.status_code == 201
     assert response.json()['message'] == 'Token translations saved'
 
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser2']['token']
     #PUT with Aguser not a member
-    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id),headers=headers_auth, json=post_obj_list)
     assert response.status_code == 403
     assert response.json()['error'] == "Permission Denied"
 
-    response = client.put(f"/v2/autographa/project/token-sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(f"/v2/autographa/project/token-sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+'&token='+our_token,
         json=occurrences, headers=headers_auth)
     assert response.status_code == 403
@@ -926,18 +926,18 @@ def test_agmt_translation_access_permissions():
 
     #Add AgUser as memeber to projects
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    response = client.post("/v2/autographa/project/user"+f"?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.post("/v2/autographa/project/user"+f"?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+'&user_id='+str(initial_test_users['AgUser2']["test_user_id"]),headers=headers_auth)
     assert response.status_code == 201
     assert response.json()['message'] == "User added to project successfully"
 
     #After adding as member PUT
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser2']['token']
-    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+str(project_id),
+    response = client.put(UNIT_URL+f"/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+str(project_id),
         headers=headers_auth, json=post_obj_list)
     assert response.status_code == 201
 
-    response = client.put(f"/v2/autographa/project/token-sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+    response = client.put(f"/v2/autographa/project/token-sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
         str(project_id)+'&token='+our_token,
         json=occurrences, headers=headers_auth)
     assert response.status_code == 200
@@ -953,35 +953,35 @@ def test_agmt_translation_access_permissions():
 
     for user_token in token_list:
         headers_auth['Authorization'] = "Bearer"+" "+user_token
-        resp = client.get(f"/v2/autographa/project/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+str(project_id)
+        resp = client.get(f"/v2/autographa/project/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+str(project_id)
             ,headers=headers_auth)
         assert resp.status_code == 200
         assert isinstance(resp.json(), list)
         for item in resp.json():
             assert_positive_get_tokens(item)
 
-        response = client.get(UNIT_URL+f"/token-translations?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+str(project_id)+
+        response = client.get(UNIT_URL+f"/token-translations?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+str(project_id)+
             "&token="+all_tokens[0]['token']+"&sentence_id=41001001&offset=0&offset=4",
             headers=headers_auth, json=post_obj_list)
         assert response.status_code == 200
         assert len(response.json()) > 0
 
-        response = client.get(UNIT_URL+f"/draft?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="
+        response = client.get(UNIT_URL+f"/draft?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="
             +str(project_id)+"&output_format=alignment-json",headers=headers_auth)
         assert response.status_code == 200
         assert len(response.json()) > 0
 
-        response = client.get(UNIT_URL+f"/sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+        response = client.get(UNIT_URL+f"/sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
             str(project_id)+"&with_draft=True",headers=headers_auth)
         assert response.status_code ==200
         assert len(response.json()) > 0
 
-        response = client.get(UNIT_URL+f"/progress?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+        response = client.get(UNIT_URL+f"/progress?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
             str(project_id),headers=headers_auth)
         assert response.status_code ==200
         assert len(response.json()) > 0
 
-        response = client.get(UNIT_URL+f"/versification?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+        response = client.get(UNIT_URL+f"/versification?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
             str(project_id),headers=headers_auth)
         assert response.status_code ==200
         assert len(response.json()) > 0
@@ -996,33 +996,33 @@ def test_agmt_translation_access_permissions():
 
     for user_token in token_list:
         headers_auth['Authorization'] = "Bearer"+" "+user_token
-        resp = client.get(f"/v2/autographa/project/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+        resp = client.get(f"/v2/autographa/project/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
             str(project_id),headers=headers_auth)    
         assert resp.status_code == 403
         assert resp.json()['error'] == "Permission Denied"
 
-        response = client.get(UNIT_URL+f"/token-translations?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+        response = client.get(UNIT_URL+f"/token-translations?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
             str(project_id)+"&token="+all_tokens[0]['token']+"&sentence_id=41001001&offset=0&offset=4",
             headers=headers_auth, json=post_obj_list)
         assert response.status_code == 403
         assert response.json()['error'] == "Permission Denied"
 
-        response = client.get(UNIT_URL+f"/draft?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+        response = client.get(UNIT_URL+f"/draft?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
             str(project_id)+"&output_format=alignment-json",headers=headers_auth)
         assert response.status_code == 403
         assert response.json()['error'] == "Permission Denied"
 
-        response = client.get(UNIT_URL+f"/sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+        response = client.get(UNIT_URL+f"/sentences?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
             str(project_id)+"&with_draft=True",headers=headers_auth)
         assert response.status_code == 403
         assert response.json()['error'] == "Permission Denied"
 
-        response = client.get(UNIT_URL+f"/progress?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+        response = client.get(UNIT_URL+f"/progress?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
             str(project_id),headers=headers_auth)
         assert response.status_code == 403
         assert response.json()['error'] == "Permission Denied"
 
-        response = client.get(UNIT_URL+f"/versification?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+
+        response = client.get(UNIT_URL+f"/versification?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+
             str(project_id),headers=headers_auth)
         assert response.status_code == 403
         assert response.json()['error'] == "Permission Denied"

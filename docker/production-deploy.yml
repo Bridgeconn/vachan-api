@@ -38,7 +38,7 @@ services:
       - LOG_LEVEL=trace
       - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS}
       - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL}
-      - SERVE_PUBLIC_BASE_URL=http://${VACHAN_DOMAIN:-kratos}:4443
+      - SERVE_PUBLIC_BASE_URL=http://${VACHAN_DOMAIN:-kratos-app}:4433
     command: serve -c /etc/config/kratos/kratos-app.yml --watch-courier
     volumes:
       # - type: volume
@@ -49,8 +49,8 @@ services:
         source: ./Kratos_config/email-password
         target: /etc/config/kratos
     expose:
-      - 4434
-      - 4433
+      - 4444
+      - 4443
     networks:
       - my-network
 
@@ -100,9 +100,9 @@ services:
       - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
       - VACHAN_POSTGRES_PORT=5432
       - VACHAN_KRATOS_PUBLIC_URL=${VACHAN_KRATOS_PUBLIC_URL:-http://kratos:4433/}
-      - VACHAN_KRATOS_APP_PUBLIC_URL=${VACHAN_KRATOS_APP_PUBLIC_URL:-http://kratos:4443/}
       - VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
-      - VACHAN_KRATOS_APP_ADMIN_URL=http://kratos:4444/
+      - VACHAN_KRATOS_APP_PUBLIC_URL=${VACHAN_KRATOS_APP_PUBLIC_URL:-http://kratos-app:4433/}
+      - VACHAN_KRATOS_APP_ADMIN_URL=http://kratos-app:4434/
       - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME}
       - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD}
       - VACHAN_TEST_MODE="False"

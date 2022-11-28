@@ -55,14 +55,14 @@ def check_post(data, auth_token=None):
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     else:
         headers_auth['Authorization'] = "Bearer"+" "+auth_token
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=data)
     return response
 
 def test_default_post_put_get():
     '''Positive test to create a project'''
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    resp = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}"
+    resp = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}"
         +'&project_name=Test project 1',headers=headers_auth)
     assert_not_available_content(resp)
 
@@ -72,7 +72,7 @@ def test_default_post_put_get():
     "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml"
     }
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=post_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"
@@ -90,7 +90,7 @@ def test_default_post_put_get():
     "projectId":new_project['projectId'],
     "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    response2 = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response2 = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
          headers=headers_auth, json=put_data)
     assert response2.status_code == 201
     assert response2.json()['message'] == "Project updated successfully"
@@ -138,7 +138,7 @@ def test_default_post_put_get():
             "books": ["luk", "jhn"]
           }
     }
-    response2b = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response2b = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=put_data)
     assert response2b.status_code == 201
     assert response2b.json()['message'] == "Project updated successfully"
@@ -147,7 +147,7 @@ def test_default_post_put_get():
     assert updated_project['metaData']['books'] == ['mat', 'mrk', 'luk', 'jhn']
 
     # fetch projects
-    response3 = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response3 = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth)
     assert len(response3.json()) >= 1
     found_project = False
@@ -167,7 +167,7 @@ def test_default_post_put_get():
     put_data = {
         "projectId":new_project['projectId'],
         "projectName":"New name for old project"}
-    response4 = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    response4 = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
         headers=headers_auth, json=put_data)
     assert response4.status_code == 201
     assert response4.json()['message'] == "Project updated successfully"
@@ -190,7 +190,7 @@ def test_default_post_put_get():
         "’","(",")","‘","—" ],
       "active": True
     }
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
         headers=headers_auth, json=post_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"
@@ -203,7 +203,7 @@ def test_default_post_put_get():
       "sourceLanguageCode": "hi",
       "targetLanguageCode": "ml"
     }
-    resp = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    resp = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
         headers=headers_auth, json=post_data)
     assert resp.status_code == 201
     post_data = {
@@ -211,11 +211,11 @@ def test_default_post_put_get():
       "sourceLanguageCode": "hi",
       "targetLanguageCode": "ml"
     }
-    resp = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    resp = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
         headers=headers_auth, json=post_data)
     assert resp.status_code == 201
     
-    check_default_get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    check_default_get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers_auth, assert_positive_get)
 
 
@@ -226,7 +226,7 @@ def test_post_invalid():
     "projectName": "Test project 1",
     "targetLanguageCode": "ml"
     }
-    res1 = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    res1 = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
         headers=headers_auth, json=data1)
     assert_input_validation_error(res1)
 
@@ -234,7 +234,7 @@ def test_post_invalid():
     "projectName": "Test project 1",
     "sourceLanguageCode": "hi",
     }
-    res2 = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    res2 = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
         headers=headers_auth, json=data2)
     assert_input_validation_error(res2)
 
@@ -242,7 +242,7 @@ def test_post_invalid():
     "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml"
     }
-    res3 = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    res3 = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=data3)
     assert_input_validation_error(res3)
 
@@ -252,7 +252,7 @@ def test_post_invalid():
     "sourceLanguageCode": "2hindi",
     "targetLanguageCode": "ml"
     }
-    res1 = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    res1 = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=data1)
     assert_input_validation_error(res1)
 
@@ -262,7 +262,7 @@ def test_post_invalid():
     "targetLanguageCode": "ml",
     "useDataForLearning": "use"
     }
-    res2 = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    res2 = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=data2)
     assert_input_validation_error(res2)
 
@@ -272,7 +272,7 @@ def test_post_invalid():
     "targetLanguageCode": "ml",
     "stopwords": ["a", "mromal", "list"]
     }
-    res3 = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    res3 = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=data3)
     assert_input_validation_error(res3)
 
@@ -282,7 +282,7 @@ def test_post_invalid():
     "targetLanguageCode": "ml",
     "punctuations": "+_*())^%$#<>?:'"
     }
-    res4 = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    res4 = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=data4)
     assert_input_validation_error(res4)
 
@@ -297,33 +297,33 @@ def test_put_invalid():
 
     # missing projectId
     data = {"active": False}
-    resp = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    resp = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=data)
     assert_input_validation_error(resp)
 
     # incorrect values in fields
     data = {"projectId": new_project['projectId'],
     "active": "delete"}
-    resp = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    resp = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=data)
     assert_input_validation_error(resp)
 
     data = {"projectId": new_project['projectId'],
     "uploadedUSFMs": "mat"}
-    resp = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    resp = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=data)
     assert_input_validation_error(resp)
 
     data = {"projectId": new_project['projectId'],
     "uploadedUSFMs": ["The contents of matthew in text"]}
-    resp = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    resp = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=data)
     assert resp.status_code == 415
     assert resp.json()['error'] == "Not the Required Type"
 
 def check_project_user(project_name, user_id, role=None, status=None, metadata = None):
     '''Make sure the user is in project and if specified, check for other values'''
-    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}"+'&project_name='+project_name,
+    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}"+'&project_name='+project_name,
         headers=headers_auth)
     found_user = False
     found_owner = False
@@ -354,13 +354,13 @@ def test_add_user():
 
     #not exising user id 
     new_user_id = str(5555)
-    response = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}"+'&project_id='+str(new_project['projectId'])+
+    response = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}"+'&project_id='+str(new_project['projectId'])+
         '&user_id='+str(new_user_id),headers=headers_auth)
     assert response.status_code == 404
     assert response.json()['error'] == 'Requested Content Not Available'
     #exising user
     new_user_id = initial_test_users['AgUser']['test_user_id']
-    response = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}"+'&project_id='+str(new_project['projectId'])+
+    response = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}"+'&project_id='+str(new_project['projectId'])+
         '&user_id='+str(new_user_id),headers=headers_auth)
     assert response.status_code == 201
     assert response.json()['message'] == "User added to project successfully"
@@ -386,20 +386,20 @@ def test_add_user_invalid():
     new_project = resp.json()['data']
 
     # No projectId
-    resp = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}"+'&user_id=11111',headers=headers_auth)
+    resp = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}"+'&user_id=11111',headers=headers_auth)
     assert_input_validation_error(resp)
 
     # No User
-    resp = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}"+'&project_id='+str(new_project['projectId']),headers=headers_auth)
+    resp = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}"+'&project_id='+str(new_project['projectId']),headers=headers_auth)
     assert_input_validation_error(resp)
 
     # Invalid project
-    resp = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}"+'&project_id='+str(new_project['projectName'])+
+    resp = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}"+'&project_id='+str(new_project['projectName'])+
         '&user_id=111111',headers=headers_auth)
     assert_input_validation_error(resp)
 
     # Invalid user
-    resp = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}"+'&project_id='+str(new_project['projectId'])+
+    resp = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}"+'&project_id='+str(new_project['projectId'])+
         '&user_id=some_name',headers=headers_auth)
     assert resp.status_code == 404
     assert resp.json()['error'] == 'Requested Content Not Available'
@@ -417,7 +417,7 @@ def test_update_user():
     new_project = resp.json()['data']
     new_user_id = initial_test_users['AgUser']['test_user_id']
 
-    resp = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}"+'&project_id='+str(new_project['projectId'])+
+    resp = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}"+'&project_id='+str(new_project['projectId'])+
         '&user_id='+str(new_user_id),headers=headers_auth)
     assert resp.json()['message'] == "User added to project successfully"
 
@@ -429,7 +429,7 @@ def test_update_user():
     # change role
     update1 = update_data
     update1['userRole'] = 'projectOwner'
-    response1 = client.put(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", headers=headers_auth, json=update1)
+    response1 = client.put(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", headers=headers_auth, json=update1)
     assert response1.status_code == 201
     assert response1.json()['message'] == "User updated in project successfully"
     check_project_user(project_data['projectName'], new_user_id, role="projectOwner")
@@ -437,7 +437,7 @@ def test_update_user():
     # change status
     update2 = update_data
     update2['active'] = False
-    response2 = client.put(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", headers=headers_auth, json=update2)
+    response2 = client.put(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", headers=headers_auth, json=update2)
     assert response2.status_code == 201
     assert response2.json()['message'] == "User updated in project successfully"
     check_project_user(project_data['projectName'], new_user_id, status=False)
@@ -446,7 +446,7 @@ def test_update_user():
     meta = {"last_filter": "mat"}
     update3 = update_data
     update3['metaData'] = meta
-    response3 = client.put(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", headers=headers_auth, json=update3)
+    response3 = client.put(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", headers=headers_auth, json=update3)
     assert response3.status_code == 201
     assert response3.json()['message'] == "User updated in project successfully"
     check_project_user(project_data['projectName'], new_user_id, metadata=meta)
@@ -464,7 +464,7 @@ def test_update_user_invlaid():
     new_project = resp.json()['data']
     new_user_id = initial_test_users['AgUser']['test_user_id']
 
-    resp = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}"+'&project_id='+str(new_project['projectId'])+
+    resp = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}"+'&project_id='+str(new_project['projectId'])+
         '&user_id='+str(new_user_id),headers=headers_auth)
     assert resp.json()['message'] == "User added to project successfully"
 
@@ -475,7 +475,7 @@ def test_update_user_invlaid():
         "userId": "not-a-valid-user-11233",
         "active": False
     }
-    response = client.put(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", headers=headers_auth, json=update_data)
+    response = client.put(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", headers=headers_auth, json=update_data)
     assert response.status_code == 404
     assert response.json()['details'] == "User-project pair not found"
 
@@ -485,7 +485,7 @@ def test_update_user_invlaid():
         "userId": new_user_id,
         "active": False
     }
-    response = client.put(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", headers=headers_auth, json=update_data)
+    response = client.put(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", headers=headers_auth, json=update_data)
     assert response.status_code == 404
     assert response.json()['details'] == "User-project pair not found"
 
@@ -495,7 +495,7 @@ def test_update_user_invlaid():
         "userId": new_user_id,
         "active": "Delete"
     }
-    response = client.put(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    response = client.put(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
         headers=headers_auth, json=update_data)
     assert_input_validation_error(response)
 
@@ -505,7 +505,7 @@ def test_update_user_invlaid():
         "userId": new_user_id,
         "metaData": "A normal string intead of json"
     }
-    response = client.put(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    response = client.put(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
         headers=headers_auth, json=update_data)
     assert_input_validation_error(response)
 
@@ -549,28 +549,28 @@ def test_soft_delete():
         assert response.status_code == 201
         assert response.json()['message'] == "Project created successfully"
 
-    get_response1 = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",headers=headers_auth)
+    get_response1 = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",headers=headers_auth)
     assert len(get_response1.json()) >= len(data)
 
 
     # positive PUT
     for item in delete_data:
         # find the project id
-        resp = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}"+"&project_name="+item['project_name'],headers=headers_auth)
+        resp = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}"+"&project_name="+item['project_name'],headers=headers_auth)
         assert resp.status_code == 200
         project_id = resp.json()[0]['projectId']
 
         put_obj = {"active": False}
         put_obj['projectId'] = project_id
-        response = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", headers=headers_auth, json=put_obj)
+        response = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", headers=headers_auth, json=put_obj)
         assert response.status_code == 201
         assert response.json()['message'] == 'Project updated successfully'
         assert not response.json()['data']['active']
 
-    get_response2 = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",headers=headers_auth)
+    get_response2 = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",headers=headers_auth)
     assert len(get_response2.json()) == len(get_response1.json()) - len(delete_data)
 
-    get_response3 = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}"+'&active=false',headers=headers_auth)
+    get_response3 = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}"+'&active=false',headers=headers_auth)
     assert len(get_response3.json()) >= len(delete_data)
 
 #Access Rules and related Test
@@ -584,12 +584,12 @@ def test_agmt_projects_access_rule():
     "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml"
     }
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers, json=post_data)
     assert response.status_code == 401
     assert 'error' in response.json()
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=post_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"
@@ -605,13 +605,13 @@ def test_agmt_projects_access_rule():
     assert response.json()['error'] == 'Permission Denied'
     post_data["projectName"] = "Test project 3"
     # headers_auth["app"] = "Vachan-online or vachan-app"
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]}",
+    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]['key']}",
         headers=headers_auth, json=post_data)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
     post_data["projectName"] = "Test project 4"
     # headers_auth["app"] = "VachanAdmin"
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]}",
+    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]['key']}",
         headers=headers_auth, json=post_data)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
@@ -620,22 +620,22 @@ def test_agmt_projects_access_rule():
     post_data["projectName"] = "Test project 5"
     # headers_auth["app"] = "Autographa"
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
         headers=headers_auth, json=post_data)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
         headers=headers_auth, json=post_data)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
         headers=headers_auth, json=post_data)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
         headers=headers_auth, json=post_data)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
@@ -652,14 +652,14 @@ def test_agmt_projects_access_rule():
     #create with AGUser and SA
     post_data["projectName"] = "Test project 6"
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
         headers=headers_auth, json=post_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"
     project6_id = response.json()['data']['projectId']
     post_data["projectName"] = "Test project 7"
     headers_auth['Authorization'] = "Bearer"+" "+test_SA_token
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
         headers=headers_auth, json=post_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"
@@ -672,7 +672,7 @@ def test_agmt_projects_access_rule():
     }
     #update with Owner of project
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    response2 = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    response2 = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
         headers=headers_auth, json=put_data)
     assert response2.status_code == 201
     assert response2.json()['message'] == "Project updated successfully"
@@ -684,14 +684,14 @@ def test_agmt_projects_access_rule():
         "projectId":project6_id,
         "projectName":"New name for old project6"}
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    response2 = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response2 = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=put_data)
     assert response2.status_code == 201
     assert response2.json()['message'] == "Project updated successfully"
     assert response2.json()['data']['projectName'] == put_data["projectName"]
     put_data["projectName"] = "New name for project7 by SA"
     headers_auth['Authorization'] = "Bearer"+" "+test_SA_token
-    response2 = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response2 = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=put_data)
     assert response2.status_code == 201
     assert response2.json()['message'] == "Project updated successfully"
@@ -700,7 +700,7 @@ def test_agmt_projects_access_rule():
     #update project with not Owner
     put_data["projectId"] = project7_id
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    response2 = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response2 = client.put(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=put_data)
     assert response2.status_code == 403
     assert response2.json()['error'] == 'Permission Denied'
@@ -710,27 +710,26 @@ def test_agmt_projects_access_rule():
     new_user_id = initial_test_users['AgUser']['test_user_id']
     #add user from another app than Autographa
     # headers_auth["app"] = "VachanAdmin"
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]}"
+    response = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]['key']}"
         +'&project_id='+str(project1_id)+
         '&user_id='+str(new_user_id),headers=headers_auth)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
     # headers_auth["app"] = "Vachan-online or vachan-app"
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]}"
+    response = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]['key']}"
         +'&project_id='+str(project1_id)+
         '&user_id='+str(new_user_id),headers=headers_auth)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
     # headers_auth["app"] = "API-user"
-    response = client.post(f"{UNIT_URL}"
-        +'&project_id='+str(project1_id)+
+    response = client.post(f"{USER_URL}"+'?project_id='+str(project1_id)+
         '&user_id='+str(new_user_id),headers=headers_auth)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
     #add user by not owner
     # headers_auth["app"] = "Autographa"
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}"+
+    response = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}"+
         '&project_id='+str(project1_id)+
         '&user_id='+str(new_user_id),headers=headers_auth)
     assert response.status_code == 403
@@ -738,12 +737,13 @@ def test_agmt_projects_access_rule():
     #add from Autograpaha by allowed user
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     post_data["projectName"] = "Test project 8"
-    response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
+    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
+        headers=headers_auth, json=post_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"
     project8_id = response.json()['data']['projectId']
 
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}"+
+    response = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}"+
         '&project_id='+str(project8_id)+
         '&user_id='+str(new_user_id),headers=headers_auth)
     assert response.status_code == 201
@@ -763,14 +763,14 @@ def test_agmt_projects_access_rule():
     # add metadata
     meta = {"last_filter": "luk"}
     update_data['metaData'] = meta
-    response3 = client.put(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response3 = client.put(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=update_data)
     assert response3.status_code == 403
     assert response3.json()['error'] == 'Permission Denied'
     #update with owner
     post_data['projectName'] = 'Test project 1'
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    response3 = client.put(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response3 = client.put(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth, json=update_data)
     assert response3.status_code == 201
     assert response3.json()['message'] == "User updated in project successfully"
@@ -784,7 +784,7 @@ def test_get_project_access_rules():
     "targetLanguageCode": "ml"
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
         headers=headers_auth, json=post_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"
@@ -792,7 +792,7 @@ def test_get_project_access_rules():
 
     post_data["projectName"] = "Test project 2"
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
         headers=headers_auth, json=post_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"
@@ -800,7 +800,7 @@ def test_get_project_access_rules():
 
     post_data["projectName"] = "Test project 3"
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
         headers=headers_auth, json=post_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"
@@ -823,12 +823,12 @@ def test_get_project_access_rules():
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
     # headers_auth["app"] = "Vachan-online or vachan-app"
-    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]}",
+    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['VACHAN']]['key']}",
         headers=headers_auth)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
     # headers_auth["app"] = "VachanAdmin"
-    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]}",
+    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]['key']}",
         headers=headers_auth)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
@@ -836,51 +836,51 @@ def test_get_project_access_rules():
     #get project from Autographa with not allowed users get empty result
     # headers_auth["app"] = "Autographa"
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth)
     assert len(response.json()) == 0
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
-    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth)
     assert len(response.json()) == 0
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
-    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth)
     assert len(response.json()) == 0
 
     #get all project by SA , AgAdmin, Bcs internal dev
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth)
     assert len(response.json()) >= 3
 
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
-    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth)
     assert len(response.json()) >= 3
 
     headers_auth['Authorization'] = "Bearer"+" "+ test_SA_token
-    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth)
     assert len(response.json()) >= 3
 
     #get project by project owner Aguser only get owner project
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth)
     assert len(response.json()) >= 2
 
     #create project by SA and add Aguser as member to the project
     post_data["projectName"] = 'Test project 4'
     headers_auth['Authorization'] = "Bearer"+" "+ test_SA_token
-    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response = client.post(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
          headers=headers_auth, json=post_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"
     project4_id = response.json()['data']['projectId']
 
     new_user_id = initial_test_users['AgUser']['test_user_id']
-    response = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}"+
+    response = client.post(f"{USER_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}"+
         '&project_id='+str(project4_id)+
         '&user_id='+str(new_user_id),headers=headers_auth)
     assert response.status_code == 201
@@ -893,7 +893,7 @@ def test_get_project_access_rules():
 
     #get after add as member
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}"+
+    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}"+
         "&user_id="+new_user_id,headers=headers_auth)
     assert len(response.json()) >= 3
     for proj in response.json():
@@ -912,7 +912,7 @@ def test_get_project_access_rules():
     # headers_auth["app"] = "Autographa"
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser2']['token']
     # headers_auth['Authorization'] = "Bearer"+" "+ag_user_token
-    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    response = client.get(f"{UNIT_URL}?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
         headers=headers_auth)
     assert len(response.json()) == 0
     # delete_user_identity(ag_user_id)

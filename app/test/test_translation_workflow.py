@@ -383,59 +383,59 @@ def test_end_to_end_translation():
                 "accept": "application/json"
             }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    resp = client.post(BASE_URL+"bibles/"+source_name+"/books"+f"?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    resp = client.post(BASE_URL+"bibles/"+source_name+"/books"+f"?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
       headers=headers_auth,json=gospel_books_data)
     assert resp.json()['message'] == "Bible books uploaded and processed successfully"
 
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    resp = client.post(BASE_URL+f"autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    resp = client.post(BASE_URL+f"autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
       headers=headers_auth, json=project_post_data)
     assert resp.json()['message'] == "Project created successfully"
     project_update_data['projectId'] = resp.json()['data']['projectId']
     project_id = resp.json()['data']['projectId']
 
-    resp = client.put(BASE_URL+f"autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]}", 
+    resp = client.put(BASE_URL+f"autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}", 
       headers=headers_auth, json=project_update_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # tokenize
-    resp = client.get(BASE_URL+f"autographa/project/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+str(project_id),
+    resp = client.get(BASE_URL+f"autographa/project/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+str(project_id),
       headers=headers_auth)
     assert resp.status_code == 200
 
     # translate
-    resp = client.put(BASE_URL+f"autographa/project/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+str(project_id),
+    resp = client.put(BASE_URL+f"autographa/project/tokens?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+str(project_id),
     	headers=headers_auth, json=token_update_data)
     assert resp.json()['message'] == "Token translations saved"
 
     # Additional user
     NEW_USER_ID = initial_test_users['AgUser']['test_user_id']
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    resp = client.post(BASE_URL+f"autographa/project/user?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+str(project_id)+
+    resp = client.post(BASE_URL+f"autographa/project/user?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+str(project_id)+
     	"&user_id="+str(NEW_USER_ID), headers=headers_auth)
     assert resp.json()['message'] == "User added to project successfully"
 
     user_data['project_id'] = project_id
     user_data['userId'] = NEW_USER_ID
-    resp = client.put(BASE_URL+f"autographa/project/user?app_key={default_app_keys[TEST_APPS_LIST['AG']]}",
+    resp = client.put(BASE_URL+f"autographa/project/user?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}",
       headers=headers_auth, json=user_data)
     print(resp.json())
     assert resp.json()['message'] == "User updated in project successfully"
 
-    resp = client.get(BASE_URL+f"autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&user_id="+str(NEW_USER_ID),
+    resp = client.get(BASE_URL+f"autographa/projects?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&user_id="+str(NEW_USER_ID),
       headers=headers_auth)
     assert len(resp.json()) > 0
 
     # # Suggestions
 
-    resp = client.post(BASE_URL+f"nlp/learn/alignment?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&source_language="+ALIGNMENT_SRC+
+    resp = client.post(BASE_URL+f"nlp/learn/alignment?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&source_language="+ALIGNMENT_SRC+
     	"&target_language="+ALIGNMENT_TRG, headers=headers_auth, json=alignment_data)
     assert resp.status_code == 201
     # print(resp)
     # print(resp.json())
 
     # tokenize after adding token "परमेश्वर" via alignment
-    resp = client.put(BASE_URL+f"autographa/project/suggestions?app_key={default_app_keys[TEST_APPS_LIST['AG']]}&project_id="+str(project_id)+
+    resp = client.put(BASE_URL+f"autographa/project/suggestions?app_key={default_app_keys[TEST_APPS_LIST['AG']]['key']}&project_id="+str(project_id)+
         "&sentence_id_list=42001001",
     	headers=headers_auth)
     draft = resp.json()[0]['draft']

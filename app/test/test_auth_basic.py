@@ -300,7 +300,7 @@ def test_register_roles(create_user_fixture):
         "firstname": "user XYZ1",
         "lastname": "Vachan role Test"
     }
-    response1 = register(data_xyz1,app_key=default_app_keys[TEST_APPS_LIST['VACHAN']])
+    response1 = register(data_xyz1,app_key=default_app_keys[TEST_APPS_LIST['VACHAN']]['key'])
     xyz1_id = response1.json()["registered_details"]["id"]
     assert response1.json()["registered_details"]["Permissions"] == [TEST_APPS_LIST['VACHAN']]
 
@@ -310,7 +310,7 @@ def test_register_roles(create_user_fixture):
         "firstname": "user XYZ2",
         "lastname": "Ag role Test"
     }
-    response2 = register(data_xyz2,app_key=default_app_keys[TEST_APPS_LIST['AG']])
+    response2 = register(data_xyz2,app_key=default_app_keys[TEST_APPS_LIST['AG']]['key'])
     xyz2_id = response2.json()["registered_details"]["id"]
     assert response2.json()["registered_details"]["Permissions"] == [TEST_APPS_LIST['AG']]
     data_xyz3 = \
@@ -382,7 +382,7 @@ def test_register_roles(create_user_fixture):
         "email": "xyz2@gmail.com",
         "password": "passwordxyz2@1"
     }
-    response2 = register_role_appending(data_xyz2,app_key=default_app_keys[TEST_APPS_LIST['VACHAN']])
+    response2 = register_role_appending(data_xyz2,app_key=default_app_keys[TEST_APPS_LIST['VACHAN']]['key'])
     assert response2.json()["registered_details"]["Permissions"] == [TEST_APPS_LIST['AG'],TEST_APPS_LIST['VACHAN']]
 
     #role changed none --> ag
@@ -390,7 +390,7 @@ def test_register_roles(create_user_fixture):
         "email": "xyz3@gmail.com",
         "password": "passwordxyz3@1"
     }
-    response3 = register_role_appending(data_xyz3,app_key=default_app_keys[TEST_APPS_LIST['AG']])
+    response3 = register_role_appending(data_xyz3,app_key=default_app_keys[TEST_APPS_LIST['AG']]['key'])
     assert response3.json()["registered_details"]["Permissions"] == [TEST_APPS_LIST['API'],TEST_APPS_LIST['AG']]
 
     # #role changed Vachan Admin --> ag

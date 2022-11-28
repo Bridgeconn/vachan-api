@@ -4,11 +4,11 @@ dsn: memory
 
 serve:
   public:
-    base_url: http://kratos-app:4443/
+    base_url: http://kratos-app:4433/
     cors:
       enabled: true
   admin:
-    base_url: http://kratos-app:4444/
+    base_url: http://kratos-app:4434/
 
 selfservice:
   default_browser_return_url: http://127.0.0.1:4455/

@@ -33,8 +33,9 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/user/delete-identity,DELETE,API-user,FALSE,user,delete/deactivate
 /v2/app/register,POST,VachanAdmin,FALSE,app,create
 /v2/app/key,GET,VachanAdmin,FALSE,app,generate-key
-/v2/app/key,GET,API-user,FALSE,app,generate-key-via-api
+/v2/app/key,GET,API-user,FALSE,app,operate-via-api
 /v2/app/delete-key,GET,VachanAdmin,FALSE,app,delete-key
+/v2/app/delete-key,GET,API-user,FALSE,app,operate-via-api
 /v2/app/{app_id},PUT,VachanAdmin,FALSE,app,edit
 /v2/apps,GET,VachanAdmin,FALSE,app,read
 /v2/app/delete-app,DELETE,VachanAdmin,FALSE,app,delete/deactivate

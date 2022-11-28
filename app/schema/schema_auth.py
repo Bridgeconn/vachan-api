@@ -3,6 +3,8 @@ from enum import Enum
 from pydantic import BaseModel, validator
 from pydantic import types, EmailStr
 
+#pylint: disable=too-few-public-methods
+
 class Registration(BaseModel):
     """kratos registration input"""
     email:str

@@ -123,6 +123,17 @@ initial_test_users = {
             }
         }
 
+API_USER = {
+    "email": "apiuser@vachan.testing",
+    "name": "API-user",
+    "organization": "BCS",
+    "password": "secret@!@#$",
+    "contacts": {
+        "email": "apitestingemail@vachan.com",
+        "phone": "None"
+    }
+}
+
 default_app_keys = {}
 
 #session fixture for access checks working
@@ -130,19 +141,20 @@ default_app_keys = {}
 def create_user_session_run_at_start():
     try:
         print("Session fixture for default apps and create user------------------>")
-        from .test_auth_basic import register,delete_user_identity,assign_roles,SUPER_USER,SUPER_PASSWORD\
-            ,login
-        from .test_auth_app import delete_app_key
+        from .test_auth_basic import register,delete_user_identity,assign_roles,SUPER_USER,SUPER_PASSWORD
+        from .test_auth_app import delete_app_key, generate_app_key, register_app, delete_app
         from app.auth.auth_app import DEFAULT_APPS
-        
+
         # Generate appkey for default apps
         for app in DEFAULT_APPS:
             data = {
-                "user_email": app["email"],
+                "app_email": app["email"],
                 "password": app["password"]
             }
-            response = login(data)
-            default_app_keys[app["name"]] = response.json()['token']
+            response = generate_app_key(data)
+            default_app_keys[app["name"]] = {"key" : response.json()['key']}
+            default_app_keys[app["name"]]["id"] = response.json()['appId']
+        
         #userTokens
         for user_data in initial_test_users:
             current_user = initial_test_users[user_data]
@@ -155,7 +167,7 @@ def create_user_session_run_at_start():
             if current_user['app'] == TEST_APPS_LIST['API']:
                 current_app_key = None
             else:
-                current_app_key = default_app_keys[current_user['app']]
+                current_app_key = default_app_keys[current_user['app']]["key"]
             response = register(data, app_key= current_app_key)
             current_user['test_user_id'] = response.json()["registered_details"]["id"]
             current_user['token'] = response.json()["token"]
@@ -191,8 +203,20 @@ def create_user_session_run_at_start():
         assert response.json()["role_list"] == \
             [TEST_ROLE_LIST['APIUSER'],TEST_ROLE_LIST['BCSDEV']]
             # [schema_auth.AdminRoles.APIUSER.value, schema_auth.AdminRoles.BCSDEV.value]
+        
+        # Register API app
+        register_resp = register_app(API_USER, default_app_keys[TEST_APPS_LIST['VACHANADMIN']]["key"],
+            user_token=initial_test_users["VachanAdmin"]["token"])
+        default_app_keys[API_USER["name"]] = {"key" : register_resp.json()["key"]}
+        default_app_keys[API_USER["name"]]["id"] = register_resp.json()["registered_details"]["id"]
+
         yield initial_test_users
     finally:
+        # Delete API app
+        del_resp = delete_app(default_app_keys[API_USER["name"]]["id"],
+            default_app_keys[TEST_APPS_LIST['VACHANADMIN']]["key"],
+            user_token=initial_test_users["VachanAdmin"]["token"])
+
         delete_list = []
         for user_data in initial_test_users:
             current_user = initial_test_users[user_data]
@@ -201,7 +225,8 @@ def create_user_session_run_at_start():
 
         # delete keys of default apps
         for app in default_app_keys:
-            response = delete_app_key(default_app_keys[app])
-            assert response.status_code == 200
+            if app != API_USER["name"]:
+                response = delete_app_key(default_app_keys[app]["key"], app)
+                assert response.status_code == 200
         print("Session fixture for create user END------------------>")
 

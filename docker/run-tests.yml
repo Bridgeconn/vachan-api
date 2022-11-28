@@ -16,14 +16,14 @@ services:
       - VACHAN_POSTGRES_PORT=5432
       - VACHAN_KRATOS_PUBLIC_URL=http://kratos:4433/
       - VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
-      - VACHAN_KRATOS_APP_PUBLIC_URL=http://kratos:4443/
-      - VACHAN_KRATOS_APP_ADMIN_URL=http://kratos:4444/
+      - VACHAN_KRATOS_APP_PUBLIC_URL=http://kratos-app:4433/
+      - VACHAN_KRATOS_APP_ADMIN_URL=http://kratos-app:4434/
       - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME:-super@admin.com}
       - VACHAN_GITLAB_TOKEN=${VACHAN_GITLAB_TOKEN}
       - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD:-Just4Complexity!}
       - VACHAN_TEST_MODE="False"
       - VACHAN_LOGGING_LEVEL=INFO
-    command: python -m pytest test/test_auth_basic.py -v -s
+    command: python -m pytest --ignore-glob=test/test_gql_*
     volumes:
       - logs-test-vol:/app/logs
     restart: "no"

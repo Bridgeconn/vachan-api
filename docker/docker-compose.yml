@@ -68,6 +68,7 @@ services:
       - LOG_LEVEL=trace
       - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS:-smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true}
       - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL:-EMAIL_ADDRESS@bridgeconn.com}
+      - SERVE_PUBLIC_BASE_URL=http://${VACHAN_DOMAIN:-kratos-app}:4433
     command: serve -c /etc/config/kratos/kratos-app.yml --dev --watch-courier
     volumes:
       # - type: volume
@@ -130,8 +131,8 @@ services:
      - VACHAN_POSTGRES_PORT=5432
      - VACHAN_KRATOS_PUBLIC_URL=http://kratos:4433/
      - VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
-     - VACHAN_KRATOS_APP_PUBLIC_URL=http://kratos:4443/
-     - VACHAN_KRATOS_APP_ADMIN_URL=http://kratos:4444/
+     - VACHAN_KRATOS_APP_PUBLIC_URL=http://kratos-app:4433/
+     - VACHAN_KRATOS_APP_ADMIN_URL=http://kratos-app:4434/
      - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME}
      - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD}
      - VACHAN_TEST_MODE="False"
@@ -147,6 +148,7 @@ services:
     links:
      - vachan-db
      - kratos
+     - kratos-app
     depends_on:
      - kratos-migrate
      - postgresd
