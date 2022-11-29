@@ -1,12 +1,12 @@
 '''Test cases for licenses related APIs'''
+from schema.schemas import SourcePermissions
 from . import client, check_default_get
 from . import assert_input_validation_error, assert_not_available_content
 from .test_auth_basic import logout_user,login,SUPER_PASSWORD,SUPER_USER
 from .conftest import initial_test_users
-from schema.schemas import SourcePermissions
+
 
 UNIT_URL = '/v2/licenses'
-RESTORE_URL = '/v2/restore'
 headers = {"contentType": "application/json", "accept": "application/json"}
 
 headers_auth = {"contentType": "application/json",
@@ -108,7 +108,6 @@ def test_post():
     assert response.json()['message'] == "License uploaded successfully"
     assert_positive_get(response.json()['data'])
     assert response.json()["data"]["code"] == "LIC-1"
-    create_license = response
 
     # '''positive test case, checking for case conversion of code'''
     data["code"]= "lic-2"
@@ -190,9 +189,8 @@ def test_post():
     }
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
-    return(create_license)
 
-def test_put():
+def test_put(): #pylint: disable=too-many-statements
     '''Add a new license and then alter it'''
     data = {
       "license": "A very very long license text",
@@ -248,7 +246,7 @@ def test_put():
     data_admin   = {
     "user_email": SUPER_USER,
     "password": SUPER_PASSWORD
-    }      
+    }
     response =login(data_admin)
     assert response.json()['message'] == "Login Succesfull"
     token_admin =  response.json()['token']
@@ -293,255 +291,3 @@ def test_put():
     resp2 = client.get(UNIT_URL)
     assert resp1.status_code == 200
     assert len(resp1.json()) - len(resp2.json()) == 1
-
-def test_delete_default():
-    ''' positive test case, checking for correct return of deleted license ID'''
-    #create new data
-    response = test_post()
-    license_id = response.json()["data"]["licenseId"]
-    res = client.get(UNIT_URL+'?license_code=LIC-1')
-
-    data = {"itemId":license_id}
-
-    #Delete without authentication
-    response = client.delete(UNIT_URL, headers=headers, json=data)
-    assert response.status_code == 401
-    assert response.json()['error'] == 'Authentication Error'
-
-    #Delete license with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev
-    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev']:
-        user_headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
-        }
-        response = client.delete(UNIT_URL, headers=user_headers, json=data)
-        assert response.status_code == 403
-        assert response.json()['error'] == 'Permission Denied'
-
-    #Delete license with item created API User
-
-    response = client.delete(UNIT_URL, headers=headers_auth, json=data)
-    assert response.status_code == 200
-    assert response.json()['message'] ==  \
-        f"License with identity {license_id} deleted successfully"
-    #Check license is deleted from licenses table
-    check_license =client.get(UNIT_URL+'?license_code=LIC-1')
-    assert_not_available_content(check_license)
-
-def test_delete_default_superadmin():
-    ''' positive test case, checking for correct return of deleted license ID'''
-    #Created User or Super Admin can only delete license
-    #creating data
-    response = test_post()
-    license_id = response.json()['data']['licenseId']
-    data = {"itemId":license_id}
-
-    #Delete license with Super Admin
-     #Login as Super Admin
-    as_data = {
-            "user_email": SUPER_USER,
-            "password": SUPER_PASSWORD
-        }
-    response = login(as_data)
-    assert response.json()['message'] == "Login Succesfull"
-    test_user_token = response.json()["token"]
-    headers_sa = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+test_user_token
-            }
-
-    #Delete license
-    response = client.delete(UNIT_URL, headers=headers_sa, json=data)
-    assert response.status_code == 200
-    assert response.json()['message'] == \
-    f"License with identity {license_id} deleted successfully"
-    logout_user(test_user_token)
-    return response
-
-def test_delete_license_id_string():
-    '''positive test case, license id as string'''
-    response = test_post()
-    #Deleting created data
-    license_id = response.json()['data']['licenseId']
-    license_id = str(license_id)
-    data = {"itemId":license_id}
-    sa_data = {
-            "user_email": SUPER_USER,
-            "password": SUPER_PASSWORD
-        }
-    response = login(sa_data)
-    assert response.json()['message'] == "Login Succesfull"
-    test_user_token = response.json()["token"]
-    headers_sa = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+test_user_token
-            }
-    response = client.delete(UNIT_URL, headers=headers_sa, json=data)
-    assert response.status_code == 200
-    assert response.json()['message'] == \
-        f"License with identity {license_id} deleted successfully"
-    logout_user(test_user_token)
-
-def test_delete_incorrectdatatype():
-    '''negative testcase. Passing input data not in json format'''
-    response = test_post()
-    #Deleting created data
-    license_id = response.json()['data']['licenseId']
-    data = license_id
-    response = client.delete(UNIT_URL, headers=headers_auth, json=data)
-    assert_input_validation_error(response)
-
-def test_delete_missingvalue_license_id():
-    '''Negative Testcase. Passing input data without licenseId'''
-    data = {}
-    response = client.delete(UNIT_URL, headers=headers_auth, json=data)
-    assert_input_validation_error(response)
-
-def test_delete_notavailable_license():
-    ''' request a non existing license ID, Ensure there is no partial matching'''
-    data = {"itemId":20000}
-    response = client.delete(UNIT_URL,headers=headers_auth,json=data)
-    assert response.status_code == 404
-    assert response.json()['error'] == "Requested Content Not Available"
-
-def test_restore_default():
-    '''positive test case, checking for correct return object'''
-    #only Super Admin can restore deleted data
-    #Creating and Deleting data
-    response = test_delete_default_superadmin()
-    deleteditem_id = response.json()['data']['itemId']
-    data = {"itemId": deleteditem_id}
-
-    #Restoring data
-    #Restore without authentication
-    response = client.put(RESTORE_URL, headers=headers, json=data)
-    assert response.status_code == 401
-    assert response.json()['error'] == 'Authentication Error'
-
-    #Restore license with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev and APIUSer2
-    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2']:
-        user_headers = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
-        }
-    response = client.put(RESTORE_URL, headers=user_headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-
-    #Restore license with Super Admin
-    #Login as Super Admin
-    as_data = {
-            "user_email": SUPER_USER,
-            "password": SUPER_PASSWORD
-        }
-    response = login(as_data)
-    assert response.json()['message'] == "Login Succesfull"
-    test_user_token = response.json()["token"]
-    headers_sa = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+test_user_token
-            }
-
-    response = client.put(RESTORE_URL, headers=headers_sa, json=data)
-    assert response.status_code == 201
-    assert response.json()['message'] == \
-    f"Deleted Item with identity {deleteditem_id} restored successfully"
-    assert_positive_get(response.json()['data'])
-    logout_user(test_user_token)
-    #Check license is available in licenses table after restore
-    check_license_code = client.get(UNIT_URL+"?icense_code=LIC-1")
-    assert check_license_code.status_code == 200
-
-def test_restore_item_id_string():
-    '''positive test case, passing deleted item id as string'''
-    #only Super Admin can restore deleted data
-    #Creating and Deleting data
-    response = test_delete_default_superadmin()
-    deleteditem_id = response.json()['data']['itemId']
-    data = {"itemId": deleteditem_id}
-
-    #Restoring string data
-    deleteditem_id = str(deleteditem_id)
-    data = {"itemId": deleteditem_id}
-
-#Login as Super Admin
-    data_admin   = {
-    "user_email": SUPER_USER,
-    "password": SUPER_PASSWORD
-    }
-    response =login(data_admin)
-    assert response.json()['message'] == "Login Succesfull"
-    token_admin =  response.json()['token']
-    headers_sa = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+token_admin
-                     }
-
-    response = client.put(RESTORE_URL, headers=headers_sa, json=data)
-    assert response.status_code == 201
-    assert response.json()['message'] == \
-    f"Deleted Item with identity {deleteditem_id} restored successfully"
-    logout_user(token_admin)
-
-def test_restore_incorrectdatatype():
-    '''Negative Test Case. Passing input data not in json format'''
-    #Creating and Deleting data
-    response = test_delete_default_superadmin()
-    deleteditem_id = response.json()['data']['itemId']
-    data = {"itemId": deleteditem_id}
-
-    #Login as Super Admin
-    data_admin   = {
-    "user_email": SUPER_USER,
-    "password": SUPER_PASSWORD
-    }
-    response =login(data_admin)
-    assert response.json()['message'] == "Login Succesfull"
-    token_admin =  response.json()['token']
-    headers_sa = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+token_admin
-                     }
-
-    #Passing input data not in json format
-    data = deleteditem_id
-
-    response = client.put(RESTORE_URL, headers=headers_sa, json=data)
-    assert_input_validation_error(response)
-    logout_user(token_admin)
-
-def test_restore_missingvalue_itemid():
-    '''itemId is mandatory in input data object'''
-    data = {}
-    data_admin   = {
-    "user_email": SUPER_USER,
-    "password": SUPER_PASSWORD
-    }
-    response =login(data_admin)
-    assert response.json()['message'] == "Login Succesfull"
-    token_admin =  response.json()['token']
-    headers_sa = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+token_admin
-                    }
-    response = client.put(RESTORE_URL, headers=headers_sa, json=data)
-    assert_input_validation_error(response)
-    logout_user(token_admin)
-
-def test_restore_notavailable_item():
-    ''' request a non existing restore ID, Ensure there is no partial matching'''
-    data = {"itemId":20000}
-    data_admin   = {
-    "user_email": SUPER_USER,
-    "password": SUPER_PASSWORD
-    }
-    response =login(data_admin)
-    assert response.json()['message'] == "Login Succesfull"
-    token_admin =  response.json()['token']
-    headers_sa = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+token_admin
-                    }
-    response = client.put(RESTORE_URL, headers=headers_sa, json=data)
-    assert response.status_code == 404
-    assert response.json()['error'] == "Requested Content Not Available"

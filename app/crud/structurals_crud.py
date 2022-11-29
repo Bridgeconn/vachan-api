@@ -149,25 +149,6 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
         createdUser= json_string['createdUser'],
         updatedUser= json_string['updatedUser'],
         updateTime = datetime.now())
-    elif db_content.deletedFrom == 'licenses':
-        db_content = db_models.License(code = json_string['code'],
-        name= json_string['name'],
-        license= json_string['license'],
-        permissions = json_string['permissions'],
-        active = json_string['active'],
-        #metaData= json_string['metaData'],
-        createdUser= json_string['createdUser'],
-        updatedUser= json_string['updatedUser'],
-        updateTime = datetime.now())
-    elif db_content.deletedFrom == 'versions':
-        db_content = db_models.Version(versionAbbreviation = json_string['versionAbbreviation'],
-        versionId= json_string['versionId'],
-        versionName= json_string['versionName'],
-        revision= json_string['revision'],
-        metaData= json_string['metaData'],
-        createdUser= json_string['createdUser'],
-        updatedUser= json_string['updatedUser'],
-        updateTime = datetime.now())
     db_.add(db_content)
     # db_.flush()
     #db_.commit()
@@ -237,14 +218,6 @@ def update_license(db_: Session, license_obj: schemas.LicenseEdit, user_id=None)
     # db_.refresh(db_content)
     return db_content
 
-def delete_license(db_: Session, content: schemas.DeleteIdentity):
-    '''delete particular license, selected via license id'''
-    db_content = db_.query(db_models.License).get(content.itemId)
-    deleted_content = db_content
-    db_.delete(db_content)
-    #db_.commit()
-    return deleted_content
-
 def get_versions(db_: Session, version_abbr = None, version_name = None, revision = None,
     metadata = None, **kwargs):
     '''Fetches rows of versions table, with various filters and pagination'''
@@ -294,14 +267,6 @@ def update_version(db_: Session, version: schemas.VersionEdit, user_id=None):
     # db_.commit()
     # db_.refresh(db_content)
     return db_content
-
-def delete_version(db_: Session, ver: schemas.DeleteIdentity):
-    '''delete particular version, selected via version id'''
-    db_content = db_.query(db_models.Version).get(ver.itemId)
-    deleted_content = db_content
-    db_.delete(db_content)
-    #db_.commit()
-    return deleted_content
 
 def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks
     content_type=None, version_abbreviation=None, revision=None, language_code=None,

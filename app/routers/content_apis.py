@@ -237,28 +237,6 @@ async def edit_license(request: Request, license_obj: schemas.LicenseEdit = Body
         "data": structurals_crud.update_license(db_=db_, license_obj=license_obj,
         user_id=user_details['user_id'])}
 
-@router.delete('/v2/licenses',response_model=schemas.DeleteResponse,
-    responses={404: {"model": schemas.ErrorResponse},
-    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
-    502: {"model": schemas.ErrorResponse}},
-    status_code=200,tags=["Licenses"])
-@get_auth_access_check_decorator
-async def delete_licenses(request: Request, delete_obj: schemas.DeleteIdentity = Body(...),
-    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
-    '''Delete License
-    * unique License Id can be used to delete an exisiting identity'''
-    log.info('In delete_licenses')
-    log.debug('license-delete:%s',delete_obj)
-    license_id= delete_obj.itemId
-    dbtable_name = "licenses"
-    if len(structurals_crud.get_license_id(db_, license_id= delete_obj.itemId)) == 0:
-        raise NotAvailableException(f"License id {license_id} not found")
-    deleted_content = structurals_crud.delete_license(db_=db_, content=delete_obj)
-    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-            table_name = dbtable_name)
-    return {'message': f"License with identity {license_id} deleted successfully",
-            "data": delcont}
-
 ##### Version #####
 @router.get('/v2/versions',
     response_model=List[schemas.VersionResponse],
@@ -322,28 +300,6 @@ async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...
     return {'message': "Version edited successfully",
         "data": structurals_crud.update_version(db_=db_, version=ver_obj,
         user_id=user_details['user_id'])}
-
-@router.delete('/v2/versions',response_model=schemas.DeleteResponse,
-    responses={404: {"model": schemas.ErrorResponse},
-    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
-    502: {"model": schemas.ErrorResponse}},
-    status_code=200,tags=["Versions"])
-@get_auth_access_check_decorator
-async def delete_versions(request: Request, delete_obj: schemas.DeleteIdentity = Body(...),
-    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
-    '''Delete Version
-    * unique Version Id can be used to delete an exisiting identity'''
-    log.info('In delete_versions')
-    log.debug('version-delete:%s',delete_obj)
-    version_id= delete_obj.itemId
-    dbtable_name = "versions"
-    if len(structurals_crud.get_versions(db_, version_id = delete_obj.itemId)) == 0:
-        raise NotAvailableException(f"Version id {delete_obj.itemId} not found")
-    deleted_content = structurals_crud.delete_version(db_=db_, ver=delete_obj)
-    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-            table_name = dbtable_name)
-    return {'message': f"Version with identity {version_id} deleted successfully",
-            "data": delcont}
 
 ###### Source #####
 @router.get('/v2/sources',
