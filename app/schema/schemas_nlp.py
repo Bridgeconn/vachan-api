@@ -81,7 +81,7 @@ class SentenceInput(BaseModel):
     sentence: str = Field(...,
         example="इब्राहीम के वंशज दाऊद के पुत्र यीशु मसीह की वंशावली इस प्रकार है")
     @root_validator
-    def set_surrogate_id(cls, values): # pylint: disable=R0201 disable=E0213
+    def set_surrogate_id(cls, values): # pylint: disable=E0213
         '''Set surrogate id value, if not provided and make id int'''
         if values['surrogateId'] is None:
             values['surrogateId'] = values['sentenceId']
@@ -161,7 +161,7 @@ class DraftInput(BaseModel):
         example=[[[0,8], [0,8],"confirmed"],
             [[8,64],[8,64],"untranslated"]])
     @root_validator
-    def set_surrogate_id(cls, values): # pylint: disable=R0201 disable=E0213
+    def set_surrogate_id(cls, values): # pylint: disable=E0213
         '''Set surrogate id value, if not provided and make id int'''
         if values['surrogateId'] is None:
             values['surrogateId'] = values['sentenceId']
@@ -257,7 +257,7 @@ class StopWords(BaseModel):
     metaData: dict = Field(None, example={
         "type":'postposition'})
     @root_validator
-    def set_stopword_type(cls, values): # pylint: disable=R0201 disable=E0213
+    def set_stopword_type(cls, values): # pylint: disable=E0213
         '''Set stopword type based on confidence score'''
         if values['stopwordType'] is None:
             if values['confidence'] == 2:

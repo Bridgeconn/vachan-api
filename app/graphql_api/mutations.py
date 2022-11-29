@@ -1178,7 +1178,7 @@ class Register(graphene.Mutation):
     message = graphene.String()
     token  = graphene.String()
 
-    async def mutate(self,info,registration_args,app_type):
+    async def mutate(self,info,registration_args):
         '''resolve'''
         log.info('In GraphQL Register User')
         db_ = info.context["request"].db_session
@@ -1189,7 +1189,7 @@ class Register(graphene.Mutation):
         schema_model = utils.convert_graphene_obj_to_pydantic\
             (registration_args,schema_auth.Registration)
         response = await auth_api.register(request=req, register_details = schema_model,
-        user_details=user_details, db_=db_, app_type = app_type)
+        user_details=user_details, db_=db_)
         result = response['registered_details']
         register = types.RegisterResponse(
                 id = result['id'],
@@ -1363,7 +1363,8 @@ class GenerateStopwords(graphene.Mutation):
             language_code=language_code,background_tasks=background_tasks,
             use_server_data=use_server_data,source_name=source_name,
             user_details=user_details,sentence_list=sentence_list,db_=db_,
-            operates_on=schema_auth.ResourceType.LOOKUP.value)
+            operates_on='lookup-content')
+            # operates_on=schema_auth.ResourceType.LOOKUP.value)
         return GenerateStopwords(message=response['message'],
             data=response["data"])
 

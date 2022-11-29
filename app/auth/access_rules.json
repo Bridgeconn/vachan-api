@@ -75,5 +75,14 @@
        "login":["noAuthRequired"],
         "logout":["createdUser"],
         "delete/deactivate":["SuperAdmin"]
+    },
+    "app":{
+        "create":["SuperAdmin", "VachanAdmin"],
+        "edit":["SuperAdmin", "VachanAdmin"],
+        "view-profile":["SuperAdmin", "VachanAdmin"],
+        "read":["SuperAdmin", "VachanAdmin"],
+       "login":["noAuthRequired"],
+        "logout":["SuperAdmin", "VachanAdmin"],
+        "delete/deactivate":["SuperAdmin", "VachanAdmin"]
     }
 }

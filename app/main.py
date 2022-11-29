@@ -17,12 +17,14 @@ from schema.schemas import NormalResponse
 from routers import content_apis, translation_apis, auth_api, media_api, filehandling_apis
 from graphql_api import router as gql_router
 from auth.authentication import create_super_user
+from auth.auth_globals import generate_access_rules_dict, generate_permission_map_table,\
+    generate_apps, generate_resource_types, generate_roles
+from auth.auth_app import register_default_apps_on_startup
 
 # from auth.api_permission_map import initialize_apipermissions
 
 #create super user
 if os.environ.get("VACHAN_TEST_MODE", "False") != 'True':
-
     create_super_user()
 
 app = FastAPI(title="Vachan-API", version="2.0.0-beta.1",
@@ -37,9 +39,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-#read JSON and api permissions on startup
-# initialize_accessrules()
-# initialize_apipermissions()
+# register default apps
+register_default_apps_on_startup()
+
+#get permission map and accessRules on startup
+generate_roles()
+generate_apps()
+generate_resource_types()
+generate_access_rules_dict()
+generate_permission_map_table()
 
 ######### Error Handling ##############
 @app.exception_handler(Exception)

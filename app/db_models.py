@@ -432,3 +432,85 @@ class Jobs(Base): # pylint: disable=too-few-public-methods
     output = Column('output', JSON)
     startTime = Column('start_time', DateTime)
     endTime = Column('end_time', DateTime)
+
+############ Auth Tables ##########
+class Roles(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table Roles for auth  in vachan DB(postgres)'''
+    __tablename__ = 'roles'
+
+    roleId = Column('role_id', Integer, primary_key=True)
+    roleName = Column('role_name', String, unique=True, index=True)
+    roleOfApp = Column('role_of_app', String)
+    roleDescription = Column('role_description', String)
+    createdUser = Column('created_user', String)
+    updatedUser = Column('last_updated_user', String)
+    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    active = Column('active', Boolean)
+
+class ResourceTypes(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table Roles for auth  in vachan DB(postgres)'''
+    __tablename__ = 'resource_types'
+
+    resourceTypeId = Column('resource_type_id', Integer, primary_key=True)
+    resourceTypeName = Column('resource_type_name', String, unique=True, index=True)
+    resourceTypeDescription = Column('resource_type_description', String)
+    createdUser = Column('created_user', String)
+    updatedUser = Column('last_updated_user', String)
+    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    active = Column('active', Boolean)
+
+class Permissions(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table Roles for auth  in vachan DB(postgres)'''
+    __tablename__ = 'permissions'
+
+    permissionId = Column('permission_id', Integer, primary_key=True)
+    permissionName = Column('permission_name', String, unique=True, index=True)
+    permissionDescription = Column('permission_description', String)
+    createdUser = Column('created_user', String)
+    updatedUser = Column('last_updated_user', String)
+    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    active = Column('active', Boolean)
+
+class Apps(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table Roles for auth  in vachan DB(postgres)'''
+    __tablename__ = 'apps'
+
+    appId = Column('app_id', Integer, primary_key=True)
+    appName = Column('app_name', String, unique=True, index=True)
+    defaultRole = Column('default_role', String, ForeignKey('roles.role_name'))
+    appKey = Column('app_key', String)
+    useForRegistration = Column('use_for_registration', String)
+    createdUser = Column('created_user', String)
+    updatedUser = Column('last_updated_user', String)
+    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    active = Column('active', Boolean)
+
+class AccessRules(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table access rules of auth in vachan DB(postgres)'''
+    __tablename__ = 'access_rules'
+
+    ruleId = Column('rule_id', Integer, primary_key=True)
+    entitlement = Column('entitlement', String, ForeignKey('resource_types.resource_type_name'))
+    tag = Column('tag', String, ForeignKey('permissions.permission_name'))
+    roles = Column('roles', ARRAY(String))
+    createdUser = Column('created_user', String)
+    updatedUser = Column('last_updated_user', String)
+    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    active = Column('active', Boolean)
+
+
+class ApiPermissionsMap(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table api permissions for auth  in vachan DB(postgres)'''
+    __tablename__ = 'api_permissions_map'
+
+    permissionId = Column('permission_id', Integer, primary_key=True)
+    apiEndpoint = Column('api_endpoint', String, unique=True, index=True)
+    method = Column('method', String)
+    requestApp = Column('request_app', String, ForeignKey('apps.app_name'))
+    filterResults = Column('filter_results', Boolean)
+    resourceType = Column('resource_type', String, ForeignKey('resource_types.resource_type_name'))
+    permission = Column('permission', String, ForeignKey('permissions.permission_name'))
+    active = Column('active', Boolean)
+    createdUser = Column('created_user', String)
+    updatedUser = Column('last_updated_user', String)
+    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())

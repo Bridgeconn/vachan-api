@@ -172,8 +172,8 @@ class LicenseShortResponse(BaseModel):
     '''Return object of licenses without the full text'''
     name : str
     code : LicenseCodePattern
-    permissions : List[SourcePermissions]
     active: bool
+    permissions : List[SourcePermissions]
     class Config: # pylint: disable=too-few-public-methods
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
@@ -195,8 +195,8 @@ class LicenseResponse(BaseModel):
     name : str
     code : LicenseCodePattern
     license : str
-    permissions : List[SourcePermissions]
     active: bool
+    permissions : List[SourcePermissions]
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
@@ -270,8 +270,8 @@ class VersionResponse(BaseModel):
     versionId : int
     versionAbbreviation : VersionPattern
     versionName : str
-    revision : int
     metaData : dict = None
+    revision : int
     class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True

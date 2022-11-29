@@ -5,8 +5,8 @@ from app.main import log
 from app.schema import schema_auth, schemas
 from . import client
 from . import check_default_get
-from . import assert_not_available_content
-from .conftest import initial_test_users
+from . import assert_not_available_content, TEST_APPS_LIST
+from .conftest import initial_test_users, default_app_keys
 
 
 UNIT_URL = '/v2/lookup/stopwords'
@@ -225,8 +225,9 @@ def add_version():
         "versionName": "test version",
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    headers_auth['app'] = schema_auth.AdminRoles.VACHANADMIN.value
-    result = client.post('/v2/versions', headers=headers_auth, json=version_data)
+    # headers_auth['app'] = schema_auth.AdminRoles.VACHANADMIN.value
+    result = client.post(f"/v2/versions?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]['key']}", 
+        headers=headers_auth, json=version_data)
     assert result.status_code == 201
 
 def add_bible_source():
@@ -242,7 +243,8 @@ def add_bible_source():
     "accessPermissions": [schemas.SourcePermissions.OPENACCESS, schemas.SourcePermissions.CONTENT]
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    source = client.post('/v2/sources', headers=headers_auth, json=src_data)
+    source = client.post(f"/v2/sources?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]['key']}",
+        headers=headers_auth, json=src_data)
     assert source.status_code == 201
     table_name = source.json()['data']['sourceName']
     return table_name
@@ -258,7 +260,8 @@ def add_dict_source():
         "accessPermissions": [schemas.SourcePermissions.OPENACCESS, schemas.SourcePermissions.CONTENT]
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    source = client.post('/v2/sources', headers=headers_auth, json=source_data)
+    source = client.post(f"/v2/sources?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]['key']}",
+        headers=headers_auth, json=source_data)
     assert source.status_code == 201
     table_name = source.json()['data']['sourceName']
     return table_name
@@ -271,7 +274,8 @@ def add_bible_books(table_name):
         book_data = open('test/resources/' + book, 'r',encoding='utf-8').read()
         data.append({"USFM":book_data})
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    response = client.post('/v2/bibles/'+table_name+'/books', headers=headers_auth, json=data)
+    response = client.post('/v2/bibles/'+table_name+'/books'+f"?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]['key']}",
+        headers=headers_auth, json=data)
     assert response.status_code == 201
     assert response.json()["message"] == "Bible books uploaded and processed successfully"
 
@@ -279,7 +283,8 @@ def add_tw_dict(table_name):
     '''uploads tw dictionary'''
     data = json.load(open('test/resources/hindi.json'))
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    response = client.post('/v2/dictionaries/'+table_name, headers=headers_auth, json=data)
+    response = client.post('/v2/dictionaries/'+table_name+f"?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]['key']}",
+        headers=headers_auth, json=data)
     assert response.status_code == 201
 
 def test_generate_stopwords():

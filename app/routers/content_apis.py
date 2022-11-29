@@ -4,8 +4,9 @@ from typing import List
 from fastapi import APIRouter, Query, Body, Depends, Path , Request,\
     BackgroundTasks
 from sqlalchemy.orm import Session
+from pydantic import types
 import db_models
-from schema import schemas,schemas_nlp, schema_auth, schema_content
+from schema import schemas,schemas_nlp, schema_content
 from dependencies import get_db, log, AddHiddenInput
 from crud import structurals_crud, contents_crud, nlp_sw_crud, media_crud
 from custom_exceptions import NotAvailableException, AlreadyExistsException,\
@@ -24,8 +25,9 @@ router = APIRouter()
     tags=["Contents Types"])
 @get_auth_access_check_decorator
 async def get_contents(request: Request,content_type: str = Query(None, example="bible"),
-     skip: int = Query(0, ge=0),limit: int = Query(100, ge=0),
-     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
+    skip: int = Query(0, ge=0),limit: int = Query(100, ge=0),
+    user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     '''fetches all the contents types supported and their details
     * the optional query parameter can be used to filter the result set
     * skip=n: skips the first n objects in return list
@@ -41,6 +43,7 @@ async def get_contents(request: Request,content_type: str = Query(None, example=
     status_code=201, tags=["Contents Types"])
 @get_auth_access_check_decorator
 async def add_contents(request: Request, content: schemas.ContentTypeCreate,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
     ''' Creates a new content type.
@@ -65,6 +68,7 @@ async def add_contents(request: Request, content: schemas.ContentTypeCreate,
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Languages"])
 @get_auth_access_check_decorator
 async def get_language(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     language_code : schemas.LangCodePattern = Query(None, example="hi"),
     language_name: str = Query(None, example="hindi"),
     search_word: str = Query(None, example="Sri Lanka"),
@@ -88,6 +92,7 @@ async def get_language(request: Request,
     status_code=201, tags=["Languages"])
 @get_auth_access_check_decorator
 async def add_language(request: Request, lang_obj : schemas.LanguageCreate = Body(...),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     ''' Creates a new language. Langugage code should of 3 letters which uniquely identifies it.'''
     log.info('In add_language')
@@ -105,6 +110,7 @@ async def add_language(request: Request, lang_obj : schemas.LanguageCreate = Bod
     status_code=201, tags=["Languages"])
 @get_auth_access_check_decorator
 async def edit_language(request: Request, lang_obj: schemas.LanguageEdit = Body(...),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     ''' Changes one or more fields of language'''
     log.info('In edit_language')
@@ -122,6 +128,7 @@ async def edit_language(request: Request, lang_obj: schemas.LanguageEdit = Body(
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Licenses"])
 @get_auth_access_check_decorator
 async def get_license(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     license_code : schemas.LicenseCodePattern=Query(None, example="CC-BY-SA"),
     license_name: str=Query(None, example="Creative Commons License"),
     permission: schemas.SourcePermissions=Query(None, example="open-access"),
@@ -145,6 +152,7 @@ async def get_license(request: Request,
     status_code=201, tags=["Licenses"])
 @get_auth_access_check_decorator
 async def add_license(request: Request, license_obj : schemas.LicenseCreate = Body(...),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     ''' Uploads a new license. License code provided will be used as the unique identifier.'''
     log.info('In add_license')
@@ -159,6 +167,7 @@ async def add_license(request: Request, license_obj : schemas.LicenseCreate = Bo
     status_code=201, tags=["Licenses"])
 @get_auth_access_check_decorator
 async def edit_license(request: Request, license_obj: schemas.LicenseEdit = Body(...),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     ''' Changes one or more fields of license.
     Item identifier is license code, which cannot be altered.
@@ -177,6 +186,7 @@ async def edit_license(request: Request, license_obj: schemas.LicenseEdit = Body
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Versions"])
 @get_auth_access_check_decorator
 async def get_version(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     version_abbreviation : schemas.VersionPattern = Query(None, example="KJV"),
     version_name: str = Query(None, example="King James Version"), revision : int = Query(None),
     metadata: schemas.MetaDataPattern = Query(None, example='{"publishedIn":"1611"}'),
@@ -200,6 +210,7 @@ async def get_version(request: Request,
     status_code=201, tags=["Versions"])
 @get_auth_access_check_decorator
 async def add_version(request: Request, version_obj : schemas.VersionCreate = Body(...),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     ''' Creates a new version. Version code provided will be used as unique identifier'''
     log.info('In add_version')
@@ -221,6 +232,7 @@ async def add_version(request: Request, version_obj : schemas.VersionCreate = Bo
     status_code=201, tags=["Versions"])
 @get_auth_access_check_decorator
 async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     ''' Changes one or more fields of version types table.
     Item identifier is version id.
@@ -242,6 +254,7 @@ async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...
     status_code=200, tags=["Sources"])
 @get_auth_access_check_decorator
 async def get_source(request: Request, #pylint: disable=too-many-locals
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name : schemas.TableNamePattern=Query(None, example="hi_IRV_1_bible"),
     content_type: str=Query(None, example="commentary"),
     version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
@@ -255,8 +268,9 @@ async def get_source(request: Request, #pylint: disable=too-many-locals
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db),
-    operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.CONTENT.value)),
+    operates_on=Depends(AddHiddenInput(value="content")),
     filtering_required=Depends(AddHiddenInput(value=True))):
+    # operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.CONTENT.value)),
     '''Fetches all sources and their details.
     * optional query parameters can be used to filter the result set
     * If revision is not explictly set or latest_revision is not set to False,
@@ -282,6 +296,7 @@ async def get_source(request: Request, #pylint: disable=too-many-locals
     status_code=201, tags=["Sources"])
 @get_auth_access_check_decorator
 async def add_source(request: Request, source_obj : schemas.SourceCreate = Body(...),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     # user_details = Depends(auth_handler.kratos_session_validation)
     ''' Creates a new source entry in sources table.
@@ -325,6 +340,7 @@ async def add_source(request: Request, source_obj : schemas.SourceCreate = Body(
     status_code=201, tags=["Sources"])
 @get_auth_access_check_decorator
 async def edit_source(request: Request,source_obj: schemas.SourceEdit = Body(...),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     ''' Changes one or more fields of source. Item identifier is source_name.
     * Active field can be used to activate or deactivate a content.
@@ -362,6 +378,7 @@ async def edit_source(request: Request,source_obj: schemas.SourceEdit = Body(...
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Lookups"])
 @get_auth_access_check_decorator
 async def get_bible_book(request: Request,book_id: int=Query(None, example=67),
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     book_code: schemas.BookCodePattern=Query(None,example='rev'),
     book_name: str=Query(None, example="Revelation"),user_details =Depends(get_user_or_none),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
@@ -387,6 +404,7 @@ async def get_bible_book(request: Request,book_id: int=Query(None, example=67),
     status_code=201, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def add_bible_book(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name : schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
     books: List[schema_content.BibleBookUpload] = Body(...),
     user_details =Depends(get_user_or_none),
@@ -407,6 +425,7 @@ async def add_bible_book(request: Request,
     status_code=201, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def edit_bible_book(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
     books: List[schema_content.BibleBookEdit] = Body(...),user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
@@ -433,6 +452,7 @@ async def edit_bible_book(request: Request,
     status_code=200, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def get_available_bible_book(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name: schemas.TableNamePattern=Path(...,example="hi_IRV_1_bible"),
     book_code: schemas.BookCodePattern=Query(None, example="mat"),
     content_type: schema_content.BookContentType=Query(None), active: bool=True,
@@ -457,6 +477,7 @@ async def get_available_bible_book(request: Request,
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def get_bible_versification(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name:schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
     '''Fetches the versification structure of the specified bible,
@@ -474,6 +495,7 @@ async def get_bible_versification(request: Request,
     status_code=200, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def get_bible_verse(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
     book_code: schemas.BookCodePattern=Query(None, example="mat"),
     chapter: int=Query(None, example=1), verse: int=Query(None, example=1),
@@ -510,6 +532,7 @@ async def get_bible_verse(request: Request,
     status_code=201, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def add_audio_bible(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name : schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
     audios: List[schema_content.AudioBibleUpload] = Body(...),
     user_details =Depends(get_user_or_none),
@@ -529,6 +552,7 @@ async def add_audio_bible(request: Request,
     status_code=201, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def edit_audio_bible(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
     audios: List[schema_content.AudioBibleEdit] = Body(...),
     user_details =Depends(get_user_or_none),
@@ -551,6 +575,7 @@ async def edit_audio_bible(request: Request,
     415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Commentaries"])
 @get_auth_access_check_decorator
 async def get_commentary(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
     book_code: schemas.BookCodePattern=Query(None, example="1ki"),
     chapter: int = Query(None, example=10, ge=-1), verse: int = Query(None, example=1, ge=-1),
@@ -583,6 +608,7 @@ async def get_commentary(request: Request,
     status_code=201, tags=["Commentaries"])
 @get_auth_access_check_decorator
 async def add_commentary(request: Request,background_tasks: BackgroundTasks,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name : schemas.TableNamePattern=Path(...,example="en_BBC_1_commentary"),
     commentaries: List[schema_content.CommentaryCreate] = Body(...),
     user_details =Depends(get_user_or_none),
@@ -623,6 +649,7 @@ async def add_commentary(request: Request,background_tasks: BackgroundTasks,
     status_code=201, tags=["Commentaries"])
 @get_auth_access_check_decorator
 async def edit_commentary(request: Request,background_tasks: BackgroundTasks,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
     commentaries: List[schema_content.CommentaryEdit] = Body(...),
     user_details =Depends(get_user_or_none),
@@ -658,14 +685,16 @@ async def edit_commentary(request: Request,background_tasks: BackgroundTasks,
     404:{"model": schemas.ErrorResponse},}, status_code=200, tags=["Dictionaries"])
 @get_auth_access_check_decorator
 async def get_dictionary_word(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name: schemas.TableNamePattern=Path(...,example="en_TW_1_dictionary"),
     search_word: str=Query(None, example="Adam"),
     exact_match: bool=False, word_list_only: bool=False,
     details: schemas.MetaDataPattern=Query(None, example='{"type":"person"}'), active: bool=True,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db),
-    operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.CONTENT.value))):
-    #operates_on=schema_auth.ResourceType.CONTENT.value
+    operates_on=Depends(AddHiddenInput(value='content'))):
+    # operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.CONTENT.value))):
+    # operates_on=schema_auth.ResourceType.CONTENT.value
     '''fetches list of dictionary words and all available details about them.
     Using the searchIndex appropriately, it is possible to get
     * All words starting with a letter
@@ -694,6 +723,7 @@ async def get_dictionary_word(request: Request,
     status_code=201, tags=["Dictionaries"])
 @get_auth_access_check_decorator
 async def add_dictionary_word(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name : schemas.TableNamePattern=Path(..., example="en_TW_1_dictionary"),
     dictionary_words: List[schema_content.DictionaryWordCreate] = Body(...),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
@@ -714,6 +744,7 @@ async def add_dictionary_word(request: Request,
     status_code=201, tags=["Dictionaries"])
 @get_auth_access_check_decorator
 async def edit_dictionary_word(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name: schemas.TableNamePattern=Path(..., example="en_TW_1_dictionary"),
     dictionary_words: List[schema_content.DictionaryWordEdit] = Body(...),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
@@ -735,6 +766,7 @@ async def edit_dictionary_word(request: Request,
     415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Infographics"])
 @get_auth_access_check_decorator
 async def get_infographic(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name:schemas.TableNamePattern=Path(...,example="hi_IRV_1_infographic"),
     book_code: schemas.BookCodePattern=Query(None, example="exo"),
     title: str=Query(None, example="Ark of Covenant"), active: bool=True,
@@ -760,6 +792,7 @@ async def get_infographic(request: Request,
     status_code=201, tags=["Infographics"])
 @get_auth_access_check_decorator
 async def add_infographics(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name : schemas.TableNamePattern=Path(...,
     example="hi_IRV_1_infographic"),
     infographics: List[schema_content.InfographicCreate] = Body(...),
@@ -781,6 +814,7 @@ async def add_infographics(request: Request,
     status_code=201, tags=["Infographics"])
 @get_auth_access_check_decorator
 async def edit_infographics(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name: schemas.TableNamePattern=Path(...,
     example="hi_IRV_1_infographic"),
     infographics: List[schema_content.InfographicEdit] = Body(...),
@@ -804,6 +838,7 @@ async def edit_infographics(request: Request,
     status_code=200, tags=["Bible Videos"])
 @get_auth_access_check_decorator
 async def get_biblevideo(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
     title: str=Query(None, example="Overview: song of songs"),
     series: str=Query(None, example="Old Testament"),
@@ -835,6 +870,7 @@ async def get_biblevideo(request: Request,
     status_code=201, tags=["Bible Videos"])
 @get_auth_access_check_decorator
 async def add_biblevideo(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
     videos: List[schema_content.BibleVideoUpload] = Body(...),
     user_details =Depends(get_user_or_none),
@@ -854,6 +890,7 @@ async def add_biblevideo(request: Request,
     status_code=201, tags=["Bible Videos"])
 @get_auth_access_check_decorator
 async def edit_biblevideo(request: Request,
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
     videos: List[schema_content.BibleVideoEdit] = Body(...),user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
@@ -874,13 +911,15 @@ async def edit_biblevideo(request: Request,
     status_code=200, tags=["Sources"])
 @get_auth_access_check_decorator
 async def extract_text_contents(request:Request, #pylint: disable=W0613
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     source_name:schemas.TableNamePattern=Query(None,example="en_TBP_1_bible"),
     books:List[schemas.BookCodePattern]=Query(None,example='GEN'),
     language_code:schemas.LangCodePattern=Query(None, example="hi"),
     content_type:str=Query(None, example="commentary"),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details = Depends(get_user_or_none), db_: Session = Depends(get_db),
-    operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.RESEARCH.value))):
+    operates_on=Depends(AddHiddenInput(value='research-use'))):
+    # operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.RESEARCH.value))):
     '''A generic API for all content type tables to get just the text contents of that table
     that could be used for translation, as corpus for NLP operations like SW identification.
     If source_name is provided, only that filter will be considered over content_type & language.'''
@@ -888,13 +927,15 @@ async def extract_text_contents(request:Request, #pylint: disable=W0613
     log.debug('source_name: %s, language_code: %s',source_name, language_code)
     try:
         tables = await get_source(request=request, source_name=source_name,
+            app_key = app_key,
             content_type=content_type, version_abbreviation=None,
             revision=None, language_code=language_code,
             license_code=None, metadata=None,
             access_tag = None, active= True, latest_revision= True,
             skip=0, limit=1000, user_details=user_details, db_=db_,
-            operates_on=schema_auth.ResourceType.CONTENT.value,
+            operates_on='content',
             filtering_required=True)
+            # operates_on=schema_auth.ResourceType.CONTENT.value,
     except Exception:
         log.error("Error in getting sources list")
         raise

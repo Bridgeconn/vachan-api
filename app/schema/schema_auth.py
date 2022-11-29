@@ -1,35 +1,9 @@
 """schema for auth related"""
 from enum import Enum
-from typing import List
-from pydantic import BaseModel
-from pydantic import types
+from pydantic import BaseModel, validator
+from pydantic import types, EmailStr
 
 #pylint: disable=too-few-public-methods
-class ResourceType(str, Enum):
-    '''Classify DB resources for defineing access rights on them'''
-    METACONTENT = "meta contents like licences, languages, versions or content types"
-    CONTENT = "contents like bibles, commentaries, infographics, dictionary or videos"
-    PROJECT = "Ag or translation project"
-    USER = "all users in our system (Kratos)"
-    TRANSLATION = "generic translation apis"
-    LOOKUP = "Lookup contents"
-    RESEARCH = "Research-Material"
-    JOBS = "Background-jobs"
-    MEDIA = "Media contents"
-    FILE = "File Manipulation Ops"
-
-class App(str, Enum):
-    '''Defined apps'''
-    AG = "Autographa"
-    VACHAN = "Vachan-online or vachan-app"
-    API = "API-user"
-    VACHANADMIN = "VachanAdmin"
-
-class AppInput(str, Enum):
-    '''Input fields for App in Registration'''
-    AG = "Autographa"
-    VACHAN = "Vachan-online or vachan-app"
-    API = "API-user"
 
 class Registration(BaseModel):
     """kratos registration input"""
@@ -43,27 +17,17 @@ class EditUser(BaseModel):
     firstname:str
     lastname:str
 
-class AdminRoles(str, Enum):
-    '''Admin Roles'''
-    SUPERADMIN = 'SuperAdmin'
-    VACHANADMIN = 'VachanAdmin'
-    AGADMIN = 'AgAdmin'
-    AGUSER = 'AgUser'
-    VACHANUSER = 'VachanUser'
-    APIUSER = 'APIUser'
-    BCSDEV = 'BcsDeveloper'
-
-class FilterRoles(str, Enum):
-    '''Filter roles for get users'''
-    ALL = "All"
-    AG = "Autographa"
-    VACHAN = "Vachan-online or vachan-app"
-    API = "API-user"
+# class FilterRoles(str, Enum):
+#     '''Filter roles for get users'''
+#     ALL = "All"
+#     AG = "Autographa"
+#     VACHAN = "Vachan-online or vachan-app"
+#     API = "API-user"
 
 class UserRole(BaseModel):
     """kratos user role input"""
     userid:str
-    roles:List[AdminRoles]
+    roles:list[str]
 
 class UserIdentity(BaseModel):
     """kratos user role input"""
@@ -73,7 +37,7 @@ class RegistrationOut(BaseModel):
     """registration output"""
     id:str
     email:str
-    Permissions:List[App]
+    Permissions:list
 
 class RegisterResponse(BaseModel):
     """Response object of registration"""
@@ -105,14 +69,14 @@ class IdentityDeleteResponse(BaseModel):
     """user identity delete response"""
     message:str
 
-class TableHeading(int, Enum):
-    """Heading of permission table"""
-    ENDPOINT = 0
-    METHOD = 1
-    REQUESTAPP = 2
-    USERNEEDED = 3
-    RESOURCETYPE = 4
-    PERMISSION = 5
+# class TableHeading(int, Enum):
+#     """Heading of permission table"""
+#     ENDPOINT = 0
+#     METHOD = 1
+#     REQUESTAPP = 2
+#     USERNEEDED = 3
+#     RESOURCETYPE = 4
+#     PERMISSION = 5
 
 class IdentitityListResponse(BaseModel):
     """Response object of list of identities"""
@@ -150,3 +114,76 @@ class UserUpdateResponse(BaseModel):
     """Response object of User Update"""
     message:str
     data: IdentitityListResponse
+
+class RegistrationAppContacts(BaseModel):
+    """registration App output"""
+    email:EmailStr
+    phone:str = None
+
+class RegistrationAppOut(BaseModel):
+    """registration App output"""
+    id:str
+    name:str
+    email:str
+    organization:str
+    contacts:RegistrationAppContacts
+
+class RegisterAppResponse(BaseModel):
+    """Response object of App registration"""
+    message:str
+    registered_details:RegistrationAppOut
+    key:str
+
+class RegistrationAppIn(BaseModel):
+    """kratos app registration input"""
+    email:str
+    name:str
+    organization:str
+    password:types.SecretStr
+    contacts:RegistrationAppContacts
+
+    @validator('contacts')
+    def check_phone(cls, val):#pylint: disable=no-self-argument, inconsistent-return-statements
+        '''check for phone is present'''
+        if val.phone is not None:
+            if len(val.phone) <= 0:
+                raise ValueError('Phone Should not be blank')
+        return {"email" : val.email, "phone" : val.phone}
+
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example":{
+            "email": "myapp@vachan",
+            "name": "my app",
+            "organization": "BCS",
+            "password": "my secret",
+            "contacts": {
+                "email": "myappofficial@vachan.org",
+                "phone": "+91 1234567890"
+            }
+        }}
+
+class LoginResponseApp(BaseModel):
+    """Response object of login for app"""
+    message:str
+    key:str
+    appId:str
+
+class AppUpdateResponse(BaseModel):
+    """Response object of App data Update"""
+    message:str
+    data: RegistrationAppOut
+
+class EditApp(BaseModel):
+    """kratos App update input"""
+    ContactEmail:EmailStr
+    organization:str
+    phone:str = None
+    @validator('phone')
+    def check_phone(cls, val):#pylint: disable=no-self-argument, inconsistent-return-statements
+        '''check for phone is present'''
+        if val is not None:
+            if len(val) <= 0:
+                raise ValueError('Phone Should not be blank')
+        return val

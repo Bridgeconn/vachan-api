@@ -31,7 +31,7 @@ def redis_connect() -> redis.client.Redis:
         raise UnAuthorizedException("Redis Connection Failed") from redis_auth_error
     except Exception as any_error: #pylint: disable=W0703
         log.error("Redis connection failed. "+\
-            f"May be Redis container is not running at {redis_host}:{redis_port}.")
+            f"May be Redis container is not running at {redis_host}:{redis_port}.")#pylint: disable=logging-not-lazy
         log.error(any_error)
         # not raisig error to be able to function even without redis, eg. local dev
         return None

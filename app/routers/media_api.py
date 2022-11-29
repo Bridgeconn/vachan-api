@@ -5,7 +5,8 @@ from typing import  Optional
 from fastapi import APIRouter, Query, Request, Depends
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
-from schema import schemas,schema_auth
+from pydantic import types
+from schema import schemas
 from routers.content_apis import get_source
 from crud import media_crud
 from custom_exceptions import NotAvailableException, UnprocessableException
@@ -46,7 +47,8 @@ async def get_and_accesscheck_for_repo(repo, file_path, tag, permanent_link, db_
         metadata=None,access_tag = None, active= True, latest_revision= True,
         limit=1000, skip=0, db_=db_, user_details=user_details,
         filtering_required=True,
-        operates_on=schema_auth.ResourceType.CONTENT.value)
+        operates_on='content')
+        # operates_on=schema_auth.ResourceType.CONTENT.value)
     except Exception:
         log.error("Error in getting sources list")
         raise
@@ -69,6 +71,7 @@ accessible to the user")
     status_code=200, tags=["Media"])
 @get_auth_access_check_decorator
 async def stream_media(request: Request, #pylint: disable=unused-argument,too-many-arguments
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     access_token: str = Query(None),
     repo: str = Query(None,example="kavitha.raju/trial-media-project"),
     tag: str = Query(None,example="main"),
@@ -109,6 +112,7 @@ async def stream_media(request: Request, #pylint: disable=unused-argument,too-ma
     status_code=200, tags=["Media"])
 @get_auth_access_check_decorator
 async def download_media(request: Request, #pylint: disable=too-many-arguments
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     access_token: str = Query(None),
     repo: str = Query(None,example="kavitha.raju/trial-media-project"),
     tag: str = Query(None,example="main"),
