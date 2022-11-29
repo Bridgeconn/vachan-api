@@ -44,7 +44,6 @@ def create_content_type(db_: Session, content: schemas.ContentTypeCreate,user_id
 
 def delete_content(db_: Session, content: schemas.DeleteIdentity):
     '''delete particular content, selected via content id'''
-    # source_content = db_.query(db_models.Source).get(content.itemId)
     db_content = db_.query(db_models.ContentType).get(content.itemId)
     deleted_content = db_content
     db_.delete(db_content)
@@ -171,7 +170,6 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
         updateTime = datetime.now())
     db_.add(db_content)
     # db_.flush()
-    
     #db_.commit()
     return db_content
 
@@ -305,7 +303,7 @@ def delete_version(db_: Session, ver: schemas.DeleteIdentity):
     #db_.commit()
     return deleted_content
 
-def get_sources(db_: Session, language_id=None,#pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks
+def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks
     content_type=None, version_abbreviation=None, revision=None, language_code=None,
     **kwargs):
     '''Fetches the rows of sources table'''
@@ -329,8 +327,6 @@ def get_sources(db_: Session, language_id=None,#pylint: disable=too-many-locals,
             db_models.Source.version.has(revision = revision))
     if license_abbreviation:
         query = query.filter(db_models.Source.license.has(code = license_abbreviation.strip()))
-    if language_id:
-        query = query.filter(db_models.Source.language.has(languageId = language_id))
     if language_code:
         query = query.filter(db_models.Source.language.has(code = language_code.strip()))
     if metadata:

@@ -1,6 +1,5 @@
 '''API endpoints related to content management''' #pylint: disable=too-many-lines
 import json
-import re
 from typing import List
 import jsonpickle
 from fastapi import APIRouter, Query, Body, Depends, Path , Request,BackgroundTasks
@@ -10,7 +9,7 @@ from schema import schemas,schemas_nlp, schema_auth, schema_content
 from dependencies import get_db, log, AddHiddenInput
 from crud import structurals_crud, contents_crud, nlp_sw_crud, media_crud
 from custom_exceptions import NotAvailableException, AlreadyExistsException,\
-    UnprocessableException,PermissionException
+    UnprocessableException
 from auth.authentication import get_auth_access_check_decorator ,get_user_or_none
 
 router = APIRouter()
@@ -112,7 +111,6 @@ async def get_language(request: Request,
     language_code : schemas.LangCodePattern = Query(None, example="hi"),
     language_name: str = Query(None, example="hindi"),
     search_word: str = Query(None, example="Sri Lanka"),
-    language_id: int = Query(None,example=100057),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     '''fetches all the languages supported in the DB, their code and other details.
@@ -124,7 +122,7 @@ async def get_language(request: Request,
     log.debug('langauge_code:%s, language_name: %s, search_word:%s, skip: %s, limit: %s',
         language_code, language_name, search_word, skip, limit)
     return structurals_crud.get_languages(db_, language_code, language_name, search_word,
-        language_id, skip = skip, limit = limit)
+        skip = skip, limit = limit)
 
 @router.post('/v2/languages', response_model=schemas.LanguageCreateResponse,
     responses={502: {"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},

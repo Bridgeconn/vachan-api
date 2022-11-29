@@ -7,6 +7,7 @@ from .conftest import initial_test_users
 
 UNIT_URL = '/v2/languages'
 RESTORE_URL = '/v2/restore'
+VERSION_URL = '/v2/versions'
 SOURCE_URL = '/v2/sources'
 
 def assert_positive_get(item):
@@ -476,9 +477,12 @@ def test_language_used_by_source():
     '''  Negativetest case, trying to delete that language which is used to create a source'''
     #create new data
     response = test_post_default()
+    print("AFTER POST",response.json())
     language_id = response.json()["data"]["languageId"]
+    print("Lang ID :",language_id)
 
-    response = client.get(UNIT_URL+"?language_id="+str(language_id))
+    response = client.get(UNIT_URL+"?language_code=x-aaj")
+    print("AFTER GET",response.json())
     language_code = response.json()[0]["code"]
 
     #create new source as SuperAdmin
@@ -493,6 +497,20 @@ def test_language_used_by_source():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+token_admin
                      }
+    #Create Version with associated with source
+    version_data = {
+        "versionAbbreviation": "KJV",
+        "versionName": "King James Version",
+        "revision": 1,
+        "metaData": {
+            "publishedIn": "1611"
+            }
+        }
+    response = client.post(VERSION_URL, headers=headers_auth, json=version_data)
+    print("AFTER CREATE VERSION",response.json())
+    assert response.status_code == 201
+    assert response.json()['message'] == "Version created successfully"
+
     source_data = {
         "contentType": "commentary",
         "language": language_code,
@@ -503,6 +521,7 @@ def test_language_used_by_source():
     }
     #Create Source with created language
     response = client.post(SOURCE_URL, headers=headers_auth, json=source_data)
+    print("AFTER CREATE SOURCE",response.json())
     assert response.status_code == 201
     assert response.json()['message'] == "Source created successfully"
     logout_user(token_admin)
@@ -514,6 +533,7 @@ def test_language_used_by_source():
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
     response = client.delete(UNIT_URL, headers=headers, json=data)
+    print("AFTER DELETE LANGUAGE",response.json())
     assert response.status_code == 409
     assert response.json()['error'] == 'Already Exists'
 
