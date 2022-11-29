@@ -20,19 +20,20 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/languages,POST,None,False,None,create
 /v2/languages,PUT,None,False,None,edit
 /v2/languages,DELETE,None,False,None,delete/deactivate
-/v2/restore,PUT,None,False,None,data-restore
 /v2/licenses,GET,Autographa,False,None,refer-for-translation
 /v2/licenses,GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/licenses,GET,VachanAdmin,False,None,read-via-vachanadmin
 /v2/licenses,GET,API-user,False,None,read-via-api
 /v2/licenses,POST,None,False,None,create
 /v2/licenses,PUT,None,False,None,edit
+/v2/licenses,DELETE,None,False,None,delete/deactivate
 /v2/versions,GET,Autographa,False,None,refer-for-translation
 /v2/versions,GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/versions,GET,VachanAdmin,False,None,read-via-vachanadmin
 /v2/versions,GET,API-user,False,None,read-via-api
 /v2/versions,POST,None,False,None,create
 /v2/versions,PUT,None,False,None,edit
+/v2/versions,DELETE,None,False,None,delete/deactivate
 /v2/sources,GET,Autographa,True,None,refer-for-translation
 /v2/sources,GET,Vachan-online or vachan-app,True,None,view-on-web
 /v2/sources,GET,VachanAdmin,True,None,read-via-vachanadmin
@@ -123,3 +124,4 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/bibles/{source_name}/books/{book_code}/format/{output_format},GET,VachanAdmin,False,None,read-via-vachanadmin
 /v2/bibles/{source_name}/books/{book_code}/format/{output_format},GET,API-user,False,None,read-via-api
 /v2/files/usfm/to/{output_format},PUT,None,False,File Manipulation Ops,access-via-api
+/v2/restore,PUT,None,False,None,data-restore

@@ -1,5 +1,4 @@
 '''Test cases for language related APIs'''
-import csv
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
@@ -8,6 +7,7 @@ from .conftest import initial_test_users
 
 UNIT_URL = '/v2/languages'
 RESTORE_URL = '/v2/restore'
+SOURCE_URL = '/v2/sources'
 
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
@@ -472,24 +472,50 @@ def test_delete_notavailable_language():
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
 
+def test_language_used_by_source():
+    '''  Negativetest case, trying to delete that language which is used to create a source'''
+    #create new data
+    response = test_post_default()
+    language_id = response.json()["data"]["languageId"]
 
-def test_delete_seed_data():
-    '''negative test case, trying to delete a langauge that is the part of seed db'''
-    response = client.get(UNIT_URL+'?language_code=hi')
-    language_code = response.json()[0]['code']
-    data_present = False
-    with open('../db/csvs/consolidated_languages.csv', 'rt') as file: # pylint: disable=W1514
-        reader = csv.reader(file, delimiter=',')
-        for row in reader:
-            if language_code == row[0]:
-                data_present = True
-                if data_present:
-                    try:
-                        raise Exception
-                    except Exception: # pylint: disable=W0703
-                        print('Seed data cannot be deleted')
-        if not data_present:
-            response = client.delete(UNIT_URL+'?language_code=hi')
+    response = client.get(UNIT_URL+"?language_id="+str(language_id))
+    language_code = response.json()[0]["code"]
+
+    #create new source as SuperAdmin
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_auth = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                     }
+    source_data = {
+        "contentType": "commentary",
+        "language": language_code,
+        "version": "KJV",
+        "revision": 1,
+        "year": 2020,
+        "license": "ISC"
+    }
+    #Create Source with created language
+    response = client.post(SOURCE_URL, headers=headers_auth, json=source_data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Source created successfully"
+    logout_user(token_admin)
+
+    #Delete language with item created API User
+    data = {"itemId":language_id}
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+            }
+    response = client.delete(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 409
+    assert response.json()['error'] == 'Already Exists'
 
 def test_restore_default():
     '''positive test case, checking for correct return object'''

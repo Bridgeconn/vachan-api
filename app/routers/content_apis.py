@@ -1,21 +1,17 @@
-'''API endpoints related to content management'''
+'''API endpoints related to content management''' #pylint: disable=too-many-lines
 import json
 import re
 from typing import List
 import jsonpickle
-from fastapi import APIRouter, Query, Body, Depends, Path , Request,\
-    BackgroundTasks
+from fastapi import APIRouter, Query, Body, Depends, Path , Request,BackgroundTasks
 from sqlalchemy.orm import Session
 import db_models
 from schema import schemas,schemas_nlp, schema_auth, schema_content
 from dependencies import get_db, log, AddHiddenInput
 from crud import structurals_crud, contents_crud, nlp_sw_crud, media_crud
 from custom_exceptions import NotAvailableException, AlreadyExistsException,\
-    UnprocessableException
-from auth.authentication import get_auth_access_check_decorator ,\
-    get_user_or_none
-
-
+    UnprocessableException,PermissionException
+from auth.authentication import get_auth_access_check_decorator ,get_user_or_none
 
 router = APIRouter()
 
@@ -93,16 +89,15 @@ async def delete_contents(request: Request, content_obj: schemas.DeleteIdentity 
 async def restore_content(request: Request, content: schemas.RestoreIdentity,
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
-    ''' Restore deleted data.
-    * Unique deleted item ID can be used to restore data'''
+    ''' Restore deleted data.Unique deleted item ID can be used to restore data'''
     log.info('In restore_content')
     log.debug('restore: %s',content)
     if len(structurals_crud.get_restore_item_id(db_, restore_item_id= content.itemId)) == 0:
         raise NotAvailableException(f"Restore item id {content.itemId} not found")
     data = structurals_crud.restore_data(db_=db_, restored_item=content)
     data = jsonpickle.encode(data)
-    data = re.sub(r'^.*?}}}, ' ,'{', data)
-    data = json.loads(data)
+    data=json.loads(data)
+    del data['py/object'],data['_sa_instance_state']
     return {'message': f"Deleted Item with identity {content.itemId} restored successfully",
     "data": data}
 
@@ -117,6 +112,7 @@ async def get_language(request: Request,
     language_code : schemas.LangCodePattern = Query(None, example="hi"),
     language_name: str = Query(None, example="hindi"),
     search_word: str = Query(None, example="Sri Lanka"),
+    language_id: int = Query(None,example=100057),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     '''fetches all the languages supported in the DB, their code and other details.
@@ -128,7 +124,7 @@ async def get_language(request: Request,
     log.debug('langauge_code:%s, language_name: %s, search_word:%s, skip: %s, limit: %s',
         language_code, language_name, search_word, skip, limit)
     return structurals_crud.get_languages(db_, language_code, language_name, search_word,
-        skip = skip, limit = limit)
+        language_id, skip = skip, limit = limit)
 
 @router.post('/v2/languages', response_model=schemas.LanguageCreateResponse,
     responses={502: {"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
@@ -180,6 +176,8 @@ async def delete_languages(request: Request, lang_obj: schemas.DeleteIdentity = 
     dbtable_name = "languages"
     if len(structurals_crud.get_languages(db_, language_id = lang_obj.itemId)) == 0:
         raise NotAvailableException(f"Language id {language_id} not found")
+    # if len(structurals_crud.get_sources(db_, language_id = lang_obj.itemId)) > 0:
+    #     raise PermissionException(f"Language {language_id} is in use and can't be deleted")
     deleted_content = structurals_crud.delete_language(db_=db_, lang=lang_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
         table_name = dbtable_name)
@@ -240,6 +238,28 @@ async def edit_license(request: Request, license_obj: schemas.LicenseEdit = Body
     return {'message': "License edited successfully",
         "data": structurals_crud.update_license(db_=db_, license_obj=license_obj,
         user_id=user_details['user_id'])}
+
+@router.delete('/v2/licenses',response_model=schemas.DeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Licenses"])
+@get_auth_access_check_decorator
+async def delete_licenses(request: Request, delete_obj: schemas.DeleteIdentity = Body(...),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Delete License
+    * unique License Id can be used to delete an exisiting identity'''
+    log.info('In delete_licenses')
+    log.debug('license-delete:%s',delete_obj)
+    license_id= delete_obj.itemId
+    dbtable_name = "licenses"
+    if len(structurals_crud.get_license_id(db_, license_id= delete_obj.itemId)) == 0:
+        raise NotAvailableException(f"License id {license_id} not found")
+    deleted_content = structurals_crud.delete_license(db_=db_, content=delete_obj)
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
+            table_name = dbtable_name)
+    return {'message': f"License with identity {license_id} deleted successfully",
+            "data": delcont}
 
 ##### Version #####
 @router.get('/v2/versions',
@@ -304,6 +324,28 @@ async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...
     return {'message': "Version edited successfully",
         "data": structurals_crud.update_version(db_=db_, version=ver_obj,
         user_id=user_details['user_id'])}
+
+@router.delete('/v2/versions',response_model=schemas.DeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Versions"])
+@get_auth_access_check_decorator
+async def delete_versions(request: Request, delete_obj: schemas.DeleteIdentity = Body(...),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Delete Version
+    * unique Version Id can be used to delete an exisiting identity'''
+    log.info('In delete_versions')
+    log.debug('version-delete:%s',delete_obj)
+    version_id= delete_obj.itemId
+    dbtable_name = "versions"
+    if len(structurals_crud.get_versions(db_, version_id = delete_obj.itemId)) == 0:
+        raise NotAvailableException(f"Version id {delete_obj.itemId} not found")
+    deleted_content = structurals_crud.delete_version(db_=db_, ver=delete_obj)
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
+            table_name = dbtable_name)
+    return {'message': f"Version with identity {version_id} deleted successfully",
+            "data": delcont}
 
 ###### Source #####
 @router.get('/v2/sources',

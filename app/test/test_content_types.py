@@ -131,7 +131,7 @@ def test_delete_default():
     assert response.json()['message'] ==  \
         f"Content with identity {content_id} deleted successfully"
     #Check content is deleted from content_types table
-    check_content_type = client.get(UNIT_URL+"?content_type={content_type}")
+    check_content_type = client.get(UNIT_URL+"?content_type=altbible")
     assert_not_available_content(check_content_type)
 
 def test_delete_default_superadmin():
@@ -210,21 +210,6 @@ def test_delete_missingvalue_content_id():
     response = client.delete(UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
 
-def test_delete_seed_data():
-    '''negative test case, trying to delete a content that is the part of seed db'''
-    response = client.get(UNIT_URL+'?content_type=bible')
-    content_type = response.json()[0]['contentType']
-    data_present = False
-    for content in ['bible','commentary','dictionary','infographic','biblevideo','gitlabrepo']:
-        if content_type == content:
-            data_present = True
-            if data_present:
-                try:
-                    raise Exception
-                except Exception: # pylint: disable=W0703
-                    print('Seed data cannot be deleted')
-    if not data_present:
-        response = client.delete(UNIT_URL+'?content_type=bible')
 def test_delete_notavailable_content():
     ''' request a non existing content ID, Ensure there is no partial matching'''
     data = {"itemId":20000}
@@ -251,8 +236,8 @@ def test_restore_default():
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
-    #Restore content with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev
-    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev']:
+    #Restore content with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev and APIUSer2
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2']:
         headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']

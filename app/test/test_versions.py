@@ -6,6 +6,7 @@ from .test_auth_basic import login,SUPER_USER,SUPER_PASSWORD,logout_user
 from .conftest import initial_test_users
 
 UNIT_URL = '/v2/versions'
+RESTORE_URL = '/v2/restore'
 
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
@@ -49,7 +50,8 @@ def test_post_default():
         "revision": "1",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
-    check_post(data)
+    post_version = check_post(data)
+    return(post_version)
 
 def test_post_multiple_with_same_abbr():
     '''Positive test to add two version, with same abbr and diff revision'''
@@ -310,5 +312,262 @@ def test_put_version():
     assert response.status_code == 201
     assert response.json()['message'] == "Version edited successfully"
     assert response.json()["data"]["versionName"] == "Xyz version edited by admin"
-
     logout_user(token_admin)
+
+def test_delete_default():
+    ''' positive test case, checking for correct return of deleted version ID'''
+    #create new data
+    response = test_post_default()
+    version_id = response.json()["data"]["versionId"]
+    res = client.get(UNIT_URL+'?version_abbreviation=XYZ')
+
+    data = {"itemId":version_id}
+
+    #Delete without authentication
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    response = client.delete(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
+
+    #Delete version with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev']:
+        user_headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
+        }
+        response = client.delete(UNIT_URL, headers=user_headers, json=data)
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
+
+    #Delete version with item created API User
+    headers_au = {"contentType": "application/json",
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+            }
+    response = client.delete(UNIT_URL, headers=headers_au, json=data)
+    assert response.status_code == 200
+    assert response.json()['message'] ==  \
+        f"Version with identity {version_id} deleted successfully"
+    #Check version is deleted from versions table
+    check_version =client.get(UNIT_URL+'?version_abbreviation=XYZ')
+    assert_not_available_content(check_version)
+
+def test_delete_default_superadmin():
+    ''' positive test case, checking for correct return of deleted version ID'''
+    #Created User or Super Admin can only delete version
+    #creating data
+    response = test_post_default()
+    version_id = response.json()['data']['versionId']
+    data = {"itemId":version_id}
+    res = client.get(UNIT_URL+'?version_abbreviation=XYZ')
+
+    #Delete version with Super Admin
+     #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    #Delete verison
+    response = client.delete(UNIT_URL, headers=headers_sa, json=data)
+    assert response.status_code == 200
+    assert response.json()['message'] == \
+    f"Version with identity {version_id} deleted successfully"
+    logout_user(test_user_token)
+    return response
+
+def test_delete_version_id_string():
+    '''positive test case, version id as string'''
+    response = test_post_default()
+    #Deleting created data
+    version_id = response.json()['data']['versionId']
+    version_id = str(version_id)
+    data = {"itemId":version_id}
+    sa_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(sa_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+    response = client.delete(UNIT_URL, headers=headers_sa, json=data)
+    assert response.status_code == 200
+    assert response.json()['message'] == \
+        f"Version with identity {version_id} deleted successfully"
+    logout_user(test_user_token)
+
+def test_delete_incorrectdatatype():
+    '''negative testcase. Passing input data not in json format'''
+    response = test_post_default()
+    #Deleting created data
+    version_id = response.json()['data']['versionId']
+    data = version_id
+    response = client.delete(UNIT_URL, headers=headers_auth, json=data)
+    assert_input_validation_error(response)
+
+def test_delete_missingvalue_version_id():
+    '''Negative Testcase. Passing input data without version Id'''
+    data = {}
+    response = client.delete(UNIT_URL, headers=headers_auth, json=data)
+    assert_input_validation_error(response)
+
+def test_delete_notavailable_version():
+    ''' request a non existing version ID, Ensure there is no partial matching'''
+    data = {"itemId":20000}
+    response = client.delete(UNIT_URL,headers=headers_auth,json=data)
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"
+
+def test_restore_default():
+    '''positive test case, checking for correct return object'''
+    #only Super Admin can restore deleted data
+    #Creating and Deleting data
+    response = test_delete_default_superadmin()
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Restoring data
+    #Restore without authentication
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    response = client.put(RESTORE_URL, headers=headers, json=data)
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
+
+    #Restore version with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev and APIUSer2
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2']:
+        user_headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
+        }
+    response = client.put(RESTORE_URL, headers=user_headers, json=data)
+    assert response.status_code == 403
+    assert response.json()['error'] == 'Permission Denied'
+
+    #Restore version with Super Admin
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    response = client.put(RESTORE_URL, headers=headers_sa, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == \
+    f"Deleted Item with identity {deleteditem_id} restored successfully"
+    assert_positive_get(response.json()['data'])
+    logout_user(test_user_token)
+    #Check version is available in versions table after restore
+    check_version_abbr = client.get(UNIT_URL+'?version_abbreviation=XYZ')
+    assert check_version_abbr.status_code == 200
+
+def test_restore_item_id_string():
+    '''positive test case, passing deleted item id as string'''
+    #only Super Admin can restore deleted data
+    #Creating and Deleting data
+    response = test_delete_default_superadmin()
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Restoring string data
+    deleteditem_id = str(deleteditem_id)
+    data = {"itemId": deleteditem_id}
+
+#Login as Super Admin
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_sa = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                     }
+
+    response = client.put(RESTORE_URL, headers=headers_sa, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == \
+    f"Deleted Item with identity {deleteditem_id} restored successfully"
+    logout_user(token_admin)
+
+def test_restore_incorrectdatatype():
+    '''Negative Test Case. Passing input data not in json format'''
+    #Creating and Deleting data
+    response = test_delete_default_superadmin()
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Login as Super Admin
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_sa = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                     }
+
+    #Passing input data not in json format
+    data = deleteditem_id
+
+    response = client.put(RESTORE_URL, headers=headers_sa, json=data)
+    assert_input_validation_error(response)
+    logout_user(token_admin)
+
+def test_restore_missingvalue_itemid():
+    '''itemId is mandatory in input data object'''
+    data = {}
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_sa = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                    }
+    response = client.put(RESTORE_URL, headers=headers_sa, json=data)
+    assert_input_validation_error(response)
+    logout_user(token_admin)
+
+def test_restore_notavailable_item():
+    ''' request a non existing restore ID, Ensure there is no partial matching'''
+    data = {"itemId":20000}
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_sa = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                    }
+    response = client.put(RESTORE_URL, headers=headers_sa, json=data)
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"

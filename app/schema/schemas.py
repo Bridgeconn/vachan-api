@@ -164,8 +164,7 @@ class DeletedItemResponse(BaseModel):
             "example": {
                 "itemId": 100057,
                 "createdUser": "access_token",
-                "deletedFrom": "languages",
-                "scriptDirection": "left-to-right"
+                "deletedFrom": "languages"
 
             }
         }
@@ -249,6 +248,7 @@ class LicenseShortResponse(BaseModel):
 
 class LicenseResponse(BaseModel):
     '''Return object of licenses'''
+    licenseId : int
     name : str
     code : LicenseCodePattern
     license : str
