@@ -32,9 +32,15 @@ If all goes well you should be able to get proper outputs at `http://localhost`,
 
 ## Set up locally for development and testing(without docker)
 
+We follow fork and merge git workflow.
+* Fork the repo, https://github.com/Bridgeconn/vachan-api.git, to your github account
+* Then clone you account locally and keep that as "origin"
+* Add the central Bridgeconn repo as "upstream".
+* Contribute back via pull requests to the "version-2" branch on this repo.
+
 ### Clone git repo
 
-```git clone https://github.com/Bridgeconn/vachan-api.git```
+```git clone https://github.com/<your-account>/vachan-api.git```
 
 ```cd vachan-api```
 
