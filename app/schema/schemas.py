@@ -2,7 +2,7 @@
 #pylint: disable=too-many-lines
 from typing import List
 from enum import Enum
-from pydantic import BaseModel, constr, Field
+from pydantic import BaseModel, constr, Field # pylint: disable=no-name-in-module
 
 
 #pylint: disable=too-few-public-methods
@@ -141,7 +141,7 @@ class RestoreIdentity(BaseModel):
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "itemId": 40
+                "itemId": 100002
             }
         }
 
@@ -153,7 +153,6 @@ class DataRestoreResponse(BaseModel):
 class DeletedItemResponse(BaseModel):
     '''returns object of deleted items'''
     itemId : int
-    createdUser :str = None
     deletedFrom :str
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
@@ -163,7 +162,6 @@ class DeletedItemResponse(BaseModel):
         schema_extra = {
             "example": {
                 "itemId": 100057,
-                "createdUser": "access_token",
                 "deletedFrom": "languages"
 
             }

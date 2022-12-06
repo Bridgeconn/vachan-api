@@ -7,6 +7,8 @@ from .conftest import initial_test_users
 
 UNIT_URL = '/v2/contents'
 RESTORE_URL = '/v2/restore'
+VERSION_URL = '/v2/versions'
+SOURCE_URL = '/v2/sources'
 
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
@@ -220,6 +222,60 @@ def test_delete_notavailable_content():
     response = client.delete(UNIT_URL,headers=headers,json=data)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
+
+def test_content_used_by_source():
+    '''  Negativetest case, trying to delete that content which is used to create a source'''
+
+    #get id of an already existing content
+    response = client.get(UNIT_URL+"?content_type=commentary")
+    content_id = response.json()[0]["contentId"]
+
+    #create new source as SuperAdmin
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_auth = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                     }
+    #Create Version with associated with source
+    version_data = {
+        "versionAbbreviation": "TTT",
+        "versionName": "Test Version",
+        "revision": 1,
+        "metaData": {
+            "publishedIn": "1611"
+            }
+        }
+    response = client.post(VERSION_URL, headers=headers_auth, json=version_data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Version created successfully"
+
+    source_data = {
+        "contentType": "commentary",
+        "language": "en",
+        "version": "TTT",
+        "revision": 1,
+        "year": 2020,
+        "license": "ISC"
+    }
+    #Create Source with content
+    response = client.post(SOURCE_URL, headers=headers_auth, json=source_data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Source created successfully"
+    logout_user(token_admin)
+
+    #Delete content
+    data = {"itemId":content_id}
+    response = client.delete(UNIT_URL, headers=headers_auth, json=data)
+    print("AFTER DELETE LANGUAGE",response.json())
+    assert response.status_code == 409
+    assert response.json()['error'] == 'Conflict'
+
 
 def test_restore_default():
     '''positive test case, checking for correct return object'''
