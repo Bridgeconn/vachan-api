@@ -2,7 +2,7 @@
 #pylint: disable=too-many-lines
 from typing import List
 from enum import Enum
-from pydantic import BaseModel, constr, Field # pylint: disable=no-name-in-module
+from pydantic import BaseModel, constr, Field
 
 
 #pylint: disable=too-few-public-methods
@@ -31,7 +31,6 @@ class ContentType(BaseModel):
     '''output object for content types'''
     contentId : int
     contentType : str
-    createdUser : str = None
     class Config:
         '''For SQL Alchemy'''
         orm_mode = True
@@ -39,8 +38,7 @@ class ContentType(BaseModel):
         schema_extra = {
             "example": {
                 "contentId": 1,
-                "contentType": "commentary",
-                "createdUser": "token"
+                "contentType": "commentary"
             }
         }
 
@@ -80,7 +78,6 @@ class LanguageResponse(BaseModel):
     languageId : int
     language : str
     code : LangCodePattern
-    createdUser : str = None
     scriptDirection : Direction = None
     metaData: dict = None
     class Config:
@@ -93,7 +90,6 @@ class LanguageResponse(BaseModel):
                 "languageId": 100057,
                 "language": "Hindi",
                 "code": "hi",
-                "createdUser": "token",
                 "scriptDirection": "left-to-right",
                 "metaData": {"region": "India, Asia",
                     "alternate-names": ["Khadi Boli", "Khari Boli", "Dakhini", "Khariboli"],
@@ -134,52 +130,48 @@ class LanguageEdit (BaseModel):
             }
         }
 
+class LanguageDeleteResponse(BaseModel):
+    """Language delete response"""
+    message:str
+
+class LanguageIdentity(BaseModel):
+    """kratos language ID input"""
+    languageId:int
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "languageId": 100057
+            }
+        }
+
 class RestoreIdentity(BaseModel):
-    """ item ID input"""
+    """kratos item ID input"""
     itemId:int
     class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "itemId": 100002
+                "itemId": 40
             }
         }
 
 class DataRestoreResponse(BaseModel):
     """Content delete response"""
     message:str
-    data: dict = None
 
-class DeletedItemResponse(BaseModel):
-    '''returns object of deleted items'''
-    itemId : int
-    deletedFrom :str
-    class Config:
-        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
-        just get the data from object attributes'''
-        orm_mode = True
-        # '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "itemId": 100057,
-                "deletedFrom": "languages"
-
-            }
-        }
-
-class DeleteResponse(BaseModel):
+class ContentDeleteResponse(BaseModel):
     """Content delete response"""
     message:str
-    data: DeletedItemResponse = None
 
-class DeleteIdentity(BaseModel):
-    """ ID input of item to be deleted"""
-    itemId: int
+class ContentIdentity(BaseModel):
+    """kratos content ID input"""
+    contentId:int
     class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "itemId": 100000
+                "contentId": 100000
             }
         }
 
@@ -246,7 +238,6 @@ class LicenseShortResponse(BaseModel):
 
 class LicenseResponse(BaseModel):
     '''Return object of licenses'''
-    licenseId : int
     name : str
     code : LicenseCodePattern
     license : str

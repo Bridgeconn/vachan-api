@@ -308,6 +308,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                 if db_:
                     db_.commit()
             else:
+
                 if user_details['user_id'] is None:
                     raise UnAuthorizedException("Access token not provided or user not recognized.")
                 raise PermissionException("Access Permission Denied for the URL")
