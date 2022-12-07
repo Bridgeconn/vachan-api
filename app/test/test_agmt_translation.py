@@ -491,7 +491,8 @@ def test_get_sentence():
     assert len(response.json()) > 1
     for item in response.json():
         assert_positive_get_sentence(item)
-        assert item['sentence'] == item['draft']
+        assert item['sentence'] != ""
+        assert item['draft'] == ""
 
 
     # translate all tokens at once
