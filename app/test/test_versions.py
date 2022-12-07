@@ -30,7 +30,7 @@ def check_post(data):
     assert response.json()['error'] == 'Authentication Error'
 
     #with Auth
-    headers_auth = {"contentType": "application/json",
+    headers_auth = {"contentType": "application/json", #pylint: disable=redefined-outer-name
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
@@ -211,7 +211,7 @@ def test_get_after_adding_data():
     assert len(response.json()) == 2
     for item in response.json():
         assert_positive_get(item)
-        assert item['versionAbbreviation'] == 'AAA'   
+        assert item['versionAbbreviation'] == 'AAA'
 
     # filter with abbr, for not available content
     response = client.get(UNIT_URL + '?version_abbreviation=CCC')
@@ -258,7 +258,7 @@ def test_put_version():
         "revision": "1",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
-    headers_auth = {"contentType": "application/json",
+    headers_auth = {"contentType": "application/json", #pylint: disable=redefined-outer-name
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
@@ -290,7 +290,7 @@ def test_put_version():
     data_admin   = {
     "user_email": SUPER_USER,
     "password": SUPER_PASSWORD
-    }      
+    }
     response =login(data_admin)
     assert response.json()['message'] == "Login Succesfull"
     token_admin =  response.json()['token']
@@ -310,5 +310,4 @@ def test_put_version():
     assert response.status_code == 201
     assert response.json()['message'] == "Version edited successfully"
     assert response.json()["data"]["versionName"] == "Xyz version edited by admin"
-
     logout_user(token_admin)

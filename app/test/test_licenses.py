@@ -1,9 +1,10 @@
 '''Test cases for licenses related APIs'''
+from schema.schemas import SourcePermissions
 from . import client, check_default_get
 from . import assert_input_validation_error, assert_not_available_content
 from .test_auth_basic import logout_user,login,SUPER_PASSWORD,SUPER_USER
 from .conftest import initial_test_users
-from schema.schemas import SourcePermissions
+
 
 UNIT_URL = '/v2/licenses'
 headers = {"contentType": "application/json", "accept": "application/json"}
@@ -189,7 +190,7 @@ def test_post():
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
-def test_put():
+def test_put(): #pylint: disable=too-many-statements
     '''Add a new license and then alter it'''
     data = {
       "license": "A very very long license text",
@@ -245,7 +246,7 @@ def test_put():
     data_admin   = {
     "user_email": SUPER_USER,
     "password": SUPER_PASSWORD
-    }      
+    }
     response =login(data_admin)
     assert response.json()['message'] == "Login Succesfull"
     token_admin =  response.json()['token']
@@ -290,6 +291,3 @@ def test_put():
     resp2 = client.get(UNIT_URL)
     assert resp1.status_code == 200
     assert len(resp1.json()) - len(resp2.json()) == 1
-
-
-    

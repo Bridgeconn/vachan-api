@@ -25,17 +25,26 @@ def get_content_types(db_: Session, content_type: str =None, skip: int = 0, limi
             db_models.ContentType.contentType == content_type).offset(skip).limit(limit).all()
     return db_.query(db_models.ContentType).offset(skip).limit(limit).all()
 
-def create_content_type(db_: Session, content: schemas.ContentTypeCreate):
+def get_content_id(db_: Session, content_id = None, **kwargs):
+    '''Fetches row of content type'''
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
+    query = db_.query(db_models.ContentType)
+    if content_id is not None:
+        query = query.filter(db_models.ContentType.contentId == content_id)
+    return query.offset(skip).limit(limit).all()
+
+def create_content_type(db_: Session, content: schemas.ContentTypeCreate,user_id=None):
     '''Adds a row to content_types table'''
-    db_content = db_models.ContentType(contentType = content.contentType)
+    db_content = db_models.ContentType(contentType = content.contentType,createdUser= user_id)
     db_.add(db_content)
     # db_.commit()
     # db_.refresh(db_content)
     return db_content
 
-def delete_content(db_: Session, content: schemas.ContentIdentity):
+def delete_content(db_: Session, content: schemas.DeleteIdentity):
     '''delete particular content, selected via content id'''
-    db_content = db_.query(db_models.ContentType).get(content.contentId)
+    db_content = db_.query(db_models.ContentType).get(content.itemId)
     deleted_content = db_content
     db_.delete(db_content)
     #db_.commit()
@@ -100,19 +109,27 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
     # db_.refresh(db_content)
     return db_content
 
-def add_deleted_data(db_: Session, del_content : db_models.Language,
-    user_id = None, table_name : str = None):
+def add_deleted_data(db_: Session, del_content, table_name : str = None):
     '''backup deleted items from any table'''
     json_string = jsonpickle.encode(del_content)#, unpicklable=False
-    json_string = re.sub(r'^.*?}}}, ' ,'{', json_string)
-    json_string = json.loads(json_string)
+    json_string=json.loads(json_string)
+    del json_string['py/object'],json_string['_sa_instance_state']
     db_content =  db_models.DeletedItem(deletedData = json_string,
-        deletedUser = user_id,
+        #createdUser = del_content.createdUser,
+        createdUser = del_content.createdUser,
         deletedTime = datetime.now(),
         deletedFrom = table_name)
     db_.add(db_content)
-    #db_.commit()
-    return del_content
+    return db_content
+
+def get_restore_item_id(db_: Session, restore_item_id = None, **kwargs):
+    '''Fetches row of deleted item'''
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
+    query = db_.query(db_models.ContentType)
+    if restore_item_id is not None:
+        query = query.filter(db_models.DeletedItem.itemId == restore_item_id)
+    return query.offset(skip).limit(limit).all()
 
 def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
     '''Restore deleted record back to the original table'''
@@ -120,7 +137,6 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
     db_content = restore_content
     json_string = db_content.deletedData
     db_.delete(restore_content)
-    db_.commit()
     if db_content.deletedFrom == 'content_types':
         db_content = db_models.ContentType(contentId = json_string['contentId'],
         contentType = json_string['contentType'])
@@ -134,12 +150,13 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
         updatedUser= json_string['updatedUser'],
         updateTime = datetime.now())
     db_.add(db_content)
+    # db_.flush()
     #db_.commit()
     return db_content
 
-def delete_language(db_: Session, lang: schemas.LanguageIdentity):
+def delete_language(db_: Session, lang: schemas.DeleteIdentity):
     '''delete particular language, selected via language id'''
-    db_content = db_.query(db_models.Language).get(lang.languageId)
+    db_content = db_.query(db_models.Language).get(lang.itemId)
     deleted_content = db_content
     db_.delete(db_content)
     #db_.commit()
@@ -158,6 +175,15 @@ def get_licenses(db_: Session, license_code = None, license_name = None,
     if permission is not None:
         query = query.filter(db_models.License.permissions.any(permission))
     return query.filter(db_models.License.active == active).offset(skip).limit(limit).all()
+
+def get_license_id(db_: Session, license_id = None, **kwargs):
+    '''Fetches row of content type'''
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
+    query = db_.query(db_models.License)
+    if license_id is not None:
+        query = query.filter(db_models.License.licenseId == license_id)
+    return query.offset(skip).limit(limit).all()
 
 def create_license(db_: Session, license_obj: schemas.LicenseCreate, user_id=None):
     '''Adds a new license to Database'''
