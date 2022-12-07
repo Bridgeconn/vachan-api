@@ -272,7 +272,6 @@ def test_content_used_by_source():
     #Delete content
     data = {"itemId":content_id}
     response = client.delete(UNIT_URL, headers=headers_auth, json=data)
-    print("AFTER DELETE LANGUAGE",response.json())
     assert response.status_code == 409
     assert response.json()['error'] == 'Conflict'
 

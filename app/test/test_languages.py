@@ -477,12 +477,9 @@ def test_language_used_by_source():
     '''  Negativetest case, trying to delete that language which is used to create a source'''
     #create new data
     response = test_post_default()
-    print("AFTER POST",response.json())
     language_id = response.json()["data"]["languageId"]
-    print("Lang ID :",language_id)
 
     response = client.get(UNIT_URL+"?language_code=x-aaj")
-    print("AFTER GET",response.json())
     language_code = response.json()[0]["code"]
 
     #create new source as SuperAdmin
