@@ -73,9 +73,3 @@ temp.json
 ENV/*
 *.env
 ENV*/*
-docker/vachan-ENV/bin/python
-docker/vachan-ENV/bin/python3
-docker/vachan-ENV/bin/python3.10
-docker/vachan-ENV/lib64
-docker/vachan-ENV/pyvenv.cfg
-.project
