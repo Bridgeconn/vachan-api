@@ -668,6 +668,7 @@ def test_restore_notavailable_item():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+token_admin
                     }
+
     response = client.put(RESTORE_URL, headers=headers_admin, json=data)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"

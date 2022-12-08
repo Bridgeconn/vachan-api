@@ -169,7 +169,6 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
         updatedUser= json_string['updatedUser'],
         updateTime = datetime.now())
     db_.add(db_content)
-    # db_.flush()
     #db_.commit()
     return db_content
 

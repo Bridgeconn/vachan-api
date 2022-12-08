@@ -215,4 +215,5 @@ CREATE TABLE public.deleted_items (
     deleted_from text NOT NULL,
     UNIQUE(item_id)
     );
+
 ALTER SEQUENCE public.deleted_items_item_id_seq RESTART WITH 100000;

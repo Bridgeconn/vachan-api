@@ -345,6 +345,7 @@ async def delete_versions(request: Request, delete_obj: schemas.DeleteIdentity =
     return {'message': f"Version with identity {version_id} deleted successfully",
             "data": delcont}
 
+
 ###### Source #####
 @router.get('/v2/sources',
     response_model=List[schemas.SourceResponse],

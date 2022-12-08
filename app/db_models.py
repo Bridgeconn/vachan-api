@@ -304,7 +304,6 @@ def map_all_dynamic_tables(db_: Session):
     for src in all_src:
         create_dynamic_table(src.sourceName, src.tableName, src.contentType.contentType)
 
-
 ############ Translation Tables ##########
 
 class TranslationProject(Base): # pylint: disable=too-few-public-methods
