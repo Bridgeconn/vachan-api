@@ -265,8 +265,8 @@ async def get_project_source(request: Request,project_id:int=Query(...,example="
     log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s, '+\
         ' with_draft:%s, only_ids:%s',project_id, books, sentence_id_list, sentence_id_range,
         with_draft, only_ids)
-    return nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_range, sentence_id_list,
-        with_draft=with_draft, only_ids=only_ids)
+    return projects_crud.obtain_agmt_source(db_, project_id, books, sentence_id_range,
+        sentence_id_list, with_draft=with_draft, only_ids=only_ids)
 
 @router.get('/v2/autographa/project/progress', status_code=200,
     response_model= schemas_nlp.Progress,
