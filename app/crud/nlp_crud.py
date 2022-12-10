@@ -960,6 +960,7 @@ def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=No
     sentence_id_list=None, **kwargs):
     '''fetches all or selected source sentences from translation_sentences table'''
     with_draft= kwargs.get("with_draft",False)
+    only_ids = kwargs.get("only_ids",False)
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
@@ -984,7 +985,13 @@ def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=No
         sentence_query = sentence_query.filter(
             db_models.TranslationDraft.sentenceId.in_(sentence_id_list))
     draft_rows = sentence_query.order_by(db_models.TranslationDraft.sentenceId).all()
-    if with_draft:
+    if only_ids:
+        result = []
+        for row in draft_rows:
+            obj = {"sentenceId": row.sentenceId,
+                "surrogateId":row.surrogateId}
+            result.append(obj)
+    elif with_draft:
         result =  draft_rows
     else:
         result = []
