@@ -262,8 +262,8 @@ async def get_project_source(request: Request,project_id:int=Query(...,example="
     db_:Session=Depends(get_db)):
     '''Obtains source sentences or verses, as per the filters'''
     log.info('In get_source')
-    log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s, '+\
-        ' with_draft:%s, only_ids:%s',project_id, books, sentence_id_list, sentence_id_range,
+    log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s, \
+         with_draft:%s, only_ids:%s',project_id, books, sentence_id_list, sentence_id_range,
         with_draft, only_ids)
     return projects_crud.obtain_agmt_source(db_, project_id, books, sentence_id_range,
         sentence_id_list, with_draft=with_draft, only_ids=only_ids)
