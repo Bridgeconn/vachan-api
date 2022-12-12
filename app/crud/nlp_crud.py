@@ -9,12 +9,11 @@ from datetime import datetime
 from math import floor, ceil
 from pathlib import Path
 import pygtrie
-from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
 
-from crud import utils
+from crud import utils, projects_crud
 from crud import nlp_tokenization as nlp_utils
 import db_models
 from dependencies import log
@@ -83,7 +82,8 @@ def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
-    sentences = obtain_agmt_source(db_, project_id, books, sentence_id_range,sentence_id_list)
+    sentences = projects_crud.obtain_agmt_source(db_, project_id, books, sentence_id_range,
+        sentence_id_list)
     sentences = sentences['db_content']
     args = {"db_":db_, "src_language":project_row.sourceLanguage, "sentence_list":sentences,
         'trg_language':project_row.targetLanguage,
@@ -789,8 +789,8 @@ def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range,
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
-    draft_rows = obtain_agmt_source(db_, project_id, books, sentence_id_range,sentence_id_list,
-        with_draft=True)
+    draft_rows = projects_crud.obtain_agmt_source(db_, project_id, books, sentence_id_range,
+        sentence_id_list, with_draft=True)
     draft_rows = draft_rows['db_content']
     if confirm_all:
         for row in draft_rows:
@@ -954,46 +954,3 @@ def export_to_json(source_lang, target_lang, sentence_list, last_modified):
             row_obj['alignments'].append(algmt)
         json_output['segments'].append(row_obj)
     return json_output
-
-#########################################################
-def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=None,#pylint: disable=too-many-locals
-    sentence_id_list=None, **kwargs):
-    '''fetches all or selected source sentences from translation_sentences table'''
-    with_draft= kwargs.get("with_draft",False)
-    project_row = db_.query(db_models.TranslationProject).get(project_id)
-    if not project_row:
-        raise NotAvailableException(f"Project with id, {project_id}, not found")
-    sentence_query = db_.query(db_models.TranslationDraft).filter(
-        db_models.TranslationDraft.project_id == project_id)
-    if books:
-        book_filters = []
-        for buk in books:
-            book_id = db_.query(db_models.BibleBook.bookId).filter(
-                db_models.BibleBook.bookCode==buk).first()
-            if not book_id:
-                raise NotAvailableException(f"Book, {buk}, not in database")
-            book_filters.append(
-                db_models.TranslationDraft.sentenceId.between(
-                    book_id[0]*1000000, book_id[0]*1000000 + 999999))
-        sentence_query = sentence_query.filter(or_(*book_filters))
-    elif sentence_id_range:
-        sentence_query = sentence_query.filter(
-            db_models.TranslationDraft.sentenceId.between(
-                sentence_id_range[0],sentence_id_range[1]))
-    elif sentence_id_list:
-        sentence_query = sentence_query.filter(
-            db_models.TranslationDraft.sentenceId.in_(sentence_id_list))
-    draft_rows = sentence_query.order_by(db_models.TranslationDraft.sentenceId).all()
-    if with_draft:
-        result =  draft_rows
-    else:
-        result = []
-        for row in draft_rows:
-            obj = {"sentenceId": row.sentenceId,
-                "surrogateId":row.surrogateId,"sentence":row.sentence}
-            result.append(obj)
-    response = {
-        'db_content':result,
-        'project_content':project_row
-        }
-    return response

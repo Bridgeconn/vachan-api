@@ -134,7 +134,7 @@ class Sentence(BaseModel):
     '''Response object for sentences and plain-text draft'''
     sentenceId: int
     surrogateId: str
-    sentence: str
+    sentence: str = None
     draft: str = None
     draftMeta: List[Tuple[Tuple[int, int], Tuple[int,int],'str']] = Field(None,
         example=[[[0,8], [0,8],"confirmed"],
