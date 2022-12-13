@@ -2,13 +2,13 @@
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
+from .test_versions import check_post as add_version
+from .test_sources import check_post as add_source
 from .test_auth_basic import SUPER_USER,SUPER_PASSWORD, login, logout_user
 from .conftest import initial_test_users
 
 UNIT_URL = '/v2/contents'
 RESTORE_URL = '/v2/restore'
-VERSION_URL = '/v2/versions'
-SOURCE_URL = '/v2/sources'
 
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
@@ -229,8 +229,27 @@ def test_content_used_by_source():
     #get id of an already existing content
     response = client.get(UNIT_URL+"?content_type=commentary")
     content_id = response.json()[0]["contentId"]
+    #Create Version with associated with source
+    version_data = {
+        "versionAbbreviation": "TTT",
+        "versionName": "test version or content types",
+    }
+    add_version(version_data)
 
-    #create new source as SuperAdmin
+    #Create Source with language
+    source_data = {
+        "contentType": "commentary",
+        "language": "en",
+        "version": "TTT",
+        "revision": 1,
+        "year": 2020,
+        "license": "ISC",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    add_source(source_data)
+
+    #Delete content
+    data = {"itemId":content_id}
     data_admin   = {
     "user_email": SUPER_USER,
     "password": SUPER_PASSWORD
@@ -238,42 +257,14 @@ def test_content_used_by_source():
     response =login(data_admin)
     assert response.json()['message'] == "Login Succesfull"
     token_admin =  response.json()['token']
-    headers_auth = {"contentType": "application/json",
+    headers_admin = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+token_admin
                      }
-    #Create Version with associated with source
-    version_data = {
-        "versionAbbreviation": "TTT",
-        "versionName": "Test Version",
-        "revision": 1,
-        "metaData": {
-            "publishedIn": "1611"
-            }
-        }
-    response = client.post(VERSION_URL, headers=headers_auth, json=version_data)
-    assert response.status_code == 201
-    assert response.json()['message'] == "Version created successfully"
-
-    source_data = {
-        "contentType": "commentary",
-        "language": "en",
-        "version": "TTT",
-        "revision": 1,
-        "year": 2020,
-        "license": "ISC"
-    }
-    #Create Source with content
-    response = client.post(SOURCE_URL, headers=headers_auth, json=source_data)
-    assert response.status_code == 201
-    assert response.json()['message'] == "Source created successfully"
-    logout_user(token_admin)
-
-    #Delete content
-    data = {"itemId":content_id}
-    response = client.delete(UNIT_URL, headers=headers_auth, json=data)
+    response = client.delete(UNIT_URL, headers=headers_admin, json=data)
     assert response.status_code == 409
     assert response.json()['error'] == 'Conflict'
+    logout_user(token_admin)
 
 
 def test_restore_default():

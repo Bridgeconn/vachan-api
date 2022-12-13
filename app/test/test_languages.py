@@ -2,13 +2,13 @@
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
+from .test_versions import check_post as add_version
+from .test_sources import check_post as add_source
 from .test_auth_basic import SUPER_USER,SUPER_PASSWORD, login, logout_user
 from .conftest import initial_test_users
 
 UNIT_URL = '/v2/languages'
 RESTORE_URL = '/v2/restore'
-VERSION_URL = '/v2/versions'
-SOURCE_URL = '/v2/sources'
 
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
@@ -482,45 +482,24 @@ def test_language_used_by_source():
     response = client.get(UNIT_URL+"?language_code=x-aaj")
     language_code = response.json()[0]["code"]
 
-    #create new source as SuperAdmin
-    data_admin   = {
-    "user_email": SUPER_USER,
-    "password": SUPER_PASSWORD
-    }
-    response =login(data_admin)
-    assert response.json()['message'] == "Login Succesfull"
-    token_admin =  response.json()['token']
-    headers_auth = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+token_admin
-                     }
     #Create Version with associated with source
     version_data = {
         "versionAbbreviation": "TTT",
-        "versionName": "Test Version",
-        "revision": 1,
-        "metaData": {
-            "publishedIn": "1611"
-            }
-        }
-    response = client.post(VERSION_URL, headers=headers_auth, json=version_data)
-    assert response.status_code == 201
-    assert response.json()['message'] == "Version created successfully"
+        "versionName": "test version or licenses",
+    }
+    add_version(version_data)
 
+    #Create Source with language
     source_data = {
         "contentType": "commentary",
         "language": language_code,
         "version": "TTT",
         "revision": 1,
         "year": 2020,
-        "license": "ISC"
+        "license": "ISC",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
-    #Create Source with created language
-    response = client.post(SOURCE_URL, headers=headers_auth, json=source_data)
-    assert response.status_code == 201
-    assert response.json()['message'] == "Source created successfully"
-    logout_user(token_admin)
-
+    add_source(source_data)
     #Delete language with item created API User
     data = {"itemId":language_id}
     headers = {"contentType": "application/json",

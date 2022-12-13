@@ -2,12 +2,13 @@
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
+#from .test_sources import check_post as add_source
 from .test_auth_basic import login,SUPER_USER,SUPER_PASSWORD,logout_user
 from .conftest import initial_test_users
 
 UNIT_URL = '/v2/versions'
-SOURCE_URL = '/v2/sources'
 RESTORE_URL = '/v2/restore'
+SOURCE_URL = '/v2/sources'
 
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
@@ -25,7 +26,7 @@ def assert_positive_get(item):
 
 def check_post(data):
     '''common steps for positive post test cases'''
-    #without AUth
+    #without Auth
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert response.status_code == 401
@@ -431,7 +432,24 @@ def test_delete_notavailable_version():
 def test_version_used_by_source():
     '''  Negativetest case, trying to delete that version which is used to create a source'''
 
-    #create new source as SuperAdmin
+    #Create Version with associated with source
+    version_data = {
+        "versionAbbreviation": "TTT",
+        "versionName": "test version for versions",
+    }
+    check_post(version_data)
+
+    #Create Source with license
+    source_data = {
+        "contentType": "commentary",
+        "language": "en",
+        "version": "TTT",
+        "revision": 1,
+        "year": 2020,
+        "license": "ISC",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    # add_source()
     data_admin   = {
     "user_email": SUPER_USER,
     "password": SUPER_PASSWORD
@@ -443,34 +461,13 @@ def test_version_used_by_source():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+token_admin
                      }
-    #Create Version with associated with source
-    version_data = {
-        "versionAbbreviation": "TTT",
-        "versionName": "Test Version",
-        "revision": 1,
-        "metaData": {
-            "publishedIn": "1611"
-            }
-        }
-    response = client.post(UNIT_URL, headers=headers_admin, json=version_data)
-    version_id = response.json()['data']['versionId']
-    assert response.status_code == 201
-    assert response.json()['message'] == "Version created successfully"
-
-    #Create Source with created version
-    source_data = {
-        "contentType": "commentary",
-        "language": "en",
-        "version": "TTT",
-        "revision": 1,
-        "year": 2020,
-        "license": "ISC"
-    }
     response = client.post(SOURCE_URL, headers=headers_admin, json=source_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Source created successfully"
 
     #Delete version
+    version_response = client.get(UNIT_URL+'?version_abbreviation=TTT')
+    version_id = version_response.json()[0]['versionId']
     data = {"itemId":version_id}
     response = client.delete(UNIT_URL, headers=headers_admin, json=data)
     assert response.status_code == 409
