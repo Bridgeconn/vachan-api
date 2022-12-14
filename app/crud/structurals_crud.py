@@ -45,10 +45,9 @@ def create_content_type(db_: Session, content: schemas.ContentTypeCreate,user_id
 def delete_content(db_: Session, content: schemas.DeleteIdentity):
     '''delete particular content, selected via content id'''
     db_content = db_.query(db_models.ContentType).get(content.itemId)
-    deleted_content = db_content
     db_.delete(db_content)
     #db_.commit()
-    return deleted_content
+    return db_content
 
 def get_languages(db_: Session, language_code = None, language_name = None, search_word=None,
     language_id = None, **kwargs):
@@ -126,41 +125,55 @@ def get_restore_item_id(db_: Session, restore_item_id = None, **kwargs):
     '''Fetches row of deleted item'''
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
-    query = db_.query(db_models.ContentType)
+    query = db_.query(db_models.DeletedItem)
     if restore_item_id is not None:
         query = query.filter(db_models.DeletedItem.itemId == restore_item_id)
     return query.offset(skip).limit(limit).all()
 
 def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
     '''Restore deleted record back to the original table'''
-    restore_content = db_.query(db_models.DeletedItem).get(restored_item.itemId)
-    db_content = restore_content
+    db_restore = db_.query(db_models.DeletedItem).get(restored_item.itemId)
+    db_content=db_restore
     json_string = db_content.deletedData
-    db_.delete(restore_content)
-    if db_content.deletedFrom == 'content_types':
+    db_.delete(db_restore)
+    common_field_table_db_model_dict = {"languages":db_models.Language, \
+        "licenses":db_models.License,"versions":db_models.Version}
+    if db_restore.deletedFrom in common_field_table_db_model_dict:
+        db_content = common_field_table_db_model_dict[db_restore.deletedFrom] \
+            (createdUser= json_string['createdUser'],
+            updatedUser= json_string['updatedUser'],updateTime = datetime.now())
+    if db_restore.deletedFrom == 'content_types':
         db_content = db_models.ContentType(contentId = json_string['contentId'],
-        contentType = json_string['contentType'])
-    elif db_content.deletedFrom == 'languages':
+            contentType = json_string['contentType'],
+            createdUser = json_string['createdUser'])
+    elif db_restore.deletedFrom == 'languages':
         db_content = db_models.Language(scriptDirection = json_string['scriptDirection'],
         code= json_string['code'],
         language= json_string['language'],
         languageId = json_string['languageId'],
-        metaData= json_string['metaData'],
-        createdUser= json_string['createdUser'],
-        updatedUser= json_string['updatedUser'],
-        updateTime = datetime.now())
+        metaData= json_string['metaData'])
+    elif db_restore.deletedFrom == 'licenses':
+        db_content = db_models.License(code = json_string['code'],
+        name= json_string['name'],
+        license= json_string['license'],
+        permissions = json_string['permissions'],
+        active = json_string['active'])
+    elif db_restore.deletedFrom == 'versions':
+        db_content = db_models.Version(versionAbbreviation = json_string['versionAbbreviation'],
+        versionId= json_string['versionId'],
+        versionName= json_string['versionName'],
+        revision= json_string['revision'],
+        metaData= json_string['metaData'])
     db_.add(db_content)
-    # db_.flush()
     #db_.commit()
     return db_content
 
 def delete_language(db_: Session, lang: schemas.DeleteIdentity):
     '''delete particular language, selected via language id'''
     db_content = db_.query(db_models.Language).get(lang.itemId)
-    deleted_content = db_content
     db_.delete(db_content)
     #db_.commit()
-    return deleted_content
+    return db_content
 
 def get_licenses(db_: Session, license_code = None, license_name = None,
     permission = None, active=True, **kwargs):
@@ -218,6 +231,13 @@ def update_license(db_: Session, license_obj: schemas.LicenseEdit, user_id=None)
     # db_.refresh(db_content)
     return db_content
 
+def delete_license(db_: Session, content: schemas.DeleteIdentity):
+    '''delete particular license, selected via license id'''
+    db_content = db_.query(db_models.License).get(content.itemId)
+    db_.delete(db_content)
+    #db_.commit()
+    return db_content
+
 def get_versions(db_: Session, version_abbr = None, version_name = None, revision = None,
     metadata = None, **kwargs):
     '''Fetches rows of versions table, with various filters and pagination'''
@@ -266,6 +286,13 @@ def update_version(db_: Session, version: schemas.VersionEdit, user_id=None):
     db_content.updatedUser = user_id
     # db_.commit()
     # db_.refresh(db_content)
+    return db_content
+
+def delete_version(db_: Session, ver: schemas.DeleteIdentity):
+    '''delete particular version, selected via version id'''
+    db_content = db_.query(db_models.Version).get(ver.itemId)
+    db_.delete(db_content)
+    #db_.commit()
     return db_content
 
 def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks

@@ -210,10 +210,10 @@ ALTER SEQUENCE public.jobs_job_id_seq RESTART WITH 100000;
 CREATE TABLE public.deleted_items (
     item_id  SERIAL PRIMARY KEY,
     deleted_data JSON,
-    --created_user text NULL,
     deleted_user text NULL,
     deleted_time timestamp with time zone DEFAULT NOW(),
     deleted_from text NOT NULL,
     UNIQUE(item_id)
     );
+
 ALTER SEQUENCE public.deleted_items_item_id_seq RESTART WITH 100000;
