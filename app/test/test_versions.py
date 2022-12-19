@@ -410,6 +410,7 @@ def test_delete_version_id_string():
 def test_delete_incorrectdatatype():
     '''negative testcase. Passing input data not in json format'''
     response = test_post_default()
+
     #Deleting created data
     version_id = response.json()['data']['versionId']
     data = version_id

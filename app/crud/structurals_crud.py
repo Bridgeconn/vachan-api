@@ -137,15 +137,14 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
     json_string = db_content.deletedData
     db_.delete(db_restore)
     common_field_table_db_model_dict = {"languages":db_models.Language, \
-        "licenses":db_models.License,"versions":db_models.Version}
+        "licenses":db_models.License,"versions":db_models.Version,"sources":db_models.Source}
     if db_restore.deletedFrom in common_field_table_db_model_dict:
         db_content = common_field_table_db_model_dict[db_restore.deletedFrom] \
             (createdUser= json_string['createdUser'],
             updatedUser= json_string['updatedUser'],updateTime = datetime.now())
     if db_restore.deletedFrom == 'content_types':
         db_content = db_models.ContentType(contentId = json_string['contentId'],
-            contentType = json_string['contentType'],
-            createdUser = json_string['createdUser'])
+            contentType = json_string['contentType'])
     elif db_restore.deletedFrom == 'languages':
         db_content = db_models.Language(scriptDirection = json_string['scriptDirection'],
         code= json_string['code'],
@@ -164,6 +163,17 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
         versionName= json_string['versionName'],
         revision= json_string['revision'],
         metaData= json_string['metaData'])
+    elif db_restore.deletedFrom == 'sources':
+        db_content = db_models.Source(sourceId = json_string['sourceId'],
+        sourceName= json_string['sourceName'],
+        tableName= json_string['tableName'],
+        year= json_string['year'],
+        licenseId= json_string['licenseId'],
+        languageId= json_string['languageId'],
+        contentId= json_string['contentId'],
+        versionId= json_string['versionId'],
+        metaData= json_string['metaData'],
+        active= json_string['active'])
     db_.add(db_content)
     #db_.commit()
     return db_content
@@ -334,7 +344,6 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
     if access_tags:
         query = query.filter(db_models.Source.metaData.contains(
             {"accessPermissions":[tag.value for tag in access_tags]}))
-
     res = query.join(db_models.Version).order_by(db_models.Version.revision.desc()
         ).offset(skip).limit(limit).all()
     if not latest_revision or revision:
@@ -366,6 +375,15 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
         if not exculde:
             latest_res.append(res_item)
     return latest_res
+
+def get_source_id(db_: Session, source_id = None, **kwargs):
+    '''Fetches row of source id'''
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
+    query = db_.query(db_models.Source)
+    if source_id is not None:
+        query = query.filter(db_models.Source.sourceId == source_id)
+    return query.offset(skip).limit(limit).all()
 
 def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_id):
     '''Adds a row to sources table'''
@@ -479,6 +497,13 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
     # db_.refresh(db_content)
     if not source.sourceName.split("_")[-1] == db_models.ContentTypeName.GITLABREPO.value:
         db_models.dynamicTables[db_content.sourceName] = db_models.dynamicTables[source.sourceName]
+    return db_content
+
+def delete_source(db_: Session, delitem: schemas.DeleteIdentity):
+    '''delete particular source, selected via source id'''
+    db_content = db_.query(db_models.Source).get(delitem.itemId)
+    db_.delete(db_content)
+    #db_.commit()
     return db_content
 
 def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None,

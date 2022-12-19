@@ -52,7 +52,6 @@ class Language(Base): # pylint: disable=too-few-public-methods
     updatedUser = Column('last_updated_user', String)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
 
-
 class License(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table licenses in vachan DB(postgres)'''
     __tablename__ = 'licenses'

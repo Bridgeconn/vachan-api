@@ -467,6 +467,29 @@ async def edit_source(request: Request,source_obj: schemas.SourceEdit = Body(...
     "data": structurals_crud.update_source(db_=db_, source=source_obj,
         user_id=user_details['user_id'])}
 
+@router.delete('/v2/sources',response_model=schemas.DeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Sources"])
+@get_auth_access_check_decorator
+async def delete_sources(request: Request, delete_obj: schemas.DeleteIdentity = Body(...), \
+    user_details =Depends(get_user_or_none),  \
+    db_: Session = Depends(get_db)):
+    '''Delete Source
+    * unique Source Id can be used to delete an exisiting identity'''
+    log.info('In delete_sources')
+    log.debug('source-delete:%s',delete_obj)
+    source_id= delete_obj.itemId
+    dbtable_name = "sources"
+    if len(structurals_crud.get_source_id(db_, source_id= delete_obj.itemId)) == 0:
+        raise NotAvailableException(f"Source id {source_id} not found")
+    deleted_content = structurals_crud.delete_source(db_=db_, delitem=delete_obj)
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
+            table_name = dbtable_name)
+    return {'message': f"Source with identity {source_id} deleted successfully",
+            "data": delcont}
+
 # ############ Bible Books ##########
 @router.get('/v2/lookup/bible/books',
     response_model=List[schema_content.BibleBook],

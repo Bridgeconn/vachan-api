@@ -40,6 +40,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/sources,GET,API-user,True,None,read-via-api
 /v2/sources,POST,None,False,None,create
 /v2/sources,PUT,None,False,None,edit
+/v2/sources,DELETE,None,False,None,delete/deactivate
 /v2/sources/get-sentence,GET,Autographa,False,"contents like bibles, commentaries, infographics, dictionary or videos",refer-for-translation
 /v2/sources/get-sentence,GET,Vachan-online or vachan-app,False,"contents like bibles, commentaries, infographics, dictionary or videos",view-on-web
 /v2/sources/get-sentence,GET,VachanAdmin,False,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-vachanadmin
