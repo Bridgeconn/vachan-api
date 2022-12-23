@@ -3,11 +3,12 @@ from app.schema import schemas, schema_auth
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
-from .test_versions import check_post as add_version
+from . test_versions import check_post as add_version
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 from .conftest import initial_test_users
 
 UNIT_URL = '/v2/sources'
+COMMENTARY_URL = '/v2/commentaries/'
 RESTORE_URL = '/v2/restore'
 
 headers_auth = {"contentType": "application/json",
@@ -295,7 +296,6 @@ def test_post_duplicate():
         "version": "TTT",
         "year": 2020
     }
-    headers = {"contentType": "application/json", "accept": "application/json"} #pylint: disable=unused-variable
     check_post(data)
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 409
@@ -699,9 +699,9 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     headers_auth = {"contentType": "application/json","accept": "application/json"} #pylint: disable=redefined-outer-name
     #app names
     # API = schema_auth.App.API.value
-    AG = schema_auth.App.AG.value #pylint: disable=invalid-name
-    VACHAN = schema_auth.App.VACHAN.value #pylint: disable=invalid-name
-    VACHANADMIN = schema_auth.AdminRoles.VACHANADMIN.value #pylint: disable=invalid-name
+    autographa = schema_auth.App.AG.value
+    vachan = schema_auth.App.VACHAN.value
+    vachanadmin = schema_auth.AdminRoles.VACHANADMIN.value
 
     #create sources for test with different access permissions
     #content is default
@@ -785,11 +785,11 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     check_list = ["open-access"]
     check_resp_permission(response, check_list)
     #APP : Autographa
-    headers_auth['app'] = AG
+    headers_auth['app'] = autographa
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert_not_available_content(response)
     #APP : Vachan Online
-    headers_auth['app'] = VACHAN
+    headers_auth['app'] = vachan
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -798,7 +798,7 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     check_list = ['open-access','publishable']
     check_resp_permission(response, check_list)
     #APP : Vachan Admin
-    headers_auth['app'] = VACHANADMIN
+    headers_auth['app'] = vachanadmin
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert_not_available_content(response)
 
@@ -814,7 +814,7 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     check_list = ['open-access','publishable']
     check_resp_permission(response, check_list)
     #APP : Autographa
-    headers_auth['app'] = AG
+    headers_auth['app'] = autographa
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -823,7 +823,7 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     check_list = ['open-access','publishable']
     check_resp_permission(response, check_list)
     #APP : Vachan Online
-    headers_auth['app'] = VACHAN
+    headers_auth['app'] = vachan
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -832,7 +832,7 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     check_list = ['open-access','publishable']
     check_resp_permission(response, check_list)
     #APP : Vachan Admin
-    headers_auth['app'] = VACHANADMIN
+    headers_auth['app'] = vachanadmin
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert_not_available_content(response)
 
@@ -848,11 +848,11 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     check_list = ['open-access','publishable']
     check_resp_permission(response, check_list)
     #APP : Autographa
-    headers_auth['app'] = AG
+    headers_auth['app'] = autographa
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert_not_available_content(response)
     #APP : Vachan Online
-    headers_auth['app'] = VACHAN
+    headers_auth['app'] = vachan
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -861,7 +861,7 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     check_list = ['open-access','publishable']
     check_resp_permission(response, check_list)
     #APP : Vachan Admin
-    headers_auth['app'] = VACHANADMIN
+    headers_auth['app'] = vachanadmin
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert_not_available_content(response)
 
@@ -880,11 +880,11 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     check_list = ['open-access','publishable','downloadable','derivable','content']
     check_resp_permission(response, check_list)
     #APP : Autographa
-    headers_auth['app'] = AG
+    headers_auth['app'] = autographa
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert_not_available_content(response)
     #APP : Vachan Online
-    headers_auth['app'] = VACHAN
+    headers_auth['app'] = vachan
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -893,7 +893,7 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     check_list = ['open-access','publishable']
     check_resp_permission(response, check_list)
     #APP : Vachan Admin
-    headers_auth['app'] = VACHANADMIN
+    headers_auth['app'] = vachanadmin
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert len(response.json()) == 5
     # assert 'content' in response.json()[0]['metaData']['accessPermissions']
@@ -916,11 +916,11 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     check_list = ['open-access','publishable']
     check_resp_permission(response, check_list)
     #APP : Autographa
-    headers_auth['app'] = AG
+    headers_auth['app'] = autographa
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert_not_available_content(response)
     #APP : Vachan Online
-    headers_auth['app'] = VACHAN
+    headers_auth['app'] = vachan
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -929,7 +929,7 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     check_list = ['open-access','publishable']
     check_resp_permission(response, check_list)
     #APP : Vachan Admin
-    headers_auth['app'] = VACHANADMIN
+    headers_auth['app'] = vachanadmin
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert_not_available_content(response)
 
@@ -945,7 +945,7 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     check_list = ['open-access','publishable']
     check_resp_permission(response, check_list)
     #APP : Autographa
-    headers_auth['app'] = AG
+    headers_auth['app'] = autographa
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -954,7 +954,7 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     check_list = ['open-access','publishable']
     check_resp_permission(response, check_list)
     #APP : Vachan Online
-    headers_auth['app'] = VACHAN
+    headers_auth['app'] = vachan
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -963,7 +963,7 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     check_list = ['open-access','publishable']
     check_resp_permission(response, check_list)
     #APP : Vachan Admin
-    headers_auth['app'] = VACHANADMIN
+    headers_auth['app'] = vachanadmin
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert_not_available_content(response)
 
@@ -982,11 +982,11 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     check_list = ['open-access','publishable','downloadable','derivable','content']
     check_resp_permission(response, check_list)
     #APP : Autographa
-    headers_auth['app'] = AG
+    headers_auth['app'] = autographa
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert_not_available_content(response)
     #APP : Vachan Online
-    headers_auth['app'] = VACHAN
+    headers_auth['app'] = vachan
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -995,7 +995,7 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     check_list = ['open-access','publishable']
     check_resp_permission(response, check_list)
     #APP : Vachan Admin
-    headers_auth['app'] = VACHANADMIN
+    headers_auth['app'] = vachanadmin
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert_not_available_content(response)
 
@@ -1023,7 +1023,7 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     check_list = ['open-access','publishable','downloadable','derivable','content']
     check_resp_permission(response, check_list)
     #APP : Autographa
-    headers_auth['app'] = AG
+    headers_auth['app'] = autographa
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -1032,7 +1032,7 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     check_list = ['open-access','publishable']
     check_resp_permission(response, check_list)
     #APP : Vachan Online
-    headers_auth['app'] = VACHAN
+    headers_auth['app'] = vachan
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -1041,7 +1041,7 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     check_list = ['open-access','publishable']
     check_resp_permission(response, check_list)
     #APP : Vachan Admin
-    headers_auth['app'] = VACHANADMIN
+    headers_auth['app'] = vachanadmin
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 5
@@ -1055,15 +1055,33 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
 
 def test_delete_default():
     ''' positive test case, checking for correct return of deleted source ID'''
+    from .test_commentaries import assert_positive_get as check_commentary  #pylint: disable=import-outside-toplevel
+
     #create new data
     response = test_post_default()
-
     headers_va = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
-    response = client.get(UNIT_URL + "?source_name=hi_TTT_1_commentary", headers=headers_va)
+    source_name = response.json()['data']['sourceName']
 
+    #Check Commentary table is created
+    commentary_data = [
+    	{'bookCode':'gen', 'chapter':1, 'verseStart':3, 'verseEnd': 30,
+    		'commentary':'the creation'}
+     ]
+    # headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    response = client.post(COMMENTARY_URL+source_name, headers=headers_auth, json=commentary_data)
+    response = client.get(COMMENTARY_URL+source_name,headers=headers_auth)
+    print("***************************************************************************************")
+    print("COMMENTARY GET RESPONSE BEFORE DELETE",response.json())
+    print("***************************************************************************************")
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    for item in response.json():
+        check_commentary(item)
+
+    response = client.get(UNIT_URL + "?source_name=hi_TTT_1_commentary", headers=headers_va)
     source_id = response.json()[0]["sourceId"]
     data = {"itemId":source_id}
 
@@ -1096,6 +1114,11 @@ def test_delete_default():
     check_source_name = client.get(UNIT_URL + "?source_name=hi_TTT_1_commentary", \
         headers=headers_auth)
     assert_not_available_content(check_source_name)
+    print("After Delete Source")
+    response = client.get(COMMENTARY_URL+source_name,headers=headers_auth)
+    print("CHECK COMMENTARY AFTER DELETE : ",response.json())
+    assert response.status_code == 404
+
 
 def test_delete_default_superadmin():
     ''' positive test case, checking for correct return of deleted source ID'''
@@ -1242,7 +1265,15 @@ def test_restore_default():
     assert response.status_code == 201
     assert response.json()['message'] == \
     f"Deleted Item with identity {deleteditem_id} restored successfully"
+    response = client.get(UNIT_URL + \
+         "?source_name=hi_TTT_1_commentary",headers=headers_sa)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    for item in response.json():
+        assert_positive_get(item)
+
     logout_user(test_user_token)
+    # assert_positive_get(response.json()['data'])
 
 def test_restore_item_id_string():
     '''positive test case, passing deleted item id as string'''

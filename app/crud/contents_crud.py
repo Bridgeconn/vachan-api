@@ -6,13 +6,13 @@ from datetime import datetime
 import sqlalchemy
 from sqlalchemy.orm import Session, defer, joinedload
 from sqlalchemy.sql import text
-import db_models
-from crud import utils
-from crud.nlp_sw_crud import update_job
-from schema import schemas_nlp
-from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException
+import db_models #pylint: disable=import-error
+from crud import utils  #pylint: disable=import-error
+from crud.nlp_sw_crud import update_job #pylint: disable=import-error
+from schema import schemas_nlp  #pylint: disable=import-error
+from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException  #pylint: disable=import-error
 
-def get_commentaries(db_:Session, *args,**kwargs):
+def get_commentaries(db_:Session, *args,**kwargs): #pylint: disable=too-many-locals
     '''Fetches rows of commentries from the table specified by source_name'''
     source_name = args[0]
     book_code = args[1]
@@ -22,6 +22,20 @@ def get_commentaries(db_:Session, *args,**kwargs):
     active = kwargs.get("active",True)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
+
+    all_src = db_.query(db_models.Source).all()
+    for src in all_src:
+        db_.refresh(src)
+
+    for item in db_models.dynamicTables:
+        print("DYNAMIC TABLE ITEM : ",item)
+
+    # all_dynamictable = db_.query(db_models.dynamicTables)
+    # db_.refresh(db_models.dynamicTables)
+    # for tbl in all_dynamictable:
+    #     print("REFRESHING DYN TABLE IN STRUCTURAL CRUD GET COMMENTARY")
+    #     db_.refresh(tbl)
+
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException(f'{source_name} not found in database.')
     if not source_name.endswith(db_models.ContentTypeName.COMMENTARY.value):
