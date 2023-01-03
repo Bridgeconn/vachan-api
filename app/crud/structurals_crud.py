@@ -9,14 +9,12 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
-import db_models
-from schema import schemas
-from custom_exceptions import NotAvailableException, TypeException
-from database import engine
-from dependencies import log
-from crud import utils
-
-
+import db_models #pylint: disable=import-error
+from schema import schemas #pylint: disable=import-error
+from custom_exceptions import NotAvailableException, TypeException #pylint: disable=import-error
+from database import engine #pylint: disable=import-error
+from dependencies import log #pylint: disable=import-error
+from crud import utils #pylint: disable=import-error
 
 def get_content_types(db_: Session, content_type: str =None, skip: int = 0, limit: int = 100):
     '''Fetches all content types, with pagination'''
@@ -175,6 +173,10 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
         metaData= json_string['metaData'],
         active= json_string['active'])
     db_.add(db_content)
+    if db_restore.deletedFrom == 'sources':
+        db_.flush()
+        db_models.create_dynamic_table(db_content.sourceName, \
+             db_content.tableName, db_content.contentType.contentType)
     #db_.commit()
     return db_content
 
@@ -305,9 +307,9 @@ def delete_version(db_: Session, ver: schemas.DeleteIdentity):
     #db_.commit()
     return db_content
 
-def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks
+def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks,too-many-arguments
     content_type=None, version_abbreviation=None, revision=None, language_code=None,
-    **kwargs):
+    source_id=None, **kwargs):
     '''Fetches the rows of sources table'''
     license_abbreviation = kwargs.get("license_abbreviation",None)
     metadata = kwargs.get("metadata",None)
@@ -318,6 +320,8 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
     query = db_.query(db_models.Source)
+    if source_id:
+        query = query.filter(db_models.Source.sourceId == source_id)
     if content_type:
         query = query.filter(db_models.Source.contentType.has
         (contentType = content_type.strip()))
@@ -375,15 +379,6 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
         if not exculde:
             latest_res.append(res_item)
     return latest_res
-
-def get_source_id(db_: Session, source_id = None, **kwargs):
-    '''Fetches row of source id'''
-    skip = kwargs.get("skip",0)
-    limit = kwargs.get("limit",100)
-    query = db_.query(db_models.Source)
-    if source_id is not None:
-        query = query.filter(db_models.Source.sourceId == source_id)
-    return query.offset(skip).limit(limit).all()
 
 def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_id):
     '''Adds a row to sources table'''
@@ -502,8 +497,8 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
 def delete_source(db_: Session, delitem: schemas.DeleteIdentity):
     '''delete particular source, selected via source id'''
     db_content = db_.query(db_models.Source).get(delitem.itemId)
+    del db_models.dynamicTables[db_content.sourceName]
     db_.delete(db_content)
-    #db_.commit()
     return db_content
 
 def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None,

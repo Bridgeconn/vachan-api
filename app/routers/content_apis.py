@@ -4,13 +4,12 @@ from typing import List
 import jsonpickle
 from fastapi import APIRouter, Query, Body, Depends, Path , Request,BackgroundTasks
 from sqlalchemy.orm import Session
-import db_models
-from schema import schemas,schemas_nlp, schema_auth, schema_content
-from dependencies import get_db, log, AddHiddenInput
-from crud import structurals_crud, contents_crud, nlp_sw_crud, media_crud
-from custom_exceptions import NotAvailableException, AlreadyExistsException,\
-    UnprocessableException
-from auth.authentication import get_auth_access_check_decorator ,get_user_or_none
+import db_models # pylint: disable=import-error
+from schema import schemas,schemas_nlp, schema_auth, schema_content # pylint: disable=import-error
+from dependencies import get_db, log, AddHiddenInput # pylint: disable=import-error
+from crud import structurals_crud, contents_crud, nlp_sw_crud, media_crud # pylint: disable=import-error
+from custom_exceptions import NotAvailableException, AlreadyExistsException,UnprocessableException # pylint: disable=import-error
+from auth.authentication import get_auth_access_check_decorator ,get_user_or_none # pylint: disable=import-error
 
 router = APIRouter()
 
@@ -482,7 +481,7 @@ async def delete_sources(request: Request, delete_obj: schemas.DeleteIdentity = 
     log.debug('source-delete:%s',delete_obj)
     source_id= delete_obj.itemId
     dbtable_name = "sources"
-    if len(structurals_crud.get_source_id(db_, source_id= delete_obj.itemId)) == 0:
+    if len(structurals_crud.get_sources(db_, source_id= delete_obj.itemId)) == 0:
         raise NotAvailableException(f"Source id {source_id} not found")
     deleted_content = structurals_crud.delete_source(db_=db_, delitem=delete_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
