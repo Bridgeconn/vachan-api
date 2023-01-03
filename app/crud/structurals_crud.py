@@ -9,12 +9,14 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
-import db_models #pylint: disable=import-error
-from schema import schemas #pylint: disable=import-error
-from custom_exceptions import NotAvailableException, TypeException #pylint: disable=import-error
-from database import engine #pylint: disable=import-error
-from dependencies import log #pylint: disable=import-error
-from crud import utils #pylint: disable=import-error
+import db_models
+from schema import schemas
+from custom_exceptions import NotAvailableException, TypeException
+from database import engine
+from dependencies import log
+from crud import utils
+
+
 
 def get_content_types(db_: Session, content_type: str =None, skip: int = 0, limit: int = 100):
     '''Fetches all content types, with pagination'''
@@ -135,14 +137,15 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
     json_string = db_content.deletedData
     db_.delete(db_restore)
     common_field_table_db_model_dict = {"languages":db_models.Language, \
-        "licenses":db_models.License,"versions":db_models.Version,"sources":db_models.Source}
+        "licenses":db_models.License,"versions":db_models.Version}
     if db_restore.deletedFrom in common_field_table_db_model_dict:
         db_content = common_field_table_db_model_dict[db_restore.deletedFrom] \
             (createdUser= json_string['createdUser'],
             updatedUser= json_string['updatedUser'],updateTime = datetime.now())
     if db_restore.deletedFrom == 'content_types':
         db_content = db_models.ContentType(contentId = json_string['contentId'],
-            contentType = json_string['contentType'])
+            contentType = json_string['contentType'],
+            createdUser = json_string['createdUser'])
     elif db_restore.deletedFrom == 'languages':
         db_content = db_models.Language(scriptDirection = json_string['scriptDirection'],
         code= json_string['code'],
@@ -161,22 +164,19 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
         versionName= json_string['versionName'],
         revision= json_string['revision'],
         metaData= json_string['metaData'])
-    elif db_restore.deletedFrom == 'sources':
-        db_content = db_models.Source(sourceId = json_string['sourceId'],
-        sourceName= json_string['sourceName'],
-        tableName= json_string['tableName'],
-        year= json_string['year'],
-        licenseId= json_string['licenseId'],
-        languageId= json_string['languageId'],
-        contentId= json_string['contentId'],
-        versionId= json_string['versionId'],
-        metaData= json_string['metaData'],
-        active= json_string['active'])
+    elif "table" in db_restore.deletedFrom:
+        source_obj = db_.query(db_models.Source).filter(
+        db_models.Source.tableName == db_restore.deletedFrom).first()
+        if "commentary" in source_obj.sourceName:
+            db_content = db_models.dynamicTables[source_obj.sourceName](createdUser = json_string['createdUser'], \
+                commentaryId =json_string['commentaryId'],commentary = json_string['commentary'], \
+                book_id = json_string['book_id'], verseStart = json_string['verseStart'], verseEnd = \
+                json_string['verseEnd'],chapter=json_string['chapter'],active = json_string['active'])
+        elif "dictionary" in source_obj.sourceName:
+            db_content=db_models.dynamicTables[source_obj.sourceName](wordId=json_string['wordId'],\
+            word = json_string['word'], details = json_string['details'], \
+            active = json_string['active'],createdUser = json_string['createdUser'])
     db_.add(db_content)
-    if db_restore.deletedFrom == 'sources':
-        db_.flush()
-        db_models.create_dynamic_table(db_content.sourceName, \
-             db_content.tableName, db_content.contentType.contentType)
     #db_.commit()
     return db_content
 
@@ -307,9 +307,9 @@ def delete_version(db_: Session, ver: schemas.DeleteIdentity):
     #db_.commit()
     return db_content
 
-def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks,too-many-arguments
+def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks
     content_type=None, version_abbreviation=None, revision=None, language_code=None,
-    source_id=None, **kwargs):
+    **kwargs):
     '''Fetches the rows of sources table'''
     license_abbreviation = kwargs.get("license_abbreviation",None)
     metadata = kwargs.get("metadata",None)
@@ -320,8 +320,6 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
     query = db_.query(db_models.Source)
-    if source_id:
-        query = query.filter(db_models.Source.sourceId == source_id)
     if content_type:
         query = query.filter(db_models.Source.contentType.has
         (contentType = content_type.strip()))
@@ -348,6 +346,7 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
     if access_tags:
         query = query.filter(db_models.Source.metaData.contains(
             {"accessPermissions":[tag.value for tag in access_tags]}))
+
     res = query.join(db_models.Version).order_by(db_models.Version.revision.desc()
         ).offset(skip).limit(limit).all()
     if not latest_revision or revision:
@@ -492,13 +491,6 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
     # db_.refresh(db_content)
     if not source.sourceName.split("_")[-1] == db_models.ContentTypeName.GITLABREPO.value:
         db_models.dynamicTables[db_content.sourceName] = db_models.dynamicTables[source.sourceName]
-    return db_content
-
-def delete_source(db_: Session, delitem: schemas.DeleteIdentity):
-    '''delete particular source, selected via source id'''
-    db_content = db_.query(db_models.Source).get(delitem.itemId)
-    del db_models.dynamicTables[db_content.sourceName]
-    db_.delete(db_content)
     return db_content
 
 def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None,

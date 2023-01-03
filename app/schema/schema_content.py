@@ -363,6 +363,7 @@ class CommentaryEdit(BaseModel):
 
 class CommentaryResponse(BaseModel):
     '''Response object for commentaries'''
+    commentaryId: int
     book : BibleBook
     chapter: int
     verseStart: int = None
@@ -375,6 +376,7 @@ class CommentaryResponse(BaseModel):
         # '''display example value in API documentation'''
         schema_extra = {
             "example": {
+                "commentaryId": 100000,
                 "bookCode": "1ki",
                 "chapter": 10,
                 "verseStart": 1,
@@ -439,6 +441,7 @@ class DictionaryWordEdit(BaseModel):
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
+                "wordId": 100000,
                 "word": "Adam",
                 "details": {"type": "person name",
                     "definition": 'The first man God created.'+\
@@ -450,6 +453,7 @@ class DictionaryWordEdit(BaseModel):
 
 class DictionaryWordResponse(BaseModel):
     '''Response object of dictionary word'''
+    wordId: int = None
     word: str
     details: dict = None
     active: bool = None
@@ -459,6 +463,7 @@ class DictionaryWordResponse(BaseModel):
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
+                "wordId": 100000,
                 "word": "Adam",
                 "details": {"type": "person",
                     "definition": "The first man God created."},
@@ -680,3 +685,17 @@ class UploadedUsfm(BaseModel):
                 "USFM": "\\id MAT\n\\c 1\n\\p\n\\v 1 इब्राहीम की सन्‍तान, दाऊद की ...",
             }
         }
+
+class DeleteIdentity(BaseModel):
+    """ ID input of item to be deleted"""
+    itemId: int
+    sourceName : str
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "itemId": 100000,
+                "sourceName" : "en_KJV_1_dictionary"
+            }
+        }
+

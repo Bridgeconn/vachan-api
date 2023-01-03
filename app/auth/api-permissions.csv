@@ -40,7 +40,6 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/sources,GET,API-user,True,None,read-via-api
 /v2/sources,POST,None,False,None,create
 /v2/sources,PUT,None,False,None,edit
-/v2/sources,DELETE,None,False,None,delete/deactivate
 /v2/sources/get-sentence,GET,Autographa,False,"contents like bibles, commentaries, infographics, dictionary or videos",refer-for-translation
 /v2/sources/get-sentence,GET,Vachan-online or vachan-app,False,"contents like bibles, commentaries, infographics, dictionary or videos",view-on-web
 /v2/sources/get-sentence,GET,VachanAdmin,False,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-vachanadmin
@@ -69,12 +68,14 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/commentaries/{source_name},GET,API-user,False,None,read-via-api
 /v2/commentaries/{source_name},POST,None,False,None,create
 /v2/commentaries/{source_name},PUT,None,False,None,edit
+/v2/commentaries/{source_name},DELETE,None,False,None,delete/deactivate
 /v2/dictionaries/{source_name},GET,Autographa,False,None,refer-for-translation
 /v2/dictionaries/{source_name},GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/dictionaries/{source_name},GET,VachanAdmin,False,None,read-via-vachanadmin
 /v2/dictionaries/{source_name},GET,API-user,False,None,read-via-api
 /v2/dictionaries/{source_name},POST,None,False,None,create
 /v2/dictionaries/{source_name},PUT,None,False,None,edit
+/v2/dictionaries/{source_name},DELETE,None,False,None,delete/deactivate
 /v2/infographics/{source_name},GET,Autographa,False,None,refer-for-translation
 /v2/infographics/{source_name},GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/infographics/{source_name},GET,VachanAdmin,False,None,read-via-vachanadmin

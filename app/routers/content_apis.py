@@ -4,12 +4,13 @@ from typing import List
 import jsonpickle
 from fastapi import APIRouter, Query, Body, Depends, Path , Request,BackgroundTasks
 from sqlalchemy.orm import Session
-import db_models # pylint: disable=import-error
-from schema import schemas,schemas_nlp, schema_auth, schema_content # pylint: disable=import-error
-from dependencies import get_db, log, AddHiddenInput # pylint: disable=import-error
-from crud import structurals_crud, contents_crud, nlp_sw_crud, media_crud # pylint: disable=import-error
-from custom_exceptions import NotAvailableException, AlreadyExistsException,UnprocessableException # pylint: disable=import-error
-from auth.authentication import get_auth_access_check_decorator ,get_user_or_none # pylint: disable=import-error
+import db_models
+from schema import schemas,schemas_nlp, schema_auth, schema_content
+from dependencies import get_db, log, AddHiddenInput
+from crud import structurals_crud, contents_crud, nlp_sw_crud, media_crud
+from custom_exceptions import NotAvailableException, AlreadyExistsException,\
+    UnprocessableException
+from auth.authentication import get_auth_access_check_decorator ,get_user_or_none
 
 router = APIRouter()
 
@@ -466,29 +467,6 @@ async def edit_source(request: Request,source_obj: schemas.SourceEdit = Body(...
     "data": structurals_crud.update_source(db_=db_, source=source_obj,
         user_id=user_details['user_id'])}
 
-@router.delete('/v2/sources',response_model=schemas.DeleteResponse,
-    responses={404: {"model": schemas.ErrorResponse},
-    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
-    502: {"model": schemas.ErrorResponse}},
-    status_code=200,tags=["Sources"])
-@get_auth_access_check_decorator
-async def delete_sources(request: Request, delete_obj: schemas.DeleteIdentity = Body(...), \
-    user_details =Depends(get_user_or_none),  \
-    db_: Session = Depends(get_db)):
-    '''Delete Source
-    * unique Source Id can be used to delete an exisiting identity'''
-    log.info('In delete_sources')
-    log.debug('source-delete:%s',delete_obj)
-    source_id= delete_obj.itemId
-    dbtable_name = "sources"
-    if len(structurals_crud.get_sources(db_, source_id= delete_obj.itemId)) == 0:
-        raise NotAvailableException(f"Source id {source_id} not found")
-    deleted_content = structurals_crud.delete_source(db_=db_, delitem=delete_obj)
-    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-            table_name = dbtable_name)
-    return {'message': f"Source with identity {source_id} deleted successfully",
-            "data": delcont}
-
 # ############ Bible Books ##########
 @router.get('/v2/lookup/bible/books',
     response_model=List[schema_content.BibleBook],
@@ -783,6 +761,33 @@ async def edit_commentary(request: Request,background_tasks: BackgroundTasks,
     # "data": contents_crud.update_commentaries(db_=db_, source_name=source_name,
     #     commentaries=commentaries, user_id=user_details['user_id'])}
 
+@router.delete('/v2/commentaries/{source_name}',response_model=schemas.DeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Commentaries"])
+@get_auth_access_check_decorator
+async def delete_commentary(request: Request, delete_obj: schemas_nlp.DeleteIdentity = Body(...), \
+    user_details =Depends(get_user_or_none),  \
+    db_: Session = Depends(get_db)):
+    '''Delete Commentary
+    * unique Commentary Id can be used to delete an exisiting identity'''
+    log.info('In delete_commentaries')
+    log.debug('commentary-delete:%s',delete_obj)
+    commentary_id= delete_obj.itemId
+    source_name = delete_obj.sourceName
+    tb_name = db_models.dynamicTables[source_name]
+    dbtable_name = tb_name.__name__
+    if len(contents_crud.get_commentary_id(db_, commentary_id= delete_obj.itemId, \
+        source_name=delete_obj.sourceName,table_name=tb_name)) == 0:
+        raise NotAvailableException(f"Commentary with id {commentary_id} not found")
+    deleted_content = contents_crud.delete_commentary(db_=db_, \
+        delitem=delete_obj,table_name=tb_name)
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
+            table_name = dbtable_name)
+    return {'message': f"Commentary id {commentary_id} deleted successfully",
+            "data": delcont}
+
 # # ########### Dictionary ###################
 @router.get('/v2/dictionaries/{source_name}',
     response_model_exclude_unset=True,
@@ -860,6 +865,32 @@ async def edit_dictionary_word(request: Request,
     return {'message': "Dictionary words updated successfully",
         "data": contents_crud.update_dictionary_words(db_=db_, source_name=source_name,
         dictionary_words=dictionary_words, user_id=user_details['user_id'])}
+
+@router.delete('/v2/dictionaries/{source_name}',response_model=schemas.DeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Dictionaries"])
+@get_auth_access_check_decorator
+async def delete_dictionaries(request: Request, delete_obj: schema_content.DeleteIdentity = Body(...),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Delete Dictionary
+    * unique Dictionary Id with source name can be used to delete an exisiting identity'''
+    log.info('In delete_dictionaries')
+    log.debug('dictionary-delete:%s',delete_obj)
+    word_id= delete_obj.itemId
+    source_name = delete_obj.sourceName
+    tb_name = db_models.dynamicTables[source_name]
+    dbtable_name = tb_name.__name__
+    if len(contents_crud.get_word_id(db_, word_id= delete_obj.itemId, \
+        source_name=delete_obj.sourceName,table_name=tb_name)) == 0:
+        raise NotAvailableException(f"Dictionary with id {word_id} not found")
+    deleted_content = contents_crud.delete_dictionary(db_=db_, \
+        delitem=delete_obj,table_name=tb_name)
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
+            table_name = dbtable_name)
+    return {'message': f"Dictionary id {word_id} deleted successfully",
+            "data": delcont}
 
 # # ########### Infographic ###################
 @router.get('/v2/infographics/{source_name}',

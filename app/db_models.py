@@ -11,8 +11,8 @@ from sqlalchemy.schema import Sequence
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from database import Base  # pylint: disable=import-error
-from custom_exceptions import GenericException # pylint: disable=import-error
+from database import Base
+from custom_exceptions import GenericException
 
 dynamicTables = {}
 
@@ -51,6 +51,7 @@ class Language(Base): # pylint: disable=too-few-public-methods
     createdUser = Column('created_user', String)
     updatedUser = Column('last_updated_user', String)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+
 
 class License(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table licenses in vachan DB(postgres)'''
@@ -112,7 +113,6 @@ class BibleBook(Base): # pylint: disable=too-few-public-methods
 
 class Commentary(): # pylint: disable=too-few-public-methods
     '''Corresponds to the dynamically created commentary tables in vachan Db(postgres)'''
-    __table_args__ = {'extend_existing': True}
     commentaryId = Column('commentary_id', Integer,
         Sequence('commentary_id_seq', start=100001, increment=1), primary_key=True)
     @declared_attr
@@ -135,8 +135,8 @@ class Commentary(): # pylint: disable=too-few-public-methods
     verseStart = Column('verse_start', Integer)
     verseEnd = Column('verse_end', Integer)
     commentary = Column('commentary', String)
-    createdUser = Column('created_user',String)
     active = Column('active', Boolean)
+    createdUser = Column('created_user', String)
     # __table_args__ = (
     #     UniqueConstraint('book_id', 'chapter', 'verse_start', 'verse_end'),
     #     {'extend_existing': True}
@@ -149,6 +149,7 @@ class Dictionary(): # pylint: disable=too-few-public-methods
     word = Column('word', String, unique=True)
     details = Column('details', JSONB)
     active = Column('active', Boolean)
+    createdUser = Column('crerated_user',String)
 
     __table_args__ = (
         {'extend_existing': True},

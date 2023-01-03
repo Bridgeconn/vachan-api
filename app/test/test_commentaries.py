@@ -7,14 +7,16 @@ from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
 from .test_versions import check_post as add_version
 from .test_sources import check_post as add_source
-from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER
+from . test_auth_basic import SUPER_PASSWORD,SUPER_USER, login, logout_user
 from .conftest import initial_test_users
 from .test_stop_words_generation import get_job_status
+
 
 UNIT_URL = '/v2/commentaries/'
 headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json"}
+RESTORE_URL = '/v2/restore'
 
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
@@ -46,6 +48,7 @@ def check_post(data: list):
     source = add_source(source_data)
     source_name = source.json()['data']['sourceName']
     #without auth
+    headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL+source_name, headers=headers, json=data)
     if response.status_code == 422:
         assert response.json()['error'] == 'Input Validation Error'
@@ -53,6 +56,8 @@ def check_post(data: list):
         assert response.status_code == 401
         assert response.json()['error'] == 'Authentication Error'
     #with auth
+    headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
     return response, source_name
@@ -84,7 +89,8 @@ def test_post_default():
     		'commentary':'Chapter Epilogue. God completes creation in 6 days.'}, 
     	{'bookCode':'gen', 'chapter':-1, 'commentary':'book Epilogue.'}
     ]
-    response = check_post(data)[0]
+    response,source_name = check_post(data)
+    # source_name = check_post(data)[0]
     assert response.status_code == 201
     assert response.json()['message'] == "Uploading Commentaries in background"
     job_response = check_commentary_job_finished(response)
@@ -95,6 +101,7 @@ def test_post_default():
     # print("resp=======>",job_response.json()["message"])
     for item in job_response.json()['data']['output']['data']:
         assert_positive_get(item)
+    return response,source_name
 
 
 def test_post_duplicate():
@@ -570,3 +577,429 @@ def test_get_access_with_user_roles_and_apps():
     	{'bookCode':'gen', 'chapter':0, 'commentary':'book intro to Genesis'}
     ]
     contetapi_get_accessrule_checks_app_userroles("commentary",UNIT_URL,data)
+
+def test_delete_default():
+    ''' positive test case, checking for correct return of deleted commentary ID'''
+    #create new data
+    response,source_name = test_post_default()
+    headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    commentary_response = client.get(UNIT_URL+source_name,headers=headers_auth)
+    commentary_id = commentary_response.json()[0]['commentaryId']
+
+    # data = {"itemId":commentary_id,"sourceName":source_name}
+    data = {
+      "itemId":commentary_id,
+      "sourceName":source_name
+    }
+
+    #Delete without authentication
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    response = client.delete(UNIT_URL+source_name, headers=headers, json=data)
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
+
+     #Delete commentary with other API user,AgAdmin,AgUser,VachanUser,BcsDev
+    for user in ['APIUser','AgAdmin','AgUser','VachanUser','BcsDev']:
+        headers_au = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
+        }
+        response = client.delete(UNIT_URL+source_name, headers=headers_au, json=data)
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
+
+    #Delete commentary with Vachan Admin
+    headers_va = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+            }
+    response = client.delete(UNIT_URL+source_name, headers=headers_va, json=data)
+    assert response.status_code == 200
+    assert response.json()['message'] ==\
+         f"Commentary id {commentary_id} deleted successfully"
+    #Check commentray is deleted from table
+    commentary_response = client.get(UNIT_URL+source_name,headers=headers_auth)
+    # assert_not_available_content(commentary_response)
+
+def test_delete_default_superadmin():
+    ''' positive test case, checking for correct return of deleted commentary ID'''
+    #Created User or Super Admin can only delete commentary
+    #creating data
+    response,source_name = test_post_default()
+
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa= {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    commentary_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    commentary_id = commentary_response.json()[0]['commentaryId']
+
+    data = {
+      "itemId":commentary_id,
+      "sourceName":source_name
+    }
+
+     #Delete commentary with Super Admin
+    response = client.delete(UNIT_URL+source_name, headers=headers_sa, json=data)
+    assert response.status_code == 200
+    assert response.json()['message'] ==\
+         f"Commentary id {commentary_id} deleted successfully"
+    #Check commentray is deleted from table
+    commentary_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    logout_user(test_user_token)
+    return response,source_name
+
+def test_delete_commentary_id_string():
+    '''positive test case, commentary id as string'''
+    response,source_name = test_post_default()
+
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa= {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    commentary_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    commentary_id = commentary_response.json()[0]['commentaryId']
+    commentary_id = str(commentary_id)
+
+    data = {
+      "itemId":commentary_id,
+      "sourceName":source_name
+    }
+
+    #Delete commentary with Super Admin
+    response = client.delete(UNIT_URL+source_name, headers=headers_sa, json=data)
+    assert response.status_code == 200
+    assert response.json()['message'] ==\
+         f"Commentary id {commentary_id} deleted successfully"
+    #Check commentray is deleted from table
+    commentary_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    logout_user(test_user_token)
+
+def test_delete_incorrectdatatype():
+    '''negative testcase. Passing input data not in json format'''
+    response,source_name = test_post_default()
+
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa= {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    commentary_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    commentary_id = commentary_response.json()[0]['commentaryId']
+    commentary_id = str(commentary_id)
+
+    data = commentary_id,source_name
+
+    #Delete commentary with Super Admin
+    response = client.delete(UNIT_URL+source_name, headers=headers_sa, json=data)
+    assert_input_validation_error(response)
+    logout_user(test_user_token)
+
+def test_delete_missingvalue_commentary_id():
+    '''Negative Testcase. Passing input data without commentaryId'''
+    response,source_name = test_post_default()
+
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa= {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    data = {"sourceName":source_name}
+    response = client.delete(UNIT_URL, headers=headers_sa, json=data)
+    assert response.status_code == 404
+    logout_user(test_user_token)
+
+def test_delete_missingvalue_source_name():
+    '''Negative Testcase. Passing input data without sourceName'''
+    response,source_name = test_post_default()
+
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa= {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+    commentary_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    commentary_id = commentary_response.json()[0]['commentaryId']
+    commentary_id = str(commentary_id)
+
+    data = {"itemId":commentary_id}
+    response = client.delete(UNIT_URL, headers=headers_sa, json=data)
+    assert response.status_code == 404
+    logout_user(test_user_token)
+
+def test_delete_notavailable_content():
+    ''' request a non existing content ID, Ensure there is no partial matching'''
+    response,source_name = test_post_default()
+
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa= {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    data = {
+      "itemId":200000,
+      "sourceName":source_name
+    }
+
+     #Delete commentary with Super Admin
+    response = client.delete(UNIT_URL+source_name, headers=headers_sa, json=data)   
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"
+    logout_user(test_user_token)
+
+def test_restore_default():
+    '''positive test case, checking for correct return object'''
+    #only Super Admin can restore deleted data
+    #Creating and Deleting data
+    response,source_name = test_delete_default_superadmin()
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Restoring data
+    #Restore without authentication
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    response = client.put(RESTORE_URL, headers=headers, json=data)
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
+
+    #Restore content with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev and APIUSer2
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2']:
+        headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
+        }
+        response = client.put(RESTORE_URL, headers=headers, json=data)
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
+
+    #Restore content with Super Admin
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_auth = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == \
+    f"Deleted Item with identity {deleteditem_id} restored successfully"
+    assert_positive_get(response.json()['data'])
+    logout_user(test_user_token)
+    #Check content is available in content_types table after restore
+    # check_content_type = client.get(UNIT_URL+"?content_type=altbibile")
+    # assert check_content_type.status_code == 200
+
+def test_restore_default():
+    '''positive test case, checking for correct return object'''
+    #only Super Admin can restore deleted data
+    #Creating and Deleting data
+    response,source_name = test_delete_default_superadmin()
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+    #Restoring data
+    
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+    #Restore without authentication
+    # commentary_response = client.get(UNIT_URL+source_name,headers=headers_sa
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    response = client.put(RESTORE_URL, headers=headers, json=data)
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
+    
+    #Restore language with other API user,VachanAdmin,AgAdmin, \
+    # AgUser,VachanUser,BcsDev and resoursecreatedUser
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2']:
+        headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
+        }
+        response = client.put(RESTORE_URL, headers=headers, json=data)
+        # assert response.status_code == 403
+        # assert response.json()['error'] == 'Permission Denied'
+
+    # Restore commentary with other API user,VachanAdmin,AgAdmin, \
+    # AgUser,VachanUser,BcsDev and resoursecreatedUser
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2']:
+        headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
+        }
+        # commentary_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+        response = client.put(RESTORE_URL, headers=headers, json=data)
+        commentary_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
+
+    #Restore commentary with Super Admin
+    response = client.put(RESTORE_URL, headers=headers_sa, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == \
+    f"Deleted Item with identity {deleteditem_id} restored successfully"
+    commentary_response = client.get(UNIT_URL+source_name+\
+        '?book_code=gen&chapter=0&commentary=book intro to Genesis',headers=headers_sa)
+    for item in commentary_response.json():
+        assert_positive_get(item)
+    logout_user(test_user_token)
+
+def test_restore_item_id_string():
+    '''positive test case, passing deleted item id as string'''
+    #only Super Admin can restore deleted data
+    #Creating and Deleting data
+    response = test_delete_default_superadmin()[0]
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Restoring string data
+    deleteditem_id = str(deleteditem_id)
+    data = {"itemId": deleteditem_id}
+
+#Login as Super Admin
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_auth = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                     }
+
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == \
+    f"Deleted Item with identity {deleteditem_id} restored successfully"
+    logout_user(token_admin)
+
+def test_restore_incorrectdatatype():
+    '''Negative Test Case. Passing input data not in json format'''
+    #Creating and Deleting data
+    response = test_delete_default_superadmin()[0]
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Login as Super Admin
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_auth = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                     }
+
+    #Passing input data not in json format
+    data = deleteditem_id
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert_input_validation_error(response)
+    logout_user(token_admin)
+
+def test_restore_missingvalue_itemid():
+    '''itemId is mandatory in input data object'''
+    data = {}
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_admin = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                    }
+    response = client.put(RESTORE_URL, headers=headers_admin, json=data)
+    assert_input_validation_error(response)
+    logout_user(token_admin)
+
+def test_restore_notavailable_item():
+    ''' request a non existing restore ID, Ensure there is no partial matching'''
+    data = {"itemId":20000}
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_admin = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                    }
+
+    response = client.put(RESTORE_URL, headers=headers_admin, json=data)
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"

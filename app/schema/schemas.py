@@ -399,7 +399,6 @@ class SourceCreate(BaseModel):
 
 class SourceResponse(BaseModel):
     '''Output object of sources'''
-    sourceId : int
     sourceName : TableNamePattern
     contentType : ContentType = None
     language : LanguageResponse = None
@@ -415,7 +414,6 @@ class SourceResponse(BaseModel):
         # '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "sourceId" : 100090,
                 "sourceName": "en_KJV_1_commentary",
                 "contentType": {},
                 "language": {},

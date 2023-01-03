@@ -5,10 +5,11 @@ from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get, check_soft_delete
 from .test_versions import check_post as add_version
 from .test_sources import check_post as add_source
-from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER
+from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 from .conftest import initial_test_users
 
 UNIT_URL = '/v2/dictionaries/'
+RESTORE_URL = '/v2/restore'
 headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json"}
@@ -58,12 +59,13 @@ def test_post_default():
     	{"word": "four", "details":{"digit": 4, "type":"even"}},
     	{"word": "five", "details":{"digit": 5, "type":"odd"}}
     ]
-    response = check_post(data)[0]
+    response,source_name = check_post(data)
     assert response.status_code == 201
     assert response.json()['message'] == "Dictionary words added successfully"
     assert len(data) == len(response.json()['data'])
     for item in response.json()['data']:
         assert_positive_get(item)
+    return response,source_name
 
 
 def test_post_duplicate():
@@ -363,3 +365,365 @@ def test_get_access_with_user_roles_and_apps():
     	{"word": "one", "details":{"digit": 1, "type":"odd", "link":UNIT_URL+'dictionary?word=one'}}
     ]
     contetapi_get_accessrule_checks_app_userroles("dictionary",UNIT_URL,data)
+
+def test_delete_default():
+    ''' positive test case, checking for correct return of deleted word ID'''
+    #create new data
+    response,source_name = test_post_default()
+    print("POST RESPONSE :",response.json())
+    headers_auth = {"contentType": "application/json",
+                "accept": "application/json"}
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    dictionary_response = client.get(UNIT_URL+source_name,headers=headers_auth)
+    word_id = dictionary_response.json()[0]['wordId']
+
+    # data = {"itemId":word_id,"sourceName":source_name}
+    data = {
+      "itemId":word_id,
+      "sourceName":source_name
+    }
+
+    #Delete without authentication
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    response = client.delete(UNIT_URL+source_name, headers=headers, json=data)
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
+
+     #Delete word with other API user,AgAdmin,AgUser,VachanUser,BcsDev
+    for user in ['APIUser','AgAdmin','AgUser','VachanUser','BcsDev']:
+        headers_au = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
+        }
+        response = client.delete(UNIT_URL+source_name, headers=headers_au, json=data)
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
+
+    #Delete word with Vachan Admin
+    headers_va = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+            }
+    response = client.delete(UNIT_URL+source_name, headers=headers_va, json=data)
+    assert response.status_code == 200
+    assert response.json()['message'] ==\
+         f"Dictionary id {word_id} deleted successfully"
+    #Check commentray is deleted from table
+    dictionary_response = client.get(UNIT_URL+source_name,headers=headers_auth)
+    print("DICTIONARY RESPONSE :",dictionary_response.json())
+
+def test_delete_default_superadmin():
+    ''' positive test case, checking for correct return of deleted word ID'''
+    #Created User or Super Admin can only delete word
+    #creating data
+    response,source_name = test_post_default()
+
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa= {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    dictionary_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    print("RESPONSE AFTER POST:",dictionary_response.json())
+    word_id = dictionary_response.json()[0]['wordId']
+
+    data = {
+      "itemId":word_id,
+      "sourceName":source_name
+    }
+
+     #Delete word with Super Admin
+    response = client.delete(UNIT_URL+source_name, headers=headers_sa, json=data)
+    assert response.status_code == 200
+    assert response.json()['message'] ==\
+         f"Dictionary id {word_id} deleted successfully"
+    #Check word is deleted from table
+    dictionary_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    # print("DICTIONARY RESPONSE :",dictionary_response.json())
+    logout_user(test_user_token)
+    return response,source_name
+
+def test_delete_word_id_string():
+    '''positive test case, dictionary id as string'''
+    response,source_name = test_post_default()
+
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa= {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    dictionary_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    word_id = dictionary_response.json()[0]['wordId']
+    word_id = str(word_id)
+
+    data = {
+      "itemId":word_id,
+      "sourceName":source_name
+    }
+
+    #Delete dictionary with Super Admin
+    response = client.delete(UNIT_URL+source_name, headers=headers_sa, json=data)
+    assert response.status_code == 200
+    assert response.json()['message'] ==\
+         f"Dictionary id {word_id} deleted successfully"
+    #Check dictionary word is deleted from table
+    dictionary_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    logout_user(test_user_token)
+
+def test_delete_incorrectdatatype():
+    '''negative testcase. Passing input data not in json format'''
+    response,source_name = test_post_default()
+
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa= {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    dictionary_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    word_id = dictionary_response.json()[0]['wordId']
+    data = word_id,source_name
+
+    #Delete dictionary with Super Admin
+    response = client.delete(UNIT_URL+source_name, headers=headers_sa, json=data)
+    assert_input_validation_error(response)
+    logout_user(test_user_token)
+
+def test_delete_missingvalue_word_id():
+    '''Negative Testcase. Passing input data without wordId'''
+    response,source_name = test_post_default()
+
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa= {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    data = {"sourceName":source_name}
+    response = client.delete(UNIT_URL, headers=headers_sa, json=data)
+    assert response.status_code == 404
+    logout_user(test_user_token)
+
+def test_delete_missingvalue_source_name():
+    '''Negative Testcase. Passing input data without sourceName'''
+    response,source_name = test_post_default()
+
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa= {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+    dictionary_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    word_id = dictionary_response.json()[0]['wordId']
+    data = {"itemId":word_id}
+    response = client.delete(UNIT_URL, headers=headers_sa, json=data)
+    assert response.status_code == 404
+    logout_user(test_user_token)
+
+def test_delete_notavailable_content():
+    ''' request a non existing word ID, Ensure there is no partial matching'''
+    response,source_name = test_post_default()
+
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa= {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    data = {
+      "itemId":200000,
+      "sourceName":source_name
+    }
+
+     #Delete dictionary with Super Admin
+    response = client.delete(UNIT_URL+source_name, headers=headers_sa, json=data)   
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"
+    logout_user(test_user_token)
+
+def test_restore_default():
+    '''positive test case, checking for correct return object'''
+    #only Super Admin can restore deleted data
+    #Creating and Deleting data
+    response,source_name = test_delete_default_superadmin()
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+    #Restoring data
+    #Restore without authentication
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    response = client.put(RESTORE_URL, headers=headers, json=data)
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
+
+
+    #Restore content with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev and APIUSer2
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2']:
+        headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
+        }
+        print(f"*************************RESTORE BY {user}****************************************")
+        response = client.put(RESTORE_URL, headers=headers, json=data)
+        print(f"RESTORE RESPONSE OF {user}:",response.json())
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
+
+    #Restore content with Super Admin
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_auth = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+    print("*************************RESTORE BY SUPERADMIN**********************************")
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    print("RESTORE RESPONSE OF Superadmin :",response.json())
+    assert response.status_code == 201
+    assert response.json()['message'] == \
+    f"Deleted Item with identity {deleteditem_id} restored successfully"
+    assert_positive_get(response.json()['data'])
+    logout_user(test_user_token)
+
+def test_restore_item_id_string():
+    '''positive test case, passing deleted item id as string'''
+    #only Super Admin can restore deleted data
+    #Creating and Deleting data
+    response = test_delete_default_superadmin()[0]
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Restoring string data
+    deleteditem_id = str(deleteditem_id)
+    data = {"itemId": deleteditem_id}
+
+#Login as Super Admin
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_auth = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                     }
+
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == \
+    f"Deleted Item with identity {deleteditem_id} restored successfully"
+    logout_user(token_admin)
+
+def test_restore_incorrectdatatype():
+    '''Negative Test Case. Passing input data not in json format'''
+    #Creating and Deleting data
+    response = test_delete_default_superadmin()[0]
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Login as Super Admin
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_auth = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                     }
+
+    #Passing input data not in json format
+    data = deleteditem_id
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert_input_validation_error(response)
+    logout_user(token_admin)
+
+def test_restore_missingvalue_itemid():
+    '''itemId is mandatory in input data object'''
+    data = {}
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_admin = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                    }
+    response = client.put(RESTORE_URL, headers=headers_admin, json=data)
+    assert_input_validation_error(response)
+    logout_user(token_admin)
+
+def test_restore_notavailable_item():
+    ''' request a non existing restore ID, Ensure there is no partial matching'''
+    data = {"itemId":20000}
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_admin = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                    }
+
+    response = client.put(RESTORE_URL, headers=headers_admin, json=data)
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"
