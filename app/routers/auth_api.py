@@ -11,6 +11,8 @@ from auth.authentication import user_register_kratos,login_kratos,user_role_add 
     delete_identity , get_auth_access_check_decorator , get_user_or_none, kratos_logout,\
     get_all_or_one_kratos_users,update_kratos_user
 from auth.auth_app import app_register_kratos, app_update_kratos, get_filter_apps
+from crud.auth_crud import create_role
+from crud import auth_crud
 
 router = APIRouter()
 
@@ -269,3 +271,49 @@ user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint:
     log.debug('app-delete:%s',app_id)
     delete_identity(app_id, app=True)
     return {"message":f"deleted app with id : {app_id}"}
+
+###################Roles#############################
+
+@router.post('/v2/app/roles',response_model=schema_auth.RoleResponse,
+    responses={400: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
+    500: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    status_code=201,tags=["Roles"])
+@get_auth_access_check_decorator
+async def create_roles(role_details:schema_auth.Roles,request: Request,#pylint: disable=unused-argument
+app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
+user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+    '''Roles of apps
+    * role Id, role name fields are mandatory
+    * the active status column is mandatory'''
+    log.info('In App Registration')
+    log.debug('roles:%s',role_details)
+    data = create_role(db_,role_details, user_id = user_details['user_id'])
+    return {'message': "Role created successfully",
+        "data": data}
+
+@router.get('/v2/app/roles',
+    response_model=List[schema_auth.RoleReadResponse],
+    response_model_exclude_unset=True,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Roles"])
+@get_auth_access_check_decorator
+async def get_roles(request: Request,
+app_key: types.SecretStr = Query(None),
+    role_name : str = Query(None, example="assistant"),
+    role_of_app: str = Query(None, example="abcd"),
+    role_description: str = Query(None, example="assistant of app"),
+    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
+user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
+    '''fetches all the roles supported in the DB, their code and other details.
+    * if any of the optional query parameters are provided, returns details of that roles
+    * skip=n: skips the first n objects in return list
+    * limit=n: limits the no. of items to be returned to n
+    * returns [] for not available content'''
+    log.info('In get_roles')
+    log.debug('role_name:%s, role_of_app: %s, role_description:%s, skip: %s, limit: %s',
+        role_name, role_of_app, role_description, skip, limit)
+    data= auth_crud.get_role(db_, role_name, role_of_app, role_description,
+        skip = skip, limit = limit)
+    return data
+    
