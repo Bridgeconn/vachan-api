@@ -1,3 +1,4 @@
+''' Place to define all Database CRUD operations for Roles'''
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 import db_models
