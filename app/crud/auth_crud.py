@@ -1,15 +1,13 @@
 from sqlalchemy.orm import Session
-import db_models
 from sqlalchemy import func
-from custom_exceptions import AlreadyExistsException,NotAvailableException
-from sqlalchemy.orm.attributes import flag_modified
+import db_models
+from custom_exceptions import NotAvailableException
 from auth.auth_globals import generate_roles, APPS
-from schema import schema_auth
 
 def create_role(db_: Session, role_details, user_id=None):
     '''Adds a row to roles table'''
-    if role_details.roleOfApp.lower() not in [app.lower() for app in APPS.keys()]:
-          raise NotAvailableException(f"{role_details.roleOfApp} is not registered")
+    if role_details.roleOfApp.lower() not in [app.lower() for app in APPS]:
+        raise NotAvailableException(f"{role_details.roleOfApp} is not registered")
 
     db_content = db_models.Roles(roleName = role_details.roleName.lower(),
         roleOfApp = role_details.roleOfApp,
@@ -20,9 +18,7 @@ def create_role(db_: Session, role_details, user_id=None):
     # db_.commit()
     # db_.refresh(db_content)
     generate_roles()
-
     return db_content
-
 
 def get_role(db_: Session, role_name = None, role_of_app = None, role_description=None,
     role_id = None, **kwargs):

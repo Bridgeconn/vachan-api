@@ -11,8 +11,7 @@ from auth.authentication import user_register_kratos,login_kratos,user_role_add 
     delete_identity , get_auth_access_check_decorator , get_user_or_none, kratos_logout,\
     get_all_or_one_kratos_users,update_kratos_user
 from auth.auth_app import app_register_kratos, app_update_kratos, get_filter_apps
-from crud.auth_crud import create_role
-from crud import auth_crud
+from crud.auth_crud import create_role, get_role
 
 router = APIRouter()
 
@@ -298,13 +297,13 @@ db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Roles"])
 @get_auth_access_check_decorator
-async def get_roles(request: Request,
-app_key: types.SecretStr = Query(None),
+async def get_roles(request: Request,#pylint: disable=unused-argument
+app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     role_name : str = Query(None, example="assistant"),
     role_of_app: str = Query(None, example="abcd"),
     role_description: str = Query(None, example="assistant of app"),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
-user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
+user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''fetches all the roles supported in the DB, their code and other details.
     * if any of the optional query parameters are provided, returns details of that roles
     * skip=n: skips the first n objects in return list
@@ -313,7 +312,7 @@ user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     log.info('In get_roles')
     log.debug('role_name:%s, role_of_app: %s, role_description:%s, skip: %s, limit: %s',
         role_name, role_of_app, role_description, skip, limit)
-    data= auth_crud.get_role(db_, role_name, role_of_app, role_description,
+    data= get_role(db_, role_name, role_of_app, role_description,
         skip = skip, limit = limit)
     return data
     
