@@ -283,8 +283,7 @@ app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
 user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
 db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Roles of apps
-    * role Id, role name fields are mandatory
-    * the active status column is mandatory'''
+    * role name & role of apps field are mandatory'''
     log.info('In App Registration')
     log.debug('roles:%s',role_details)
     data = create_role(db_,role_details, user_id = user_details['user_id'])

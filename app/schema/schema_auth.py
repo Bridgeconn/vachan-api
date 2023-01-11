@@ -220,11 +220,11 @@ class Roles(BaseModel):
     roleOfApp : str
     roleDescription : str
 
-class RoleIn(BaseModel):
-    """kratos roles update input"""
-    roleName: str
-    roleOfApp : str
-    roleDescription : str
+# class RoleIn(BaseModel):
+#     """kratos roles update input"""
+#     roleName: str
+#     roleOfApp : str
+#     roleDescription : str
 
 
 class RoleReadResponse(BaseModel):
