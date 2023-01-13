@@ -20,7 +20,7 @@ GLOBAL_VARIABLES = {
     "object": {
         "versionAbbreviation": "XYZ",
         "versionName": "Xyz version to test",
-        "revision": 1,
+        "versionTag": "1",
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
     }
     }
@@ -33,7 +33,7 @@ GLOBAL_QUERY = """
         versionId
         versionAbbreviation
         versionName
-        revision
+        versionTag
         metaData
         }
     }
@@ -102,21 +102,21 @@ def check_skip_limit():
     check_skip_limit_gql(query_check,"versions")
 
 def test_post_multiple_with_same_abbr():
-    '''Positive test to add two version, with same abbr and diff revision'''
+    '''Positive test to add two version, with same abbr and diff versionTag'''
     variables = GLOBAL_VARIABLES
-    variables["object"]["revision"] = 2
+    variables["object"]["versionTag"] = "2"
     check_post(GLOBAL_QUERY,variables)
 
 def test_post_multiple_with_same_abbr_negative():
-    '''Negative test to add two version, with same abbr and revision'''
+    '''Negative test to add two version, with same abbr and versionTag'''
     check_post(GLOBAL_QUERY,GLOBAL_VARIABLES)
     executed2 =  gql_request(query=GLOBAL_QUERY,operation="mutation", variables=GLOBAL_VARIABLES,
     headers=headers_auth)
     assert isinstance(executed2, Dict)
     assert "errors" in executed2.keys()
 
-def test_post_without_revision():
-    '''revision field should have a default value, even not provided'''
+def test_post_without_versionTag():
+    '''versionTag field should have a default value, even not provided'''
     variables = {
     "object": {
         "versionAbbreviation": "XYZ",
@@ -125,7 +125,7 @@ def test_post_without_revision():
     }
     }
     executed = check_post(GLOBAL_QUERY,variables)
-    assert executed["data"]["addVersion"]["data"]["revision"] == 1
+    assert executed["data"]["addVersion"]["data"]["versionTag"] == "1"
 
 def test_post_without_metadata():
     '''metadata field is not mandatory'''
@@ -133,7 +133,7 @@ def test_post_without_metadata():
     "object": {
         "versionAbbreviation": "XYZ",
         "versionName": "Xyz version to test",
-        "revision": 1
+        "versionTag": "1"
     }
     }
     executed = check_post(GLOBAL_QUERY,variables)
@@ -144,7 +144,7 @@ def test_post_without_abbr():
     variables = {
     "object": {
         "versionName": "Xyz version to test",
-        "revision": 1
+        "versionTag": "1"
     }
     }
     assert_error_check(GLOBAL_QUERY,variables)
@@ -155,7 +155,7 @@ def test_post_wrong_abbr():
     "object": {
         "versionAbbreviation": "XY Z",
         "versionName": "Xyz version to test",
-        "revision": 1
+        "versionTag": "1"
     }
     }
     assert_error_check(GLOBAL_QUERY,variables)
@@ -164,28 +164,28 @@ def test_post_wrong_abbr():
     "object": {
         "versionAbbreviation": "XY.Z",
         "versionName": "Xyz version to test",
-        "revision": 1
+        "versionTag": "1"
     }
     }
     assert_error_check(GLOBAL_QUERY,variables2)
 
-def test_post_wrong_revision():
-    '''revision cannot have space, dot letters etc'''
+def test_post_wrong_versionTag():
+    '''versionTag cannot have space, comma, letters etc'''
     variables = {
     "object": {
         "versionAbbreviation": "XYZ",
         "versionName": "Xyz version to test",
-        "revision": 1
+        "versionTag": "1"
     }
     }
 
-    variables["object"]["revision"] = "1 2"
+    variables["object"]["versionTag"] = "1 2"
     assert_error_check(GLOBAL_QUERY,variables)
 
-    variables["object"]["revision"] = "1a"
+    variables["object"]["versionTag"] = "1a"
     assert_error_check(GLOBAL_QUERY,variables)
 
-    variables["object"]["revision"] = "1 2"
+    variables["object"]["versionTag"] = "1,2"
     assert_error_check(GLOBAL_QUERY,variables)
 
 def test_post_without_name():
@@ -193,7 +193,7 @@ def test_post_without_name():
     variables = {
     "object": {
         "versionAbbreviation": "XYZ",
-        "revision": 1
+        "versionTag": "1"
     }
     }
     assert_error_check(GLOBAL_QUERY,variables)
@@ -204,7 +204,7 @@ QUERY_GET = """
         versionId
         versionAbbreviation
         versionName
-        revision
+        versionTag
         metaData
     }
     }
@@ -227,7 +227,7 @@ def test_get_wrong_abbr():
         versionId
         versionAbbreviation
         versionName
-        revision
+        versionTag
         metaData
     }
     }
@@ -241,7 +241,7 @@ def test_get_wrong_abbr():
         versionId
         versionAbbreviation
         versionName
-        revision
+        versionTag
         metaData
     }
     }
@@ -249,15 +249,15 @@ def test_get_wrong_abbr():
     executed =  gql_request(query=query2)
     assert "errors" in executed.keys()
 
-def test_get_wrong_revision():
-    '''revision as text'''
+def test_get_wrong_versionTag():
+    '''versionTag as text'''
     query = """
         {
-    versions(revision:"red"){
+    versions(versionTag:"red"){
         versionId
         versionAbbreviation
         versionName
-        revision
+        versionTag
         metaData
     }
     }
@@ -271,22 +271,22 @@ def test_get_after_adding_data():
     "object": {
        'versionAbbreviation': "AAA",
         'versionName': 'test name A',
-        'revision': 1
+        'versionTag': "1"
     }
     }
     check_post(GLOBAL_QUERY,variables)
-    variables["object"]["revision"] = 2
+    variables["object"]["versionTag"] = "2"
     check_post(GLOBAL_QUERY,variables)
 
     variables2 = {
     "object": {
         'versionAbbreviation': "BBB",
         'versionName': 'test name B',
-        'revision': 1
+        'versionTag': "1"
     }
     }
     check_post(GLOBAL_QUERY,variables2)
-    variables2["object"]["revision"] = 2
+    variables2["object"]["versionTag"] = "2"
     check_post(GLOBAL_QUERY,variables2)
 
     #get added versions
@@ -296,7 +296,7 @@ def test_get_after_adding_data():
     versionId
     versionAbbreviation
     versionName
-    revision
+    versionTag
     metaData
   }
 }
@@ -338,7 +338,7 @@ def test_get_after_adding_data():
         versionId
         versionAbbreviation
         versionName
-        revision
+        versionTag
         metaData
     }
     }
@@ -359,7 +359,7 @@ def test_get_after_adding_data():
         versionId
         versionAbbreviation
         versionName
-        revision
+        versionTag
         metaData
     }
     }
@@ -374,7 +374,7 @@ def test_get_after_adding_data():
         versionId
         versionAbbreviation
         versionName
-        revision
+        versionTag
         metaData
     }
     }
@@ -389,14 +389,14 @@ def test_get_after_adding_data():
             assert_positive_get(item)
         assert item["versionName"] == "test name B"
 
-    # filter with abbr and revision
+    # filter with abbr and versionTag
     query4 = """
             {
-    versions(versionAbbreviation:"AAA",revision:2){
+    versions(versionAbbreviation:"AAA",versionTag:"2"){
         versionId
         versionAbbreviation
         versionName
-        revision
+        versionTag
         metaData
     }
     }
@@ -404,12 +404,13 @@ def test_get_after_adding_data():
     executed4 = gql_request(query4)
     assert isinstance(executed4, Dict)
     items =executed4["data"]["versions"]
+    print(items)
     for item in items:
         if 'versionId' in item:
             item["versionId"] = int(item["versionId"])
             assert_positive_get(item)
         assert item["versionAbbreviation"] == "AAA"
-        assert item["revision"] ==  2
+        assert item["versionTag"] ==  "2"
 
     variables3 = {
     "object": {
@@ -427,7 +428,7 @@ def test_get_after_adding_data():
         versionId
         versionAbbreviation
         versionName
-        revision
+        versionTag
         metaData
     }
     }
@@ -443,7 +444,7 @@ def test_get_after_adding_data():
             item["versionId"] = int(item["versionId"])
             assert_positive_get(item)
         assert item["versionAbbreviation"] == "CCC"
-        assert item["revision"] == 1
+        assert item["versionTag"] == "1"
         assert item['metaData']['owner'] == "myself"
 
 def test_put_versions():
@@ -453,7 +454,7 @@ def test_put_versions():
     "object": {
        'versionAbbreviation': "AAA",
         'versionName': 'test name A',
-        'revision': 1
+        'versionTag': "1"
     }
     }
     executed = check_post(GLOBAL_QUERY,variables)
@@ -468,7 +469,7 @@ def test_put_versions():
         versionId
         versionAbbreviation
         versionName
-        revision
+        versionTag
         metaData
         }
     }

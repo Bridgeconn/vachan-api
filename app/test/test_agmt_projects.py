@@ -111,7 +111,7 @@ def test_default_post_put_get():
         "language": "gu",
         "version": "TTT",
         "year": 3030,
-        "revision": 1,
+        "versionTag": 1,
         "accessPermissions": [
             "content","open-access"
         ],

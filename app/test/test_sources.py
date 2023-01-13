@@ -1,4 +1,6 @@
 '''Test cases for versions related APIs'''
+import re
+
 from app.schema import schemas, schema_auth
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
@@ -34,8 +36,22 @@ def assert_positive_get(item):
     assert 'accessPermissions' in item['metaData'].keys()
     assert "active" in item
     assert item["active"] in [True, False]
+    if item['version']['versionTag'] is None:
+        tag = "1"
+    elif isinstance(item['version']['versionTag'], list):
+        tag = ".".join(item['version']['versionTag'])
+        tag = re.sub(r'(\.0)+$', "", tag)
+    elif isinstance(item['version']['versionTag'], int):
+        tag = str(item['version']['versionTag'])
+    elif isinstance(item['version']['versionTag'], str):
+        if item['version']['versionTag'].startswith("["):
+            items = item['version']['versionTag'][1:-1].split(",")
+            tag = ".".join([itm.strip() for itm in items])
+            tag = re.sub(r'(\.0)+$', "", tag)
+        else:
+            tag = item['version']['versionTag']
     parts = [item['language']['code'], item['version']['versionAbbreviation'],
-        str(item['version']['revision']), item['contentType']['contentType']]
+        tag, item['contentType']['contentType']]
     table_name = "_".join(parts)
     assert item["sourceName"] == table_name
 
@@ -76,7 +92,7 @@ def test_post_default():
         "contentType": "commentary",
         "language": "hi",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2020,
         "license": "CC-BY-SA",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
@@ -84,7 +100,7 @@ def test_post_default():
     check_post(data)
 
 def test_post_wrong_version():
-    '''Negative test with not available version or revision'''
+    '''Negative test with not available version or versionTag'''
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version",
@@ -94,7 +110,7 @@ def test_post_wrong_version():
         "contentType": "commentary",
         "language": "hi",
         "version": "TTD",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2020,
         "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
@@ -110,7 +126,7 @@ def test_post_wrong_version():
         "contentType": "commentary",
         "language": "hi",
         "version": "TTT",
-        "revision": 2,
+        "versionTag": 2,
         "year": 2020,
         "license": "CC-BY-SA",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
@@ -124,7 +140,7 @@ def test_post_wrong_version():
         "contentType": "commentary",
         "language": "hi",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2020,
         "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
@@ -142,7 +158,7 @@ def test_post_wrong_lang():
         "contentType": "commentary",
         "language": "aaj",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2020,
         "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
@@ -165,7 +181,7 @@ def test_post_wrong_content():
         "contentType": "bibl",
         "language": "hi",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2020,
         "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
@@ -181,7 +197,7 @@ def test_post_wrong_content():
         "contentType": "infographic",
         "language": "hi",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2020,
         "license": "XYZ-123",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
@@ -197,7 +213,7 @@ def test_post_wrong_year():
         "contentType": "commentary",
         "language": "hi",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": "twenty twenty",
         "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
@@ -213,7 +229,7 @@ def test_post_wrong_metadata():
         "contentType": "commentary",
         "language": "hi",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": "twenty twenty",
         "license": "ISC",
         "metaData": '["owner"="someone", "access-key"="123xyz"]'
@@ -228,7 +244,7 @@ def test_post_missing_mandatory_info():
     data = {
         "language": "hi",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2020
     }
     # headers = {"contentType": "application/json", "accept": "application/json"}
@@ -239,7 +255,7 @@ def test_post_missing_mandatory_info():
     data = {
         "contentType": "commentary",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2020
     }
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
@@ -249,7 +265,7 @@ def test_post_missing_mandatory_info():
     data = {
         "contentType": "commentary",
         "language": "hi",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2020
     }
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
@@ -266,7 +282,7 @@ def test_post_missing_mandatory_info():
 
 def test_post_missing_some_info():
     '''Positive test with non mandatory contents missing.
-    If revision not specified, 1 is assumed. Other fields are nullable or have default value'''
+    If versionTag not specified, 1 is assumed. Other fields are nullable or have default value'''
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version",
@@ -307,7 +323,7 @@ def test_put_default():
         "versionName": "test version",
     }
     add_version(version_data)
-    version_data['revision'] = 2
+    version_data['versionTag'] = 2
     add_version(version_data)
     data = {
         "contentType": "commentary",
@@ -319,7 +335,7 @@ def test_put_default():
 
     data_update = {
         "sourceName": 'ml_TTT_1_commentary',
-        "revision": 2
+        "versionTag": 2
     }
     #update source without auth
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -334,7 +350,7 @@ def test_put_default():
     assert response.status_code == 201
     assert response.json()['message'] == "Source edited successfully"
     assert_positive_get(response.json()['data'])
-    assert response.json()['data']['version']['revision'] == 2
+    assert response.json()['data']['version']['versionTag'] == "2"
     assert response.json()['data']['sourceName'] == "ml_TTT_2_commentary"
 
     data_update = {
@@ -420,7 +436,7 @@ def test_created_user_can_only_edit():
         "versionName": "test version",
     }
     add_version(version_data)
-    version_data['revision'] = 2
+    version_data['versionTag'] = 2
     add_version(version_data)
     data = {
         "contentType": "commentary",
@@ -436,7 +452,7 @@ def test_created_user_can_only_edit():
 
     data_update = {
         "sourceName": 'ml_TTT_1_commentary',
-        "revision": 2
+        "versionTag": 2
     }
 
     #edit with SA who also the createdUser
@@ -444,13 +460,13 @@ def test_created_user_can_only_edit():
     assert response.status_code == 201
     assert response.json()['message'] == "Source edited successfully"
     assert_positive_get(response.json()['data'])
-    assert response.json()['data']['version']['revision'] == 2
+    assert response.json()['data']['version']['versionTag'] == "2"
     assert response.json()['data']['sourceName'] == "ml_TTT_2_commentary"
 
     #edit with a non permited user VachanAdmin (not createdUser)
     data_update = {
         "sourceName": 'ml_TTT_2_commentary',
-        "revision": 1
+        "versionTag": 1
     }
     
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
@@ -506,7 +522,7 @@ def test_get_wrong_values():
     response = client.get(UNIT_URL + '?version_abbreviation=1')
     assert_input_validation_error(response)
 
-    response = client.get(UNIT_URL + '?revision=X')
+    response = client.get(UNIT_URL + '?version_tag=X')
     assert_input_validation_error(response)
 
     response = client.get(UNIT_URL + '?language_code=hin6i')
@@ -528,15 +544,15 @@ def test_get_after_adding_data():
         data['language'] = lang
         check_post(data)
 
-    version_data['revision'] = 2
+    version_data['versionTag'] = 2
     add_version(version_data)
-    data['revision'] = 2
+    data['versionTag'] = 2
     for lang in ['hi', 'mr', 'te']:
         data['language'] = lang
         check_post(data)
 
     data['contentType'] = 'commentary'
-    data['revision'] = 1
+    data['versionTag'] = 1
     data['metaData'] = {'owner': 'myself'}
     data['license'] = "ISC"
     for lang in ['hi', 'mr', 'te']:
@@ -571,8 +587,8 @@ def test_get_after_adding_data():
     for item in response.json():
         assert_positive_get(item)
 
-    # filter with revision  #WITH AUTH
-    response = client.get(UNIT_URL + "?revision=2&version_abbreviation=TTT",headers=headers_auth)
+    # filter with versionTag  #WITH AUTH
+    response = client.get(UNIT_URL + "?version_tag=2&version_abbreviation=TTT",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) >= 3
     for item in response.json():
@@ -613,8 +629,8 @@ def test_get_after_adding_data():
     for item in response.json():
         assert_positive_get(item)
 
-    # filter with revsion and revision
-    response = client.get(UNIT_URL + '?version_abbreviation=TTT&revision=1',headers=headers_auth)
+    # filter with revsion and versionTag
+    response = client.get(UNIT_URL + '?version_abbreviation=TTT&version_tag=1',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) >= 3
     for item in response.json():
@@ -705,7 +721,7 @@ def test_diffrernt_sources_with_app_and_roles():
         "contentType": "commentary",
         "language": "hi",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2020,
         "license": "CC-BY-SA",
         "accessPermissions": [

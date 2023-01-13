@@ -18,7 +18,7 @@ def assert_positive_get(item):
     assert isinstance(item['versionId'], int)
     assert "versionAbbreviation" in item
     assert "versionName" in item
-    assert "revision" in item
+    assert "versionTag" in item
     assert "metaData" in item
 
 def check_post(data):
@@ -46,29 +46,29 @@ def test_post_default():
     data = {
         "versionAbbreviation": "XYZ",
         "versionName": "Xyz version to test",
-        "revision": "1",
+        "versionTag": "1",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     check_post(data)
 
 def test_post_multiple_with_same_abbr():
-    '''Positive test to add two version, with same abbr and diff revision'''
+    '''Positive test to add two version, with same abbr and diff versionTag'''
     data = {
         "versionAbbreviation": "XYZ",
         "versionName": "Xyz version to test",
-        "revision": "1",
+        "versionTag": "1",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     check_post(data)
-    data["revision"] = 2
+    data["versionTag"] = 2
     check_post(data)
 
 def test_post_multiple_with_same_abbr_negative():
-    '''Negative test to add two version, with same abbr and revision'''
+    '''Negative test to add two version, with same abbr and versionTag'''
     data = {
         "versionAbbreviation": "XYZ",
         "versionName": "Xyz version to test",
-        "revision": "1",
+        "versionTag": "1",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     check_post(data)
@@ -77,22 +77,22 @@ def test_post_multiple_with_same_abbr_negative():
     assert response.status_code == 409
     assert response.json()['error'] == "Already Exists"
 
-def test_post_without_revision():
-    '''revision field should have a default value, even not provided'''
+def test_post_without_versionTag():
+    '''versionTag field should have a default value, even not provided'''
     data = {
         "versionAbbreviation": "XYZ",
         "versionName": "Xyz version to test",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     response = check_post(data)
-    assert response.json()['data']['revision'] == 1
+    assert response.json()['data']['versionTag'] == "1"
 
 def test_post_without_metadata():
     '''metadata field is not mandatory'''
     data = {
         "versionAbbreviation": "XYZ",
         "versionName": "Xyz version to test",
-        "revision": "3"
+        "versionTag": "3"
     }
     response = check_post(data)
     assert response.json()['data']['metaData'] is None
@@ -101,7 +101,7 @@ def test_post_without_abbr():
     '''versionAbbreviation is mandatory'''
     data = {
         "versionName": "Xyz version to test",
-        "revision": "1",
+        "versionTag": "1",
         "metaData": {"owner": "some", "access-key": "123xyz"}
     }
     # headers = {"contentType": "application/json", "accept": "application/json"}
@@ -113,7 +113,7 @@ def test_post_wrong_abbr():
     data = {
         "versionAbbreviation": "XY Z",
         "versionName": "Xyz version to test",
-        "revision": "1",
+        "versionTag": "1",
         "metaData": {"owner": "one", "access-key": "123xyz"}
     }
     # headers = {"contentType": "application/json", "accept": "application/json"}
@@ -124,23 +124,23 @@ def test_post_wrong_abbr():
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
-def test_post_wrong_revision():
-    '''revision cannot have space, dot letters etc'''
+def test_post_wrong_versionTag():
+    '''versionTag cannot have space, comma letters etc'''
     data = {
         "versionAbbreviation": "XY Z",
         "versionName": "Xyz version to test",
-        "revision": "1.0",
+        "versionTag": "1,0",
         "metaData": {"owner": "another one", "access-key": "123xyz"}
     }
     # headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
-    data['revision'] = "1 2"
+    data['versionTag'] = "1 2"
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
-    data['revision'] = '1a'
+    data['versionTag'] = '1a'
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
@@ -148,7 +148,7 @@ def test_post_without_name():
     '''versionName is mandatory'''
     data = {
         "versionAbbreviation": "XYZ",
-        "revision": "1",
+        "versionTag": "1",
         "metaData": {"owner": "no one", "access-key": "123xyz"}
     }
     # headers = {"contentType": "application/json", "accept": "application/json"}
@@ -171,8 +171,8 @@ def test_get_wrong_abbr():
     response = client.get(UNIT_URL+'?version_abbreviation=123')
     assert_input_validation_error(response)
 
-def test_get_wrong_revision():
-    '''revision as text'''
+def test_get_wrong_versionTag():
+    '''versionTag as text'''
     response = client.get(UNIT_URL+'?version_abbreviation=A%20A')
     assert_input_validation_error(response)
 
@@ -181,18 +181,18 @@ def test_get_after_adding_data():
     data = {
         'versionAbbreviation': "AAA",
         'versionName': 'test name A',
-        'revision': 1
+        'versionTag': 1
     }
     check_post(data)
-    data['revision'] = 2
+    data['versionTag'] = 2
     check_post(data)
     data = {
         'versionAbbreviation': "BBB",
         'versionName': 'test name B',
-        'revision': 1
+        'versionTag': 1
     }
     check_post(data)
-    data['revision'] = 2
+    data['versionTag'] = 2
     check_post(data)
     headers = {"contentType": "application/json", "accept": "application/json"}
     check_default_get(UNIT_URL, headers,assert_positive_get)
@@ -225,13 +225,13 @@ def test_get_after_adding_data():
         assert_positive_get(item)
         assert item['versionName'] == 'test name B'
 
-   # filter with abbr and revision
-    response = client.get(UNIT_URL + '?version_abbreviation=AAA&revision=2')
+   # filter with abbr and versionTag
+    response = client.get(UNIT_URL + '?version_abbreviation=AAA&version_tag=2')
     assert response.status_code == 200
     assert len(response.json()) == 1
     assert_positive_get(response.json()[0])
     assert response.json()[0]['versionAbbreviation'] == 'AAA'
-    assert response.json()[0]['revision'] == 2
+    assert response.json()[0]['versionTag'] == "2"
 
     data = {
         'versionAbbreviation': "CCC",
@@ -246,7 +246,7 @@ def test_get_after_adding_data():
     assert len(response.json()) == 1
     assert_positive_get(response.json()[0])
     assert response.json()[0]['versionAbbreviation'] == 'CCC'
-    assert response.json()[0]['revision'] == 1
+    assert response.json()[0]['versionTag'] == "1"
     assert response.json()[0]['metaData']['owner'] == 'myself'
 
 def test_put_version():
@@ -255,7 +255,7 @@ def test_put_version():
     data = {
         "versionAbbreviation": "XYZ",
         "versionName": "Xyz version to test",
-        "revision": "1",
+        "versionTag": "1",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     headers_auth = {"contentType": "application/json",
@@ -270,7 +270,7 @@ def test_put_version():
         "versionId": version_id,
         "versionAbbreviation": "XYZ",
         "versionName": "Xyz version to test edited",
-        "revision": "1",
+        "versionTag": "1",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     response = client.put(UNIT_URL, headers=headers_auth, json=data)
@@ -299,7 +299,7 @@ def test_put_version():
         "versionId": version_id,
         "versionAbbreviation": "XYZ",
         "versionName": "Xyz version edited by admin",
-        "revision": "1",
+        "versionTag": "1",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     headers_admin = {"contentType": "application/json",

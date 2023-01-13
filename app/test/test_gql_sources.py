@@ -23,7 +23,7 @@ SOURCE_GLOBAL_VARIABLES = {
     "contentType": "commentary",
     "language": "hi",
     "version": "TTT",
-    "revision": "1",
+    "versionTag": "1",
     "year": 2021,
     "license": "CC-BY-SA",
     "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
@@ -51,7 +51,7 @@ SOURCE_GLOBAL_QUERY = """
             versionId
             versionAbbreviation
             versionName
-            revision
+            versionTag
             metaData
         }
         year
@@ -90,7 +90,7 @@ SOURCE_GLOBAL_QUERY_UPDATE="""
         versionId
         versionAbbreviation
         versionName
-        revision
+        versionTag
         metaData
       }
       year
@@ -151,7 +151,7 @@ def test_post_default():
     check_skip_limit_gql(query_check,"contents",headers_auth)
 
 def test_post_wrong_version():
-    '''Negative test with not available version or revision'''
+    '''Negative test with not available version or versionTag'''
     version_variable = {
         "object": {
         "versionAbbreviation": "TTT",
@@ -167,7 +167,7 @@ def test_post_wrong_version():
         "contentType": "commentary",
         "language": "hi",
         "version": "TTD",
-        "revision": "1",
+        "versionTag": "1",
         "year": 2021,
         "license": "ISC",
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
@@ -178,13 +178,13 @@ def test_post_wrong_version():
     assert isinstance(executed1, Dict)
     assert "errors" in executed1.keys()
 
-    #wrong revision
+    #wrong versionTag
     variables2 = {
     "object": {
         "contentType": "commentary",
         "language": "hi",
         "version": "TTT",
-        "revision": "2",
+        "versionTag": "2",
         "year": 2021,
         "license": "ISC",
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
@@ -214,7 +214,7 @@ def test_post_wrong_lang():
         "contentType": "commentary",
         "language": "aaj",
         "version": "TTT",
-        "revision": "1",
+        "versionTag": "1",
         "year": 2021,
         "license": "ISC",
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
@@ -240,7 +240,7 @@ def test_post_wrong_content():
         "contentType": "bibl",
         "language": "hi",
         "version": "TTT",
-        "revision": "1",
+        "versionTag": "1",
         "year": 2021,
         "license": "ISC",
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
@@ -257,7 +257,7 @@ def test_post_wrong_content():
         "contentType": "infographic",
         "language": "hi",
         "version": "TTT",
-        "revision": "1",
+        "versionTag": "1",
         "year": 2021,
         "license": "XYZ-123",
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
@@ -275,7 +275,7 @@ def test_post_wrong_year():
         "contentType": "bible",
         "language": "hi",
         "version": "TTT",
-        "revision": "1",
+        "versionTag": "1",
         "year": "twenty twenty",
         "license": "ISC",
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
@@ -293,7 +293,7 @@ def test_post_wrong_metadata():
         "contentType": "bible",
         "language": "hi",
         "version": "TTT",
-        "revision": "1",
+        "versionTag": "1",
         "year": 2021,
         "license": "ISC",
         "metaData": "{\"owner\"=\"someone\",\"access-key\"=\"123xyz\"}"
@@ -311,7 +311,7 @@ def test_post_missing_mandatory_info():
     "object": {
         "language": "hi",
         "version": "TTT",
-        "revision": "1",
+        "versionTag": "1",
         "year": 2021,
         "license": "ISC",
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
@@ -327,7 +327,7 @@ def test_post_missing_mandatory_info():
     "object": {
         "contentType": "bible",
         "version": "TTT",
-        "revision": "1",
+        "versionTag": "1",
         "year": 2021,
         "license": "ISC",
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
@@ -343,7 +343,7 @@ def test_post_missing_mandatory_info():
     "object": {
         "contentType": "bible",
         "language": "hi",
-        "revision": "1",
+        "versionTag": "1",
         "year": 2021,
         "license": "ISC",
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
@@ -360,7 +360,7 @@ def test_post_missing_mandatory_info():
         "contentType": "bible",
         "language": "hi",
         "version": "TTT",
-        "revision": "1",
+        "versionTag": "1",
         "license": "ISC",
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
     }
@@ -372,7 +372,7 @@ def test_post_missing_mandatory_info():
 
 def test_post_missing_some_info():
     '''Positive test with non mandatory contents missing.
-    If revision not specified, 1 is assumed. Other fields are nullable or have default value'''
+    If versionTag not specified, 1 is assumed. Other fields are nullable or have default value'''
     version_variable = {
         "object": {
         "versionAbbreviation": "TTT",
@@ -435,7 +435,7 @@ SOURCE_GET = """
       versionId
       versionAbbreviation
       versionName
-      revision
+      versionTag
       metaData
     }
     year
@@ -480,7 +480,7 @@ def test_get_wrong_values():
 
     get_query2 = """
             {
-    contents(revision:X){
+    contents(versionTag:X){
         sourceName
         contentType{
         contentId
@@ -529,15 +529,15 @@ def test_get_after_adding_data():
         variables["object"]['language'] = lang
         check_post(SOURCE_GLOBAL_QUERY,variables)
 
-    version_variable["object"]['revision'] = 2
+    version_variable["object"]['versionTag'] = "2"
     version_add(version_query,version_variable)
-    variables["object"]['revision'] = '2'
+    variables["object"]['versionTag'] = '2'
     for lang in ['hi', 'mr', 'te']:
         variables["object"]['language'] = lang
         check_post(SOURCE_GLOBAL_QUERY,variables)
 
     variables["object"]['contentType'] = 'commentary'
-    variables["object"]['revision'] = 1
+    variables["object"]['versionTag'] = "1"
     variables["object"]['metaData'] = "{\"owner\":\"myself\"}"
     variables["object"]['license'] = "ISC"
     for lang in ['hi', 'mr', 'te']:
@@ -576,7 +576,7 @@ def test_get_after_adding_data():
       versionId
       versionAbbreviation
       versionName
-      revision
+      versionTag
       metaData
     }
     year
@@ -619,7 +619,7 @@ def test_get_after_adding_data():
       versionId
       versionAbbreviation
       versionName
-      revision
+      versionTag
       metaData
     }
     year
@@ -642,10 +642,10 @@ def test_get_after_adding_data():
     for item in items:
         assert_positive_get(item)
 
-    # filter with revision
+    # filter with versionTag
     query3 = """
         {
-  contents(revision:2){
+  contents(versionTag:2){
     sourceName
     contentType{
       contentId
@@ -662,7 +662,7 @@ def test_get_after_adding_data():
       versionId
       versionAbbreviation
       versionName
-      revision
+      versionTag
       metaData
     }
     year
@@ -705,7 +705,7 @@ def test_get_after_adding_data():
       versionId
       versionAbbreviation
       versionName
-      revision
+      versionTag
       metaData
     }
     year
@@ -748,7 +748,7 @@ def test_get_after_adding_data():
       versionId
       versionAbbreviation
       versionName
-      revision
+      versionTag
       metaData
     }
     year
@@ -791,7 +791,7 @@ def test_get_after_adding_data():
       versionId
       versionAbbreviation
       versionName
-      revision
+      versionTag
       metaData
     }
     year
@@ -834,7 +834,7 @@ def test_get_after_adding_data():
       versionId
       versionAbbreviation
       versionName
-      revision
+      versionTag
       metaData
     }
     year
@@ -857,10 +857,10 @@ def test_get_after_adding_data():
     for item in items:
         assert_positive_get(item)
 
-# filter with version and revision
+# filter with version and versionTag
     query7 = """
     {
-  contents(versionAbbreviation:"TTT",revision:1){
+  contents(versionAbbreviation:"TTT",versionTag:1){
     sourceName
     contentType{
       contentId
@@ -877,7 +877,7 @@ def test_get_after_adding_data():
       versionId
       versionAbbreviation
       versionName
-      revision
+      versionTag
       metaData
     }
     year
@@ -976,7 +976,7 @@ def test_put_default():
     }
     #Create a version
     version_add(version_query,version_variable)
-    version_variable["object"]['revision'] = 2
+    version_variable["object"]['versionTag'] = "2"
     version_add(version_query,version_variable)
     variables = {
     "object": {
@@ -1010,7 +1010,7 @@ def test_put_default():
 #         versionId
 #         versionAbbreviation
 #         versionName
-#         revision
+#         versionTag
 #         metaData
 #       }
 #       year
@@ -1030,7 +1030,7 @@ def test_put_default():
     up_variables={
   "object": {
     "sourceName": "ml_TTT_1_commentary",
-    "revision": 2
+    "versionTag": "2"
   }
 }
     #without auth
@@ -1043,7 +1043,7 @@ def test_put_default():
     assert executed["data"]["editSource"]["message"] == "Source edited successfully"
     item =executed["data"]["editSource"]["data"]
     assert_positive_get(item)
-    assert item["version"]["revision"] == 2
+    assert item["version"]["versionTag"] == "2"
     assert item['sourceName'] == "ml_TTT_2_commentary"
 
     up_variables2={
@@ -1160,7 +1160,7 @@ def test_soft_delete():
         versionId
         versionAbbreviation
         versionName
-        revision
+        versionTag
         metaData
       }
       year
@@ -1210,7 +1210,7 @@ def test_soft_delete():
       versionId
       versionAbbreviation
       versionName
-      revision
+      versionTag
       metaData
     }
     year
@@ -1287,7 +1287,7 @@ def test_created_user_can_only_edit():
         versionId
         versionAbbreviation
         versionName
-        revision
+        versionTag
         metaData
       }
       year
