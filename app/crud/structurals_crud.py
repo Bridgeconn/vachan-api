@@ -11,7 +11,8 @@ from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
 import db_models
 from schema import schemas
-from custom_exceptions import NotAvailableException, TypeException
+from custom_exceptions import NotAvailableException, TypeException, UnprocessableException,\
+    AlreadyExistsException
 from database import engine
 from dependencies import log
 from crud import utils
@@ -192,7 +193,7 @@ def update_license(db_: Session, license_obj: schemas.LicenseEdit, user_id=None)
     # db_.refresh(db_content)
     return db_content
 
-def get_versions(db_: Session, version_abbr = None, version_name = None, revision = None,
+def get_versions(db_: Session, version_abbr = None, version_name = None, version_tag = None,
     metadata = None, **kwargs):
     '''Fetches rows of versions table, with various filters and pagination'''
     version_id = kwargs.get("version_id",None)
@@ -203,8 +204,9 @@ def get_versions(db_: Session, version_abbr = None, version_name = None, revisio
         query = query.filter(db_models.Version.versionAbbreviation == version_abbr.upper().strip())
     if version_name:
         query = query.filter(db_models.Version.versionName == version_name.strip())
-    if revision:
-        query = query.filter(db_models.Version.revision == revision)
+    if version_tag:
+        version_array = version_tag_to_array(version_tag)
+        query = query.filter(db_models.Version.versionTag == version_array)
     if metadata:
         meta = json.loads(metadata)
         for key in meta:
@@ -213,12 +215,47 @@ def get_versions(db_: Session, version_abbr = None, version_name = None, revisio
         query = query.filter(db_models.Version.versionId == version_id)
     return query.offset(skip).limit(limit).all()
 
+def version_tag_to_array(tag_str):
+    '''converts "2022.1.11" to [2022, 1, 11, 0]. Used for writing to and querying DB'''
+    if tag_str is None:
+        tag_str = "1.0.0"
+    tag_str = str(tag_str)
+    array = [0,0,0,0]
+    split_tag = tag_str.split(".")
+    if len(split_tag) > 4:
+        raise UnprocessableException("Version tag should be a string of dot separated numbers"+\
+            " of maximum four parts. Eg.: 2022.1.26, 2.0.1, 3.0, 1.2.3.4")
+    for i,part in enumerate(split_tag):
+        try:
+            num = int(part)
+        except Exception as exe:
+            raise UnprocessableException("Version tag should be a string of dot separated numbers"+\
+            " of maximum four parts. Eg.: 2022.1.26, 2.0.1, 3.0, 1.2.3.4") from exe
+        array[i] = num
+    return array
+
+def version_array_to_tag(tag_array):
+    '''converts [2022, 1, 11, 0] to "2022.1.11". Used for naming source and response'''
+    tag_str = ""
+    pass_zero = True
+    for item in reversed(tag_array):
+        if item == 0 and pass_zero:
+            pass
+        else:
+            pass_zero = False
+            tag_str = str(item)+"."+tag_str
+    return tag_str[:-1]
+
+
 def create_version(db_: Session, version: schemas.VersionCreate,user_id=None):
     '''Adds a row to versions table'''
+    if version.versionTag is None:
+        version.versionTag = "1.0.0"
+    version_array = version_tag_to_array(version.versionTag)
     db_content = db_models.Version(
         versionAbbreviation = version.versionAbbreviation.upper().strip(),
         versionName = utils.normalize_unicode(version.versionName.strip()),
-        revision = version.revision,
+        versionTag = version_array,
         metaData = version.metaData,
         createdUser=user_id)
     db_.add(db_content)
@@ -233,8 +270,9 @@ def update_version(db_: Session, version: schemas.VersionEdit, user_id=None):
         db_content.versionAbbreviation = version.versionAbbreviation
     if version.versionName:
         db_content.versionName = utils.normalize_unicode(version.versionName)
-    if version.revision:
-        db_content.revision = version.revision
+    if version.versionTag:
+        version_array = version_tag_to_array(version.versionTag)
+        db_content.versionTag = version_array
     if version.metaData:
         db_content.metaData = version.metaData
     db_content.updatedUser = user_id
@@ -243,7 +281,7 @@ def update_version(db_: Session, version: schemas.VersionEdit, user_id=None):
     return db_content
 
 def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks
-    content_type=None, version_abbreviation=None, revision=None, language_code=None,
+    content_type=None, version_abbreviation=None, version_tag=None, language_code=None,
     **kwargs):
     '''Fetches the rows of sources table'''
     license_abbreviation = kwargs.get("license_abbreviation",None)
@@ -261,9 +299,10 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
     if version_abbreviation:
         query = query.filter(
             db_models.Source.version.has(versionAbbreviation = version_abbreviation.strip()))
-    if revision:
+    if version_tag:
+        version_array = version_tag_to_array(version_tag)
         query = query.filter(
-            db_models.Source.version.has(revision = revision))
+            db_models.Source.version.has(versionTag = version_array))
     if license_abbreviation:
         query = query.filter(db_models.Source.license.has(code = license_abbreviation.strip()))
     if language_code:
@@ -281,41 +320,31 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
     if access_tags:
         query = query.filter(db_models.Source.metaData.contains(
             {"accessPermissions":[tag.value for tag in access_tags]}))
-
-    res = query.join(db_models.Version).order_by(db_models.Version.revision.desc()
+    res = query.join(db_models.Version).order_by(
+        db_models.Version.versionTag.desc()
         ).offset(skip).limit(limit).all()
-    if not latest_revision or revision:
+    if not latest_revision or version_tag is not None:
         return res
-    # print("res=============>",res)
-    # sub_qry = query.join(db_models.Version, func.max(db_models.Version.revision).label(
-    #     "latest_rev")).group_by(
-    #     db_models.Source.contentId, db_models.Source.languageId,
-    #     db_models.Version.versionAbbreviation
-    #     ).subquery('sub_qry')
-    # latest_res = query.filter(db_models.Source.contentId == sub_qry.c.contentType.contentId,
-    #     db_models.Source.languageId == sub_qry.c.language.languageId,
-    #     db_models.Source.version.has(versionAbbreviation = sub_qry.c.version.versionAbbreviation),
-    #     db_models.Source.version.has(revision = sub_qry.c.latest_rev)
-    #     ).offset(skip).limit(limit).all()
 
-    # Filtering out the latest versions here from the query result.
-    # Had tried to include that into the query, but it seemed very difficult.
-    latest_res = []
-    for res_item in res:#pylint: disable=too-many-nested-blocks
-        exculde = False
-        x_parts = res_item.sourceName.split('_')
-        for latest_item in latest_res:
-            y_parts = latest_item.sourceName.split('_')
-            if x_parts[:1]+x_parts[-1:] == y_parts[:1]+y_parts[-1:]:
-                if x_parts[2] < y_parts[3]:
-                    exculde = True
-                    break
-        if not exculde:
-            latest_res.append(res_item)
-    return latest_res
+    # Take only the top most in each version, unless there is a differnt "latest"
+    latest_res = {}
+    for item in res:
+        key_name = "_".join([item.language.code,
+            item.version.versionAbbreviation,
+            item.contentType.contentType])
+        if key_name not in latest_res:
+            latest_res[key_name] = item
+        elif item.latest:
+            latest_res[key_name] = item   
+    return list(latest_res.values())
 
-def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_id):
+def create_source(db_: Session, source: schemas.SourceCreate, user_id):
     '''Adds a row to sources table'''
+    version_array = version_tag_to_array(source.versionTag)
+    source_name = "_".join([source.language, source.version,
+        version_array_to_tag(version_array), source.contentType])
+    if len(get_sources(db_, source_name = source_name)) > 0:
+        raise AlreadyExistsException(f"{source_name} already present")
     content_type = db_.query(db_models.ContentType).filter(
         db_models.ContentType.contentType == source.contentType.strip()).first()
     if not content_type:
@@ -323,9 +352,9 @@ def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_
             " not found in Database")
     version = db_.query(db_models.Version).filter(
         db_models.Version.versionAbbreviation == source.version,
-        db_models.Version.revision == source.revision).first()
+        db_models.Version.versionTag == version_array).first()
     if not version:
-        raise NotAvailableException(f"Version, {source.version} {source.revision},"+\
+        raise NotAvailableException(f"Version, {source.version} {source.versionTag},"+\
             " not found in Database")
     language = db_.query(db_models.Language).filter(
         db_models.Language.code == source.language).first()
@@ -335,6 +364,15 @@ def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_
         db_models.License.code == source.license).first()
     if not license_obj:
         raise NotAvailableException(f"License code, {source.license}, not found in Database")
+    if source.latest:
+        query = db_.query(db_models.Source).join(db_models.Version).filter(
+            db_models.Source.version.has(versionAbbreviation = source.version),
+            db_models.Source.contentId == content_type.contentId,
+            db_models.Source.latest == True) # pylint: disable=C0121
+        another_latest = query.all()
+        if another_latest:
+            raise AlreadyExistsException(
+                f"Another source with latest tag exists: {another_latest[0].sourceName}")
     table_name_count = 0
     dynamic_tablename_pattern = re.compile(r"table_\d+$")
     for table_name in engine.table_names():
@@ -346,6 +384,7 @@ def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_
         table_name = source.metaData["repo"]
     db_content = db_models.Source(
         year = source.year,
+        latest = source.latest,
         sourceName = source_name,
         tableName = table_name,
         contentId = content_type.contentId,
@@ -354,8 +393,7 @@ def create_source(db_: Session, source: schemas.SourceCreate, source_name, user_
         licenseId = license_obj.licenseId,
         metaData = source.metaData,
         active = True)
-    if user_id:
-        db_content.createdUser = user_id
+    db_content.createdUser = user_id
     db_.add(db_content)
     if not content_type.contentType == db_models.ContentTypeName.GITLABREPO.value:
         db_models.create_dynamic_table(source_name, table_name, content_type.contentType)
@@ -379,13 +417,14 @@ def update_source_sourcename(db_, source, db_content):
         ver = source.version
     else:
         ver = db_content.version.versionAbbreviation
-    if source.revision:
-        rev = source.revision
+    if source.versionTag:
+        version_array = version_tag_to_array(source.versionTag)
     else:
-        rev = db_content.version.revision
+        version_array = db_content.version.versionTag
+    rev = version_array_to_tag(version_array)
     version = db_.query(db_models.Version).filter(
         db_models.Version.versionAbbreviation == ver,
-        db_models.Version.revision == rev).first()
+        db_models.Version.versionTag == version_array).first()
     if not version:
         raise NotAvailableException(f"Version, {ver} {rev}, not found in Database")
     db_content.versionId = version.versionId
@@ -397,7 +436,7 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
     '''changes one or more fields of sources, selected via sourceName or table_name'''
     db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source.sourceName).first()
-    if source.version or source.revision:
+    if source.version or source.versionTag:
         db_content =  update_source_sourcename(db_, source, db_content)
 
     if source.language:
@@ -414,14 +453,26 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
         if not license_obj:
             raise NotAvailableException(f"License code, {source.license}, not found in Database")
         db_content.licenseId = license_obj.licenseId
+    if source.latest is not None:
+        if source.latest is True:
+            query = db_.query(db_models.Source).join(db_models.Version).filter(
+                db_models.Source.version.has(
+                    versionAbbreviation = db_content.version.versionAbbreviation),
+                db_models.Source.contentId == db_content.contentId,
+                db_models.Source.latest == True, # pylint: disable=C0121
+                db_models.Source.sourceId != db_content.sourceId) 
+            another_latest = query.all()
+            if another_latest:
+                raise AlreadyExistsException(
+                    f"Another source with latest tag exists: {another_latest[0].sourceName}")
+        db_content.latest = source.latest
     if source.year:
         db_content.year = source.year
     if source.metaData:
         db_content.metaData = source.metaData
     if source.active is not None:
         db_content.active = source.active
-    if user_id:
-        db_content.updatedUser = user_id
+    db_content.updatedUser = user_id
     # db_.commit()
     # db_.refresh(db_content)
     if not source.sourceName.split("_")[-1] == db_models.ContentTypeName.GITLABREPO.value:
