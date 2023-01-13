@@ -11,6 +11,10 @@ from auth.authentication import user_register_kratos,login_kratos,user_role_add 
     delete_identity , get_auth_access_check_decorator , get_user_or_none, kratos_logout,\
     get_all_or_one_kratos_users,update_kratos_user
 from auth.auth_app import app_register_kratos, app_update_kratos, get_filter_apps
+from crud.auth_crud import update_role
+from crud import auth_crud
+
+
 
 router = APIRouter()
 
@@ -269,3 +273,90 @@ user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint:
     log.debug('app-delete:%s',app_id)
     delete_identity(app_id, app=True)
     return {"message":f"deleted app with id : {app_id}"}
+
+# @router.put('/v2/app/roles', response_model=schema_auth.RoleUpdateResponse,
+#     responses={502:{"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
+#     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
+#     401: {"model": schemas.ErrorResponse}},
+#     status_code=201, tags=["Roles"])
+# @get_auth_access_check_decorator
+# async def update_roles(request: Request, role_details:schema_auth.RoleIn,#pylint: disable=unused-argument
+# app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
+# user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+#     ''' Changes one or more fields of roles'''
+#     log.info('In update_roles')
+#     log.debug('roles:%s',role_details)
+#     data = update_role(db_,role_details, user_id=user_details['user_id'])
+#     print(data,"this is data o/p")
+#     return {'message': "Role edited successfully",
+#         "data": data}
+
+@router.put('/v2/app/roles',response_model=schema_auth.RoleUpdateResponse,
+responses={403: {"model": schemas.ErrorResponse},
+401: {"model": schemas.ErrorResponse},409: {"model": schemas.ErrorResponse},
+422: {"model": schemas.ErrorResponse},500: {"model": schemas.ErrorResponse}},
+status_code=201,tags=["Roles"])
+@get_auth_access_check_decorator
+async def update_roles(role_data:schema_auth.RoleIn,request: Request,#pylint: disable=unused-argument
+app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
+user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+    # print(update_roles,"print update_roles")
+    '''Changes one or more fields of roles
+    * Roles should be registered one'''
+    log.info('In update_roles')
+    log.debug('role:%s',role_data)
+    data = update_role(db_,role_data, user_id=user_details['user_id'])
+
+    print(data,"this is data o/p")
+    return {'message': "Role edited successfully",
+        "data": data} 
+#     user_id = role_data.userid
+#     role_list = role_data.roles
+#     return user_role_add(user_id,role_list)
+
+@router.delete('/v2/app/roles',response_model=schema_auth.RoleDeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Roles"])
+@get_auth_access_check_decorator
+async def delete_roles(request: Request, role_details: schema_auth.RoleIdentity,
+    app_key: types.SecretStr = Query(None),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Delete Roles'''
+    log.info('In delete_roles')
+    log.debug('role:%s',role_details)
+    role_id= role_details.roleId
+    dbtable_name = "roles"
+    deleted_content = auth_crud.delete_role(db_=db_, role=role_details)
+    # user_id=user_details['user_id'],table_name = dbtable_name
+    return {'message': f"Role with identity {role_id} deleted successfully",
+            "data": deleted_content}
+
+
+# @router.delete('/v2/commentaries/{source_name}',response_model=schemas.DeleteResponse,
+#     responses={404: {"model": schemas.ErrorResponse},
+#     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+#     502: {"model": schemas.ErrorResponse}},
+#     status_code=200,tags=["Commentaries"])
+# @get_auth_access_check_decorator
+# async def delete_commentary(request: Request, delete_obj: schemas_nlp.DeleteIdentity = Body(...), \
+#     user_details =Depends(get_user_or_none),  \
+#     db_: Session = Depends(get_db)):
+#     '''Delete Commentary
+#     * unique Commentary Id can be used to delete an exisiting identity'''
+#     log.info('In delete_commentaries')
+#     log.debug('commentary-delete:%s',delete_obj)
+#     commentary_id= delete_obj.itemId
+#     source_name = delete_obj.sourceName
+#     tb_name = db_models.dynamicTables[source_name]
+#     dbtable_name = tb_name.__name__
+#     if len(contents_crud.get_commentary_id(db_, commentary_id= delete_obj.itemId, \
+#         source_name=delete_obj.sourceName,table_name=tb_name)) == 0:
+#         raise NotAvailableException(f"Commentary with id {commentary_id} not found")
+#     deleted_content = contents_crud.delete_commentary(db_=db_, \
+#         delitem=delete_obj,table_name=tb_name)
+#     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
+#             table_name = dbtable_name)
+#     return {'message': f"Commentary id {commentary_id} deleted successfully",
+#             "data": delcont}
