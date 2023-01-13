@@ -335,7 +335,7 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
         if key_name not in latest_res:
             latest_res[key_name] = item
         elif item.latest:
-            latest_res[key_name] = item   
+            latest_res[key_name] = item
     return list(latest_res.values())
 
 def create_source(db_: Session, source: schemas.SourceCreate, user_id):
@@ -460,7 +460,7 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
                     versionAbbreviation = db_content.version.versionAbbreviation),
                 db_models.Source.contentId == db_content.contentId,
                 db_models.Source.latest == True, # pylint: disable=C0121
-                db_models.Source.sourceId != db_content.sourceId) 
+                db_models.Source.sourceId != db_content.sourceId)
             another_latest = query.all()
             if another_latest:
                 raise AlreadyExistsException(
