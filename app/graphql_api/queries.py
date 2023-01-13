@@ -4,6 +4,7 @@ import graphene
 from graphql_api import types, utils
 from schema import schemas_nlp
 from routers import content_apis, auth_api, translation_apis
+from crud import structurals_crud
 from auth.authentication import get_user_or_none_graphql
 from dependencies import log
 
@@ -70,26 +71,29 @@ class Query(graphene.ObjectType):
 
     versions = graphene.List(types.Version,
         description="Query defined versions in vachan-db", version_abbreviation=graphene.String(),
-        version_name=graphene.String(), revision=graphene.Int(),
+        version_name=graphene.String(), version_tag=graphene.String(),
         skip=graphene.Int(), limit=graphene.Int())
-    def resolve_versions(self, info, version_abbreviation=None, version_name=None,
-        revision=None, skip=0, limit=100, metadata=None):
+    async def resolve_versions(self, info, version_abbreviation=None, version_name=None,
+        version_tag=None, skip=0, limit=100, metadata=None):
         '''resolver'''
         log.info('In GraphQL Get Content versions')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
         req.scope['path'] = "/v2/versions"
-        return content_apis.get_version(request=req, version_abbreviation=version_abbreviation,
-        version_name=version_name, revision=revision, skip=skip, limit=limit,
+        resp = await content_apis.get_version(request=req,version_abbreviation=version_abbreviation,
+        version_name=version_name, version_tag=version_tag, skip=skip, limit=limit,
         user_details=user_details, db_=db_,metadata=metadata)
+        for res in resp:
+            res.versionTag = structurals_crud.version_array_to_tag(res.versionTag)
+        return resp
         # return structurals_crud.get_versions(db_, version_abbreviation,
-        # version_name, revision, skip = skip, limit = limit)
+        # version_name, versionTag, skip = skip, limit = limit)
 
     contents = graphene.List(types.Source,
         description="Query added contents in vachan-db",
         source_name=graphene.String(), content_type=graphene.String(),
-        version_abbreviation=graphene.String(), revision=graphene.Int(),
+        version_abbreviation=graphene.String(), version_tag=graphene.Int(),
         language_code=graphene.String(
             description="language code as per bcp47(usually 2 letter code)"),
         license_code=graphene.String(),
@@ -97,7 +101,7 @@ class Query(graphene.ObjectType):
         active=graphene.Boolean(), latest_revision=graphene.Boolean(),
         skip=graphene.Int(), limit=graphene.Int())
     def resolve_contents(self, info, content_type=None, version_abbreviation=None,#pylint: disable=too-many-locals
-        revision=None, language_code=None, license_code=None, active=True,
+        version_tag=None, language_code=None, license_code=None, active=True,
         latest_revision=True, skip=0, limit=100,metadata=None, source_name = None,
         access_tag= types.SourcePermissions.CONTENT.name):#pylint: disable=no-member
         '''resolver'''
@@ -111,7 +115,8 @@ class Query(graphene.ObjectType):
         req.scope['method'] = "GET"
         req.scope['path'] = "/v2/sources"
         results = content_apis.get_source(request=req,content_type=content_type,
-        version_abbreviation=version_abbreviation, revision=revision, language_code=language_code
+        version_abbreviation=version_abbreviation,
+        version_tag=version_tag, language_code=language_code
         ,license_code=license_code, metadata=metadata, access_tag=access_tag, active=active,
         latest_revision=latest_revision, skip=skip, limit=limit, user_details=user_details,
         db_=db_, filtering_required=True,source_name=source_name)

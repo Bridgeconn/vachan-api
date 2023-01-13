@@ -53,7 +53,7 @@ class Version(graphene.ObjectType):#pylint: disable=too-few-public-methods
     versionId = graphene.ID()
     versionAbbreviation = graphene.String()
     versionName = graphene.String()
-    revision = graphene.Int()
+    versionTag = graphene.String()
     metaData = Metadata()
 
 class Source(graphene.ObjectType):#pylint: disable=too-few-public-methods
@@ -62,6 +62,7 @@ class Source(graphene.ObjectType):#pylint: disable=too-few-public-methods
     contentType = graphene.Field(ContentType)
     language = graphene.Field(Language)
     version = graphene.Field(Version)
+    latest = graphene.Boolean()
     year = graphene.Int()
     license = graphene.Field(License)
     metaData = Metadata()
@@ -377,7 +378,7 @@ class InputAddVersion(graphene.InputObjectType):
     versionAbbreviation = graphene.String(required=True,\
         description="pattern: ^[A-Z]+$")
     versionName = graphene.String(required=True)
-    revision = graphene.Int(default_value = 1)
+    versionTag = graphene.String(default_value = "1")
     metaData = graphene.JSONString(default_value = None,\
     description="Expecting a dictionary Type JSON String")
 
@@ -387,7 +388,7 @@ class InputEditVersion(graphene.InputObjectType):
     versionAbbreviation = graphene.String(\
         description="pattern: ^[A-Z]+$")
     versionName = graphene.String()
-    revision = graphene.Int()
+    versionTag = graphene.String()
     metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String")
 
 class InputAddSource(graphene.InputObjectType):
@@ -397,7 +398,7 @@ class InputAddSource(graphene.InputObjectType):
         description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
     version = graphene.String(required=True,\
         description="pattern:^[A-Z]+$")
-    revision = graphene.String(default_value = 1,\
+    versionTag = graphene.String(default_value = "1",\
         description="default: 1")
     year = graphene.Int(required=True)
     license = graphene.String(default_value = "CC-BY-SA",\
@@ -417,7 +418,7 @@ class InputEditSource(graphene.InputObjectType):
     contentType  = graphene.String()
     language = graphene.String(description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
     version = graphene.String(description="pattern:^[A-Z]+$")
-    revision = graphene.String(description="default: 1")
+    versionTag = graphene.String(description="default: 1")
     year = graphene.Int()
     license = graphene.String(description="pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
     # accessPermissions = graphene.List(graphene.String,
