@@ -1,5 +1,4 @@
 """schema for auth related"""
-from enum import Enum
 from pydantic import BaseModel, validator
 from pydantic import types, EmailStr
 
@@ -141,15 +140,6 @@ class RegistrationAppIn(BaseModel):
     organization:str
     password:types.SecretStr
     contacts:RegistrationAppContacts
-
-    @validator('contacts')
-    def check_phone(cls, val):#pylint: disable=no-self-argument, inconsistent-return-statements
-        '''check for phone is present'''
-        if val.phone is not None:
-            if len(val.phone) <= 0:
-                raise ValueError('Phone Should not be blank')
-        return {"email" : val.email, "phone" : val.phone}
-
     class Config:
         '''display example value in API documentation'''
         schema_extra = {
@@ -163,6 +153,13 @@ class RegistrationAppIn(BaseModel):
                 "phone": "+91 1234567890"
             }
         }}
+    @validator('contacts')
+    def check_phone(cls, val):#pylint: disable=no-self-argument, inconsistent-return-statements
+        '''check for phone is present'''
+        if val.phone is not None:
+            if len(val.phone) <= 0:
+                raise ValueError('Phone Should not be blank')
+        return {"email" : val.email, "phone" : val.phone}
 
 class LoginResponseApp(BaseModel):
     """Response object of login for app"""
@@ -175,7 +172,7 @@ class AppUpdateResponse(BaseModel):
     message:str
     data: RegistrationAppOut
 
-class EditApp(BaseModel):
+class EditAppInput(BaseModel):
     """kratos App update input"""
     ContactEmail:EmailStr
     organization:str
@@ -187,3 +184,51 @@ class EditApp(BaseModel):
             if len(val) <= 0:
                 raise ValueError('Phone Should not be blank')
         return val
+
+
+class PermissionOut(BaseModel):
+    """auth permission output object"""
+    permissionId:int
+    permissionName:str
+    permissionDescription:str = None
+    class Config:
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "permissionId": 100057,
+                "permissionName": "create-data",
+                "permissionDescription": "permission to create-data"
+            }
+        }
+
+class PermissionResponse(BaseModel):
+    """Response object of Permission creation"""
+    message:str
+    data:PermissionOut
+
+class PermissionCreateInput(BaseModel):
+    """auth permission crearte input"""
+    permissionName:str
+    permissionDescription:str = None
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "permissionName": "create-data",
+                "permissionDescription": "permission to create-data"
+            }}
+
+class PermissionUpdateInput(BaseModel):
+    """auth permission updation input"""
+    permissionId:int
+    permissionDescription:str
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "permissionId": 100001,
+                "permissionDescription": "permission to create-data"
+            }}

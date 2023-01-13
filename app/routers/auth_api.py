@@ -11,6 +11,8 @@ from auth.authentication import user_register_kratos,login_kratos,user_role_add 
     delete_identity , get_auth_access_check_decorator , get_user_or_none, kratos_logout,\
     get_all_or_one_kratos_users,update_kratos_user
 from auth.auth_app import app_register_kratos, app_update_kratos, get_filter_apps
+from crud.auth_crud import create_auth_permission, update_auth_permission,\
+    get_auth_permission
 
 router = APIRouter()
 
@@ -216,21 +218,6 @@ async def delete_key(application_key: types.SecretStr,
     log.debug('logout:%s',message)
     return message
 
-@router.put('/v2/app/{app_id}', response_model=schema_auth.AppUpdateResponse,
-responses={401: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse},
-500: {"model": schemas.ErrorResponse}},status_code=201,tags=["App"])
-@get_auth_access_check_decorator
-async def edit_app(request: Request,#pylint: disable=unused-argument
-    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
-    app_id:str =Path(...,example="4bd012fd-7de8-4d66-928f-4925ee9bb"),
-    edit_details:schema_auth.EditApp = Body(...),
-    user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
-    '''update app data'''
-    log.info('In edit app Identity')
-    log.debug('app_id: %s, app_details: %s',app_id, edit_details)
-    data =  app_update_kratos(app_id=app_id, update_data=edit_details)
-    return {"message":"app details updated successfully","data":data}
-
 @router.get('/v2/apps', response_model=List[schema_auth.AppUpdateResponse],
 responses={401: {"model": schemas.ErrorResponse}}
 ,tags=["App"])
@@ -269,3 +256,78 @@ user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint:
     log.debug('app-delete:%s',app_id)
     delete_identity(app_id, app=True)
     return {"message":f"deleted app with id : {app_id}"}
+
+# Authentication for App permission ----------------------------------------------
+@router.get('/v2/app/permissions',response_model=List[schema_auth.PermissionOut],
+responses={401: {"model": schemas.ErrorResponse}}
+,tags=["Auth-Permission"])
+@get_auth_access_check_decorator
+async def get_auth_permissions(request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument,
+    permission_id: int = Query(None, example=100001),
+    permission_name: str = Query(None, example='create'),
+    search_word: str = Query(None, example="operation"),
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
+    db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+    '''Fetch Authentication Permissions
+    * all auth Permissions : with out giving any query params.
+    * skip=n: skips the first n objects in return list
+    * limit=n: limits the no. of items to be returned to n
+    * returns [] for not available content'''
+    log.info('In get permissions')
+    log.debug('permission_name: %s, skip: %s, limit:%s',
+        permission_name, skip, limit)
+    return get_auth_permission(db_, permission_name,permission_id=permission_id,
+        search_word=search_word, skip=skip, limit=limit)
+
+@router.post('/v2/app/permissions',response_model=schema_auth.PermissionResponse,
+    responses={400: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
+    500: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    status_code=201,tags=["Auth-Permission"])
+@get_auth_access_check_decorator
+async def add_auth_permission(details:schema_auth.PermissionCreateInput,request: Request,#pylint: disable=unused-argument
+app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
+user_details =Depends(get_user_or_none),
+db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+    '''Create Authentication Permissions
+    * permissionNamefield is mandatory'''
+    log.info('In create Auth Permission')
+    log.debug('Auth Permission Create In:%s',details)
+    data = create_auth_permission (db_, details, user_id = user_details['user_id'])
+    return {'message': "Auth Permission created successfully",
+            "data": data}
+
+@router.put('/v2/app/permissions',response_model=schema_auth.PermissionResponse,
+    responses={400: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
+    500: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    status_code=201,tags=["Auth-Permission"])
+@get_auth_access_check_decorator
+async def edit_auth_permission(details:schema_auth.PermissionUpdateInput,request: Request,#pylint: disable=unused-argument
+app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
+user_details =Depends(get_user_or_none),
+db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+    '''Update Authentication Permissions
+    * permissionId, permissionDescription is mandatory'''
+    log.info('In create Auth Permission')
+    log.debug('Auth Permission Update In:%s',details)
+    if len(get_auth_permission(db_, permission_id = details.permissionId,)) == 0:
+        raise NotAvailableException(f"Auth Permission with id {details.permissionId} not found")
+    data = update_auth_permission(db_, details, user_id = user_details['user_id'])
+    return {'message': "Auth Permission Updated successfully",
+            "data": data}
+
+# Dynamic route cause error for other static endpoints -----------------------------------
+@router.put('/v2/app/{app_id}', response_model=schema_auth.AppUpdateResponse,
+responses={401: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse},
+500: {"model": schemas.ErrorResponse}},status_code=201,tags=["App"])
+@get_auth_access_check_decorator
+async def edit_app(request: Request,#pylint: disable=unused-argument
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
+    app_id:str =Path(...,example="4bd012fd-7de8-4d66-928f-4925ee9bb"),
+    edit_details:schema_auth.EditAppInput = Body(...),
+    user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+    '''update app data'''
+    log.info('In edit app Identity')
+    log.debug('app_id: %s, app_details: %s',app_id, edit_details)
+    data =  app_update_kratos(app_id=app_id, update_data=edit_details)
+    return {"message":"app details updated successfully","data":data}
