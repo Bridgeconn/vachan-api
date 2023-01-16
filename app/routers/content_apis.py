@@ -352,7 +352,7 @@ async def add_source(request: Request, source_obj : schemas.SourceCreate = Body(
     * Also creates all associtated tables for the content type.
     * The required content type, version, language and license should be present in DB,
     * if not create them first.
-    * Latest, can be True for only one item per version.
+    * Latest, can be included in labels for only one item per version.
     * AccessPermissions is list of permissions ["content", "open-access", "publishable",
         "downloadable","derivable"]. Default will be ["content"]
     * repo and defaultBranch should given in the metaData if contentType is gitlabrepo,
@@ -387,6 +387,7 @@ async def edit_source(request: Request,source_obj: schemas.SourceEdit = Body(...
     ''' Changes one or more fields of source. Item identifier is source_name.
     * Active field can be used to activate or deactivate a content.
     * Deactivated items are not included in normal fetch results if not specified otherwise
+    * Edit of labels will overwrite the existing List of labels entirely
     * AccessPermissions is list of permissions ["content", "open-access", "publishable",
         "downloadable", "derivable"]. Edit accessPermission will overwrite the current list'''
     log.info('In edit_source')
