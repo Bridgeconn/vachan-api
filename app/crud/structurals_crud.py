@@ -373,7 +373,7 @@ def create_source(db_: Session, source: schemas.SourceCreate, user_id):
         query = db_.query(db_models.Source).join(db_models.Version).filter(
             db_models.Source.version.has(versionAbbreviation = source.version),
             db_models.Source.contentId == content_type.contentId,
-            db_models.Source.labels.contains(schemas.SourceLabel.LATEST.value()))
+            db_models.Source.labels.contains(schemas.SourceLabel.LATEST.value))
         another_latest = query.all()
         if another_latest:
             raise AlreadyExistsException(
@@ -465,7 +465,7 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
                 db_models.Source.version.has(
                     versionAbbreviation = db_content.version.versionAbbreviation),
                 db_models.Source.contentId == db_content.contentId,
-                db_models.Source.labels.contains(schemas.SourceLabel.LATEST.value()),
+                db_models.Source.labels.contains(schemas.SourceLabel.LATEST.value),
                 db_models.Source.sourceId != db_content.sourceId)
             another_latest = query.all()
             if another_latest:
