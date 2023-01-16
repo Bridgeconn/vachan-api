@@ -1,19 +1,15 @@
-'''API endpoints related to content management'''
+'''API endpoints related to content management''' #pylint: disable=too-many-lines
 import json
 from typing import List
-from fastapi import APIRouter, Query, Body, Depends, Path , Request,\
-    BackgroundTasks
+import jsonpickle
+from fastapi import APIRouter, Query, Body, Depends, Path , Request,BackgroundTasks
 from sqlalchemy.orm import Session
-import db_models
-from schema import schemas,schemas_nlp, schema_auth, schema_content
-from dependencies import get_db, log, AddHiddenInput
-from crud import structurals_crud, contents_crud, nlp_sw_crud, media_crud
-from custom_exceptions import NotAvailableException, AlreadyExistsException,\
-    UnprocessableException
-from auth.authentication import get_auth_access_check_decorator ,\
-    get_user_or_none
-
-
+import db_models # pylint: disable=import-error
+from schema import schemas,schemas_nlp, schema_auth, schema_content # pylint: disable=import-error
+from dependencies import get_db, log, AddHiddenInput # pylint: disable=import-error
+from crud import structurals_crud, contents_crud, nlp_sw_crud, media_crud # pylint: disable=import-error
+from custom_exceptions import NotAvailableException, AlreadyExistsException,UnprocessableException # pylint: disable=import-error
+from auth.authentication import get_auth_access_check_decorator ,get_user_or_none # pylint: disable=import-error
 
 router = APIRouter()
 
@@ -33,7 +29,8 @@ async def get_contents(request: Request,content_type: str = Query(None, example=
     * limit=n: limits the no. of items to be returned to n'''
     log.info('In get_contents')
     log.debug('contentType:%s, skip: %s, limit: %s',content_type, skip, limit)
-    return structurals_crud.get_content_types(db_, content_type, skip, limit)
+    return structurals_crud.get_content_types(db_, content_type=content_type,
+        skip=skip, limit=limit)
 
 @router.post('/v2/contents', response_model=schemas.ContentTypeUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -52,46 +49,54 @@ async def add_contents(request: Request, content: schemas.ContentTypeCreate,
         2. Define input, output resources and all required APIs to handle this content'''
     log.info('In add_contents')
     log.debug('content: %s',content)
-    if len(structurals_crud.get_content_types(db_, content.contentType)) > 0:
+    if len(structurals_crud.get_content_types(db_, content_type=content.contentType)) > 0:
         raise AlreadyExistsException(f"{content.contentType} already present")
-    data = structurals_crud.create_content_type(db_=db_, content=content)
+    data = structurals_crud.create_content_type(db_=db_, \
+        content=content,user_id=user_details['user_id'])
     return {'message': "Content type created successfully",
             "data": data}
 
-@router.delete('/v2/contents',response_model=schemas.ContentDeleteResponse,
+@router.delete('/v2/contents',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
-    502: {"model": schemas.ErrorResponse},409: {"model": schemas.ErrorResponse}},
+    502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Contents Types"])
 @get_auth_access_check_decorator
-async def delete_contents(request: Request, content_obj: schemas.ContentIdentity = Body(...),
+async def delete_contents(request: Request, content_obj: schemas.DeleteIdentity = Body(...),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Content
     * unique Content Id can be used to delete an exisiting identity'''
     log.info('In delete_contents')
     log.debug('content-delete:%s',content_obj)
-    content_id= content_obj.contentId
+    content_id= content_obj.itemId
     dbtable_name = "content_types"
+    if len(structurals_crud.get_content_types(db_, content_id= content_obj.itemId)) == 0:
+        raise NotAvailableException(f"Content id {content_id} not found")
     deleted_content = structurals_crud.delete_content(db_=db_, content=content_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-             user_id=user_details['user_id'],table_name = dbtable_name)
+            table_name = dbtable_name)
     return {'message': f"Content with identity {content_id} deleted successfully",
             "data": delcont}
 
-@router.post('/v2/restore', response_model=schemas.DataRestoreResponse,
-    responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse},401:{"model": schemas.ErrorResponse},
-    409: {"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Contents Types"])
+#### Data Manipulation - Restore ####
+@router.put('/v2/restore', response_model=schemas.DataRestoreResponse,
+    responses={502:{"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Data Manipulation"])
 @get_auth_access_check_decorator
 async def restore_content(request: Request, content: schemas.RestoreIdentity,
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
-    ''' Restore deleted data.
-    * Unique deleted item ID can be used to restore data'''
+    ''' Restore deleted data.Unique deleted item ID can be used to restore data'''
     log.info('In restore_content')
     log.debug('restore: %s',content)
+    if len(structurals_crud.get_restore_item_id(db_, restore_item_id= content.itemId)) == 0:
+        raise NotAvailableException(f"Restore item id {content.itemId} not found")
     data = structurals_crud.restore_data(db_=db_, restored_item=content)
+    data = jsonpickle.encode(data)
+    data=json.loads(data)
+    del data['py/object'],data['_sa_instance_state']
     return {'message': f"Deleted Item with identity {content.itemId} restored successfully",
     "data": data}
 
@@ -132,9 +137,10 @@ async def add_language(request: Request, lang_obj : schemas.LanguageCreate = Bod
     log.debug('lang_obj: %s',lang_obj)
     if len(structurals_crud.get_languages(db_, language_code = lang_obj.code)) > 0:
         raise AlreadyExistsException(f"{lang_obj.code} already present")
+    data =  structurals_crud.create_language(db_=db_, lang=lang_obj,
+        user_id=user_details['user_id'])
     return {'message': "Language created successfully",
-        "data": structurals_crud.create_language(db_=db_, lang=lang_obj,
-        user_id=user_details['user_id'])}
+            "data": data}
 
 @router.put('/v2/languages', response_model=schemas.LanguageUpdateResponse,
     responses={502:{"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
@@ -153,24 +159,28 @@ async def edit_language(request: Request, lang_obj: schemas.LanguageEdit = Body(
             "data": structurals_crud.update_language(db_=db_, lang=lang_obj,
             user_id=user_details['user_id'])}
 
-@router.delete('/v2/languages',response_model=schemas.LanguageDeleteResponse,
+@router.delete('/v2/languages',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Languages"])
 @get_auth_access_check_decorator
-async def delete_languages(request: Request, lang_obj: schemas.LanguageIdentity = Body(...),
+async def delete_languages(request: Request, lang_obj: schemas.DeleteIdentity = Body(...),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Language
     * unique Language Code can be used to delete an exisiting identity'''
     log.info('In delete_languages')
     log.debug('language-delete:%s',lang_obj)
-    language_id= lang_obj.languageId
+    language_id= lang_obj.itemId
     dbtable_name = "languages"
+    if len(structurals_crud.get_languages(db_, language_id = lang_obj.itemId)) == 0:
+        raise NotAvailableException(f"Language id {language_id} not found")
+    # if len(structurals_crud.get_sources(db_, language_id = lang_obj.itemId)) > 0:
+    #     raise PermissionException(f"Language {language_id} is in use and can't be deleted")
     deleted_content = structurals_crud.delete_language(db_=db_, lang=lang_obj)
-    structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-    user_id=user_details['user_id'],table_name = dbtable_name)
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
+        table_name = dbtable_name)
     return {'message': f"Language with identity {language_id} deleted successfully",
-            "data": deleted_content}
+            "data": delcont}
 
 ########### Licenses ######################
 @router.get('/v2/licenses',
@@ -226,6 +236,28 @@ async def edit_license(request: Request, license_obj: schemas.LicenseEdit = Body
     return {'message': "License edited successfully",
         "data": structurals_crud.update_license(db_=db_, license_obj=license_obj,
         user_id=user_details['user_id'])}
+
+@router.delete('/v2/licenses',response_model=schemas.DeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Licenses"])
+@get_auth_access_check_decorator
+async def delete_licenses(request: Request, delete_obj: schemas.DeleteIdentity = Body(...),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Delete License
+    * unique License Id can be used to delete an exisiting identity'''
+    log.info('In delete_licenses')
+    log.debug('license-delete:%s',delete_obj)
+    license_id= delete_obj.itemId
+    dbtable_name = "licenses"
+    if len(structurals_crud.get_license_id(db_, license_id= delete_obj.itemId)) == 0:
+        raise NotAvailableException(f"License id {license_id} not found")
+    deleted_content = structurals_crud.delete_license(db_=db_, content=delete_obj)
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
+            table_name = dbtable_name)
+    return {'message': f"License with identity {license_id} deleted successfully",
+            "data": delcont}
 
 ##### Version #####
 @router.get('/v2/versions',
@@ -290,6 +322,29 @@ async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...
     return {'message': "Version edited successfully",
         "data": structurals_crud.update_version(db_=db_, version=ver_obj,
         user_id=user_details['user_id'])}
+
+@router.delete('/v2/versions',response_model=schemas.DeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Versions"])
+@get_auth_access_check_decorator
+async def delete_versions(request: Request, delete_obj: schemas.DeleteIdentity = Body(...),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Delete Version
+    * unique Version Id can be used to delete an exisiting identity'''
+    log.info('In delete_versions')
+    log.debug('version-delete:%s',delete_obj)
+    version_id= delete_obj.itemId
+    dbtable_name = "versions"
+    if len(structurals_crud.get_versions(db_, version_id = delete_obj.itemId)) == 0:
+        raise NotAvailableException(f"Version id {delete_obj.itemId} not found")
+    deleted_content = structurals_crud.delete_version(db_=db_, ver=delete_obj)
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
+            table_name = dbtable_name)
+    return {'message': f"Version with identity {version_id} deleted successfully",
+            "data": delcont}
+
 
 ###### Source #####
 @router.get('/v2/sources',
@@ -411,6 +466,29 @@ async def edit_source(request: Request,source_obj: schemas.SourceEdit = Body(...
     return {'message': "Source edited successfully",
     "data": structurals_crud.update_source(db_=db_, source=source_obj,
         user_id=user_details['user_id'])}
+
+@router.delete('/v2/sources',response_model=schemas.DeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Sources"])
+@get_auth_access_check_decorator
+async def delete_sources(request: Request, delete_obj: schemas.DeleteIdentity = Body(...), \
+    user_details =Depends(get_user_or_none),  \
+    db_: Session = Depends(get_db)):
+    '''Delete Source
+    * unique Source Id can be used to delete an exisiting identity'''
+    log.info('In delete_sources')
+    log.debug('source-delete:%s',delete_obj)
+    source_id= delete_obj.itemId
+    dbtable_name = "sources"
+    if len(structurals_crud.get_sources(db_, source_id= delete_obj.itemId)) == 0:
+        raise NotAvailableException(f"Source id {source_id} not found")
+    deleted_content = structurals_crud.delete_source(db_=db_, delitem=delete_obj)
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
+            table_name = dbtable_name)
+    return {'message': f"Source with identity {source_id} deleted successfully",
+            "data": delcont}
 
 # ############ Bible Books ##########
 @router.get('/v2/lookup/bible/books',

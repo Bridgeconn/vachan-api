@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+# pylint: disable=E0401
 from custom_exceptions import GenericException,TypeException , PermissionException,\
     UnprocessableException,NotAvailableException, AlreadyExistsException,\
         UnAuthorizedException, GitlabException
@@ -17,6 +18,7 @@ from schema.schemas import NormalResponse
 from routers import content_apis, translation_apis, auth_api, media_api, filehandling_apis
 from graphql_api import router as gql_router
 from auth.authentication import create_super_user
+# pylint: enable=E0401
 
 # from auth.api_permission_map import initialize_apipermissions
 
@@ -176,11 +178,18 @@ async def unique_violation_exception_handler(request, exc: IntegrityError):
     '''logs and returns error details'''
     log.error("Request URL:%s %s,  from : %s",
         request.method ,request.url.path, request.client.host)
-    log.exception("%s: %s","Already Exists", exc.__dict__)
-    return JSONResponse(
+    log.exception("%s: %s","Already Exists/Conflict", exc.__dict__)
+
+    if "unique constraint" in str(exc.orig):
+        return JSONResponse(
         status_code=409,
         content={"error": "Already Exists", "details" : str(exc.orig).replace("DETAIL","")},
-    )
+        )
+    if "foreign key constraint" in str(exc.orig):
+        return JSONResponse(
+        status_code=409,
+        content={"error": "Conflict", "details" : str(exc.orig).replace("DETAIL","")},
+        )
 
 @app.exception_handler(GitlabException)
 async def gitlab_exception_handler(request, exc: GitlabException):
@@ -193,7 +202,6 @@ async def gitlab_exception_handler(request, exc: GitlabException):
         content={"error": exc.name, "details": str(exc.detail)}
     )
 ######################################################
-
 db_models.map_all_dynamic_tables(db_= next(get_db()))
 db_models.Base.metadata.create_all(bind=engine)
 

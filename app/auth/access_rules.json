@@ -6,13 +6,14 @@
         "read-via-vachanadmin":["SuperAdmin", "VachanAdmin"],
         "view-on-web":["noAuthRequired"],
         "refer-for-translation": ["registeredUser"],
-        "delete/deactivate":["registeredUser"]
-    }, 
+        "delete/deactivate":["SuperAdmin", "resourceCreatedUser"]
+    },
     "content":{
         "read-via-api":["SuperAdmin", "VachanAdmin", "BcsDeveloper"],
         "read-via-vachanadmin":["SuperAdmin", "VachanAdmin"],
         "create": ["SuperAdmin", "VachanAdmin"],
-        "edit": ["SuperAdmin", "resourceCreatedUser"]
+        "edit": ["SuperAdmin", "resourceCreatedUser"],
+        "delete/deactivate":["SuperAdmin", "resourceCreatedUser"]
     },
     "open-access":{
         "read-via-api":["noAuthRequired"],
@@ -74,10 +75,10 @@
         "view-profile":["SuperAdmin", "resourceCreatedUser"],
         "read":["registeredUser"],
        "login":["noAuthRequired"],
-        "logout":["createdUser"],
-        "delete/deactivate":["SuperAdmin"]
+        "logout":["resourceCreatedUser"],
+        "delete/deactivate":["SuperAdmin", "resourceCreatedUser"]
     },
     "data-manipulation": {
-        "data-restore" : ["SuperAdmin"]   
+        "data-restore" : ["SuperAdmin"]
     }
 }

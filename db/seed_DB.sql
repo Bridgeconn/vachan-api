@@ -3,7 +3,8 @@
 
 CREATE TABLE public.content_types (
     content_type_id SERIAL PRIMARY KEY ,
-    content_type text UNIQUE NOT NULL
+    content_type text UNIQUE NOT NULL,
+    created_user text NULL
 );
 
 ALTER SEQUENCE public.content_types_content_type_id_seq RESTART WITH 100000;
@@ -38,7 +39,7 @@ CREATE INDEX languages_search_idx ON languages USING gin (
 );
 
 
-\copy languages (language_code,language_name, script_direction, metadata) FROM 'csvs/consolidated_languages.csv' DELIMITER ',' CSV;
+\COPY languages (language_code,language_name, script_direction, metadata) FROM 'csvs/consolidated_languages.csv' DELIMITER ',' CSV;
 
 CREATE TABLE public.licenses (
     license_id SERIAL PRIMARY KEY,
@@ -56,7 +57,7 @@ CREATE TABLE public.licenses (
 
 ALTER SEQUENCE public.licenses_license_id_seq RESTART WITH 100000;
 
-\copy licenses (license_code, license_name, license_text, permissions) FROM 'csvs/licenses.csv' DELIMITER ',' CSV HEADER;
+\COPY licenses (license_code, license_name, license_text, permissions) FROM 'csvs/licenses.csv' DELIMITER ',' CSV HEADER;
 
 CREATE TABLE public.versions (
     version_id SERIAL PRIMARY KEY,
@@ -78,10 +79,10 @@ CREATE TABLE public.sources (
     source_name text UNIQUE,
     source_table text UNIQUE,
     year integer NOT NULL,
-    license_id int REFERENCES licenses(license_id) ON DELETE CASCADE,
-    content_id int NOT NULL REFERENCES content_types(content_type_id) ON DELETE CASCADE,
-    language_id int NOT NULL REFERENCES languages(language_id) ON DELETE CASCADE,
-    version_id int NOT NULL REFERENCES versions(version_id) ON DELETE CASCADE,
+    license_id int REFERENCES licenses(license_id),
+    content_id int NOT NULL REFERENCES content_types(content_type_id),
+    language_id int NOT NULL REFERENCES languages(language_id),
+    version_id int NOT NULL REFERENCES versions(version_id),
     created_at timestamp with time zone DEFAULT NOW(),
     created_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
@@ -98,7 +99,7 @@ CREATE TABLE public.bible_books_look_up (
     book_code char(3) NOT NULL
 );
 
-\copy bible_books_look_up (book_id,book_name, book_code) FROM 'csvs/bible_books.csv' DELIMITER ',' CSV HEADER;
+\COPY bible_books_look_up (book_id,book_name, book_code) FROM 'csvs/bible_books.csv' DELIMITER ',' CSV HEADER;
 
 CREATE TABLE public.translation_projects(
     project_id SERIAL PRIMARY KEY,
@@ -182,16 +183,16 @@ CREATE TABLE public.stopwords_look_up(
 ALTER SEQUENCE public.stopwords_look_up_sw_id_seq RESTART WITH 100000;
 
 -- COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM PROGRAM 'awk FNR-1 ./csvs/stop_words/*.csv | cat' csv NULL AS 'NULL'
-\copy stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/assamese.csv' DELIMITER ',' CSV HEADER;
-\copy stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/bengali.csv' DELIMITER ',' CSV HEADER;
-\copy stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/gujarati.csv' DELIMITER ',' CSV HEADER;
-\copy stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/hindi.csv' DELIMITER ',' CSV HEADER;
-\copy stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/kannada.csv' DELIMITER ',' CSV HEADER;
-\copy stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/malayalam.csv' DELIMITER ',' CSV HEADER;
-\copy stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/marathi.csv' DELIMITER ',' CSV HEADER;
-\copy stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/punjabi.csv' DELIMITER ',' CSV HEADER;
-\copy stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/tamil.csv' DELIMITER ',' CSV HEADER;
-\copy stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/telugu.csv' DELIMITER ',' CSV HEADER;
+\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/assamese.csv' DELIMITER ',' CSV HEADER;
+\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/bengali.csv' DELIMITER ',' CSV HEADER;
+\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/gujarati.csv' DELIMITER ',' CSV HEADER;
+\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/hindi.csv' DELIMITER ',' CSV HEADER;
+\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/kannada.csv' DELIMITER ',' CSV HEADER;
+\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/malayalam.csv' DELIMITER ',' CSV HEADER;
+\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/marathi.csv' DELIMITER ',' CSV HEADER;
+\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/punjabi.csv' DELIMITER ',' CSV HEADER;
+\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/tamil.csv' DELIMITER ',' CSV HEADER;
+\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/telugu.csv' DELIMITER ',' CSV HEADER;
 
 CREATE TABLE public.jobs(
     job_id SERIAL PRIMARY KEY,
@@ -209,9 +210,10 @@ ALTER SEQUENCE public.jobs_job_id_seq RESTART WITH 100000;
 CREATE TABLE public.deleted_items (
     item_id  SERIAL PRIMARY KEY,
     deleted_data JSON,
-    deleted_user text NOT NULL,
+    deleted_user text NULL,
     deleted_time timestamp with time zone DEFAULT NOW(),
     deleted_from text NOT NULL,
     UNIQUE(item_id)
     );
 
+ALTER SEQUENCE public.deleted_items_item_id_seq RESTART WITH 100000;
