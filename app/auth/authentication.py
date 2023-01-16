@@ -11,7 +11,7 @@ import db_models
 # from auth.api_permission_map import api_permission_map
 from auth import utils
 from schema import schema_auth
-from dependencies import log
+from dependencies import log, get_db
 from custom_exceptions import GenericException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
     UnprocessableException, PermissionException
@@ -301,12 +301,18 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             # All no-auth and role based cases checked and appoved if applicable
             if db_:
                 db_.commit()
+                if (method == "DELETE" and "source" in endpoint) or "restore" in endpoint:
+                    db_models.dynamicTables = {}
+                    db_models.map_all_dynamic_tables(db_= next(get_db()))
 
         elif obj is not None:
             # Resource(item) specific checks
             if check_right(user_details, required_rights, obj, db_):
                 if db_:
                     db_.commit()
+                    if (method == "DELETE" and "source" in endpoint) or "restore" in endpoint:
+                        db_models.dynamicTables = {}
+                        db_models.map_all_dynamic_tables(db_= next(get_db()))
             else:
                 if user_details['user_id'] is None:
                     raise UnAuthorizedException("Access token not provided or user not recognized.")

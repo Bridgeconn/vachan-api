@@ -9,27 +9,19 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
-import db_models
-from schema import schemas
-from custom_exceptions import NotAvailableException, TypeException
-from database import engine
-from dependencies import log
-from crud import utils
+import db_models #pylint: disable=import-error
+from schema import schemas #pylint: disable=import-error
+from custom_exceptions import NotAvailableException, TypeException #pylint: disable=import-error
+from database import engine #pylint: disable=import-error
+from dependencies import log #pylint: disable=import-error
+from crud import utils #pylint: disable=import-error
 
-
-
-def get_content_types(db_: Session, content_type: str =None, skip: int = 0, limit: int = 100):
+def get_content_types(db_: Session, content_type: str =None, content_id: int = None,
+    skip: int = 0, limit: int = 100):
     '''Fetches all content types, with pagination'''
-    if content_type:
-        return db_.query(db_models.ContentType).filter(
-            db_models.ContentType.contentType == content_type).offset(skip).limit(limit).all()
-    return db_.query(db_models.ContentType).offset(skip).limit(limit).all()
-
-def get_content_id(db_: Session, content_id = None, **kwargs):
-    '''Fetches row of content type'''
-    skip = kwargs.get("skip",0)
-    limit = kwargs.get("limit",100)
     query = db_.query(db_models.ContentType)
+    if content_type:
+        query = query.filter(db_models.ContentType.contentType == content_type)
     if content_id is not None:
         query = query.filter(db_models.ContentType.contentId == content_id)
     return query.offset(skip).limit(limit).all()
@@ -136,34 +128,21 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
     db_content=db_restore
     json_string = db_content.deletedData
     db_.delete(db_restore)
-    common_field_table_db_model_dict = {"languages":db_models.Language, \
-        "licenses":db_models.License,"versions":db_models.Version}
-    if db_restore.deletedFrom in common_field_table_db_model_dict:
-        db_content = common_field_table_db_model_dict[db_restore.deletedFrom] \
-            (createdUser= json_string['createdUser'],
-            updatedUser= json_string['updatedUser'],updateTime = datetime.now())
-    if db_restore.deletedFrom == 'content_types':
-        db_content = db_models.ContentType(contentId = json_string['contentId'],
-            contentType = json_string['contentType'],
-            createdUser = json_string['createdUser'])
-    elif db_restore.deletedFrom == 'languages':
-        db_content = db_models.Language(scriptDirection = json_string['scriptDirection'],
-        code= json_string['code'],
-        language= json_string['language'],
-        languageId = json_string['languageId'],
-        metaData= json_string['metaData'])
-    elif db_restore.deletedFrom == 'licenses':
-        db_content = db_models.License(code = json_string['code'],
-        name= json_string['name'],
-        license= json_string['license'],
-        permissions = json_string['permissions'],
-        active = json_string['active'])
-    elif db_restore.deletedFrom == 'versions':
-        db_content = db_models.Version(versionAbbreviation = json_string['versionAbbreviation'],
-        versionId= json_string['versionId'],
-        versionName= json_string['versionName'],
-        revision= json_string['revision'],
-        metaData= json_string['metaData'])
+    content_class_map = {
+        "languages":db_models.Language,
+        "licenses":db_models.License,
+        "versions":db_models.Version,
+        "content_types": db_models.ContentType,
+        "sources":db_models.Source,
+        "commentary":db_models.Commentary,
+        "infographic":db_models.Infographic}
+    if db_restore.deletedFrom in content_class_map:
+        model_cls = content_class_map[db_restore.deletedFrom]
+    else:
+        source = get_sources(db_, table_name=db_restore.deletedFrom)[0]
+        content_type = source.contentType.contentType
+        model_cls = content_class_map[content_type]
+    db_content = utils.convert_dict_to_sqlalchemy(json_string, model_cls)
     db_.add(db_content)
     #db_.commit()
     return db_content
@@ -295,9 +274,9 @@ def delete_version(db_: Session, ver: schemas.DeleteIdentity):
     #db_.commit()
     return db_content
 
-def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks
+def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks,too-many-arguments
     content_type=None, version_abbreviation=None, revision=None, language_code=None,
-    **kwargs):
+    source_id=None, **kwargs):
     '''Fetches the rows of sources table'''
     license_abbreviation = kwargs.get("license_abbreviation",None)
     metadata = kwargs.get("metadata",None)
@@ -305,9 +284,12 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
     latest_revision = kwargs.get("latest_revision",True)
     active = kwargs.get("active",True)
     source_name = kwargs.get("source_name",None)
+    table_name = kwargs.get("table_name",None)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
     query = db_.query(db_models.Source)
+    if source_id:
+        query = query.filter(db_models.Source.sourceId == source_id)
     if content_type:
         query = query.filter(db_models.Source.contentType.has
         (contentType = content_type.strip()))
@@ -331,10 +313,11 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
         query = query.filter(db_models.Source.active == False) #pylint: disable=singleton-comparison
     if source_name:
         query = query.filter(db_models.Source.sourceName == source_name)
+    if table_name:
+        query = query.filter(db_models.Source.sourceName == table_name)
     if access_tags:
         query = query.filter(db_models.Source.metaData.contains(
             {"accessPermissions":[tag.value for tag in access_tags]}))
-
     res = query.join(db_models.Version).order_by(db_models.Version.revision.desc()
         ).offset(skip).limit(limit).all()
     if not latest_revision or revision:
@@ -479,6 +462,12 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
     # db_.refresh(db_content)
     if not source.sourceName.split("_")[-1] == db_models.ContentTypeName.GITLABREPO.value:
         db_models.dynamicTables[db_content.sourceName] = db_models.dynamicTables[source.sourceName]
+    return db_content
+
+def delete_source(db_: Session, delitem: schemas.DeleteIdentity):
+    '''delete particular source, selected via source id'''
+    db_content = db_.query(db_models.Source).get(delitem.itemId)
+    db_.delete(db_content)
     return db_content
 
 def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None,

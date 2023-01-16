@@ -410,6 +410,7 @@ def test_delete_version_id_string():
 def test_delete_incorrectdatatype():
     '''negative testcase. Passing input data not in json format'''
     response = test_post_default()
+
     #Deleting created data
     version_id = response.json()['data']['versionId']
     data = version_id
@@ -495,9 +496,9 @@ def test_restore_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
-    response = client.put(RESTORE_URL, headers=user_headers, json=data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
+        response = client.put(RESTORE_URL, headers=user_headers, json=data)
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
 
     #Restore version with Super Admin
     #Login as Super Admin

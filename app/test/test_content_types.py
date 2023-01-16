@@ -49,6 +49,7 @@ def test_post_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
+    
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert response.status_code == 201
     assert response.json()['message'] == "Content type created successfully"
@@ -359,6 +360,7 @@ def test_restore_incorrectdatatype():
     "user_email": SUPER_USER,
     "password": SUPER_PASSWORD
     }
+
     response =login(data_admin)
     assert response.json()['message'] == "Login Succesfull"
     token_admin =  response.json()['token']

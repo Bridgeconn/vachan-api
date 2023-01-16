@@ -12,7 +12,8 @@
         "read-via-api":["SuperAdmin", "VachanAdmin", "BcsDeveloper"],
         "read-via-vachanadmin":["SuperAdmin", "VachanAdmin"],
         "create": ["SuperAdmin", "VachanAdmin"],
-        "edit": ["SuperAdmin", "resourceCreatedUser"]
+        "edit": ["SuperAdmin", "resourceCreatedUser"],
+        "delete/deactivate":["SuperAdmin", "resourceCreatedUser"]
     },
     "open-access":{
         "read-via-api":["noAuthRequired"],

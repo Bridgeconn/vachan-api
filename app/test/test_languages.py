@@ -610,7 +610,6 @@ def test_restore_incorrectdatatype():
 
     #Passing input data not in json format
     data = deleteditem_id
-
     response = client.put(RESTORE_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
     logout_user(token_admin)

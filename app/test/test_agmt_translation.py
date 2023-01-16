@@ -532,6 +532,17 @@ def test_get_sentence():
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
+    # With only_ids
+    response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id)+
+        "&only_ids=True",headers=headers_auth)
+    assert response.status_code ==200
+    for item in response.json():
+        assert "sentenceId" in item
+        assert "surrogateId" in item
+        assert "sentence" not in item
+        assert "draft" not in item
+        assert "draftMeta" not in item
+
 def test_progress_n_suggestion():
     '''tests for project progress API of AgMT'''
     resp = add_project(project_data)
