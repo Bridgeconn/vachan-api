@@ -77,6 +77,43 @@ def test_post_multiple_with_same_abbr_negative():
     assert response.status_code == 409
     assert response.json()['error'] == "Already Exists"
 
+def test_version_tag():
+    '''version tag support a flexible pattern. Ensure its different forms are supported'''
+    data = {
+        "versionAbbreviation": "XYZ",
+        "versionName": "Xyz version to test"
+    }
+
+    # No versionTag
+    response = check_post(data)
+    assert response.json()['data']['versionTag'] == "1"
+
+    # One digit versionTag
+    data['versionTag'] = "2"
+    response = check_post(data)
+    assert response.json()['data']['versionTag'] == "2"
+
+    # Dot separated numbers and varying number of parts
+    data['versionTag'] = "2.0.1"
+    response = check_post(data)
+    assert response.json()['data']['versionTag'] == "2.0.1"
+
+    # with string parts
+    data['versionTag'] = "2.0.1.aplha.1"
+    response = check_post(data)
+    assert response.json()['data']['versionTag'] == "2.0.1.aplha.1"
+
+    # get
+    response = client.get(UNIT_URL+"?version_abbreviation=XYZ")
+    assert response.status_code == 200
+    response = response.json()
+    assert len(response) == 4
+    assert response[0]['versionTag'] == '1'
+    assert response[1]['versionTag'] == '2'
+    assert response[2]['versionTag'] == '2.0.1'
+    assert response[3]['versionTag'] == "2.0.1.aplha.1"
+
+
 def test_post_without_versionTag():
     '''versionTag field should have a default value, even not provided'''
     data = {
@@ -127,7 +164,7 @@ def test_post_wrong_abbr():
 def test_post_wrong_versionTag():
     '''versionTag cannot have space, comma letters etc'''
     data = {
-        "versionAbbreviation": "XY Z",
+        "versionAbbreviation": "XYZ",
         "versionName": "Xyz version to test",
         "versionTag": "1,0",
         "metaData": {"owner": "another one", "access-key": "123xyz"}
@@ -140,7 +177,7 @@ def test_post_wrong_versionTag():
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
-    data['versionTag'] = '1a'
+    data['versionTag'] = '1@a'
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 

@@ -259,7 +259,9 @@ async def get_version(request: Request,
 @get_auth_access_check_decorator
 async def add_version(request: Request, version_obj : schemas.VersionCreate = Body(...),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
-    ''' Creates a new version. Version code provided will be used as unique identifier'''
+    ''' Creates a new version. Version code provided will be used as unique identifier
+    * For VersionTag, using a calender version, date separted by dot, is encouraged.
+    But, if not provided, will be assumed as 1'''
     log.info('In add_version')
     log.debug('version_obj: %s',version_obj)
     if len(structurals_crud.get_versions(db_, version_obj.versionAbbreviation,
@@ -279,9 +281,11 @@ async def add_version(request: Request, version_obj : schemas.VersionCreate = Bo
 async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     ''' Changes one or more fields of version types table.
-    Item identifier is version id.
-    Active field can be used to activate or deactivate a content.
-    Deactivated items are not included in normal fetch results if not specified otherwise'''
+    * Item identifier is version id.
+    * For VersionTag, using a calender version, date separted by dot, is encouraged.
+    But, if not provided, will be assumed as "1"
+    * Active field can be used to activate or deactivate a content.
+    * Deactivated items are not included in normal fetch results if not specified otherwise'''
     log.info('In edit_version')
     log.debug('ver_obj: %s',ver_obj)
     if len(structurals_crud.get_versions(db_, version_id = ver_obj.versionId)) == 0:
@@ -345,8 +349,6 @@ async def add_source(request: Request, source_obj : schemas.SourceCreate = Body(
     * Also creates all associtated tables for the content type.
     * The required content type, version, language and license should be present in DB,
     * if not create them first.
-    * For VersionTag, using a calender version, date separted by dot, is encouraged.
-    But, if not provided, will be assumed as 1.0.0.
     * Latest, can be True for only one item per version.
     * AccessPermissions is list of permissions ["content", "open-access", "publishable",
         "downloadable","derivable"]. Default will be ["content"]

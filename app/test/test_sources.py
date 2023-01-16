@@ -40,14 +40,14 @@ def assert_positive_get(item):
         tag = "1"
     elif isinstance(item['version']['versionTag'], list):
         tag = ".".join(item['version']['versionTag'])
-        tag = re.sub(r'(\.0)+$', "", tag)
+        # tag = re.sub(r'(\.0)+$', "", tag)
     elif isinstance(item['version']['versionTag'], int):
         tag = str(item['version']['versionTag'])
     elif isinstance(item['version']['versionTag'], str):
         if item['version']['versionTag'].startswith("["):
             items = item['version']['versionTag'][1:-1].split(",")
             tag = ".".join([itm.strip() for itm in items])
-            tag = re.sub(r'(\.0)+$', "", tag)
+            tag = re.sub(r"'", "", tag)
         else:
             tag = item['version']['versionTag']
     parts = [item['language']['code'], item['version']['versionAbbreviation'],
@@ -520,9 +520,6 @@ def test_get_empty():
 def test_get_wrong_values():
     '''Checks input validation for query params'''
     response = client.get(UNIT_URL + '?version_abbreviation=1')
-    assert_input_validation_error(response)
-
-    response = client.get(UNIT_URL + '?version_tag=X')
     assert_input_validation_error(response)
 
     response = client.get(UNIT_URL + '?language_code=hin6i')
@@ -1059,3 +1056,122 @@ def test_diffrernt_sources_with_app_and_roles():
     # assert 'derivable' in response.json()[4]['metaData']['accessPermissions']
     check_list = ['open-access','publishable','downloadable','derivable','content']
     check_resp_permission(response, check_list)
+
+def test_version_tag():
+    '''version tag support a flexible pattern. Ensure its different forms are supported'''
+    data = {
+        "versionAbbreviation": "XYZ",
+        "versionName": "Xyz version to test"
+    }
+
+    # No versionTag
+    add_version(data)
+
+    # One digit versionTag
+    data['versionTag'] = "2"
+    add_version(data)
+
+    # Dot separated numbers and varying number of parts
+    data['versionTag'] = "2.0.1"
+    add_version(data)
+
+    # with string parts
+    data['versionTag'] = "2.0.1.aplha.1"
+    add_version(data)
+
+    source_data = {
+        "contentType": "commentary",
+        "language": "hi",
+        "version": "XYZ",
+        "versionTag": 1,
+        "year": 2020,
+        "license": "CC-BY-SA",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    check_post(source_data)
+
+    source_data['versionTag'] = "2"
+    check_post(source_data)
+
+    source_data['versionTag'] = "2.0.1"
+    check_post(source_data)
+
+    source_data['versionTag'] = "2.0.1.aplha.1"
+    check_post(source_data)
+
+    headers_auth = {"contentType": "application/json", "accept": "application/json"}
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    response = client.get(UNIT_URL+"?version_abbreviation=XYZ&latest_revision=false",headers=headers_auth)
+    assert len(response.json()) == 4
+
+    response = client.get(UNIT_URL+"?version_abbreviation=XYZ",headers=headers_auth)
+    assert len(response.json()) == 1
+    assert response.json()[0]['version']['versionTag'] == "2.0.1.aplha.1"
+
+def test_version_tag_sorting_numeric():
+    '''version tag support a flexible pattern. Ensure its sorted properly'''
+    data = {
+        "versionAbbreviation": "TTT",
+        "versionName": "TTT version to test"
+    }
+
+    version_tags = ["10", "9", "9.1", "9.3.5.alpha.1", "9.3.5.alpha.2"]
+    for tag in version_tags:
+        data['versionTag'] = tag
+        add_version(data)
+
+    source_data = {
+        "contentType": "commentary",
+        "language": "hi",
+        "version": "TTT",
+        "year": 2020,
+        "license": "CC-BY-SA",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    for tag in version_tags:
+        source_data['versionTag'] = tag
+        check_post(source_data)
+
+    headers_auth = {"contentType": "application/json", "accept": "application/json"}
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    response = client.get(UNIT_URL+"?version_abbreviation=TTT&latest_revision=false",headers=headers_auth)
+    assert len(response.json()) == 5
+    assert response.json()[0]['version']['versionTag'] == "10"
+    assert response.json()[1]['version']['versionTag'] == "9.3.5.alpha.2"
+    assert response.json()[2]['version']['versionTag'] == "9.3.5.alpha.1"
+    assert response.json()[3]['version']['versionTag'] == "9.1"
+    assert response.json()[4]['version']['versionTag'] == "9"
+
+def test_version_tag_sorting_dates():
+    '''version tag support a flexible pattern. Ensure its sorted properly'''
+    data = {
+        "versionAbbreviation": "TTT",
+        "versionName": "TTT version to test"
+    }
+
+    version_tags = ["1161", "2000.1", "2000.2.28", "1999.3.3", "2022.12.12"]
+    for tag in version_tags:
+        data['versionTag'] = tag
+        add_version(data)
+
+    source_data = {
+        "contentType": "commentary",
+        "language": "hi",
+        "version": "TTT",
+        "year": 2020,
+        "license": "CC-BY-SA",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    for tag in version_tags:
+        source_data['versionTag'] = tag
+        check_post(source_data)
+
+    headers_auth = {"contentType": "application/json", "accept": "application/json"}
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    response = client.get(UNIT_URL+"?version_abbreviation=TTT&latest_revision=false",headers=headers_auth)
+    assert len(response.json()) == 5
+    assert response.json()[0]['version']['versionTag'] == "2022.12.12"
+    assert response.json()[1]['version']['versionTag'] == "2000.2.28"
+    assert response.json()[2]['version']['versionTag'] == "2000.1"
+    assert response.json()[3]['version']['versionTag'] == "1999.3.3"
+    assert response.json()[4]['version']['versionTag'] == "1161"

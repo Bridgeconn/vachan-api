@@ -478,21 +478,6 @@ def test_get_wrong_values():
     assert isinstance(executed, Dict)
     assert "errors" in executed.keys()
 
-    get_query2 = """
-            {
-    contents(versionTag:X){
-        sourceName
-        contentType{
-        contentId
-        contentType
-        }
-    }
-    }
-    """
-    executed2 = gql_request(query=get_query2,headers=headers_auth)
-    assert isinstance(executed2, Dict)
-    assert "errors" in executed2.keys()
-
     get_query3 = """
         {
   contents(languageCode:"hin6i"){

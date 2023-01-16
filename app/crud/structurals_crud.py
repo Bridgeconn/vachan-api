@@ -218,33 +218,16 @@ def get_versions(db_: Session, version_abbr = None, version_name = None, version
 def version_tag_to_array(tag_str):
     '''converts "2022.1.11" to [2022, 1, 11, 0]. Used for writing to and querying DB'''
     if tag_str is None:
-        tag_str = "1.0.0"
+        tag_str = "1"
     tag_str = str(tag_str)
-    array = [0,0,0,0]
     split_tag = tag_str.split(".")
-    if len(split_tag) > 4:
-        raise UnprocessableException("Version tag should be a string of dot separated numbers"+\
-            " of maximum four parts. Eg.: 2022.1.26, 2.0.1, 3.0, 1.2.3.4")
-    for i,part in enumerate(split_tag):
-        try:
-            num = int(part)
-        except Exception as exe:
-            raise UnprocessableException("Version tag should be a string of dot separated numbers"+\
-            " of maximum four parts. Eg.: 2022.1.26, 2.0.1, 3.0, 1.2.3.4") from exe
-        array[i] = num
-    return array
+    return split_tag
 
 def version_array_to_tag(tag_array):
     '''converts [2022, 1, 11, 0] to "2022.1.11". Used for naming source and response'''
     tag_str = ""
-    pass_zero = True
-    for item in reversed(tag_array):
-        if item == 0 and pass_zero:
-            pass
-        else:
-            pass_zero = False
-            tag_str = str(item)+"."+tag_str
-    return tag_str[:-1]
+    tag_str = ".".join(tag_array)
+    return tag_str
 
 
 def create_version(db_: Session, version: schemas.VersionCreate,user_id=None):
@@ -320,15 +303,29 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
     if access_tags:
         query = query.filter(db_models.Source.metaData.contains(
             {"accessPermissions":[tag.value for tag in access_tags]}))
-    res = query.join(db_models.Version).order_by(
-        db_models.Version.versionTag.desc()
-        ).offset(skip).limit(limit).all()
+    res = query.all()
+    def digits_to_int(string):
+        '''to convert number strings to int for sorting'''
+        if re.match(r'^\d+$', string):
+            return int(string)
+        return string
+    version_tags = []
+    for res_item in res:
+        converted_tag = [digits_to_int(part) for part in res_item.version.versionTag]
+        version_tags.append((res_item.contentType.contentType, res_item.language.language,
+         res_item.version.versionAbbreviation,
+         converted_tag, res_item))
+    sorted_res =[res_tuple[4] for res_tuple in sorted(version_tags, reverse=True)]
+
     if not latest_revision or version_tag is not None:
-        return res
+        sorted_res = sorted_res[skip:]
+        if limit < len(sorted_res):
+            sorted_res = sorted_res[:limit]
+        return sorted_res
 
     # Take only the top most in each version, unless there is a differnt "latest"
     latest_res = {}
-    for item in res:
+    for item in sorted_res:
         key_name = "_".join([item.language.code,
             item.version.versionAbbreviation,
             item.contentType.contentType])
@@ -336,7 +333,12 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
             latest_res[key_name] = item
         elif item.latest:
             latest_res[key_name] = item
-    return list(latest_res.values())
+    filtered_res = list(latest_res.values())
+    filtered_res = filtered_res[skip:]
+    if limit < len(filtered_res):
+        filtered_res = filtered_res[:limit]
+
+    return filtered_res
 
 def create_source(db_: Session, source: schemas.SourceCreate, user_id):
     '''Adds a row to sources table'''

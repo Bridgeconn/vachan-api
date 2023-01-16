@@ -62,7 +62,7 @@ CREATE TABLE public.versions (
     version_id SERIAL PRIMARY KEY,
     version_short_name text NOT NULL,
     version_name text NOT NULL,
-    version_tag integer[4] DEFAULT '{1,0,0,0}',
+    version_tag varchar(15)[] DEFAULT '{"1"}',
     metadata jsonb,
     created_at timestamp with time zone DEFAULT NOW(),
     created_user text NULL,

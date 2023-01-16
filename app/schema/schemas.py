@@ -294,12 +294,12 @@ MetaDataPattern = constr(
         r"(,\s*[\"\'][^\"]+[\"\']\s*:\s*[\"\'][^\"]*[\"\']\s*)*")
 
 VersionPattern = constr(regex=r"^[A-Z]+$")
-VersionTagPattern = constr(regex=r"^\d+(.\d+){0,3}$")
+VersionTagPattern = constr(regex=r"^[a-z\d]+(\.[a-z\d]+)*$")
 class VersionCreate(BaseModel):
     '''input object of version'''
     versionAbbreviation : VersionPattern
     versionName : str
-    versionTag : VersionTagPattern = "1.0.0"
+    versionTag : VersionTagPattern = "1"
     metaData : dict = None
     class Config:
         '''display example value in API documentation'''
@@ -317,7 +317,7 @@ class VersionResponse(BaseModel):
     versionId : int
     versionAbbreviation : VersionPattern
     versionName : str
-    versionTag : List[int]
+    versionTag : List[str]
     metaData : dict = None
     class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
@@ -367,14 +367,14 @@ class VersionEdit(BaseModel):
             }
         }
 
-TableNamePattern = constr(regex=r"^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_[\d\.]+_[a-z]+$")
+TableNamePattern = constr(regex=r"^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_[\w\.]+_[a-z]+$")
 
 class SourceCreate(BaseModel):
     '''Input object of sources'''
     contentType : str
     language : LangCodePattern
     version : VersionPattern
-    versionTag: VersionTagPattern = "1.0.0"
+    versionTag: VersionTagPattern = "1"
     latest: bool = False
     year: int
     license: LicenseCodePattern = "CC-BY-SA"

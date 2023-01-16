@@ -74,7 +74,7 @@ class Version(Base): # pylint: disable=too-few-public-methods
     versionId = Column('version_id', Integer, primary_key=True)
     versionAbbreviation = Column('version_short_name', String, unique=True, index=True)
     versionName = Column('version_name', String)
-    versionTag = Column('version_tag', ARRAY(Integer))
+    versionTag = Column('version_tag', ARRAY(String))
     metaData = Column('metadata', JSON)
     createdUser = Column('created_user', String)
     updatedUser = Column('last_updated_user', String)
