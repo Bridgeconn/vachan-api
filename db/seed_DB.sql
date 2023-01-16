@@ -78,7 +78,7 @@ CREATE TABLE public.sources (
     version text UNIQUE,
     source_table text UNIQUE,
     year integer NOT NULL,
-    latest boolean DEFAULT false,
+    labels text[],
     license_id int REFERENCES licenses(license_id) ON DELETE CASCADE,
     content_id int NOT NULL REFERENCES content_types(content_type_id) ON DELETE CASCADE,
     language_id int NOT NULL REFERENCES languages(language_id) ON DELETE CASCADE,

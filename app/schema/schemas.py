@@ -369,13 +369,21 @@ class VersionEdit(BaseModel):
 
 TableNamePattern = constr(regex=r"^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_[\w\.]+_[a-z]+$")
 
+class SourceLabel(str, Enum):
+    '''Markers for source items to be able to filter contents as per different usecases'''
+    LATEST = "latest"
+    PUBLISHED = "published"
+    PRERELEASE = "pre-release"
+    PRIVATE = "private"
+    DEPRECATED = "deprecated"
+
 class SourceCreate(BaseModel):
     '''Input object of sources'''
     contentType : str
     language : LangCodePattern
     version : VersionPattern
     versionTag: VersionTagPattern = "1"
-    latest: bool = False
+    labels: List[SourceLabel] = None
     year: int
     license: LicenseCodePattern = "CC-BY-SA"
     accessPermissions : List[SourcePermissions] = [SourcePermissions.CONTENT]
@@ -403,7 +411,7 @@ class SourceResponse(BaseModel):
     language : LanguageResponse = None
     version : VersionResponse = None
     # revision: str = "1"
-    latest: bool = None
+    labels: List[SourceLabel] = None
     year: int
     license: LicenseShortResponse
     metaData: dict = None
@@ -443,7 +451,7 @@ class SourceEdit(BaseModel):
     language : LangCodePattern = None
     version : VersionPattern = None
     versionTag: VersionTagPattern = None
-    latest: bool = None
+    labels: List[SourceLabel] = None
     year: int = None
     license: LicenseCodePattern = None
     accessPermissions : List[SourcePermissions] = [SourcePermissions.CONTENT]
@@ -471,3 +479,4 @@ BookCodePattern = constr(regex=r"^[a-zA-Z1-9][a-zA-Z][a-zA-Z]$")
 class RefreshCache(BaseModel):
     '''List of file paths'''
     mediaList: List[str] = None
+    

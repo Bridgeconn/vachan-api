@@ -88,7 +88,7 @@ class Source(Base): # pylint: disable=too-few-public-methods
     sourceName = Column('version', String, unique=True)
     tableName = Column('source_table', String, unique=True)
     year = Column('year', Integer)
-    latest = Column('latest', Boolean)
+    labels = Column('labels', ARRAY(String))
     licenseId = Column('license_id', Integer, ForeignKey('licenses.license_id'))
     license = relationship(License)
     contentId = Column('content_id', Integer, ForeignKey('content_types.content_type_id'))

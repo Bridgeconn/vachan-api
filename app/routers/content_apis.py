@@ -311,6 +311,7 @@ async def get_source(request: Request, #pylint: disable=too-many-locals
     metadata: schemas.MetaDataPattern=Query(None,
         example='{"otherName": "KJBC, King James Bible Commentaries"}'),
     access_tag:List[schemas.SourcePermissions]=Query([schemas.SourcePermissions.CONTENT]),
+    labels:List[schemas.SourceLabel] = Query(None),
     active: bool = True, latest_revision: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none),
@@ -320,20 +321,22 @@ async def get_source(request: Request, #pylint: disable=too-many-locals
     '''Fetches all sources and their details.
     * Optional query parameters can be used to filter the result set
     * If version_tag is not explictly set or latest_revision is not set to False, then only
-    the item marked as "latest=True" or highest version_tag among same version would be returned.
+     item with highest version_tag among same version would be returned.
+     (If that is not the required version, use labels to mark another item as latest)
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
     log.info('In get_source')
     log.debug('sourceName:%s,contentType:%s, versionAbbreviation: %s, versionTag: %s, \
     languageCode: %s,license_code:%s, metadata: %s, access_tag: %s, latest_revision:\
-         %s, active: %s, skip: %s, limit: %s',source_name,
+         %s, labels:%s, active: %s, skip: %s, limit: %s',source_name,
         content_type, version_abbreviation, version_tag, language_code, license_code, metadata,
-        access_tag, latest_revision, active, skip, limit)
+        access_tag, latest_revision, labels, active, skip, limit)
     return structurals_crud.get_sources(db_, content_type, version_abbreviation,
         version_tag=version_tag,
         language_code=language_code, license_code=license_code, metadata=metadata,
-        access_tag=access_tag,latest_revision=latest_revision, active=active,skip=skip, limit=limit,
+        access_tag=access_tag,latest_revision=latest_revision, labels=labels,
+        active=active,skip=skip, limit=limit,
         source_name=source_name)
 
 @router.post('/v2/sources', response_model=schemas.SourceCreateResponse,
@@ -946,7 +949,7 @@ async def extract_text_contents(request:Request, #pylint: disable=W0613
             content_type=content_type, version_abbreviation=None,
             version_tag=None, language_code=language_code,
             license_code=None, metadata=None,
-            access_tag = None, active= True, latest_revision= True,
+            access_tag = None, labels=None, active= True, latest_revision= True,
             skip=0, limit=1000, user_details=user_details, db_=db_,
             operates_on=schema_auth.ResourceType.CONTENT.value,
             filtering_required=True)

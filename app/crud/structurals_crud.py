@@ -11,8 +11,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
 import db_models
 from schema import schemas
-from custom_exceptions import NotAvailableException, TypeException, UnprocessableException,\
-    AlreadyExistsException
+from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException
 from database import engine
 from dependencies import log
 from crud import utils
@@ -263,7 +262,7 @@ def update_version(db_: Session, version: schemas.VersionEdit, user_id=None):
     # db_.refresh(db_content)
     return db_content
 
-def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks
+def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks, too-many-statements
     content_type=None, version_abbreviation=None, version_tag=None, language_code=None,
     **kwargs):
     '''Fetches the rows of sources table'''
@@ -271,6 +270,7 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
     metadata = kwargs.get("metadata",None)
     access_tags = kwargs.get("access_tag",None)
     latest_revision = kwargs.get("latest_revision",True)
+    labels = kwargs.get("labels", [])
     active = kwargs.get("active",True)
     source_name = kwargs.get("source_name",None)
     skip = kwargs.get("skip",0)
@@ -294,6 +294,9 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
         meta = json.loads(metadata)
         for key in meta:
             query = query.filter(db_models.Source.metaData.op('->>')(key) == meta[key])
+    if labels:
+        for label in labels:
+            query = query.filter(db_models.Source.labels.contains(label.value()))
     if active:
         query = query.filter(db_models.Source.active)
     else:
@@ -331,7 +334,7 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
             item.contentType.contentType])
         if key_name not in latest_res:
             latest_res[key_name] = item
-        elif item.latest:
+        elif item.labels and schemas.SourceLabel.LATEST in item.labels:
             latest_res[key_name] = item
     filtered_res = list(latest_res.values())
     filtered_res = filtered_res[skip:]
@@ -366,11 +369,11 @@ def create_source(db_: Session, source: schemas.SourceCreate, user_id):
         db_models.License.code == source.license).first()
     if not license_obj:
         raise NotAvailableException(f"License code, {source.license}, not found in Database")
-    if source.latest:
+    if source.labels and schemas.SourceLabel.LATEST in source.labels:
         query = db_.query(db_models.Source).join(db_models.Version).filter(
             db_models.Source.version.has(versionAbbreviation = source.version),
             db_models.Source.contentId == content_type.contentId,
-            db_models.Source.latest == True) # pylint: disable=C0121
+            db_models.Source.labels.contains(schemas.SourceLabel.LATEST.value()))
         another_latest = query.all()
         if another_latest:
             raise AlreadyExistsException(
@@ -386,7 +389,7 @@ def create_source(db_: Session, source: schemas.SourceCreate, user_id):
         table_name = source.metaData["repo"]
     db_content = db_models.Source(
         year = source.year,
-        latest = source.latest,
+        labels = source.labels,
         sourceName = source_name,
         tableName = table_name,
         contentId = content_type.contentId,
@@ -394,7 +397,8 @@ def create_source(db_: Session, source: schemas.SourceCreate, user_id):
         languageId = language.languageId,
         licenseId = license_obj.licenseId,
         metaData = source.metaData,
-        active = True)
+        active = True,
+        )
     db_content.createdUser = user_id
     db_.add(db_content)
     if not content_type.contentType == db_models.ContentTypeName.GITLABREPO.value:
@@ -455,19 +459,19 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
         if not license_obj:
             raise NotAvailableException(f"License code, {source.license}, not found in Database")
         db_content.licenseId = license_obj.licenseId
-    if source.latest is not None:
-        if source.latest is True:
+    if source.labels is not None:
+        if schemas.SourceLabel.LATEST in source.labels:
             query = db_.query(db_models.Source).join(db_models.Version).filter(
                 db_models.Source.version.has(
                     versionAbbreviation = db_content.version.versionAbbreviation),
                 db_models.Source.contentId == db_content.contentId,
-                db_models.Source.latest == True, # pylint: disable=C0121
+                db_models.Source.labels.contains(schemas.SourceLabel.LATEST.value()),
                 db_models.Source.sourceId != db_content.sourceId)
             another_latest = query.all()
             if another_latest:
                 raise AlreadyExistsException(
                     f"Another source with latest tag exists: {another_latest[0].sourceName}")
-        db_content.latest = source.latest
+        db_content.labels = source.labels
     if source.year:
         db_content.year = source.year
     if source.metaData:
