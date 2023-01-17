@@ -98,10 +98,11 @@ class Query(graphene.ObjectType):
             description="language code as per bcp47(usually 2 letter code)"),
         license_code=graphene.String(),
         access_tag = graphene.List(types.SourcePermissions),
+        labels = graphene.List(types.SourceLabels),
         active=graphene.Boolean(), latest_revision=graphene.Boolean(),
         skip=graphene.Int(), limit=graphene.Int())
     def resolve_contents(self, info, content_type=None, version_abbreviation=None,#pylint: disable=too-many-locals
-        version_tag=None, language_code=None, license_code=None, active=True,
+        version_tag=None, language_code=None, license_code=None, labels=None,active=True,
         latest_revision=True, skip=0, limit=100,metadata=None, source_name = None,
         access_tag= types.SourcePermissions.CONTENT.name):#pylint: disable=no-member
         '''resolver'''
@@ -116,8 +117,8 @@ class Query(graphene.ObjectType):
         req.scope['path'] = "/v2/sources"
         results = content_apis.get_source(request=req,content_type=content_type,
         version_abbreviation=version_abbreviation,
-        version_tag=version_tag, language_code=language_code
-        ,license_code=license_code, metadata=metadata, access_tag=access_tag, active=active,
+        version_tag=version_tag, language_code=language_code, labels=labels,
+        license_code=license_code, metadata=metadata, access_tag=access_tag, active=active,
         latest_revision=latest_revision, skip=skip, limit=limit, user_details=user_details,
         db_=db_, filtering_required=True,source_name=source_name)
         return results
