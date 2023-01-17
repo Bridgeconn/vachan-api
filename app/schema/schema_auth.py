@@ -187,12 +187,13 @@ class EditApp(BaseModel):
             if len(val) <= 0:
                 raise ValueError('Phone Should not be blank')
         return val
+    
 class RoleOut(BaseModel):
     '''Return object of roles output'''
     roleId : int 
     roleName : str
     roleOfApp : str
-    roleDescription : str
+    roleDescription : str = None
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
@@ -250,9 +251,9 @@ class RoleIn(BaseModel):
 class RoleEdit(BaseModel):
     '''Input object of role update'''
     roleId : int
-    roleName : str = None
-    roleOfApp : str = None
-    roleDescription : str = None
+    roleName : str 
+    roleOfApp : str 
+    roleDescription : str 
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
@@ -270,11 +271,7 @@ class RoleEdit(BaseModel):
 class RoleUpdateResponse(BaseModel):
     '''Return object of role update'''
     message: str 
-    data: RoleOut = None
-
-class RoleDeleteResponse(BaseModel):
-    """Role delete response"""
-    message:str
+    data: RoleOut 
 
 class RoleIdentity(BaseModel):
     """kratos role ID input"""

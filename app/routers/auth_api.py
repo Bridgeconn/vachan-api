@@ -291,72 +291,37 @@ user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint:
 #     return {'message': "Role edited successfully",
 #         "data": data}
 
-@router.put('/v2/app/roles',response_model=schema_auth.RoleUpdateResponse,
-responses={403: {"model": schemas.ErrorResponse},
-401: {"model": schemas.ErrorResponse},409: {"model": schemas.ErrorResponse},
-422: {"model": schemas.ErrorResponse},500: {"model": schemas.ErrorResponse}},
-status_code=201,tags=["Roles"])
+@router.put('/v2/access/roles',response_model=schema_auth.RoleUpdateResponse,
+responses={401: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse},
+500: {"model": schemas.ErrorResponse}},status_code=201,tags=["Roles"])
 @get_auth_access_check_decorator
 async def update_roles(role_data:schema_auth.RoleIn,request: Request,#pylint: disable=unused-argument
-app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
-user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
+    user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     # print(update_roles,"print update_roles")
     '''Changes one or more fields of roles
-    * Roles should be registered one'''
-    log.info('In update_roles')
+    * Roles should be registered one
+    * including AppRoleName also'''
+    log.info('In update roles')
     log.debug('role:%s',role_data)
     data = update_role(db_,role_data, user_id=user_details['user_id'])
 
-    print(data,"this is data o/p")
+    # print(data,"this is data o/p")
     return {'message': "Role edited successfully",
         "data": data} 
-#     user_id = role_data.userid
-#     role_list = role_data.roles
-#     return user_role_add(user_id,role_list)
-
-@router.delete('/v2/app/roles',response_model=schema_auth.RoleDeleteResponse,
-    responses={404: {"model": schemas.ErrorResponse},
-    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
-    502: {"model": schemas.ErrorResponse}},
-    status_code=200,tags=["Roles"])
-@get_auth_access_check_decorator
-async def delete_roles(request: Request, role_details: schema_auth.RoleIdentity,
-    app_key: types.SecretStr = Query(None),
-    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
-    '''Delete Roles'''
-    log.info('In delete_roles')
-    log.debug('role:%s',role_details)
-    role_id= role_details.roleId
-    dbtable_name = "roles"
-    deleted_content = auth_crud.delete_role(db_=db_, role=role_details)
-    # user_id=user_details['user_id'],table_name = dbtable_name
-    return {'message': f"Role with identity {role_id} deleted successfully",
-            "data": deleted_content}
 
 
-# @router.delete('/v2/commentaries/{source_name}',response_model=schemas.DeleteResponse,
-#     responses={404: {"model": schemas.ErrorResponse},
-#     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
-#     502: {"model": schemas.ErrorResponse}},
-#     status_code=200,tags=["Commentaries"])
+# @router.put('/v2/app/{app_id}', response_model=schema_auth.AppUpdateResponse,
+# responses={401: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse},
+# 500: {"model": schemas.ErrorResponse}},status_code=201,tags=["App"])
 # @get_auth_access_check_decorator
-# async def delete_commentary(request: Request, delete_obj: schemas_nlp.DeleteIdentity = Body(...), \
-#     user_details =Depends(get_user_or_none),  \
-#     db_: Session = Depends(get_db)):
-#     '''Delete Commentary
-#     * unique Commentary Id can be used to delete an exisiting identity'''
-#     log.info('In delete_commentaries')
-#     log.debug('commentary-delete:%s',delete_obj)
-#     commentary_id= delete_obj.itemId
-#     source_name = delete_obj.sourceName
-#     tb_name = db_models.dynamicTables[source_name]
-#     dbtable_name = tb_name.__name__
-#     if len(contents_crud.get_commentary_id(db_, commentary_id= delete_obj.itemId, \
-#         source_name=delete_obj.sourceName,table_name=tb_name)) == 0:
-#         raise NotAvailableException(f"Commentary with id {commentary_id} not found")
-#     deleted_content = contents_crud.delete_commentary(db_=db_, \
-#         delitem=delete_obj,table_name=tb_name)
-#     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-#             table_name = dbtable_name)
-#     return {'message': f"Commentary id {commentary_id} deleted successfully",
-#             "data": delcont}
+# async def edit_app(request: Request,#pylint: disable=unused-argument
+#     app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
+#     app_id:str =Path(...,example="4bd012fd-7de8-4d66-928f-4925ee9bb"),
+#     edit_details:schema_auth.EditApp = Body(...),
+#     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+#     '''update app data'''
+#     log.info('In edit app Identity')
+#     log.debug('app_id: %s, app_details: %s',app_id, edit_details)
+#     data =  app_update_kratos(app_id=app_id, update_data=edit_details)
+#     return {"message":"app details updated successfully","data":data}

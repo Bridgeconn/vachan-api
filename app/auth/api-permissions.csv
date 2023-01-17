@@ -120,5 +120,4 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/bibles/{source_name}/books/{book_code}/format/{output_format},GET,VachanAdmin,False,None,read-via-vachanadmin
 /v2/bibles/{source_name}/books/{book_code}/format/{output_format},GET,API-user,False,None,read-via-api
 /v2/files/usfm/to/{output_format},PUT,None,False,File Manipulation Ops,access-via-api
-/v2/app/roles,PUT,VachanAdmin,False,app,edit
-/v2/app/roles,DELETE,VachanAdmin,False,app,delete/deactivate
+/v2/access/roles,PUT,VachanAdmin,False,access-control,edit

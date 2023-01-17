@@ -7,7 +7,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from schema import schema_auth
 
 def update_role(db_: Session, role: schema_auth.RoleEdit, user_id=None):
-    '''changes one or more fields of roles, selected via role id'''
+    '''update rows to roles table'''
     # print(role,user_id)
     db_content = db_.query(db_models.Roles).get(role.roleId)
     # print(db_content, "print the db_content")
@@ -21,6 +21,15 @@ def update_role(db_: Session, role: schema_auth.RoleEdit, user_id=None):
     # db_.commit()
     # db_.refresh(db_content)
     return db_content
+
+# def update_auth_permission(db_: Session, details, user_id= None):
+#     '''update a row to auth permission table'''
+#     db_content = db_.query(db_models.Permissions).get(details.permissionId)
+#     if details.permissionDescription:
+#               db_content.permissionDescription = details.permissionDescription
+#     db_content.updatedUser = user_id
+#     return db_content
+
 
 # def update_license(db_: Session, license_obj: schemas.LicenseEdit, user_id=None):
 #     '''changes one or more fields of license, selected via license code'''
@@ -42,27 +51,7 @@ def update_role(db_: Session, role: schema_auth.RoleEdit, user_id=None):
 #     # db_.refresh(db_content)
 #     return db_content
 
-def delete_role(db_: Session, role: schema_auth.RoleIdentity):
-    '''delete particular role, selected via role id'''
-    db_content = db_.query(db_models.Roles).get(role.roleId)
-    deleted_content = db_content
-    db_.delete(db_content)
-    #db_.commit()
-    return deleted_content
 
-
-# def create_license(db_: Session, license_obj: schemas.LicenseCreate, user_id=None):
-#     '''Adds a new license to Database'''
-#     db_content = db_models.License(code = license_obj.code.upper(),
-#         name = license_obj.name.strip(),
-#         license = utils.normalize_unicode(license_obj.license),
-#         permissions = license_obj.permissions,
-#         active=True,
-#         createdUser=user_id)
-#     db_.add(db_content)
-#     # db_.commit()
-#     # db_.refresh(db_content)
-#     return db_content
 # def update_license(db_: Session, license_obj: schemas.LicenseEdit, user_id=None):
 #     '''changes one or more fields of license, selected via license code'''
 #     db_content = db_.query(db_models.License).filter(
@@ -88,4 +77,3 @@ def delete_role(db_: Session, role: schema_auth.RoleIdentity):
 #     db_.delete(db_content)
 #     #db_.commit()
 #     return db_content
-
