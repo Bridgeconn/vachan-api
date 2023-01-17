@@ -311,7 +311,7 @@ async def get_source(request: Request, #pylint: disable=too-many-locals
     metadata: schemas.MetaDataPattern=Query(None,
         example='{"otherName": "KJBC, King James Bible Commentaries"}'),
     access_tag:List[schemas.SourcePermissions]=Query([schemas.SourcePermissions.CONTENT]),
-    labels:List[schemas.SourceLabel] = Query(None),
+    labels:List[schemas.SourceLabel] = Query([]),
     active: bool = True, latest_revision: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none),
