@@ -164,7 +164,7 @@ class BibleBookUpload(BaseModel):
     USFM: str = None
     JSON: dict = None
     @root_validator
-    def check_for_usfm_json(cls, values): # pylint: disable=R0201 disable=E0213
+    def check_for_usfm_json(cls, values): # pylint: disable=E0213
         '''Either USFM and JSON should be present'''
         if "USFM" not in values and "JSON" not in values:
             raise ValueError("Either USFM and JSON should be provided")
@@ -186,7 +186,7 @@ class BibleBookEdit(BaseModel):
     active: bool = None
 
     @root_validator
-    def check_for_usfm_json(cls, values): # pylint: disable=R0201 disable=E0213
+    def check_for_usfm_json(cls, values): # pylint:  disable=E0213
         '''USFM and JSON should be updated together. If they are absent, bookCode is required'''
         if "bookCode" not in values or values['bookCode'] is None:
             if "JSON" in values and values['JSON'] is not None:
@@ -272,7 +272,7 @@ class CommentaryCreate(BaseModel):
     active: bool = True
 
     @validator('verseStart', 'verseEnd')
-    def check_verses(cls, val, values): # pylint: disable=R0201 disable=E0213
+    def check_verses(cls, val, values): # pylint:  disable=E0213
         '''verse fields should be greater than or equal to -1'''
         if 'chapter' in values and values['chapter'] in [-1, 0]:
             if val not in [-1, 0, None]:
@@ -286,14 +286,14 @@ class CommentaryCreate(BaseModel):
         return val
 
     @validator('verseEnd')
-    def check_range(cls, val, values): # pylint: disable=R0201 disable=E0213
+    def check_range(cls, val, values): # pylint: disable=E0213
         '''verse start should be less than or equal to verse end'''
         if 'verseStart' in values and val < values['verseStart']:
             raise ValueError('verse start should be less than or equal to verse end')
         return val
 
     @validator('chapter')
-    def check_chapter(cls, val): # pylint: disable=R0201 disable=E0213
+    def check_chapter(cls, val): # pylint:  disable=E0213
         '''chapter fields should be greater than or equal to -1'''
         if val < -1:
             raise ValueError('chapter field should be greater than or equal to -1')
@@ -322,7 +322,7 @@ class CommentaryEdit(BaseModel):
     active: bool = None
 
     @validator('verseStart', 'verseEnd')
-    def check_verses(cls, val, values): # pylint: disable=R0201 disable=E0213
+    def check_verses(cls, val, values): # pylint: disable=E0213
         '''verse fields should be greater than or equal to -1'''
         if 'chapter' in values and values['chapter'] in [-1, 0]:
             if val not in [-1, 0, None]:
@@ -336,14 +336,14 @@ class CommentaryEdit(BaseModel):
         return val
 
     @validator('verseEnd')
-    def check_range(cls, val, values): # pylint: disable=R0201 disable=E0213
+    def check_range(cls, val, values): # pylint:  disable=E0213
         '''verse start should be less than or equal to verse end'''
         if 'verseStart' in values and val < values['verseStart']:
             raise ValueError('verse start should be less than or equal to verse end')
         return val
 
     @validator('chapter')
-    def check_chapter(cls, val): # pylint: disable=R0201 disable=E0213
+    def check_chapter(cls, val): # pylint:  disable=E0213
         '''chapter fields should be greater than or equal to -1'''
         if val < -1:
             raise ValueError('chapter field should be greater than or equal to -1')
@@ -363,6 +363,7 @@ class CommentaryEdit(BaseModel):
 
 class CommentaryResponse(BaseModel):
     '''Response object for commentaries'''
+    commentaryId: int
     book : BibleBook
     chapter: int
     verseStart: int = None
@@ -547,7 +548,7 @@ class BibleVideoRefObj(BaseModel):
     verseEnd: int = None
 
     @validator('verseStart', 'verseEnd')
-    def check_verses(cls, val, values): # pylint: disable=R0201 disable=E0213
+    def check_verses(cls, val, values): # pylint:  disable=E0213
         '''verse fields should be greater than or equal to -1'''
         if 'chapter' in values and values['chapter'] in [-1, 0]:
             if val not in [-1, 0, None]:
@@ -561,14 +562,14 @@ class BibleVideoRefObj(BaseModel):
         return val
 
     @validator('verseEnd')
-    def check_range(cls, val, values): # pylint: disable=R0201 disable=E0213
+    def check_range(cls, val, values): # pylint:  disable=E0213
         '''verse start should be less than or equal to verse end'''
         if 'verseStart' in values and val < values['verseStart']:
             raise ValueError('verse start should be less than or equal to verse end')
         return val
 
     @validator('chapter')
-    def check_chapter(cls, val): # pylint: disable=R0201 disable=E0213
+    def check_chapter(cls, val): # pylint: disable=E0213
         '''chapter fields should be greater than or equal to -1'''
         if val < -1:
             raise ValueError('chapter field should be greater than or equal to -1')
@@ -678,5 +679,18 @@ class UploadedUsfm(BaseModel):
         schema_extra = {
             "example": {
                 "USFM": "\\id MAT\n\\c 1\n\\p\n\\v 1 इब्राहीम की सन्‍तान, दाऊद की ...",
+            }
+        }
+
+class DeleteIdentity(BaseModel):
+    """ ID input of item to be deleted"""
+    itemId: int
+    sourceName : str
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "itemId": 100000,
+                "sourceName" : "en_KJV_1_dictionary"
             }
         }

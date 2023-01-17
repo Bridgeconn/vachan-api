@@ -112,7 +112,6 @@ class BibleBook(Base): # pylint: disable=too-few-public-methods
 
 class Commentary(): # pylint: disable=too-few-public-methods
     '''Corresponds to the dynamically created commentary tables in vachan Db(postgres)'''
-    __table_args__ = {'extend_existing': True}
     commentaryId = Column('commentary_id', Integer,
         Sequence('commentary_id_seq', start=100001, increment=1), primary_key=True)
     @declared_attr
@@ -135,12 +134,12 @@ class Commentary(): # pylint: disable=too-few-public-methods
     verseStart = Column('verse_start', Integer)
     verseEnd = Column('verse_end', Integer)
     commentary = Column('commentary', String)
-    createdUser = Column('created_user',String)
     active = Column('active', Boolean)
-    # __table_args__ = (
+    createdUser = Column('created_user', String)
+    __table_args__ = (
     #     UniqueConstraint('book_id', 'chapter', 'verse_start', 'verse_end'),
-    #     {'extend_existing': True}
-    #                  )
+        {'extend_existing': True}
+                     )
 
 class Dictionary(): # pylint: disable=too-few-public-methods
     '''Corresponds to the dynamically created dictionary tables in vachan Db(postgres)'''

@@ -784,6 +784,33 @@ async def edit_commentary(request: Request,background_tasks: BackgroundTasks,
     # "data": contents_crud.update_commentaries(db_=db_, source_name=source_name,
     #     commentaries=commentaries, user_id=user_details['user_id'])}
 
+@router.delete('/v2/commentaries/{source_name}',response_model=schemas.DeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Commentaries"])
+@get_auth_access_check_decorator
+async def delete_commentary(request: Request, delete_obj: schemas_nlp.DeleteIdentity = Body(...), \
+    user_details =Depends(get_user_or_none),  \
+    db_: Session = Depends(get_db)):
+    '''Delete Commentary
+    * unique Commentary Id can be used to delete an exisiting identity'''
+    log.info('In delete_commentaries')
+    log.debug('commentary-delete:%s',delete_obj)
+    commentary_id= delete_obj.itemId
+    source_name = delete_obj.sourceName
+    tb_name = db_models.dynamicTables[source_name]
+    dbtable_name = tb_name.__name__
+    if len(contents_crud.get_commentary_id(db_, commentary_id= delete_obj.itemId, \
+        source_name=delete_obj.sourceName,table_name=tb_name)) == 0:
+        raise NotAvailableException(f"Commentary with id {commentary_id} not found")
+    deleted_content = contents_crud.delete_commentary(db_=db_, \
+        delitem=delete_obj,table_name=tb_name)
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
+            table_name = dbtable_name)
+    return {'message': f"Commentary id {commentary_id} deleted successfully",
+            "data": delcont}
+
 # # ########### Dictionary ###################
 @router.get('/v2/dictionaries/{source_name}',
     response_model_exclude_unset=True,

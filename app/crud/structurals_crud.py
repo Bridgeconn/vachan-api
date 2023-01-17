@@ -127,23 +127,23 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
     db_restore = db_.query(db_models.DeletedItem).get(restored_item.itemId)
     db_content=db_restore
     json_string = db_content.deletedData
-    db_.delete(db_restore)
+
     content_class_map = {
         "languages":db_models.Language,
         "licenses":db_models.License,
         "versions":db_models.Version,
         "content_types": db_models.ContentType,
         "sources":db_models.Source,
-        "commentary":db_models.Commentary,
         "infographic":db_models.Infographic}
     if db_restore.deletedFrom in content_class_map:
         model_cls = content_class_map[db_restore.deletedFrom]
     else:
         source = get_sources(db_, table_name=db_restore.deletedFrom)[0]
-        content_type = source.contentType.contentType
-        model_cls = content_class_map[content_type]
+        model_cls = db_models.dynamicTables[source.sourceName]
+
     db_content = utils.convert_dict_to_sqlalchemy(json_string, model_cls)
     db_.add(db_content)
+    db_.delete(db_restore)
     #db_.commit()
     return db_content
 
@@ -314,7 +314,7 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
     if source_name:
         query = query.filter(db_models.Source.sourceName == source_name)
     if table_name:
-        query = query.filter(db_models.Source.sourceName == table_name)
+        query = query.filter(db_models.Source.tableName == table_name)
     if access_tags:
         query = query.filter(db_models.Source.metaData.contains(
             {"accessPermissions":[tag.value for tag in access_tags]}))
