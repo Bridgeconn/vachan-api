@@ -63,7 +63,6 @@ class SourceLabels(graphene.Enum):#pylint: disable=too-few-public-methods
     PRERELEASE = "pre-release"
     PRIVATE = "private"
     DEPRECATED = "deprecated"
-    
 
 class Source(graphene.ObjectType):#pylint: disable=too-few-public-methods
     '''Return object of source'''
