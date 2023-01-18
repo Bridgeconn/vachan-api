@@ -264,3 +264,40 @@ def test_empty_draft_initalization():
             found_untranslated = True
     assert found_jungle_meta
     assert found_untranslated
+
+def test_draft_meta_validation():
+    '''Bugfix test for #479 after the changes in PR #481'''
+    resp = add_project(project_data, auth_token=initial_test_users['AgUser']['token'])
+    assert resp.json()['message'] == "Project created successfully"
+    project_id = resp.json()['data']['projectId']
+
+    put_data = {
+        "projectId": project_id,
+        "sentenceList":source_sentences
+    }
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
+    assert resp.json()['message'] == "Project updated successfully"
+
+    #Get suggestions
+    resp = client.put(f"/v2/autographa/project/suggestions?project_id={project_id}&sentenceIdList=100", 
+        headers=headers_auth)
+    assert resp.status_code == 201
+    resp_draft_meta = resp.json()[0]['draftMeta']
+    print("draftMeta:", resp_draft_meta)
+    empty_seg = False
+    for seg in resp_draft_meta:
+        if seg[0][0] == seg[0][1] or seg[1][0] == seg[1][1]:
+            empty_seg = True
+            break
+    # assert empty_seg
+    
+    # PUT the draft meta back to server
+    json_data = [{
+        "sentenceId":100,
+        "draft":resp.json()[0]['draft'],
+        "draftMeta":resp_draft_meta
+    }]
+    resp = client.put(f"/v2/autographa/project/draft?project_id={project_id}",
+        headers=headers_auth, json=json_data)
+    assert resp.status_code == 201
