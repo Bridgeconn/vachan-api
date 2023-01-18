@@ -235,7 +235,8 @@ async def edit_license(request: Request, license_obj: schemas.LicenseEdit = Body
 @get_auth_access_check_decorator
 async def get_version(request: Request,
     version_abbreviation : schemas.VersionPattern = Query(None, example="KJV"),
-    version_name: str = Query(None, example="King James Version"), revision : int = Query(None),
+    version_name: str = Query(None, example="King James Version"),
+    version_tag : schemas.VersionTagPattern = Query(None),
     metadata: schemas.MetaDataPattern = Query(None, example='{"publishedIn":"1611"}'),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
@@ -245,10 +246,10 @@ async def get_version(request: Request,
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
     log.info('In get_version')
-    log.debug('version_abbreviation:%s, skip: %s, limit: %s',
-        version_abbreviation, skip, limit)
+    log.debug('version_abbreviation:%s, version_name:%s, version_tag:%s, skip: %s, limit: %s',
+        version_abbreviation, version_name, version_tag, skip, limit)
     return structurals_crud.get_versions(db_, version_abbreviation,
-        version_name, revision, metadata, skip = skip, limit = limit)
+        version_name, version_tag, metadata, skip = skip, limit = limit)
 
 @router.post('/v2/versions', response_model=schemas.VersionCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -258,15 +259,15 @@ async def get_version(request: Request,
 @get_auth_access_check_decorator
 async def add_version(request: Request, version_obj : schemas.VersionCreate = Body(...),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
-    ''' Creates a new version. Version code provided will be used as unique identifier'''
+    ''' Creates a new version. Version code provided will be used as unique identifier
+    * For VersionTag, using a calender version, date separted by dot, is encouraged.
+    But, if not provided, will be assumed as 1'''
     log.info('In add_version')
     log.debug('version_obj: %s',version_obj)
-    if not version_obj.revision:
-        version_obj.revision = 1
     if len(structurals_crud.get_versions(db_, version_obj.versionAbbreviation,
-        revision =version_obj.revision)) > 0:
+        version_tag =version_obj.versionTag)) > 0:
         raise AlreadyExistsException(f"{version_obj.versionAbbreviation}, "+\
-            f"{version_obj.revision} already present")
+            f"{version_obj.versionTag} already present")
     return {'message': "Version created successfully",
         "data": structurals_crud.create_version(db_=db_, version=version_obj,
         user_id=user_details['user_id'])}
@@ -280,9 +281,11 @@ async def add_version(request: Request, version_obj : schemas.VersionCreate = Bo
 async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     ''' Changes one or more fields of version types table.
-    Item identifier is version id.
-    Active field can be used to activate or deactivate a content.
-    Deactivated items are not included in normal fetch results if not specified otherwise'''
+    * Item identifier is version id.
+    * For VersionTag, using a calender version, date separted by dot, is encouraged.
+    But, if not provided, will be assumed as "1"
+    * Active field can be used to activate or deactivate a content.
+    * Deactivated items are not included in normal fetch results if not specified otherwise'''
     log.info('In edit_version')
     log.debug('ver_obj: %s',ver_obj)
     if len(structurals_crud.get_versions(db_, version_id = ver_obj.versionId)) == 0:
@@ -302,12 +305,13 @@ async def get_source(request: Request, #pylint: disable=too-many-locals
     source_name : schemas.TableNamePattern=Query(None, example="hi_IRV_1_bible"),
     content_type: str=Query(None, example="commentary"),
     version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
-    revision: int=Query(None, example=1),
+    version_tag: schemas.VersionTagPattern=Query(None, example="1611.12.31"),
     language_code: schemas.LangCodePattern=Query(None,example="en"),
     license_code: schemas.LicenseCodePattern=Query(None,example="ISC"),
     metadata: schemas.MetaDataPattern=Query(None,
         example='{"otherName": "KJBC, King James Bible Commentaries"}'),
     access_tag:List[schemas.SourcePermissions]=Query([schemas.SourcePermissions.CONTENT]),
+    labels:List[schemas.SourceLabel] = Query([]),
     active: bool = True, latest_revision: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none),
@@ -315,21 +319,24 @@ async def get_source(request: Request, #pylint: disable=too-many-locals
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.CONTENT.value)),
     filtering_required=Depends(AddHiddenInput(value=True))):
     '''Fetches all sources and their details.
-    * optional query parameters can be used to filter the result set
-    * If revision is not explictly set or latest_revision is not set to False,
-    then only the highest number revision from the avaliable list in each version would be returned.
+    * Optional query parameters can be used to filter the result set
+    * If version_tag is not explictly set or latest_revision is not set to False, then only
+     item with highest version_tag among same version would be returned.
+     (If that is not the required version, use labels to mark another item as latest)
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
     log.info('In get_source')
-    log.debug('sourceName:%s,contentType:%s, versionAbbreviation: %s, revision: %s, \
+    log.debug('sourceName:%s,contentType:%s, versionAbbreviation: %s, versionTag: %s, \
     languageCode: %s,license_code:%s, metadata: %s, access_tag: %s, latest_revision:\
-         %s, active: %s, skip: %s, limit: %s',source_name,
-        content_type, version_abbreviation, revision, language_code, license_code, metadata,
-        access_tag, latest_revision, active, skip, limit)
-    return structurals_crud.get_sources(db_, content_type, version_abbreviation, revision=revision,
+         %s, labels:%s, active: %s, skip: %s, limit: %s',source_name,
+        content_type, version_abbreviation, version_tag, language_code, license_code, metadata,
+        access_tag, latest_revision, labels, active, skip, limit)
+    return structurals_crud.get_sources(db_, content_type, version_abbreviation,
+        version_tag=version_tag,
         language_code=language_code, license_code=license_code, metadata=metadata,
-        access_tag=access_tag,latest_revision=latest_revision, active=active,skip=skip, limit=limit,
+        access_tag=access_tag,latest_revision=latest_revision, labels=labels,
+        active=active,skip=skip, limit=limit,
         source_name=source_name)
 
 @router.post('/v2/sources', response_model=schemas.SourceCreateResponse,
@@ -345,7 +352,7 @@ async def add_source(request: Request, source_obj : schemas.SourceCreate = Body(
     * Also creates all associtated tables for the content type.
     * The required content type, version, language and license should be present in DB,
     * if not create them first.
-    * Revision, if not provided, will be assumed as 1
+    * Latest, can be included in labels for only one item per version.
     * AccessPermissions is list of permissions ["content", "open-access", "publishable",
         "downloadable","derivable"]. Default will be ["content"]
     * repo and defaultBranch should given in the metaData if contentType is gitlabrepo,
@@ -353,12 +360,6 @@ async def add_source(request: Request, source_obj : schemas.SourceCreate = Body(
     '''
     log.info('In add_source')
     log.debug('source_obj: %s',source_obj)
-    if not source_obj.revision:
-        source_obj.revision = 1
-    source_name = source_obj.language + "_" + source_obj.version + "_" +\
-    source_obj.revision + "_" + source_obj.contentType
-    if len(structurals_crud.get_sources(db_, source_name = source_name)) > 0:
-        raise AlreadyExistsException(f"{source_name} already present")
     if 'content' not in source_obj.accessPermissions:
         source_obj.accessPermissions.append(schemas.SourcePermissions.CONTENT)
     source_obj.metaData['accessPermissions'] = source_obj.accessPermissions
@@ -372,7 +373,7 @@ async def add_source(request: Request, source_obj : schemas.SourceCreate = Body(
         if "defaultBranch" not in source_obj.metaData:
             source_obj.metaData["defaultBranch"] = "main"
     return {'message': "Source created successfully",
-    "data": structurals_crud.create_source(db_=db_, source=source_obj, source_name=source_name,
+    "data": structurals_crud.create_source(db_=db_, source=source_obj,
         user_id=user_details['user_id'])}
 
 @router.put('/v2/sources', response_model=schemas.SourceUpdateResponse,
@@ -386,6 +387,7 @@ async def edit_source(request: Request,source_obj: schemas.SourceEdit = Body(...
     ''' Changes one or more fields of source. Item identifier is source_name.
     * Active field can be used to activate or deactivate a content.
     * Deactivated items are not included in normal fetch results if not specified otherwise
+    * Edit of labels will overwrite the existing List of labels entirely
     * AccessPermissions is list of permissions ["content", "open-access", "publishable",
         "downloadable", "derivable"]. Edit accessPermission will overwrite the current list'''
     log.info('In edit_source')
@@ -946,9 +948,9 @@ async def extract_text_contents(request:Request, #pylint: disable=W0613
     try:
         tables = await get_source(request=request, source_name=source_name,
             content_type=content_type, version_abbreviation=None,
-            revision=None, language_code=language_code,
+            version_tag=None, language_code=language_code,
             license_code=None, metadata=None,
-            access_tag = None, active= True, latest_revision= True,
+            access_tag = None, labels=None, active= True, latest_revision= True,
             skip=0, limit=1000, user_details=user_details, db_=db_,
             operates_on=schema_auth.ResourceType.CONTENT.value,
             filtering_required=True)

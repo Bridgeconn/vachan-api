@@ -33,7 +33,7 @@ SOURCE_VAR = {
     "contentType": "commentary",
     "language": "gu",
     "version": "TTT",
-    "revision": "1",
+    "versionTag": "1",
     "year": 2020,
   }
 }
@@ -914,7 +914,7 @@ EDIT_COMMENTARY = """
 #     "contentType": "commentary",
 #     "language": "gu",
 #     "version": "TTT",
-#     "revision": "1",
+#     "versionTag": "1",
 #     "year": 2021
 #   }
 # }

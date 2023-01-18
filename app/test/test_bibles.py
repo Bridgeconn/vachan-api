@@ -99,7 +99,7 @@ def check_post(data: list, datatype='books'):
         "language": "gu",
         "version": "TTT",
         "year": 3030,
-        "revision": 1
+        "versionTag": 1
     }
     source = add_source(source_data)
     table_name = source.json()['data']['sourceName']
@@ -857,7 +857,7 @@ def test_created_user_can_only_edit():
         "language": "gu",
         "version": "TTT",
         "year": 3030,
-        "revision": 1
+        "versionTag": 1
     }
     #create source
     response = client.post('/v2/sources', headers=headers_auth, json=source_data)

@@ -38,7 +38,7 @@ def check_post(data: list):
         "language": "mr",
         "version": "TTT",
         "year": 1999,
-        "revision": 1
+        "versionTag": 1
     }
     source = add_source(source_data)
     table_name = source.json()['data']['sourceName']
@@ -495,7 +495,7 @@ def test_created_user_can_only_edit():
         "language": "mr",
         "version": "TTT",
         "year": 1999,
-        "revision": 1
+        "versionTag": 1
     }
     #create source
     response = client.post('/v2/sources', headers=headers_auth, json=source_data)
