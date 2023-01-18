@@ -376,6 +376,7 @@ class SourceLabel(str, Enum):
     PRERELEASE = "pre-release"
     PRIVATE = "private"
     DEPRECATED = "deprecated"
+    TEST = "test"
 
 class SourceCreate(BaseModel):
     '''Input object of sources'''
