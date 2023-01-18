@@ -5,10 +5,11 @@ from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get, check_soft_delete
 from .test_versions import check_post as add_version
 from .test_sources import check_post as add_source
-from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER
+from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 from .conftest import initial_test_users
 
 UNIT_URL = '/v2/dictionaries/'
+RESTORE_URL = '/v2/restore'
 headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json"}
@@ -58,12 +59,13 @@ def test_post_default():
     	{"word": "four", "details":{"digit": 4, "type":"even"}},
     	{"word": "five", "details":{"digit": 5, "type":"odd"}}
     ]
-    response = check_post(data)[0]
+    response,source_name = check_post(data)
     assert response.status_code == 201
     assert response.json()['message'] == "Dictionary words added successfully"
     assert len(data) == len(response.json()['data'])
     for item in response.json()['data']:
         assert_positive_get(item)
+    return response,source_name
 
 
 def test_post_duplicate():
