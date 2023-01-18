@@ -273,11 +273,11 @@ user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint:
 
 ###################Roles#############################
 
-@router.post('/v2/app/roles',response_model=schema_auth.RoleResponse,
+@router.post('/v2/access/roles',response_model=schema_auth.RoleResponse,
     responses={400: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
     500: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
     status_code=201,tags=["Roles"])
-@get_auth_access_check_decorator
+# @get_auth_access_check_decorator
 async def create_roles(role_details:schema_auth.Roles,request: Request,#pylint: disable=unused-argument
 app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
 user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
@@ -344,7 +344,7 @@ db_: Session = Depends(get_db)):#pylint: disable=unused-argument
 
 
     
-@router.get('/v2/app/roles',response_model=List[schema_auth.RoleReadResponse],
+@router.get('/v2/access/roles',response_model=List[schema_auth.RoleReadResponse],
 responses={401: {"model": schemas.ErrorResponse}}
 ,tags=["Roles"])
 @get_auth_access_check_decorator
