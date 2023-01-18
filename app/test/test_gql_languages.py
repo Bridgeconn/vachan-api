@@ -519,6 +519,3 @@ def test_put_languages():
     executed = gql_request(query=up_qry, operation=operation, variables=up_variables,
     headers=headers_auth)
     assert "errors" in executed.keys()
-
-
-

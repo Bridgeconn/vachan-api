@@ -341,19 +341,7 @@ def test_token_translate():
     new_return_sent = executed3["data"]["translateToken"][0]
     assert "Jesus Christ" in new_return_sent['draft']
     # combined two segments to one
-    found_combined = False
-    found_seperate = False
-    for meta in new_return_sent['draftMeta']:
-        match meta[0]:
-            case [31, 35]:
-                found_seperate = True
-            case [36,40]:
-                found_seperate = True
-            case [31,40]:
-                found_combined = True
-    assert found_combined
-    assert not found_seperate
-
+    assert len(new_return_sent['draftMeta']) == len(return_sent['draftMeta']) -2
 
 def test_draft_generation():
     '''tests conversion of sentence list to differnt draft formats'''

@@ -451,6 +451,7 @@ class DictionaryWordEdit(BaseModel):
 
 class DictionaryWordResponse(BaseModel):
     '''Response object of dictionary word'''
+    wordId: int = None
     word: str
     details: dict = None
     active: bool = None
@@ -460,6 +461,7 @@ class DictionaryWordResponse(BaseModel):
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
+                "wordId": 100000,
                 "word": "Adam",
                 "details": {"type": "person",
                     "definition": "The first man God created."},

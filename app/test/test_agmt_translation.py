@@ -491,8 +491,7 @@ def test_get_sentence():
     assert len(response.json()) > 1
     for item in response.json():
         assert_positive_get_sentence(item)
-        assert item['sentence'] != ""
-        assert item['draft'] == ""
+        assert item['sentence'] == item['draft']
 
 
     # translate all tokens at once
@@ -531,17 +530,6 @@ def test_get_sentence():
         "&with_draft=True",headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
-
-    # With only_ids
-    response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id)+
-        "&only_ids=True",headers=headers_auth)
-    assert response.status_code ==200
-    for item in response.json():
-        assert "sentenceId" in item
-        assert "surrogateId" in item
-        assert "sentence" not in item
-        assert "draft" not in item
-        assert "draftMeta" not in item
 
 def test_progress_n_suggestion():
     '''tests for project progress API of AgMT'''

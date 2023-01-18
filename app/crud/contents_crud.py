@@ -9,7 +9,7 @@ from sqlalchemy.sql import text
 import db_models #pylint: disable=import-error
 from crud import utils  #pylint: disable=import-error
 from crud.nlp_sw_crud import update_job #pylint: disable=import-error
-from schema import schemas_nlp  #pylint: disable=import-error
+from schema import schemas_nlp, schema_content #pylint: disable=import-error
 from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException  #pylint: disable=import-error
 
 def get_commentaries(db_:Session, *args,**kwargs): #pylint: disable=too-many-locals
@@ -266,7 +266,8 @@ def upload_dictionary_words(db_: Session, source_name, dictionary_words, user_id
         row = model_cls(
             word = utils.normalize_unicode(item.word),
             details = item.details,
-            active = item.active)
+            active = item.active,
+            createdUser = user_id)
         db_content.append(row)
     db_.add_all(db_content)
     db_.expire_all()
@@ -304,6 +305,27 @@ def update_dictionary_words(db_: Session, source_name, dictionary_words, user_id
         'source_content':source_db_content
         }
     return response
+
+def get_word_id(db_: Session, word_id = None, source_name = None,table_name = None, **kwargs):
+    '''Fetches row of dictionary id'''
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
+    model_cls = table_name
+    query = db_.query(model_cls)
+    if source_name not in db_models.dynamicTables:
+        raise NotAvailableException(f'{source_name} not found in database.')
+    if word_id is not None:
+        query = query.filter(model_cls.wordId == word_id)
+    return query.offset(skip).limit(limit).all()
+
+def delete_dictionary(db_: Session, delitem: schema_content.DeleteIdentity,table_name = None):
+    '''delete particular word from dictionary, selected via sourcename and word id'''
+    model_cls = table_name
+    query = db_.query(model_cls)
+    db_content = query.filter(model_cls.wordId == delitem.itemId).first()
+    db_.delete(db_content)
+    #db_.commit()
+    return db_content
 
 def get_infographics(db_:Session, source_name, book_code=None, title=None,**kwargs):
     '''Fetches rows of infographics from the table specified by source_name'''

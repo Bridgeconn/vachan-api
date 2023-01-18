@@ -306,6 +306,8 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                     db_models.map_all_dynamic_tables(db_= next(get_db()))
                 if (method == "DELETE" and "commentaries" in endpoint):
                     db_models.map_all_dynamic_tables(db_= next(get_db()))
+                if (method == "DELETE" and "dictionaries" in endpoint):
+                    db_models.map_all_dynamic_tables(db_= next(get_db()))
 
         elif obj is not None:
             # Resource(item) specific checks
@@ -316,6 +318,8 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                         db_models.dynamicTables = {}
                         db_models.map_all_dynamic_tables(db_= next(get_db()))
                     if (method == "DELETE" and "commentaries" in endpoint):
+                        db_models.map_all_dynamic_tables(db_= next(get_db()))
+                    if (method == "DELETE" and "dictionaries" in endpoint):
                         db_models.map_all_dynamic_tables(db_= next(get_db()))
             else:
                 if user_details['user_id'] is None:

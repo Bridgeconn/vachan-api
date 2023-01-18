@@ -889,6 +889,32 @@ async def edit_dictionary_word(request: Request,
         "data": contents_crud.update_dictionary_words(db_=db_, source_name=source_name,
         dictionary_words=dictionary_words, user_id=user_details['user_id'])}
 
+@router.delete('/v2/dictionaries/{source_name}',response_model=schemas.DeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Dictionaries"])
+@get_auth_access_check_decorator
+async def delete_dictionaries(request: Request, delete_obj: schema_content.DeleteIdentity = \
+    Body(...),user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Delete Dictionary
+    * unique Dictionary Id with source name can be used to delete an exisiting identity'''
+    log.info('In delete_dictionaries')
+    log.debug('dictionary-delete:%s',delete_obj)
+    word_id= delete_obj.itemId
+    source_name = delete_obj.sourceName
+    tb_name = db_models.dynamicTables[source_name]
+    dbtable_name = tb_name.__name__
+    if len(contents_crud.get_word_id(db_, word_id= delete_obj.itemId, \
+        source_name=delete_obj.sourceName,table_name=tb_name)) == 0:
+        raise NotAvailableException(f"Dictionary with id {word_id} not found")
+    deleted_content = contents_crud.delete_dictionary(db_=db_, \
+        delitem=delete_obj,table_name=tb_name)
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
+            table_name = dbtable_name)
+    return {'message': f"Dictionary id {word_id} deleted successfully",
+            "data": delcont}
+
 # # ########### Infographic ###################
 @router.get('/v2/infographics/{source_name}',
     response_model=List[schema_content.InfographicResponse],
