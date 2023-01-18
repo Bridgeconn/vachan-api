@@ -165,7 +165,6 @@ CREATE TABLE public.translation_project_users(
 
 ALTER SEQUENCE public.translation_project_users_project_user_id_seq RESTART WITH 100000;
 
-
 CREATE TABLE public.stopwords_look_up(
     sw_id SERIAL PRIMARY KEY,
     language_id int,
