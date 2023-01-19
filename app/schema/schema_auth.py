@@ -221,10 +221,10 @@ class Roles(BaseModel):
     roleDescription : str
 
 class RoleReadResponse(BaseModel):
-    '''Return object of roles'''
+    '''Return output object of roles'''
     roleId : int
     roleName : str
-    roleOfApp : str =None
+    roleOfApp : str 
     roleDescription : str =None
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
@@ -239,3 +239,4 @@ class RoleReadResponse(BaseModel):
                 "roleDescription": "manager of the app"
             }
         }
+

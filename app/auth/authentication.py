@@ -167,6 +167,7 @@ def get_access_tag(db_, resource_type, path_params=None, kw_args = None, resourc
     resource_tag_map = {
         'user': ['user'],
         'app': ['app'],
+        'access-control': ['access-control'],
         'project': ['translation-project'],
         'translation': ['generic-translation'],
         'lookup-content': ['lookup-content'],

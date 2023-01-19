@@ -275,5 +275,6 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/files/usfm/to/{output_format},PUT,Vachan-online or vachan-app,FALSE,file-ops,access-via-api
 /v2/files/usfm/to/{output_format},PUT,VachanAdmin,FALSE,file-ops,access-via-api
 /v2/files/usfm/to/{output_format},PUT,API-user,FALSE,file-ops,access-via-api
-/v2/access/roles,POST,VachanAdmin,FALSE,access-control,create 
+/v2/access/roles,POST,VachanAdmin,FALSE,access-control,create
 /v2/access/roles,GET,VachanAdmin,FALSE,access-control,read
+/v2/access/roles,PUT,VachanAdmin,FALSE,access-control,edit
