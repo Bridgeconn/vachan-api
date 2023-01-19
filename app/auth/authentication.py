@@ -113,7 +113,7 @@ def api_resourcetype_map(endpoint, path_params=None):
     elif endpoint.startswith('/v2/app'):
         resource_type = 'app'
     elif endpoint.startswith('/v2/access'):
-        resource_type = 'access-control'    
+        resource_type = 'access-control'
     elif endpoint.startswith("/v2/translation") or endpoint.startswith("/v2/nlp"):
         resource_type = 'translation'
     elif endpoint.startswith("/v2/lookup"):

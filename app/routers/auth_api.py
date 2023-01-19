@@ -298,12 +298,12 @@ async def get_roles(request: Request,user_details =Depends(get_user_or_none),#py
     app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument,
     role_id: int = Query(None, example=100001),
     role_name: str = Query(None, example='assistant'),
-    role_of_app: str = Query(None, example="abcd"),  
+    role_of_app: str = Query(None, example="abcd"),\
     search_word: str = Query(None, example="manager"),
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''fetches all the roles supported in the DB, their code and other details.
-    * if any of the optional query parameters are provided, returns details of that roles  
+    * if any of the optional query parameters are provided, returns details of that roles
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
