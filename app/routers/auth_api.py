@@ -283,93 +283,13 @@ app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
 user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
 db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Roles of apps
-    * naming the permission by including the AppRolename
+    * naming the role by including the AppRolename
     * role name & role of apps field are mandatory'''
     log.info('In create roles')
     log.debug('roles:%s',role_details)
     data = create_role(db_,role_details, user_id = user_details['user_id'])
-    print(data,"o/p data")
     return {'message': "Role created successfully",
         "data": data}
-# @router.get('/v2/app/roles',
-#     response_model=List[schema_auth.RoleReadResponse],
-#     responses={502: {"model": schemas.ErrorResponse},
-#     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Roles"])
-# @get_auth_access_check_decorator
-# async def get_roles(request: Request,#pylint: disable=unused-argument
-# app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
-#     role_id: int = Query(None, example=100001),    
-#     role_name : str = Query(None, example="assistant"),
-#     search_word: str = Query(None, example="manager")
-#     role_of_app: str = Query(None, example="abcd"),
-#     # role_description: str = Query(None, example="assistant of app"),
-#     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
-# user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
-#     '''fetches all the roles supported in the DB, their code and other details.
-#     * if any of the optional query parameters are provided, returns details of that roles
-#     * skip=n: skips the first n objects in return list
-#     * limit=n: limits the no. of items to be returned to n
-#     * returns [] for not available content'''
-#     log.info('In get roles')
-#     log.debug('role_name:%s, role_of_app: %s,skip: %s, limit: %s',
-#         role_name, role_of_app,skip, limit)
-#     return get_role(db_, role_name, role_of_app,role_id,search_word
-#         skip = skip, limit = limit)
-
-# @router.get('/v2/access/roles',
-#     response_model=List[schema_auth.RoleReadResponse],
-#     response_model_exclude_unset=True,
-#     responses={502: {"model": schemas.ErrorResponse},
-#     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Roles"])
-# @get_auth_access_check_decorator
-# async def get_roles(request: Request,#pylint: disable=unused-argument
-# app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
-#     role_name : str = Query(None, example="assistant"),
-#     role_of_app: str = Query(None, example="abcd"),
-#     # role_description: str = Query(None, example="assistant of app"),
-#     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
-# user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
-#     '''fetches all the roles supported in the DB, their code and other details.
-#     * if any of the optional query parameters are provided, returns details of that roles
-#     * skip=n: skips the first n objects in return list
-#     * limit=n: limits the no. of items to be returned to n
-#     * returns [] for not available content'''
-#     log.info('In get_roles')
-#     log.debug('role_name:%s, role_of_app: %s,skip: %s, limit: %s',
-#         role_name, role_of_app,skip, limit)
-#     data= get_role(db_, role_name, role_of_app,
-#         skip = skip, limit = limit)
-#     return data
-
-
-
-    
-# @router.get('/v2/access/roles',response_model=List[schema_auth.RoleReadResponse],
-# responses={401: {"model": schemas.ErrorResponse}}
-# ,tags=["Roles"])
-# @get_auth_access_check_decorator
-# async def get_roles(request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
-#     app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument,
-#     role_id: int = Query(None, example=100001),
-#     role_name: str = Query(None, example='assistant'),
-#     role_of_app: str = Query(None, example="abcd"),  
-#     search_word: str = Query(None, example="manager"),
-#     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
-#     db_: Session = Depends(get_db)):#pylint: disable=unused-argument
-#     '''fetches all the roles supported in the DB, their code and other details.
-#     * if any of the optional query parameters are provided, returns details of that roles  
-#     * skip=n: skips the first n objects in return list
-#     * limit=n: limits the no. of items to be returned to n
-#     * returns [] for not available content'''
-#     log.info('In get roles')
-#     log.debug('role_name: %s,role_of_app: %s, skip: %s, limit:%s',
-#         role_name, role_of_app, skip, limit)
-#     data =get_roles(db_, role_name,role_of_app,role_id=role_id,
-#         search_word=search_word, skip=skip, limit=limit)
-#     print(data,"o/p data")
-#     return {'message': "Role read successfully",
-#         "data": data}
-
 
 @router.get('/v2/access/roles',response_model=List[schema_auth.RoleReadResponse],
 responses={401: {"model": schemas.ErrorResponse}},tags=["Access-control"])
@@ -380,7 +300,7 @@ async def get_roles(request: Request,user_details =Depends(get_user_or_none),#py
     role_name: str = Query(None, example='assistant'),
     role_of_app: str = Query(None, example="abcd"),  
     search_word: str = Query(None, example="manager"),
-        skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''fetches all the roles supported in the DB, their code and other details.
     * if any of the optional query parameters are provided, returns details of that roles  
@@ -390,9 +310,6 @@ async def get_roles(request: Request,user_details =Depends(get_user_or_none),#py
     log.info('In get roles')
     log.debug('role_name: %s,role_of_app: %s, skip: %s, limit:%s',
         role_name, role_of_app, skip, limit)
-    # data= get_roles(db_, role_name,role_of_app,role_id=role_id,
-    #         search_word=search_word, skip=skip, limit=limit)
-    data= await get_roles(db_, role_name,role_of_app,role_id=role_id,
+    data= get_role(db_, role_name,role_of_app,role_id=role_id,
             search_word=search_word, skip=skip, limit=limit)
-    print(data,"o/p data")
     return data

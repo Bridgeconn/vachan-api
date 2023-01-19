@@ -239,4 +239,3 @@ class RoleReadResponse(BaseModel):
                 "roleDescription": "manager of the app"
             }
         }
-
