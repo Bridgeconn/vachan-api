@@ -249,10 +249,10 @@ def validate_draft_meta(sentence, draft, draft_meta):
         # and non empty
         src_len = len(sentence)
         for seg in src_segs:
-            assert 0 <= seg[0] < seg[1] <= src_len, f"Source segment {seg}, is improper!"
+            assert 0 <= seg[0] <= seg[1] <= src_len, f"Source segment {seg}, is improper!"
         trg_len = len(draft)
         for seg in trg_segs:
-            assert 0 <= seg[0] < seg[1] <= trg_len, f"Target segment {seg}, is improper!"
+            assert 0 <= seg[0] <= seg[1] <= trg_len, f"Target segment {seg}, is improper!"
         for meta in draft_meta:
             assert meta[2] in ['confirmed', 'suggestion', 'untranslated'],\
                 "invalid value where confirmed, suggestion or untranslated is expected"
