@@ -285,8 +285,8 @@ ALTER SEQUENCE public.apps_app_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.access_rules (
     rule_id SERIAL PRIMARY KEY,
-    entitlement text NOT NULL,
-    tag text NOT NULL,
+    entitlement_id int NOT NULL,
+    tag_id int NOT NULL,
     roles text[],
     created_at timestamp with time zone DEFAULT NOW(),
     created_user text NULL,
@@ -294,35 +294,35 @@ CREATE TABLE public.access_rules (
     last_updated_user text NULL,
     active boolean DEFAULT true NOT NULL,
     UNIQUE(rule_id),
-    CONSTRAINT fk_entitlement FOREIGN KEY(entitlement) REFERENCES public.resource_types(resource_type_name),
-    CONSTRAINT fk_tag FOREIGN KEY(tag) REFERENCES public.permissions(permission_name)
+    CONSTRAINT fk_entitlement FOREIGN KEY(entitlement_id) REFERENCES public.resource_types(resource_type_id),
+    CONSTRAINT fk_tag FOREIGN KEY(tag_id) REFERENCES public.permissions(permission_id)
 );
 
 ALTER SEQUENCE public.access_rules_rule_id_seq RESTART WITH 100000;
 
-\COPY access_rules(entitlement,tag,roles) FROM 'csvs/access_rules.csv' DELIMITER ',' CSV HEADER;
+-- \COPY access_rules(entitlement_id,tag_id,roles) FROM 'csvs/access_rules.csv' DELIMITER ',' CSV HEADER;
 
 CREATE TABLE public.api_permissions_map (
-    permission_id SERIAL PRIMARY KEY,
+    permission_map_id SERIAL PRIMARY KEY,
     api_endpoint text NOT NULL,
     method text NOT NULL,
-    request_app	 text NOT NULL,
+    request_app_id int NOT NULL,
     filter_results boolean DEFAULT false NOT NULL,
-    resource_type text NOT NULL,
-    permission text NOT NULL,
+    resource_type_id int NOT NULL,
+    permission_id int NOT NULL,
     created_at timestamp with time zone DEFAULT NOW(),
     created_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
     last_updated_user text NULL,
     active boolean DEFAULT true NOT NULL,
-    UNIQUE(permission_id),
-    CONSTRAINT fk_request_app FOREIGN KEY(request_app) REFERENCES public.apps(app_name),
-    CONSTRAINT fk_resource_type FOREIGN KEY(resource_type) REFERENCES public.resource_types(resource_type_name),
-    CONSTRAINT fk_permission FOREIGN KEY(permission) REFERENCES public.permissions(permission_name)
+    UNIQUE(permission_map_id),
+    CONSTRAINT fk_request_app FOREIGN KEY(request_app_id) REFERENCES public.apps(app_id),
+    CONSTRAINT fk_resource_type FOREIGN KEY(resource_type_id) REFERENCES public.resource_types(resource_type_id),
+    CONSTRAINT fk_permission FOREIGN KEY(permission_id) REFERENCES public.permissions(permission_id)
 );
 
-ALTER SEQUENCE public.api_permissions_map_permission_id_seq RESTART WITH 100000;
+ALTER SEQUENCE public.api_permissions_map_permission_map_id_seq RESTART WITH 100000;
 -- restrict values of a column
 ALTER TABLE public.api_permissions_map ADD CONSTRAINT check_type CHECK (public.api_permissions_map.method IN ('GET', 'POST', 'PUT', 'DELETE', 'PATCH'));
 
-\COPY api_permissions_map(api_endpoint,method,request_app,filter_results,resource_type,permission) FROM 'csvs/api_permissions.csv' DELIMITER ',' CSV HEADER;
+-- \COPY api_permissions_map(api_endpoint,method,request_app_id,filter_results,resource_type_id,permission_id) FROM 'csvs/api_permissions.csv' DELIMITER ',' CSV HEADER;

@@ -258,9 +258,9 @@ user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint:
     return {"message":f"deleted app with id : {app_id}"}
 
 # Authentication for App permission ----------------------------------------------
-@router.get('/v2/app/permissions',response_model=List[schema_auth.PermissionOut],
+@router.get('/v2/access/permissions',response_model=List[schema_auth.PermissionOut],
 responses={401: {"model": schemas.ErrorResponse}}
-,tags=["Auth-Permission"])
+,tags=["Access-Control"])
 @get_auth_access_check_decorator
 async def get_auth_permissions(request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
     app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument,
@@ -280,10 +280,10 @@ async def get_auth_permissions(request: Request,user_details =Depends(get_user_o
     return get_auth_permission(db_, permission_name,permission_id=permission_id,
         search_word=search_word, skip=skip, limit=limit)
 
-@router.post('/v2/app/permissions',response_model=schema_auth.PermissionResponse,
+@router.post('/v2/access/permissions',response_model=schema_auth.PermissionResponse,
     responses={400: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
     500: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
-    status_code=201,tags=["Auth-Permission"])
+    status_code=201,tags=["Access-Control"])
 @get_auth_access_check_decorator
 async def add_auth_permission(details:schema_auth.PermissionCreateInput,request: Request,#pylint: disable=unused-argument
 app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
@@ -297,17 +297,17 @@ db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     return {'message': "Auth Permission created successfully",
             "data": data}
 
-@router.put('/v2/app/permissions',response_model=schema_auth.PermissionResponse,
+@router.put('/v2/access/permissions',response_model=schema_auth.PermissionResponse,
     responses={400: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
     500: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
-    status_code=201,tags=["Auth-Permission"])
+    status_code=201,tags=["Access-Control"])
 @get_auth_access_check_decorator
 async def edit_auth_permission(details:schema_auth.PermissionUpdateInput,request: Request,#pylint: disable=unused-argument
 app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
 user_details =Depends(get_user_or_none),
 db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Update Authentication Permissions
-    * permissionId, permissionDescription is mandatory'''
+    * permissionId, permissionName, permissionDescription is mandatory'''
     log.info('In create Auth Permission')
     log.debug('Auth Permission Update In:%s',details)
     if len(get_auth_permission(db_, permission_id = details.permissionId,)) == 0:

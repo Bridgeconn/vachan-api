@@ -102,7 +102,7 @@ def get_default_role_for_app(app_key):
         raise NotAcceptableException("The requested app Not allowed to register Users")
     return user_role
 
-def api_resourcetype_map(endpoint, path_params=None):
+def api_resourcetype_map(endpoint, path_params=None):#pylint: disable=too-many-branches
     '''Default correlation between API endpoints and resource they act upon'''
     if endpoint.split('/')[2] in ["contents", "languages", "licenses", 'versions']:
         resource_type = 'meta-content'
@@ -112,6 +112,8 @@ def api_resourcetype_map(endpoint, path_params=None):
         resource_type = 'user'
     elif endpoint.startswith('/v2/app'):
         resource_type = 'app'
+    elif endpoint.startswith('/v2/access'):
+        resource_type = 'access-control'
     elif endpoint.startswith("/v2/translation") or endpoint.startswith("/v2/nlp"):
         resource_type = 'translation'
     elif endpoint.startswith("/v2/lookup"):
@@ -165,6 +167,7 @@ def get_access_tag(db_, resource_type, path_params=None, kw_args = None, resourc
     resource_tag_map = {
         'user': ['user'],
         'app': ['app'],
+        'access-control': ['access-control'],
         'project': ['translation-project'],
         'translation': ['generic-translation'],
         'lookup-content': ['lookup-content'],

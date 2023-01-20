@@ -200,7 +200,8 @@ class PermissionOut(BaseModel):
             "example": {
                 "permissionId": 100057,
                 "permissionName": "create-data",
-                "permissionDescription": "permission to create-data"
+                "permissionDescription": "Permission to make POST \
+                    calls making new entries to server DB"
             }
         }
 
@@ -218,17 +219,21 @@ class PermissionCreateInput(BaseModel):
         schema_extra = {
             "example": {
                 "permissionName": "create-data",
-                "permissionDescription": "permission to create-data"
+                "permissionDescription": "Permission to make POST calls\
+                     making new entries to server DB"
             }}
 
 class PermissionUpdateInput(BaseModel):
     """auth permission updation input"""
     permissionId:int
+    permissionName:str
     permissionDescription:str
     class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
                 "permissionId": 100001,
-                "permissionDescription": "permission to create-data"
+                "permissionName":'create-data',
+                "permissionDescription": "Permission to make POST calls\
+                     making new entries to server DB"
             }}

@@ -38,6 +38,8 @@ def create_auth_permission(db_: Session, details, user_id= None):
 def update_auth_permission(db_: Session, details, user_id= None):
     '''update a row to auth permission table'''
     db_content = db_.query(db_models.Permissions).get(details.permissionId)
+    if details.permissionName:
+        db_content.permissionName = details.permissionName
     if details.permissionDescription:
         db_content.permissionDescription = details.permissionDescription
     db_content.updatedUser = user_id
