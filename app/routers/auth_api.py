@@ -12,8 +12,6 @@ from auth.authentication import user_register_kratos,login_kratos,user_role_add 
     get_all_or_one_kratos_users,update_kratos_user
 from auth.auth_app import app_register_kratos, app_update_kratos, get_filter_apps
 from crud.auth_crud import update_role
-from crud import auth_crud
-
 
 
 router = APIRouter()
@@ -273,55 +271,21 @@ user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint:
     log.debug('app-delete:%s',app_id)
     delete_identity(app_id, app=True)
     return {"message":f"deleted app with id : {app_id}"}
-
-# @router.put('/v2/app/roles', response_model=schema_auth.RoleUpdateResponse,
-#     responses={502:{"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
-#     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
-#     401: {"model": schemas.ErrorResponse}},
-#     status_code=201, tags=["Roles"])
-# @get_auth_access_check_decorator
-# async def update_roles(request: Request, role_details:schema_auth.RoleIn,#pylint: disable=unused-argument
-# app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
-# user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
-#     ''' Changes one or more fields of roles'''
-#     log.info('In update_roles')
-#     log.debug('roles:%s',role_details)
-#     data = update_role(db_,role_details, user_id=user_details['user_id'])
-#     print(data,"this is data o/p")
-#     return {'message': "Role edited successfully",
-#         "data": data}
+#################################Roles########################################
 
 @router.put('/v2/access/roles',response_model=schema_auth.RoleUpdateResponse,
-responses={401: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse},
-500: {"model": schemas.ErrorResponse}},status_code=201,tags=["Roles"])
+responses={400: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
+    500: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    status_code=201,tags=["Access-control"])
 @get_auth_access_check_decorator
-async def update_roles(role_data:schema_auth.RoleIn,request: Request,#pylint: disable=unused-argument
+async def update_roles(role_details:schema_auth.RoleIn,request: Request,#pylint: disable=unused-argument
     app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
-    # print(update_roles,"print update_roles")
     '''Changes one or more fields of roles
     * Roles should be registered one
-    * including AppRoleName also'''
+    * naming the role by including the AppRoleName '''
     log.info('In update roles')
-    log.debug('role:%s',role_data)
-    data = update_role(db_,role_data, user_id=user_details['user_id'])
-
-    # print(data,"this is data o/p")
-    return {'message': "Role edited successfully",
-        "data": data} 
-
-
-# @router.put('/v2/app/{app_id}', response_model=schema_auth.AppUpdateResponse,
-# responses={401: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse},
-# 500: {"model": schemas.ErrorResponse}},status_code=201,tags=["App"])
-# @get_auth_access_check_decorator
-# async def edit_app(request: Request,#pylint: disable=unused-argument
-#     app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
-#     app_id:str =Path(...,example="4bd012fd-7de8-4d66-928f-4925ee9bb"),
-#     edit_details:schema_auth.EditApp = Body(...),
-#     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
-#     '''update app data'''
-#     log.info('In edit app Identity')
-#     log.debug('app_id: %s, app_details: %s',app_id, edit_details)
-#     data =  app_update_kratos(app_id=app_id, update_data=edit_details)
-#     return {"message":"app details updated successfully","data":data}
+    log.debug('roles:%s',role_details)
+    data = update_role(db_,role_details, user_id=user_details['user_id'])
+    return {'message': "Role updated successfully",
+        "data": data}

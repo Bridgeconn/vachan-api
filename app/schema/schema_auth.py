@@ -208,78 +208,14 @@ class RoleOut(BaseModel):
             }
         }
 
-# class RoleResponse(BaseModel):
-#     """Response object of role"""
-
-#     message:str
-#     data: RoleOut
-
-
-# class Roles(BaseModel):
-#     """kratos roles input"""
-#     roleName: str
-#     roleOfApp : str
-#     roleDescription : str
-
 class RoleIn(BaseModel):
     """kratos roles update input"""
+    roleId :int
     roleName: str
     roleOfApp : str
-    roleDescription : str
-
-
-# class RoleReadResponse(BaseModel):
-#     '''Return object of roles'''
-#     roleId : int
-#     roleName : str
-#     roleOfApp : str =None
-#     roleDescription : str =None
-#     class Config:
-#         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
-#         just get the data from object attributes'''
-#         orm_mode = True
-#         # '''display example value in API documentation'''
-#         schema_extra = {
-#             "example": {
-#                 "roleId": 100011,
-#                 "roleName": "manager",
-#                 "roleOfApp": "xyz",
-#                 "roleDescription": "manager of the app"
-#             }
-#         }
-
-class RoleEdit(BaseModel):
-    '''Input object of role update'''
-    roleId : int
-    roleName : str 
-    roleOfApp : str 
     roleDescription : str 
-    class Config:
-        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
-        just get the data from object attributes'''
-        orm_mode = True
-        # '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "roleId": 100011,
-                "roleName": "manager",
-                "roleOfApp": "xyz",
-                "roleDescription": "manager of the app"
-            }
-        }
-
+    
 class RoleUpdateResponse(BaseModel):
     '''Return object of role update'''
     message: str 
     data: RoleOut 
-
-class RoleIdentity(BaseModel):
-    """kratos role ID input"""
-    roleId:int
-    class Config:
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "roleId": 100001
-            }
-        }
