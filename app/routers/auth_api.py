@@ -291,7 +291,7 @@ db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     return {'message': "Role created successfully",
         "data": data}
 
-@router.get('/v2/access/roles',response_model=List[schema_auth.RoleReadResponse],
+@router.get('/v2/access/roles',response_model=List[schema_auth.RoleOut],
 responses={401: {"model": schemas.ErrorResponse}},tags=["Access-control"])
 @get_auth_access_check_decorator
 async def get_roles(request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument

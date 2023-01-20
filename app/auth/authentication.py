@@ -102,7 +102,7 @@ def get_default_role_for_app(app_key):
         raise NotAcceptableException("The requested app Not allowed to register Users")
     return user_role
 
-def api_resourcetype_map(endpoint, path_params=None):
+def api_resourcetype_map(endpoint, path_params=None):#pylint: disable=unused-argument,too-many-branches
     '''Default correlation between API endpoints and resource they act upon'''
     if endpoint.split('/')[2] in ["contents", "languages", "licenses", 'versions']:
         resource_type = 'meta-content'

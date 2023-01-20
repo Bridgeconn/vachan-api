@@ -192,7 +192,7 @@ class RoleOut(BaseModel):
     roleId : int 
     roleName : str
     roleOfApp : str
-    roleDescription : str
+    roleDescription : str = None
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
@@ -219,23 +219,3 @@ class Roles(BaseModel):
     roleName: str
     roleOfApp : str
     roleDescription : str
-
-class RoleReadResponse(BaseModel):
-    '''Return output object of roles'''
-    roleId : int
-    roleName : str
-    roleOfApp : str 
-    roleDescription : str =None
-    class Config:
-        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
-        just get the data from object attributes'''
-        orm_mode = True
-        # '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "roleId": 100011,
-                "roleName": "manager",
-                "roleOfApp": "xyz",
-                "roleDescription": "manager of the app"
-            }
-        }
