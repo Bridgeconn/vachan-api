@@ -330,4 +330,3 @@ class JobStatusResponse(BaseModel):
 class DeleteIdentity(BaseModel):
     """ ID input of item to be deleted"""
     itemId: int = Field(..., example=100000)
-    sourceName: str = Field(..., example="en_KJV_1_commentary")

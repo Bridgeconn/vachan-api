@@ -12,17 +12,10 @@ from crud.nlp_sw_crud import update_job #pylint: disable=import-error
 from schema import schemas_nlp, schema_content #pylint: disable=import-error
 from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException  #pylint: disable=import-error
 
-def get_commentaries(db_:Session, *args,**kwargs): #pylint: disable=too-many-locals
+def get_commentaries(db_: Session, source_name: str,book_code: str =None,chapter: int =None,#pylint: disable=too-many-arguments
+    verse: int = None,last_verse: int=None,active: bool= True,
+    skip: int = 0, limit: int = 100,commentary_id: int = None):
     '''Fetches rows of commentries from the table specified by source_name'''
-    source_name = args[0]
-    book_code = args[1]
-    chapter = args[2]
-    verse = args[3]
-    last_verse = args[4]
-    active = kwargs.get("active",True)
-    skip = kwargs.get("skip",0)
-    limit = kwargs.get("limit",100)
-
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException(f'{source_name} not found in database.')
     if not source_name.endswith(db_models.ContentTypeName.COMMENTARY.value):
@@ -33,6 +26,9 @@ def get_commentaries(db_:Session, *args,**kwargs): #pylint: disable=too-many-loc
         query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
     if chapter is not None:
         query = query.filter(model_cls.chapter == chapter)
+    if commentary_id is not None:
+        query = query.filter(model_cls.commentaryId == commentary_id)
+        return query.offset(skip).limit(limit).all()
     if verse is not None:
         if last_verse is None:
             last_verse = verse
@@ -193,18 +189,6 @@ def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=
         "output": {"message": "Commentaries updated successfully","data": db_content_out}}
     update_job(db_, job_id, user_id, update_args)
 
-def get_commentary_id(db_: Session,commentary_id = None,source_name =None,table_name=None,**kwargs):
-    '''Fetches row of commentary id'''
-    skip = kwargs.get("skip",0)
-    limit = kwargs.get("limit",100)
-    model_cls = table_name
-    query = db_.query(model_cls)
-    if source_name not in db_models.dynamicTables:
-        raise NotAvailableException(f'{source_name} not found in database.')
-    if commentary_id is not None:
-        query = query.filter(model_cls.commentaryId == commentary_id)
-    return query.offset(skip).limit(limit).all()
-
 def delete_commentary(db_: Session, delitem: schemas_nlp.DeleteIdentity,table_name = None):
     '''delete particular commentary, selected via source id'''
     model_cls = table_name
@@ -214,7 +198,7 @@ def delete_commentary(db_: Session, delitem: schemas_nlp.DeleteIdentity,table_na
     #db_.commit()
     return db_content
 
-def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):#pylint: disable=too-many-locals
+def get_dictionary_words(db_:Session, source_name,search_word =None, word_id=None,**kwargs):#pylint: disable=too-many-locals
     '''Fetches rows of dictionary from the table specified by source_name'''
     details = kwargs.get("details",None)
     exact_match = kwargs.get("exact_match",False)
@@ -231,6 +215,9 @@ def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):#
         query = db_.query(model_cls.word)
     else:
         query = db_.query(model_cls)
+    if word_id:
+        query = query.filter(model_cls.wordId == word_id)
+        return query.offset(skip).limit(limit).all()
     if search_word and exact_match:
         query = query.filter(model_cls.word == utils.normalize_unicode(search_word))
     elif search_word:

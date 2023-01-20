@@ -690,7 +690,8 @@ async def get_commentary(request: Request,
     book_code: schemas.BookCodePattern=Query(None, example="1ki"),
     chapter: int = Query(None, example=10, ge=-1), verse: int = Query(None, example=1, ge=-1),
     last_verse: int = Query(None, example=3, ge=-1), active: bool = True,
-    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
+    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),\
+    commentary_id: int= Query(None, example=100000),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Fetches commentries under the specified source.
     * optional query parameters can be used to filter the result set
@@ -707,7 +708,7 @@ async def get_commentary(request: Request,
         last_verse:%s, skip: %s, limit: %s',
         source_name, book_code, chapter, verse, last_verse, skip, limit)
     return contents_crud.get_commentaries(db_, source_name, book_code, chapter, verse, last_verse,
-        active=active, skip = skip, limit = limit)
+        active=active, skip = skip, limit = limit,commentary_id=commentary_id)
 
 @router.post('/v2/commentaries/{source_name}',
     response_model=schema_content.CommentaryCreateResponse, response_model_exclude_none=True,
@@ -790,19 +791,20 @@ async def edit_commentary(request: Request,background_tasks: BackgroundTasks,
     502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Commentaries"])
 @get_auth_access_check_decorator
-async def delete_commentary(request: Request, delete_obj: schemas_nlp.DeleteIdentity = Body(...), \
-    user_details =Depends(get_user_or_none),  \
-    db_: Session = Depends(get_db)):
+async def delete_commentary(request: Request,
+    source_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
+    delete_obj: schemas_nlp.DeleteIdentity = Body(...),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Commentary
     * unique Commentary Id can be used to delete an exisiting identity'''
     log.info('In delete_commentaries')
     log.debug('commentary-delete:%s',delete_obj)
     commentary_id= delete_obj.itemId
-    source_name = delete_obj.sourceName
     tb_name = db_models.dynamicTables[source_name]
     dbtable_name = tb_name.__name__
-    if len(contents_crud.get_commentary_id(db_, commentary_id= delete_obj.itemId, \
-        source_name=delete_obj.sourceName,table_name=tb_name)) == 0:
+    if len(contents_crud.get_commentaries(db_, source_name, book_code=None,
+        chapter=None, verse=None, last_verse=None,
+        active=True, skip = 0, limit = 100,commentary_id= delete_obj.itemId)) == 0:
         raise NotAvailableException(f"Commentary with id {commentary_id} not found")
     deleted_content = contents_crud.delete_commentary(db_=db_, \
         delitem=delete_obj,table_name=tb_name)
@@ -905,8 +907,8 @@ async def delete_dictionaries(request: Request, delete_obj: schema_content.Delet
     source_name = delete_obj.sourceName
     tb_name = db_models.dynamicTables[source_name]
     dbtable_name = tb_name.__name__
-    if len(contents_crud.get_word_id(db_, word_id= delete_obj.itemId, \
-        source_name=delete_obj.sourceName,table_name=tb_name)) == 0:
+    if len(contents_crud.get_dictionary_words(db_,source_name=delete_obj.sourceName,
+    word_id= delete_obj.itemId)) == 0:
         raise NotAvailableException(f"Dictionary with id {word_id} not found")
     deleted_content = contents_crud.delete_dictionary(db_=db_, \
         delitem=delete_obj,table_name=tb_name)

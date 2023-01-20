@@ -148,7 +148,7 @@ class Dictionary(): # pylint: disable=too-few-public-methods
     word = Column('word', String, unique=True)
     details = Column('details', JSONB)
     active = Column('active', Boolean)
-    createdUser = Column('crerated_user',String)
+    createdUser = Column('created_user',String)
 
     __table_args__ = (
         {'extend_existing': True},
