@@ -84,10 +84,5 @@
        "login":["noAuthRequired"],
         "logout":["SuperAdmin", "VachanAdmin"],
         "delete/deactivate":["SuperAdmin", "VachanAdmin"]
-    },
-    "access-control":{
-        "create":["SuperAdmin", "VachanAdmin"],
-        "edit":["SuperAdmin", "VachanAdmin"],
-        "read":["SuperAdmin", "VachanAdmin"]
     }
 }    
