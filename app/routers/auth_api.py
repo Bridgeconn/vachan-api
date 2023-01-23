@@ -273,7 +273,7 @@ user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint:
     return {"message":f"deleted app with id : {app_id}"}
 #################################Roles########################################
 
-@router.put('/v2/access/roles',response_model=schema_auth.RoleUpdateResponse,
+@router.put('/v2/access/roles',response_model=schema_auth.RoleResponse,
 responses={400: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
     500: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
     status_code=201,tags=["Access-control"])
@@ -282,7 +282,7 @@ async def update_roles(role_details:schema_auth.RoleIn,request: Request,#pylint:
     app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''Changes one or more fields of roles
-    * Roles should be registered one
+    * roleId, roleName,roleOfApp,roleDescription is mandatory
     * naming the role by including the AppRoleName '''
     log.info('In update roles')
     log.debug('roles:%s',role_details)

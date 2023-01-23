@@ -215,7 +215,7 @@ class RoleIn(BaseModel):
     roleOfApp : str
     roleDescription : str 
     
-class RoleUpdateResponse(BaseModel):
+class RoleResponse(BaseModel):
     '''Return object of role update'''
     message: str 
     data: RoleOut 
