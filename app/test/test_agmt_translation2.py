@@ -301,3 +301,45 @@ def test_draft_meta_validation():
     resp = client.put(f"/v2/autographa/project/draft?project_id={project_id}",
         headers=headers_auth, json=json_data)
     assert resp.status_code == 201
+
+def test_space_in_suggested_draft():
+    '''BUgfix text for #485, after changes in PR #486'''
+    resp = add_project(project_data, auth_token=initial_test_users['AgUser']['token'])
+    assert resp.json()['message'] == "Project created successfully"
+    project_id = resp.json()['data']['projectId']
+
+    put_data = {
+        "projectId": project_id,
+        "sentenceList":source_sentences
+    }
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
+    assert resp.json()['message'] == "Project updated successfully"
+
+    # Add a gloss to ensure some suggestion in output
+    tokens_trans = [
+        {"token":"jungle", "translations":["കാട്"]},
+        {"token":"far", "translations":["ദൂരെ"]},
+        {"token":"fox", "translations":["കുറുക്കന്‍"]}
+    ]
+    response = client.post('/v2/nlp/learn/gloss?source_language=en&target_language=ml',
+        headers=headers_auth, json=tokens_trans)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Added to glossary"
+
+
+    #Get suggestions
+    resp = client.put(f"/v2/autographa/project/suggestions?project_id={project_id}&sentenceIdList=100", 
+        headers=headers_auth)
+    assert resp.status_code == 201
+    resp_obj = resp.json()
+    assert resp_obj[0]['draft'] != ""
+    assert not resp_obj[0]['draft'].startswith(" ")
+
+    #Get suggestions again
+    resp = client.put(f"/v2/autographa/project/suggestions?project_id={project_id}&sentenceIdList=100", 
+        headers=headers_auth)
+    assert resp.status_code == 201
+    resp_obj = resp.json()
+    assert resp_obj[0]['draft'] != ""
+    assert not resp_obj[0]['draft'].startswith(" ")
