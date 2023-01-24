@@ -100,14 +100,17 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
     # db_.refresh(db_content)
     return db_content
 
-def add_deleted_data(db_: Session, del_content, table_name : str = None):
+def add_deleted_data(db_: Session, del_content, table_name : str = None,source_createduser = None):
     '''backup deleted items from any table'''
     json_string = jsonpickle.encode(del_content)#, unpicklable=False
     json_string=json.loads(json_string)
     del json_string['py/object'],json_string['_sa_instance_state']
+    if source_createduser is not None:
+        created_user = source_createduser
+    else:
+        created_user = del_content.createdUser
     db_content =  db_models.DeletedItem(deletedData = json_string,
-        #createdUser = del_content.createdUser,
-        createdUser = del_content.createdUser,
+        createdUser = created_user,
         deletedTime = datetime.now(),
         deletedFrom = table_name)
     db_.add(db_content)
@@ -157,6 +160,7 @@ def delete_language(db_: Session, lang: schemas.DeleteIdentity):
 def get_licenses(db_: Session, license_code = None, license_name = None,
     permission = None, active=True, **kwargs):
     '''Fetches rows of licenses, with pagination and various filters'''
+    license_id = kwargs.get("license_id",None)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
     query = db_.query(db_models.License)
@@ -164,18 +168,11 @@ def get_licenses(db_: Session, license_code = None, license_name = None,
         query = query.filter(db_models.License.code == license_code.upper())
     if license_name:
         query = query.filter(db_models.License.name == license_name.strip())
+    if license_id is not None:
+        query = query.filter(db_models.License.licenseId == license_id)
     if permission is not None:
         query = query.filter(db_models.License.permissions.any(permission))
     return query.filter(db_models.License.active == active).offset(skip).limit(limit).all()
-
-def get_license_id(db_: Session, license_id = None, **kwargs):
-    '''Fetches row of content type'''
-    skip = kwargs.get("skip",0)
-    limit = kwargs.get("limit",100)
-    query = db_.query(db_models.License)
-    if license_id is not None:
-        query = query.filter(db_models.License.licenseId == license_id)
-    return query.offset(skip).limit(limit).all()
 
 def create_license(db_: Session, license_obj: schemas.LicenseCreate, user_id=None):
     '''Adds a new license to Database'''

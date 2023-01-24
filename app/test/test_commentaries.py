@@ -594,6 +594,12 @@ def test_delete_default():
     headers_auth = {"contentType": "application/json",#pylint: disable=redefined-outer-name
                 "accept": "application/json"}
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    post_response = client.get(UNIT_URL+source_name+'?book_code=gen&chapter=0',\
+        headers=headers_auth)
+    assert post_response.status_code == 200
+    assert len(post_response.json()) == 1
+    for item in post_response.json():
+        assert_positive_get(item)
     commentary_response = client.get(UNIT_URL+source_name,headers=headers_auth)
     commentary_id = commentary_response.json()[0]['commentaryId']
 
@@ -630,7 +636,10 @@ def test_delete_default():
          f"Commentary id {commentary_id} deleted successfully"
     #Check commentray is deleted from table
     commentary_response = client.get(UNIT_URL+source_name,headers=headers_auth)
-    # assert_not_available_content(commentary_response)
+    assert commentary_response.status_code == 200
+    delete_response = client.get(UNIT_URL+source_name+'?book_code=gen&chapter=0',\
+        headers=headers_auth)
+    assert_not_available_content(delete_response)
 
 def test_delete_default_superadmin():
     ''' positive test case, checking for correct return of deleted commentary ID'''
@@ -653,7 +662,6 @@ def test_delete_default_superadmin():
 
     commentary_response = client.get(UNIT_URL+source_name,headers=headers_sa)
     commentary_id = commentary_response.json()[0]['commentaryId']
-
     data = {
       "itemId":commentary_id,
       "sourceName":source_name
@@ -664,7 +672,7 @@ def test_delete_default_superadmin():
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Commentary id {commentary_id} deleted successfully"
-    #Check commentray is deleted from table
+    # Check commentray is deleted from table
     commentary_response = client.get(UNIT_URL+source_name,headers=headers_sa)
     logout_user(test_user_token)
     return response,source_name
@@ -850,6 +858,12 @@ def test_restore_default():
     assert response.status_code == 201
     assert response.json()['message'] == \
     f"Deleted Item with identity {deleteditem_id} restored successfully"
+    restore_response = client.get(UNIT_URL+source_name+'?book_code=gen&chapter=0',\
+        headers=headers_auth)
+    assert restore_response.status_code == 200
+    assert len(restore_response.json()) == 1
+    for item in restore_response.json():
+        assert_positive_get(item)
     logout_user(test_user_token)
 
 def test_restore_item_id_string():

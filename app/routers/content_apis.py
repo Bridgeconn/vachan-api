@@ -251,7 +251,7 @@ async def delete_licenses(request: Request, delete_obj: schemas.DeleteIdentity =
     log.debug('license-delete:%s',delete_obj)
     license_id= delete_obj.itemId
     dbtable_name = "licenses"
-    if len(structurals_crud.get_license_id(db_, license_id= delete_obj.itemId)) == 0:
+    if len(structurals_crud.get_licenses(db_, license_id= delete_obj.itemId)) == 0:
         raise NotAvailableException(f"License id {license_id} not found")
     deleted_content = structurals_crud.delete_license(db_=db_, content=delete_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
@@ -690,8 +690,7 @@ async def get_commentary(request: Request,
     book_code: schemas.BookCodePattern=Query(None, example="1ki"),
     chapter: int = Query(None, example=10, ge=-1), verse: int = Query(None, example=1, ge=-1),
     last_verse: int = Query(None, example=3, ge=-1), active: bool = True,
-    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),\
-    commentary_id: int= Query(None, example=100000),
+    skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Fetches commentries under the specified source.
     * optional query parameters can be used to filter the result set
@@ -707,8 +706,9 @@ async def get_commentary(request: Request,
     log.debug('source_name: %s, book_code: %s, chapter: %s, verse:%s,\
         last_verse:%s, skip: %s, limit: %s',
         source_name, book_code, chapter, verse, last_verse, skip, limit)
-    return contents_crud.get_commentaries(db_, source_name, book_code, chapter, verse, last_verse,
-        active=active, skip = skip, limit = limit,commentary_id=commentary_id)
+    return contents_crud.get_commentaries(db_, source_name=source_name,chapter=chapter,\
+        book_code=book_code,verse=verse, last_verse=last_verse,active=active,\
+        skip = skip, limit = limit)
 
 @router.post('/v2/commentaries/{source_name}',
     response_model=schema_content.CommentaryCreateResponse, response_model_exclude_none=True,
@@ -802,14 +802,14 @@ async def delete_commentary(request: Request,
     commentary_id= delete_obj.itemId
     tb_name = db_models.dynamicTables[source_name]
     dbtable_name = tb_name.__name__
-    if len(contents_crud.get_commentaries(db_, source_name, book_code=None,
-        chapter=None, verse=None, last_verse=None,
-        active=True, skip = 0, limit = 100,commentary_id= delete_obj.itemId)) == 0:
+    get_commentary_response = contents_crud.get_commentaries(db_, \
+        source_name=source_name, commentary_id= delete_obj.itemId)
+    if len(get_commentary_response['db_content']) == 0:
         raise NotAvailableException(f"Commentary with id {commentary_id} not found")
-    deleted_content = contents_crud.delete_commentary(db_=db_, \
-        delitem=delete_obj,table_name=tb_name)
-    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-            table_name = dbtable_name)
+    deleted_content = contents_crud.delete_commentary(db_=db_,delitem=delete_obj,\
+        table_name=tb_name,source_name=source_name,user_id=user_details['user_id'])
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
+        table_name= dbtable_name,source_createduser= deleted_content['source_content'].createdUser)
     return {'message': f"Commentary id {commentary_id} deleted successfully",
             "data": delcont}
 
@@ -845,7 +845,7 @@ async def get_dictionary_word(request: Request,
     log.debug('source_name: %s, search_word: %s, exact_match: %s, word_list_only:%s, details:%s\
         skip: %s, limit: %s', source_name, search_word, exact_match, word_list_only, details,
         skip, limit)
-    return contents_crud.get_dictionary_words(db_, source_name, search_word,
+    return contents_crud.get_dictionary_words(db_, source_name=source_name, search_word=search_word,
         exact_match=exact_match,
         word_list_only=word_list_only, details=details, active=active, skip=skip, limit=limit)
 
@@ -907,13 +907,14 @@ async def delete_dictionaries(request: Request, delete_obj: schema_content.Delet
     source_name = delete_obj.sourceName
     tb_name = db_models.dynamicTables[source_name]
     dbtable_name = tb_name.__name__
-    if len(contents_crud.get_dictionary_words(db_,source_name=delete_obj.sourceName,
-    word_id= delete_obj.itemId)) == 0:
+    get_dictionary_response = contents_crud.get_dictionary_words(db_, source_name=source_name, \
+        word_id= delete_obj.itemId)
+    if len(get_dictionary_response['db_content']) == 0:
         raise NotAvailableException(f"Dictionary with id {word_id} not found")
-    deleted_content = contents_crud.delete_dictionary(db_=db_, \
-        delitem=delete_obj,table_name=tb_name)
-    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-            table_name = dbtable_name)
+    deleted_content = contents_crud.delete_dictionary(db_=db_,delitem=delete_obj,\
+        table_name=tb_name,source_name=source_name,user_id=user_details['user_id'])
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
+        table_name= dbtable_name,source_createduser= deleted_content['source_content'].createdUser)
     return {'message': f"Dictionary id {word_id} deleted successfully",
             "data": delcont}
 

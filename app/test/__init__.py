@@ -78,6 +78,9 @@ def check_default_get(unit_url, headers, assert_positive_get):
     '''checks for an array of items of particular type'''
     #without auth
     response = client.get(unit_url,headers=headers)
+    print("/////////////response:",response.json())
+    print("/////////////response code:",response.status_code)
+
     assert response.status_code == 200
     assert isinstance( response.json(), list)
     assert len(response.json()) > 0

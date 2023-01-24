@@ -375,10 +375,14 @@ def test_delete_default():
     headers_auth = {"contentType": "application/json",#pylint: disable=redefined-outer-name
                 "accept": "application/json"}
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    post_response = client.get(UNIT_URL+source_name+'?search_word=one',\
+        headers=headers_auth)
+    assert post_response.status_code == 200
+    assert len(post_response.json()) == 1
+    for item in post_response.json():
+        assert_positive_get(item)   
     dictionary_response = client.get(UNIT_URL+source_name,headers=headers_auth)
-    word_id = dictionary_response.json()[0]['wordId']
-
-    # data = {"itemId":word_id,"sourceName":source_name}
+    word_id = dictionary_response.json()[0]['wordId'] 
     data = {
       "itemId":word_id,
       "sourceName":source_name
@@ -411,6 +415,10 @@ def test_delete_default():
          f"Dictionary id {word_id} deleted successfully"
     #Check commentray is deleted from table
     dictionary_response = client.get(UNIT_URL+source_name,headers=headers_auth)
+    assert dictionary_response.status_code == 200
+    delete_response = client.get(UNIT_URL+source_name+'?search_word=one',\
+        headers=headers_auth)
+    assert_not_available_content(delete_response)
 
 def test_delete_default_superadmin():
     ''' positive test case, checking for correct return of deleted word ID'''
@@ -587,7 +595,7 @@ def test_restore_default():
     '''positive test case, checking for correct return object'''
     #only Super Admin can restore deleted data
     #Creating and Deleting data
-    response = test_delete_default_superadmin()[0]
+    response,source_name = test_delete_default_superadmin()
     deleteditem_id = response.json()['data']['itemId']
     data = {"itemId": deleteditem_id}
     #Restoring data
@@ -625,7 +633,12 @@ def test_restore_default():
     assert response.status_code == 201
     assert response.json()['message'] == \
     f"Deleted Item with identity {deleteditem_id} restored successfully"
-    assert_positive_get(response.json()['data'])
+    restore_response = client.get(UNIT_URL+source_name+'?search_word=one',\
+        headers=headers_auth)
+    assert restore_response.status_code == 200
+    assert len(restore_response.json()) == 1
+    for item in restore_response.json():
+        assert_positive_get(item)
     logout_user(test_user_token)
 
 def test_restore_item_id_string():

@@ -301,7 +301,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             # All no-auth and role based cases checked and appoved if applicable
             if db_:
                 db_.commit()
-                if (method == "DELETE" and "source" in endpoint) or "restore" in endpoint:
+                if (method == "DELETE" and "source" in endpoint):
                     db_models.dynamicTables = {}
                     db_models.map_all_dynamic_tables(db_= next(get_db()))
 
@@ -310,7 +310,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             if check_right(user_details, required_rights, obj, db_):
                 if db_:
                     db_.commit()
-                    if (method == "DELETE" and "source" in endpoint) or "restore" in endpoint:
+                    if (method == "DELETE" and "source" in endpoint):
                         db_models.dynamicTables = {}
                         db_models.map_all_dynamic_tables(db_= next(get_db()))
             else:
