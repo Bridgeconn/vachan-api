@@ -332,6 +332,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         response = await func(*args, **kwargs)
         #########################################
         obj = None
+        refresh_auth_func=None
         if isinstance(response, dict):
             # separating out intended response and (source/project)object passed for auth check
             if "db_content" in response:
@@ -346,6 +347,8 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                         obj = response['data']['source_content']
                     if "project_content" in response['data']:
                         obj = response['data']['project_content']
+                    if "refresh_auth_func" in response['data']:
+                        refresh_auth_func= response['data']['refresh_auth_func']
                     response['data'] = response['data']['db_content']
                 else:
                     obj = response['data']
@@ -355,6 +358,13 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             # All no-auth and role based cases checked and appoved if applicable
             if db_:
                 db_.commit()
+                if refresh_auth_func is not None:
+                    refresh_auth_func()
+
+                # refresh_auth_globals()
+                # if (method == "POST" and "source" in endpoint):
+                #     db_models.dynamicTables = {}
+                #     db_models.map_all_dynamic_tables(db_= next(get_db()))
 
         elif obj is not None:
             # Resource(item) specific checks

@@ -7,21 +7,23 @@ import db_models
 from custom_exceptions import NotAvailableException
 from auth.auth_globals import generate_roles, APPS
 
-def create_role(db_: Session, role_details, user_id=None):
+def create_role(db_: Session, role_details,user_id=None):
     '''Adds a row to roles table'''
     if role_details.roleOfApp.lower() not in [app.lower() for app in APPS]:
         raise NotAvailableException(f"{role_details.roleOfApp} is not registered")
-
     db_content = db_models.Roles(roleName = role_details.roleName.lower(),
         roleOfApp = role_details.roleOfApp,
         roleDescription = role_details.roleDescription,
         createdUser= user_id,
-        updatedUser=user_id,active=True)
+        updatedUser=user_id,
+        active=True)
     db_.add(db_content)
     # db_.commit()
-    # db_.refresh(db_content)
-    generate_roles()
-    return db_content
+    response = {
+        'db_content':db_content,
+        'refresh_auth_func':generate_roles
+        }
+    return response
 
 def get_role(db_: Session,role_name =None,role_of_app =None,role_id=None,**kwargs):
     '''Fetches rows of role, with pagination and various filters'''
