@@ -348,7 +348,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                     if "project_content" in response['data']:
                         obj = response['data']['project_content']
                     if "refresh_auth_func" in response['data']:
-                        refresh_auth_func= response['data']['refresh_auth_func']    
+                        refresh_auth_func= response['data']['refresh_auth_func']
                     response['data'] = response['data']['db_content']
                 else:
                     obj = response['data']
