@@ -1,6 +1,7 @@
 ''' Place to define all Database CRUD operations for table Roles'''
 from sqlalchemy.orm import Session
 import db_models
+from auth.auth_globals import generate_roles
 
 def update_role(db_: Session, role_details, user_id=None):
     '''update rows to roles table'''
@@ -13,5 +14,8 @@ def update_role(db_: Session, role_details, user_id=None):
         db_content.roleDescription = role_details.roleDescription
     db_content.updatedUser = user_id
     # db_.commit()
-    # db_.refresh(db_content)
-    return db_content
+    response = {
+        'db_content':db_content,
+        'refresh_auth_func':generate_roles
+        }
+    return response
