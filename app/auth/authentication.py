@@ -360,12 +360,6 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                 db_.commit()
                 if refresh_auth_func is not None:
                     refresh_auth_func()
-
-                # refresh_auth_globals()
-                # if (method == "POST" and "source" in endpoint):
-                #     db_models.dynamicTables = {}
-                #     db_models.map_all_dynamic_tables(db_= next(get_db()))
-
         elif obj is not None:
             # Resource(item) specific checks
             if check_right(user_details, required_rights, obj, db_):
