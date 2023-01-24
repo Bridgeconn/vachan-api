@@ -123,10 +123,12 @@ services:
   depends_on:
    - vachan-api
   volumes:
-   - ./nginx/prod/app.conf:/etc/nginx/conf.d/default.conf:ro
+   - ./nginx/prod/app.conf.template:/etc/nginx/templates/default.conf.template:ro
    - ./certbot/www:/var/www/certbot/:ro
    - ./certbot/conf/:/etc/nginx/ssl/:ro
    - logs-vol:/var/log/nginx/
+  environment:
+    - VACHAN_DOMAIN=${VACHAN_DOMAIN}
   networks:
    - my-network
 
