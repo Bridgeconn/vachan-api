@@ -74,7 +74,7 @@ async def delete_contents(request: Request, content_obj: schemas.DeleteIdentity 
         raise NotAvailableException(f"Content id {content_id} not found")
     deleted_content = structurals_crud.delete_content(db_=db_, content=content_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-            table_name = dbtable_name)
+            table_name = dbtable_name,user_details=user_details)
     return {'message': f"Content with identity {content_id} deleted successfully",
             "data": delcont}
 
@@ -174,11 +174,9 @@ async def delete_languages(request: Request, lang_obj: schemas.DeleteIdentity = 
     dbtable_name = "languages"
     if len(structurals_crud.get_languages(db_, language_id = lang_obj.itemId)) == 0:
         raise NotAvailableException(f"Language id {language_id} not found")
-    # if len(structurals_crud.get_sources(db_, language_id = lang_obj.itemId)) > 0:
-    #     raise PermissionException(f"Language {language_id} is in use and can't be deleted")
     deleted_content = structurals_crud.delete_language(db_=db_, lang=lang_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-        table_name = dbtable_name)
+        table_name = dbtable_name,user_details=user_details)
     return {'message': f"Language with identity {language_id} deleted successfully",
             "data": delcont}
 
@@ -255,7 +253,7 @@ async def delete_licenses(request: Request, delete_obj: schemas.DeleteIdentity =
         raise NotAvailableException(f"License id {license_id} not found")
     deleted_content = structurals_crud.delete_license(db_=db_, content=delete_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-            table_name = dbtable_name)
+            table_name = dbtable_name,user_details=user_details)
     return {'message': f"License with identity {license_id} deleted successfully",
             "data": delcont}
 
@@ -341,7 +339,7 @@ async def delete_versions(request: Request, delete_obj: schemas.DeleteIdentity =
         raise NotAvailableException(f"Version id {delete_obj.itemId} not found")
     deleted_content = structurals_crud.delete_version(db_=db_, ver=delete_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-            table_name = dbtable_name)
+            table_name = dbtable_name,user_details=user_details)
     return {'message': f"Version with identity {version_id} deleted successfully",
             "data": delcont}
 
@@ -486,7 +484,7 @@ async def delete_sources(request: Request, delete_obj: schemas.DeleteIdentity = 
         raise NotAvailableException(f"Source id {source_id} not found")
     deleted_content = structurals_crud.delete_source(db_=db_, delitem=delete_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-            table_name = dbtable_name)
+            table_name = dbtable_name,user_details=user_details)
     return {'message': f"Source with identity {source_id} deleted successfully",
             "data": delcont}
 
@@ -809,7 +807,8 @@ async def delete_commentary(request: Request,
     deleted_content = contents_crud.delete_commentary(db_=db_,delitem=delete_obj,\
         table_name=tb_name,source_name=source_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
-        table_name= dbtable_name,source_createduser= deleted_content['source_content'].createdUser)
+        table_name= dbtable_name,source_createduser= deleted_content['source_content'].createdUser,\
+        item_createduser=deleted_content['item_createduser'],user_details=user_details)
     return {'message': f"Commentary id {commentary_id} deleted successfully",
             "data": delcont}
 
@@ -914,7 +913,8 @@ async def delete_dictionaries(request: Request, delete_obj: schema_content.Delet
     deleted_content = contents_crud.delete_dictionary(db_=db_,delitem=delete_obj,\
         table_name=tb_name,source_name=source_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
-        table_name= dbtable_name,source_createduser= deleted_content['source_content'].createdUser)
+        table_name= dbtable_name,source_createduser= deleted_content['source_content'].createdUser,\
+        item_createduser=deleted_content['item_createduser'],user_details=user_details)
     return {'message': f"Dictionary id {word_id} deleted successfully",
             "data": delcont}
 

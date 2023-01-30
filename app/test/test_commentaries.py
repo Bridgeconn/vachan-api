@@ -603,7 +603,6 @@ def test_delete_default():
     commentary_response = client.get(UNIT_URL+source_name,headers=headers_auth)
     commentary_id = commentary_response.json()[0]['commentaryId']
 
-    # data = {"itemId":commentary_id,"sourceName":source_name}
     data = {
       "itemId":commentary_id,
       "sourceName":source_name
@@ -859,7 +858,7 @@ def test_restore_default():
     assert response.json()['message'] == \
     f"Deleted Item with identity {deleteditem_id} restored successfully"
     restore_response = client.get(UNIT_URL+source_name+'?book_code=gen&chapter=0',\
-        headers=headers_auth)
+        headers=headers_sa)
     assert restore_response.status_code == 200
     assert len(restore_response.json()) == 1
     for item in restore_response.json():

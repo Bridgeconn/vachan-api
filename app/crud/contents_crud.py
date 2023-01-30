@@ -201,14 +201,15 @@ def delete_commentary(db_: Session, delitem: schemas_nlp.DeleteIdentity,table_na
     model_cls = table_name
     query = db_.query(model_cls)
     db_content = query.filter(model_cls.commentaryId == delitem.itemId).first()
-    db_.flush()
-    db_.delete(db_content)
     #db_.commit()
+    commentary_createduser = source_db_content.updatedUser
     source_db_content.updatedUser = user_id
     response = {
         'db_content':db_content,
-        'source_content':source_db_content
+        'source_content':source_db_content,
+        'item_createduser':commentary_createduser
         }
+    db_.delete(db_content)
     return response
 
 def get_dictionary_words(db_:Session,**kwargs):#pylint: disable=too-many-locals
@@ -316,14 +317,14 @@ def delete_dictionary(db_: Session, delitem: schema_content.DeleteIdentity,table
     model_cls = table_name
     query = db_.query(model_cls)
     db_content = query.filter(model_cls.wordId == delitem.itemId).first()
-    db_.flush()
-    db_.delete(db_content)
-    #db_.commit()
+    dictionary_createduser = source_db_content.updatedUser
     source_db_content.updatedUser = user_id
     response = {
         'db_content':db_content,
-        'source_content':source_db_content
+        'source_content':source_db_content,
+        'item_createduser':dictionary_createduser
         }
+    db_.delete(db_content)
     return response
 
 def get_infographics(db_:Session, source_name, book_code=None, title=None,**kwargs):

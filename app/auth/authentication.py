@@ -212,8 +212,8 @@ def check_right(user_details, required_rights, resp_obj=None, db_=None):
         return True
     if resp_obj is not None and db_ is not None:
         try:
-            if "resourceCreatedUser" in required_rights and \
-                    user_details['user_id'] == resp_obj.createdUser:
+            if "resourceCreatedUser" in required_rights  and \
+                user_details['user_id'] == resp_obj.createdUser:
                 valid = True
             if "projectOwner" in required_rights and \
                 is_project_owner(db_, resp_obj, user_details['user_id']):
@@ -301,9 +301,8 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             # All no-auth and role based cases checked and appoved if applicable
             if db_:
                 db_.commit()
-                if (method == "DELETE" and "source" in endpoint):
-                    db_models.dynamicTables = {}
-                    db_models.map_all_dynamic_tables(db_= next(get_db()))
+                # if (method == "DELETE" and "source" in endpoint) or "restore" in endpoint:
+                #     db_models.map_all_dynamic_tables(db_= next(get_db()))
 
         elif obj is not None:
             # Resource(item) specific checks
@@ -312,6 +311,8 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                     db_.commit()
                     if (method == "DELETE" and "source" in endpoint):
                         db_models.dynamicTables = {}
+                        db_models.map_all_dynamic_tables(db_= next(get_db()))
+                    if "restore" in endpoint:
                         db_models.map_all_dynamic_tables(db_= next(get_db()))
             else:
                 if user_details['user_id'] is None:

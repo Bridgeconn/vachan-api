@@ -100,17 +100,21 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
     # db_.refresh(db_content)
     return db_content
 
-def add_deleted_data(db_: Session, del_content, table_name : str = None,source_createduser = None):
+def add_deleted_data(db_: Session, del_content, table_name : str = None,source_createduser = None,#pylint: disable=too-many-arguments
+    item_createduser=None,user_details=None):
     '''backup deleted items from any table'''
     json_string = jsonpickle.encode(del_content)#, unpicklable=False
     json_string=json.loads(json_string)
     del json_string['py/object'],json_string['_sa_instance_state']
-    if source_createduser is not None:
-        created_user = source_createduser
+    if "SuperAdmin" in user_details['user_roles']:
+        deleted_user = user_details['user_id']
     else:
-        created_user = del_content.createdUser
+        if source_createduser is not None:
+            deleted_user = item_createduser
+        else:
+            deleted_user = del_content.createdUser
     db_content =  db_models.DeletedItem(deletedData = json_string,
-        createdUser = created_user,
+        createdUser = deleted_user,
         deletedTime = datetime.now(),
         deletedFrom = table_name)
     db_.add(db_content)
