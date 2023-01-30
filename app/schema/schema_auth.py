@@ -1,5 +1,4 @@
 """schema for auth related"""
-from enum import Enum
 from pydantic import BaseModel, validator
 from pydantic import types, EmailStr
 
@@ -187,3 +186,36 @@ class EditApp(BaseModel):
             if len(val) <= 0:
                 raise ValueError('Phone Should not be blank')
         return val
+    
+class RoleOut(BaseModel):
+    '''Return object of roles output'''
+    roleId : int 
+    roleName : str
+    roleOfApp : str
+    roleDescription : str = None
+    class Config:
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "roleId": 100011,
+                "roleName": "manager",
+                "roleOfApp": "xyz",
+                "roleDescription": "manager of the app"
+            }
+        }
+
+class RoleResponse(BaseModel):
+    """Response object of role"""
+
+    message:str
+    data: RoleOut
+
+
+class Roles(BaseModel):
+    """kratos roles input"""
+    roleName: str
+    roleOfApp : str
+    roleDescription : str

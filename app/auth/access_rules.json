@@ -85,4 +85,4 @@
         "logout":["SuperAdmin", "VachanAdmin"],
         "delete/deactivate":["SuperAdmin", "VachanAdmin"]
     }
-}
+}    
