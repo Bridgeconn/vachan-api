@@ -201,13 +201,10 @@ def delete_commentary(db_: Session, delitem: schemas_nlp.DeleteIdentity,table_na
     model_cls = table_name
     query = db_.query(model_cls)
     db_content = query.filter(model_cls.commentaryId == delitem.itemId).first()
-    #db_.commit()
-    commentary_createduser = source_db_content.updatedUser
     source_db_content.updatedUser = user_id
     response = {
         'db_content':db_content,
-        'source_content':source_db_content,
-        'item_createduser':commentary_createduser
+        'source_content':source_db_content
         }
     db_.delete(db_content)
     return response
@@ -317,12 +314,10 @@ def delete_dictionary(db_: Session, delitem: schema_content.DeleteIdentity,table
     model_cls = table_name
     query = db_.query(model_cls)
     db_content = query.filter(model_cls.wordId == delitem.itemId).first()
-    dictionary_createduser = source_db_content.updatedUser
     source_db_content.updatedUser = user_id
     response = {
         'db_content':db_content,
-        'source_content':source_db_content,
-        'item_createduser':dictionary_createduser
+        'source_content':source_db_content
         }
     db_.delete(db_content)
     return response

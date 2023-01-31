@@ -100,25 +100,29 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
     # db_.refresh(db_content)
     return db_content
 
-def add_deleted_data(db_: Session, del_content, table_name : str = None,source_createduser = None,#pylint: disable=too-many-arguments
-    item_createduser=None,user_details=None):
+def add_deleted_data(db_: Session, del_content, table_name : str = None,\
+    source = None, user_details = None):
     '''backup deleted items from any table'''
     json_string = jsonpickle.encode(del_content)#, unpicklable=False
     json_string=json.loads(json_string)
     del json_string['py/object'],json_string['_sa_instance_state']
-    if "SuperAdmin" in user_details['user_roles']:
-        deleted_user = user_details['user_id']
-    else:
-        if source_createduser is not None:
-            deleted_user = item_createduser
-        else:
-            deleted_user = del_content.createdUser
     db_content =  db_models.DeletedItem(deletedData = json_string,
-        createdUser = deleted_user,
+        createdUser = user_details['user_id'],
         deletedTime = datetime.now(),
         deletedFrom = table_name)
     db_.add(db_content)
-    return db_content
+
+    if source is not None:
+        response =  {
+            'db_content':db_content,
+            'source_content': source
+                }
+    else:
+        response =  {
+        'db_content':db_content,
+        'source_content':del_content
+            }
+    return response
 
 def get_restore_item_id(db_: Session, restore_item_id = None, **kwargs):
     '''Fetches row of deleted item'''

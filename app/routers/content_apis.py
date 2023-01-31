@@ -807,8 +807,7 @@ async def delete_commentary(request: Request,
     deleted_content = contents_crud.delete_commentary(db_=db_,delitem=delete_obj,\
         table_name=tb_name,source_name=source_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
-        table_name= dbtable_name,source_createduser= deleted_content['source_content'].createdUser,\
-        item_createduser=deleted_content['item_createduser'],user_details=user_details)
+        table_name= dbtable_name,source=deleted_content['source_content'],user_details=user_details)
     return {'message': f"Commentary id {commentary_id} deleted successfully",
             "data": delcont}
 
@@ -913,8 +912,7 @@ async def delete_dictionaries(request: Request, delete_obj: schema_content.Delet
     deleted_content = contents_crud.delete_dictionary(db_=db_,delitem=delete_obj,\
         table_name=tb_name,source_name=source_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
-        table_name= dbtable_name,source_createduser= deleted_content['source_content'].createdUser,\
-        item_createduser=deleted_content['item_createduser'],user_details=user_details)
+        table_name= dbtable_name,source=deleted_content['source_content'],user_details=user_details)
     return {'message': f"Dictionary id {word_id} deleted successfully",
             "data": delcont}
 
