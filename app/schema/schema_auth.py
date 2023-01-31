@@ -215,7 +215,7 @@ class RoleIn(BaseModel):
     roleDescription : str 
     
 class RoleResponse(BaseModel):
-    '''Return object of role'''
+    '''Return object of role update'''
     message: str 
     data: RoleOut 
 

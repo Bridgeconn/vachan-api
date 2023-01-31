@@ -54,3 +54,9 @@ def update_role(db_: Session, role_details, user_id=None):
     if role_details.roleDescription:
         db_content.roleDescription = role_details.roleDescription
     db_content.updatedUser = user_id
+    # db_.commit()
+    response = {
+        'db_content':db_content,
+        'refresh_auth_func':generate_roles
+        }
+    return response
