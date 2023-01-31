@@ -360,7 +360,6 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
                 db_.commit()
                 if refresh_auth_func is not None:
                     refresh_auth_func()
-
         elif obj is not None:
             # Resource(item) specific checks
             if check_right(user_details, required_rights, obj, db_):

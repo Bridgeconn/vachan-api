@@ -11,8 +11,7 @@ from auth.authentication import user_register_kratos,login_kratos,user_role_add 
     delete_identity , get_auth_access_check_decorator , get_user_or_none, kratos_logout,\
     get_all_or_one_kratos_users,update_kratos_user
 from auth.auth_app import app_register_kratos, app_update_kratos, get_filter_apps
-from crud.auth_crud import update_role
-
+from crud.auth_crud import create_role, get_role,update_role
 
 router = APIRouter()
 
@@ -289,3 +288,44 @@ async def update_roles(role_details:schema_auth.RoleIn,request: Request,#pylint:
     data = update_role(db_,role_details, user_id=user_details['user_id'])
     return {'message': "Role updated successfully",
         "data": data}
+
+@router.post('/v2/access/roles',response_model=schema_auth.RoleResponse,
+    responses={400: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
+    500: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    status_code=201,tags=["Access-control"])
+@get_auth_access_check_decorator
+async def create_roles(role_details:schema_auth.Roles,request: Request,#pylint: disable=unused-argument
+app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
+user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+    '''Roles of apps
+    * naming the role by including the AppRolename
+    * role name & role of apps field are mandatory'''
+    log.info('In create roles')
+    log.debug('roles:%s',role_details)
+    data = create_role(db_,role_details, user_id = user_details['user_id'])
+    return {'message': "Role created successfully",
+        "data": data}
+
+@router.get('/v2/access/roles',response_model=List[schema_auth.RoleOut],
+responses={401: {"model": schemas.ErrorResponse}},tags=["Access-control"])
+@get_auth_access_check_decorator
+async def get_roles(request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument,
+    role_id: int = Query(None, example=100001),
+    role_name: str = Query(None, example='assistant'),
+    role_of_app: str = Query(None, example="abcd"),\
+    search_word: str = Query(None, example="manager"),
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
+    db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+    '''fetches all the roles supported in the DB, their code and other details.
+    * if any of the optional query parameters are provided, returns details of that roles
+    * skip=n: skips the first n objects in return list
+    * limit=n: limits the no. of items to be returned to n
+    * returns [] for not available content'''
+    log.info('In get roles')
+    log.debug('role_name: %s,role_of_app: %s, skip: %s, limit:%s',
+        role_name, role_of_app, skip, limit)
+    data= get_role(db_, role_name,role_of_app,role_id=role_id,
+            search_word=search_word, skip=skip, limit=limit)
+    return data

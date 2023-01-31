@@ -1,5 +1,4 @@
 """schema for auth related"""
-from enum import Enum
 from pydantic import BaseModel, validator
 from pydantic import types, EmailStr
 
@@ -216,6 +215,12 @@ class RoleIn(BaseModel):
     roleDescription : str 
     
 class RoleResponse(BaseModel):
-    '''Return object of role update'''
+    '''Return object of role'''
     message: str 
     data: RoleOut 
+
+class Roles(BaseModel):
+    """kratos roles input"""
+    roleName: str
+    roleOfApp : str
+    roleDescription : str
