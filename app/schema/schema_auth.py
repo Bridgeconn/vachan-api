@@ -207,12 +207,17 @@ class RoleOut(BaseModel):
             }
         }
 
+class RoleIn(BaseModel):
+    """kratos roles update input"""
+    roleId :int
+    roleName: str
+    roleOfApp : str
+    roleDescription : str 
+    
 class RoleResponse(BaseModel):
-    """Response object of role"""
-
-    message:str
-    data: RoleOut
-
+    '''Return object of role update'''
+    message: str 
+    data: RoleOut 
 
 class Roles(BaseModel):
     """kratos roles input"""

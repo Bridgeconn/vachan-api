@@ -11,7 +11,7 @@ from auth.authentication import user_register_kratos,login_kratos,user_role_add 
     delete_identity , get_auth_access_check_decorator , get_user_or_none, kratos_logout,\
     get_all_or_one_kratos_users,update_kratos_user
 from auth.auth_app import app_register_kratos, app_update_kratos, get_filter_apps
-from crud.auth_crud import create_role, get_role
+from crud.auth_crud import create_role, get_role,update_role
 
 router = APIRouter()
 
@@ -270,9 +270,7 @@ user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint:
     log.debug('app-delete:%s',app_id)
     delete_identity(app_id, app=True)
     return {"message":f"deleted app with id : {app_id}"}
-
-###################Roles#############################
-
+#################################Roles########################################
 @router.post('/v2/access/roles',response_model=schema_auth.RoleResponse,
     responses={400: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
     500: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
@@ -313,3 +311,20 @@ async def get_roles(request: Request,user_details =Depends(get_user_or_none),#py
     data= get_role(db_, role_name,role_of_app,role_id=role_id,
             search_word=search_word, skip=skip, limit=limit)
     return data
+
+@router.put('/v2/access/roles',response_model=schema_auth.RoleResponse,
+responses={400: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
+    500: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    status_code=201,tags=["Access-control"])
+@get_auth_access_check_decorator
+async def update_roles(role_details:schema_auth.RoleIn,request: Request,#pylint: disable=unused-argument
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
+    user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+    '''Changes one or more fields of roles
+    * roleId, roleName,roleOfApp,roleDescription is mandatory
+    * naming the role by including the AppRoleName '''
+    log.info('In update roles')
+    log.debug('roles:%s',role_details)
+    data = update_role(db_,role_details, user_id=user_details['user_id'])
+    return {'message': "Role updated successfully",
+        "data": data}

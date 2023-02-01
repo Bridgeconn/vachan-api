@@ -1,4 +1,4 @@
-''' Place to define all Database CRUD operations for Roles'''
+''' Place to define all Database CRUD operations for table Roles'''
 import re
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -43,3 +43,20 @@ def get_role(db_: Session,role_name =None,role_of_app =None,role_id=None,**kwarg
     if role_id is not None:
         query = query.filter(db_models.Roles.roleId == role_id)
     return query.offset(skip).limit(limit).all()
+
+def update_role(db_: Session, role_details, user_id=None):
+    '''update rows to roles table'''
+    db_content = db_.query(db_models.Roles).get(role_details.roleId)
+    if role_details.roleName:
+        db_content.roleName = role_details.roleName
+    if role_details.roleOfApp:
+        db_content.roleOfApp = role_details.roleOfApp
+    if role_details.roleDescription:
+        db_content.roleDescription = role_details.roleDescription
+    db_content.updatedUser = user_id
+    # db_.commit()
+    response = {
+        'db_content':db_content,
+        'refresh_auth_func':generate_roles
+        }
+    return response
