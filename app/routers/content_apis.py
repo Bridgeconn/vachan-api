@@ -74,7 +74,7 @@ async def delete_contents(request: Request, content_obj: schemas.DeleteIdentity 
         raise NotAvailableException(f"Content id {content_id} not found")
     deleted_content = structurals_crud.delete_content(db_=db_, content=content_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-            table_name = dbtable_name)
+            table_name = dbtable_name,user_details=user_details)
     return {'message': f"Content with identity {content_id} deleted successfully",
             "data": delcont}
 
@@ -174,11 +174,9 @@ async def delete_languages(request: Request, lang_obj: schemas.DeleteIdentity = 
     dbtable_name = "languages"
     if len(structurals_crud.get_languages(db_, language_id = lang_obj.itemId)) == 0:
         raise NotAvailableException(f"Language id {language_id} not found")
-    # if len(structurals_crud.get_sources(db_, language_id = lang_obj.itemId)) > 0:
-    #     raise PermissionException(f"Language {language_id} is in use and can't be deleted")
     deleted_content = structurals_crud.delete_language(db_=db_, lang=lang_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-        table_name = dbtable_name)
+        table_name = dbtable_name,user_details=user_details)
     return {'message': f"Language with identity {language_id} deleted successfully",
             "data": delcont}
 
@@ -251,11 +249,11 @@ async def delete_licenses(request: Request, delete_obj: schemas.DeleteIdentity =
     log.debug('license-delete:%s',delete_obj)
     license_id= delete_obj.itemId
     dbtable_name = "licenses"
-    if len(structurals_crud.get_license_id(db_, license_id= delete_obj.itemId)) == 0:
+    if len(structurals_crud.get_licenses(db_, license_id= delete_obj.itemId)) == 0:
         raise NotAvailableException(f"License id {license_id} not found")
     deleted_content = structurals_crud.delete_license(db_=db_, content=delete_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-            table_name = dbtable_name)
+            table_name = dbtable_name,user_details=user_details)
     return {'message': f"License with identity {license_id} deleted successfully",
             "data": delcont}
 
@@ -341,7 +339,7 @@ async def delete_versions(request: Request, delete_obj: schemas.DeleteIdentity =
         raise NotAvailableException(f"Version id {delete_obj.itemId} not found")
     deleted_content = structurals_crud.delete_version(db_=db_, ver=delete_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-            table_name = dbtable_name)
+            table_name = dbtable_name,user_details=user_details)
     return {'message': f"Version with identity {version_id} deleted successfully",
             "data": delcont}
 
@@ -486,7 +484,7 @@ async def delete_sources(request: Request, delete_obj: schemas.DeleteIdentity = 
         raise NotAvailableException(f"Source id {source_id} not found")
     deleted_content = structurals_crud.delete_source(db_=db_, delitem=delete_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-            table_name = dbtable_name)
+            table_name = dbtable_name,user_details=user_details)
     return {'message': f"Source with identity {source_id} deleted successfully",
             "data": delcont}
 
@@ -706,8 +704,9 @@ async def get_commentary(request: Request,
     log.debug('source_name: %s, book_code: %s, chapter: %s, verse:%s,\
         last_verse:%s, skip: %s, limit: %s',
         source_name, book_code, chapter, verse, last_verse, skip, limit)
-    return contents_crud.get_commentaries(db_, source_name, book_code, chapter, verse, last_verse,
-        active=active, skip = skip, limit = limit)
+    return contents_crud.get_commentaries(db_, source_name=source_name,chapter=chapter,\
+        book_code=book_code,verse=verse, last_verse=last_verse,active=active,\
+        skip = skip, limit = limit)
 
 @router.post('/v2/commentaries/{source_name}',
     response_model=schema_content.CommentaryCreateResponse, response_model_exclude_none=True,
@@ -784,6 +783,34 @@ async def edit_commentary(request: Request,background_tasks: BackgroundTasks,
     # "data": contents_crud.update_commentaries(db_=db_, source_name=source_name,
     #     commentaries=commentaries, user_id=user_details['user_id'])}
 
+@router.delete('/v2/commentaries/{source_name}',response_model=schemas.DeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Commentaries"])
+@get_auth_access_check_decorator
+async def delete_commentary(request: Request,
+    source_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
+    delete_obj: schemas_nlp.DeleteIdentity = Body(...),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Delete Commentary
+    * unique Commentary Id can be used to delete an exisiting identity'''
+    log.info('In delete_commentaries')
+    log.debug('commentary-delete:%s',delete_obj)
+    commentary_id= delete_obj.itemId
+    tb_name = db_models.dynamicTables[source_name]
+    dbtable_name = tb_name.__name__
+    get_commentary_response = contents_crud.get_commentaries(db_, \
+        source_name=source_name, commentary_id= delete_obj.itemId)
+    if len(get_commentary_response['db_content']) == 0:
+        raise NotAvailableException(f"Commentary with id {commentary_id} not found")
+    deleted_content = contents_crud.delete_commentary(db_=db_,delitem=delete_obj,\
+        table_name=tb_name,source_name=source_name,user_id=user_details['user_id'])
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
+        table_name= dbtable_name,source=deleted_content['source_content'],user_details=user_details)
+    return {'message': f"Commentary id {commentary_id} deleted successfully",
+            "data": delcont}
+
 # # ########### Dictionary ###################
 @router.get('/v2/dictionaries/{source_name}',
     response_model_exclude_unset=True,
@@ -816,7 +843,7 @@ async def get_dictionary_word(request: Request,
     log.debug('source_name: %s, search_word: %s, exact_match: %s, word_list_only:%s, details:%s\
         skip: %s, limit: %s', source_name, search_word, exact_match, word_list_only, details,
         skip, limit)
-    return contents_crud.get_dictionary_words(db_, source_name, search_word,
+    return contents_crud.get_dictionary_words(db_, source_name=source_name, search_word=search_word,
         exact_match=exact_match,
         word_list_only=word_list_only, details=details, active=active, skip=skip, limit=limit)
 
@@ -861,6 +888,33 @@ async def edit_dictionary_word(request: Request,
     return {'message': "Dictionary words updated successfully",
         "data": contents_crud.update_dictionary_words(db_=db_, source_name=source_name,
         dictionary_words=dictionary_words, user_id=user_details['user_id'])}
+
+@router.delete('/v2/dictionaries/{source_name}',response_model=schemas.DeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Dictionaries"])
+@get_auth_access_check_decorator
+async def delete_dictionaries(request: Request, delete_obj: schema_content.DeleteIdentity = \
+    Body(...),user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Delete Dictionary
+    * unique Dictionary Id with source name can be used to delete an exisiting identity'''
+    log.info('In delete_dictionaries')
+    log.debug('dictionary-delete:%s',delete_obj)
+    word_id= delete_obj.itemId
+    source_name = delete_obj.sourceName
+    tb_name = db_models.dynamicTables[source_name]
+    dbtable_name = tb_name.__name__
+    get_dictionary_response = contents_crud.get_dictionary_words(db_, source_name=source_name, \
+        word_id= delete_obj.itemId)
+    if len(get_dictionary_response['db_content']) == 0:
+        raise NotAvailableException(f"Dictionary with id {word_id} not found")
+    deleted_content = contents_crud.delete_dictionary(db_=db_,delitem=delete_obj,\
+        table_name=tb_name,source_name=source_name,user_id=user_details['user_id'])
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
+        table_name= dbtable_name,source=deleted_content['source_content'],user_details=user_details)
+    return {'message': f"Dictionary id {word_id} deleted successfully",
+            "data": delcont}
 
 # # ########### Infographic ###################
 @router.get('/v2/infographics/{source_name}',

@@ -6,19 +6,20 @@ from datetime import datetime
 import sqlalchemy
 from sqlalchemy.orm import Session, defer, joinedload
 from sqlalchemy.sql import text
-import db_models
-from crud import utils
-from crud.nlp_sw_crud import update_job
-from schema import schemas_nlp
-from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException
+import db_models #pylint: disable=import-error
+from crud import utils  #pylint: disable=import-error
+from crud.nlp_sw_crud import update_job #pylint: disable=import-error
+from schema import schemas_nlp, schema_content #pylint: disable=import-error
+from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException  #pylint: disable=import-error
 
-def get_commentaries(db_:Session, *args,**kwargs):
+def get_commentaries(db_: Session,**kwargs):
     '''Fetches rows of commentries from the table specified by source_name'''
-    source_name = args[0]
-    book_code = args[1]
-    chapter = args[2]
-    verse = args[3]
-    last_verse = args[4]
+    source_name = kwargs.get("source_name")
+    book_code = kwargs.get("book_code",None)
+    chapter = kwargs.get("chapter",None)
+    verse = kwargs.get("verse",None)
+    last_verse = kwargs.get("last_verse",None)
+    commentary_id = kwargs.get("commentary_id",None)
     active = kwargs.get("active",True)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
@@ -32,6 +33,8 @@ def get_commentaries(db_:Session, *args,**kwargs):
         query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
     if chapter is not None:
         query = query.filter(model_cls.chapter == chapter)
+    if commentary_id is not None:
+        query = query.filter(model_cls.commentaryId == commentary_id)
     if verse is not None:
         if last_verse is None:
             last_verse = verse
@@ -190,8 +193,27 @@ def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=
         "output": {"message": "Commentaries updated successfully","data": db_content_out}}
     update_job(db_, job_id, user_id, update_args)
 
-def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):#pylint: disable=too-many-locals
+def delete_commentary(db_: Session, delitem: schemas_nlp.DeleteIdentity,table_name = None,\
+    source_name=None,user_id=None):
+    '''delete particular commentary, selected via source id'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    model_cls = table_name
+    query = db_.query(model_cls)
+    db_content = query.filter(model_cls.commentaryId == delitem.itemId).first()
+    source_db_content.updatedUser = user_id
+    response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+        }
+    db_.delete(db_content)
+    return response
+
+def get_dictionary_words(db_:Session,**kwargs):#pylint: disable=too-many-locals
     '''Fetches rows of dictionary from the table specified by source_name'''
+    source_name=kwargs.get("source_name")
+    search_word=kwargs.get("search_word",None)
+    word_id=kwargs.get("word_id",None)
     details = kwargs.get("details",None)
     exact_match = kwargs.get("exact_match",False)
     word_list_only = kwargs.get("word_list_only",False)
@@ -207,6 +229,9 @@ def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):#
         query = db_.query(model_cls.word)
     else:
         query = db_.query(model_cls)
+    if word_id:
+        query = query.filter(model_cls.wordId == word_id)
+        # return query.offset(skip).limit(limit).all()
     if search_word and exact_match:
         query = query.filter(model_cls.word == utils.normalize_unicode(search_word))
     elif search_word:
@@ -279,6 +304,22 @@ def update_dictionary_words(db_: Session, source_name, dictionary_words, user_id
         'db_content':db_content,
         'source_content':source_db_content
         }
+    return response
+
+def delete_dictionary(db_: Session, delitem: schema_content.DeleteIdentity,table_name = None,\
+    source_name=None,user_id=None):
+    '''delete particular word from dictionary, selected via sourcename and word id'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    model_cls = table_name
+    query = db_.query(model_cls)
+    db_content = query.filter(model_cls.wordId == delitem.itemId).first()
+    source_db_content.updatedUser = user_id
+    response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+        }
+    db_.delete(db_content)
     return response
 
 def get_infographics(db_:Session, source_name, book_code=None, title=None,**kwargs):

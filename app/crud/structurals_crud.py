@@ -100,18 +100,29 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
     # db_.refresh(db_content)
     return db_content
 
-def add_deleted_data(db_: Session, del_content, table_name : str = None):
+def add_deleted_data(db_: Session, del_content, table_name : str = None,\
+    source = None, user_details = None):
     '''backup deleted items from any table'''
     json_string = jsonpickle.encode(del_content)#, unpicklable=False
     json_string=json.loads(json_string)
     del json_string['py/object'],json_string['_sa_instance_state']
     db_content =  db_models.DeletedItem(deletedData = json_string,
-        #createdUser = del_content.createdUser,
-        createdUser = del_content.createdUser,
+        createdUser = user_details['user_id'],
         deletedTime = datetime.now(),
         deletedFrom = table_name)
     db_.add(db_content)
-    return db_content
+
+    if source is not None:
+        response =  {
+            'db_content':db_content,
+            'source_content': source
+                }
+    else:
+        response =  {
+        'db_content':db_content,
+        'source_content':del_content
+            }
+    return response
 
 def get_restore_item_id(db_: Session, restore_item_id = None, **kwargs):
     '''Fetches row of deleted item'''
@@ -127,23 +138,23 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
     db_restore = db_.query(db_models.DeletedItem).get(restored_item.itemId)
     db_content=db_restore
     json_string = db_content.deletedData
-    db_.delete(db_restore)
+
     content_class_map = {
         "languages":db_models.Language,
         "licenses":db_models.License,
         "versions":db_models.Version,
         "content_types": db_models.ContentType,
         "sources":db_models.Source,
-        "commentary":db_models.Commentary,
         "infographic":db_models.Infographic}
     if db_restore.deletedFrom in content_class_map:
         model_cls = content_class_map[db_restore.deletedFrom]
     else:
         source = get_sources(db_, table_name=db_restore.deletedFrom)[0]
-        content_type = source.contentType.contentType
-        model_cls = content_class_map[content_type]
+        model_cls = db_models.dynamicTables[source.sourceName]
+
     db_content = utils.convert_dict_to_sqlalchemy(json_string, model_cls)
     db_.add(db_content)
+    db_.delete(db_restore)
     #db_.commit()
     return db_content
 
@@ -157,6 +168,7 @@ def delete_language(db_: Session, lang: schemas.DeleteIdentity):
 def get_licenses(db_: Session, license_code = None, license_name = None,
     permission = None, active=True, **kwargs):
     '''Fetches rows of licenses, with pagination and various filters'''
+    license_id = kwargs.get("license_id",None)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
     query = db_.query(db_models.License)
@@ -164,18 +176,11 @@ def get_licenses(db_: Session, license_code = None, license_name = None,
         query = query.filter(db_models.License.code == license_code.upper())
     if license_name:
         query = query.filter(db_models.License.name == license_name.strip())
+    if license_id is not None:
+        query = query.filter(db_models.License.licenseId == license_id)
     if permission is not None:
         query = query.filter(db_models.License.permissions.any(permission))
     return query.filter(db_models.License.active == active).offset(skip).limit(limit).all()
-
-def get_license_id(db_: Session, license_id = None, **kwargs):
-    '''Fetches row of content type'''
-    skip = kwargs.get("skip",0)
-    limit = kwargs.get("limit",100)
-    query = db_.query(db_models.License)
-    if license_id is not None:
-        query = query.filter(db_models.License.licenseId == license_id)
-    return query.offset(skip).limit(limit).all()
 
 def create_license(db_: Session, license_obj: schemas.LicenseCreate, user_id=None):
     '''Adds a new license to Database'''
@@ -314,7 +319,7 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
     if source_name:
         query = query.filter(db_models.Source.sourceName == source_name)
     if table_name:
-        query = query.filter(db_models.Source.sourceName == table_name)
+        query = query.filter(db_models.Source.tableName == table_name)
     if access_tags:
         query = query.filter(db_models.Source.metaData.contains(
             {"accessPermissions":[tag.value for tag in access_tags]}))

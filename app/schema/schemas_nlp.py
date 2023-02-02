@@ -81,7 +81,7 @@ class SentenceInput(BaseModel):
     sentence: str = Field(...,
         example="इब्राहीम के वंशज दाऊद के पुत्र यीशु मसीह की वंशावली इस प्रकार है")
     @root_validator
-    def set_surrogate_id(cls, values): # pylint: disable=R0201 disable=E0213
+    def set_surrogate_id(cls, values): # pylint: disable=E0213
         '''Set surrogate id value, if not provided and make id int'''
         if values['surrogateId'] is None:
             values['surrogateId'] = values['sentenceId']
@@ -326,3 +326,7 @@ class JobStatusResponse(BaseModel):
     '''Response object for job'''
     message: str = Field(..., example="Automatically generated stopwords for the given language")
     data: Job
+
+class DeleteIdentity(BaseModel):
+    """ ID input of item to be deleted"""
+    itemId: int = Field(..., example=100000)

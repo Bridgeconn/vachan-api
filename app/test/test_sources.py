@@ -1072,8 +1072,8 @@ def test_delete_default():
     		'commentary':'the creation'}
      ]
     # headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    response = client.post(COMMENTARY_URL+source_name, headers=headers_auth, json=commentary_data)
-    response = client.get(COMMENTARY_URL+source_name,headers=headers_auth)
+    response = client.post(COMMENTARY_URL+source_name, headers=headers_va, json=commentary_data)
+    response = client.get(COMMENTARY_URL+source_name,headers=headers_va)
     assert response.status_code == 200
     assert len(response.json()) == 1
     for item in response.json():
@@ -1107,10 +1107,9 @@ def test_delete_default():
     check_source_name = client.get(UNIT_URL + "?source_name="+source_name, \
         headers=headers_auth)
     assert_not_available_content(check_source_name)
-    response = client.get(COMMENTARY_URL+source_name,headers=headers_auth)
+    #Check commentary exists
+    response = client.get(COMMENTARY_URL+source_name,headers=headers_va)
     assert response.status_code == 404
-
-
 
 def test_delete_default_superadmin():
     ''' positive test case, checking for correct return of deleted source ID'''
@@ -1266,6 +1265,9 @@ def test_restore_default():
     assert len(response.json()) == 1
     for item in response.json():
         assert_positive_get(item)
+     #Check commentary exists
+    response =client.get(COMMENTARY_URL+source_name,headers=headers_sa)
+    assert response.status_code == 200
 
 def test_restore_item_id_string():
     '''positive test case, passing deleted item id as string'''
