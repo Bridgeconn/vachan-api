@@ -1,0 +1,20 @@
+resource_type_name,resource_type_description
+content,"contents like bibles, commentaries, infographics, dictionary or videos"
+research-use,Research-Material
+project,Ag or translation project
+lookup-content,Lookup contents
+media,Media contents
+meta-content,"meta contents like licences, languages, versions or content types"
+user,all users in our system (Kratos)
+translation,generic translation apis
+jobs,Background-jobs
+open-access,open access contetns - source related
+publishable,publishable contents - source related
+downloadable,downloadable contents - source related
+derivable,derivable contents for projects - source related
+editable,editable contents
+translation-project,translation project
+generic-translation, general translation
+file-ops,file operations
+app,"application related operations"
+access-control,"control of access to endpoints"

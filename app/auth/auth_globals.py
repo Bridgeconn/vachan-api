@@ -15,7 +15,6 @@ INPUT_APPS = dict()
 ROLES = []
 
 #pylint: disable=broad-except, inconsistent-return-statements
-
 # Functions
 def generate_permission_map_table():
     """get permisison map table from db"""
@@ -52,7 +51,7 @@ def generate_access_rules_dict():
             ACCESS_RULES[rules_row.entitlement.resourceTypeName]\
                 [rules_row.tag.permissionName]= rules_row.roles
         print("access rules : ", len(ACCESS_RULES))
-        print(ACCESS_RULES)
+        # print(ACCESS_RULES)
         return ACCESS_RULES
     except Exception as err:
         # print("Error Generating Access Rules from DB :", e)
