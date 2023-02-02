@@ -221,7 +221,11 @@ def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):#
             query = query.filter(model_cls.details.op('->>')(key) == det[key])
     if active is not None:
         query = query.filter(model_cls.active == active)
-    res = query.offset(skip).limit(limit).all()
+    if skip is not None:
+        query = query.offset(skip)
+    if limit is not None:
+        query = query.limit(limit)
+    res = query.all()
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     response = {
