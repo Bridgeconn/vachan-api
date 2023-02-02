@@ -4,6 +4,7 @@ projects are included in nlp_crud module'''
 
 import re
 import itertools
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -65,8 +66,8 @@ def update_agmt_project_sentences(db_, project_obj, new_books, user_id):
             sentenceId=sent.sentenceId,
             surrogateId=sent.surrogateId,
             sentence=norm_sent,
-            draft=norm_sent,
-            draftMeta=[[offsets,offsets,"untranslated"]],
+            draft="",
+            draftMeta=[[offsets,[0,0], "untranslated"]],
             updatedUser=user_id)
         db_.add(draft_row)
 
@@ -93,8 +94,8 @@ def update_agmt_project_uploaded_book(db_,project_obj,new_books,user_id):
                             int(chapter_number)*1000+int(verse_number),
                         surrogateId=book_code+" "+str(chapter_number)+":"+str(verse_number),
                         sentence=verse_text,
-                        draft=verse_text,
-                        draftMeta=[[offsets,offsets,'untranslated']],
+                        draft="",
+                        draftMeta=[[offsets,[0,0], "untranslated"]],
                         updatedUser=user_id)
                     db_.add(draft_row)
 
@@ -210,7 +211,7 @@ def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
-    draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_list,
+    draft_rows = obtain_agmt_source(db_, project_id, books, sentence_id_list,
         sentence_id_range, with_draft=True)
     draft_rows = draft_rows['db_content']
     if output_format == schemas_nlp.DraftFormats.USFM :
@@ -248,10 +249,10 @@ def validate_draft_meta(sentence, draft, draft_meta):
         # and non empty
         src_len = len(sentence)
         for seg in src_segs:
-            assert 0 <= seg[0] < seg[1] <= src_len, f"Source segment {seg}, is improper!"
+            assert 0 <= seg[0] <= seg[1] <= src_len, f"Source segment {seg}, is improper!"
         trg_len = len(draft)
         for seg in trg_segs:
-            assert 0 <= seg[0] < seg[1] <= trg_len, f"Target segment {seg}, is improper!"
+            assert 0 <= seg[0] <= seg[1] <= trg_len, f"Target segment {seg}, is improper!"
         for meta in draft_meta:
             assert meta[2] in ['confirmed', 'suggestion', 'untranslated'],\
                 "invalid value where confirmed, suggestion or untranslated is expected"
@@ -263,7 +264,7 @@ def validate_draft_meta(sentence, draft, draft_meta):
 def update_agmt_draft(db_:Session, project_id, sentence_list, user_id):
     '''Directly write to the draft and draftMeta fields of project sentences'''
     sentence_id_list = [sent.sentenceId for sent in sentence_list]
-    source_resp = nlp_crud.obtain_agmt_source(db_, project_id,
+    source_resp = obtain_agmt_source(db_, project_id,
         sentence_id_list=sentence_id_list, with_draft=True)
     project_row = source_resp['project_content']
     sentences = source_resp['db_content']
@@ -292,7 +293,7 @@ def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_r
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
-    draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_list,
+    draft_rows = obtain_agmt_source(db_, project_id, books, sentence_id_list,
         sentence_id_range, with_draft=True)
     draft_rows = draft_rows["db_content"]
     confirmed_length = 0
@@ -335,7 +336,7 @@ def obtain_agmt_token_translation(db_, project_id, token, occurrences): # pylint
             new_occurences.append(occur)
     occurrences = new_occurences
     sentence_list = [occur["sentenceId"] for occur in occurrences]
-    draft_rows = nlp_crud.obtain_agmt_source(db_, project_id, sentence_id_list=sentence_list,
+    draft_rows = obtain_agmt_source(db_, project_id, sentence_id_list=sentence_list,
         with_draft=True)
     draft_rows = draft_rows["db_content"]
     translations = pin_point_token_in_draft(occurrences, draft_rows)
@@ -404,7 +405,7 @@ def get_agmt_source_per_token(db_:Session, project_id, token, occurrences): #pyl
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not present")
     sent_ids = [occur.sentenceId for occur in occurrences]
-    draft_rows = nlp_crud.obtain_agmt_source(db_, project_id,
+    draft_rows = obtain_agmt_source(db_, project_id,
         sentence_id_list=sent_ids, with_draft=True)
     draft_rows = draft_rows['db_content']
     occur_list = []
@@ -491,3 +492,53 @@ def pin_point_token_in_draft(occurrences, draft_rows):#pylint: disable=too-many-
         }
         translations.append(res)
     return translations
+
+#########################################################
+def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=None,#pylint: disable=too-many-locals
+    sentence_id_list=None, **kwargs):
+    '''fetches all or selected source sentences from translation_sentences table'''
+    with_draft= kwargs.get("with_draft",False)
+    only_ids = kwargs.get("only_ids",False)
+    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    if not project_row:
+        raise NotAvailableException(f"Project with id, {project_id}, not found")
+    sentence_query = db_.query(db_models.TranslationDraft).filter(
+        db_models.TranslationDraft.project_id == project_id)
+    if books:
+        book_filters = []
+        for buk in books:
+            book_id = db_.query(db_models.BibleBook.bookId).filter(
+                db_models.BibleBook.bookCode==buk).first()
+            if not book_id:
+                raise NotAvailableException(f"Book, {buk}, not in database")
+            book_filters.append(
+                db_models.TranslationDraft.sentenceId.between(
+                    book_id[0]*1000000, book_id[0]*1000000 + 999999))
+        sentence_query = sentence_query.filter(or_(*book_filters))
+    elif sentence_id_range:
+        sentence_query = sentence_query.filter(
+            db_models.TranslationDraft.sentenceId.between(
+                sentence_id_range[0],sentence_id_range[1]))
+    elif sentence_id_list:
+        sentence_query = sentence_query.filter(
+            db_models.TranslationDraft.sentenceId.in_(sentence_id_list))
+    draft_rows = sentence_query.order_by(db_models.TranslationDraft.sentenceId).all()
+    if only_ids:
+        result = []
+        for row in draft_rows:
+            obj = {"sentenceId": row.sentenceId,
+                "surrogateId":row.surrogateId}
+            result.append(obj)
+    elif with_draft:
+        result =  draft_rows
+    else:
+        result = []
+        for row in draft_rows:
+            obj = {"sentenceId": row.sentenceId,
+                "surrogateId":row.surrogateId,"sentence":row.sentence}
+            result.append(obj)
+    response = {
+        'db_content':result,
+        'project_content':project_row
+        }
+    return response

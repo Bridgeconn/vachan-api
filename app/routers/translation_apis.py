@@ -258,13 +258,15 @@ async def get_project_source(request: Request,project_id:int=Query(...,example="
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
-    with_draft:bool=False, user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
+    with_draft:bool=False, only_ids:bool=False, user_details =Depends(get_user_or_none),
+    db_:Session=Depends(get_db)):
     '''Obtains source sentences or verses, as per the filters'''
     log.info('In get_source')
-    log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s, with_draft:%s',
-        project_id, books, sentence_id_list, sentence_id_range, with_draft)
-    return nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_range, sentence_id_list,
-        with_draft=with_draft)
+    log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s, \
+         with_draft:%s, only_ids:%s',project_id, books, sentence_id_list, sentence_id_range,
+        with_draft, only_ids)
+    return projects_crud.obtain_agmt_source(db_, project_id, books, sentence_id_range,
+        sentence_id_list, with_draft=with_draft, only_ids=only_ids)
 
 @router.get('/v2/autographa/project/progress', status_code=200,
     response_model= schemas_nlp.Progress,
