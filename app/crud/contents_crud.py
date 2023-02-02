@@ -219,7 +219,8 @@ def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):#
         det = json.loads(details)
         for key in det:
             query = query.filter(model_cls.details.op('->>')(key) == det[key])
-    query = query.filter(model_cls.active == active)
+    if active is not None:
+        query = query.filter(model_cls.active == active)
     res = query.offset(skip).limit(limit).all()
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()

@@ -742,6 +742,40 @@ async def get_dictionary_word(request: Request,
         exact_match=exact_match,
         word_list_only=word_list_only, details=details, active=active, skip=skip, limit=limit)
 
+@router.get('/v2/dictionaries/{source_name}/count',
+    response_model=int,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
+    404:{"model": schemas.ErrorResponse},}, status_code=200, tags=["Dictionaries"])
+@get_auth_access_check_decorator
+async def get_dictionary_word_count(request: Request,
+    source_name: schemas.TableNamePattern=Path(...,example="en_TW_1_dictionary"),
+    search_word: str=Query(None, example="Adam"),
+    exact_match: bool=False,
+    details: schemas.MetaDataPattern=Query(None, example='{"type":"person"}'),
+    active: bool= Query(None),
+    user_details =Depends(get_user_or_none), db_: Session=Depends(get_db),
+    operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.CONTENT.value))):
+    '''Counts dictionary words that match the query criteria.
+    Using the search_word appropriately, it is possible to count:
+    * All word in the dictionary, if not specified
+    * All words starting with a letter
+    * All words starting with a substring
+    * An exact word search, giving the whole word and setting exactMatch to True
+    * Based on any key value pair in details, which should be specified as a dict/JSON like string
+    * Both active and deactivated words, by not specifiying a value for active, which is default. 
+        Recommended that it is set to true for regular use-cases
+    '''
+    log.info('In get_dictionary_word_count')
+    log.debug('source_name: %s, search_word: %s, exact_match: %s,  details:%s',
+        source_name, search_word, exact_match, details)
+    response = contents_crud.get_dictionary_words(db_, source_name, search_word,
+        exact_match=exact_match,
+        word_list_only=True, details=details, active=active)
+    response['db_content'] = len(response['db_content'])
+    return response
+
+
 @router.post('/v2/dictionaries/{source_name}',
     response_model=schema_content.DictionaryCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
