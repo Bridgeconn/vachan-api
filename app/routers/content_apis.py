@@ -763,7 +763,7 @@ async def get_dictionary_word_count(request: Request,
     * All words starting with a substring
     * An exact word search, giving the whole word and setting exactMatch to True
     * Based on any key value pair in details, which should be specified as a dict/JSON like string
-    * Both active and deactivated words, by not specifiying a value for active, which is default. 
+    * Both active and deactivated words, by not specifiying a value for active, which is default.
         Recommended that it is set to true for regular use-cases
     '''
     log.info('In get_dictionary_word_count')
