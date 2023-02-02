@@ -1,5 +1,5 @@
 '''Database connection module'''
-
+import urllib
 import os
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -11,8 +11,9 @@ postgres_database = os.environ.get("VACHAN_POSTGRES_DATABASE", "vachan")
 postgres_password = os.environ.get("VACHAN_POSTGRES_PASSWORD", "secret")
 postgres_port = os.environ.get("VACHAN_POSTGRES_PORT", "5432")
 
-SQLALCHEMY_DATABASE_URL = f"postgresql+psycopg2://{postgres_user}:{postgres_password}@"\
-		f"{postgres_host}:{postgres_port}/{postgres_database}"
+SQLALCHEMY_DATABASE_URL = f"postgresql+psycopg2://{postgres_user}:\
+{urllib.parse.quote(postgres_password)}@"\
+        f"{postgres_host}:{postgres_port}/{postgres_database}"
 
 connection_url = os.environ.get("VACHAN_POSTGRES_CONN", SQLALCHEMY_DATABASE_URL)
 
