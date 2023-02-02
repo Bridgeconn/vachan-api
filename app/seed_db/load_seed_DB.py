@@ -141,6 +141,7 @@ def seed_data_to_created_tables_no_fk(cursor,conn, csv_dict):
             for csv_name in data_dict["csvs"]:
                 current_csv_data=[]
                 current_csv_data = read_csv(os.path.join('csvs',csv_name), current_csv_data)
+                current_csv_data = [tuple([None if x == '' else x for x in c]) for c in current_csv_data]
                 csv_data_tuple = [tuple(l) for l in current_csv_data]
                 keys_string = str.join(',', data_dict["columns"])
                 insert_sql_cmd = f"INSERT INTO public.{db_name} ({keys_string}) VALUES %s"
