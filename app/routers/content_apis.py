@@ -985,6 +985,33 @@ async def edit_infographics(request: Request,
         "data": contents_crud.update_infographics(db_=db_, source_name=source_name,
         infographics=infographics, user_id=user_details['user_id'])}
 
+@router.delete('/v2/infographics/{source_name}',response_model=schemas.DeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Infographics"])
+@get_auth_access_check_decorator
+async def delete_infographics(request: Request, delete_obj: schema_content.DeleteIdentity = \
+    Body(...),user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Delete Infographic
+    * unique Infographic Id with source name can be used to delete an exisiting identity'''
+    log.info('In delete_infographics')
+    log.debug('infographics-delete:%s',delete_obj)
+    infographic_id= delete_obj.itemId
+    source_name = delete_obj.sourceName
+    tb_name = db_models.dynamicTables[source_name]
+    dbtable_name = tb_name.__name__
+    get_infographic_response = contents_crud.get_infographics(db_, source_name=source_name, \
+        infographic_id= delete_obj.itemId)
+    if len(get_infographic_response['db_content']) == 0:
+        raise NotAvailableException(f"Infographic with id {infographic_id} not found")
+    deleted_content = contents_crud.delete_infographic(db_=db_,delitem=delete_obj,\
+        table_name=tb_name,source_name=source_name,user_id=user_details['user_id'])
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
+        table_name= dbtable_name,source=deleted_content['source_content'],user_details=user_details)
+    return {'message': f"Infographic id {infographic_id} deleted successfully",
+            "data": delcont}
+
 # # ########### bible videos ###################
 @router.get('/v2/biblevideos/{source_name}',
     response_model=List[schema_content.BibleVideo],response_model_exclude_none=True,

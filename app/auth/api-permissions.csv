@@ -83,6 +83,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/infographics/{source_name},GET,API-user,False,None,read-via-api
 /v2/infographics/{source_name},POST,None,False,None,create
 /v2/infographics/{source_name},PUT,None,False,None,edit
+/v2/infographics/{source_name},DELETE,None,False,None,delete/deactivate
 /v2/biblevideos/{source_name},GET,Autographa,False,None,refer-for-translation
 /v2/biblevideos/{source_name},GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/biblevideos/{source_name},GET,VachanAdmin,False,None,read-via-vachanadmin

@@ -515,6 +515,7 @@ class InfographicEdit(BaseModel):
 
 class InfographicResponse(BaseModel):
     '''Response object of infographics'''
+    infographicId : int
     book : BibleBook
     title: str
     infographicLink : AnyUrl
