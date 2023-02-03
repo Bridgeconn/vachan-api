@@ -20,7 +20,8 @@ from auth.authentication import create_super_user
 from auth.auth_globals import generate_access_rules_dict, generate_permission_map_table,\
     generate_apps, generate_resource_types, generate_roles
 from auth.auth_app import register_default_apps_on_startup
-from seed_db.load_seed_db import create_database_and_seed
+# from seed_db.load_seed_db import create_database_and_seed
+from seed_db import load_seed_db
 
 # from auth.api_permission_map import initialize_apipermissions
 
@@ -42,7 +43,7 @@ app.add_middleware(
 )
 
 #Create db and seed if not exist
-create_database_and_seed()
+load_seed_db.create_database_and_seed()
 
 # register default apps
 register_default_apps_on_startup()
