@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from sqlalchemy.sql import text
 import db_models
+from custom_exceptions import NotAvailableException
+from auth.auth_globals import generate_roles, APPS
 
 def get_auth_permission(db_: Session, permission_name=None, permission_id=None, **kwargs):
     '''get rows from auth permission table'''
@@ -44,8 +46,6 @@ def update_auth_permission(db_: Session, details, user_id= None):
         db_content.permissionDescription = details.permissionDescription
     db_content.updatedUser = user_id
     return db_content
-from custom_exceptions import NotAvailableException
-from auth.auth_globals import generate_roles, APPS
 
 def create_role(db_: Session, role_details,user_id=None):
     '''Adds a row to roles table'''
