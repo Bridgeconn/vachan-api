@@ -192,7 +192,7 @@ def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=
         "endTime": datetime.now(),
         "output": {"message": "Commentaries updated successfully","data": db_content_out}}
     update_job(db_, job_id, user_id, update_args)
-
+# pylint: disable=duplicate-code
 def delete_commentary(db_: Session, delitem: schemas_nlp.DeleteIdentity,table_name = None,\
     source_name=None,user_id=None):
     '''delete particular commentary, selected via source id'''
@@ -208,6 +208,7 @@ def delete_commentary(db_: Session, delitem: schemas_nlp.DeleteIdentity,table_na
         }
     db_.delete(db_content)
     return response
+# pylint: enable=duplicate-code
 
 def get_dictionary_words(db_:Session,**kwargs):#pylint: disable=too-many-locals
     '''Fetches rows of dictionary from the table specified by source_name'''

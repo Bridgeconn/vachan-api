@@ -294,7 +294,7 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
         'source_content':source_db_content
         }
     return response
-
+# pylint: disable=duplicate-code
 def delete_biblevideo(db_: Session, delitem: schema_content.DeleteIdentity,table_name = None,\
     source_name=None,user_id=None):
     '''delete particular item from biblevideo, selected via sourcename and biblevideo id'''
@@ -303,14 +303,12 @@ def delete_biblevideo(db_: Session, delitem: schema_content.DeleteIdentity,table
     model_cls = table_name
     query = db_.query(model_cls)
     db_content = query.filter(model_cls.bibleVideoId == delitem.itemId).first()
-    # pylint: disable=duplicate-code
     db_.flush()
     db_.delete(db_content)
-    #db_.commit()
     source_db_content.updatedUser = user_id
     response = {
         'db_content':db_content,
         'source_content':source_db_content
         }
     return response
-    # pylint: enable=duplicate-code
+# pylint: enable=duplicate-code
