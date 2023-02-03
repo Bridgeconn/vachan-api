@@ -112,7 +112,7 @@ services:
     volumes:
       # - ${VACHAN_POSTGRES_DATA_DIR:-./pgdata}:/var/lib/postgresql/data
       - vachan-db-test-vol:/var/lib/postgresql/data
-      - ../db/csvs:/csvs
+      # - ../db/csvs:/csvs
       # - ../db/seed_DB.sql:/docker-entrypoint-initdb.d/seed_DB.sql
 
 networks:

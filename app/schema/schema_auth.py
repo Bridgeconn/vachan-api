@@ -184,10 +184,10 @@ class EditAppInput(BaseModel):
             if len(val) <= 0:
                 raise ValueError('Phone Should not be blank')
         return val
-    
+
 class RoleOut(BaseModel):
     '''Return object of roles output'''
-    roleId : int 
+    roleId : int
     roleName : str
     roleOfApp : str
     roleDescription : str = None
@@ -210,12 +210,12 @@ class RoleIn(BaseModel):
     roleId :int
     roleName: str
     roleOfApp : str
-    roleDescription : str 
-    
+    roleDescription : str
+
 class RoleResponse(BaseModel):
     '''Return object of role update'''
-    message: str 
-    data: RoleOut 
+    message: str
+    data: RoleOut
 
 class Roles(BaseModel):
     """kratos roles input"""
@@ -274,4 +274,4 @@ class PermissionUpdateInput(BaseModel):
                 "permissionName":'create-data',
                 "permissionDescription": "Permission to make POST calls\
                      making new entries to server DB"
-            }}
+    }}
