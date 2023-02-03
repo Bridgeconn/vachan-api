@@ -327,6 +327,7 @@ def get_infographics(db_:Session, source_name, book_code=None, title=None,**kwar
     active = kwargs.get("active",True)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
+    infographic_id=kwargs.get("infographic_id",None)
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException(f'{source_name} not found in database.')
     if not source_name.endswith(db_models.ContentTypeName.INFOGRAPHIC.value):
@@ -337,6 +338,8 @@ def get_infographics(db_:Session, source_name, book_code=None, title=None,**kwar
         query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
     if title:
         query = query.filter(model_cls.title == utils.normalize_unicode(title.strip()))
+    if infographic_id:
+        query = query.filter(model_cls.infographicId == infographic_id)
     query = query.filter(model_cls.active == active)
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
@@ -416,6 +419,24 @@ def update_infographics(db_: Session, source_name, infographics, user_id=None):
             row.active = item.active
         db_.flush()
         db_content.append(row)
+    source_db_content.updatedUser = user_id
+    response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+        }
+    return response
+
+def delete_infographic(db_: Session, delitem: schema_content.DeleteIdentity,table_name = None,\
+    source_name=None,user_id=None):
+    '''delete particular item from infographic, selected via sourcename and infographic id'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    model_cls = table_name
+    query = db_.query(model_cls)
+    db_content = query.filter(model_cls.infographicId == delitem.itemId).first()
+    db_.flush()
+    db_.delete(db_content)
+    #db_.commit()
     source_db_content.updatedUser = user_id
     response = {
         'db_content':db_content,
