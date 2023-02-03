@@ -102,11 +102,7 @@ def get_default_role_for_app(app_key):
         raise NotAcceptableException("The requested app Not allowed to register Users")
     return user_role
 
-<<<<<<< HEAD
-def api_resourcetype_map(endpoint, path_params=None):#pylint: disable=too-many-branches
-=======
 def api_resourcetype_map(endpoint, path_params=None):#pylint: disable=unused-argument,too-many-branches
->>>>>>> f8c4b0347a9c60681f05d928d740061269d47be9
     '''Default correlation between API endpoints and resource they act upon'''
     if endpoint.split('/')[2] in ["contents", "languages", "licenses", 'versions']:
         resource_type = 'meta-content'
@@ -276,16 +272,16 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         # checking Requested App
         if requested_app_key is not None and \
             requested_app_key.get_secret_value() not in ('None',''):
-            print("app key ==============> ", requested_app_key.get_secret_value())
+            # print("app key ==============> ", requested_app_key.get_secret_value())
             client_app = get_current_user_data(requested_app_key.get_secret_value()\
                 , app=True)['app_name']
-            print("request from app name ---------->", client_app)
+            # print("request from app name ---------->", client_app)
             if not client_app.lower() in [key.lower() for key in APPS]:
-                print(" ERROR : -----> Not a Valid app , app is not registred ")
+                # print(" ERROR : -----> Not a Valid app , app is not registred ")
                 raise UnAuthorizedException("Requesting app is not registered")
         else:
             if 'API-user' in APPS:
-                print("app key in else ==============> ", "API User")
+                # print("app key in else ==============> ", "API User")
                 client_app = 'API-user'
             else:
                 raise NotAvailableException('Not a Valid app , app is not registred ')
@@ -297,17 +293,17 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         # checking resource type  and permission requiered for request
         resource_type, permission = search_api_permission_map(
             endpoint, method, client_app, path_params, resource=resource_type)
-        if not endpoint.startswith('/v2/user'):
-            print("resource_type : ", resource_type, "| permisison : ",\
-                permission, "endpoint : ", endpoint)
+        # if not endpoint.startswith('/v2/user'):
+            # print("resource_type : ", resource_type, "| permisison : ",\
+            #     permission, "endpoint : ", endpoint)
 
         required_rights = []
         access_tags = get_access_tag(db_, resource_type, path_params, kwargs)
         for tag in access_tags:
             if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
                 required_rights += ACCESS_RULES[tag][permission]
-        if not endpoint.startswith('/v2/user'):
-            print("req rights ==== : ", required_rights)
+        # if not endpoint.startswith('/v2/user'):
+        #     print("req rights ==== : ", required_rights)
         authenticated = check_right(user_details, required_rights)
         if not endpoint.startswith('/v2/user'):
             print("AUTH DETAILS DICT : ----> ",{"required_rights":required_rights,\
@@ -378,8 +374,8 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             for item in response:
                 required_rights_thisitem = required_rights.copy()
                 access_tags = get_access_tag(db_, resource_type, path_params, kwargs, item)
-                print("access_tags :: ======= > :: ", access_tags, "path params : ", \
-                    path_params, "resource : ", resource_type, "item : ", item)
+                # print("access_tags :: ======= > :: ", access_tags, "path params : ", \
+                #     path_params, "resource : ", resource_type, "item : ", item)
                 for tag in access_tags:
                     if tag in ACCESS_RULES and permission in ACCESS_RULES[tag]:
                         required_rights_thisitem += ACCESS_RULES[tag][permission]
