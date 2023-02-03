@@ -526,6 +526,7 @@ class InfographicResponse(BaseModel):
         # '''display example value in API documentation'''
         schema_extra = {
             "example": {
+                "infographicId": 100000,
                 "book": {"bookId":2, "bookCode":"exo", "bookName":"exodus"},
                 "title": "Ark of Covenant",
                 "infographicLink": "http://someplace.com/resoucesid",
@@ -579,7 +580,8 @@ class BibleVideoRefObj(BaseModel):
         return val
 
 class BibleVideo(BaseModel):
-    '''Response object of Bible Vedios'''
+    '''Response object of Bible Videos'''
+    bibleVideoId : int
     title: str
     references: List[Reference] = []
     videoLink: AnyUrl
@@ -592,6 +594,7 @@ class BibleVideo(BaseModel):
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
+                "bibleVideoId":100000,
                 "title": "Overview: song of songs",
                 "references": [{
                     "book": "sng",
