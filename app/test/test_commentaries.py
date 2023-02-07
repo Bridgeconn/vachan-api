@@ -804,7 +804,7 @@ def test_delete_notavailable_content():
             }
 
     data = {
-      "itemId":200000,
+      "itemId":99999,
       "sourceName":source_name
     }
 

@@ -53,6 +53,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/bibles/{source_name}/books,GET,API-user,False,None,read-via-api
 /v2/bibles/{source_name}/books,POST,None,False,None,create
 /v2/bibles/{source_name}/books,PUT,None,False,None,edit
+/v2/bibles/{source_name}/books,DELETE,None,False,None,delete/deactivate
 /v2/bibles/{source_name}/versification,GET,Autographa,False,None,refer-for-translation
 /v2/bibles/{source_name}/versification,GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/bibles/{source_name}/versification,GET,VachanAdmin,False,None,read-via-vachanadmin

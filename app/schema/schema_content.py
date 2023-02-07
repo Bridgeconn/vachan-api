@@ -117,6 +117,7 @@ class Reference(BaseModel):
 
 class BibleBookContent(BaseModel):
     '''Response object of Bible book contents'''
+    bookContentId : int = None
     book : BibleBook
     bookName: str = None
     USFM: str = None
@@ -129,6 +130,7 @@ class BibleBookContent(BaseModel):
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
+                "bookContentId": 1,
                 "book": { "bookId": 41, "bookCode": "mat", "bookName": "Matthew"},
                 "USFM": "\\id MAT\n\\c 1\n\\p\n\\v 1 इब्राहीम की सन्‍तान, दाऊद की ...",
                 "JSON": { "book": { "bookCode": "MAT" },
@@ -376,6 +378,7 @@ class CommentaryResponse(BaseModel):
         # '''display example value in API documentation'''
         schema_extra = {
             "example": {
+                "commentaryId":100000,
                 "bookCode": "1ki",
                 "chapter": 10,
                 "verseStart": 1,
