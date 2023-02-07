@@ -14,6 +14,7 @@ import db_models
 from dependencies import log
 from crud import utils
 from crud.contents_crud import ref_to_bcv, bcv_to_ref
+from schema import schema_content
 from custom_exceptions import NotAvailableException, TypeException, GitlabException
 
 access_token = os.environ.get("VACHAN_GITLAB_TOKEN")
@@ -127,8 +128,9 @@ def find_media_source(repo, db_):
     return query
 
 # bible Video
-def get_bible_videos(db_:Session, source_name, book_code=None, title=None, series=None,**kwargs):#pylint: disable=too-many-locals
+def get_bible_videos(db_:Session,source_name, book_code=None, title=None,series=None,**kwargs):#pylint: disable=too-many-locals disable=too-many-statements
     '''fetches rows of bible videos as per provided source_name and filters'''
+    biblevideo_id = kwargs.get("biblevideo_id",None)
     search_word = kwargs.get("search_word",None)
     chapter = kwargs.get("chapter",None)
     active = kwargs.get("active",True)
@@ -151,6 +153,8 @@ def get_bible_videos(db_:Session, source_name, book_code=None, title=None, serie
         query = query.filter(text("to_tsvector('simple', title || ' ' ||"+\
             " series || ' ' || description || ' ')"+\
             " @@ to_tsquery('simple', :pattern)").bindparams(pattern=search_pattern))
+    if biblevideo_id:
+        query = query.filter(model_cls.bibleVideoId == biblevideo_id)
     if book_code:
         book = db_.query(db_models.BibleBook).filter(
                 db_models.BibleBook.bookCode == book_code.lower() ).first()
@@ -179,7 +183,6 @@ def get_bible_videos(db_:Session, source_name, book_code=None, title=None, serie
             result = db_.execute(raw_sql)
             id_list = [row[0] for row in result]
             query = query.filter(model_cls.bibleVideoId.in_(id_list))
-
     query = query.filter(model_cls.active == active)
     db_content = query.offset(skip).limit(limit).all()
     source_db_content = db_.query(db_models.Source).filter(
@@ -291,3 +294,21 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
         'source_content':source_db_content
         }
     return response
+# pylint: disable=duplicate-code
+def delete_biblevideo(db_: Session, delitem: schema_content.DeleteIdentity,table_name = None,\
+    source_name=None,user_id=None):
+    '''delete particular item from biblevideo, selected via sourcename and biblevideo id'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    model_cls = table_name
+    query = db_.query(model_cls)
+    db_content = query.filter(model_cls.bibleVideoId == delitem.itemId).first()
+    db_.flush()
+    db_.delete(db_content)
+    source_db_content.updatedUser = user_id
+    response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+        }
+    return response
+# pylint: enable=duplicate-code

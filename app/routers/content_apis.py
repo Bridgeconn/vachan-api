@@ -1083,6 +1083,33 @@ async def edit_biblevideo(request: Request,
         "data": media_crud.update_bible_videos(db_=db_, source_name=source_name,
         videos=videos, user_id=user_details['user_id'])}
 
+@router.delete('/v2/biblevideos/{source_name}',response_model=schemas.DeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Bible Videos"])
+@get_auth_access_check_decorator
+async def delete_biblevideos(request: Request, delete_obj: schema_content.DeleteIdentity = \
+    Body(...),user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Delete Bible Video
+    * unique bibleVideoId with source name can be used to delete an exisiting identity'''
+    log.info('In delete_biblevideos')
+    log.debug('biblevideos-delete:%s',delete_obj)
+    biblevideo_id= delete_obj.itemId
+    source_name = delete_obj.sourceName
+    tb_name = db_models.dynamicTables[source_name]
+    dbtable_name = tb_name.__name__
+    get_biblevideo_response = media_crud.get_bible_videos(db_, source_name=source_name, \
+        biblevideo_id= delete_obj.itemId)
+    if len(get_biblevideo_response['db_content']) == 0:
+        raise NotAvailableException(f"Bible Video with id {biblevideo_id} not found")
+    deleted_content = media_crud.delete_biblevideo(db_=db_,delitem=delete_obj,\
+        table_name=tb_name,source_name=source_name,user_id=user_details['user_id'])
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
+        table_name= dbtable_name,source=deleted_content['source_content'],user_details=user_details)
+    return {'message': f"Bible Video id {biblevideo_id} deleted successfully",
+            "data": delcont}
+
 @router.get('/v2/sources/get-sentence', response_model=List[schemas_nlp.SentenceInput],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401:{"model": schemas.ErrorResponse},
