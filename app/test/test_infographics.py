@@ -8,6 +8,7 @@ from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 from .conftest import initial_test_users
 
 UNIT_URL = '/v2/infographics/'
+SOURCE_URL = '/v2/sources'
 RESTORE_URL = '/v2/restore'
 headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json",
@@ -783,3 +784,35 @@ def test_restore_notavailable_item():
     response = client.put(RESTORE_URL, headers=headers_admin, json=data)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
+
+def test_restoreitem_with_notavailable_source():
+    ''' Negative test case.request to restore an item whoose source is not available'''
+    #only Super Admin can restore deleted data
+    #Creating and Deleting data
+    response,source_name = test_delete_default_superadmin()
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_auth = {"contentType": "application/json",#pylint: disable=redefined-outer-name
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+    #Delete Associated Source
+    get_source_response = client.get(SOURCE_URL + "?source_name="+source_name, headers=headers_auth)
+    source_id = get_source_response.json()[0]["sourceId"]
+    data = {"itemId":source_id}
+    response = client.delete(SOURCE_URL, headers=headers_auth, json=data)
+    assert response.status_code == 200
+    #Restoring data
+    #Restore content with Super Admin after deleting source
+    restore_response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    restore_response.status_code = 404
+    logout_user(test_user_token)
+

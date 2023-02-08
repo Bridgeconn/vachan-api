@@ -149,10 +149,11 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
     if db_restore.deletedFrom in content_class_map:
         model_cls = content_class_map[db_restore.deletedFrom]
     else:
+        if not  get_sources(db_, table_name=db_restore.deletedFrom):
+            raise NotAvailableException('Source not found in database')
         source = get_sources(db_, table_name=db_restore.deletedFrom)[0]
         source_name = source.sourceName
         if source_name.endswith("bible") is False:
-        # if "bible" not in source.sourceName:
             model_cls = db_models.dynamicTables[source.sourceName]
         else:
             model_cls = db_models.dynamicTables[source.sourceName]

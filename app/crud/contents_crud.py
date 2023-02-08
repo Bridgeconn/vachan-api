@@ -894,7 +894,7 @@ def delete_bible_book(db_: Session, delitem: schema_content.DeleteIdentity,\
     query = db_.query(model_cls)
     query2 = db_.query(model_cls2)
     db_content = query.filter(model_cls.bookContentId == delitem.itemId).first()
-    db_content2 = query2.filter(model_cls.book_id == model_cls2.book_id).first()
+    db_content2 = query2.filter(db_content.book_id == model_cls2.book_id).first()
     db_.flush()
     db_.delete(db_content)
     db_.delete(db_content2)
