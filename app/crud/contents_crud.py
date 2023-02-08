@@ -838,13 +838,13 @@ def get_bible_versification(db_, source_name):
         }
     return response
 
-
-def get_available_bible_books(db_, source_name, book_code=None, content_type=None,
-    **kwargs):
+def get_available_bible_books(db_, source_name,book_code=None, content_type=None,
+    biblecontent_id=None, **kwargs):
     '''fetches the contents of .._bible table based of provided source_name and other options'''
     active = kwargs.get("active",True)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
+    # biblecontent_id = kwargs.get("bible_content_id",None)
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException(f'{source_name} not found in database.')
     if not source_name.endswith('_bible'):
@@ -853,6 +853,8 @@ def get_available_bible_books(db_, source_name, book_code=None, content_type=Non
     # model_cls_audio = db_models.dynamicTables[source_name+"_audio"]
     query = db_.query(model_cls).options(joinedload(model_cls.book))
     fetched = None
+    if biblecontent_id:
+        query = query.filter(model_cls.bookContentId  == biblecontent_id)
     if book_code:
         query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
     if content_type == "usfm":
@@ -878,6 +880,29 @@ def get_available_bible_books(db_, source_name, book_code=None, content_type=Non
         db_models.Source.sourceName == source_name).first()
     response = {
         'db_content':results,
+        'source_content':source_db_content
+        }
+    return response
+
+def delete_bible_book(db_: Session, delitem: schema_content.DeleteIdentity,\
+    source_name=None,user_id=None):
+    '''delete particular item from bible, selected via sourcename and bible content id'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    model_cls  = db_models.dynamicTables[source_name]
+    model_cls2 =  db_models.dynamicTables[source_name+'_cleaned']
+    query = db_.query(model_cls)
+    query2 = db_.query(model_cls2)
+    db_content = query.filter(model_cls.bookContentId == delitem.itemId).first()
+    db_content2 = query2.filter(db_content.book_id == model_cls2.book_id).first()
+    db_.flush()
+    db_.delete(db_content)
+    db_.delete(db_content2)
+    #db_.commit()
+    source_db_content.updatedUser = user_id
+    response = {
+        'db_content'    :db_content,
+        'db_content2'   :db_content2,
         'source_content':source_db_content
         }
     return response

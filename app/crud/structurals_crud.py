@@ -149,8 +149,24 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
     if db_restore.deletedFrom in content_class_map:
         model_cls = content_class_map[db_restore.deletedFrom]
     else:
+        if not  get_sources(db_, table_name=db_restore.deletedFrom):
+            raise NotAvailableException('Source not found in database')
         source = get_sources(db_, table_name=db_restore.deletedFrom)[0]
-        model_cls = db_models.dynamicTables[source.sourceName]
+        source_name = source.sourceName
+        if source_name.endswith("bible") is False:
+            model_cls = db_models.dynamicTables[source.sourceName]
+        else:
+            model_cls = db_models.dynamicTables[source.sourceName]
+            source_table = db_restore.deletedFrom.replace("_cleaned", "")
+            source = get_sources(db_, table_name=source_table)[0]
+            model_cls2 = db_models.dynamicTables[source.sourceName+'_cleaned']
+            cleanedtable_itemid = db_content.itemId + 1
+            db_restore2 = db_.query(db_models.DeletedItem).get(cleanedtable_itemid)
+            db_content2=db_restore2
+            json_string2 = db_content2.deletedData
+            db_content2 = utils.convert_dict_to_sqlalchemy(json_string2, model_cls2)
+            db_.add(db_content2)
+            db_.delete(db_restore2)
 
     db_content = utils.convert_dict_to_sqlalchemy(json_string, model_cls)
     db_.add(db_content)

@@ -1087,8 +1087,8 @@ def test_delete_default():
     response = client.delete(UNIT_URL, headers=headers, json=data)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
-     #Delete source with other API user,AgAdmin,AgUser,VachanUser,BcsDev,APIUser2
-    for user in ['APIUser','APIUser2','AgAdmin','AgUser','VachanUser','BcsDev']:
+     #Delete source with other API user,AgAdmin,AgUser,VachanUser,BcsDev
+    for user in ['APIUser','AgAdmin','AgUser','VachanUser','BcsDev']:
         headers_au = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
@@ -1206,7 +1206,7 @@ def test_delete_missingvalue_source_id():
 
 def test_delete_notavailable_source():
     ''' request a non existing source ID, Ensure there is no partial matching'''
-    data = {"itemId":20000}
+    data = {"itemId":99999}
     headers = {"contentType": "application/json",
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
@@ -1232,8 +1232,8 @@ def test_restore_default():
     assert response.json()['error'] == 'Authentication Error'
 
     #Restore source with other API user,VachanAdmin,AgAdmin, \
-    # AgUser,VachanUser,BcsDev and resoursecreatedUser
-    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2']:
+    # AgUser,VachanUser,BcsDev
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev']:
         headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']

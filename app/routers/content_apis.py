@@ -584,6 +584,36 @@ async def get_available_bible_book(request: Request,
     return contents_crud.get_available_bible_books(db_, source_name, book_code, content_type,
         active=active, skip = skip, limit = limit)
 
+@router.delete('/v2/bibles/{source_name}/books',response_model=schemas.DeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Bibles"])
+@get_auth_access_check_decorator
+async def delete_bible_book(request: Request, delete_obj: schema_content.DeleteIdentity = \
+    Body(...),user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Delete Bible Book
+    * unique bible content Id with source name can be used to delete an exisiting identity'''
+    log.info('In delete_biblebook')
+    log.debug('biblebook-delete:%s',delete_obj)
+    biblecontent_id= delete_obj.itemId
+    source_name = delete_obj.sourceName
+    tb_name = db_models.dynamicTables[source_name]
+    dbtable_name = tb_name.__name__
+    cleaned_tablename = dbtable_name+'_cleaned'
+    get_bible_response = contents_crud.get_available_bible_books(db_, source_name=source_name, \
+        biblecontent_id= delete_obj.itemId)
+    if len(get_bible_response['db_content']) == 0:
+        raise NotAvailableException(f"Bible Book with id {biblecontent_id} not found")
+    deleted_content = contents_crud.delete_bible_book(db_=db_,delitem=delete_obj,\
+        source_name=source_name,user_id=user_details['user_id'])
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
+        table_name= dbtable_name,source=deleted_content['source_content'],user_details=user_details)
+    del_clean=structurals_crud.add_deleted_data(db_=db_,del_content=deleted_content['db_content2'],#pylint: disable=unused-variable
+    table_name=cleaned_tablename,source=deleted_content['source_content'],user_details=user_details)
+    return {'message': f"Bible Book with id {biblecontent_id} deleted successfully",
+            "data": delcont}
+
 @router.get('/v2/bibles/{source_name}/versification',
     response_model= schema_content.Versification,
     responses={502: {"model": schemas.ErrorResponse},
