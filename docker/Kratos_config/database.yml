@@ -24,6 +24,7 @@ services:
     image: postgres:9.6
     ports:
       - "5432:5432"
+    restart: always
     environment:
       - POSTGRES_USER=${VACHAN_KRATOS_DB_USER:-kratos}
       - POSTGRES_PASSWORD=${VACHAN_KRATOS_DB_PASSWORD:-secret}

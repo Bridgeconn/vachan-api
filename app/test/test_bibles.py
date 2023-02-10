@@ -1322,7 +1322,6 @@ def test_delete_audio_default():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     #Check bible audio exist in dynamic table after post
     post_response = client.get(UNIT_URL+source_name+"/books?book_code=mat&content_type=audio",headers=headers_auth)
-    print("post res :",post_response.json())
     assert post_response.status_code == 200
     assert len(post_response.json()) == 1
     #Get bible audioId
@@ -1524,11 +1523,7 @@ def test_restore_audio_default():
     #only Super Admin can restore deleted data
     #Creating and Deleting data
     response,source_name,audio_id = test_delete_audio_superadmin_default()
-    print("response of delete:",response.json())
-    print("sourcename:",source_name)
-    print("audioid:",audio_id)
     deleteditem_id = response.json()['data']['itemId']
-    print("deleted item id:",deleteditem_id)
     data = {"itemId": deleteditem_id}
     #Restoring data
     #Restore without authentication
@@ -1570,7 +1565,6 @@ def test_restore_audio_default():
     assert restore_response.status_code == 200
     assert len(restore_response.json()) == 1
     assert restore_response.json()[0]['audio']['audioId'] == audio_id
-    print("restore response:",restore_response.json()[0]['audio'])
     logout_user(test_user_token)
 
 def test_restore_audio_item_id_string():
