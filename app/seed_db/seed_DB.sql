@@ -1,6 +1,3 @@
--- Script to create the basic table strcutures and 
--- add minimal seed data for vachan-api
-
 CREATE TABLE public.content_types (
     content_type_id SERIAL PRIMARY KEY ,
     content_type text UNIQUE NOT NULL
@@ -37,9 +34,6 @@ CREATE INDEX languages_search_idx ON languages USING gin (
     (jsonb_to_tsvector('simple', metadata, '["string", "numeric"]'))
 );
 
-
-\COPY languages (language_code,language_name, script_direction, metadata) FROM 'csvs/consolidated_languages.csv' DELIMITER ',' CSV;
-
 CREATE TABLE public.licenses (
     license_id SERIAL PRIMARY KEY,
     license_code text UNIQUE NOT NULL,
@@ -55,8 +49,6 @@ CREATE TABLE public.licenses (
 );
 
 ALTER SEQUENCE public.licenses_license_id_seq RESTART WITH 100000;
-
-\COPY licenses (license_code, license_name, license_text, permissions) FROM 'csvs/licenses.csv' DELIMITER ',' CSV HEADER;
 
 CREATE TABLE public.versions (
     version_id SERIAL PRIMARY KEY,
@@ -97,8 +89,6 @@ CREATE TABLE public.bible_books_look_up (
     book_name text NOT NULL,
     book_code char(3) NOT NULL
 );
-
-\COPY bible_books_look_up (book_id,book_name, book_code) FROM 'csvs/bible_books.csv' DELIMITER ',' CSV HEADER;
 
 CREATE TABLE public.translation_projects(
     project_id SERIAL PRIMARY KEY,
@@ -181,18 +171,6 @@ CREATE TABLE public.stopwords_look_up(
 
 ALTER SEQUENCE public.stopwords_look_up_sw_id_seq RESTART WITH 100000;
 
--- \COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM PROGRAM 'awk FNR-1 ./csvs/stop_words/*.csv | cat' csv NULL AS 'NULL'
-\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/assamese.csv' DELIMITER ',' CSV HEADER;
-\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/bengali.csv' DELIMITER ',' CSV HEADER;
-\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/gujarati.csv' DELIMITER ',' CSV HEADER;
-\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/hindi.csv' DELIMITER ',' CSV HEADER;
-\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/kannada.csv' DELIMITER ',' CSV HEADER;
-\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/malayalam.csv' DELIMITER ',' CSV HEADER;
-\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/marathi.csv' DELIMITER ',' CSV HEADER;
-\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/punjabi.csv' DELIMITER ',' CSV HEADER;
-\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/tamil.csv' DELIMITER ',' CSV HEADER;
-\COPY stopwords_look_up(language_id,stopword,confidence,created_user,last_updated_user,active) FROM 'csvs/stop_words/telugu.csv' DELIMITER ',' CSV HEADER;
-
 CREATE TABLE public.jobs(
     job_id SERIAL PRIMARY KEY,
     user_id text NULL,
@@ -205,8 +183,6 @@ CREATE TABLE public.jobs(
 ); 
 
 ALTER SEQUENCE public.jobs_job_id_seq RESTART WITH 100000;
-
--- authentication tables
 
 CREATE TABLE public.roles (
     role_id SERIAL PRIMARY KEY,
@@ -244,7 +220,6 @@ CREATE TABLE public.resource_types (
 );
 
 ALTER SEQUENCE public.resource_types_resource_type_id_seq RESTART WITH 100000;
-\COPY resource_types(resource_type_name,resource_type_description) FROM 'csvs/auth_resource_types.csv' DELIMITER ',' CSV HEADER;
 
 CREATE TABLE public.permissions (
     permission_id SERIAL PRIMARY KEY,
@@ -259,7 +234,6 @@ CREATE TABLE public.permissions (
 );
 
 ALTER SEQUENCE public.permissions_permission_id_seq RESTART WITH 100000;
-\COPY permissions(permission_name) FROM 'csvs/auth_permissions.csv' DELIMITER ',' CSV HEADER;
 
 CREATE TABLE public.apps (
     app_id SERIAL PRIMARY KEY,
@@ -281,7 +255,6 @@ INSERT INTO apps(app_name,default_role,app_key,use_for_registration) VALUES('Vac
 INSERT INTO apps(app_name,default_role,app_key,use_for_registration) VALUES('API-user', 'APIUser','temp_key', true);
 
 ALTER SEQUENCE public.apps_app_id_seq RESTART WITH 100000;
--- ALTER TABLE public.apps ADD CONSTRAINT default_role_value CHECK (public.apps.default_role IN (SELECT role_name FROM public.roles));
 
 CREATE TABLE public.access_rules (
     rule_id SERIAL PRIMARY KEY,
@@ -299,8 +272,6 @@ CREATE TABLE public.access_rules (
 );
 
 ALTER SEQUENCE public.access_rules_rule_id_seq RESTART WITH 100000;
-
--- \COPY access_rules(entitlement_id,tag_id,roles) FROM 'csvs/access_rules.csv' DELIMITER ',' CSV HEADER;
 
 CREATE TABLE public.api_permissions_map (
     permission_map_id SERIAL PRIMARY KEY,
@@ -322,7 +293,5 @@ CREATE TABLE public.api_permissions_map (
 );
 
 ALTER SEQUENCE public.api_permissions_map_permission_map_id_seq RESTART WITH 100000;
--- restrict values of a column
-ALTER TABLE public.api_permissions_map ADD CONSTRAINT check_type CHECK (public.api_permissions_map.method IN ('GET', 'POST', 'PUT', 'DELETE', 'PATCH'));
 
--- \COPY api_permissions_map(api_endpoint,method,request_app_id,filter_results,resource_type_id,permission_id) FROM 'csvs/api_permissions.csv' DELIMITER ',' CSV HEADER;
+ALTER TABLE public.api_permissions_map ADD CONSTRAINT check_type CHECK (public.api_permissions_map.method IN ('GET', 'POST', 'PUT', 'DELETE', 'PATCH'));

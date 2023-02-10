@@ -1,4 +1,5 @@
 '''Tests the translation APIs that do need projects available in DB'''
+import os
 import json
 import time
 from app.main import log
@@ -271,7 +272,8 @@ def add_bible_books(table_name):
     data = []
     input_files = ['41-MAT.usfm', '42-MRK.usfm', '43-LUK.usfm']
     for book in input_files:
-        book_data = open('test/resources/' + book, 'r',encoding='utf-8').read()
+        # book_data = open('/test/resources/' + book, 'r',encoding='utf-8').read()
+        book_data = open(os.path.join('test','resources', book), 'r',encoding='utf-8').read()
         data.append({"USFM":book_data})
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     response = client.post('/v2/bibles/'+table_name+'/books'+f"?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]['key']}",
@@ -281,7 +283,8 @@ def add_bible_books(table_name):
 
 def add_tw_dict(table_name):
     '''uploads tw dictionary'''
-    data = json.load(open('test/resources/hindi.json'))
+    # data = json.load(open('test/resources/hindi.json'))
+    data = json.load(open(os.path.join('test','resources', 'hindi.json')))
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     response = client.post('/v2/dictionaries/'+table_name+f"?app_key={default_app_keys[TEST_APPS_LIST['VACHANADMIN']]['key']}",
         headers=headers_auth, json=data)

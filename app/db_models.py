@@ -490,8 +490,10 @@ class AccessRules(Base): # pylint: disable=too-few-public-methods
     __tablename__ = 'access_rules'
 
     ruleId = Column('rule_id', Integer, primary_key=True)
-    entitlement = Column('entitlement', String, ForeignKey('resource_types.resource_type_name'))
-    tag = Column('tag', String, ForeignKey('permissions.permission_name'))
+    entitlementId = Column('entitlement_id', Integer, ForeignKey('resource_types.resource_type_id'))
+    entitlement = relationship(ResourceTypes)
+    tagId = Column('tag_id', Integer, ForeignKey('permissions.permission_id'))
+    tag = relationship(Permissions)
     roles = Column('roles', ARRAY(String))
     createdUser = Column('created_user', String)
     updatedUser = Column('last_updated_user', String)
@@ -503,13 +505,17 @@ class ApiPermissionsMap(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table api permissions for auth  in vachan DB(postgres)'''
     __tablename__ = 'api_permissions_map'
 
-    permissionId = Column('permission_id', Integer, primary_key=True)
+    permissionMapId = Column('permission_map_id', Integer, primary_key=True)
     apiEndpoint = Column('api_endpoint', String, unique=True, index=True)
     method = Column('method', String)
-    requestApp = Column('request_app', String, ForeignKey('apps.app_name'))
+    requestAppId = Column('request_app_id', Integer, ForeignKey('apps.app_id'))
+    requestApp = relationship(Apps)
     filterResults = Column('filter_results', Boolean)
-    resourceType = Column('resource_type', String, ForeignKey('resource_types.resource_type_name'))
-    permission = Column('permission', String, ForeignKey('permissions.permission_name'))
+    resourceTypeId = Column('resource_type_id', Integer, \
+        ForeignKey('resource_types.resource_type_id'))
+    resourceType = relationship(ResourceTypes)
+    permissionId = Column('permission_id', Integer, ForeignKey('permissions.permission_id'))
+    permission = relationship(Permissions)
     active = Column('active', Boolean)
     createdUser = Column('created_user', String)
     updatedUser = Column('last_updated_user', String)

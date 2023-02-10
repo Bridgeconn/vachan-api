@@ -140,15 +140,6 @@ class RegistrationAppIn(BaseModel):
     organization:str
     password:types.SecretStr
     contacts:RegistrationAppContacts
-
-    @validator('contacts')
-    def check_phone(cls, val):#pylint: disable=no-self-argument, inconsistent-return-statements
-        '''check for phone is present'''
-        if val.phone is not None:
-            if len(val.phone) <= 0:
-                raise ValueError('Phone Should not be blank')
-        return {"email" : val.email, "phone" : val.phone}
-
     class Config:
         '''display example value in API documentation'''
         schema_extra = {
@@ -162,6 +153,13 @@ class RegistrationAppIn(BaseModel):
                 "phone": "+91 1234567890"
             }
         }}
+    @validator('contacts')
+    def check_phone(cls, val):#pylint: disable=no-self-argument, inconsistent-return-statements
+        '''check for phone is present'''
+        if val.phone is not None:
+            if len(val.phone) <= 0:
+                raise ValueError('Phone Should not be blank')
+        return {"email" : val.email, "phone" : val.phone}
 
 class LoginResponseApp(BaseModel):
     """Response object of login for app"""
@@ -174,7 +172,7 @@ class AppUpdateResponse(BaseModel):
     message:str
     data: RegistrationAppOut
 
-class EditApp(BaseModel):
+class EditAppInput(BaseModel):
     """kratos App update input"""
     ContactEmail:EmailStr
     organization:str
@@ -186,10 +184,10 @@ class EditApp(BaseModel):
             if len(val) <= 0:
                 raise ValueError('Phone Should not be blank')
         return val
-    
+
 class RoleOut(BaseModel):
     '''Return object of roles output'''
-    roleId : int 
+    roleId : int
     roleName : str
     roleOfApp : str
     roleDescription : str = None
@@ -212,15 +210,68 @@ class RoleIn(BaseModel):
     roleId :int
     roleName: str
     roleOfApp : str
-    roleDescription : str 
-    
+    roleDescription : str
+
 class RoleResponse(BaseModel):
     '''Return object of role update'''
-    message: str 
-    data: RoleOut 
+    message: str
+    data: RoleOut
 
 class Roles(BaseModel):
     """kratos roles input"""
     roleName: str
     roleOfApp : str
     roleDescription : str
+
+
+class PermissionOut(BaseModel):
+    """auth permission output object"""
+    permissionId:int
+    permissionName:str
+    permissionDescription:str = None
+    class Config:
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "permissionId": 100057,
+                "permissionName": "create-data",
+                "permissionDescription": "Permission to make POST \
+                    calls making new entries to server DB"
+            }
+        }
+
+class PermissionResponse(BaseModel):
+    """Response object of Permission creation"""
+    message:str
+    data:PermissionOut
+
+class PermissionCreateInput(BaseModel):
+    """auth permission crearte input"""
+    permissionName:str
+    permissionDescription:str = None
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "permissionName": "create-data",
+                "permissionDescription": "Permission to make POST calls\
+                     making new entries to server DB"
+            }}
+
+class PermissionUpdateInput(BaseModel):
+    """auth permission updation input"""
+    permissionId:int
+    permissionName:str
+    permissionDescription:str
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "permissionId": 100001,
+                "permissionName":'create-data',
+                "permissionDescription": "Permission to make POST calls\
+                     making new entries to server DB"
+    }}

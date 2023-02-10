@@ -65,7 +65,8 @@ services:
     environment:
       - POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-newpassword}
-      - POSTGRES_DB=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
+      # - POSTGRES_DB=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
+      - POSTGRES_DB=vachan_dev_dummy
       - POSTGRES_HOST_AUTH_METHOD=md5
     logging:
       options:
@@ -81,8 +82,8 @@ services:
     volumes:
       # - ${VACHAN_POSTGRES_DATA_DIR:-./pgdata}:/var/lib/postgresql/data
       - vachan-db-vol:/var/lib/postgresql/data
-      - ../db/csvs:/csvs
-      - ../db/seed_DB.sql:/docker-entrypoint-initdb.d/seed_DB.sql
+      # - ../db/csvs:/csvs
+      # - ../db/seed_DB.sql:/docker-entrypoint-initdb.d/seed_DB.sql
 
   # vachan-api app
   vachan-api:
