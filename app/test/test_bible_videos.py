@@ -940,8 +940,8 @@ def test_restoreitem_with_notavailable_source():
     #Delete Associated Source
     get_source_response = client.get(SOURCE_URL + "?source_name="+source_name, headers=headers_auth)
     source_id = get_source_response.json()[0]["sourceId"]
-    data = {"itemId":source_id}
-    response = client.delete(SOURCE_URL, headers=headers_auth, json=data)
+    source_data = {"itemId":source_id}
+    response = client.delete(SOURCE_URL, headers=headers_auth, json=source_data)
     assert response.status_code == 200
     #Restoring data
     #Restore content with Super Admin after deleting source

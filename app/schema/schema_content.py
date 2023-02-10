@@ -27,7 +27,7 @@ class BibleBook(BaseModel):
 
 class AudioBible(BaseModel):
     '''Response object of Audio Bible'''
-    # audioId: int
+    audioId: int
     name: str = None
     url: AnyUrl = None
     # book:  BibleBook
@@ -118,6 +118,7 @@ class Reference(BaseModel):
 class BibleBookContent(BaseModel):
     '''Response object of Bible book contents'''
     bookContentId : int = None
+    audioId : int = None
     book : BibleBook
     bookName: str = None
     USFM: str = None
@@ -131,6 +132,7 @@ class BibleBookContent(BaseModel):
         schema_extra = {
             "example": {
                 "bookContentId": 1,
+                "audioId": 100000,
                 "book": { "bookId": 41, "bookCode": "mat", "bookName": "Matthew"},
                 "USFM": "\\id MAT\n\\c 1\n\\p\n\\v 1 इब्राहीम की सन्‍तान, दाऊद की ...",
                 "JSON": { "book": { "bookCode": "MAT" },

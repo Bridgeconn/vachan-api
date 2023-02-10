@@ -609,7 +609,7 @@ async def delete_bible_book(request: Request, delete_obj: schema_content.DeleteI
         source_name=source_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
         table_name= dbtable_name,source=deleted_content['source_content'],user_details=user_details)
-    del_clean=structurals_crud.add_deleted_data(db_=db_,del_content=deleted_content['db_content2'],#pylint: disable=unused-variable
+    del_clean=structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content2'],#pylint: disable=unused-variable
     table_name=cleaned_tablename,source=deleted_content['source_content'],user_details=user_details)
     return {'message': f"Bible Book with id {biblecontent_id} deleted successfully",
             "data": delcont}
@@ -705,6 +705,36 @@ async def edit_audio_bible(request: Request,
     return {'message': "Bible audios details updated successfully",
         "data": contents_crud.update_bible_audios(db_=db_, source_name=source_name,
         audios=audios, user_id=user_details['user_id'])}
+
+@router.delete('/v2/bibles/{source_name}/audios',response_model=schemas.DeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Bibles"])
+@get_auth_access_check_decorator
+async def delete_bible_audios(request: Request, delete_obj: schema_content.DeleteIdentity = \
+    Body(...),user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+
+    '''Delete Bible Audio
+    * unique Bible Audio Id  with source name can be used to delete an exisiting identity'''
+    log.info('In delete_bibleaudios')
+    log.debug('bibleaudio-delete:%s',delete_obj)
+    bibleaudio_id= delete_obj.itemId
+    source_name = delete_obj.sourceName
+    tb_name = db_models.dynamicTables[source_name]
+    dbtable_name = tb_name.__name__
+    audio_tablename = dbtable_name+'_audio'
+    # model_cls_audio = db_models.dynamicTables[source_name+'_audio']
+    get_bible_response = contents_crud.get_available_bible_books(db_, source_name=source_name, \
+        bibleaudio_id= delete_obj.itemId)
+    if len(get_bible_response['db_content']) == 0:
+        raise NotAvailableException(f"Bible Audio with id {bibleaudio_id} not found")
+    deleted_content = contents_crud.delete_bible_audio(db_=db_,delitem=delete_obj,\
+        source_name=source_name,user_id=user_details['user_id'])
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
+    table_name=audio_tablename,source=deleted_content['source_content'],user_details=user_details)
+    return {'message': f"Bible Audio with id {bibleaudio_id} deleted successfully",
+            "data": delcont}
 
 # # ##### Commentary #####
 @router.get('/v2/commentaries/{source_name}',
