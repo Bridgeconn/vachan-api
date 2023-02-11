@@ -799,6 +799,24 @@ def update_bible_audios(db_: Session, source_name, audios, user_id=None):
         }
     return response
 
+def delete_bible_audio(db_: Session, delitem: schema_content.DeleteIdentity,\
+    source_name=None,user_id=None):
+    '''delete particular item from bible audio, selected via sourcename and bible audio id'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    model_cls =  db_models.dynamicTables[source_name+'_audio']
+    query = db_.query(model_cls)
+    db_content = query.filter(model_cls.audioId == delitem.itemId).first()
+    db_.flush()
+    db_.delete(db_content)
+    #db_.commit()
+    source_db_content.updatedUser = user_id
+    response = {
+        'db_content'    :db_content,
+        'source_content':source_db_content
+        }
+    return response
+
 def get_bible_versification(db_, source_name):
     '''select the reference list from bible_cleaned table'''
     model_cls = db_models.dynamicTables[source_name+"_cleaned"]
@@ -838,23 +856,25 @@ def get_bible_versification(db_, source_name):
         }
     return response
 
-def get_available_bible_books(db_, source_name,book_code=None, content_type=None,
+def get_available_bible_books(db_, source_name,book_code=None, content_type=None,#pylint: disable=too-many-locals
     biblecontent_id=None, **kwargs):
     '''fetches the contents of .._bible table based of provided source_name and other options'''
     active = kwargs.get("active",True)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
-    # biblecontent_id = kwargs.get("bible_content_id",None)
+    bibleaudio_id = kwargs.get("bibleaudio_id",None)
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException(f'{source_name} not found in database.')
     if not source_name.endswith('_bible'):
         raise TypeException('The operation is supported only on bible')
     model_cls = db_models.dynamicTables[source_name]
-    # model_cls_audio = db_models.dynamicTables[source_name+"_audio"]
+    model_cls_audio = db_models.dynamicTables[source_name+"_audio"]
     query = db_.query(model_cls).options(joinedload(model_cls.book))
     fetched = None
     if biblecontent_id:
         query = query.filter(model_cls.bookContentId  == biblecontent_id)
+    if bibleaudio_id:
+        query = query.filter(model_cls_audio.audioId  == bibleaudio_id)
     if book_code:
         query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
     if content_type == "usfm":
