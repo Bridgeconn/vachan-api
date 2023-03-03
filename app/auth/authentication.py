@@ -108,6 +108,8 @@ def api_resourcetype_map(endpoint, path_params=None):
         resource_type = schema_auth.ResourceType.CONTENT.value
     elif endpoint.split('/')[2] == "restore":
         resource_type = schema_auth.ResourceType.DATAMANIPULATION.value
+    elif endpoint.split('/')[2] == "deleted-items":
+        resource_type = schema_auth.ResourceType.DATAMANIPULATION.value
     else:
         raise GenericException("Resource Type of API not defined")
     return resource_type

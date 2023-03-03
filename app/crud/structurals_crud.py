@@ -515,3 +515,25 @@ def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None,
     if book_name is not None:
         query = query.filter(db_models.BibleBook.bookName == book_name.lower())
     return query.offset(skip).limit(limit).all()
+
+def delete_deleteditems(db_: Session):
+    '''Cleanup entire deleted_items table  and remove irrelevant dangling dynamic tables'''
+    for item in db_models.dynamicTables:   #pylint: disable=C0206
+        tb_name = db_models.dynamicTables[item]
+        dbtable_name = tb_name.__name__
+        if dbtable_name.endswith("audio"):
+            dbtable_name = dbtable_name.replace("_audio", "")
+        elif dbtable_name.endswith("cleaned"):
+            dbtable_name = dbtable_name.replace("_cleaned", "")
+        if not  get_sources(db_, table_name = dbtable_name):
+            db_models.dynamicTables[item].__table__.drop(bind=engine, checkfirst=True)
+    deleteditem_count = db_.query(db_models.DeletedItem).delete()
+    return deleteditem_count
+
+def get_deleted_items(db_: Session, item_id: int =None,
+    skip: int = 0, limit: int = 100):
+    '''Fetches deleted items from deleted_items table'''
+    query = db_.query(db_models.DeletedItem)
+    if item_id is not None:
+        query = query.filter(db_models.DeletedItem.itemId == item_id)
+    return query.offset(skip).limit(limit).all()

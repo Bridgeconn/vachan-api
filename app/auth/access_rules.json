@@ -79,6 +79,8 @@
         "delete/deactivate":["SuperAdmin", "resourceCreatedUser"]
     },
     "data-manipulation": {
-        "data-restore" : ["SuperAdmin"]
+        "read-via-api":["SuperAdmin"],
+        "data-restore" : ["SuperAdmin"],
+        "delete/deactivate":["SuperAdmin"]
     }
 }
