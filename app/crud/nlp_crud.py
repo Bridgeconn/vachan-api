@@ -741,6 +741,30 @@ def glossary(db_:Session, source_language, target_language, token, **kwargs):
     suggs = get_gloss(db_, index, context_list, source_language, target_language)
     return suggs
 
+def get_glossary_list(db_: Session, source_language, target_language, token, **kwargs):
+    '''Get the list of all matching items in translation memory. Not content aware'''
+    skip = kwargs.get("skip", 0)
+    limit = kwargs.get("limit", 100)
+    query = db_.query(db_models.TranslationMemory)
+    source = db_.query(db_models.Language).filter(db_models.Language.code == source_language
+        ).first()
+    if not source:
+        raise NotAvailableException(f"Language, {source_language}, not found")
+    query = query.filter(db_models.TranslationMemory.source_lang_id == source.languageId)
+    target = db_.query(db_models.Language).filter(db_models.Language.code == target_language
+        ).first()
+    if not target:
+        raise NotAvailableException(f"Language, {target_language}, not found")
+    query = query.filter(db_models.TranslationMemory.target_lang_id == target.languageId)
+    if token is not None:
+        query = query.filter(db_models.TranslationMemory.token == token.lower())
+    if skip is not None:
+        query = query.skip(skip)
+    if limit is not None:
+        query = query.limit(limit)
+    return query.all()
+
+
 def auto_translate_token_logic(db_,tokens, sent, source_lang, target_lang):
     """auto translate token loop"""
     for token in tokens:

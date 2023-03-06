@@ -110,6 +110,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/translation/token-translate,PUT,None,False,None,process
 /v2/translation/draft,PUT,None,False,None,process
 /v2/nlp/gloss,GET,None,False,None,read
+/v2/nlp/gloss-entries,GET,None,False,None,read
 /v2/nlp/learn/gloss,POST,None,False,None,create
 /v2/nlp/learn/alignment,POST,None,False,None,create
 /v2/nlp/stopwords/generate,POST,None,False,Lookup contents,create
