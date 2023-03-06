@@ -759,7 +759,7 @@ def get_glossary_list(db_: Session, source_language, target_language, token, **k
     if token is not None:
         query = query.filter(db_models.TranslationMemory.token == token.lower())
     if skip is not None:
-        query = query.skip(skip)
+        query = query.offset(skip)
     if limit is not None:
         query = query.limit(limit)
     return query.all()
