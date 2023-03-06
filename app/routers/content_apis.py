@@ -771,7 +771,7 @@ async def get_dictionary_word_count(request: Request,
         source_name, search_word, exact_match, details)
     response = contents_crud.get_dictionary_words(db_, source_name, search_word,
         exact_match=exact_match,
-        word_list_only=True, details=details, active=active)
+        word_list_only=True, details=details, active=active, skip=None, limit=None)
     response['db_content'] = len(response['db_content'])
     return response
 
