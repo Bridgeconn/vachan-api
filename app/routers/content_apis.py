@@ -718,7 +718,7 @@ async def get_dictionary_word(request: Request,
     source_name: schemas.TableNamePattern=Path(...,example="en_TW_1_dictionary"),
     search_word: str=Query(None, example="Adam"),
     exact_match: bool=False, word_list_only: bool=False,
-    details: schemas.MetaDataPattern=Query(None, example='{"type":"person"}'), active: bool=True,
+    details: schemas.MetaDataPattern=Query(None, example='{"type":"person"}'), active: bool=None,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.CONTENT.value))):

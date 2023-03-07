@@ -432,3 +432,29 @@ def test_get_count_after_data_upload():
     assert response.json() == 6
     response = client.get(UNIT_URL+source_name+'/count?active=false',headers=headers_auth)
     assert response.json() == 1
+
+def test_get_active_and_inactive():
+    '''Test after the API change as per the request: 
+    https://github.com/Bridgeconn/vachan-api/issues/508'''
+
+    data = [
+        {"word": "one", "details":{"digit": 1, "type":"odd", "link":UNIT_URL+'dictionary?word=one'}},
+        {"word": "two", "details":{"digit": 2, "type":"even", "link":UNIT_URL+'dictionary?word=two'}},
+        {"word": "three", "details":{"digit": 3, "type":"odd",
+        "link":UNIT_URL+'dictionary?word=three'}},
+        {"word": "four", "details":{"digit": 4, "type":"even",
+        "link":UNIT_URL+'dictionary?word=four'}},
+        {"word": "five", "details":{"digit": 5, "type":"odd", "link":UNIT_URL+'dictionary?word=five'}},
+        {"word": "another", "details":{"empty-field": ""}},
+        {"word": "inactive", "active": "false"}
+    ]
+    resp, source_name = check_post(data)
+    assert resp.status_code == 201
+
+    # all words, active and inactive
+    response = client.get(UNIT_URL+source_name,headers=headers_auth)
+    assert len(response.json()) == 7
+    response = client.get(UNIT_URL+source_name+'?active=True',headers=headers_auth)
+    assert len(response.json()) == 6
+    response = client.get(UNIT_URL+source_name+'?active=false',headers=headers_auth)
+    assert len(response.json()) == 1
