@@ -114,7 +114,7 @@ def check_soft_delete(unit_url, check_post, data, delete_data , headers):
     for item in response.json()['data']:
         assert not item['active']
 
-    get_response2 = client.get(unit_url+source_name, headers=headers)
+    get_response2 = client.get(unit_url+source_name+'?active=true', headers=headers)
     assert len(get_response2.json()) == len(data) - len(delete_data)
 
     get_response3 = client.get(unit_url+source_name+'?active=false',headers=headers)
