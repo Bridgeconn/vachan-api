@@ -13,7 +13,7 @@ CONN = None
 def override_get_db():
     '''To use a separate transaction for test sessions which can then be rolled back'''
     global CONN #pylint: disable=W0603
-    db_ = Session(bind=CONN)
+    db_ = Session(bind=CONN, autocommit=False, autoflush=False)
     try:
         log.warning('TESTING:overrides default database connection')
         yield db_

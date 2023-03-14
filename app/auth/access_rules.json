@@ -38,7 +38,9 @@
     },
     "translation-project":{
         "create":["SuperAdmin", "AgAdmin", "AgUser"],
+        "delete":["SuperAdmin", "AgAdmin", "projectOwner"],
         "create-user":["SuperAdmin", "AgAdmin", "projectOwner"],
+        "delete-user":["SuperAdmin", "AgAdmin", "projectOwner"],
         "edit-Settings":["SuperAdmin", "AgAdmin", "projectOwner"],
         "read-settings":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember"],
         "edit-draft": ["SuperAdmin", "AgAdmin", "projectOwner", "projectMember"],
@@ -79,8 +81,6 @@
         "delete/deactivate":["SuperAdmin", "resourceCreatedUser"]
     },
     "data-manipulation": {
-        "read-via-api":["SuperAdmin"],
-        "data-restore" : ["SuperAdmin"],
-        "delete/deactivate":["SuperAdmin"]
+        "data-restore" : ["SuperAdmin"]
     }
 }

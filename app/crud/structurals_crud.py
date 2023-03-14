@@ -101,13 +101,17 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
     return db_content
 
 def add_deleted_data(db_: Session, del_content, table_name : str = None,\
-    source = None, user_details = None):
+    source = None,deleting_user=None):
     '''backup deleted items from any table'''
     json_string = jsonpickle.encode(del_content)#, unpicklable=False
     json_string=json.loads(json_string)
     del json_string['py/object'],json_string['_sa_instance_state']
+    # try:
+    #     del_item_createduser = del_content.createdUser
+    # except Exception: # pylint: disable=W0703
+    del_item_createduser = deleting_user
     db_content =  db_models.DeletedItem(deletedData = json_string,
-        createdUser = user_details['user_id'],
+        createdUser = del_item_createduser,
         deletedTime = datetime.now(),
         deletedFrom = table_name)
     db_.add(db_content)
@@ -144,7 +148,9 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
         "licenses":db_models.License,
         "versions":db_models.Version,
         "content_types": db_models.ContentType,
-        "sources":db_models.Source}
+        "sources":db_models.Source,
+        "translation_projects":db_models.TranslationProject,
+        "translation_project_users": db_models.TranslationProjectUser}
     if db_restore.deletedFrom in content_class_map:
         model_cls = content_class_map[db_restore.deletedFrom]
     else:
@@ -514,26 +520,4 @@ def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None,
         query = query.filter(db_models.BibleBook.bookCode == book_code.lower())
     if book_name is not None:
         query = query.filter(db_models.BibleBook.bookName == book_name.lower())
-    return query.offset(skip).limit(limit).all()
-
-def delete_deleteditems(db_: Session):
-    '''Cleanup entire deleted_items table  and remove irrelevant dangling dynamic tables'''
-    for item in db_models.dynamicTables:   #pylint: disable=C0206
-        tb_name = db_models.dynamicTables[item]
-        dbtable_name = tb_name.__name__
-        if dbtable_name.endswith("audio"):
-            dbtable_name = dbtable_name.replace("_audio", "")
-        elif dbtable_name.endswith("cleaned"):
-            dbtable_name = dbtable_name.replace("_cleaned", "")
-        if not  get_sources(db_, table_name = dbtable_name):
-            db_models.dynamicTables[item].__table__.drop(bind=engine, checkfirst=True)
-    deleteditem_count = db_.query(db_models.DeletedItem).delete()
-    return deleteditem_count
-
-def get_deleted_items(db_: Session, item_id: int =None,
-    skip: int = 0, limit: int = 100):
-    '''Fetches deleted items from deleted_items table'''
-    query = db_.query(db_models.DeletedItem)
-    if item_id is not None:
-        query = query.filter(db_models.DeletedItem.itemId == item_id)
     return query.offset(skip).limit(limit).all()

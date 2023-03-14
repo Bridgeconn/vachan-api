@@ -97,8 +97,10 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/autographa/projects,POST,Autographa,False,None,create
 /v2/autographa/projects,PUT,Autographa,False,"contents like bibles, commentaries, infographics, dictionary or videos",translate
 /v2/autographa/projects,PUT,Autographa,False,Ag or translation project,edit-Settings
+/v2/autographa/projects,DELETE,Autographa,False,None,delete
 /v2/autographa/project/user,POST,Autographa,False,None,create-user
 /v2/autographa/project/user,PUT,Autographa,False,None,edit-Settings
+/v2/autographa/project/user,DELETE,Autographa,False,None,delete-user
 /v2/autographa/project/tokens,GET,Autographa,False,None,read-draft
 /v2/autographa/project/tokens,PUT,Autographa,False,None,edit-draft
 /v2/autographa/project/token-translations,GET,Autographa,False,None,read-draft
@@ -131,6 +133,4 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/bibles/{source_name}/books/{book_code}/format/{output_format},GET,VachanAdmin,False,None,read-via-vachanadmin
 /v2/bibles/{source_name}/books/{book_code}/format/{output_format},GET,API-user,False,None,read-via-api
 /v2/files/usfm/to/{output_format},PUT,None,False,File Manipulation Ops,access-via-api
-/v2/deleted-items,GET,API-user,False,None,read-via-api
 /v2/restore,PUT,None,False,None,data-restore
-/v2/deleted-items,DELETE,None,False,None,delete/deactivate

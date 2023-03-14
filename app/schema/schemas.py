@@ -153,7 +153,6 @@ class DataRestoreResponse(BaseModel):
 class DeletedItemResponse(BaseModel):
     '''returns object of deleted items'''
     itemId : int
-    deletedData : dict
     deletedFrom :str
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
