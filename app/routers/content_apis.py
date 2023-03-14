@@ -74,31 +74,9 @@ async def delete_contents(request: Request, content_obj: schemas.DeleteIdentity 
         raise NotAvailableException(f"Content id {content_id} not found")
     deleted_content = structurals_crud.delete_content(db_=db_, content=content_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-            table_name = dbtable_name,user_details=user_details)
+            table_name = dbtable_name,deleting_user=user_details['user_id'])
     return {'message': f"Content with identity {content_id} deleted successfully",
             "data": delcont}
-
-#### Data Manipulation - Restore ####
-@router.put('/v2/restore', response_model=schemas.DataRestoreResponse,
-    responses={502:{"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
-    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
-    401: {"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Data Manipulation"])
-@get_auth_access_check_decorator
-async def restore_content(request: Request, content: schemas.RestoreIdentity,
-    user_details =Depends(get_user_or_none),
-    db_: Session = Depends(get_db)):
-    ''' Restore deleted data.Unique deleted item ID can be used to restore data'''
-    log.info('In restore_content')
-    log.debug('restore: %s',content)
-    if len(structurals_crud.get_restore_item_id(db_, restore_item_id= content.itemId)) == 0:
-        raise NotAvailableException(f"Restore item id {content.itemId} not found")
-    data = structurals_crud.restore_data(db_=db_, restored_item=content)
-    data = jsonpickle.encode(data)
-    data=json.loads(data)
-    del data['py/object'],data['_sa_instance_state']
-    return {'message': f"Deleted Item with identity {content.itemId} restored successfully",
-    "data": data}
 
 ##### languages #####
 @router.get('/v2/languages',
@@ -176,7 +154,7 @@ async def delete_languages(request: Request, lang_obj: schemas.DeleteIdentity = 
         raise NotAvailableException(f"Language id {language_id} not found")
     deleted_content = structurals_crud.delete_language(db_=db_, lang=lang_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-        table_name = dbtable_name,user_details=user_details)
+        table_name = dbtable_name,deleting_user=user_details['user_id'])
     return {'message': f"Language with identity {language_id} deleted successfully",
             "data": delcont}
 
@@ -253,7 +231,7 @@ async def delete_licenses(request: Request, delete_obj: schemas.DeleteIdentity =
         raise NotAvailableException(f"License id {license_id} not found")
     deleted_content = structurals_crud.delete_license(db_=db_, content=delete_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-            table_name = dbtable_name,user_details=user_details)
+            table_name = dbtable_name,deleting_user=user_details['user_id'])
     return {'message': f"License with identity {license_id} deleted successfully",
             "data": delcont}
 
@@ -339,7 +317,7 @@ async def delete_versions(request: Request, delete_obj: schemas.DeleteIdentity =
         raise NotAvailableException(f"Version id {delete_obj.itemId} not found")
     deleted_content = structurals_crud.delete_version(db_=db_, ver=delete_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-            table_name = dbtable_name,user_details=user_details)
+            table_name = dbtable_name,deleting_user=user_details['user_id'])
     return {'message': f"Version with identity {version_id} deleted successfully",
             "data": delcont}
 
@@ -484,7 +462,7 @@ async def delete_sources(request: Request, delete_obj: schemas.DeleteIdentity = 
         raise NotAvailableException(f"Source id {source_id} not found")
     deleted_content = structurals_crud.delete_source(db_=db_, delitem=delete_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
-            table_name = dbtable_name,user_details=user_details)
+            table_name = dbtable_name,deleting_user=user_details['user_id'])
     return {'message': f"Source with identity {source_id} deleted successfully",
             "data": delcont}
 
@@ -607,10 +585,12 @@ async def delete_bible_book(request: Request, delete_obj: schema_content.DeleteI
         raise NotAvailableException(f"Bible Book with id {biblecontent_id} not found")
     deleted_content = contents_crud.delete_bible_book(db_=db_,delitem=delete_obj,\
         source_name=source_name,user_id=user_details['user_id'])
-    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
-        table_name= dbtable_name,source=deleted_content['source_content'],user_details=user_details)
+    delcont = structurals_crud.add_deleted_data(db_= db_,del_content= deleted_content['db_content'],
+        table_name = dbtable_name, source = deleted_content['source_content'],
+        deleting_user=user_details['user_id'])
     del_clean=structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content2'],#pylint: disable=unused-variable
-    table_name=cleaned_tablename,source=deleted_content['source_content'],user_details=user_details)
+        table_name=cleaned_tablename,source=deleted_content['source_content'],
+        deleting_user=user_details['user_id'])
     return {'message': f"Bible Book with id {biblecontent_id} deleted successfully",
             "data": delcont}
 
@@ -732,7 +712,8 @@ async def delete_bible_audios(request: Request, delete_obj: schema_content.Delet
     deleted_content = contents_crud.delete_bible_audio(db_=db_,delitem=delete_obj,\
         source_name=source_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
-    table_name=audio_tablename,source=deleted_content['source_content'],user_details=user_details)
+        table_name = audio_tablename, source = deleted_content['source_content'],
+        deleting_user = user_details['user_id'])
     return {'message': f"Bible Audio with id {bibleaudio_id} deleted successfully",
             "data": delcont}
 
@@ -867,7 +848,8 @@ async def delete_commentary(request: Request,
     deleted_content = contents_crud.delete_commentary(db_=db_,delitem=delete_obj,\
         table_name=tb_name,source_name=source_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
-        table_name= dbtable_name,source=deleted_content['source_content'],user_details=user_details)
+        table_name= dbtable_name, source=deleted_content['source_content'],
+        deleting_user = user_details['user_id'])
     return {'message': f"Commentary id {commentary_id} deleted successfully",
             "data": delcont}
 
@@ -972,7 +954,8 @@ async def delete_dictionaries(request: Request, delete_obj: schema_content.Delet
     deleted_content = contents_crud.delete_dictionary(db_=db_,delitem=delete_obj,\
         table_name=tb_name,source_name=source_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
-        table_name= dbtable_name,source=deleted_content['source_content'],user_details=user_details)
+        table_name = dbtable_name, source = deleted_content['source_content'],
+        deleting_user = user_details['user_id'])
     return {'message': f"Dictionary id {word_id} deleted successfully",
             "data": delcont}
 
@@ -1068,7 +1051,8 @@ async def delete_infographics(request: Request, delete_obj: schema_content.Delet
     deleted_content = contents_crud.delete_infographic(db_=db_,delitem=delete_obj,\
         table_name=tb_name,source_name=source_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
-        table_name= dbtable_name,source=deleted_content['source_content'],user_details=user_details)
+        table_name = dbtable_name, source = deleted_content['source_content'],
+        deleting_user = user_details['user_id'])
     return {'message': f"Infographic id {infographic_id} deleted successfully",
             "data": delcont}
 
@@ -1166,7 +1150,8 @@ async def delete_biblevideos(request: Request, delete_obj: schema_content.Delete
     deleted_content = media_crud.delete_biblevideo(db_=db_,delitem=delete_obj,\
         table_name=tb_name,source_name=source_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
-        table_name= dbtable_name,source=deleted_content['source_content'],user_details=user_details)
+        table_name = dbtable_name, source = deleted_content['source_content'],
+        deleting_user = user_details['user_id'])
     return {'message': f"Bible Video id {biblevideo_id} deleted successfully",
             "data": delcont}
 
@@ -1209,4 +1194,26 @@ async def extract_text_contents(request:Request, #pylint: disable=W0613
     if len(tables) == 0:
         raise NotAvailableException("No sources available for the requested name or language")
     return contents_crud.extract_text(db_, tables, books, skip=skip, limit=limit)
-    
+
+#### Data Manipulation ####
+@router.put('/v2/restore', response_model=schemas.DataRestoreResponse,
+    responses={502:{"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Data Manipulation"])
+@get_auth_access_check_decorator
+async def restore_content(request: Request, content: schemas.RestoreIdentity,
+    user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
+    ''' Restore deleted data to the original table.
+    * Unique deleted item ID can be used to restore data'''
+    log.info('In restore_content')
+    log.debug('restore: %s',content)
+    if len(structurals_crud.get_restore_item_id(db_, restore_item_id= content.itemId)) == 0:
+        raise NotAvailableException(f"Restore item id {content.itemId} not found")
+    data = structurals_crud.restore_data(db_=db_, restored_item=content)
+    data = jsonpickle.encode(data)
+    data=json.loads(data)
+    del data['py/object'],data['_sa_instance_state']
+    return {'message': f"Deleted Item with identity {content.itemId} restored successfully",
+    "data": data}

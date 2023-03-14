@@ -101,13 +101,17 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
     return db_content
 
 def add_deleted_data(db_: Session, del_content, table_name : str = None,\
-    source = None, user_details = None):
+    source = None,deleting_user=None):
     '''backup deleted items from any table'''
     json_string = jsonpickle.encode(del_content)#, unpicklable=False
     json_string=json.loads(json_string)
     del json_string['py/object'],json_string['_sa_instance_state']
+    # try:
+    #     del_item_createduser = del_content.createdUser
+    # except Exception: # pylint: disable=W0703
+    del_item_createduser = deleting_user
     db_content =  db_models.DeletedItem(deletedData = json_string,
-        createdUser = user_details['user_id'],
+        createdUser = del_item_createduser,
         deletedTime = datetime.now(),
         deletedFrom = table_name)
     db_.add(db_content)
@@ -144,7 +148,9 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
         "licenses":db_models.License,
         "versions":db_models.Version,
         "content_types": db_models.ContentType,
-        "sources":db_models.Source}
+        "sources":db_models.Source,
+        "translation_projects":db_models.TranslationProject,
+        "translation_project_users": db_models.TranslationProjectUser}
     if db_restore.deletedFrom in content_class_map:
         model_cls = content_class_map[db_restore.deletedFrom]
     else:

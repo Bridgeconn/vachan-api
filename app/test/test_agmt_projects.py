@@ -6,10 +6,11 @@ from .test_bibles import check_post as add_bible, gospel_books_data
 from .test_sources import check_post as add_source
 from .test_versions import check_post as add_version
 from .conftest import initial_test_users
-from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER
+from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 
 UNIT_URL = '/v2/autographa/projects' 
 USER_URL = '/v2/autographa/project/user'
+RESTORE_URL = '/v2/restore'
 headers = {"contentType": "application/json", "accept": "application/json", "app":"Autographa"}
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
@@ -303,9 +304,11 @@ def test_put_invalid():
 
 def check_project_user(project_name, user_id, role=None, status=None, metadata = None):
     '''Make sure the user is in project and if specified, check for other values'''
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     response = client.get(UNIT_URL+'?project_name='+project_name,headers=headers_auth)
     found_user = False
     found_owner = False
+
     for user in response.json()[0]['users']:
         if user['userId'] == user_id:
             found_user = True
@@ -550,6 +553,7 @@ def test_soft_delete():
     get_response3 = client.get(UNIT_URL+'?active=false',headers=headers_auth)
     assert len(get_response3.json()) >= len(delete_data)
 
+
 #Access Rules and related Test
 
 #Project Access Rules based tests
@@ -714,7 +718,7 @@ def test_agmt_projects_access_rule():
     #update user with not owner
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
     update_data = {
-        "project_id": project1_id,
+        "project_id": project8_id,
         "userId": new_user_id
     }
     # add metadata
@@ -854,3 +858,370 @@ def test_get_project_access_rules():
     response = client.get(UNIT_URL,headers=headers_auth)
     assert len(response.json()) == 0
     # delete_user_identity(ag_user_id)
+
+def test_delete_project():
+    '''Test the removal a project'''
+
+    #Create Project
+    project_data = {
+        "projectName": "Test project 1",
+        "sourceLanguageCode": "hi",
+        "targetLanguageCode": "ml"
+    }
+    resp = check_post(project_data, auth_token=initial_test_users['AgAdmin']['token'])
+    assert resp.status_code == 201
+    assert resp.json()['message'] == "Project created successfully"
+    new_project = resp.json()['data']
+    project_id = new_project['projectId']
+    assert_positive_get(new_project)
+
+    # fetch project
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    get_response = client.get(UNIT_URL,headers=headers_auth)
+    assert len(get_response.json()) >= 1
+    found_project = False
+    for proj in get_response.json():
+        if proj['projectName'] == project_data['projectName']:
+            found_project = True
+            fetched_project = proj
+    assert found_project
+    assert_positive_get(fetched_project)
+
+    assert fetched_project['projectName'] == project_data['projectName']
+    assert fetched_project['sourceLanguage']['code'] == project_data['sourceLanguageCode']
+    assert fetched_project['targetLanguage']['code'] == project_data['targetLanguageCode']
+
+    #Delete Project with no auth
+    resp = client.delete(UNIT_URL+'?project_id='+str(new_project['projectId']),headers=headers)
+    assert resp.status_code == 401
+    assert resp.json()['details'] == "Access token not provided or user not recognized."
+
+    # deleting non existing  project
+    invalid_project_id = 9999
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    resp = client.delete(UNIT_URL+'?project_id='+str(invalid_project_id),headers=headers_auth)
+    assert resp.status_code == 404
+    assert resp.json()['details'] == f"Project with id {invalid_project_id} not found"
+
+    # Delete as unauthorized users
+    for user in ['APIUser','VachanAdmin','VachanUser','BcsDev']:
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
+        response = client.delete(UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
+
+    # Delete as AgAdmin- Positive test
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    resp = client.delete(UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
+    assert resp.status_code == 201
+    assert "successfull" in resp.json()['message']
+
+    #Ensure deleted project is not present
+    resp = client.get(UNIT_URL+'?project_name=Test project 1',headers=headers_auth)
+    assert_not_available_content(resp)
+
+    #Create and Delete Project with AgUser - Positive Test
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    post_resp_aguser = check_post(project_data, auth_token=initial_test_users['AgUser']['token'])
+    assert post_resp_aguser.status_code == 201
+    #Ensure presence of created project
+    get_response = client.get(UNIT_URL,headers=headers_auth)
+    assert len(get_response.json()) >= 1
+    found_project = False
+    for proj in get_response.json():
+        if proj['projectName'] == project_data['projectName']:
+            found_project = True
+            fetched_project = proj
+    assert found_project
+    assert_positive_get(fetched_project)
+    #Get project Id
+    new_project = post_resp_aguser.json()['data']
+    project_id = new_project['projectId']
+    #Delete
+    delete_resp_aguser = client.delete(UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
+    assert delete_resp_aguser.status_code == 201
+    #Ensure deleted project is not present
+    resp = client.get(UNIT_URL+'?project_name=Test project 1',headers=headers_auth)
+    assert_not_available_content(resp)
+
+     #Create and Delete Project with SuperAdmin - Positive Test
+    #Login as Super Admin
+    sa_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(sa_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_auth['Authorization'] = "Bearer"+" "+test_user_token
+    post_resp_sa = check_post(project_data, auth_token=test_user_token)
+    assert post_resp_sa.status_code == 201
+    #Ensure presence of created project
+    get_response = client.get(UNIT_URL,headers=headers_auth)
+    assert len(get_response.json()) >= 1
+    found_project = False
+    for proj in get_response.json():
+        if proj['projectName'] == project_data['projectName']:
+            found_project = True
+            fetched_project = proj
+    assert found_project
+    assert_positive_get(fetched_project)
+    #Get project Id
+    new_project = post_resp_sa.json()['data']
+    project_id = new_project['projectId']
+    #Delete
+    delete_resp_sa= client.delete(UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
+    assert delete_resp_sa.status_code == 201
+    #Ensure deleted project is not present
+    resp = client.get(UNIT_URL+'?project_name=Test project 1',headers=headers_auth)
+    assert_not_available_content(resp)
+    logout_user(test_user_token)
+
+def test_restore_project():
+    '''positive test case, checking for correct return object'''
+    #only Super Admin can restore deleted data
+    #Creating and Deleting project
+    project_data = {
+        "projectName": "Test project 1",
+        "sourceLanguageCode": "hi",
+        "targetLanguageCode": "ml"
+    }
+    post_resp= check_post(project_data, auth_token=initial_test_users['AgAdmin']['token'])
+    assert post_resp.status_code == 201
+
+    #Get project Id
+    project_id = post_resp.json()['data']['projectId']
+
+    #Delete
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    delete_resp= client.delete(UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
+    assert delete_resp.status_code == 201
+    #Ensure deleted project is not present
+    resp = client.get(UNIT_URL+'?project_name=Test project 1',headers=headers_auth)
+    assert_not_available_content(resp)
+
+    deleteditem_id = delete_resp.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Restoring data
+    #Restore without authentication - Negative Test
+    response = client.put(RESTORE_URL, headers=headers, json=data)
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
+
+    #Restore project with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev and APIUSer2 - Negative Test
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2']:
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
+        response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
+
+    #Restore Project with Super Admin - Positive Test
+     # Login as Super Admin
+    sa_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(sa_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_auth['Authorization'] = "Bearer"+" "+test_user_token
+
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == \
+    f"Deleted Item with identity {deleteditem_id} restored successfully"
+
+    #Ensure presence of restored project
+    get_response = client.get(UNIT_URL,headers=headers_auth)
+    assert len(get_response.json()) >= 1
+    found_project = False
+    for proj in get_response.json():
+        if proj['projectName'] == project_data['projectName']:
+            found_project = True
+            fetched_project = proj
+    assert found_project
+    assert_positive_get(fetched_project)
+
+    #restore with missing data - Negative Test
+    data = {}
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert_input_validation_error(response)
+
+    #Restore with invalid item id - Negative Test
+    data = {"itemId":9999}
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"
+    logout_user(test_user_token)
+
+def test_delete_user():
+    '''Test the removal of a user from a project'''
+    project_data = {
+        "projectName": "Test project 1",
+        "sourceLanguageCode": "hi",
+        "targetLanguageCode": "ml"
+    }
+    resp = check_post(project_data, auth_token=initial_test_users['AgAdmin']['token'])
+    assert resp.json()['message'] == "Project created successfully"
+    new_project = resp.json()['data']
+    new_user_id = initial_test_users['AgUser']['test_user_id']
+
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    resp = client.post(USER_URL+'?project_id='+str(new_project['projectId'])+
+        '&user_id='+str(new_user_id),headers=headers_auth)
+    assert resp.json()['message'] == "User added to project successfully"
+
+    # fetch this project and check for new user
+    check_project_user(project_data['projectName'], new_user_id, role='projectMember')
+
+    #no auth
+    resp = client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
+        '&user_id='+str(new_user_id),headers=headers)
+    assert resp.status_code == 401
+    assert resp.json()['details'] == "Access token not provided or user not recognized."
+    check_project_user(project_data['projectName'], new_user_id, role='projectMember')
+
+    # deleting non existing user
+    second_user_id = initial_test_users['AgUser2']['test_user_id']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    resp = client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
+        '&user_id='+str(second_user_id),headers=headers_auth)
+    assert resp.status_code == 404
+    assert resp.json()['details'] == "User-project pair not found"
+
+    resp = client.post(USER_URL+'?project_id='+str(new_project['projectId'])+
+        '&user_id='+str(second_user_id),headers=headers_auth)
+    assert resp.json()['message'] == "User added to project successfully"
+    check_project_user(project_data['projectName'], second_user_id, role='projectMember')
+
+    #  as non-owner user
+    user_id = initial_test_users['AgUser2']['test_user_id']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    resp = client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
+        '&user_id='+str(user_id),headers=headers_auth)
+    assert resp.status_code == 403
+    assert resp.json()['error'] == "Permission Denied"
+    check_project_user(project_data['projectName'], user_id, role='projectMember')
+
+    # as same user
+    user_id = initial_test_users['AgAdmin']['test_user_id']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    resp = client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
+        '&user_id='+str(user_id),headers=headers_auth)
+    assert resp.status_code == 403
+    assert resp.json()['details'] == "A user cannot remove oneself from a project."
+    check_project_user(project_data['projectName'], user_id, role='projectOwner')
+
+    # as project owner - Positive test
+    user_id = initial_test_users['AgUser2']['test_user_id']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    resp = client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
+        '&user_id='+str(user_id),headers=headers_auth)
+    assert resp.status_code == 201
+    assert "successfull" in resp.json()['message']
+
+    # Check get project to ensure deleted user is not present
+    get_project_response = client.get(UNIT_URL+'?project_id='+str(new_project['projectId']),headers=headers_auth)
+    found_user = False
+
+    for user in get_project_response.json()[0]['users']:
+        if user['userId'] == user_id:
+            found_user = True
+            assert user['userRole'] is 'projectMember'
+            assert user['active'] is True
+            assert user['metaData'] is None
+    assert not found_user
+
+def test_restore_user():
+    '''positive test case, checking for correct return object'''
+    #only Super Admin can restore deleted data
+    #Creating and Deleting project user
+    project_data = {
+        "projectName": "Test project 1",
+        "sourceLanguageCode": "hi",
+        "targetLanguageCode": "ml"
+    }
+    resp = check_post(project_data, auth_token=initial_test_users['AgAdmin']['token'])
+    assert resp.json()['message'] == "Project created successfully"
+    #  Get project Id
+    project_id = resp.json()['data']['projectId']
+    new_project = resp.json()['data']
+    user_id = initial_test_users['AgUser']['test_user_id']
+
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    resp = client.post(USER_URL+'?project_id='+str(new_project['projectId'])+
+        '&user_id='+str(user_id),headers=headers_auth)
+    assert resp.json()['message'] == "User added to project successfully"
+
+    # fetch this project and check for new user
+    check_project_user(project_data['projectName'], user_id, role='projectMember')
+    
+    #Delete
+    # user_id = initial_test_users['AgUser']['test_user_id']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    delete_resp = client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
+        '&user_id='+str(user_id),headers=headers_auth)
+    assert delete_resp.status_code == 201
+    assert "successfull" in delete_resp.json()['message']
+
+    #Ensure deleted user is not present
+    get_project_response = client.get(UNIT_URL+'?project_id='+str(new_project['projectId']),headers=headers_auth)
+    found_user = False
+
+    for user in get_project_response.json()[0]['users']:
+        if user['userId'] == user_id:
+            found_user = True
+            assert user['userRole'] is 'projectMember'
+            assert user['active'] is True
+            assert user['metaData'] is None
+    assert not found_user
+
+
+
+    deleteditem_id = delete_resp.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Restoring data
+    #Restore user without authentication - Negative Test
+    response = client.put(RESTORE_URL, headers=headers, json=data)
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
+
+    #Restore project user with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev and APIUSer2 - Negative Test
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2']:
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
+        response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
+
+    #Restore Project User with Super Admin - Positive Test
+     # Login as Super Admin
+    sa_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(sa_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_auth['Authorization'] = "Bearer"+" "+test_user_token
+
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == \
+    f"Deleted Item with identity {deleteditem_id} restored successfully"
+
+    #Ensure presence of restored user
+    check_project_user(project_data['projectName'], user_id, role='projectMember')
+
+    #restore with missing data - Negative Test
+    data = {}
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert_input_validation_error(response)
+
+    #Restore with invalid item id - Negative Test
+    data = {"itemId":9999}
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"
+    logout_user(test_user_token)
