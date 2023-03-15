@@ -150,7 +150,8 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
         "content_types": db_models.ContentType,
         "sources":db_models.Source,
         "translation_projects":db_models.TranslationProject,
-        "translation_project_users": db_models.TranslationProjectUser}
+        "translation_project_users": db_models.TranslationProjectUser,
+        "translation_sentences": db_models.TranslationDraft}
     if db_restore.deletedFrom in content_class_map:
         model_cls = content_class_map[db_restore.deletedFrom]
     else:
