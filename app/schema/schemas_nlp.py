@@ -1,4 +1,5 @@
 '''Defines all input and output classes for translation Apps related API endpoints'''
+import datetime
 from typing import List, Tuple
 from enum import Enum
 from pydantic import BaseModel, Field, constr, root_validator
@@ -61,6 +62,8 @@ class TranslationProject(BaseModel):
     targetLanguage : LanguageResponse = Field(...)
     documentFormat: TranslationDocumentType
     users: List[ProjectUser] = None
+    createTime: datetime.datetime = Field(None)
+    updateTime: datetime.datetime = Field(None)
     metaData: dict = Field(None, example={"books":['mat', 'mrk', 'luk', 'jhn'],
         "useDataForLearning":True})
     active: bool

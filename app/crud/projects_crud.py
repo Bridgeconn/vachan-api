@@ -3,6 +3,7 @@ AgMT Project Management. The translation or NLP related functions of these
 projects are included in nlp_crud module'''
 
 import re
+import datetime
 import itertools
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
@@ -129,6 +130,7 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
         project_row.metaData['punctuations'] = project_obj.punctuations
         flag_modified(project_row, "metaData")
     project_row.updatedUser = user_id
+    project_row.updateTime = datetime.datetime.now()
     if len(new_books) > 0:
         project_row.metaData['books'] += new_books
         flag_modified(project_row, "metaData")
