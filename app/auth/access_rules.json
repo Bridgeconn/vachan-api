@@ -46,7 +46,7 @@
         "edit-draft": ["SuperAdmin", "AgAdmin", "projectOwner", "projectMember"],
         "read-draft":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"],
         "view-project":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"],
-        "delete-sentence": ["SuperAdmin", "AgAdmin", "projectOwner"]
+        "delete-sentence": ["SuperAdmin", "AgAdmin", "projectOwner","projectMember"]
     },
     "generic-translation":{
         "read":["registeredUser"],
