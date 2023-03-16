@@ -574,3 +574,23 @@ def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=No
         'project_content':project_row
         }
     return response
+
+def remove_agmt_sentence(db_, project_id, sentence_id):
+    '''To remove a sentence'''
+    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    if not project_row:
+        raise NotAvailableException(f"Project with id, {project_id}, not found")
+    sentence_row = db_.query(db_models.TranslationDraft).filter(
+        db_models.TranslationDraft.project_id == project_id,
+        db_models.TranslationDraft.sentenceId == sentence_id).first()
+    if not sentence_row:
+        raise NotAvailableException(f"Sentence with id {sentence_id} not found")
+    # if user_id == current_user:
+    #     raise PermissionException("A user cannot remove oneself from a project.")
+    db_.delete(sentence_row)
+    # db_.commit()
+    response = {
+        "db_content": sentence_row,
+        "project_content": project_row
+    }
+    return response
