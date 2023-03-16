@@ -204,6 +204,8 @@ class TranslationProject(graphene.ObjectType):#pylint: disable=too-few-public-me
     targetLanguage = graphene.Field(Language)
     documentFormat = TranslationDocumentType()
     users = graphene.List(ProjectUser)
+    createTime = graphene.DateTime()
+    updateTime = graphene.DateTime()
     metaData = Metadata()
     active = graphene.Boolean()
 
