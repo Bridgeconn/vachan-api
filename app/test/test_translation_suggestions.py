@@ -1,12 +1,14 @@
 '''tests the APIs related to translation suggestion module'''
 from . import client
-from . import assert_input_validation_error, assert_not_available_content
+from . import assert_input_validation_error
 from .test_agmt_translation import assert_positive_get_tokens, assert_positive_get_sentence
 from .test_generic_translation import sentence_list, sample_sent
 from .conftest import initial_test_users
+from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 
 UNIT_URL = '/v2/translation'
 NLP_UNIT_URL = '/v2/nlp'
+RESTORE_URL = '/v2/restore'
 headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json"
@@ -303,3 +305,159 @@ def test_bug_fix():
     assert response.json()["token"] == "अब्राहम की"
     assert list(response.json()["translations"].keys())[0] == "Abraham's".lower()
     assert response.json()["metaData"]["for"] == "अब्राहम की"
+
+def test_delete_glossary():
+    '''Test the removal of a suggestion/glossary'''
+
+    #Adding a suggestion for translation
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
+    response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
+        headers=headers_auth, json=tokens_trans)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Added to glossary"
+
+    # Check glossary is added
+    response = client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
+    headers=headers_auth)
+    assert response.status_code ==200
+    assert isinstance(response.json(), dict)
+    assert len(response.json()['translations']) > 0
+    assert_positive_get_suggetion(response.json())
+    found_test = False
+    for item in response.json()['translations']:
+        if item == "ടെസ്റ്റ്":
+            found_test = True
+    assert found_test
+
+    #deleting glossary with no auth - Negative Test
+    resp = client.delete(NLP_UNIT_URL+'/gloss?source_lang=en&target_lang=ml&token=test',
+             headers=headers)
+    assert resp.status_code == 401
+    assert resp.json()['details'] == "Access token not provided or user not recognized."
+
+    #Deleting glossary with different auth of registerdUser - Positive Test
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
+    response = client.delete(NLP_UNIT_URL+'/gloss?source_lang=en&target_lang=ml&token=test',
+                    headers=headers_auth)
+    assert response.status_code == 201
+    assert "successfull" in response.json()['message']
+
+    # Ensure deleted glossary is not present
+    get_response = client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
+                headers=headers_auth)
+    assert get_response.status_code == 200
+    assert isinstance(get_response.json(), dict)
+    assert len(get_response.json()['translations']) == 0
+
+    #Create and Delete glossary with superadmin - Positive test
+    # Login as Super Admin
+    sa_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(sa_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_auth['Authorization'] = "Bearer"+" "+test_user_token
+    response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
+        headers=headers_auth, json=tokens_trans)
+    response = client.delete(NLP_UNIT_URL+'/gloss?source_lang=en&target_lang=ml&token=test',
+                    headers=headers_auth)
+    assert response.status_code == 201
+    assert "successfull" in response.json()['message']
+
+    # Ensure deleted sentence is not present
+    get_response = client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
+                headers=headers_auth)
+    assert get_response.status_code == 200
+    assert isinstance(get_response.json(), dict)
+    assert len(get_response.json()['translations']) == 0
+
+    #Delete with not available source language
+    response = client.delete(NLP_UNIT_URL+'/gloss?source_lang=x-ttt&target_lang=ml&token=test',
+                    headers=headers_auth)
+    assert response.status_code == 404
+    assert "Source language not available" in response.json()['details']
+
+     #Delete not available target language
+    response = client.delete(NLP_UNIT_URL+'/gloss?source_lang=en&target_lang=x-ttt&token=test',
+                    headers=headers_auth)
+    assert response.status_code == 404
+    assert "Target language not available" in response.json()['details']
+    logout_user(test_user_token)
+
+
+def test_restore_glossary():
+    '''positive test case, checking for correct return object'''
+    #only Super Admin can restore deleted data
+    #Adding a suggestion for translation
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
+    response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
+        headers=headers_auth, json=tokens_trans)
+    # Deleting
+    delete_resp = client.delete(NLP_UNIT_URL+'/gloss?source_lang=en&target_lang=ml&token=test',
+                    headers=headers_auth)
+
+    # Ensure deleted glossary is not present
+    get_response = client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
+                headers=headers_auth)
+    assert get_response.status_code == 200
+    assert isinstance(get_response.json(), dict)
+    assert len(get_response.json()['translations']) == 0
+
+    deleteditem_id = delete_resp.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Restoring data
+    #Restore glossary without authentication - Negative Test
+    response = client.put(RESTORE_URL, headers=headers, json=data)
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
+
+    #Restore glossary with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev-Negative Test
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev']:
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
+        response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
+
+    #Restore glossary with Super Admin - Positive Test
+     # Login as Super Admin
+    sa_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(sa_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_auth['Authorization'] = "Bearer"+" "+test_user_token
+
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == \
+    f"Deleted Item with identity {deleteditem_id} restored successfully"
+
+    # Check glossary is restored
+    response = client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
+    headers=headers_auth)
+    assert response.status_code ==200
+    assert isinstance(response.json(), dict)
+    assert len(response.json()['translations']) > 0
+    assert_positive_get_suggetion(response.json())
+    found_test = False
+    for item in response.json()['translations']:
+        if item == "ടെസ്റ്റ്":
+            found_test = True
+    assert found_test
+
+    #restore with missing data - Negative Test
+    data = {}
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert_input_validation_error(response)
+
+    #Restore with invalid item id - Negative Test
+    data = {"itemId":9999}
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"
+    logout_user(test_user_token)
