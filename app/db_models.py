@@ -338,7 +338,9 @@ class TranslationProject(Base): # pylint: disable=too-few-public-methods
     active = Column('active', Boolean, default=True)
     createdUser = Column('created_user', String)
     updatedUser = Column('last_updated_user', String)
-    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    createTime = Column('created_at', DateTime, default=func.now())
+    updateTime = Column('last_updated_at', DateTime, onupdate=func.now(),
+        default=func.now())
 
 class TranslationDraft(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table translation_drafts in vachan DB used by Autographa MT mode'''
