@@ -820,7 +820,7 @@ def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range,
         }
     return response
 
-def remove_glossary(db_, source_lang,target_lang, token):
+def remove_glossary(db_, source_lang,target_lang, token,translation):
     '''To remove a suggestion'''
     if isinstance(source_lang, str):
         source_lang = db_.query(db_models.Language).filter(
@@ -836,7 +836,8 @@ def remove_glossary(db_, source_lang,target_lang, token):
     token_row = db_.query(db_models.TranslationMemory).filter(
             db_models.TranslationMemory.source_lang_id == source_lang.languageId,
             db_models.TranslationMemory.target_lang_id == target_lang.languageId,
-            db_models.TranslationMemory.token == token).first()
+            db_models.TranslationMemory.token == token,
+            db_models.TranslationMemory.translation == translation).first()
     if not token_row:
         raise NotAvailableException("Token not found")
     db_.delete(token_row)

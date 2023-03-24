@@ -514,14 +514,16 @@ async def remove_glossary(request: Request,
     source_lang:schemas.LangCodePattern=Query(...,example="en"),
     target_lang:schemas.LangCodePattern=Query(...,example="hi"),
     token:str=Query(...,example="duck"),
+    translation:str=Query(...,example="बत्तख"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Remove glossary.'''
     log.info('In remove_gloss')
-    log.debug('source_language:%s,target_language:%s,token:%s',source_lang,target_lang,token)
-    deleted_content = nlp_crud.remove_glossary(db_, source_lang,target_lang,token)
+    log.debug('source_language:%s,target_language:%s,token:%s,translation:%s',
+        source_lang,target_lang,token,translation)
+    deleted_content = nlp_crud.remove_glossary(db_, source_lang,target_lang,token,translation)
     delcont = structurals_crud.add_deleted_data(db_, del_content=  deleted_content['db_content'],
         table_name = "translation_memory", deleting_user=user_details['user_id'])
-    return {'message': "Glossary with deleted successfully",
+    return {'message': f"Token-Translation pair {token} -> {translation} deleted successfully",
             "data": delcont}
 
 @router.post('/v2/nlp/learn/alignment', response_model=schemas_nlp.GlossUpdateResponse,
