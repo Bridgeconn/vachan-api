@@ -266,7 +266,7 @@ CREATE TABLE public.access_rules (
     last_updated_at  timestamp with time zone DEFAULT NOW(),
     last_updated_user text NULL,
     active boolean DEFAULT true NOT NULL,
-    UNIQUE(rule_id),
+    UNIQUE(entitlement_id,tag_id),
     CONSTRAINT fk_entitlement FOREIGN KEY(entitlement_id) REFERENCES public.resource_types(resource_type_id),
     CONSTRAINT fk_tag FOREIGN KEY(tag_id) REFERENCES public.permissions(permission_id)
 );

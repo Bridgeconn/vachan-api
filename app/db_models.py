@@ -499,6 +499,10 @@ class AccessRules(Base): # pylint: disable=too-few-public-methods
     updatedUser = Column('last_updated_user', String)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
     active = Column('active', Boolean)
+    __table_args__ = (
+        UniqueConstraint('entitlement_id', 'tag_id'),
+        {'extend_existing': True}
+                     )
 
 
 class ApiPermissionsMap(Base): # pylint: disable=too-few-public-methods

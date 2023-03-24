@@ -39,13 +39,14 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/app/{app_id},PUT,VachanAdmin,FALSE,app,edit
 /v2/apps,GET,VachanAdmin,FALSE,app,read
 /v2/app/delete-app,DELETE,VachanAdmin,FALSE,app,delete/deactivate
-/v2/access/permissions,POST,VachanAdmin,FALSE,app,create
-/v2/access/permissions,GET,VachanAdmin,FALSE,app,read
-/v2/access/permissions,PUT,VachanAdmin,FALSE,app,edit
-/v2/access/permissions,DELETE,VachanAdmin,FALSE,app,delete/deactivate
+/v2/access/permissions,POST,VachanAdmin,FALSE,access-control,create
+/v2/access/permissions,GET,VachanAdmin,FALSE,access-control,read
+/v2/access/permissions,PUT,VachanAdmin,FALSE,access-control,edit
+/v2/access/permissions,DELETE,VachanAdmin,FALSE,access-control,delete/deactivate
 /v2/access/roles,POST,VachanAdmin,FALSE,access-control,create
 /v2/access/roles,GET,VachanAdmin,FALSE,access-control,read
 /v2/access/roles,PUT,VachanAdmin,FALSE,access-control,edit
+/v2/access/rules,POST,VachanAdmin,FALSE,access-control,create
 /v2/contents,GET,Autographa,FALSE,meta-content,refer-for-translation
 /v2/contents,GET,Vachan-online or vachan-app,FALSE,meta-content,view-on-web
 /v2/contents,GET,VachanAdmin,FALSE,meta-content,read-via-vachanadmin
