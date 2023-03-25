@@ -51,7 +51,8 @@
     "generic-translation":{
         "read":["registeredUser"],
         "create":["registeredUser"],
-        "process":["registeredUser"]
+        "process":["registeredUser"],
+        "delete":["registeredUser"]
     },
     "lookup-content":{
         "read":["noAuthRequired"],
