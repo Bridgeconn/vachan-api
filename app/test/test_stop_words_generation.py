@@ -5,13 +5,15 @@ from app.main import log
 from app.schema import schema_auth, schemas
 from . import client
 from . import check_default_get
-from . import assert_not_available_content
+from . import assert_not_available_content,assert_input_validation_error
 from .conftest import initial_test_users
+from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 
 
 UNIT_URL = '/v2/lookup/stopwords'
 GER_URL = '/v2/nlp/stopwords'
 JOBS_URL = '/v2/jobs'
+RESTORE_URL = '/v2/restore'
 
 headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json", "accept": "application/json"}
@@ -368,3 +370,129 @@ def test_generate_stopwords():
     assert len(job_response2.json()['data']['output']['data']) < len(job_response1.json()
                                                             ['data']['output']['data'])
     assert job_response2.json()['message'] == "Automatically generated stopwords for the given language"
+
+def test_delete_stopword():
+    '''Test the removal of a stopword'''
+    #Adding stopwords
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
+    response = client.post(UNIT_URL+'/aa?',headers=headers_auth, json=add_obj)
+    assert response.status_code == 201
+    assert_positive_response(response.json())
+    for item in response.json()['data']:
+        assert_positive_get_stopwords(item)
+
+    #Ensure stopword is added
+    get_response = client.get(UNIT_URL+'/aa?',headers=headers_auth)
+    assert get_response.status_code == 200
+    assert isinstance(get_response.json(), list)
+    for item in get_response.json():
+        assert_positive_get_stopwords(item)
+
+    #deleting stopword with no auth - Negative Test
+    resp = client.delete(UNIT_URL+'/aa?lang=aa&stopword=asd',headers=headers)
+    assert resp.status_code == 401
+    assert resp.json()['details'] == "Access token not provided or user not recognized."
+
+    #Deleting stopword with different auth of registerdUser - Positive Test
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
+    response = client.delete(UNIT_URL+'/aa?lang=aa&stopword=asd',headers=headers_auth)
+    assert response.status_code == 201
+    assert "successfull" in response.json()['message']
+
+    # Ensure deleted stopword is not present
+    get_response = client.get(UNIT_URL+'/aa?',headers=headers_auth)
+    assert get_response.status_code == 200
+    assert isinstance( get_response.json(), list)
+    assert len(get_response.json())==2
+
+    #Create and Delete glossary with superadmin - Positive test
+    # Login as Super Admin
+    sa_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(sa_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_auth['Authorization'] = "Bearer"+" "+test_user_token
+    response = client.post(UNIT_URL+'/aa?',headers=headers_auth, json=add_obj)
+    response = client.delete(UNIT_URL+'/aa?lang=aa&stopword=asd',headers=headers_auth)
+    assert response.status_code == 201
+    assert "successfull" in response.json()['message']
+
+    # Ensure deleted stopword is not present
+    get_response = client.get(UNIT_URL+'/aa?',headers=headers_auth) #, json=["asd"])
+    assert get_response.status_code == 200
+    assert isinstance( get_response.json(), list)
+    assert len(get_response.json())==2
+
+    #Delete with not available source language
+    response = client.delete(UNIT_URL+'/aa?lang=x-ttt&stopword=asd',headers=headers_auth)
+    assert response.status_code == 404
+    assert "Language not available" in response.json()['details']
+    logout_user(test_user_token)
+
+
+def test_restore_stopword():
+    '''positive test case, checking for correct return object'''
+    #only Super Admin can restore deleted data
+    #Adding a stopword and deleting it
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
+    response = client.post(UNIT_URL+'/aa?',headers=headers_auth, json=add_obj)
+    delete_resp = client.delete(UNIT_URL+'/aa?lang=aa&stopword=asd',headers=headers_auth)
+
+    # Ensure deleted stopword is not present
+    get_response = client.get(UNIT_URL+'/aa?',headers=headers_auth)
+    assert get_response.status_code == 200
+    assert isinstance( get_response.json(), list)
+    assert len(get_response.json())==2
+
+    deleteditem_id = delete_resp.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Restoring data
+    #Restore stopword without authentication - Negative Test
+    response = client.put(RESTORE_URL, headers=headers, json=data)
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
+
+    #Restore stopword with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev-Negative Test
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev']:
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
+        response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
+
+    #Restore glossary with Super Admin - Positive Test
+     # Login as Super Admin
+    sa_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(sa_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_auth['Authorization'] = "Bearer"+" "+test_user_token
+
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == \
+    f"Deleted Item with identity {deleteditem_id} restored successfully"
+
+    # Check stopword is restored
+    get_response = client.get(UNIT_URL+'/aa?',headers=headers_auth)
+    assert get_response.status_code == 200
+    assert isinstance( get_response.json(), list)
+    assert len(get_response.json())== 3
+
+    #restore with missing data - Negative Test
+    data = {}
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert_input_validation_error(response)
+
+    #Restore with invalid item id - Negative Test
+    data = {"itemId":9999}
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"
+    logout_user(test_user_token)

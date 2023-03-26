@@ -602,6 +602,26 @@ async def add_stopwords(request: Request,
     msg = f"{len(result)} stopwords added successfully"
     return {"message": msg, "data": result}
 
+@router.delete('/v2/lookup/stopwords/{language_code}', status_code=201,
+    response_model=schemas.DeleteResponse,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}, 403:{"model": schemas.ErrorResponse}},
+    tags=['Lookups'])
+@get_auth_access_check_decorator
+async def remove_stopword(request: Request,
+    lang:schemas.LangCodePattern=Query(...,example="en"),
+    stopword:str=Query(...,example="as"),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Api to remove stopwords from lookup table'''
+    log.info('In remove_stopword')
+    log.debug('language:%s,stopword:%s',lang,stopword)
+    deleted_content = nlp_sw_crud.remove_stopword(db_, lang, stopword)
+    delcont = structurals_crud.add_deleted_data(db_, del_content= deleted_content['db_content'],
+        table_name = "stopwords_look_up", deleting_user=user_details['user_id'])
+    return {'message':  "Stopword removed successfully",
+            "data": delcont}
+
 @router.post('/v2/nlp/stopwords/generate',
     response_model=schemas_nlp.StopWordsGenerateResponse, response_model_exclude_none=True,
     status_code=201,responses={502: {"model": schemas.ErrorResponse},

@@ -106,9 +106,6 @@ def add_deleted_data(db_: Session, del_content, table_name : str = None,\
     json_string = jsonpickle.encode(del_content)#, unpicklable=False
     json_string=json.loads(json_string)
     del json_string['py/object'],json_string['_sa_instance_state']
-    # try:
-    #     del_item_createduser = del_content.createdUser
-    # except Exception: # pylint: disable=W0703
     del_item_createduser = deleting_user
     db_content =  db_models.DeletedItem(deletedData = json_string,
         createdUser = del_item_createduser,
@@ -152,7 +149,8 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
         "translation_projects":db_models.TranslationProject,
         "translation_project_users": db_models.TranslationProjectUser,
         "translation_sentences": db_models.TranslationDraft,
-        "translation_memory": db_models.TranslationMemory}
+        "translation_memory": db_models.TranslationMemory,
+        "stopwords_look_up": db_models.StopWords}
     if db_restore.deletedFrom in content_class_map:
         model_cls = content_class_map[db_restore.deletedFrom]
     else:

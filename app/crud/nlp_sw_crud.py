@@ -113,6 +113,25 @@ def add_stopwords(db_: Session, language_code, stopwords_list, user_id=None):
     db_.flush()
     return db_content
 
+def remove_stopword(db_, lang:None, stopword):
+    '''To remove a stopword'''
+    if isinstance(lang, str):
+        lang = db_.query(db_models.Language).filter(
+            db_models.Language.code == lang).first()
+        if not lang:
+            raise NotAvailableException("Language not available")
+    sw_row = db_.query(db_models.StopWords).filter(
+            db_models.StopWords.languageId == lang.languageId,
+            db_models.StopWords.stopWord == stopword).first()
+    if not sw_row:
+        raise NotAvailableException("Stopword not found")
+    db_.delete(sw_row)
+    # db_.commit()
+    response = {
+        "db_content": sw_row
+    }
+    return response
+
 def clean_text(text):
     '''Cleaning text by removing punctuations, extra spaces'''
     punctuations = utils.punctuations()
