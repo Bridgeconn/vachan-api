@@ -50,6 +50,8 @@ PROJECT_CREATE_GLOBAL_QUERY = """
         metaData
         active
       }
+      createTime
+      updateTime
       metaData
       active
     }
@@ -85,6 +87,8 @@ PROJECT_EDIT_GLOBAL_QUERY = """
         metaData
         active
       }
+      createTime
+      updateTime
       metaData
       active
     }
@@ -118,6 +122,8 @@ PROJECT_GET_GLOBAL_QUERY = """
       metaData
       active
     }
+    createTime
+    updateTime
     metaData
     active
   }

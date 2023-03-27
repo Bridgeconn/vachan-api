@@ -1,4 +1,5 @@
 '''Defines all input and output classes for translation Apps related API endpoints'''
+import datetime
 from typing import List, Tuple
 from enum import Enum
 from pydantic import BaseModel, Field, constr, root_validator
@@ -61,6 +62,8 @@ class TranslationProject(BaseModel):
     targetLanguage : LanguageResponse = Field(...)
     documentFormat: TranslationDocumentType
     users: List[ProjectUser] = None
+    createTime: datetime.datetime = Field(None)
+    updateTime: datetime.datetime = Field(None)
     metaData: dict = Field(None, example={"books":['mat', 'mrk', 'luk', 'jhn'],
         "useDataForLearning":True})
     active: bool
@@ -224,6 +227,17 @@ class GlossOutput(BaseModel):
     token: str = Field(..., example="love")
     translations: dict = Field(None, example={'प्यार':3, "प्रेम":1.2,
         "प्रेम करना":0})
+    metaData: dict = Field(None, example={"word-class":["noun", "verb"]})
+    class Config:
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
+
+class TranslationMemoryOut(BaseModel):
+    '''Output object to directly examine Translation memory entries'''
+    token: str = Field(..., example="love")
+    translation: str = Field(..., example="प्यार")
+    frequency: int = Field(None)
     metaData: dict = Field(None, example={"word-class":["noun", "verb"]})
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,

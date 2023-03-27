@@ -70,7 +70,7 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
         sentences = []
         books_param_list = ""
         for buk in project_obj.selectedBooks.books:
-            books_param_list += f"&books={buk}"
+            books_param_list += f"&books={buk}"#pylint: disable=R1713
 
         # request.scope['method'] = 'GET'
         # request._url = URL('/v2/sources')#pylint: disable=protected-access
@@ -427,6 +427,24 @@ async def get_glossary(request: Request,
             context, token_offset)
     return nlp_crud.glossary(db_, source_language, target_language, token,
     context=context, token_offset=token_offset)
+
+@router.get('/v2/nlp/gloss-entries', response_model=List[schemas_nlp.TranslationMemoryOut],
+    status_code=200,responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse}},
+    tags=["Nlp"])
+@get_auth_access_check_decorator
+async def get_glossary_entries(request: Request,
+    source_language:schemas.LangCodePattern=Query(...,example="en"),
+    target_language:schemas.LangCodePattern=Query(...,example="hi"),
+    token:str=Query(None,example="duck"),
+    skip: int=Query(None, ge=0), limit: int=Query(None, ge=0),
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
+    '''Searches the translation memory for matching entries. Not context aware'''
+    log.info('In get_glossary_entries')
+    log.debug('source_language:%s, target_language:%s, token:%s',
+        source_language, target_language, token)
+    return nlp_crud.get_glossary_list(db_, source_language, target_language, token,
+    skip=skip, limit=limit)
 
 @router.post('/v2/nlp/learn/gloss', response_model=schemas_nlp.GlossUpdateResponse,
     status_code=201,responses={502: {"model": schemas.ErrorResponse},
