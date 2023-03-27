@@ -19,7 +19,7 @@ router = APIRouter()
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}},
-    status_code=200, tags=['translation-Project management'])
+    status_code=200, tags=['Translation-Project management'])
 @get_auth_access_check_decorator
 async def get_projects(request: Request,
     project_name:str=Query(None,example="Hindi-Bilaspuri Gospels"),
