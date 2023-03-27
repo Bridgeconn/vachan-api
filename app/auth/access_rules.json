@@ -57,7 +57,8 @@
     "lookup-content":{
         "read":["noAuthRequired"],
         "create":["registeredUser"],
-        "edit":["registeredUser"]
+        "edit":["registeredUser"],
+        "delete":["registeredUser"]
     },
     "research-use":{
         "read-via-api":["SuperAdmin", "BcsDeveloper"]
