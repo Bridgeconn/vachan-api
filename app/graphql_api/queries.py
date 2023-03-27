@@ -280,7 +280,7 @@ class Query(graphene.ObjectType):
         return results
 
     agmt_projects = graphene.List(types.TranslationProject,
-        description="Query AutographaMT projects on vachan-db", project_name=graphene.String(),
+        description="Query Translation projects on vachan-db", project_name=graphene.String(),
         source_language=graphene.String(
             description="language code as per bcp47(usually 2 letters)"),
         target_language=graphene.String(
@@ -295,7 +295,7 @@ class Query(graphene.ObjectType):
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
-        req.scope['path'] = "/v2/autographa/projects"
+        req.scope['path'] = "/v2/translation/projects"
         results = translation_apis.get_projects(request= req,
             project_name=project_name, source_language=source_language,
             target_language=target_language, active=active, user_id=user_id,
@@ -318,7 +318,7 @@ class Query(graphene.ObjectType):
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
-        req.scope['path'] = "/v2/autographa/project/tokens"
+        req.scope['path'] = "/v2/translation/project/tokens"
         results = translation_apis.get_tokens(request= req, project_id=project_id,
         books=books, sentence_id_range=sentence_id_range, sentence_id_list=sentence_id_list,
         use_translation_memory=use_translation_memory, include_phrases=include_phrases,
@@ -337,7 +337,7 @@ class Query(graphene.ObjectType):
         # occurrences = [{"sentenceId":sentence_id, "offset":offset}]
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
-        req.scope['path'] = "/v2/autographa/project/token-translations"
+        req.scope['path'] = "/v2/translation/project/token-translations"
         # return projects_crud.obtain_agmt_token_translation(db_, project_id, token=None,
         #     occurrences=occurrences)[0]
         results = translation_apis.get_token_translation(request=req,project_id=project_id,
@@ -356,7 +356,7 @@ class Query(graphene.ObjectType):
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
-        req.scope['path'] = "/v2/autographa/project/token-sentences"
+        req.scope['path'] = "/v2/translation/project/token-sentences"
         # return projects_crud.get_agmt_source_per_token(db_,project_id,token,occurrences)
         results = translation_apis.get_token_sentences(request=req, project_id=project_id,
         token=token, occurrences=occurrences, user_details=user_details, db_=db_)
@@ -412,7 +412,7 @@ class Query(graphene.ObjectType):
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
-        req.scope['path'] = "/v2/autographa/project/draft"
+        req.scope['path'] = "/v2/translation/project/draft"
         # return projects_crud.obtain_agmt_draft(db_, project_id, books,
         #     sentence_id_list, sentence_id_range, output_format=schemas_nlp.DraftFormats.USFM)
         results = translation_apis.get_draft(request=req, project_id=project_id,
@@ -434,7 +434,7 @@ class Query(graphene.ObjectType):
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
-        req.scope['path'] = "/v2/autographa/project/draft"
+        req.scope['path'] = "/v2/translation/project/draft"
         # return projects_crud.obtain_agmt_draft(db_, project_id, books,
         #     sentence_id_list, sentence_id_range, output_format=schemas_nlp.DraftFormats.JSON)
         results = translation_apis.get_draft(request=req, project_id=project_id,
@@ -456,7 +456,7 @@ class Query(graphene.ObjectType):
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
-        req.scope['path'] = "/v2/autographa/project/sentences"
+        req.scope['path'] = "/v2/translation/project/sentences"
         # return nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_list,
         #     sentence_id_range, with_draft=True)
         results = translation_apis.get_project_source(request= req,project_id=project_id,
@@ -478,7 +478,7 @@ class Query(graphene.ObjectType):
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
-        req.scope['path'] = "/v2/autographa/project/progress"
+        req.scope['path'] = "/v2/translation/project/progress"
         # return projects_crud.obtain_agmt_progress(db_, project_id, books,
         #     sentence_id_list, sentence_id_range)
         results = translation_apis.get_progress(request= req,project_id=project_id,

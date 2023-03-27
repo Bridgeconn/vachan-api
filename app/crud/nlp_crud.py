@@ -73,7 +73,7 @@ def get_generic_tokens(db_:Session, src_language, sentence_list, trg_language=No
     result = get_generic_tokens_result(db_, trg_language, src_language, args)
     return result
 
-def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_id_list,
+def get_project_tokens(db_:Session, project_id, books, sentence_id_range, sentence_id_list,
     **kwargs):
     '''Get the selected verses from drafts table and tokenize them'''
     use_translation_memory = kwargs.get("use_translation_memory",True)
@@ -82,7 +82,7 @@ def get_agmt_tokens(db_:Session, project_id, books, sentence_id_range, sentence_
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
-    sentences = projects_crud.obtain_agmt_source(db_, project_id, books, sentence_id_range,
+    sentences = projects_crud.obtain_project_source(db_, project_id, books, sentence_id_range,
         sentence_id_list)
     sentences = sentences['db_content']
     args = {"db_":db_, "src_language":project_row.sourceLanguage, "sentence_list":sentences,
@@ -144,8 +144,8 @@ def replace_bulk_tokens(db_, sentence_list, token_translations, src_code, trg_co
     result = [updated_sentences[key] for key in updated_sentences]
     return result
 
-def save_agmt_translations__gloss_list(db_, token_translations, project_id, user_id):
-    """get gloss list for save_agmt_translations function"""
+def save_project_translations__gloss_list(db_, token_translations, project_id, user_id):
+    """get gloss list for save_project_translations function"""
     db_content = []
     gloss_list = []
     for token in token_translations:
@@ -170,7 +170,8 @@ def save_agmt_translations__gloss_list(db_, token_translations, project_id, user
         gloss_list.append(gloss)
     return gloss_list,db_content
 
-def save_agmt_translations(db_, project_id, token_translations, return_drafts=True, user_id=None):
+def save_project_translations(db_, project_id, token_translations,
+    return_drafts=True, user_id=None):
     '''replace tokens with provided translation in the drafts and update translation memory'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
@@ -181,7 +182,7 @@ def save_agmt_translations(db_, project_id, token_translations, return_drafts=Tr
 
     #get gloss list
     gloss_list, db_content = \
-        save_agmt_translations__gloss_list(db_, token_translations,project_id,user_id)
+        save_project_translations__gloss_list(db_, token_translations,project_id,user_id)
     project_row.updatedUser = user_id
     db_.add_all(db_content)
     db_.add(project_row)
@@ -806,14 +807,14 @@ def auto_translate(db_, sentence_list, source_lang, target_lang, **kwargs):
         auto_translate_token_logic(db_,tokens, sent, source_lang, target_lang)
     return sentence_list
 
-def agmt_suggest_translations(db_:Session, project_id, books, sentence_id_range, sentence_id_list,
-    **kwargs):
+def project_suggest_translations(db_:Session, project_id, books, sentence_id_range,
+    sentence_id_list, **kwargs):
     '''Tokenize and auto fill draft with top suggestions'''
     confirm_all= kwargs.get("confirm_all",False)
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
-    draft_rows = projects_crud.obtain_agmt_source(db_, project_id, books, sentence_id_range,
+    draft_rows = projects_crud.obtain_project_source(db_, project_id, books, sentence_id_range,
         sentence_id_list, with_draft=True)
     draft_rows = draft_rows['db_content']
     if confirm_all:
