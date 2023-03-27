@@ -3,6 +3,7 @@ AgMT Project Management. The translation or NLP related functions of these
 projects are included in nlp_crud module'''
 
 import re
+import datetime
 import itertools
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
@@ -129,6 +130,7 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
         project_row.metaData['punctuations'] = project_obj.punctuations
         flag_modified(project_row, "metaData")
     project_row.updatedUser = user_id
+    project_row.updateTime = datetime.datetime.now()
     if len(new_books) > 0:
         project_row.metaData['books'] += new_books
         flag_modified(project_row, "metaData")
@@ -249,10 +251,10 @@ def validate_draft_meta(sentence, draft, draft_meta):
         # and non empty
         src_len = len(sentence)
         for seg in src_segs:
-            assert 0 <= seg[0] < seg[1] <= src_len, f"Source segment {seg}, is improper!"
+            assert 0 <= seg[0] <= seg[1] <= src_len, f"Source segment {seg}, is improper!"
         trg_len = len(draft)
         for seg in trg_segs:
-            assert 0 <= seg[0] < seg[1] <= trg_len, f"Target segment {seg}, is improper!"
+            assert 0 <= seg[0] <= seg[1] <= trg_len, f"Target segment {seg}, is improper!"
         for meta in draft_meta:
             assert meta[2] in ['confirmed', 'suggestion', 'untranslated'],\
                 "invalid value where confirmed, suggestion or untranslated is expected"

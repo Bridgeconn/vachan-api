@@ -33,45 +33,53 @@ def assert_not_available_content(response):
 
 def check_skip(unit_url,headers):
     '''All tests for the skip parameter of an API endpoint'''
-    response1 = client.get(unit_url+"?skip=0",headers=headers)
+    if "?" not in unit_url:
+        unit_url += "?"
+    else:
+        unit_url += "&"
+    response1 = client.get(unit_url+"skip=0",headers=headers)
     assert response1.status_code == 200
     assert isinstance( response1.json(), list)
     if len(response1.json()) > 1:
-        response2 = client.get(unit_url+"?skip=1",headers=headers)
+        response2 = client.get(unit_url+"skip=1",headers=headers)
         assert response2.status_code == 200
         assert isinstance( response2.json(), list)
         assert response1.json()[1] == response2.json()[0]
 
     # fetch a non existant page, with skip and limit values
-    response = client.get(unit_url+"?skip=50000&limit=10",headers=headers)
+    response = client.get(unit_url+"skip=50000&limit=10",headers=headers)
     assert_not_available_content(response)
 
     # skip should be an integer
-    response = client.get(unit_url+"?skip=abc",headers=headers)
+    response = client.get(unit_url+"skip=abc",headers=headers)
     assert_input_validation_error(response)
 
     # skip should be a positive integer
-    response = client.get(unit_url+"?skip=-10",headers=headers)
+    response = client.get(unit_url+"skip=-10",headers=headers)
     assert_input_validation_error(response)
 
 
 def check_limit(unit_url,headers):
     '''All tests for the limit parameter of an API endpoint'''
-    response = client.get(unit_url+"?limit=3",headers=headers)
+    if "?" not in unit_url:
+        unit_url += "?"
+    else:
+        unit_url += "&"
+    response = client.get(unit_url+"limit=3",headers=headers)
     assert response.status_code == 200
     assert isinstance( response.json(), list)
     assert len(response.json()) <= 3
 
     # fetch a non existant page, with skip and limit values
-    response = client.get(unit_url+"?skip=50000&limit=10",headers=headers)
+    response = client.get(unit_url+"skip=50000&limit=10",headers=headers)
     assert_not_available_content(response)
 
     # limit should be an integer
-    response = client.get(unit_url+"?limit=abc",headers=headers)
+    response = client.get(unit_url+"limit=abc",headers=headers)
     assert_input_validation_error(response)
 
     # limit should be a positive integer
-    response = client.get(unit_url+"?limit=-1",headers=headers)
+    response = client.get(unit_url+"limit=-1",headers=headers)
     assert_input_validation_error(response)
 
 def check_default_get(unit_url, headers, assert_positive_get):
@@ -106,7 +114,7 @@ def check_soft_delete(unit_url, check_post, data, delete_data , headers):
     for item in response.json()['data']:
         assert not item['active']
 
-    get_response2 = client.get(unit_url+source_name, headers=headers)
+    get_response2 = client.get(unit_url+source_name+'?active=true', headers=headers)
     assert len(get_response2.json()) == len(data) - len(delete_data)
 
     get_response3 = client.get(unit_url+source_name+'?active=false',headers=headers)

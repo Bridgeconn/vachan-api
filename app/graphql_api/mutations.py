@@ -615,6 +615,8 @@ class CreateAGMTProject(graphene.Mutation):
             targetLanguage = result.targetLanguage,
             documentFormat = result.documentFormat,
             users = result.users,
+            createTime = result.createTime,
+            updateTime = result.updateTime,
             metaData = result.metaData,
             active = result.active
         )

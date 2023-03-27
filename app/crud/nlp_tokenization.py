@@ -286,7 +286,7 @@ def replace_token_outside(token_offset, draft, **kwargs):
         draft_end = len(updated_draft)
         offset_diff = draft_end - draft_seg_offset[0]
         this_draft_seg = draft[draft_seg_offset[0]: draft_seg_offset[1]]
-        if updated_draft.endswith(" ") or this_draft_seg.startswith(" "):
+        if updated_draft=="" or updated_draft.endswith(" ") or this_draft_seg.startswith(" "):
             updated_draft += this_draft_seg
         elif this_draft_seg != "":
             updated_draft += " "+this_draft_seg
