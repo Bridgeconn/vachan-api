@@ -13,8 +13,6 @@ from custom_exceptions import NotAvailableException, AlreadyExistsException,\
 from auth.authentication import get_auth_access_check_decorator ,\
     get_user_or_none
 
-
-
 router = APIRouter()
 
 #pylint: disable=too-many-arguments,unused-argument
@@ -776,7 +774,6 @@ async def get_dictionary_word_count(request: Request,
         word_list_only=True, details=details, active=active, skip=None, limit=None)
     response['db_content'] = len(response['db_content'])
     return response
-
 
 @router.post('/v2/dictionaries/{source_name}',
     response_model=schema_content.DictionaryCreateResponse,
