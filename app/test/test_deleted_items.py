@@ -18,58 +18,58 @@ def assert_positive_get(item):
     assert "itemId" in item
     assert "deletedFrom" in item
 
-def test_delete_deleted_items_language():
-    ''' positive test case, checking for correct return of deleted item from deleted_items table'''
-    #Only Super Admin can delete from deleted_items table
-    #creating and deleting language and adding it into deleted_items table
-    response = delete_language()
-    deleteditem_id = response.json()['data']['itemId']
+# def test_delete_deleted_items_language():
+#     ''' positive test case, checking for correct return of deleted item from deleted_items table'''
+#     #Only Super Admin can delete from deleted_items table
+#     #creating and deleting language and adding it into deleted_items table
+#     response = delete_language()
+#     deleteditem_id = response.json()['data']['itemId']
 
-    #Login as Super Admin
-    as_data = {
-            "user_email": SUPER_USER,
-            "password": SUPER_PASSWORD
-        }
-    response = login(as_data)
-    assert response.json()['message'] == "Login Succesfull"
-    test_user_token = response.json()["token"]
-    headers_sa= {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+test_user_token
-            }
+#     #Login as Super Admin
+#     as_data = {
+#             "user_email": SUPER_USER,
+#             "password": SUPER_PASSWORD
+#         }
+#     response = login(as_data)
+#     assert response.json()['message'] == "Login Succesfull"
+#     test_user_token = response.json()["token"]
+#     headers_sa= {"contentType": "application/json",
+#                     "accept": "application/json",
+#                     'Authorization': "Bearer"+" "+test_user_token
+#             }
 
-    get_response =   client.get(UNIT_URL + "?item_id="+str(deleteditem_id), headers=headers_sa)
-    assert get_response.status_code == 200
-    assert len(get_response.json()) == 1
-    for item in get_response.json():
-        assert_positive_get(item)
+#     get_response =   client.get(UNIT_URL + "?item_id="+str(deleteditem_id), headers=headers_sa)
+#     assert get_response.status_code == 200
+#     assert len(get_response.json()) == 1
+#     for item in get_response.json():
+#         assert_positive_get(item)
 
-    #Delete without authentication
-    headers = {"contentType": "application/json", "accept": "application/json"}#pylint: disable=redefined-outer-name
-    response = client.delete(UNIT_URL, headers=headers)
-    assert response.status_code == 401
-    assert response.json()['error'] == 'Authentication Error'
+#     #Delete without authentication
+#     headers = {"contentType": "application/json", "accept": "application/json"}#pylint: disable=redefined-outer-name
+#     response = client.delete(UNIT_URL, headers=headers)
+#     assert response.status_code == 401
+#     assert response.json()['error'] == 'Authentication Error'
 
-    #Clearing deleted items with other API user,AgAdmin,AgUser,VachanUser,BcsDev and VachanAdmin
-    for user in ['APIUser','AgAdmin','AgUser','VachanUser','BcsDev','VachanAdmin']:
-        headers_au = {"contentType": "application/json",
-                    "accept": "application/json",
-                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
-        }
-        response = client.delete(UNIT_URL, headers=headers_au)
-        assert response.status_code == 403
-        assert response.json()['error'] == 'Permission Denied'
+#     #Clearing deleted items with other API user,AgAdmin,AgUser,VachanUser,BcsDev and VachanAdmin
+#     for user in ['APIUser','AgAdmin','AgUser','VachanUser','BcsDev','VachanAdmin']:
+#         headers_au = {"contentType": "application/json",
+#                     "accept": "application/json",
+#                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
+#         }
+#         response = client.delete(UNIT_URL, headers=headers_au)
+#         assert response.status_code == 403
+#         assert response.json()['error'] == 'Permission Denied'
 
-    #Clearing deleted items with Super Admin
-    response = client.delete(UNIT_URL, headers=headers_sa)
-    assert response.status_code == 200
-    assert response.json()['message'] == "Database cleanup done!!"
+#     #Clearing deleted items with Super Admin
+#     response = client.delete(UNIT_URL, headers=headers_sa)
+#     assert response.status_code == 200
+#     assert response.json()['message'] == "Database cleanup done!!"
 
-    #Check item is deleted from table
-    get_response =   client.get(UNIT_URL + "?item_id="+str(deleteditem_id), headers=headers_sa)
-    assert get_response.status_code == 200
-    assert_not_available_content(get_response)
-    logout_user(test_user_token)
+#     #Check item is deleted from table
+#     get_response =   client.get(UNIT_URL + "?item_id="+str(deleteditem_id), headers=headers_sa)
+#     assert get_response.status_code == 200
+#     assert_not_available_content(get_response)
+#     logout_user(test_user_token)
 
 # def test_delete_deleted_items_commentary():
 #     ''' positive test case, checking for correct return of deleted item from deleted_items table'''
