@@ -521,3 +521,29 @@ def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None,
     if book_name is not None:
         query = query.filter(db_models.BibleBook.bookName == book_name.lower())
     return query.offset(skip).limit(limit).all()
+
+def get_deleted_items(db_: Session, item_id: int =None,
+    skip: int = 0, limit: int = 100):
+    '''Fetches deleted items from deleted_items table'''
+    query = db_.query(db_models.DeletedItem)
+    if item_id is not None:
+        query = query.filter(db_models.DeletedItem.itemId == item_id)
+    return query.offset(skip).limit(limit).all()
+
+def delete_deleteditems(db_: Session):
+    '''Cleanup entire deleted_items table  and remove irrelevant dangling dynamic tables'''
+    for table_name in engine.table_names():
+        if table_name.startswith('table'):
+            if table_name.endswith("audio"):
+                tb_name = table_name.replace("_audio", "")
+            elif table_name.endswith("cleaned"):
+                tb_name = table_name.replace("_cleaned", "")
+            else:
+                tb_name = table_name
+            if not  get_sources(db_, table_name = tb_name):
+                with engine.connect() as conn:
+                    conn.execute(f"DROP TABLE {table_name} CASCADE;")
+                # table = Table(table_name, metadata, autoload=True)
+                # table.drop(engine, checkfirst=True)
+    deleteditem_count = db_.query(db_models.DeletedItem).delete()
+    return deleteditem_count

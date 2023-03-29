@@ -1196,6 +1196,23 @@ async def extract_text_contents(request:Request, #pylint: disable=W0613
     return contents_crud.extract_text(db_, tables, books, skip=skip, limit=limit)
 
 #### Data Manipulation ####
+@router.get('/v2/deleted-items', response_model=List[schemas.DeletedItemResponse],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse}},  status_code=200,
+    tags=["Data Manipulation"])
+@get_auth_access_check_decorator
+async def get_deleteditems(request: Request,item_id: int = Query(None, example=100000),
+     skip: int = Query(0, ge=0),limit: int = Query(100, ge=0),
+     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
+    '''fetches items from deleted_items table based on item id
+    * the optional query parameter can be used to filter the result set
+    * skip=n: skips the first n objects in return list
+    * limit=n: limits the no. of items to be returned to n'''
+    log.info('In get_deleteditems')
+    # log.debug('contentType:%s, skip: %s, limit: %s',content_type, skip, limit)
+    return structurals_crud.get_deleted_items(db_, item_id = item_id,
+        skip=skip, limit=limit)
+
 @router.put('/v2/restore', response_model=schemas.DataRestoreResponse,
     responses={502:{"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
@@ -1217,3 +1234,18 @@ async def restore_content(request: Request, content: schemas.RestoreIdentity,
     del data['py/object'],data['_sa_instance_state']
     return {'message': f"Deleted Item with identity {content.itemId} restored successfully",
     "data": data}
+
+@router.delete('/v2/deleted-items',
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Data Manipulation"])
+@get_auth_access_check_decorator
+async def delete_deleteditems(request: Request,user_details =Depends(get_user_or_none), \
+    db_: Session = Depends(get_db)):
+    '''Periodic Cleaning of Database
+    * Clearing deleted_items table
+    * Delete dangling dynamic tables that are not linked to sources table '''
+    log.info('In delete_deleteditems')
+    structurals_crud.delete_deleteditems(db_=db_)
+    return {'message': "Database cleanup done!!"}
