@@ -40,7 +40,7 @@ def check_post(data: list):
         "contentType": "commentary",
         "language": "hi",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2000,
         "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}

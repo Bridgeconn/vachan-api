@@ -8,8 +8,8 @@ from .test_versions import check_post as add_version
 from .conftest import initial_test_users
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 
-UNIT_URL = '/v2/autographa/projects' 
-USER_URL = '/v2/autographa/project/user'
+UNIT_URL = '/v2/translation/projects' 
+USER_URL = '/v2/translation/project/user'
 RESTORE_URL = '/v2/restore'
 headers = {"contentType": "application/json", "accept": "application/json", "app":"Autographa"}
 headers_auth = {"contentType": "application/json",
@@ -47,6 +47,8 @@ def assert_positive_get(item):
     assert "active" in item
     assert "users" in item
     assert isinstance(item['users'], list)
+    assert "createTime" in item
+    assert "updateTime" in item
 
 
 def check_post(data, auth_token=None):
@@ -112,7 +114,7 @@ def test_default_post_put_get():
         "language": "gu",
         "version": "TTT",
         "year": 3030,
-        "revision": 1,
+        "versionTag": 1,
         "accessPermissions": [
             "content","open-access"
         ],
@@ -858,6 +860,44 @@ def test_get_project_access_rules():
     response = client.get(UNIT_URL,headers=headers_auth)
     assert len(response.json()) == 0
     # delete_user_identity(ag_user_id)
+
+
+def test_create_n_update_times():
+    '''Test to ensure created time and last updated time are included in project GET response'''
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    resp = client.get(UNIT_URL+'?project_name=Test project 1',headers=headers_auth)
+    assert_not_available_content(resp)
+
+    # create with minimum data
+    post_data = {
+    "projectName": "Test project 1",
+    "sourceLanguageCode": "hi",
+    "targetLanguageCode": "ml"
+    }
+    response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Project created successfully"
+    new_project = response.json()['data']
+    assert_positive_get(new_project)
+    project_id = response.json()['data']['projectId']
+
+    response = client.get(f"{UNIT_URL}?project_name={post_data['projectName']}",headers=headers_auth)
+    assert response.json()[0]["createTime"] is not None
+    assert response.json()[0]['updateTime'] is not None
+    assert response.json()[0]["createTime"] == response.json()[0]["updateTime"]
+
+    # Make an update to project
+    update_data = {
+        "projectId": project_id,
+        "metaData": {"last_filter": "luk"}
+    }
+    response2 = client.put(UNIT_URL, headers=headers_auth, json=update_data)
+    assert response2.status_code == 201
+    assert response2.json()['message'] == "Project updated successfully"
+
+    response = client.get(f"{UNIT_URL}?project_name={post_data['projectName']}",headers=headers_auth)
+    assert response.json()[0]["createTime"] != response.json()[0]["updateTime"]
+ 
 
 def test_delete_project():
     '''Test the removal a project'''

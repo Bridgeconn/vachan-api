@@ -48,7 +48,7 @@ def test_draft_update_positive():
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get(f"{UNIT_URL}/sentences?project_id={project_id}", headers=headers_auth)
@@ -64,7 +64,7 @@ def test_draft_update_positive():
                 ]
             }
     ]
-    resp = client.put(f"/v2/autographa/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data)
     sents = resp.json()
     assert len(sents) == 1
@@ -73,7 +73,7 @@ def test_draft_update_positive():
     assert sents[0]["draftMeta"] == put_data[0]['draftMeta']
 
     #fetch sentences to make sure
-    resp = client.get("/v2/autographa/project/sentences?"+\
+    resp = client.get("/v2/translation/project/sentences?"+\
         f"project_id={project_id}&sentence_id_list=100&with_draft=True",
         headers=headers_auth, json=put_data)
     sents = resp.json()
@@ -93,7 +93,7 @@ def test_draft_update_positive():
                 ]
             }
     ]
-    resp = client.put(f"/v2/autographa/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data2)
     sents = resp.json()
     assert_positive_get_sentence(sents[0])
@@ -101,7 +101,7 @@ def test_draft_update_positive():
     assert sents[0]["draftMeta"] == put_data2[0]['draftMeta']
 
     #fetch sentences again
-    resp = client.get("/v2/autographa/project/sentences?"+\
+    resp = client.get("/v2/translation/project/sentences?"+\
         f"project_id={project_id}&sentence_id_list=100&with_draft=True",
         headers=headers_auth, json=put_data2)
     sents = resp.json()
@@ -124,13 +124,13 @@ def test_draft_update_negative():
             }
     ]
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put(f"/v2/autographa/project/draft?project_id={project_id+1}",
+    resp = client.put(f"/v2/translation/project/draft?project_id={project_id+1}",
         headers=headers_auth, json=put_data)
     assert resp.json()['error'] == "Requested Content Not Available"
 
     # non existing sentence
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put(f"/v2/autographa/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data)
     assert resp.json()['error'] == "Requested Content Not Available"
 
@@ -140,17 +140,17 @@ def test_draft_update_negative():
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data_source)
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data_source)
     assert resp.json()['message'] == "Project updated successfully"
 
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put(f"/v2/autographa/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data)
     assert resp.json()[0]["draft"] == put_data[0]['draft']
 
     # incorrect user
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser2']['token']
-    resp = client.put(f"/v2/autographa/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data)
     assert resp.json()['error'] == "Permission Denied"
 
@@ -166,7 +166,7 @@ def test_draft_update_negative():
                 ]
             }
     ]
-    resp = client.put(f"/v2/autographa/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data2)
     assert resp.status_code == 422
 
@@ -179,7 +179,7 @@ def test_draft_update_negative():
                 ]
             }
     ]
-    resp = client.put(f"/v2/autographa/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data2)
     assert resp.status_code == 422
 
@@ -192,7 +192,7 @@ def test_draft_update_negative():
              #    ]
             }
     ]
-    resp = client.put(f"/v2/autographa/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data2)
     assert resp.status_code == 422
 
@@ -206,7 +206,7 @@ def test_draft_update_negative():
                 ]
             }
     ]
-    resp = client.put(f"/v2/autographa/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data2)
     assert resp.status_code == 422
     assert resp.json()['details'] == "Incorrect metadata:Target segment (0, 10), is improper!"
@@ -223,7 +223,7 @@ def test_empty_draft_initalization():
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # Ensure draft is set to ""

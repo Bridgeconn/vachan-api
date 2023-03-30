@@ -31,7 +31,7 @@ class Language(graphene.ObjectType):#pylint: disable=too-few-public-methods
 #     patent = "Patent_use"
 #     private = "Private_use"
 
-class SourcePermissions(graphene.Enum):
+class SourcePermissions(graphene.Enum):#pylint: disable=too-few-public-methods
     '''To specify source access permisions'''
     CONTENT = "content"
     OPENACCESS = "open-access"
@@ -53,8 +53,16 @@ class Version(graphene.ObjectType):#pylint: disable=too-few-public-methods
     versionId = graphene.ID()
     versionAbbreviation = graphene.String()
     versionName = graphene.String()
-    revision = graphene.Int()
+    versionTag = graphene.String()
     metaData = Metadata()
+
+class SourceLabels(graphene.Enum):#pylint: disable=too-few-public-methods
+    '''Markers for source items to be able to filter contents as per different usecases'''
+    LATEST = "latest"
+    PUBLISHED = "published"
+    PRERELEASE = "pre-release"
+    PRIVATE = "private"
+    DEPRECATED = "deprecated"
 
 class Source(graphene.ObjectType):#pylint: disable=too-few-public-methods
     '''Return object of source'''
@@ -62,6 +70,7 @@ class Source(graphene.ObjectType):#pylint: disable=too-few-public-methods
     contentType = graphene.Field(ContentType)
     language = graphene.Field(Language)
     version = graphene.Field(Version)
+    labels = graphene.List(graphene.String)
     year = graphene.Int()
     license = graphene.Field(License)
     metaData = Metadata()
@@ -204,6 +213,8 @@ class TranslationProject(graphene.ObjectType):#pylint: disable=too-few-public-me
     targetLanguage = graphene.Field(Language)
     documentFormat = TranslationDocumentType()
     users = graphene.List(ProjectUser)
+    createTime = graphene.DateTime()
+    updateTime = graphene.DateTime()
     metaData = Metadata()
     active = graphene.Boolean()
 
@@ -377,7 +388,7 @@ class InputAddVersion(graphene.InputObjectType):
     versionAbbreviation = graphene.String(required=True,\
         description="pattern: ^[A-Z]+$")
     versionName = graphene.String(required=True)
-    revision = graphene.Int(default_value = 1)
+    versionTag = graphene.String(default_value = "1")
     metaData = graphene.JSONString(default_value = None,\
     description="Expecting a dictionary Type JSON String")
 
@@ -387,7 +398,7 @@ class InputEditVersion(graphene.InputObjectType):
     versionAbbreviation = graphene.String(\
         description="pattern: ^[A-Z]+$")
     versionName = graphene.String()
-    revision = graphene.Int()
+    versionTag = graphene.String()
     metaData = graphene.JSONString(description="Expecting a dictionary Type JSON String")
 
 class InputAddSource(graphene.InputObjectType):
@@ -397,7 +408,7 @@ class InputAddSource(graphene.InputObjectType):
         description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
     version = graphene.String(required=True,\
         description="pattern:^[A-Z]+$")
-    revision = graphene.String(default_value = 1,\
+    versionTag = graphene.String(default_value = "1",\
         description="default: 1")
     year = graphene.Int(required=True)
     license = graphene.String(default_value = "CC-BY-SA",\
@@ -417,7 +428,7 @@ class InputEditSource(graphene.InputObjectType):
     contentType  = graphene.String()
     language = graphene.String(description="pattern: ^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
     version = graphene.String(description="pattern:^[A-Z]+$")
-    revision = graphene.String(description="default: 1")
+    versionTag = graphene.String(description="default: 1")
     year = graphene.Int()
     license = graphene.String(description="pattern: ^[a-zA-Z0-9\\.\\_\\-]+$")
     # accessPermissions = graphene.List(graphene.String,
