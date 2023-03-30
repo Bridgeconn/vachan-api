@@ -34,7 +34,7 @@ from .test_source_get_sentence import assert_positive_get
 #   "contentType": "bible",
 #   "language": "hi",
 #   "version": "TTT",
-#   "revision": "1",
+#   "versionTag": "1",
 #   "year": 2020
 # }
 # }

@@ -32,7 +32,7 @@ def check_post(data: list):
         "language": "ur",
         "version": "TTT",
         "year": 2020,
-        "revision": 1
+        "versionTag": 1
     }
     # headers = {"contentType": "application/json", "accept": "application/json"}
     source = add_source(source_data)

@@ -60,24 +60,25 @@ ALTER SEQUENCE public.licenses_license_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.versions (
     version_id SERIAL PRIMARY KEY,
-    version_code text NOT NULL,
-    version_description text NOT NULL,
-    revision integer DEFAULT 1,
+    version_short_name text NOT NULL,
+    version_name text NOT NULL,
+    version_tag varchar(15)[] DEFAULT '{"1"}',
     metadata jsonb,
     created_at timestamp with time zone DEFAULT NOW(),
     created_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
     last_updated_user text NULL,
-    UNIQUE(version_code, revision)
+    UNIQUE(version_short_name, version_tag)
 );
 
 ALTER SEQUENCE public.versions_version_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.sources (
     source_id SERIAL PRIMARY KEY,
-    source_name text UNIQUE,
+    version text UNIQUE,
     source_table text UNIQUE,
     year integer NOT NULL,
+    labels text[],
     license_id int REFERENCES licenses(license_id) ON DELETE CASCADE,
     content_id int NOT NULL REFERENCES content_types(content_type_id) ON DELETE CASCADE,
     language_id int NOT NULL REFERENCES languages(language_id) ON DELETE CASCADE,

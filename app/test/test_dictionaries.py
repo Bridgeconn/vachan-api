@@ -324,7 +324,7 @@ def test_created_user_can_only_edit():
         "contentType": "dictionary",
         "language": "en",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2000
     }
     #create source

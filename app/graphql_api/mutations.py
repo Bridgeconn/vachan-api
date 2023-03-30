@@ -3,6 +3,7 @@
 import graphene
 from schema import schemas, schemas_nlp, schema_auth, schema_content
 from routers import translation_apis , content_apis, auth_api
+from crud import structurals_crud
 from graphql_api import types, utils
 from auth.authentication import get_user_or_none_graphql
 from dependencies import log
@@ -195,7 +196,7 @@ class AddVersion(graphene.Mutation):
             versionId = result.versionId,
             versionAbbreviation = result.versionAbbreviation,
             versionName = result.versionName,
-            revision = result.revision,
+            versionTag = structurals_crud.version_array_to_tag(result.versionTag),
             metaData = result.metaData
         )
         message = response['message']
@@ -227,7 +228,7 @@ class EditVersion(graphene.Mutation):
             versionId = result.versionId,
             versionAbbreviation = result.versionAbbreviation,
             versionName = result.versionName,
-            revision = result.revision,
+            versionTag = structurals_crud.version_array_to_tag(result.versionTag),
             metaData = result.metaData
         )
         message = response['message']
@@ -262,6 +263,7 @@ class AddSource(graphene.Mutation):
             contentType = result.contentType,
             language = result.language,
             version = result.version,
+            labels = result.labels,
             year = result.year,
             license = result.license,
             metaData = result.metaData,
@@ -298,11 +300,14 @@ class EditSource(graphene.Mutation):
             contentType = result.contentType,
             language = result.language,
             version = result.version,
+            labels = result.labels,
             year = result.year,
             license = result.license,
             metaData = result.metaData,
             active = result.active
         )
+        source_var.version.versionTag = structurals_crud.version_array_to_tag(
+            source_var.version.versionTag)
         message = response['message']
         return EditSource(message=message,data=source_var)
 
