@@ -103,6 +103,10 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
 def add_deleted_data(db_: Session, del_content, table_name : str = None,\
     source = None,deleting_user=None):
     '''backup deleted items from any table'''
+    if hasattr(del_content, 'createTime') and del_content.createTime is not None:
+        del_content.createTime = del_content.createTime.isoformat()
+    if hasattr(del_content, 'updateTime') and del_content.updateTime is not None:
+        del_content.updateTime = del_content.updateTime.isoformat()
     json_string = jsonpickle.encode(del_content)#, unpicklable=False
     json_string=json.loads(json_string)
     del json_string['py/object'],json_string['_sa_instance_state']
