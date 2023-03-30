@@ -33,7 +33,7 @@ SOURCE_VAR = {
     "contentType": "bible",
     "language": "gu",
     "version": "TTT",
-    "revision": "1",
+    "versionTag": "1",
     "year": 3030,
   }
 }
@@ -1292,7 +1292,7 @@ def test_created_user_can_only_edit():
     "contentType": "bible",
     "language": "gu",
     "version": "TTT",
-    "revision": "1",
+    "versionTag": "1",
     "year": 2021
   }
 }

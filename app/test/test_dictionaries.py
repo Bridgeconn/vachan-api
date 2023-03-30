@@ -329,7 +329,7 @@ def test_created_user_can_only_edit():
         "contentType": "dictionary",
         "language": "en",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2000
     }
     #create source
@@ -368,6 +368,102 @@ def test_get_access_with_user_roles_and_apps():
     	{"word": "one", "details":{"digit": 1, "type":"odd", "link":UNIT_URL+'dictionary?word=one'}}
     ]
     contetapi_get_accessrule_checks_app_userroles("dictionary",UNIT_URL,data)
+
+def test_get_count_after_data_upload():
+    '''Add some data into the table and do all tests on get count API'''
+    data = [
+        {"word": "one", "details":{"digit": 1, "type":"odd", "link":UNIT_URL+'dictionary?word=one'}},
+        {"word": "two", "details":{"digit": 2, "type":"even", "link":UNIT_URL+'dictionary?word=two'}},
+        {"word": "three", "details":{"digit": 3, "type":"odd",
+        "link":UNIT_URL+'dictionary?word=three'}},
+        {"word": "four", "details":{"digit": 4, "type":"even",
+        "link":UNIT_URL+'dictionary?word=four'}},
+        {"word": "five", "details":{"digit": 5, "type":"odd", "link":UNIT_URL+'dictionary?word=five'}},
+        {"word": "another", "details":{"empty-field": ""}},
+        {"word": "inactive", "active": "false"}
+    ]
+    resp, source_name = check_post(data)
+    assert resp.status_code == 201
+    # headers = {"contentType": "application/json", "accept": "application/json"}
+    check_default_get(UNIT_URL+source_name, headers_auth ,assert_positive_get)
+
+    # search with first letter
+    #without auth
+    response = client.get(UNIT_URL+source_name+'/count?search_word=f')
+    assert response.status_code == 401
+    assert response.json()["error"] == "Authentication Error"
+    #with auth
+    response = client.get(UNIT_URL+source_name+'/count?search_word=f',headers=headers_auth)
+    assert response.status_code == 200
+    assert response.json() == 2
+
+    # search with starting two letters
+    response = client.get(UNIT_URL+source_name+'/count?search_word=fi',headers=headers_auth)
+    assert response.status_code == 200
+    assert response.json() == 1
+
+    # search for not available
+    response = client.get(UNIT_URL+source_name+'/count?search_word=ten',headers=headers_auth)
+    assert response.json() == 0
+
+    # full word match
+    response = client.get(UNIT_URL+source_name+'/count?search_word=two&exact_match=True',headers=headers_auth)
+    assert response.status_code == 200
+    assert response.json() == 1
+
+    # with details
+    response = client.get(UNIT_URL+source_name+'/count?details={"type":"odd"}',headers=headers_auth)
+    assert response.status_code == 200
+    assert response.json() == 3
+
+    response = client.get(UNIT_URL+source_name+'/count?details={"type":"even"}',headers=headers_auth)
+    assert response.status_code == 200
+    assert response.json() == 2
+
+   # search details having empty value
+    response = client.get(UNIT_URL+source_name+'/count?details={"empty-field":""}',headers=headers_auth)
+    assert response.status_code == 200
+    assert response.json() == 1
+
+    # search word from details
+    response = client.get(UNIT_URL+source_name+'/count?search_word=odd',headers=headers_auth)
+    assert response.status_code == 200
+    assert response.json() == 3
+
+    # all words, active and inactive
+    response = client.get(UNIT_URL+source_name+'/count',headers=headers_auth)
+    assert response.json() == 7
+    response = client.get(UNIT_URL+source_name+'/count?active=True',headers=headers_auth)
+    assert response.json() == 6
+    response = client.get(UNIT_URL+source_name+'/count?active=false',headers=headers_auth)
+    assert response.json() == 1
+
+def test_get_active_and_inactive():
+    '''Test after the API change as per the request: 
+    https://github.com/Bridgeconn/vachan-api/issues/508'''
+
+    data = [
+        {"word": "one", "details":{"digit": 1, "type":"odd", "link":UNIT_URL+'dictionary?word=one'}},
+        {"word": "two", "details":{"digit": 2, "type":"even", "link":UNIT_URL+'dictionary?word=two'}},
+        {"word": "three", "details":{"digit": 3, "type":"odd",
+        "link":UNIT_URL+'dictionary?word=three'}},
+        {"word": "four", "details":{"digit": 4, "type":"even",
+        "link":UNIT_URL+'dictionary?word=four'}},
+        {"word": "five", "details":{"digit": 5, "type":"odd", "link":UNIT_URL+'dictionary?word=five'}},
+        {"word": "another", "details":{"empty-field": ""}},
+        {"word": "inactive", "active": "false"}
+    ]
+    resp, source_name = check_post(data)
+    assert resp.status_code == 201
+
+    # all words, active and inactive
+    response = client.get(UNIT_URL+source_name,headers=headers_auth)
+    assert len(response.json()) == 7
+    response = client.get(UNIT_URL+source_name+'?active=True',headers=headers_auth)
+    assert len(response.json()) == 6
+    response = client.get(UNIT_URL+source_name+'?active=false',headers=headers_auth)
+    assert len(response.json()) == 1
+
 
 def test_delete_default():
     ''' positive test case, checking for correct return of deleted word ID'''

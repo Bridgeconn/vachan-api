@@ -1,4 +1,5 @@
 '''Defines all input and output classes for translation Apps related API endpoints'''
+import datetime
 from typing import List, Tuple
 from enum import Enum
 from pydantic import BaseModel, Field, constr, root_validator
@@ -23,7 +24,7 @@ class Stopwords(BaseModel):
         example=["के", "का", "में", "की", "है", "और", "से", "हैं", "को", "पर"])
 
 class ProjectUser(BaseModel):
-    '''Input object for AgMT user update'''
+    '''Input object for Translation project user update'''
     project_id: int
     userId: str
     userRole: str = Field(None, example='projectOwner')
@@ -36,7 +37,7 @@ class ProjectUser(BaseModel):
         orm_mode = True
 
 class UserUpdateResponse(BaseModel):
-    '''Response for user addition and updation on AgMT project'''
+    '''Response for user addition and updation on Translation project'''
     message: str = Field(..., example='User added to/updated in project successfully')
     data: ProjectUser
 
@@ -61,6 +62,8 @@ class TranslationProject(BaseModel):
     targetLanguage : LanguageResponse = Field(...)
     documentFormat: TranslationDocumentType
     users: List[ProjectUser] = None
+    createTime: datetime.datetime = Field(None)
+    updateTime: datetime.datetime = Field(None)
     metaData: dict = Field(None, example={"books":['mat', 'mrk', 'luk', 'jhn'],
         "useDataForLearning":True})
     active: bool
@@ -193,7 +196,7 @@ class Suggestion(BaseModel):
         orm_mode = True
 
 class Progress(BaseModel):
-    '''Response object for AgMT project progress'''
+    '''Response object for translation project progress'''
     confirmed: float
     suggestion: float
     untranslated: float
@@ -230,13 +233,24 @@ class GlossOutput(BaseModel):
         just get the data from object attributes'''
         orm_mode = True
 
+class TranslationMemoryOut(BaseModel):
+    '''Output object to directly examine Translation memory entries'''
+    token: str = Field(..., example="love")
+    translation: str = Field(..., example="प्यार")
+    frequency: int = Field(None)
+    metaData: dict = Field(None, example={"word-class":["noun", "verb"]})
+    class Config:
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
+
 class GlossUpdateResponse(BaseModel):
     '''Response object for learn/gloss and learn/alignments'''
     message: str = Field(..., example="Added to glossary/Alignments used for learning")
     data: List[GlossOutput]
 
 class Translation(BaseModel):
-    '''Response of what is the current translation of a specific token in agmt'''
+    '''Response of what is the current translation of a specific token in translation'''
     token: str = Field(..., example="duck")
     translation: str = Field(..., example="താറാവ്")
     occurrence: TokenOccurence

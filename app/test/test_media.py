@@ -29,7 +29,7 @@ def media_common(endpoint,permanent_link, repo, file_path):
         "contentType": "gitlabrepo",
         "language": "en",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2000,
         "license": "ISC",
         "metaData": {"repo": permanent_link.split("/-/")[0]}
