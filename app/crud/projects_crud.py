@@ -166,7 +166,7 @@ def get_translation_projects(db_:Session, project_name=None, source_language=Non
     query = query.filter(db_models.TranslationProject.active == active)
     return query.offset(skip).limit(limit).all()
 
-def remove_project_project(db_, project_id):
+def remove_translation_project(db_, project_id):
     '''To remove a project'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
@@ -174,7 +174,7 @@ def remove_project_project(db_, project_id):
     db_.delete(project_row)
     return project_row
 
-def add_agmt_user(db_:Session, project_id, user_id, current_user=None):
+def add_project_user(db_:Session, project_id, user_id, current_user=None):
     '''Add an additional user(not the created user) to a project, in translation_project_users'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
@@ -238,7 +238,7 @@ def remove_project_user(db_, project_id, user_id, current_user=None):
     }
     return response
 
-def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence_id_range,
+def obtain_project_draft(db_:Session, project_id, books, sentence_id_list, sentence_id_range,
     **kwargs):
     '''generate draft for selected sentences as usfm or json'''
     output_format = kwargs.get("output_format","usfm")
