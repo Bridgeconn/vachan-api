@@ -20,25 +20,27 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/languages,POST,None,False,None,create
 /v2/languages,PUT,None,False,None,edit
 /v2/languages,DELETE,None,False,None,delete/deactivate
-/v2/restore,POST,None,False,"Manipulate Data",data-restore
 /v2/licenses,GET,Autographa,False,None,refer-for-translation
 /v2/licenses,GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/licenses,GET,VachanAdmin,False,None,read-via-vachanadmin
 /v2/licenses,GET,API-user,False,None,read-via-api
 /v2/licenses,POST,None,False,None,create
 /v2/licenses,PUT,None,False,None,edit
+/v2/licenses,DELETE,None,False,None,delete/deactivate
 /v2/versions,GET,Autographa,False,None,refer-for-translation
 /v2/versions,GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/versions,GET,VachanAdmin,False,None,read-via-vachanadmin
 /v2/versions,GET,API-user,False,None,read-via-api
 /v2/versions,POST,None,False,None,create
 /v2/versions,PUT,None,False,None,edit
+/v2/versions,DELETE,None,False,None,delete/deactivate
 /v2/sources,GET,Autographa,True,None,refer-for-translation
 /v2/sources,GET,Vachan-online or vachan-app,True,None,view-on-web
 /v2/sources,GET,VachanAdmin,True,None,read-via-vachanadmin
 /v2/sources,GET,API-user,True,None,read-via-api
 /v2/sources,POST,None,False,None,create
 /v2/sources,PUT,None,False,None,edit
+/v2/sources,DELETE,None,False,None,delete/deactivate
 /v2/sources/get-sentence,GET,Autographa,False,"contents like bibles, commentaries, infographics, dictionary or videos",refer-for-translation
 /v2/sources/get-sentence,GET,Vachan-online or vachan-app,False,"contents like bibles, commentaries, infographics, dictionary or videos",view-on-web
 /v2/sources/get-sentence,GET,VachanAdmin,False,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-vachanadmin
@@ -51,6 +53,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/bibles/{source_name}/books,GET,API-user,False,None,read-via-api
 /v2/bibles/{source_name}/books,POST,None,False,None,create
 /v2/bibles/{source_name}/books,PUT,None,False,None,edit
+/v2/bibles/{source_name}/books,DELETE,None,False,None,delete/deactivate
 /v2/bibles/{source_name}/versification,GET,Autographa,False,None,refer-for-translation
 /v2/bibles/{source_name}/versification,GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/bibles/{source_name}/versification,GET,VachanAdmin,False,None,read-via-vachanadmin
@@ -61,12 +64,14 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/bibles/{source_name}/verses,GET,API-user,False,None,read-via-api
 /v2/bibles/{source_name}/audios,POST,None,False,None,create
 /v2/bibles/{source_name}/audios,PUT,None,False,None,edit
+/v2/bibles/{source_name}/audios,DELETE,None,False,None,delete/deactivate
 /v2/commentaries/{source_name},GET,Autographa,False,None,refer-for-translation
 /v2/commentaries/{source_name},GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/commentaries/{source_name},GET,VachanAdmin,False,None,read-via-vachanadmin
 /v2/commentaries/{source_name},GET,API-user,False,None,read-via-api
 /v2/commentaries/{source_name},POST,None,False,None,create
 /v2/commentaries/{source_name},PUT,None,False,None,edit
+/v2/commentaries/{source_name},DELETE,None,False,None,delete/deactivate
 /v2/dictionaries/{source_name},GET,Autographa,False,None,refer-for-translation
 /v2/dictionaries/{source_name},GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/dictionaries/{source_name},GET,VachanAdmin,False,None,read-via-vachanadmin
@@ -77,24 +82,29 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/dictionaries/{source_name}/count,GET,API-user,False,None,read-via-api
 /v2/dictionaries/{source_name},POST,None,False,None,create
 /v2/dictionaries/{source_name},PUT,None,False,None,edit
+/v2/dictionaries/{source_name},DELETE,None,False,None,delete/deactivate
 /v2/infographics/{source_name},GET,Autographa,False,None,refer-for-translation
 /v2/infographics/{source_name},GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/infographics/{source_name},GET,VachanAdmin,False,None,read-via-vachanadmin
 /v2/infographics/{source_name},GET,API-user,False,None,read-via-api
 /v2/infographics/{source_name},POST,None,False,None,create
 /v2/infographics/{source_name},PUT,None,False,None,edit
+/v2/infographics/{source_name},DELETE,None,False,None,delete/deactivate
 /v2/biblevideos/{source_name},GET,Autographa,False,None,refer-for-translation
 /v2/biblevideos/{source_name},GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/biblevideos/{source_name},GET,VachanAdmin,False,None,read-via-vachanadmin
 /v2/biblevideos/{source_name},GET,API-user,False,None,read-via-api
 /v2/biblevideos/{source_name},POST,None,False,None,create
 /v2/biblevideos/{source_name},PUT,None,False,None,edit
+/v2/biblevideos/{source_name},DELETE,None,False,None,delete/deactivate
 /v2/translation/projects,GET,Autographa,True,None,view-project
 /v2/translation/projects,POST,Autographa,False,None,create
 /v2/translation/projects,PUT,Autographa,False,"contents like bibles, commentaries, infographics, dictionary or videos",translate
 /v2/translation/projects,PUT,Autographa,False,Ag or translation project,edit-Settings
+/v2/translation/projects,DELETE,Autographa,False,None,delete
 /v2/translation/project/user,POST,Autographa,False,None,create-user
 /v2/translation/project/user,PUT,Autographa,False,None,edit-Settings
+/v2/translation/project/user,DELETE,Autographa,False,None,delete-user
 /v2/translation/project/tokens,GET,Autographa,False,None,read-draft
 /v2/translation/project/tokens,PUT,Autographa,False,None,edit-draft
 /v2/translation/project/token-translations,GET,Autographa,False,None,read-draft
@@ -104,6 +114,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/translation/project/sentences,GET,Autographa,False,None,view-project
 /v2/translation/project/progress,GET,Autographa,False,None,view-project
 /v2/translation/project/versification,GET,Autographa,False,None,view-project
+/v2/translation/project/sentences,DELETE,Autographa,False,None,delete-sentence
 /v2/translation/project/suggestions,PUT,Autographa,False,None,edit-draft
 /v2/translation/suggestions,PUT,None,False,None,process
 /v2/translation/tokens,PUT,None,False,None,process
@@ -112,12 +123,14 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/nlp/gloss,GET,None,False,None,read
 /v2/nlp/gloss-entries,GET,None,False,None,read
 /v2/nlp/learn/gloss,POST,None,False,None,create
+/v2/nlp/gloss,DELETE,None,False,None,delete
 /v2/nlp/learn/alignment,POST,None,False,None,create
 /v2/nlp/stopwords/generate,POST,None,False,Lookup contents,create
 /v2/nlp/stopwords/generate,POST,None,False,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-api
 /v2/lookup/stopwords/{language_code},GET,None,False,None,read
 /v2/lookup/stopwords/{language_code},PUT,None,False,None,edit
 /v2/lookup/stopwords/{language_code},POST,None,False,None,create
+/v2/lookup/stopwords/{language_code},DELETE,None,False,None,delete
 /v2/jobs,GET,None,False,None,read
 /v2/media/gitlab/stream,GET,None,False,Media contents,stream
 /v2/media/gitlab/stream,GET,None,False,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-api
@@ -128,3 +141,4 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/bibles/{source_name}/books/{book_code}/format/{output_format},GET,VachanAdmin,False,None,read-via-vachanadmin
 /v2/bibles/{source_name}/books/{book_code}/format/{output_format},GET,API-user,False,None,read-via-api
 /v2/files/usfm/to/{output_format},PUT,None,False,File Manipulation Ops,access-via-api
+/v2/restore,PUT,None,False,None,data-restore

@@ -3,8 +3,11 @@
 from . import client
 from .test_agmt_projects import check_post as add_project
 from .conftest import initial_test_users
+from . import assert_input_validation_error, assert_not_available_content
 from . test_agmt_translation import UNIT_URL, assert_positive_get_sentence
+from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 
+RESTORE_URL = '/v2/restore'
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
                 "app":"Autographa"
@@ -343,3 +346,163 @@ def test_space_in_suggested_draft():
     resp_obj = resp.json()
     assert resp_obj[0]['draft'] != ""
     assert not resp_obj[0]['draft'].startswith(" ")
+
+def test_delete_sentence():
+    '''Test the removal of a sentence from project'''
+
+    #Adding Project and sentences into it
+    resp = add_project(project_data, auth_token=initial_test_users['AgUser']['token'])
+    assert resp.json()['message'] == "Project created successfully"
+    project_id = resp.json()['data']['projectId']
+
+    put_data = {
+        "projectId": project_id,
+        "sentenceList":source_sentences
+    }
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    assert resp.json()['message'] == "Project updated successfully"
+
+    # Check sentences are added
+    resp = client.get(f"{UNIT_URL}/sentences?project_id={project_id}", headers=headers_auth)
+    sentence_id1 = resp.json()[0]['sentenceId']
+    sentence_id2 = resp.json()[1]['sentenceId']
+    for sent in resp.json():
+        assert_positive_get_sentence(sent)
+
+
+    #deleting sentence with no auth
+    headers = {"contentType": "application/json",
+                "accept": "application/json",
+                "app":"Autographa"
+            }
+    resp = client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id1}",
+            headers=headers)
+    assert resp.status_code == 401
+    assert resp.json()['details'] == "Access token not provided or user not recognized."
+
+    #Deleting Sentence with unauthorized users - Negative Test
+    for user in ['APIUser','VachanAdmin','VachanUser','BcsDev','AgUser']:
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
+        response = client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id1}",
+                headers=headers_auth)
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
+
+    # Delete as AgAdmin - Positive test
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    response = client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id1}",
+            headers=headers_auth)
+    assert response.status_code == 201
+    assert "successfull" in response.json()['message']
+
+    # Check get sentence to ensure deleted sentence is not present
+    get_response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id)+
+        "&sentence_id_list="+str(sentence_id1),headers=headers_auth)
+    assert_not_available_content(get_response)
+   
+    #Create and Delete sentence with superadmin - Positive test
+    # Login as Super Admin
+    sa_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(sa_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_auth['Authorization'] = "Bearer"+" "+test_user_token
+
+    response = client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id2}",
+            headers=headers_auth)
+    assert response.status_code == 201
+    assert "successfull" in response.json()['message']
+
+    # Check get sentence to ensure deleted sentence is not present
+    get_response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id)+
+        "&sentence_id_list="+str(sentence_id2),headers=headers_auth)
+    assert_not_available_content(get_response)
+
+    #Delete not available sentence
+    response = client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id=9999",
+            headers=headers_auth)
+    assert response.status_code == 404
+    assert "Requested Content Not Available" in response.json()['error']
+
+
+def test_restore_sentence():
+    '''positive test case, checking for correct return object'''
+    #only Super Admin can restore deleted data
+    #Creating and Deleting project sentence
+    #Adding Project and sentences into it
+    resp = add_project(project_data, auth_token=initial_test_users['AgAdmin']['token'])
+    project_id = resp.json()['data']['projectId']
+
+    put_data = {
+        "projectId": project_id,
+        "sentenceList":source_sentences
+    }
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    delete_resp = client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id=100",
+            headers=headers_auth)
+
+    #Ensure deleted sentence is not present
+    get_response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id)+
+        "&sentence_id_list=100",headers=headers_auth)
+    assert_not_available_content(get_response)
+    
+    deleteditem_id = delete_resp.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Restoring data
+    #Restore user without authentication - Negative Test
+    headers = {"contentType": "application/json",
+                "accept": "application/json",
+                "app":"Autographa"
+            }
+    response = client.put(RESTORE_URL, headers=headers, json=data)
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
+
+    #Restore project user with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev - Negative Test
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev']:
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
+        response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
+
+    #Restore Project User with Super Admin - Positive Test
+     # Login as Super Admin
+    sa_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(sa_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_auth['Authorization'] = "Bearer"+" "+test_user_token
+
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == \
+    f"Deleted Item with identity {deleteditem_id} restored successfully"
+
+     #Ensure deleted sentence is not present
+    get_response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id)+
+        "&sentence_id_list=100",headers=headers_auth)
+    assert get_response.status_code ==200
+    assert len(get_response.json())== 1
+    for item in get_response.json():
+        assert_positive_get_sentence(item)
+
+    #restore with missing data - Negative Test
+    data = {}
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert_input_validation_error(response)
+
+    #Restore with invalid item id - Negative Test
+    data = {"itemId":9999}
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"
+    logout_user(test_user_token)

@@ -12,7 +12,6 @@ import pygtrie
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
-
 from crud import utils, projects_crud
 from crud import nlp_tokenization as nlp_utils
 import db_models
@@ -190,10 +189,6 @@ def save_project_translations(db_, project_id, token_translations,
     if use_data:
         add_to_translation_memory(db_, project_row.sourceLanguage, project_row.targetLanguage,
             gloss_list)
-    # if return_drafts:
-    #     result = set(db_content)
-    #     return sorted(result, key=lambda x: x.sentenceId)
-    # return None
     if return_drafts:
         result = set(db_content)
         result =  sorted(result, key=lambda x: x.sentenceId)
@@ -696,7 +691,6 @@ def get_gloss(db_:Session, *args, **kwargs):#pylint: disable=too-many-locals,too
             suggestion_trie_in_mem[source_lang+"-"+target_lang] = tree
         for key in keys:
             if tree.has_subtrie(key) or tree.has_key(key):
-                # print("found:",key)
                 no_trie_match = False
                 nodes = tree.values(key)
                 level = len(key.split("/"))
@@ -709,12 +703,9 @@ def get_gloss(db_:Session, *args, **kwargs):#pylint: disable=too-many-locals,too
                         total += nod[sense]
             else:
                 pass
-                # print("not found:",key)
-
     #get forward reverse query
     matched_word , total = \
         gloss_forward_reverse_query(db_, word, source_lang, target_lang, total, trans)
-
     #get gloss chop word
     result = get_gloss_chop_word(db_, no_trie_match,
         trans, matched_word, total, word, pass_no, source_lang, target_lang)
@@ -843,6 +834,33 @@ def project_suggest_translations(db_:Session, project_id, books, sentence_id_ran
         'db_content':updated_drafts,
         'project_content':project_row
         }
+    return response
+
+def remove_glossary(db_, source_lang,target_lang, token,translation):
+    '''To remove a suggestion'''
+    if isinstance(source_lang, str):
+        source_lang = db_.query(db_models.Language).filter(
+            db_models.Language.code == source_lang).first()
+        if not source_lang:
+            raise NotAvailableException("Source language not available")
+    if isinstance(target_lang, str):
+        target_lang = db_.query(db_models.Language).filter(
+            db_models.Language.code == target_lang).first()
+        if not target_lang:
+            raise NotAvailableException("Target language not available")
+
+    token_row = db_.query(db_models.TranslationMemory).filter(
+            db_models.TranslationMemory.source_lang_id == source_lang.languageId,
+            db_models.TranslationMemory.target_lang_id == target_lang.languageId,
+            db_models.TranslationMemory.token == token,
+            db_models.TranslationMemory.translation == translation).first()
+    if not token_row:
+        raise NotAvailableException("Token not found")
+    db_.delete(token_row)
+    # db_.commit()
+    response = {
+        "db_content": token_row
+    }
     return response
 
 ###################### Export and download ######################

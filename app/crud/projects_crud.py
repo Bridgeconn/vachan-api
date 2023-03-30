@@ -8,12 +8,11 @@ import itertools
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
-
 import db_models
 from schema import schemas_nlp
 from crud import utils, nlp_crud
 from custom_exceptions import NotAvailableException, TypeException,\
-    UnprocessableException
+    UnprocessableException, PermissionException
 from auth.authentication import get_all_or_one_kratos_users
 
 #pylint: disable=W0143,E1101
@@ -167,6 +166,14 @@ def get_translation_projects(db_:Session, project_name=None, source_language=Non
     query = query.filter(db_models.TranslationProject.active == active)
     return query.offset(skip).limit(limit).all()
 
+def remove_translation_project(db_, project_id):
+    '''To remove a project'''
+    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    if not project_row:
+        raise NotAvailableException(f"Project with id {project_id} not found")
+    db_.delete(project_row)
+    return project_row
+
 def add_project_user(db_:Session, project_id, user_id, current_user=None):
     '''Add an additional user(not the created user) to a project, in translation_project_users'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
@@ -194,6 +201,7 @@ def update_project_user(db_, user_obj, current_user=10101):
         db_models.TranslationProjectUser.userId == user_obj.userId).first()
     if not user_row:
         raise NotAvailableException("User-project pair not found")
+    project_row = db_.query(db_models.TranslationProject).get(user_obj.project_id)
     if user_obj.userRole:
         user_row. userRole = user_obj.userRole
     if user_obj.metaData:
@@ -204,7 +212,31 @@ def update_project_user(db_, user_obj, current_user=10101):
     user_row.project.updatedUser = current_user
     db_.add(user_row)
     # db_.commit()
+    response = { #pylint: disable=unused-variable
+        "db_content" : user_row,
+        "project_content" : project_row
+    }
     return user_row
+
+def remove_project_user(db_, project_id, user_id, current_user=None):
+    '''To remove/un-assign a user from a project'''
+    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    if not project_row:
+        raise NotAvailableException(f"Project with id, {project_id}, not found")
+    user_row = db_.query(db_models.TranslationProjectUser).filter(
+        db_models.TranslationProjectUser.project_id == project_id,
+        db_models.TranslationProjectUser.userId == user_id).first()
+    if not user_row:
+        raise NotAvailableException("User-project pair not found")
+    if user_id == current_user:
+        raise PermissionException("A user cannot remove oneself from a project.")
+    db_.delete(user_row)
+    # db_.commit()
+    response = {
+        "db_content": user_row,
+        "project_content": project_row
+    }
+    return response
 
 def obtain_project_draft(db_:Session, project_id, books, sentence_id_list, sentence_id_range,
     **kwargs):
@@ -543,4 +575,24 @@ def obtain_project_source(db_:Session, project_id, books=None, sentence_id_range
         'db_content':result,
         'project_content':project_row
         }
+    return response
+
+def remove_project_sentence(db_, project_id, sentence_id):
+    '''To remove a sentence'''
+    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    if not project_row:
+        raise NotAvailableException(f"Project with id, {project_id}, not found")
+    sentence_row = db_.query(db_models.TranslationDraft).filter(
+        db_models.TranslationDraft.project_id == project_id,
+        db_models.TranslationDraft.sentenceId == sentence_id).first()
+    if not sentence_row:
+        raise NotAvailableException(f"Sentence with id {sentence_id} not found")
+    # if user_id == current_user:
+    #     raise PermissionException("A user cannot remove oneself from a project.")
+    db_.delete(sentence_row)
+    # db_.commit()
+    response = {
+        "db_content": sentence_row,
+        "project_content": project_row
+    }
     return response

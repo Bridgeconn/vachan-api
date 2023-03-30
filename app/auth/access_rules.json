@@ -6,13 +6,14 @@
         "read-via-vachanadmin":["SuperAdmin", "VachanAdmin"],
         "view-on-web":["noAuthRequired"],
         "refer-for-translation": ["registeredUser"],
-        "delete/deactivate":["registeredUser"]
-    }, 
+        "delete/deactivate":["SuperAdmin", "resourceCreatedUser"]
+    },
     "content":{
         "read-via-api":["SuperAdmin", "VachanAdmin", "BcsDeveloper"],
         "read-via-vachanadmin":["SuperAdmin", "VachanAdmin"],
         "create": ["SuperAdmin", "VachanAdmin"],
-        "edit": ["SuperAdmin", "resourceCreatedUser"]
+        "edit": ["SuperAdmin", "resourceCreatedUser"],
+        "delete/deactivate":["SuperAdmin", "resourceCreatedUser"]
     },
     "open-access":{
         "read-via-api":["noAuthRequired"],
@@ -37,22 +38,27 @@
     },
     "translation-project":{
         "create":["SuperAdmin", "AgAdmin", "AgUser"],
+        "delete":["SuperAdmin", "AgAdmin", "projectOwner"],
         "create-user":["SuperAdmin", "AgAdmin", "projectOwner"],
+        "delete-user":["SuperAdmin", "AgAdmin", "projectOwner"],
         "edit-Settings":["SuperAdmin", "AgAdmin", "projectOwner"],
         "read-settings":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember"],
         "edit-draft": ["SuperAdmin", "AgAdmin", "projectOwner", "projectMember"],
         "read-draft":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"],
-        "view-project":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"]
+        "view-project":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"],
+        "delete-sentence": ["SuperAdmin", "AgAdmin", "projectOwner","projectMember"]
     },
     "generic-translation":{
         "read":["registeredUser"],
         "create":["registeredUser"],
-        "process":["registeredUser"]
+        "process":["registeredUser"],
+        "delete":["registeredUser"]
     },
     "lookup-content":{
         "read":["noAuthRequired"],
         "create":["registeredUser"],
-        "edit":["registeredUser"]
+        "edit":["registeredUser"],
+        "delete":["registeredUser"]
     },
     "research-use":{
         "read-via-api":["SuperAdmin", "BcsDeveloper"]
@@ -74,10 +80,10 @@
         "view-profile":["SuperAdmin", "resourceCreatedUser"],
         "read":["registeredUser"],
        "login":["noAuthRequired"],
-        "logout":["createdUser"],
-        "delete/deactivate":["SuperAdmin"]
+        "logout":["resourceCreatedUser"],
+        "delete/deactivate":["SuperAdmin", "resourceCreatedUser"]
     },
     "data-manipulation": {
-        "data-restore" : ["SuperAdmin"]   
+        "data-restore" : ["SuperAdmin"]
     }
 }

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from dependencies import get_db, log, AddHiddenInput
 from schema import schemas, schemas_nlp, schema_auth, schema_content
-from crud import nlp_crud, projects_crud, nlp_sw_crud
+from crud import nlp_crud, projects_crud, nlp_sw_crud, structurals_crud
 from custom_exceptions import GenericException
 from routers import content_apis
 from auth.authentication import get_user_or_none,get_auth_access_check_decorator
@@ -97,6 +97,24 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
         "data": projects_crud.update_translation_project(db_, project_obj,
             user_id=user_details['user_id'])}
 
+@router.delete('/v2/translation/projects', status_code=201,
+    response_model=schemas.DeleteResponse,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}, 403:{"model": schemas.ErrorResponse}},
+    tags=['Autographa-Project management'])
+@get_auth_access_check_decorator
+async def remove_project(request: Request,project_id:int,
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Removes a project.'''
+    log.info('In remove_project')
+    log.debug('project_id:%s',project_id)
+    deleted_content = projects_crud.remove_translation_project(db_, project_id)
+    delcont = structurals_crud.add_deleted_data(db_, del_content= deleted_content,
+        table_name = "translation_projects", deleting_user=user_details['user_id'])
+    return {'message': f"Project with identity {project_id} deleted successfully",
+            "data": delcont}
+
 @router.post('/v2/translation/project/user', status_code=201,
     response_model=schemas_nlp.UserUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse},
@@ -127,6 +145,25 @@ async def update_user(request: Request,user_obj:schemas_nlp.ProjectUser,
     return {'message': "User updated in project successfully",
         "data": projects_crud.update_project_user(db_, user_obj,
             current_user=user_details['user_id'])}
+
+@router.delete('/v2/translation/project/user', status_code=201,
+    response_model=schemas.DeleteResponse,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}, 403:{"model": schemas.ErrorResponse}},
+    tags=['Autographa-Project management'])
+@get_auth_access_check_decorator
+async def remove_user(request: Request,project_id:int, user_id:str,
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Removes a user from a project.'''
+    log.info('In remove_user')
+    log.debug('project_id:%s, user_id:%s',project_id, user_id)
+    deleted_content = projects_crud.remove_project_user(db_, project_id, user_id,
+            current_user=user_details['user_id'])
+    delcont = structurals_crud.add_deleted_data(db_, del_content= deleted_content['db_content'],
+        table_name = "translation_project_users", deleting_user=user_details['user_id'])
+    return {'message':  "User removed from project successfully",
+            "data": delcont}
 
 ############## Translation APIs ##########################
 @router.get('/v2/translation/project/tokens', response_model=List[schemas_nlp.Token],
@@ -268,6 +305,25 @@ async def get_project_source(request: Request,project_id:int=Query(...,example="
         with_draft, only_ids)
     return projects_crud.obtain_project_source(db_, project_id, books, sentence_id_range,
         sentence_id_list, with_draft=with_draft, only_ids=only_ids)
+
+@router.delete('/v2/translation/project/sentences', status_code=201,
+    response_model=schemas.DeleteResponse,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}, 403:{"model": schemas.ErrorResponse}},
+    tags=['Autographa-Translation'])
+@get_auth_access_check_decorator
+async def remove_sentence(request: Request,project_id:int=Query(...,example="1022004"),
+    sentence_id:int=Query(...,example="41001001"),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Remove sentence.'''
+    log.info('In remove_sentence')
+    log.debug('project_id:%s, sentence_id:%s',project_id, sentence_id)
+    deleted_content = projects_crud.remove_project_sentence(db_, project_id,sentence_id)
+    delcont = structurals_crud.add_deleted_data(db_, del_content=  deleted_content['db_content'],
+        table_name = "translation_sentences", deleting_user=user_details['user_id'])
+    return {'message': f"Sentence with identity {sentence_id} deleted successfully",
+            "data": delcont}
 
 @router.get('/v2/translation/project/progress', status_code=200,
     response_model= schemas_nlp.Progress,
@@ -466,6 +522,29 @@ async def add_gloss(request: Request,
         token_translations)
     return { "message": "Added to glossary", "data":tw_data }
 
+@router.delete('/v2/nlp/gloss', status_code=201,
+    response_model=schemas.DeleteResponse,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}, 403:{"model": schemas.ErrorResponse}},
+    tags=['Nlp'])
+@get_auth_access_check_decorator
+async def remove_glossary(request: Request,
+    source_lang:schemas.LangCodePattern=Query(...,example="en"),
+    target_lang:schemas.LangCodePattern=Query(...,example="hi"),
+    token:str=Query(...,example="duck"),
+    translation:str=Query(...,example="बत्तख"),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Remove glossary.'''
+    log.info('In remove_gloss')
+    log.debug('source_language:%s,target_language:%s,token:%s,translation:%s',
+        source_lang,target_lang,token,translation)
+    deleted_content = nlp_crud.remove_glossary(db_, source_lang,target_lang,token,translation)
+    delcont = structurals_crud.add_deleted_data(db_, del_content=  deleted_content['db_content'],
+        table_name = "translation_memory", deleting_user=user_details['user_id'])
+    return {'message': f"Token-Translation pair {token} -> {translation} deleted successfully",
+            "data": delcont}
+
 @router.post('/v2/nlp/learn/alignment', response_model=schemas_nlp.GlossUpdateResponse,
     status_code=201,responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -541,6 +620,26 @@ async def add_stopwords(request: Request,
         user_id=user_details['user_id'])
     msg = f"{len(result)} stopwords added successfully"
     return {"message": msg, "data": result}
+
+@router.delete('/v2/lookup/stopwords/{language_code}', status_code=201,
+    response_model=schemas.DeleteResponse,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
+    404: {"model": schemas.ErrorResponse}, 403:{"model": schemas.ErrorResponse}},
+    tags=['Lookups'])
+@get_auth_access_check_decorator
+async def remove_stopword(request: Request,
+    lang:schemas.LangCodePattern=Query(...,example="en"),
+    stopword:str=Query(...,example="as"),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Api to remove stopwords from lookup table'''
+    log.info('In remove_stopword')
+    log.debug('language:%s,stopword:%s',lang,stopword)
+    deleted_content = nlp_sw_crud.remove_stopword(db_, lang, stopword)
+    delcont = structurals_crud.add_deleted_data(db_, del_content= deleted_content['db_content'],
+        table_name = "stopwords_look_up", deleting_user=user_details['user_id'])
+    return {'message':  "Stopword removed successfully",
+            "data": delcont}
 
 @router.post('/v2/nlp/stopwords/generate',
     response_model=schemas_nlp.StopWordsGenerateResponse, response_model_exclude_none=True,

@@ -11,8 +11,8 @@ from sqlalchemy.schema import Sequence
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from database import Base
-from custom_exceptions import GenericException
+from database import Base  # pylint: disable=import-error
+from custom_exceptions import GenericException # pylint: disable=import-error
 
 dynamicTables = {}
 
@@ -37,6 +37,7 @@ class ContentType(Base): # pylint: disable=too-few-public-methods
 
     contentId = Column('content_type_id', Integer, primary_key=True)
     contentType = Column('content_type', String, unique=True)
+    createdUser = Column('created_user', String)
 
 class Language(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table languages in vachan DB(postgres)'''
@@ -50,7 +51,6 @@ class Language(Base): # pylint: disable=too-few-public-methods
     createdUser = Column('created_user', String)
     updatedUser = Column('last_updated_user', String)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
-
 
 class License(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table licenses in vachan DB(postgres)'''
@@ -136,10 +136,11 @@ class Commentary(): # pylint: disable=too-few-public-methods
     verseEnd = Column('verse_end', Integer)
     commentary = Column('commentary', String)
     active = Column('active', Boolean)
-    # __table_args__ = (
+    # createdUser = Column('created_user', String)
+    __table_args__ = (
     #     UniqueConstraint('book_id', 'chapter', 'verse_start', 'verse_end'),
-    #     {'extend_existing': True}
-    #                  )
+        {'extend_existing': True}
+                     )
 
 class Dictionary(): # pylint: disable=too-few-public-methods
     '''Corresponds to the dynamically created dictionary tables in vachan Db(postgres)'''
@@ -148,6 +149,7 @@ class Dictionary(): # pylint: disable=too-few-public-methods
     word = Column('word', String, unique=True)
     details = Column('details', JSONB)
     active = Column('active', Boolean)
+    # createdUser = Column('created_user',String)
 
     __table_args__ = (
         {'extend_existing': True},
@@ -304,7 +306,6 @@ def map_all_dynamic_tables(db_: Session):
     for src in all_src:
         create_dynamic_table(src.sourceName, src.tableName, src.contentType.contentType)
 
-
 ############ Translation Tables ##########
 
 class TranslationProject(Base): # pylint: disable=too-few-public-methods
@@ -442,7 +443,7 @@ class DeletedItem(Base): # pylint: disable=too-few-public-methods
 
     itemId = Column('item_id', Integer, primary_key=True,autoincrement=True)
     deletedData = Column('deleted_data', JSON)
-    deletedUser = Column('deleted_user', String)
-    deletedTime = Column('deleted_time', DateTime, onupdate=func.now())
+    createdUser = Column('deleted_user', String)
+    deletedTime = Column('deleted_time', DateTime, default=func.now())
     deletedFrom = Column('deleted_from', String)
     
