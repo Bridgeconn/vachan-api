@@ -8,8 +8,8 @@ from .test_versions import check_post as add_version
 from .conftest import initial_test_users
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER
 
-UNIT_URL = '/v2/autographa/projects' 
-USER_URL = '/v2/autographa/project/user'
+UNIT_URL = '/v2/translation/projects' 
+USER_URL = '/v2/translation/project/user'
 headers = {"contentType": "application/json", "accept": "application/json", "app":"Autographa"}
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json",

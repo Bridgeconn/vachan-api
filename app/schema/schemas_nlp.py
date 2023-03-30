@@ -24,7 +24,7 @@ class Stopwords(BaseModel):
         example=["के", "का", "में", "की", "है", "और", "से", "हैं", "को", "पर"])
 
 class ProjectUser(BaseModel):
-    '''Input object for AgMT user update'''
+    '''Input object for Translation project user update'''
     project_id: int
     userId: str
     userRole: str = Field(None, example='projectOwner')
@@ -37,7 +37,7 @@ class ProjectUser(BaseModel):
         orm_mode = True
 
 class UserUpdateResponse(BaseModel):
-    '''Response for user addition and updation on AgMT project'''
+    '''Response for user addition and updation on Translation project'''
     message: str = Field(..., example='User added to/updated in project successfully')
     data: ProjectUser
 
@@ -196,7 +196,7 @@ class Suggestion(BaseModel):
         orm_mode = True
 
 class Progress(BaseModel):
-    '''Response object for AgMT project progress'''
+    '''Response object for translation project progress'''
     confirmed: float
     suggestion: float
     untranslated: float
@@ -250,7 +250,7 @@ class GlossUpdateResponse(BaseModel):
     data: List[GlossOutput]
 
 class Translation(BaseModel):
-    '''Response of what is the current translation of a specific token in agmt'''
+    '''Response of what is the current translation of a specific token in translation'''
     token: str = Field(..., example="duck")
     translation: str = Field(..., example="താറാവ്")
     occurrence: TokenOccurence

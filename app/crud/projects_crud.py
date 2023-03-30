@@ -1,5 +1,5 @@
 ''' Place to define all data processing and Database CRUD operations for
-AgMT Project Management. The translation or NLP related functions of these
+Translation Project Management. The translation or NLP related functions of these
 projects are included in nlp_crud module'''
 
 import re
@@ -17,8 +17,8 @@ from custom_exceptions import NotAvailableException, TypeException,\
 from auth.authentication import get_all_or_one_kratos_users
 
 #pylint: disable=W0143,E1101
-###################### AgMT Project Mangement ######################
-def create_agmt_project(db_:Session, project, user_id=None):
+###################### Translation Project Mangement ######################
+def create_translation_project(db_:Session, project, user_id=None):
     '''Add a new project entry to the translation projects table'''
     source = db_.query(db_models.Language).filter(
         db_models.Language.code==project.sourceLanguageCode).first()
@@ -53,8 +53,8 @@ def create_agmt_project(db_:Session, project, user_id=None):
     return db_content
 
 book_pattern_in_surrogate_id = re.compile(r'^[\w\d]\w\w')
-def update_agmt_project_sentences(db_, project_obj, new_books, user_id):
-    """bulk selected book update in update agmt project"""
+def update_translation_project_sentences(db_, project_obj, new_books, user_id):
+    """bulk selected book update in update translation project"""
     for sent in project_obj.sentenceList:
         norm_sent = utils.normalize_unicode(sent.sentence)
         offsets = [0, len(norm_sent)]
@@ -72,8 +72,8 @@ def update_agmt_project_sentences(db_, project_obj, new_books, user_id):
             updatedUser=user_id)
         db_.add(draft_row)
 
-def update_agmt_project_uploaded_book(db_,project_obj,new_books,user_id):
-    """bulk uploaded book update in update agmt project"""
+def update_translation_project_uploaded_book(db_,project_obj,new_books,user_id):
+    """bulk uploaded book update in update translation project"""
     for usfm in project_obj.uploadedUSFMs:
         usfm_json = utils.parse_usfm(usfm)
         book_code = usfm_json['book']['bookCode'].lower()
@@ -100,7 +100,7 @@ def update_agmt_project_uploaded_book(db_,project_obj,new_books,user_id):
                         updatedUser=user_id)
                     db_.add(draft_row)
 
-def update_agmt_project(db_:Session, project_obj, user_id=None):
+def update_translation_project(db_:Session, project_obj, user_id=None):
     '''Either activate or deactivate a project or Add more books to a project,
     adding all new verses to the drafts table'''
     project_row = db_.query(db_models.TranslationProject).get(project_obj.projectId)
@@ -110,10 +110,10 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
     if project_obj.selectedBooks:
         new_books += project_obj.selectedBooks.books
     if project_obj.sentenceList:
-        update_agmt_project_sentences(db_, project_obj, new_books, user_id)
+        update_translation_project_sentences(db_, project_obj, new_books, user_id)
     if project_obj.uploadedUSFMs:
         #uploaded usfm book add to project
-        update_agmt_project_uploaded_book(db_,project_obj,new_books,user_id)
+        update_translation_project_uploaded_book(db_,project_obj,new_books,user_id)
     # db_.commit()
     # db_.expire_all()
     if project_obj.projectName:
@@ -139,8 +139,8 @@ def update_agmt_project(db_:Session, project_obj, user_id=None):
     # db_.refresh(project_row)
     return project_row
 
-def get_agmt_projects(db_:Session, project_name=None, source_language=None, target_language=None,
-    **kwargs):
+def get_translation_projects(db_:Session, project_name=None, source_language=None,
+    target_language=None, **kwargs):
     '''Fetch autographa projects as per the query options'''
     active = kwargs.get("active",True)
     user_id = kwargs.get("user_id",None)
@@ -167,7 +167,7 @@ def get_agmt_projects(db_:Session, project_name=None, source_language=None, targ
     query = query.filter(db_models.TranslationProject.active == active)
     return query.offset(skip).limit(limit).all()
 
-def add_agmt_user(db_:Session, project_id, user_id, current_user=None):
+def add_project_user(db_:Session, project_id, user_id, current_user=None):
     '''Add an additional user(not the created user) to a project, in translation_project_users'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
@@ -187,7 +187,7 @@ def add_agmt_user(db_:Session, project_id, user_id, current_user=None):
     # db_.commit()
     return response
 
-def update_agmt_user(db_, user_obj, current_user=10101):
+def update_project_user(db_, user_obj, current_user=10101):
     '''Change role, active status or metadata of user in a project'''
     user_row = db_.query(db_models.TranslationProjectUser).filter(
         db_models.TranslationProjectUser.project_id == user_obj.project_id,
@@ -206,14 +206,14 @@ def update_agmt_user(db_, user_obj, current_user=10101):
     # db_.commit()
     return user_row
 
-def obtain_agmt_draft(db_:Session, project_id, books, sentence_id_list, sentence_id_range,
+def obtain_project_draft(db_:Session, project_id, books, sentence_id_list, sentence_id_range,
     **kwargs):
     '''generate draft for selected sentences as usfm or json'''
     output_format = kwargs.get("output_format","usfm")
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
-    draft_rows = obtain_agmt_source(db_, project_id, books, sentence_id_list,
+    draft_rows = obtain_project_source(db_, project_id, books, sentence_id_list,
         sentence_id_range, with_draft=True)
     draft_rows = draft_rows['db_content']
     if output_format == schemas_nlp.DraftFormats.USFM :
@@ -263,10 +263,10 @@ def validate_draft_meta(sentence, draft, draft_meta):
     except Exception as exe:
         raise UnprocessableException("Incorrect metadata.") from exe
 
-def update_agmt_draft(db_:Session, project_id, sentence_list, user_id):
+def update_project_draft(db_:Session, project_id, sentence_list, user_id):
     '''Directly write to the draft and draftMeta fields of project sentences'''
     sentence_id_list = [sent.sentenceId for sent in sentence_list]
-    source_resp = obtain_agmt_source(db_, project_id,
+    source_resp = obtain_project_source(db_, project_id,
         sentence_id_list=sentence_id_list, with_draft=True)
     project_row = source_resp['project_content']
     sentences = source_resp['db_content']
@@ -290,12 +290,12 @@ def update_agmt_draft(db_:Session, project_id, sentence_list, user_id):
         }
     return response_result
 
-def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_range):#pylint: disable=too-many-locals
+def obtain_project_progress(db_, project_id, books, sentence_id_list, sentence_id_range):#pylint: disable=too-many-locals
     '''Calculate project translation progress in terms of how much of draft is translated'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
-    draft_rows = obtain_agmt_source(db_, project_id, books, sentence_id_list,
+    draft_rows = obtain_project_source(db_, project_id, books, sentence_id_list,
         sentence_id_range, with_draft=True)
     draft_rows = draft_rows["db_content"]
     confirmed_length = 0
@@ -325,7 +325,7 @@ def obtain_agmt_progress(db_, project_id, books, sentence_id_list, sentence_id_r
         }
     return response_result
 
-def obtain_agmt_token_translation(db_, project_id, token, occurrences): # pylint: disable=unused-argument
+def obtain_project_token_translation(db_, project_id, token, occurrences): # pylint: disable=unused-argument
     '''Get the current translation for specific tokens providing their occurence in source'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
@@ -338,7 +338,7 @@ def obtain_agmt_token_translation(db_, project_id, token, occurrences): # pylint
             new_occurences.append(occur)
     occurrences = new_occurences
     sentence_list = [occur["sentenceId"] for occur in occurrences]
-    draft_rows = obtain_agmt_source(db_, project_id, sentence_id_list=sentence_list,
+    draft_rows = obtain_project_source(db_, project_id, sentence_id_list=sentence_list,
         with_draft=True)
     draft_rows = draft_rows["db_content"]
     translations = pin_point_token_in_draft(occurrences, draft_rows)
@@ -350,7 +350,7 @@ def obtain_agmt_token_translation(db_, project_id, token, occurrences): # pylint
     return response
 
 def versification_check(row, prev_book_code, versification, prev_verse, prev_chapter):
-    """versification check for agmt source versification"""
+    """versification check for project source versification"""
     if row.sentenceId not in range(1000000,68000000):
         raise TypeException("For versification, sentenceIds need to be refids(bbcccvvv)")
     book_id = int(row.sentenceId/1000000)
@@ -375,8 +375,8 @@ def versification_check(row, prev_book_code, versification, prev_verse, prev_cha
     prev_verse = verse
     return prev_book_code, versification, prev_verse
 
-def get_agmt_source_versification(db_, project_id):
-    '''considering the AgMT source is always bible verses, get their versification structure'''
+def get_project_source_versification(db_, project_id):
+    '''considering the project source is always bible verses, get their versification structure'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
@@ -400,14 +400,14 @@ def get_agmt_source_versification(db_, project_id):
         }
     return response
 
-def get_agmt_source_per_token(db_:Session, project_id, token, occurrences): #pylint: disable=unused-argument
+def get_project_source_per_token(db_:Session, project_id, token, occurrences): #pylint: disable=unused-argument
     '''get sentences and drafts for the token, which splits the token & translation in metadraft
     allowing it to be easily identifiable and highlightable at UI'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not present")
     sent_ids = [occur.sentenceId for occur in occurrences]
-    draft_rows = obtain_agmt_source(db_, project_id,
+    draft_rows = obtain_project_source(db_, project_id,
         sentence_id_list=sent_ids, with_draft=True)
     draft_rows = draft_rows['db_content']
     occur_list = []
@@ -496,7 +496,7 @@ def pin_point_token_in_draft(occurrences, draft_rows):#pylint: disable=too-many-
     return translations
 
 #########################################################
-def obtain_agmt_source(db_:Session, project_id, books=None, sentence_id_range=None,#pylint: disable=too-many-locals
+def obtain_project_source(db_:Session, project_id, books=None, sentence_id_range=None,#pylint: disable=too-many-locals
     sentence_id_list=None, **kwargs):
     '''fetches all or selected source sentences from translation_sentences table'''
     with_draft= kwargs.get("with_draft",False)

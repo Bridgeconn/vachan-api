@@ -89,22 +89,22 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/biblevideos/{source_name},GET,API-user,False,None,read-via-api
 /v2/biblevideos/{source_name},POST,None,False,None,create
 /v2/biblevideos/{source_name},PUT,None,False,None,edit
-/v2/autographa/projects,GET,Autographa,True,None,view-project
-/v2/autographa/projects,POST,Autographa,False,None,create
-/v2/autographa/projects,PUT,Autographa,False,"contents like bibles, commentaries, infographics, dictionary or videos",translate
-/v2/autographa/projects,PUT,Autographa,False,Ag or translation project,edit-Settings
-/v2/autographa/project/user,POST,Autographa,False,None,create-user
-/v2/autographa/project/user,PUT,Autographa,False,None,edit-Settings
-/v2/autographa/project/tokens,GET,Autographa,False,None,read-draft
-/v2/autographa/project/tokens,PUT,Autographa,False,None,edit-draft
-/v2/autographa/project/token-translations,GET,Autographa,False,None,read-draft
-/v2/autographa/project/token-sentences,PUT,Autographa,False,None,edit-draft
-/v2/autographa/project/draft,GET,Autographa,False,None,read-draft
-/v2/autographa/project/draft,PUT,Autographa,False,None,edit-draft
-/v2/autographa/project/sentences,GET,Autographa,False,None,view-project
-/v2/autographa/project/progress,GET,Autographa,False,None,view-project
-/v2/autographa/project/versification,GET,Autographa,False,None,view-project
-/v2/autographa/project/suggestions,PUT,Autographa,False,None,edit-draft
+/v2/translation/projects,GET,Autographa,True,None,view-project
+/v2/translation/projects,POST,Autographa,False,None,create
+/v2/translation/projects,PUT,Autographa,False,"contents like bibles, commentaries, infographics, dictionary or videos",translate
+/v2/translation/projects,PUT,Autographa,False,Ag or translation project,edit-Settings
+/v2/translation/project/user,POST,Autographa,False,None,create-user
+/v2/translation/project/user,PUT,Autographa,False,None,edit-Settings
+/v2/translation/project/tokens,GET,Autographa,False,None,read-draft
+/v2/translation/project/tokens,PUT,Autographa,False,None,edit-draft
+/v2/translation/project/token-translations,GET,Autographa,False,None,read-draft
+/v2/translation/project/token-sentences,PUT,Autographa,False,None,edit-draft
+/v2/translation/project/draft,GET,Autographa,False,None,read-draft
+/v2/translation/project/draft,PUT,Autographa,False,None,edit-draft
+/v2/translation/project/sentences,GET,Autographa,False,None,view-project
+/v2/translation/project/progress,GET,Autographa,False,None,view-project
+/v2/translation/project/versification,GET,Autographa,False,None,view-project
+/v2/translation/project/suggestions,PUT,Autographa,False,None,edit-draft
 /v2/translation/suggestions,PUT,None,False,None,process
 /v2/translation/tokens,PUT,None,False,None,process
 /v2/translation/token-translate,PUT,None,False,None,process
