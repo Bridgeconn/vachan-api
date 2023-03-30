@@ -12,7 +12,6 @@ import pygtrie
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
-
 from crud import utils, projects_crud
 from crud import nlp_tokenization as nlp_utils
 import db_models
@@ -190,10 +189,6 @@ def save_project_translations(db_, project_id, token_translations,
     if use_data:
         add_to_translation_memory(db_, project_row.sourceLanguage, project_row.targetLanguage,
             gloss_list)
-    # if return_drafts:
-    #     result = set(db_content)
-    #     return sorted(result, key=lambda x: x.sentenceId)
-    # return None
     if return_drafts:
         result = set(db_content)
         result =  sorted(result, key=lambda x: x.sentenceId)
@@ -696,7 +691,6 @@ def get_gloss(db_:Session, *args, **kwargs):#pylint: disable=too-many-locals,too
             suggestion_trie_in_mem[source_lang+"-"+target_lang] = tree
         for key in keys:
             if tree.has_subtrie(key) or tree.has_key(key):
-                # print("found:",key)
                 no_trie_match = False
                 nodes = tree.values(key)
                 level = len(key.split("/"))
@@ -709,12 +703,9 @@ def get_gloss(db_:Session, *args, **kwargs):#pylint: disable=too-many-locals,too
                         total += nod[sense]
             else:
                 pass
-                # print("not found:",key)
-
     #get forward reverse query
     matched_word , total = \
         gloss_forward_reverse_query(db_, word, source_lang, target_lang, total, trans)
-
     #get gloss chop word
     result = get_gloss_chop_word(db_, no_trie_match,
         trans, matched_word, total, word, pass_no, source_lang, target_lang)

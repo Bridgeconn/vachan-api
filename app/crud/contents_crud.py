@@ -381,11 +381,8 @@ def upload_infographics(db_: Session, source_name, infographics, user_id=None):
             active=item.active)
         db_content.append(row)
     db_.add_all(db_content)
-    # db_.commit()
     db_.expire_all()
     source_db_content.updatedUser = user_id
-    # db_.commit()
-    # return db_content
     response = {
         'db_content':db_content,
         'source_content':source_db_content
