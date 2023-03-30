@@ -279,11 +279,11 @@ def test_draft_meta_validation():
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     #Get suggestions
-    resp = client.put(f"/v2/autographa/project/suggestions?project_id={project_id}&sentenceIdList=100", 
+    resp = client.put(f"/v2/translation/project/suggestions?project_id={project_id}&sentenceIdList=100", 
         headers=headers_auth)
     assert resp.status_code == 201
     resp_draft_meta = resp.json()[0]['draftMeta']
@@ -301,7 +301,7 @@ def test_draft_meta_validation():
         "draft":resp.json()[0]['draft'],
         "draftMeta":resp_draft_meta
     }]
-    resp = client.put(f"/v2/autographa/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
         headers=headers_auth, json=json_data)
     assert resp.status_code == 201
 
@@ -316,7 +316,7 @@ def test_space_in_suggested_draft():
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # Add a gloss to ensure some suggestion in output
@@ -332,7 +332,7 @@ def test_space_in_suggested_draft():
 
 
     #Get suggestions
-    resp = client.put(f"/v2/autographa/project/suggestions?project_id={project_id}&sentenceIdList=100", 
+    resp = client.put(f"/v2/translation/project/suggestions?project_id={project_id}&sentenceIdList=100", 
         headers=headers_auth)
     assert resp.status_code == 201
     resp_obj = resp.json()
@@ -340,7 +340,7 @@ def test_space_in_suggested_draft():
     assert not resp_obj[0]['draft'].startswith(" ")
 
     #Get suggestions again
-    resp = client.put(f"/v2/autographa/project/suggestions?project_id={project_id}&sentenceIdList=100", 
+    resp = client.put(f"/v2/translation/project/suggestions?project_id={project_id}&sentenceIdList=100", 
         headers=headers_auth)
     assert resp.status_code == 201
     resp_obj = resp.json()
@@ -360,7 +360,7 @@ def test_delete_sentence():
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # Check sentences are added
@@ -442,7 +442,7 @@ def test_restore_sentence():
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
     delete_resp = client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id=100",
             headers=headers_auth)
 
