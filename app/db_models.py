@@ -72,9 +72,9 @@ class Version(Base): # pylint: disable=too-few-public-methods
     __tablename__ = 'versions'
 
     versionId = Column('version_id', Integer, primary_key=True)
-    versionAbbreviation = Column('version_code', String, unique=True, index=True)
-    versionName = Column('version_description', String)
-    revision = Column('revision', Integer)
+    versionAbbreviation = Column('version_short_name', String, unique=True, index=True)
+    versionName = Column('version_name', String)
+    versionTag = Column('version_tag', ARRAY(String))
     metaData = Column('metadata', JSON)
     createdUser = Column('created_user', String)
     updatedUser = Column('last_updated_user', String)
@@ -85,9 +85,10 @@ class Source(Base): # pylint: disable=too-few-public-methods
     __tablename__ = 'sources'
 
     sourceId = Column('source_id', Integer, primary_key=True)
-    sourceName = Column('source_name', String, unique=True)
+    sourceName = Column('version', String, unique=True)
     tableName = Column('source_table', String, unique=True)
     year = Column('year', Integer)
+    labels = Column('labels', ARRAY(String))
     licenseId = Column('license_id', Integer, ForeignKey('licenses.license_id'))
     license = relationship(License)
     contentId = Column('content_id', Integer, ForeignKey('content_types.content_type_id'))
@@ -339,7 +340,9 @@ class TranslationProject(Base): # pylint: disable=too-few-public-methods
     active = Column('active', Boolean, default=True)
     createdUser = Column('created_user', String)
     updatedUser = Column('last_updated_user', String)
-    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    createTime = Column('created_at', DateTime, default=func.now())
+    updateTime = Column('last_updated_at', DateTime, onupdate=func.now(),
+        default=func.now())
 
 class TranslationDraft(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table translation_drafts in vachan DB used by Autographa MT mode'''

@@ -2,7 +2,7 @@
 #pylint: disable=too-many-lines
 from typing import List
 from enum import Enum
-from pydantic import BaseModel, constr, Field # pylint: disable=no-name-in-module
+from pydantic import BaseModel, constr, Field, validator
 
 
 #pylint: disable=too-few-public-methods
@@ -303,11 +303,12 @@ MetaDataPattern = constr(
         r"(,\s*[\"\'][^\"]+[\"\']\s*:\s*[\"\'][^\"]*[\"\']\s*)*")
 
 VersionPattern = constr(regex=r"^[A-Z]+$")
+VersionTagPattern = constr(regex=r"^[a-z\d]+(\.[a-z\d]+)*$")
 class VersionCreate(BaseModel):
     '''input object of version'''
     versionAbbreviation : VersionPattern
     versionName : str
-    revision : int = 1
+    versionTag : VersionTagPattern = "1"
     metaData : dict = None
     class Config:
         '''display example value in API documentation'''
@@ -315,7 +316,7 @@ class VersionCreate(BaseModel):
             "example": {
                 "versionAbbreviation": "KJV",
                 "versionName": "King James Version",
-                "revision": 1,
+                "versionTag": "1611.12.31",
                 "metaData": {"publishedIn": "1611"}
             }
         }
@@ -325,7 +326,7 @@ class VersionResponse(BaseModel):
     versionId : int
     versionAbbreviation : VersionPattern
     versionName : str
-    revision : int
+    versionTag : List[str]
     metaData : dict = None
     class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
@@ -336,10 +337,15 @@ class VersionResponse(BaseModel):
                 "versionId": 1,
                 "versionAbbreviation": "KJV",
                 "versionName": "King James Version",
-                "revision": 1,
+                "versionTag": "1611.12.31",
                 "metaData": {"publishedIn": "1611"}
             }
         }
+    @validator('versionTag')
+    def convert_array_to_str(cls, val):  # pylint: disable=E0213
+        '''versionTag Array to versionTag str'''
+        from crud.structurals_crud import version_array_to_tag  # pylint: disable=C0415, E0401
+        return version_array_to_tag(val)
 
 class VersionCreateResponse(BaseModel):
     '''Return object of version update'''
@@ -356,7 +362,7 @@ class VersionEdit(BaseModel):
     versionId: int
     versionAbbreviation : VersionPattern = None
     versionName : str = None
-    revision : int = None
+    versionTag : VersionTagPattern = None
     metaData : dict = None
     class Config:
         '''display example value in API documentation'''
@@ -365,19 +371,29 @@ class VersionEdit(BaseModel):
                 "versionId": 1,
                 "versionAbbreviation": "KJV",
                 "versionName": "King James Version",
-                "revision": 1,
+                "versionTag": "1611.12.31",
                 "metaData": {"publishedIn": "1611"}
             }
         }
 
-TableNamePattern = constr(regex=r"^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\w+_[a-z]+$")
+TableNamePattern = constr(regex=r"^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_[\w\.]+_[a-z]+$")
+
+class SourceLabel(str, Enum):
+    '''Markers for source items to be able to filter contents as per different usecases'''
+    LATEST = "latest"
+    PUBLISHED = "published"
+    PRERELEASE = "pre-release"
+    PRIVATE = "private"
+    DEPRECATED = "deprecated"
+    TEST = "test"
 
 class SourceCreate(BaseModel):
     '''Input object of sources'''
     contentType : str
     language : LangCodePattern
     version : VersionPattern
-    revision: str = "1"
+    versionTag: VersionTagPattern = "1"
+    labels: List[SourceLabel] = None
     year: int
     license: LicenseCodePattern = "CC-BY-SA"
     accessPermissions : List[SourcePermissions] = [SourcePermissions.CONTENT]
@@ -389,7 +405,8 @@ class SourceCreate(BaseModel):
                 "contentType": "commentary",
                 "language": "en",
                 "version": "KJV",
-                "revision": 1,
+                "versionTag": "1611.12.31",
+                "latest":False,
                 "year": 2020,
                 "license": "ISC",
                 "accessPermissions" : ["content"],
@@ -405,6 +422,7 @@ class SourceResponse(BaseModel):
     language : LanguageResponse = None
     version : VersionResponse = None
     # revision: str = "1"
+    labels: List[SourceLabel] = None
     year: int
     license: LicenseShortResponse
     metaData: dict = None
@@ -420,7 +438,7 @@ class SourceResponse(BaseModel):
                 "contentType": {},
                 "language": {},
                 "version": {},
-                "revision": 1,
+                "latest":True,
                 "year": 2020,
                 "license": {},
                 "metaData": {"otherName": "KJBC, King James Bible Commentaries"},
@@ -444,7 +462,8 @@ class SourceEdit(BaseModel):
     sourceName : TableNamePattern
     language : LangCodePattern = None
     version : VersionPattern = None
-    revision: str = None
+    versionTag: VersionTagPattern = None
+    labels: List[SourceLabel] = None
     year: int = None
     license: LicenseCodePattern = None
     accessPermissions : List[SourcePermissions] = [SourcePermissions.CONTENT]
@@ -457,7 +476,8 @@ class SourceEdit(BaseModel):
                 "sourceName": "en_KJV_1_commentary",
                 "language": "en",
                 "version": "KJV",
-                "revision": 1,
+                "versionTag": "1611.12.31",
+                "latest":True,
                 "year": 2020,
                 "license": "ISC",
                 "accessPermissions" : ["content"],

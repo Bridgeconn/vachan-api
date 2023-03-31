@@ -4,6 +4,7 @@ import graphene
 from graphql_api import types, utils
 from schema import schemas_nlp
 from routers import content_apis, auth_api, translation_apis
+from crud import structurals_crud
 from auth.authentication import get_user_or_none_graphql
 from dependencies import log
 
@@ -70,34 +71,38 @@ class Query(graphene.ObjectType):
 
     versions = graphene.List(types.Version,
         description="Query defined versions in vachan-db", version_abbreviation=graphene.String(),
-        version_name=graphene.String(), revision=graphene.Int(),
+        version_name=graphene.String(), version_tag=graphene.String(),
         skip=graphene.Int(), limit=graphene.Int())
-    def resolve_versions(self, info, version_abbreviation=None, version_name=None,
-        revision=None, skip=0, limit=100, metadata=None):
+    async def resolve_versions(self, info, version_abbreviation=None, version_name=None,
+        version_tag=None, skip=0, limit=100, metadata=None):
         '''resolver'''
         log.info('In GraphQL Get Content versions')
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
         req.scope['path'] = "/v2/versions"
-        return content_apis.get_version(request=req, version_abbreviation=version_abbreviation,
-        version_name=version_name, revision=revision, skip=skip, limit=limit,
+        resp = await content_apis.get_version(request=req,version_abbreviation=version_abbreviation,
+        version_name=version_name, version_tag=version_tag, skip=skip, limit=limit,
         user_details=user_details, db_=db_,metadata=metadata)
+        for res in resp:
+            res.versionTag = structurals_crud.version_array_to_tag(res.versionTag)
+        return resp
         # return structurals_crud.get_versions(db_, version_abbreviation,
-        # version_name, revision, skip = skip, limit = limit)
+        # version_name, versionTag, skip = skip, limit = limit)
 
     contents = graphene.List(types.Source,
         description="Query added contents in vachan-db",
         source_name=graphene.String(), content_type=graphene.String(),
-        version_abbreviation=graphene.String(), revision=graphene.Int(),
+        version_abbreviation=graphene.String(), version_tag=graphene.Int(),
         language_code=graphene.String(
             description="language code as per bcp47(usually 2 letter code)"),
         license_code=graphene.String(),
         access_tag = graphene.List(types.SourcePermissions),
+        labels = graphene.List(types.SourceLabels),
         active=graphene.Boolean(), latest_revision=graphene.Boolean(),
         skip=graphene.Int(), limit=graphene.Int())
     def resolve_contents(self, info, content_type=None, version_abbreviation=None,#pylint: disable=too-many-locals
-        revision=None, language_code=None, license_code=None, active=True,
+        version_tag=None, language_code=None, license_code=None, labels=None,active=True,
         latest_revision=True, skip=0, limit=100,metadata=None, source_name = None,
         access_tag= types.SourcePermissions.CONTENT.name):#pylint: disable=no-member
         '''resolver'''
@@ -111,8 +116,9 @@ class Query(graphene.ObjectType):
         req.scope['method'] = "GET"
         req.scope['path'] = "/v2/sources"
         results = content_apis.get_source(request=req,content_type=content_type,
-        version_abbreviation=version_abbreviation, revision=revision, language_code=language_code
-        ,license_code=license_code, metadata=metadata, access_tag=access_tag, active=active,
+        version_abbreviation=version_abbreviation,
+        version_tag=version_tag, language_code=language_code, labels=labels,
+        license_code=license_code, metadata=metadata, access_tag=access_tag, active=active,
         latest_revision=latest_revision, skip=skip, limit=limit, user_details=user_details,
         db_=db_, filtering_required=True,source_name=source_name)
         return results
@@ -280,7 +286,7 @@ class Query(graphene.ObjectType):
         return results
 
     agmt_projects = graphene.List(types.TranslationProject,
-        description="Query AutographaMT projects on vachan-db", project_name=graphene.String(),
+        description="Query Translation projects on vachan-db", project_name=graphene.String(),
         source_language=graphene.String(
             description="language code as per bcp47(usually 2 letters)"),
         target_language=graphene.String(
@@ -295,7 +301,7 @@ class Query(graphene.ObjectType):
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
-        req.scope['path'] = "/v2/autographa/projects"
+        req.scope['path'] = "/v2/translation/projects"
         results = translation_apis.get_projects(request= req,
             project_name=project_name, source_language=source_language,
             target_language=target_language, active=active, user_id=user_id,
@@ -318,7 +324,7 @@ class Query(graphene.ObjectType):
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
-        req.scope['path'] = "/v2/autographa/project/tokens"
+        req.scope['path'] = "/v2/translation/project/tokens"
         results = translation_apis.get_tokens(request= req, project_id=project_id,
         books=books, sentence_id_range=sentence_id_range, sentence_id_list=sentence_id_list,
         use_translation_memory=use_translation_memory, include_phrases=include_phrases,
@@ -337,7 +343,7 @@ class Query(graphene.ObjectType):
         # occurrences = [{"sentenceId":sentence_id, "offset":offset}]
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
-        req.scope['path'] = "/v2/autographa/project/token-translations"
+        req.scope['path'] = "/v2/translation/project/token-translations"
         # return projects_crud.obtain_agmt_token_translation(db_, project_id, token=None,
         #     occurrences=occurrences)[0]
         results = translation_apis.get_token_translation(request=req,project_id=project_id,
@@ -356,7 +362,7 @@ class Query(graphene.ObjectType):
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "PUT"
-        req.scope['path'] = "/v2/autographa/project/token-sentences"
+        req.scope['path'] = "/v2/translation/project/token-sentences"
         # return projects_crud.get_agmt_source_per_token(db_,project_id,token,occurrences)
         results = translation_apis.get_token_sentences(request=req, project_id=project_id,
         token=token, occurrences=occurrences, user_details=user_details, db_=db_)
@@ -412,7 +418,7 @@ class Query(graphene.ObjectType):
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
-        req.scope['path'] = "/v2/autographa/project/draft"
+        req.scope['path'] = "/v2/translation/project/draft"
         # return projects_crud.obtain_agmt_draft(db_, project_id, books,
         #     sentence_id_list, sentence_id_range, output_format=schemas_nlp.DraftFormats.USFM)
         results = translation_apis.get_draft(request=req, project_id=project_id,
@@ -434,7 +440,7 @@ class Query(graphene.ObjectType):
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
-        req.scope['path'] = "/v2/autographa/project/draft"
+        req.scope['path'] = "/v2/translation/project/draft"
         # return projects_crud.obtain_agmt_draft(db_, project_id, books,
         #     sentence_id_list, sentence_id_range, output_format=schemas_nlp.DraftFormats.JSON)
         results = translation_apis.get_draft(request=req, project_id=project_id,
@@ -456,7 +462,7 @@ class Query(graphene.ObjectType):
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
-        req.scope['path'] = "/v2/autographa/project/sentences"
+        req.scope['path'] = "/v2/translation/project/sentences"
         # return nlp_crud.obtain_agmt_source(db_, project_id, books, sentence_id_list,
         #     sentence_id_range, with_draft=True)
         results = translation_apis.get_project_source(request= req,project_id=project_id,
@@ -478,7 +484,7 @@ class Query(graphene.ObjectType):
         db_ = info.context["request"].db_session
         user_details , req = get_user_or_none_graphql(info)
         req.scope['method'] = "GET"
-        req.scope['path'] = "/v2/autographa/project/progress"
+        req.scope['path'] = "/v2/translation/project/progress"
         # return projects_crud.obtain_agmt_progress(db_, project_id, books,
         #     sentence_id_list, sentence_id_range)
         results = translation_apis.get_progress(request= req,project_id=project_id,

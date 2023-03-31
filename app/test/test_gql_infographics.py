@@ -29,7 +29,7 @@ SOURCE_VAR = {
     "contentType": "infographic",
     "language": "ur",
     "version": "TTT",
-    "revision": "1",
+    "versionTag": "1",
     "year": 2020,
   }
 }
@@ -531,7 +531,7 @@ def test_created_user_can_only_edit():
     "contentType": "infographic",
     "language": "gu",
     "version": "TTT",
-    "revision": "1",
+    "versionTag": "1",
     "year": 2021
   }
 }

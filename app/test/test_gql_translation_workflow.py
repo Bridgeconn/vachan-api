@@ -26,7 +26,7 @@ version_variable = {
     "object": {
         "versionAbbreviation": "XYZ",
         "versionName": "Xyz version to test",
-        "revision": "1",
+        "versionTag": "1",
         "metaData": "{\"owner\":\"someone\",\"access-key\":\"123xyz\"}"
     }
     }
@@ -36,7 +36,7 @@ src_var={
     "contentType": "bible",
     "language": "hi",
     "version": "XYZ",
-    "revision": "1",
+    "versionTag": "1",
     "accessPermissions": [
             types.SourcePermissions.CONTENT.name,types.SourcePermissions.OPENACCESS.name
         ],

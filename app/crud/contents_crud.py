@@ -245,8 +245,13 @@ def get_dictionary_words(db_:Session,**kwargs):#pylint: disable=too-many-locals
         det = json.loads(details)
         for key in det:
             query = query.filter(model_cls.details.op('->>')(key) == det[key])
-    query = query.filter(model_cls.active == active)
-    res = query.offset(skip).limit(limit).all()
+    if active is not None:
+        query = query.filter(model_cls.active == active)
+    if skip is not None:
+        query = query.offset(skip)
+    if limit is not None:
+        query = query.limit(limit)
+    res = query.all()
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     response = {
@@ -376,11 +381,8 @@ def upload_infographics(db_: Session, source_name, infographics, user_id=None):
             active=item.active)
         db_content.append(row)
     db_.add_all(db_content)
-    # db_.commit()
     db_.expire_all()
     source_db_content.updatedUser = user_id
-    # db_.commit()
-    # return db_content
     response = {
         'db_content':db_content,
         'source_content':source_db_content
