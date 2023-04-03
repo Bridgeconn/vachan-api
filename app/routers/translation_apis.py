@@ -500,8 +500,35 @@ async def get_glossary_entries(request: Request,
     log.info('In get_glossary_entries')
     log.debug('source_language:%s, target_language:%s, token:%s',
         source_language, target_language, token)
-    return nlp_crud.get_glossary_list(db_, source_language, target_language, token,
+    response = nlp_crud.get_glossary_list(db_, source_language, target_language, token,
     skip=skip, limit=limit)
+    return response['gloss_entries']
+
+@router.get('/v2/nlp/gloss-count',
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
+    404:{"model": schemas.ErrorResponse},}, status_code=200, tags=["Nlp"])
+@get_auth_access_check_decorator
+async def get_gloss_count(request: Request,
+    source_language:schemas.LangCodePattern=Query(...,example="en"),
+    target_language:schemas.LangCodePattern=Query(...,example="hi"),
+    token:str=Query(None,example="love"),
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
+    '''Counts all glossary entries in translation memory between two languages.
+        * Also counts unique tokens in translation memory
+   `    * Can filter with or without search word/token
+        * Source anf target language should be specified
+        * "gloss_entries" in response gives the count of total glossary records
+        * "token_count" in response gives the count of unique tokens'''
+    log.info('In get_glossary_count')
+    log.debug('source_language:%s, target_language:%s, token:%s',
+        source_language, target_language, token)
+    response = nlp_crud.get_glossary_list(db_, source_language, target_language, token)
+    # return f"Count of total glossary records is {len(response['gloss_entries'])} and \
+    #     Count of tokens is {len(response['token_list'])}"
+    response['gloss_entries'] = len(response['gloss_entries'])
+    response['token_count'] = len(response['token_count'])
+    return response
 
 @router.post('/v2/nlp/learn/gloss', response_model=schemas_nlp.GlossUpdateResponse,
     status_code=201,responses={502: {"model": schemas.ErrorResponse},
