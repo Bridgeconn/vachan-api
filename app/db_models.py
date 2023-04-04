@@ -494,13 +494,14 @@ class AccessRules(Base): # pylint: disable=too-few-public-methods
     entitlement = relationship(ResourceTypes)
     tagId = Column('tag_id', Integer, ForeignKey('permissions.permission_id'))
     tag = relationship(Permissions)
-    roles = Column('roles', ARRAY(String))
+    roleId = Column('role_id', Integer, ForeignKey('roles.role_id'))
+    role = relationship(Roles)
     createdUser = Column('created_user', String)
     updatedUser = Column('last_updated_user', String)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
     active = Column('active', Boolean)
     __table_args__ = (
-        UniqueConstraint('entitlement_id', 'tag_id'),
+        UniqueConstraint('entitlement_id', 'tag_id', 'role_id'),
         {'extend_existing': True}
                      )
 

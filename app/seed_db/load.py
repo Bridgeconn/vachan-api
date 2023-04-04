@@ -2,6 +2,7 @@
 import os
 import csv
 import psycopg2
+import re
 from psycopg2.extras import execute_values
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
@@ -52,6 +53,7 @@ PERMISSION_DICT =dict()
 RESOURCE_TYPE_DICT =dict()
 APIPERMISSIONTABLE=[]
 ACCESSRULESTABLE=[]
+ROLES_DICT = dict()
 
 def db_real_dict_cursor_to_dict_with_custom_key(data, dict_key, headers_list):
     '''convert db realdictcursor data to dict with custom field as key'''
@@ -203,19 +205,32 @@ def create_database_and_seed():
             #pylint: disable=C0103
             APP_DICT= db_real_dict_cursor_to_dict_with_custom_key(app_data, 'app_name', app_heads)
 
+            #get all roles
+            qry = "SELECT * FROM public.roles ORDER BY role_id ASC "
+            cursor.execute(query=qry)
+            role_data = cursor.fetchall()
+            role_heads = cursor.description
+            ROLES_DICT= db_real_dict_cursor_to_dict_with_custom_key(role_data, 'role_name', role_heads)
+
             # Upload Access Rules CSV to DB with ID as FK
-            read_csv('csvs/access_rules.csv', ACCESSRULESTABLE)
+            access_rule_csv =read_csv('csvs/access_rules.csv', [])
+            # convert it into seperate rows for [] of roles
+            for rule in access_rule_csv:
+                rule[2] = (re.sub(r'[{}]','',rule[2])).split(',')
+                for user_role in rule[2]:
+                    user_role = (re.sub(r'["\']','',user_role)).strip()
+                    print("user role : ", user_role)
+                    ACCESSRULESTABLE.append([rule[0],rule[1],user_role])
             update_access = {
-                'columns':[0,1],
-                'fieldDict':[RESOURCE_TYPE_DICT,PERMISSION_DICT],
-                'fieldNames':['resource_type_id','permission_id'],
+                'columns':[0,1,2],
+                'fieldDict':[RESOURCE_TYPE_DICT,PERMISSION_DICT, ROLES_DICT],
+                'fieldNames':['resource_type_id','permission_id','role_id'],
             }
             csv_table_modified_access = update_csv_row_with_custom_fieldvalue_convert_to_tupple\
                 (ACCESSRULESTABLE, update_access)
-
             # insert converted tuple to DB
             insert_sql_access = "INSERT INTO public.access_rules \
-                (entitlement_id, tag_id, roles) VALUES %s"
+                (entitlement_id, tag_id, role_id) VALUES %s"
             execute_values(cursor, insert_sql_access, csv_table_modified_access)
             conn.commit()
             print("Uploaded Access Rule CSV to DB ====>")
