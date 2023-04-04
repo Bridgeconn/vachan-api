@@ -502,9 +502,10 @@ async def get_glossary_entries(request: Request,
         source_language, target_language, token)
     response = nlp_crud.get_glossary_list(db_, source_language, target_language, token,
     skip=skip, limit=limit)
-    return response['gloss_entries']
+    return response['token_translation_count']
 
-@router.get('/v2/nlp/gloss-count',
+@router.get('/v2/nlp/gloss-entries/count',
+    response_model= dict,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
     404:{"model": schemas.ErrorResponse},}, status_code=200, tags=["Nlp"])
@@ -517,16 +518,16 @@ async def get_gloss_count(request: Request,
     '''Counts all glossary entries in translation memory between two languages.
         * Also counts unique tokens in translation memory
    `    * Can filter with or without search word/token
-        * Source anf target language should be specified
-        * "gloss_entries" in response gives the count of total glossary records
-        * "token_count" in response gives the count of unique tokens'''
+        * Source and target language should be specified
+        * "token_translation_count" in response counts different
+            translations of same word as different.
+        * "token_count" in response doesn't consider the multiple translations
+            but give the count of unique source tokens.'''
     log.info('In get_glossary_count')
     log.debug('source_language:%s, target_language:%s, token:%s',
         source_language, target_language, token)
     response = nlp_crud.get_glossary_list(db_, source_language, target_language, token)
-    # return f"Count of total glossary records is {len(response['gloss_entries'])} and \
-    #     Count of tokens is {len(response['token_list'])}"
-    response['gloss_entries'] = len(response['gloss_entries'])
+    response['token_translation_count'] = len(response['token_translation_count'])
     response['token_count'] = len(response['token_count'])
     return response
 

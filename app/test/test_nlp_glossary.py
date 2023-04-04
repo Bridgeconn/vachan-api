@@ -10,7 +10,7 @@ trg_lang = "aa"
 
 POST_URL = '/v2/nlp/learn/gloss'
 GET_LIST_URL = "/v2/nlp/gloss-entries"
-GET_COUNT_URL = '/v2/nlp/gloss-count'
+GET_COUNT_URL = '/v2/nlp/gloss-entries/count'
 
 gloss_data = [
     {"token":"love", "translations":["love"]},
@@ -82,8 +82,6 @@ def test_get_gloss_count():
 
     GET_URL = GET_COUNT_URL+f"?source_language={src_lang}&target_language={trg_lang}"
 
-    
-
     # Without authentication - Negative Test
     headers = {"contentType": "application/json", "accept": "application/json"}
     resp = client.get(GET_URL, headers=headers)
@@ -102,18 +100,23 @@ def test_get_gloss_count():
         assert response.status_code == 200
         assert isinstance(response.json(), dict)
         assert len(response.json()) == 2
-        assert "gloss_entries" in response.json()
+        assert "token_translation_count" in response.json()
         assert "token_count" in response.json()
+        assert response.json()['token_translation_count'] == 6
+        assert response.json()['token_count'] == 4
 
     # With filter for token - Positive Test
     resp = client.get(GET_URL+"&token=love", headers=headers_auth)
     assert resp.status_code == 200
-    assert resp.json()['gloss_entries'] == 2
+    assert resp.json()['token_translation_count'] == 2
+    # Validate token_count
+    assert resp.json()['token_count'] == 1
 
     # With notavailable token - Negative Test
     resp = client.get(GET_URL+"&token=ttt", headers=headers_auth)
     assert resp.status_code == 200
-    assert resp.json()['gloss_entries'] == 0
+    assert resp.json()['token_translation_count'] == 0
+    assert resp.json()['token_count'] == 0
 
     # With notavailable source language - Negative Test
     GET_URL = GET_COUNT_URL+f"?source_language=x-ttt&target_language={trg_lang}"

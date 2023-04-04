@@ -122,7 +122,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/translation/draft,PUT,None,False,None,process
 /v2/nlp/gloss,GET,None,False,None,read
 /v2/nlp/gloss-entries,GET,None,False,None,read
-/v2/nlp/gloss-count,GET,None,False,None,read
+/v2/nlp/gloss-entries/count,GET,None,False,None,read
 /v2/nlp/learn/gloss,POST,None,False,None,create
 /v2/nlp/gloss,DELETE,None,False,None,delete
 /v2/nlp/learn/alignment,POST,None,False,None,create

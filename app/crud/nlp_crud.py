@@ -748,16 +748,16 @@ def get_glossary_list(db_: Session, source_language, target_language, token, **k
     query = query.filter(db_models.TranslationMemory.target_lang_id == target.languageId)
     if token is not None:
         query = query.filter(db_models.TranslationMemory.token == token.lower())
+        token_list = [item for item in token_list if token in item]
     if skip is not None:
         query = query.offset(skip)
     if limit is not None:
         query = query.limit(limit)
     response =  {
-        'gloss_entries': query.all(),
+        'token_translation_count': query.all(),
         'token_count': token_list
             }
     return response
-
 
 def auto_translate_token_logic(db_,tokens, sent, source_lang, target_lang):
     """auto translate token loop"""
