@@ -1,6 +1,5 @@
 ''' Place to define all data processing and Database CRUD operations
 related to NLP operations and translation apps'''
-
 import re
 import os
 import json
@@ -11,7 +10,7 @@ from pathlib import Path
 import pygtrie
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
-from sqlalchemy.sql import text
+from sqlalchemy.sql import text,func
 from crud import utils, projects_crud
 from crud import nlp_tokenization as nlp_utils
 import db_models
@@ -134,12 +133,10 @@ def replace_bulk_tokens(db_, sentence_list, token_translations, src_code, trg_co
     if not source:
         raise NotAvailableException(f"Language, {trg_code}, not in DB. Please create if required")
     updated_sentences = {sent.sentenceId:sent for sent in sentence_list}
-
     #get gloss list
     gloss_list = replace_bulk_tokens_gloss_list(token_translations, updated_sentences)
     if use_data:
         add_to_translation_memory(db_, source, target, gloss_list)
-
     result = [updated_sentences[key] for key in updated_sentences]
     return result
 
@@ -709,7 +706,6 @@ def get_gloss(db_:Session, *args, **kwargs):#pylint: disable=too-many-locals,too
     #get gloss chop word
     result = get_gloss_chop_word(db_, no_trie_match,
         trans, matched_word, total, word, pass_no, source_lang, target_lang)
-
     # check for metadata
     metadata_query = db_.query(db_models.TranslationMemory.metaData).filter(
         db_models.TranslationMemory.token == word,
@@ -737,6 +733,8 @@ def get_glossary_list(db_: Session, source_language, target_language, token, **k
     '''Get the list of all matching items in translation memory. Not content aware'''
     skip = kwargs.get("skip", 0)
     limit = kwargs.get("limit", 100)
+    token_list = db_.query(db_models.TranslationMemory.token,func.count(
+            db_models.TranslationMemory.token)).group_by(db_models.TranslationMemory.token).all()
     query = db_.query(db_models.TranslationMemory)
     source = db_.query(db_models.Language).filter(db_models.Language.code == source_language
         ).first()
@@ -750,12 +748,16 @@ def get_glossary_list(db_: Session, source_language, target_language, token, **k
     query = query.filter(db_models.TranslationMemory.target_lang_id == target.languageId)
     if token is not None:
         query = query.filter(db_models.TranslationMemory.token == token.lower())
+        token_list = [item for item in token_list if token in item]
     if skip is not None:
         query = query.offset(skip)
     if limit is not None:
         query = query.limit(limit)
-    return query.all()
-
+    response =  {
+        'token_translation_count': query.all(),
+        'token_count': token_list
+            }
+    return response
 
 def auto_translate_token_logic(db_,tokens, sent, source_lang, target_lang):
     """auto translate token loop"""
@@ -848,7 +850,6 @@ def remove_glossary(db_, source_lang,target_lang, token,translation):
             db_models.Language.code == target_lang).first()
         if not target_lang:
             raise NotAvailableException("Target language not available")
-
     token_row = db_.query(db_models.TranslationMemory).filter(
             db_models.TranslationMemory.source_lang_id == source_lang.languageId,
             db_models.TranslationMemory.target_lang_id == target_lang.languageId,

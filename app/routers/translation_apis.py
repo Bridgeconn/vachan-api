@@ -500,8 +500,37 @@ async def get_glossary_entries(request: Request,
     log.info('In get_glossary_entries')
     log.debug('source_language:%s, target_language:%s, token:%s',
         source_language, target_language, token)
-    return nlp_crud.get_glossary_list(db_, source_language, target_language, token,
+    response = nlp_crud.get_glossary_list(db_, source_language, target_language, token,
     skip=skip, limit=limit)
+    print("response['token_translation_count']:",response['token_translation_count'])
+    return response['token_translation_count']
+
+@router.get('/v2/nlp/gloss-entries/count',
+    response_model= schemas_nlp.GlossCount,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
+    404:{"model": schemas.ErrorResponse},}, status_code=200, tags=["Nlp"])
+@get_auth_access_check_decorator
+async def get_gloss_count(request: Request,
+    source_language:schemas.LangCodePattern=Query(...,example="en"),
+    target_language:schemas.LangCodePattern=Query(...,example="hi"),
+    token:str=Query(None,example="love"),
+    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
+    '''Counts all glossary entries in translation memory between two languages.
+        * Also counts unique tokens in translation memory
+   `    * Can filter with or without search word/token
+        * Source and target language should be specified
+        * "tokenTranslationCount" in response counts different
+            translations of same word as different.
+        * "tokenCount" in response doesn't consider the multiple translations
+            but give the count of unique source tokens.'''
+    log.info('In get_glossary_count')
+    log.debug('source_language:%s, target_language:%s, token:%s',
+        source_language, target_language, token)
+    response = nlp_crud.get_glossary_list(db_, source_language, target_language, token)
+    response['tokenTranslationCount'] = len(response['token_translation_count'])
+    response['tokenCount'] = len(response['token_count'])
+    return response
 
 @router.post('/v2/nlp/learn/gloss', response_model=schemas_nlp.GlossUpdateResponse,
     status_code=201,responses={502: {"model": schemas.ErrorResponse},

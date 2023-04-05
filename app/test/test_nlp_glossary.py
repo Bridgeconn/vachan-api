@@ -10,6 +10,7 @@ trg_lang = "aa"
 
 POST_URL = '/v2/nlp/learn/gloss'
 GET_LIST_URL = "/v2/nlp/gloss-entries"
+GET_COUNT_URL = '/v2/nlp/gloss-entries/count'
 
 gloss_data = [
     {"token":"love", "translations":["love"]},
@@ -69,3 +70,62 @@ def test_get_gloss_entries():
     assert len(resp.json()) == 2
     for item in resp.json():
         assert item['token'] == "love"
+
+def test_get_gloss_count():
+    '''Test cases to count all glossary records and count unique tokens in translation memory'''
+    headers_auth = {"contentType": "application/json",
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+initial_test_users['APIUser']['token']
+            }
+    # upload data before GET call
+    check_post(src_lang, trg_lang, gloss_data, headers_auth)
+
+    GET_URL = GET_COUNT_URL+f"?source_language={src_lang}&target_language={trg_lang}"
+
+    # Without authentication - Negative Test
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    resp = client.get(GET_URL, headers=headers)
+    assert resp.status_code == 401
+    assert resp.json()['error'] == 'Authentication Error'
+
+    # With all registered users - Positive Test
+    for user in ['APIUser', 'APIUser2', "BcsDev", "AgAdmin", "AgUser", "VachanUser", "VachanAdmin"]:
+        headers_auth = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
+                }
+
+        # Without filter of token - Positive Test
+        response = client.get(GET_URL,headers=headers_auth)
+        assert response.status_code == 200
+        assert isinstance(response.json(), dict)
+        assert len(response.json()) == 2
+        assert "tokenTranslationCount" in response.json()
+        assert "tokenCount" in response.json()
+        assert response.json()['tokenTranslationCount'] == 6
+        assert response.json()['tokenCount'] == 4
+
+    # With filter for token - Positive Test
+    resp = client.get(GET_URL+"&token=love", headers=headers_auth)
+    assert resp.status_code == 200
+    assert resp.json()['tokenTranslationCount'] == 2
+    # Validate tokenCount
+    assert resp.json()['tokenCount'] == 1
+
+    # With notavailable token - Negative Test
+    resp = client.get(GET_URL+"&token=ttt", headers=headers_auth)
+    assert resp.status_code == 200
+    assert resp.json()['tokenTranslationCount'] == 0
+    assert resp.json()['tokenCount'] == 0
+
+    # With notavailable source language - Negative Test
+    GET_URL = GET_COUNT_URL+f"?source_language=x-ttt&target_language={trg_lang}"
+    resp = client.get(GET_URL,headers=headers_auth)
+    assert resp.status_code == 404
+    assert resp.json()['error'] == 'Requested Content Not Available'
+
+    # With notavailable target language - Negative Test
+    GET_URL = GET_COUNT_URL+f"?source_language={src_lang}&target_language=x-ttt"
+    resp = client.get(GET_URL,headers=headers_auth)
+    assert resp.status_code == 404
+    assert resp.json()['error'] == 'Requested Content Not Available'
