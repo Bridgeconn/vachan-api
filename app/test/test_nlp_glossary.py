@@ -100,23 +100,23 @@ def test_get_gloss_count():
         assert response.status_code == 200
         assert isinstance(response.json(), dict)
         assert len(response.json()) == 2
-        assert "token_translation_count" in response.json()
-        assert "token_count" in response.json()
-        assert response.json()['token_translation_count'] == 6
-        assert response.json()['token_count'] == 4
+        assert "tokenTranslationCount" in response.json()
+        assert "tokenCount" in response.json()
+        assert response.json()['tokenTranslationCount'] == 6
+        assert response.json()['tokenCount'] == 4
 
     # With filter for token - Positive Test
     resp = client.get(GET_URL+"&token=love", headers=headers_auth)
     assert resp.status_code == 200
-    assert resp.json()['token_translation_count'] == 2
-    # Validate token_count
-    assert resp.json()['token_count'] == 1
+    assert resp.json()['tokenTranslationCount'] == 2
+    # Validate tokenCount
+    assert resp.json()['tokenCount'] == 1
 
     # With notavailable token - Negative Test
     resp = client.get(GET_URL+"&token=ttt", headers=headers_auth)
     assert resp.status_code == 200
-    assert resp.json()['token_translation_count'] == 0
-    assert resp.json()['token_count'] == 0
+    assert resp.json()['tokenTranslationCount'] == 0
+    assert resp.json()['tokenCount'] == 0
 
     # With notavailable source language - Negative Test
     GET_URL = GET_COUNT_URL+f"?source_language=x-ttt&target_language={trg_lang}"
