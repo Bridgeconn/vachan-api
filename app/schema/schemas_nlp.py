@@ -220,14 +220,14 @@ class GlossInput(BaseModel):
     '''Import object for glossary(dictionary) data for learning'''
     token: str = Field(..., example="love")
     translations: List[str] = Field(None, example=['प्यार', "प्रेम", "प्रेम करना"])
-    tokenMetaData: dict = Field(None, example={"word-class":["noun", "verb"]})
+    tokenMetaData: dict =Field(None, example={"translations":"प्रेम","word-class":["noun", "verb"]})
 
 class GlossOutput(BaseModel):
     '''Output object for translation memory or gloss'''
     token: str = Field(..., example="love")
     translations: dict = Field(None, example={'प्यार':3, "प्रेम":1.2,
         "प्रेम करना":0})
-    metaData: dict = Field(None, example={"word-class":["noun", "verb"]})
+    metaData: dict = Field(None, example={"translations":"प्रेम","word-class":["noun", "verb"]})
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''

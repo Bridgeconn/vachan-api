@@ -481,20 +481,24 @@ def rebuild_trie(db_, src, trg):
             json_data = json.load(json_file)
             for key in json_data:
                 new_trie[key] = json_data[key]
-    # display_tree(new_trie)
     return new_trie
 
-def add_metadata_to_first_occurance(db_, gloss, source_lang, target_lang, *args):
-    """Always add meta data to the first occurance of a source token only'''"""
+def add_metadata(db_, gloss, source_lang, target_lang, *args):
+    """Always add meta data to the respective token-translation pair"""
     recieved_args = args[0]
     db_content = args[1]
     if 'tokenMetaData' in gloss and gloss['tokenMetaData'] is not None:
-        # Always add meta data to the first occurance of a source token only'''
-        token_row = db_.query(db_models.TranslationMemory).filter(
+        query_filter = db_.query(db_models.TranslationMemory).filter(
             db_models.TranslationMemory.source_lang_id == source_lang.languageId,
             db_models.TranslationMemory.target_lang_id == target_lang.languageId,
             db_models.TranslationMemory.token == gloss['token']).order_by(
-            db_models.TranslationMemory.tokenId.asc()).first()
+            db_models.TranslationMemory.tokenId.asc())
+        if 'translations'in gloss['tokenMetaData']:
+            token_row = query_filter.filter(
+                db_models.TranslationMemory.translation ==
+                    gloss['tokenMetaData']['translations']).first()
+        else:
+            token_row = query_filter.first()
         if token_row:
             if not token_row.metaData:
                 token_row.metaData = {}
@@ -546,9 +550,8 @@ def add_translation_memory_gloss_dataprocess(db_, gloss_list, source_lang,
                 db_.add(token_row)
                 db_content.append(token_row)
         db_.flush()
-
-        #add meta data to the first occurance of a source token only
-        db_content =  add_metadata_to_first_occurance(db_, gloss, source_lang,
+        #add meta data to the respective translation
+        db_content =  add_metadata(db_, gloss, source_lang,
             target_lang, args, db_content)
     db_.commit()
     return db_content
@@ -816,9 +819,6 @@ def project_suggest_translations(db_:Session, project_id, books, sentence_id_ran
                 if meta[2] == "suggestion":
                     row.draftMeta[i][2] = "confirmed"
                     flag_modified(row, 'draftMeta')
-        # db_.add_all(draft_rows)
-        # db_.commit()
-        # return draft_rows
         updated_drafts = draft_rows
     else:
         args = {"db_":db_, "sentence_list":draft_rows,
@@ -830,8 +830,6 @@ def project_suggest_translations(db_:Session, project_id, books, sentence_id_ran
             args['punctuations'] = project_row.metaData['punctuations']
         updated_drafts = auto_translate(**args)
         db_.add_all(updated_drafts)
-        # db_.commit()
-        # return updated_drafts
     response = {
         'db_content':updated_drafts,
         'project_content':project_row

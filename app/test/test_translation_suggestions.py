@@ -68,7 +68,6 @@ def test_learn_n_suggest():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
     response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
         headers=headers, json=tokens_trans)
-    print("res===>",response.json())
     assert response.json()['error'] == "Authentication Error"
     assert response.status_code == 401
     #with auth
@@ -86,11 +85,11 @@ def test_learn_n_suggest():
     #with auth another registered user
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
     token_response = client.put(UNIT_URL+'/tokens?source_language=en&target_language=ml',
-        headers=headers_auth, json={"sentence_list":sentence_list})    
+        headers=headers_auth, json={"sentence_list":sentence_list})
     assert token_response.status_code == 200
     assert len(token_response.json()) >10
     found_testcase = False
-    found_tested = False 
+    found_tested = False
     for item in token_response.json():
         if item['token'] == "tested":
             assert "ടെസ്റ്റഡ്" in item['translations']
@@ -214,7 +213,6 @@ def test_learn_n_suggest():
     assert_positive_get_suggetion(response.json())
     found_sense1 = False
     found_sense2 = False
-    print(response.json())
     for item in response.json()['translations']:
         if item == sense1:
             found_sense1 = True
@@ -305,6 +303,46 @@ def test_bug_fix():
     assert response.json()["token"] == "अब्राहम की"
     assert list(response.json()["translations"].keys())[0] == "Abraham's".lower()
     assert response.json()["metaData"]["for"] == "अब्राहम की"
+
+def test_add_metadata_to_same_gloss():
+    '''testing metadata is added to the same token-translation pair'''
+    tokens_test = [
+        {"token":"test", "translations":["ടെസ്റ്റ്"],"tokenMetaData":{"translations":"ടെസ്റ്റ്","tense": "present"}},
+        {"token":"tested", "translations":["ടെസ്റ്റഡ്", "ടെസ്റ്റ് ചെയ്തു"],"tokenMetaData":{"translations":"ടെസ്റ്റ് ചെയ്തു","tense": "past"}}
+    ]
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
+    response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
+        headers=headers_auth, json=tokens_test)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Added to glossary"    
+
+    response = \
+        client.get(NLP_UNIT_URL+'/gloss-entries?source_language=en&target_language=ml&token=tested',
+        headers=headers_auth)
+    assert response.status_code ==200
+
+    # Ensuring metadata is added to the correct token-translation pair - positive test
+    assert response.json()[1]["token"] == "tested"
+    assert response.json()[1]["translation"] == "ടെസ്റ്റ് ചെയ്തു"
+    assert response.json()[1]["metaData"]["translations"] == "ടെസ്റ്റ് ചെയ്തു"
+    assert response.json()[1]["metaData"]["tense"] == "past"
+
+    # Ensuring metadata is not added to incorrect token-translation pair - negative test
+    assert response.json()[0]["token"] == "tested"
+    assert response.json()[0]["translation"] == "ടെസ്റ്റഡ്"
+    assert response.json()[0]["metaData"]  is None
+
+    #Tesing with metadata in different token-translation pair - Negative test
+    assert not response.json()[1]["metaData"]["tense"] == "present"
+
+    #Adding metadata in incorrect format
+    tokens_test = [
+    {"token":"test", "translations":["ടെസ്റ്റ്"],"tokenMetaData":"translations"}
+    ]
+    response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
+        headers=headers_auth, json=tokens_test)
+    assert response.status_code == 422
+    assert response.json()['error'] == "Input Validation Error"  
 
 def test_delete_glossary():
     '''Test the removal of a suggestion/glossary'''

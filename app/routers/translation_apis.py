@@ -502,7 +502,6 @@ async def get_glossary_entries(request: Request,
         source_language, target_language, token)
     response = nlp_crud.get_glossary_list(db_, source_language, target_language, token,
     skip=skip, limit=limit)
-    print("response['token_translation_count']:",response['token_translation_count'])
     return response['token_translation_count']
 
 @router.get('/v2/nlp/gloss-entries/count',
