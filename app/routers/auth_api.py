@@ -392,8 +392,6 @@ db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     log.info('In create Access Rules')
     log.debug('Access rule  Create In:%s',details)
     data = create_access_rules(db_, details, user_id = user_details['user_id'])
-    print("returned data ------------->", data)
-    print("returned data json -======->", data.__dict__)
     return {'message': "Access rule created successfully",
             "data": data}
 

@@ -1,8 +1,8 @@
 """ script for create and seed db for vachan engine """
 import os
 import csv
-import psycopg2
 import re
+import psycopg2
 from psycopg2.extras import execute_values
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
@@ -156,7 +156,7 @@ def seed_data_to_created_tables_no_fk(cursor,conn, csv_dict):
         # print("Error in seed csv to dbs from dict : ", err)
         raise err
 
-#pylint: disable=too-many-locals
+#pylint: disable=too-many-locals, too-many-statements
 def create_database_and_seed():
     """create and seed database"""
     try:
@@ -210,7 +210,8 @@ def create_database_and_seed():
             cursor.execute(query=qry)
             role_data = cursor.fetchall()
             role_heads = cursor.description
-            ROLES_DICT= db_real_dict_cursor_to_dict_with_custom_key(role_data, 'role_name', role_heads)
+            ROLES_DICT= db_real_dict_cursor_to_dict_with_custom_key\
+                (role_data, 'role_name', role_heads)
 
             # Upload Access Rules CSV to DB with ID as FK
             access_rule_csv =read_csv('csvs/access_rules.csv', [])
@@ -219,7 +220,6 @@ def create_database_and_seed():
                 rule[2] = (re.sub(r'[{}]','',rule[2])).split(',')
                 for user_role in rule[2]:
                     user_role = (re.sub(r'["\']','',user_role)).strip()
-                    print("user role : ", user_role)
                     ACCESSRULESTABLE.append([rule[0],rule[1],user_role])
             update_access = {
                 'columns':[0,1,2],

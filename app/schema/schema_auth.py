@@ -1,6 +1,6 @@
 """schema for auth related"""
-from pydantic import BaseModel, validator
-from pydantic import types, EmailStr
+from pydantic import BaseModel, validator, types, EmailStr, Field
+from typing import List
 
 #pylint: disable=too-few-public-methods
 
@@ -189,7 +189,7 @@ class RoleOut(BaseModel):
     '''Return object of roles output'''
     roleId : int
     roleName : str
-    roleOfApp : str
+    roleOfApp : str = None
     roleDescription : str = None
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
@@ -315,7 +315,7 @@ class AccessRuleUpdateInput(BaseModel):
     ruleId:int
     entitlement:str =None
     tag:str = None
-    roles:list[str] =None
+    roles:List[str] =None
     class Config:
         '''display example value in API documentation'''
         schema_extra = {
@@ -331,7 +331,7 @@ class AccessRulesOut(BaseModel):
     ruleId:int
     entitlement:ResourceOut = None
     tag:PermissionOut = None
-    roles:list[str]
+    role:RoleOut = None
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
@@ -342,11 +342,11 @@ class AccessRulesOut(BaseModel):
                 "ruleId": 100057,
                 "entitlement": {},
                 "tag": {},
-                "roles":['manager','employee']
+                "roles":{}
             }
         }
 
 class AccessRulesResponse(BaseModel):
     """Response object of AccessRules creation"""
-    message:str
-    data:AccessRulesOut
+    message:str = Field(..., example="Access rule created successfully")
+    data:List[AccessRulesOut] = None
