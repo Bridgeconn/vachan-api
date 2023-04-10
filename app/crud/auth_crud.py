@@ -5,7 +5,8 @@ from sqlalchemy import func
 from sqlalchemy.sql import text
 import db_models
 from custom_exceptions import NotAvailableException
-from auth.auth_globals import generate_roles, APPS
+from auth.auth_globals import generate_roles, APPS, generate_access_rules_dict
+from schema import schema_auth
 
 def get_auth_permission(db_: Session, permission_name=None, permission_id=None, **kwargs):
     '''get rows from auth permission table'''
@@ -99,4 +100,42 @@ def update_role(db_: Session, role_details, user_id=None):
         'db_content':db_content,
         'refresh_auth_func':generate_roles
         }
+    return response
+
+
+def create_access_rules(db_: Session, details: schema_auth.AccessRuleCreateInput, user_id= None):
+    '''Add a row to access rule table'''
+    entitlement = db_.query(db_models.ResourceTypes).filter(
+        func.lower(db_models.ResourceTypes.resourceTypeName) ==\
+            func.lower(details.entitlement.strip())).first()
+    if not entitlement:
+        raise NotAvailableException(f"entitlement, {details.entitlement.strip()},"+\
+            " not found in Database")
+    tag = db_.query(db_models.Permissions).filter(
+        func.lower(db_models.Permissions.permissionName) == \
+            func.lower(details.tag.strip())).first()
+    if not tag:
+        raise NotAvailableException(f"tag, {details.tag.strip()},"+\
+            " not found in Database")
+    db_rules_list = []
+    for role in details.roles:
+        db_role = db_.query(db_models.Roles).filter(
+            func.lower(db_models.Roles.roleName) == func.lower(role.strip())).first()
+        if not db_role:
+            raise NotAvailableException(f"role, {role.strip()},"+\
+                " not found in Database")
+        db_rules_list.append(
+            db_models.AccessRules(
+                entitlementId=entitlement.resourceTypeId,
+                tagId=tag.permissionId,
+                roleId=db_role.roleId,
+                createdUser= user_id,
+                updatedUser=user_id,
+                active=True)
+        )
+    db_.add_all(db_rules_list)
+    response = {
+        'db_content':db_rules_list,
+        'refresh_auth_func':generate_access_rules_dict
+    }
     return response

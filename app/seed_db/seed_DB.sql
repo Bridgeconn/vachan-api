@@ -10,7 +10,7 @@ INSERT INTO content_types(content_type) VALUES('commentary');
 INSERT INTO content_types(content_type) VALUES('dictionary');
 INSERT INTO content_types(content_type) VALUES('infographic');
 INSERT INTO content_types(content_type) VALUES('biblevideo');
-INSERT INTO content_types(content_type) VALUES('gitlabrepo'); 
+INSERT INTO content_types(content_type) VALUES('gitlabrepo');
 
 CREATE TABLE public.languages (
     language_id SERIAL PRIMARY KEY,
@@ -206,6 +206,12 @@ INSERT INTO roles(role_name) VALUES('AgUser');
 INSERT INTO roles(role_name) VALUES('VachanUser');
 INSERT INTO roles(role_name) VALUES('APIUser');
 INSERT INTO roles(role_name) VALUES('BcsDeveloper');
+INSERT INTO roles(role_name) VALUES('registeredUser');
+INSERT INTO roles(role_name) VALUES('resourceCreatedUser');
+INSERT INTO roles(role_name) VALUES('noAuthRequired');
+INSERT INTO roles(role_name) VALUES('projectOwner');
+INSERT INTO roles(role_name) VALUES('projectMember');
+INSERT INTO roles(role_name) VALUES('createdUser');
 
 CREATE TABLE public.resource_types (
     resource_type_id SERIAL PRIMARY KEY,
@@ -260,15 +266,16 @@ CREATE TABLE public.access_rules (
     rule_id SERIAL PRIMARY KEY,
     entitlement_id int NOT NULL,
     tag_id int NOT NULL,
-    roles text[],
+    role_id int NOT NULL,
     created_at timestamp with time zone DEFAULT NOW(),
     created_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
     last_updated_user text NULL,
     active boolean DEFAULT true NOT NULL,
-    UNIQUE(rule_id),
+    UNIQUE(entitlement_id, tag_id, role_id),
     CONSTRAINT fk_entitlement FOREIGN KEY(entitlement_id) REFERENCES public.resource_types(resource_type_id),
-    CONSTRAINT fk_tag FOREIGN KEY(tag_id) REFERENCES public.permissions(permission_id)
+    CONSTRAINT fk_tag FOREIGN KEY(tag_id) REFERENCES public.permissions(permission_id),
+    CONSTRAINT fk_role FOREIGN KEY(role_id) REFERENCES public.roles(role_id)
 );
 
 ALTER SEQUENCE public.access_rules_rule_id_seq RESTART WITH 100000;

@@ -48,13 +48,18 @@ def generate_access_rules_dict():
         ACCESS_RULES.clear()
         db_access_rule = db_instance.query(db_models.AccessRules).all()
         for rules_row in db_access_rule:
-            ACCESS_RULES[rules_row.entitlement.resourceTypeName]\
-                [rules_row.tag.permissionName]= rules_row.roles
+            if(rules_row.entitlement.resourceTypeName in ACCESS_RULES and \
+               rules_row.tag.permissionName in \
+                ACCESS_RULES[rules_row.entitlement.resourceTypeName]):
+                ACCESS_RULES[rules_row.entitlement.resourceTypeName]\
+                [rules_row.tag.permissionName].append(rules_row.role.roleName)
+            else:
+                ACCESS_RULES[rules_row.entitlement.resourceTypeName]\
+                    [rules_row.tag.permissionName]= [rules_row.role.roleName]
         print("access rules : ", len(ACCESS_RULES))
-        # print(ACCESS_RULES)
         return ACCESS_RULES
     except Exception as err:
-        # print("Error Generating Access Rules from DB :", e)
+        print("Error Generating Access Rules from DB :", err)
         log.error("Error Generating Access Rules from DB:%s", err)
     finally:
         db_instance.close()

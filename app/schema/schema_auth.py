@@ -1,6 +1,6 @@
 """schema for auth related"""
-from pydantic import BaseModel, validator
-from pydantic import types, EmailStr
+from pydantic import BaseModel, validator, types, EmailStr, Field
+from typing import List
 
 #pylint: disable=too-few-public-methods
 
@@ -189,7 +189,7 @@ class RoleOut(BaseModel):
     '''Return object of roles output'''
     roleId : int
     roleName : str
-    roleOfApp : str
+    roleOfApp : str = None
     roleDescription : str = None
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
@@ -275,3 +275,78 @@ class PermissionUpdateInput(BaseModel):
                 "permissionDescription": "Permission to make POST calls\
                      making new entries to server DB"
     }}
+
+
+class ResourceOut(BaseModel):
+    """auth resource output object"""
+    resourceTypeId:int
+    resourceTypeName:str
+    resourceTypeDescription:str = None
+    class Config:
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "resourceTypeId": 100057,
+                "resourceTypeName": "content",
+                "resourceTypeDescription": "resource types"
+            }
+        }
+
+
+class AccessRuleCreateInput(BaseModel):
+    """auth AccessRule crearte input"""
+    entitlement:str
+    tag:str
+    roles:list[str]
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "entitlement": "content",
+                "tag": "create",
+                "roles":["registeredUser"]
+            }}
+
+class AccessRuleUpdateInput(BaseModel):
+    """auth AccessRule update input"""
+    ruleId:int
+    entitlement:str =None
+    tag:str = None
+    roles:List[str] =None
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "entitlement": "content",
+                "tag": "create",
+                "roles":["registeredUser"]
+            }}
+
+
+class AccessRulesOut(BaseModel):
+    """auth Access Rules output object"""
+    ruleId:int
+    entitlement:ResourceOut = None
+    tag:PermissionOut = None
+    role:RoleOut = None
+    class Config:
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "ruleId": 100057,
+                "entitlement": {},
+                "tag": {},
+                "roles":{}
+            }
+        }
+
+class AccessRulesResponse(BaseModel):
+    """Response object of AccessRules creation"""
+    message:str = Field(..., example="Access rule created successfully")
+    data:List[AccessRulesOut] = None
