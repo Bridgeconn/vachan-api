@@ -219,15 +219,14 @@ class Alignment(BaseModel):
 class GlossInput(BaseModel):
     '''Import object for glossary(dictionary) data for learning'''
     token: str = Field(..., example="love")
-    translations: List[str] = Field(None, example=['प्यार', "प्रेम", "प्रेम करना"])
-    tokenMetaData: dict =Field(None, example={"translations":"प्रेम","word-class":["noun", "verb"]})
+    translations: List[str] = Field(None, example=['प्यार'])
+    metaData: dict =Field(None, example={"word-class":"noun"})
 
 class GlossOutput(BaseModel):
     '''Output object for translation memory or gloss'''
     token: str = Field(..., example="love")
-    translations: dict = Field(None, example={'प्यार':3, "प्रेम":1.2,
-        "प्रेम करना":0})
-    metaData: dict = Field(None, example={"translations":"प्रेम","word-class":["noun", "verb"]})
+    translations: dict = Field(None, example={'प्यार':3})
+    metaData: dict = Field(None, example={"word-class":["noun"]})
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
@@ -238,7 +237,8 @@ class TranslationMemoryOut(BaseModel):
     token: str = Field(..., example="love")
     translation: str = Field(..., example="प्यार")
     frequency: int = Field(None)
-    metaData: dict = Field(None, example={"word-class":["noun", "verb"]})
+    metaData: dict = Field(None, example={"word-class":["noun"]})
+
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''

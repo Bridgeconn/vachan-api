@@ -306,8 +306,8 @@ class GlossInput(graphene.InputObjectType):
     '''Import object for glossary(dictionary) data for learning'''
     token = graphene.String(description='example="love"', required=True)
     translations = graphene.List(graphene.String,
-        description="example=['प्यार', 'प्रेम', 'प्रेम करना']")
-    tokenMetaData = graphene.JSONString(description='example={"word-class":["noun", "verb"]}')
+        description="example=['प्यार']")
+    metaData = graphene.JSONString(description='example={"word-class":"noun"}')
 
 class TokenOccurenceInput(graphene.InputObjectType):
     '''Object for token occurence'''
