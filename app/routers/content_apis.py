@@ -112,7 +112,7 @@ async def get_language(request: Request,
 @get_auth_access_check_decorator
 async def add_language(request: Request, lang_obj : schemas.LanguageCreate = Body(...),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
-    ''' Creates a new language. Langugage code should of 3 letters which uniquely identifies it.'''
+    ''' Creates a new language. Langugage code should follow BCP-47 standard.'''
     log.info('In add_language')
     log.debug('lang_obj: %s',lang_obj)
     if len(structurals_crud.get_languages(db_, language_code = lang_obj.code)) > 0:

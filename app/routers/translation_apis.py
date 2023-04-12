@@ -102,7 +102,7 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}, 403:{"model": schemas.ErrorResponse}},
-    tags=['Autographa-Project management'])
+    tags=['Translation-Project management'])
 @get_auth_access_check_decorator
 async def remove_project(request: Request,project_id:int,
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
@@ -151,7 +151,7 @@ async def update_user(request: Request,user_obj:schemas_nlp.ProjectUser,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}, 403:{"model": schemas.ErrorResponse}},
-    tags=['Autographa-Project management'])
+    tags=['Translation-Project management'])
 @get_auth_access_check_decorator
 async def remove_user(request: Request,project_id:int, user_id:str,
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
@@ -311,7 +311,7 @@ async def get_project_source(request: Request,project_id:int=Query(...,example="
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}, 403:{"model": schemas.ErrorResponse}},
-    tags=['Autographa-Translation'])
+    tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
 async def remove_sentence(request: Request,project_id:int=Query(...,example="1022004"),
     sentence_id:int=Query(...,example="41001001"),
@@ -502,7 +502,6 @@ async def get_glossary_entries(request: Request,
         source_language, target_language, token)
     response = nlp_crud.get_glossary_list(db_, source_language, target_language, token,
     skip=skip, limit=limit)
-    print("response['token_translation_count']:",response['token_translation_count'])
     return response['token_translation_count']
 
 @router.get('/v2/nlp/gloss-entries/count',

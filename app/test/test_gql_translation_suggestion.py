@@ -32,7 +32,7 @@ tokens_trans = [
     {"token":"run", "translations":["റണ്‍"]},
     {"token":"pass", "translations":["പാസ്സ്"]},
     {"token":"tested", "translations":["ടെസ്റ്റഡ്", "ടെസ്റ്റ് ചെയ്തു"],
-        "tokenMetaData":"{\"tense\":\"past\"}"}
+        "metaData":"{\"tense\":\"past\"}"}
 ]
 
 Add_Gloss = """
