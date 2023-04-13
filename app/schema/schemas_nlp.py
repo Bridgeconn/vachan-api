@@ -234,7 +234,7 @@ class GlossOutput(BaseModel):
 
 class TranslationMemoryOut(BaseModel):
     '''Output object to directly examine Translation memory entries'''
-    tokenId: int = Field(..., example= 100000)
+    tmID: int = Field(..., example= 100000)
     token: str = Field(..., example="love")
     translation: str = Field(..., example="प्यार")
     frequency: int = Field(None)
@@ -247,7 +247,7 @@ class TranslationMemoryOut(BaseModel):
 
 class TranslationMemoryUpdate(BaseModel):
     '''Translation memory update'''
-    tokenId: int= Field(...,example=100000)
+    tmID: int= Field(...,example=100000)
     token:str = Field(..., example="love")
     translation: str = Field(..., example="पसन्द")
     metaData: dict = Field(None, example={"word-class":["noun"]})

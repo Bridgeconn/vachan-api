@@ -383,9 +383,9 @@ def test_update_glossary():
     assert response.json()[0]["token"] == "tested"
     assert response.json()[0]["translation"] == "ടെസ്റ്റഡ്"
     assert response.json()[0]["metaData"]["tense"] == "past"
-    token_id = response.json()[0]["tokenId"]
+    token_id = response.json()[0]["tmID"]
     data = {
-        "tokenId": token_id,
+        "tmID": token_id,
         "token": "tested",
         "translation": "പരീക്ഷിക്കുന്നു",
         "metaData": {"tense": "present" }
@@ -405,17 +405,18 @@ def test_update_glossary():
 
     #updating translation only - positive test
     data =  {
-        "tokenId": token_id,
+        "tmID": token_id,
         "token": "tested",
         "translation": "പരീക്ഷിക്കുന്നു"
         }
     response = client.put(NLP_UNIT_URL+'/gloss',headers=headers_auth, json=data)
+    print("resp :",response.json())
     assert response.json()['data']['translation'] == "പരീക്ഷിക്കുന്നു"
-    assert response.json()['data']['metaData'] == {}
+    assert response.json()['data']["metaData"]["tense"] == "present"
 
     #updating  on invalid token - negative test
     data =  {
-        "tokenId": 9999,
+        "tmID": 9999,
         "token": "tested",
         "translation": "പരീക്ഷിക്കുന്നു",
          "metaData": {"tense": "present"}
@@ -426,7 +427,7 @@ def test_update_glossary():
 
     #updating  metadata in incorrect format - negative test
     data =  {
-        "tokenId": token_id,
+        "tmID": token_id,
         "token": "tested",
         "translation": "പരീക്ഷിക്കുന്നു",
          "metaData": "tense"

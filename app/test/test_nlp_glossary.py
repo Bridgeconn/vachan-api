@@ -25,7 +25,7 @@ def assert_positive_get(item):
     assert "token" in item
     assert "translation" in item
     for key in item:
-        assert key in ['tokenId', 'token', 'translation', 'frequency', 'metaData']
+        assert key in ['tmID', 'token', 'translation', 'frequency', 'metaData']
 
 def check_post(src, trg, data, headers):
     '''common steps for positive post test cases'''

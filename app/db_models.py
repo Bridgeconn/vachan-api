@@ -369,7 +369,7 @@ class TranslationMemory(Base):  # pylint: disable=too-few-public-methods
     '''Corresponds to table translation_memory in vachan DB used by Autographa MT mode'''
     __tablename__ = 'translation_memory'
 
-    tokenId = Column('token_id', Integer, primary_key=True, autoincrement=True)
+    tmID = Column('token_id', Integer, primary_key=True, autoincrement=True)
     @declared_attr
     def source_lang_id(cls): # pylint: disable=E0213
         '''For modelling the sourceLanguage field in this class'''
