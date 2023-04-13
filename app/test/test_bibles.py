@@ -1691,3 +1691,12 @@ def test_restoreaudioitem_with_notavailable_source():
     restore_response = client.put(RESTORE_URL, headers=headers_auth, json=data)
     restore_response.status_code = 404
     logout_user(test_user_token)
+
+def test_bible_upload_with_split_verses():
+    '''Text the fix on this issue https://github.com/Bridgeconn/vachan-api/issues/538'''
+    buggy_books_data = [{"USFM": "\\id JOB\n\\c 24\n\\p\n"+\
+        "\n\\v 1 normal \n\\v 2 again normal \n\\v 3a split, first part "+\
+        "\n\\v 3b split, second half \n\\v 4 normal and final"}]
+    resp,_ = check_post(buggy_books_data)
+    assert resp.status_code == 201
+    assert resp.json()['message'] == "Bible books uploaded and processed successfully"
