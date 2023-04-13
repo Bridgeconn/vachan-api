@@ -517,8 +517,7 @@ def bible_verse_type_check(content, model_cls_2, book, db_content2, chapter_numb
                 "verseNumber":verse_number}
         else:
             #first time split verse
-            split_indexs.append(len(db_content2)) if len(split_indexs) != 0\
-                else split_indexs.append(0)#pylint: disable=expression-not-assigned
+            split_indexs.append(len(db_content2))
             metadata_field["tempcontent"] = {
                 post_script:{"verseText":utils.normalize_unicode(content['verseText'].strip()),
                 "verseNumber":verse_number}}
