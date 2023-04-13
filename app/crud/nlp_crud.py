@@ -811,6 +811,21 @@ def project_suggest_translations(db_:Session, project_id, books, sentence_id_ran
         }
     return response
 
+def edit_glossary(db_: Session,token_info):
+    '''updates the given information of a gloss in db'''
+    query = db_.query(db_models.TranslationMemory)
+    db_content = query.filter(db_models.TranslationMemory.tokenId == token_info.tokenId).first()
+    if db_content is None:
+        raise NotAvailableException(f"Token with id {token_info.tokenId} is not available.")
+    if token_info.translation is not None:
+        db_content.translation = token_info.translation
+        db_content.translationRom = utils.to_eng(token_info.translation)
+    if token_info.metaData is not None:
+        db_content.metaData = token_info.metaData
+    else:
+        db_content.metaData = {}
+    return db_content
+
 def remove_glossary(db_, source_lang,target_lang, token,translation):
     '''To remove a suggestion'''
     if isinstance(source_lang, str):

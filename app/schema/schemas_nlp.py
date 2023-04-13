@@ -234,6 +234,7 @@ class GlossOutput(BaseModel):
 
 class TranslationMemoryOut(BaseModel):
     '''Output object to directly examine Translation memory entries'''
+    tokenId: int = Field(..., example= 100000)
     token: str = Field(..., example="love")
     translation: str = Field(..., example="प्यार")
     frequency: int = Field(None)
@@ -243,6 +244,18 @@ class TranslationMemoryOut(BaseModel):
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
+
+class TranslationMemoryUpdate(BaseModel):
+    '''Translation memory update'''
+    tokenId: int= Field(...,example=100000)
+    token:str = Field(..., example="love")
+    translation: str = Field(..., example="पसन्द")
+    metaData: dict = Field(None, example={"word-class":["noun"]})
+
+class TranslationMemoryUpdateResponse(BaseModel):
+    '''Response object for translation memory/gloss update'''
+    message: str = Field(..., example="Glossary updated")
+    data : TranslationMemoryOut
 
 class GlossUpdateResponse(BaseModel):
     '''Response object for learn/gloss and learn/alignments'''

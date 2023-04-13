@@ -550,6 +550,19 @@ async def add_gloss(request: Request,
         token_translations)
     return { "message": "Added to glossary", "data":tw_data }
 
+@router.put('/v2/nlp/gloss', response_model=schemas_nlp.TranslationMemoryUpdateResponse,
+    status_code=200,responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse}},
+    tags=["Nlp"])
+@get_auth_access_check_decorator
+async def update_glossary(request: Request,
+    token_info:schemas_nlp.TranslationMemoryUpdate=Body(...),
+    user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):
+    '''Updates translation and/or metadata of a token'''
+    log.info("In update-glossary")
+    token_data = nlp_crud.edit_glossary(db_,token_info=token_info)
+    return { "message": "Glossary Updated", "data":token_data }
+
 @router.delete('/v2/nlp/gloss', status_code=201,
     response_model=schemas.DeleteResponse,
     responses={502: {"model": schemas.ErrorResponse},
