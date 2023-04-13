@@ -365,6 +365,77 @@ def test_metadata_to_same_gloss():
     freq_after = response.json()[0]['frequency']
     assert freq_after == freq_before + 2
 
+def test_update_glossary():
+    '''Test the updation of translation and metadata fields of glossary'''
+
+    # Adding glossary
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
+    response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
+        headers=headers_auth, json=tokens_trans)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Added to glossary"
+    response = \
+        client.get(NLP_UNIT_URL+'/gloss-entries?source_language=en&target_language=ml&token=tested',
+        headers=headers_auth)
+    assert response.status_code ==200
+
+    # Ensuring metadata is added to the correct token-translation pair - positive test
+    assert response.json()[0]["token"] == "tested"
+    assert response.json()[0]["translation"] == "ടെസ്റ്റഡ്"
+    assert response.json()[0]["metaData"]["tense"] == "past"
+    token_id = response.json()[0]["tmID"]
+    data = {
+        "tmID": token_id,
+        "token": "tested",
+        "translation": "പരീക്ഷിക്കുന്നു",
+        "metaData": {"tense": "present" }
+        }
+    # update without auth - negative test
+    response = client.put(NLP_UNIT_URL+'/gloss',headers=headers, json=data)
+    assert response.json()['error'] == "Authentication Error"
+    assert response.status_code == 401
+
+    #with auth - updating both translation and metadata - positive test
+    response = client.put(NLP_UNIT_URL+'/gloss',headers=headers_auth, json=data)
+    assert response.status_code ==200
+    assert response.json()['message'] == 'Glossary Updated'
+    assert response.json()['data']['token'] == "tested"
+    assert response.json()['data']['translation'] == "പരീക്ഷിക്കുന്നു"
+    assert response.json()['data']['metaData']['tense'] == "present"
+
+    #updating translation only - positive test
+    data =  {
+        "tmID": token_id,
+        "token": "tested",
+        "translation": "പരീക്ഷിക്കുന്നു"
+        }
+    response = client.put(NLP_UNIT_URL+'/gloss',headers=headers_auth, json=data)
+    print("resp :",response.json())
+    assert response.json()['data']['translation'] == "പരീക്ഷിക്കുന്നു"
+    assert response.json()['data']["metaData"]["tense"] == "present"
+
+    #updating  on invalid token - negative test
+    data =  {
+        "tmID": 9999,
+        "token": "tested",
+        "translation": "പരീക്ഷിക്കുന്നു",
+         "metaData": {"tense": "present"}
+        }
+    response = client.put(NLP_UNIT_URL+'/gloss',headers=headers_auth, json=data)
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"
+
+    #updating  metadata in incorrect format - negative test
+    data =  {
+        "tmID": token_id,
+        "token": "tested",
+        "translation": "പരീക്ഷിക്കുന്നു",
+         "metaData": "tense"
+        }
+    response = client.put(NLP_UNIT_URL+'/gloss',headers=headers_auth, json=data)
+    assert response.status_code == 422
+    assert response.json()['error'] == "Input Validation Error"
+
 def test_delete_glossary():
     '''Test the removal of a suggestion/glossary'''
 
