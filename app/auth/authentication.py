@@ -14,7 +14,7 @@ from schema import schema_auth
 from dependencies import log, get_db
 from custom_exceptions import GenericException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
-    UnprocessableException, PermissionException
+    UnprocessableException, PermissionException, AuthException
 
 PUBLIC_BASE_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL",
                                     "http://127.0.0.1:4433/")+"self-service/"
@@ -30,7 +30,10 @@ def get_current_user_data(recieve_token):
     headers = {}
     headers["Accept"] = "application/json"
     headers["Authorization"] = f"Bearer {recieve_token}"
-    user_data = requests.get(USER_SESSION_URL, headers=headers, timeout=10)
+    try:
+        user_data = requests.get(USER_SESSION_URL, headers=headers, timeout=10)
+    except Exception as exe:
+        raise AuthException(detail="Connection error from Kratos.") from exe
     data = json.loads(user_data.content)
     if user_data.status_code == 200:
         user_details["user_id"] = data["identity"]["id"]
