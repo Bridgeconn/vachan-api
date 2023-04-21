@@ -406,7 +406,7 @@ async def edit_auth_rules(details:schema_auth.AccessRuleUpdateInput,request: Req
 app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
 user_details =Depends(get_user_or_none),
 db_: Session = Depends(get_db)):#pylint: disable=unused-argument
-    '''Create Authentication Access Rules
+    '''Update Authentication Access Rules
     * ruleId is mandatory
     * others are optional, provide fields need to be updated'''
     log.debug('Access Rules Update In:%s',details)
