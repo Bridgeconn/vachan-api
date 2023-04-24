@@ -109,20 +109,20 @@ def create_access_rules(db_: Session, details: schema_auth.AccessRuleCreateInput
         func.lower(db_models.ResourceTypes.resourceTypeName) ==\
             func.lower(details.entitlement.strip())).first()
     if not entitlement:
-        raise NotAvailableException(f"entitlement, {details.entitlement.strip()},"+\
+        raise NotAvailableException(f"Entitlement, {details.entitlement.strip()},"+\
             " not found in Database")
     tag = db_.query(db_models.Permissions).filter(
         func.lower(db_models.Permissions.permissionName) == \
             func.lower(details.tag.strip())).first()
     if not tag:
-        raise NotAvailableException(f"tag, {details.tag.strip()},"+\
+        raise NotAvailableException(f"Tag, {details.tag.strip()},"+\
             " not found in Database")
     db_rules_list = []
     for role in details.roles:
         db_role = db_.query(db_models.Roles).filter(
             func.lower(db_models.Roles.roleName) == func.lower(role.strip())).first()
         if not db_role:
-            raise NotAvailableException(f"role, {role.strip()},"+\
+            raise NotAvailableException(f"Role, {role.strip()},"+\
                 " not found in Database")
         db_rules_list.append(
             db_models.AccessRules(
@@ -136,6 +136,45 @@ def create_access_rules(db_: Session, details: schema_auth.AccessRuleCreateInput
     db_.add_all(db_rules_list)
     response = {
         'db_content':db_rules_list,
+        'refresh_auth_func':generate_access_rules_dict
+    }
+    return response
+
+
+def update_access_rules(db_: Session, details: schema_auth.AccessRuleUpdateInput, user_id= None):
+    '''update a row in access rule table'''
+    db_content = db_.query(db_models.AccessRules).get(details.ruleId)
+    if not db_content:
+        raise NotAvailableException(f"Access rule of Id {details.ruleId},"+\
+        " not found in Database")
+    if details.entitlement:
+        entitlement = db_.query(db_models.ResourceTypes).filter(
+            func.lower(db_models.ResourceTypes.resourceTypeName) ==\
+                func.lower(details.entitlement.strip())).first()
+        if not entitlement:
+            raise NotAvailableException(f"Entitlement, {details.entitlement.strip()},"+\
+                " not found in Database")
+        db_content.entitlementId = entitlement.resourceTypeId
+    if details.tag:
+        tag = db_.query(db_models.Permissions).filter(
+            func.lower(db_models.Permissions.permissionName) ==\
+            func.lower(details.tag.strip())).first()
+        if not tag:
+            raise NotAvailableException(f"Tag, {details.tag.strip()},"+\
+            " not found in Database")
+        db_content.tagId =tag.permissionId
+    if details.role:
+        db_role = db_.query(db_models.Roles).filter(
+            func.lower(db_models.Roles.roleName) == func.lower(details.role.strip())).first()
+        if not db_role:
+            raise NotAvailableException(f"Role, {details.role.strip()},"+\
+                " not found in Database")
+        db_content.roleId=db_role.roleId
+
+    db_content.updatedUser = user_id
+    db_content.active = True
+    response = {
+        'db_content':db_content,
         'refresh_auth_func':generate_access_rules_dict
     }
     return response

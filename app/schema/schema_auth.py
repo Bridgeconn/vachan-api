@@ -1,6 +1,6 @@
 """schema for auth related"""
-from pydantic import BaseModel, validator, types, EmailStr, Field
 from typing import List
+from pydantic import BaseModel, validator, types, EmailStr, Field
 
 #pylint: disable=too-few-public-methods
 
@@ -50,7 +50,8 @@ class LoginResponse(BaseModel):
     token:str
     userId:str
 
-class LogoutResponse(BaseModel):
+class LogoutResponse(BaseModel):# print("returned data ------------->", data)
+    # print("returned data json -======->", data[0].__dict__)
     """Response object of logout"""
     message:str
 
@@ -315,14 +316,15 @@ class AccessRuleUpdateInput(BaseModel):
     ruleId:int
     entitlement:str =None
     tag:str = None
-    roles:List[str] =None
+    role:str =None
     class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
+                "ruleId":100000,
                 "entitlement": "content",
                 "tag": "create",
-                "roles":["registeredUser"]
+                "role":"registeredUser"
             }}
 
 
@@ -350,3 +352,8 @@ class AccessRulesResponse(BaseModel):
     """Response object of AccessRules creation"""
     message:str = Field(..., example="Access rule created successfully")
     data:List[AccessRulesOut] = None
+
+class AccessRulesUpdateResponse(BaseModel):
+    """Response object of AccessRules updation"""
+    message:str = Field(..., example="Access rule updated successfully")
+    data:AccessRulesOut = None

@@ -23,7 +23,7 @@ services:
       - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD:-Just4Complexity!}
       - VACHAN_TEST_MODE="False"
       - VACHAN_LOGGING_LEVEL=INFO
-    command: python3 -m pytest --ignore-glob=test/test_gql_*
+    command: python3 -m pytest -k "not test_gql"
     volumes:
       - logs-test-vol:/app/logs
     restart: "no"
