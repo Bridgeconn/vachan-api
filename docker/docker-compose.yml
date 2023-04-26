@@ -127,6 +127,20 @@ services:
     networks:
      - my-network
 
+ vachan-demos:
+    image: kavitha3797/vachan-demos:latest
+    expose:
+      - 8002
+    command: uvicorn main:app --host 0.0.0.0 --port 8002
+    restart: always
+    environment:
+     - VACHAN_DOMAIN=${VACHAN_DOMAIN:-api.vachanengine.org}
+     - VACHAN_LOGGING_LEVEL=INFO
+    volumes:
+     - logs-vol:/app/logs
+    networks:
+     - my-network
+
  # Web Server
  web-server:
     image: nginx:latest

@@ -35,7 +35,11 @@ server {
 
     ssl_certificate /etc/nginx/ssl/live/${VACHAN_DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/nginx/ssl/live/${VACHAN_DOMAIN}/privkey.pem;
-    
+ 
+    location /v2/demos/ {
+        proxy_pass http://vachan-demos:8002;    
+    }
+   
     location / {
         proxy_pass http://vachan-api:8000;
     }
