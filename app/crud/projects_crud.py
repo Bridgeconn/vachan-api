@@ -93,8 +93,8 @@ def get_sentences_from_usfm_json(chapters_json, book_code, book_id):
                     surrogate_id = book_code+" "+str(chapter_number)+":"+verse_number
                 except Exception as exe: #pylint: disable=W0703
                     log.error(str(exe))
-                    log.warning(f"Found a special verse {verse_number}. Checking for"+\
-                        "split verse or merged verses...")
+                    log.warning("Found a special verse %s. Checking for"+\
+                        "split verse or merged verses...", verse_number)
                     if "-" in verse_number:
                         verse_number_int = int(verse_number.split('-')[0])
                         surrogate_id = book_code+" "+str(chapter_number)+":"+str(verse_number)
@@ -113,7 +113,8 @@ def get_sentences_from_usfm_json(chapters_json, book_code, book_id):
                         surrogate_id = book_code+" "+str(chapter_number)+":"+\
                             str(verse_number_int)+ "-".join(splits)
                     else:
-                        raise Exception(f"Error with verse number {verse_number}") from exe
+                        raise UnprocessableException(
+                            f"Error with verse number {verse_number}") from exe
                 draft_rows.append({
                     "sentenceId": book_id*1000000+\
                                 int(chapter_number)*1000+verse_number_int,
