@@ -10,6 +10,7 @@ from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 
 UNIT_URL = '/v2/translation/projects' 
 USER_URL = '/v2/translation/project/user'
+SENTENCE_URL = '/v2/translation/project/sentences'
 RESTORE_URL = '/v2/restore'
 headers = {"contentType": "application/json", "accept": "application/json", "app":"Autographa"}
 headers_auth = {"contentType": "application/json",
@@ -1265,3 +1266,41 @@ def test_restore_user():
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
     logout_user(test_user_token)
+
+def test_bugfix_split_n_merged_verse():
+    '''BUg fix for https://github.com/Bridgeconn/vachan-api/issues/543'''
+    post_data = {
+    "projectName": "Test project usfm upload",
+    "sourceLanguageCode": "hi",
+    "targetLanguageCode": "ml"
+    }
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Project created successfully"
+    project_id = response.json()['data']['projectId']
+
+    prj_book_data = {
+      "projectId": project_id,
+      "uploadedUSFMs": [
+          "\\id REV\n\\c 1\n\\p\n\\v 1 some text\n\\v 2-10 merged text\n\\v 11a split text\n\\v 11b rest"
+      ]
+    }
+    prj_update_resp = client.put(UNIT_URL, json=prj_book_data, headers=headers_auth)
+    assert prj_update_resp.status_code == 201
+    resp_obj = prj_update_resp.json()
+    assert resp_obj['message'] == 'Project updated successfully'
+
+    sentences_resp = client.get(f"{SENTENCE_URL}?project_id={project_id}", headers=headers_auth)
+    assert sentences_resp.status_code == 200
+    sentences = sentences_resp.json()
+    assert len(sentences) == 3
+    assert sentences[0]['sentenceId'] == 67001001
+    assert sentences[0]['surrogateId'] == 'rev 1:1'
+    assert sentences[0]["sentence"] == 'some text'
+    assert sentences[1]['sentenceId'] == 67001002
+    assert sentences[1]['surrogateId'] == 'rev 1:2-10'
+    assert sentences[1]["sentence"] == 'merged text'
+    assert sentences[2]['sentenceId'] == 67001011
+    assert sentences[2]['surrogateId'] == 'rev 1:11a-b'
+    assert sentences[2]["sentence"] == 'split text rest'
