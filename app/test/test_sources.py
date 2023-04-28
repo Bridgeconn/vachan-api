@@ -1,6 +1,5 @@
 '''Test cases for versions related APIs'''
 import re
-
 from app.schema import schemas, schema_auth
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
@@ -95,11 +94,13 @@ def test_post_default():
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
+        "labels": ["latest"],
         "year": 2020,
         "license": "CC-BY-SA",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     create_source = check_post(data)
+    assert create_source.json()['data']['labels'] == ["latest"]
     return create_source
 
 def test_post_wrong_version():
@@ -209,6 +210,73 @@ def test_post_wrong_content():
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
     assert "License" in response.json()['details']
+
+def test_post_wrong_label():
+    '''Negative test with invalid label'''
+    version_data = {
+        "versionAbbreviation": "TTT",
+        "versionName": "test version",
+    }
+    add_version(version_data)
+    data = {
+        "contentType": "bible",
+        "language": "hi",
+        "version": "TTT",
+        "versionTag": 1,
+        "labels": ["testlabel"],
+        "year": 2020,
+        "license": "ISC",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
+    assert_input_validation_error(response)
+
+def test_post_multiple_labels():
+    '''Positive test  case to add multiple labels'''
+    version_data = {
+        "versionAbbreviation": "TTT",
+        "versionName": "test version",
+    }
+    add_version(version_data)
+    data = {
+        "contentType": "bible",
+        "language": "hi",
+        "version": "TTT",
+        "versionTag": 1,
+        "labels": ["latest","test"],
+        "year": 2020,
+        "license": "ISC",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    headers_auth = {"contentType": "application/json", "accept": "application/json"}
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Source created successfully"
+    assert_positive_get(response.json()['data'])
+    assert response.json()['data']['labels'] == ["latest","test"]
+
+def test_post_wrong_label_format():
+    '''Negative test case to labe in incorrect format.'''
+    # Label(s) should pass as a list of strings
+    version_data = {
+        "versionAbbreviation": "TTT",
+        "versionName": "test version",
+    }
+    add_version(version_data)
+    data = {
+        "contentType": "bible",
+        "language": "hi",
+        "version": "TTT",
+        "versionTag": 1,
+        "labels": "latest",
+        "year": 2020,
+        "license": "ISC",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
+    assert_input_validation_error(response)
+
 
 def test_post_wrong_year():
     '''Negative test with text in year field'''
@@ -365,6 +433,17 @@ def test_put_default():
     assert_positive_get(response.json()['data'])
     assert response.json()['data']['metaData'] == \
         {'accessPermissions': [schemas.SourcePermissions.CONTENT], 'owner': 'new owner'}
+
+    # updating label
+    data_update = {
+        'sourceName': 'ml_TTT_2_commentary',
+        'labels': ["test"]
+    }
+    response = client.put(UNIT_URL, headers=headers_auth, json=data_update)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Source edited successfully"
+    assert_positive_get(response.json()['data'])
+    assert response.json()['data']['labels'] == ["test"]
 
 def test_post_put_gitlab_source():
     '''Positive test for gitlab content type'''
