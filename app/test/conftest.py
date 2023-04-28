@@ -49,6 +49,15 @@ initial_test_users = {
                 "test_user_id": "",
                 "app" : schema_auth.App.AG.value
             },
+            "SanketMASTAdmin": {
+                "user_email": "smadmintest@mail.test",
+                "password": "passwordtest@1",
+                "firstname": "SanketMAST",
+                "lastname": "Admin",
+                "token":"",
+                "test_user_id": "",
+                "app" : schema_auth.App.SMAST.value
+            },
             "BcsDev":{
                 "user_email": "bcsdevtest@mail.test",
                 "password": "passwordtest@1",
@@ -66,6 +75,15 @@ initial_test_users = {
                 "token":"",
                 "test_user_id": "",
                 "app" : schema_auth.App.AG.value
+            },
+            "SanketMASTUser":{
+                "user_email": "smtest@mail.test",
+                "password": "passwordtest@1",
+                "firstname": "SanketMAST",
+                "lastname": "User",
+                "token":"",
+                "test_user_id": "",
+                "app" : schema_auth.App.SMAST.value
             },
             "VachanUser":{ 
                 "user_email": "vachantest@mail.test",
@@ -111,6 +129,15 @@ initial_test_users = {
                 "token":"",
                 "test_user_id": "",
                 "app" : schema_auth.App.AG.value
+            },
+            "SanketMASTUser2":{
+                "user_email": "smtest2@mail.test",
+                "password": "passwordtest@1",
+                "firstname": "SanketMAST",
+                "lastname": "User Two",
+                "token":"",
+                "test_user_id": "",
+                "app" : schema_auth.App.SMAST.value
             }
         }
 
