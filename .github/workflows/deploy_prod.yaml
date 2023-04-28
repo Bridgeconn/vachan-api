@@ -1,0 +1,26 @@
+name: Deploy-to-production
+
+on:
+  release:
+    types: [published]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  pull-n-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: executing remote ssh commands using password
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.VACHAN_DO_HOST_PROD }}
+        username: ${{ secrets.VACHAN_DO_USERNAME_PROD }}
+        key: ${{ secrets.SSH_KEY_PROD }}
+        port: 22
+        script: |
+          cd /home/vachanstaging/vachan-api
+          git pull origin version-2
+          cd docker
+          docker-compose --env-file prod.env -f production-deploy.yml up --force-recreate --build -d
+
+
