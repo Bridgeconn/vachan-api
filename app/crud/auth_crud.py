@@ -7,6 +7,7 @@ import db_models
 from custom_exceptions import NotAvailableException
 from auth.auth_globals import generate_roles, APPS, generate_access_rules_dict
 from schema import schema_auth
+from auth.authentication import get_all_or_one_kratos_users #pylint: disable=ungrouped-imports
 
 def get_auth_permission(db_: Session, permission_name=None, permission_id=None, **kwargs):
     '''get rows from auth permission table'''
@@ -178,3 +179,34 @@ def update_access_rules(db_: Session, details: schema_auth.AccessRuleUpdateInput
         'refresh_auth_func':generate_access_rules_dict
     }
     return response
+
+def get_access_rules(db_: Session, entitlement=None, tag=None, role=None, **kwargs):
+    '''get rows from auth permission table'''
+    user_id = kwargs.get("user_id",None)
+    rule_id = kwargs.get("rule_id",None)
+    active = kwargs.get("active",True)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
+    query = db_.query(db_models.AccessRules)
+    if rule_id:
+        query = query.filter(db_models.AccessRules.ruleId == rule_id)
+    elif user_id:
+        user_data = get_all_or_one_kratos_users(user_id)
+        user_roles = user_data[0]["traits"]["userrole"]
+        query = query.filter(db_models.AccessRules.role.has\
+            (db_models.Roles.roleName.in_(user_roles)))
+    else :
+        if entitlement:
+            query = query.filter(db_models.AccessRules.entitlement.has
+            (resourceTypeName = entitlement.strip()))
+        if tag:
+            query = query.filter(db_models.AccessRules.tag.has
+            (permissionName = tag.strip()))
+        if role:
+            query = query.filter(db_models.AccessRules.role.has
+            (roleName = role.strip()))
+        if active:
+            query = query.filter(db_models.AccessRules.active)
+        else:
+            query = query.filter(db_models.AccessRules.active == False) #pylint: disable=singleton-comparison
+    return query.offset(skip).limit(limit).all()

@@ -13,7 +13,7 @@ from auth.authentication import user_register_kratos,login_kratos,user_role_add 
 from auth.auth_app import app_register_kratos, app_update_kratos, get_filter_apps
 from crud.auth_crud import create_auth_permission, update_auth_permission,\
     get_auth_permission, create_role, get_role, update_role, create_access_rules,\
-    update_access_rules
+    update_access_rules, get_access_rules
 
 router = APIRouter()
 
@@ -415,6 +415,38 @@ db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     data = update_access_rules(db_, details, user_id = user_details['user_id'])
     return {'message': "Access rule updated successfully",
             "data": data}
+
+@router.get('/v2/access/rules',response_model=List[schema_auth.AccessRulesOut],
+responses={401: {"model": schemas.ErrorResponse}}
+,tags=["Access-Control"])
+@get_auth_access_check_decorator
+async def get_auth_rules(request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument,
+    user_id: str = Query(None, example='4bd012fd-7de8-4d66-928f-4925ee9bb'),
+    rule_id: int = Query(None, example=100001),
+    entitlement: str = Query(None, example='content'),
+    tag: str = Query(None, example='create'),
+    role: str = Query(None, example='manager'),
+    active: bool = True,
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
+    db_: Session = Depends(get_db)):
+    '''Fetch Authentication Access Rules
+    * all auth Rules : with out giving any query params.
+    * rule_id : if rule id is provided all other params will be ignored\
+        and only return the rule id matching result.
+    * userId : if userId provided, all other params will be ignored\
+        and return the user role related rules.Invalid user_id will\
+        throw an error for No resource Found.
+    * priority of params : rule_id > user_id > others
+    * skip=n: skips the first n objects in return list
+    * limit=n: limits the no. of items to be returned to n
+    * returns [] if no content match'''
+    log.info('In get rules')
+    log.debug('userId: %s, entitlement: %s, tag: %s, role: %s,\
+            active: %s, skip: %s, limit:%s', user_id,
+        entitlement, tag, role, active, skip, limit)
+    return get_access_rules(db_, entitlement, tag, role, user_id=user_id,
+        rule_id=rule_id, active = active, skip=skip, limit=limit)
 
 #--------- Dynamic route cause error for other static endpoints -----------------------------------
 @router.put('/v2/app/{app_id}', response_model=schema_auth.AppUpdateResponse,
