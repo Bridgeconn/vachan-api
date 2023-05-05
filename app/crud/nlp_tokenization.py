@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 
 from crud import utils
 import db_models
-from custom_exceptions import NotAvailableException
 from redis_db.utils import  get_routes_from_cache, set_routes_to_cache
 from dependencies import log
 
