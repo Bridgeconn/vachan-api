@@ -13,7 +13,7 @@ from auth.authentication import user_register_kratos,login_kratos,user_role_add 
 from auth.auth_app import app_register_kratos, app_update_kratos, get_filter_apps
 from crud.auth_crud import create_auth_permission, update_auth_permission,\
     get_auth_permission, create_role, get_role, update_role, create_access_rules,\
-    update_access_rules, get_access_rules
+    update_access_rules, get_access_rules, create_permission_map
 
 router = APIRouter()
 
@@ -447,6 +447,30 @@ async def get_auth_rules(request: Request,user_details =Depends(get_user_or_none
         entitlement, tag, role, active, skip, limit)
     return get_access_rules(db_, entitlement, tag, role, user_id=user_id,
         rule_id=rule_id, active = active, skip=skip, limit=limit)
+
+# --------------------------- Api Permission Map -------------------------------------
+@router.post('/v2/access/permission-maps',response_model=schema_auth.PermissionMapsResponse,
+    responses={400: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
+    500: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    status_code=201,tags=["Access-Control"])
+@get_auth_access_check_decorator
+async def add_auth_permission_map(details:schema_auth.PermissionMapCreateInput,request: Request,#pylint: disable=unused-argument
+app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
+user_details =Depends(get_user_or_none),
+db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+    '''Create Authentication Permission Maps
+    * apiEndpoint - should be one of the avaialble api (mandatory)
+    * method - one from method enum (mandatory)
+    * requestApp - one of the registered app name (mandatory)
+    * resourceType - one of the available resource/entitlement name (mandatory)
+    * permission - one of the available permission/tag name (mandatory)
+    * filterResults permission map allow or not to filter the result (default False ) '''
+    log.info('In create permission map')
+    log.debug('Permission Map  Create In:%s',details)
+    data = create_permission_map(db_, details, user_id = user_details['user_id'])
+    return {'message': "Permission Map created successfully",
+            "data": data}
+
 
 #--------- Dynamic route cause error for other static endpoints -----------------------------------
 @router.put('/v2/app/{app_id}', response_model=schema_auth.AppUpdateResponse,

@@ -478,8 +478,9 @@ class Apps(Base): # pylint: disable=too-few-public-methods
     appId = Column('app_id', Integer, primary_key=True)
     appName = Column('app_name', String, unique=True, index=True)
     defaultRole = Column('default_role', String, ForeignKey('roles.role_name'))
+    role = relationship(Roles)
     appKey = Column('app_key', String)
-    useForRegistration = Column('use_for_registration', String)
+    useForRegistration = Column('use_for_registration', Boolean)
     createdUser = Column('created_user', String)
     updatedUser = Column('last_updated_user', String)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
@@ -525,3 +526,8 @@ class ApiPermissionsMap(Base): # pylint: disable=too-few-public-methods
     createdUser = Column('created_user', String)
     updatedUser = Column('last_updated_user', String)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    _table_args__ = (
+        UniqueConstraint('api_endpoint', 'method', 'request_app_id', \
+            'resource_type_id', 'permission_id'),
+        {'extend_existing': True}
+    )
