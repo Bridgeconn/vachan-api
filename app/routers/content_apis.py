@@ -1254,3 +1254,18 @@ async def restore_content(request: Request, content: schemas.RestoreIdentity,
     del data['py/object'],data['_sa_instance_state']
     return {'message': f"Deleted Item with identity {content.itemId} restored successfully",
     "data": data}
+
+@router.delete('/v2/deleted-items',response_model=schemas.CleanupDB,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Data Manipulation"])
+@get_auth_access_check_decorator
+async def delete_deleteditems(request: Request,user_details =Depends(get_user_or_none), \
+    db_: Session = Depends(get_db)):
+    '''Periodic Cleaning of Database
+    * Clearing deleted_items table
+    * Delete dangling dynamic tables whose source does not exist in sources table '''
+    log.info('In delete_deleteditems')
+    deleted_item_count = structurals_crud.cleanup_database(db_=db_)
+    return {'message': "Database cleanup done!!",'deletedItemCount':deleted_item_count}
