@@ -7,8 +7,8 @@ from sqlalchemy.orm import Session
 
 from crud import utils
 import db_models
-from custom_exceptions import NotAvailableException
 from redis_db.utils import  get_routes_from_cache, set_routes_to_cache
+from dependencies import log
 
 
 def build_memory_trie(translation_memory):
@@ -122,8 +122,11 @@ def tokenize_get_unique_token(phrases,sent,unique_tokens):
         whole_word_pattern = re.compile(f"(^|\\W)({phrase})(\\W|$)")
         find = re.search(whole_word_pattern, dummy_sent[start:])
         if not find:
-            raise NotAvailableException(f"Tokenization: token, {phrase}, "+\
-                f"not found in sentence: {sent['sentence']}")
+            # "Ignoring and moving on."
+            # "This would happen when portion of the token is already confirmed"
+            log.warning(f"Tokenization: token, {phrase}, "+\
+                f"not found in sentence: {sent['sentence']}.")
+            continue
         offset = find.start(2) + start
         start = offset+len(phrase)
         if phrase not in unique_tokens:

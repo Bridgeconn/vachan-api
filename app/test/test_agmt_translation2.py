@@ -506,3 +506,49 @@ def test_restore_sentence():
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
     logout_user(test_user_token)
+
+def test_suggestion_when_token_overlaps_confirmed_segment():
+    # Testing bug fix https://github.com/Bridgeconn/vachan-api/issues/542
+    resp = add_project(project_data, auth_token=initial_test_users['AgAdmin']['token'])
+    project_id = resp.json()['data']['projectId']
+
+    put_data = {
+        "projectId": project_id,
+        "sentenceList": [
+            {
+            "sentenceId": 57001002,
+            "surrogateId": "tit 1:2",
+            "sentence":"This faith and knowledge make us sure that we have eternal life. God promised that life to us before time began—and God does not lie."
+            }
+        ]
+    }
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    assert resp.json()['message'] == "Project updated successfully"
+
+    # add a translation for just "not" when it occurs as "doesnot"
+    update_draft_url = f"/v2/translation/project/draft?project_id={project_id}"
+    data = [{ "draft": "they this",
+        "draftMeta": [ [ [ 0, 4 ], [ 9, 9 ], "untranslated" ], [ [ 4, 5 ], [ 9, 9 ], "untranslated" ], [ [ 5, 10 ], [ 9, 9 ], "untranslated" ], [ [ 10, 11 ], [ 9, 9 ], "untranslated" ], [ [ 11, 24 ], [ 9, 9 ], "untranslated" ], [ [ 24, 25 ], [ 9, 9 ], "untranslated" ], [ [ 25, 29 ], [ 9, 9 ], "untranslated" ], [ [ 29, 30 ], [ 9, 9 ], "untranslated" ], [ [ 30, 32 ], [ 9, 9 ], "untranslated" ], [ [ 32, 33 ], [ 9, 9 ], "untranslated" ], [ [ 33, 37 ], [ 9, 9 ], "untranslated" ], [ [ 37, 38 ], [ 9, 9 ], "untranslated" ], [ [ 38, 42 ], [ 9, 9 ], "untranslated" ], [ [ 42, 43 ], [ 9, 9 ], "untranslated" ], [ [ 43, 45 ], [ 9, 9 ], "untranslated" ], [ [ 45, 46 ], [ 9, 9 ], "untranslated" ], [ [ 46, 58 ], [ 9, 9 ], "untranslated" ], [ [ 58, 59 ], [ 9, 9 ], "untranslated" ], [ [ 59, 63 ], [ 9, 9 ], "untranslated" ], [ [ 63, 65 ], [ 9, 9 ], "untranslated" ], [ [ 65, 68 ], [ 9, 9 ], "untranslated" ], [ [ 68, 69 ], [ 9, 9 ], "untranslated" ], [ [ 69, 77 ], [ 9, 9 ], "untranslated" ], [ [ 77, 78 ], [ 9, 9 ], "untranslated" ], [ [ 78, 82 ], [ 9, 9 ], "untranslated" ], [ [ 82, 83 ], [ 9, 9 ], "untranslated" ], [ [ 83, 87 ], [ 9, 9 ], "untranslated" ], [ [ 87, 88 ], [ 9, 9 ], "untranslated" ], [ [ 88, 93 ], [ 9, 9 ], "untranslated" ], [ [ 93, 94 ], [ 9, 9 ], "untranslated" ], [ [ 94, 105 ], [ 9, 9 ], "untranslated" ], [ [ 105, 106 ], [ 9, 9 ], "untranslated" ], [ [ 106, 111 ], [ 9, 9 ], "untranslated" ], [ [ 111, 112 ], [ 9, 9 ], "untranslated" ], [ [ 112, 119 ], [ 9, 9 ], "untranslated" ], [ [ 119, 120 ], [ 9, 9 ], "untranslated" ], [ [ 132, 133 ], [ 9, 9 ], "untranslated" ], [ [ 125, 128 ], [ 5, 9 ], "confirmed" ], [ [ 129, 132 ], [ 0, 4 ], "confirmed" ] ],
+        "sentenceId": 57001002 }]
+    update_resp = client.put(update_draft_url,
+                           json=data,
+                             headers={'Authorization': f'bearer {initial_test_users["AgAdmin"]["token"]}',
+                                      'app':"Autographa"})
+    assert update_resp.status_code == 201
+
+
+    # Suggestion call 1
+    suggest_url =  f"/v2/translation/project/suggestions?project_id={project_id}&sentence_id_list=57001002"
+    suggest_resp = client.put(suggest_url, 
+                             headers={'Authorization': f"bearer {initial_test_users['AgAdmin']['token']}",
+                                      'app':"Autographa"})
+    assert suggest_resp.status_code == 201
+
+    # Suggestion call 2
+    suggest_url =  f"/v2/translation/project/suggestions?project_id={project_id}&sentence_id_list=57001002"
+    suggest_resp = client.put(suggest_url, 
+                             headers={'Authorization': f"bearer {initial_test_users['AgAdmin']['token']}",
+                                      'app':"Autographa"})
+    assert suggest_resp.status_code == 201
+
