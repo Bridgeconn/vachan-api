@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
 from sqlalchemy.dialects.postgresql import array
+from sqlalchemy import MetaData
 import db_models
 from schema import schemas
 from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException
@@ -584,3 +585,21 @@ def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None,
     if book_name is not None:
         query = query.filter(db_models.BibleBook.bookName == book_name.lower())
     return query.offset(skip).limit(limit).all()
+
+def cleanup_database(db_: Session):
+    '''Periodic cleanup of database'''
+    metadata = MetaData(bind=engine)
+    metadata.reflect()
+    for table_name in metadata.tables:
+        if table_name.startswith('table'):
+            if table_name.endswith("audio"):
+                tb_name = table_name.replace("_audio", "")
+            elif table_name.endswith("cleaned"):
+                tb_name = table_name.replace("_cleaned", "")
+            else:
+                tb_name = table_name
+            if not  get_sources(db_, table_name = tb_name):
+                with engine.connect() as conn:
+                    conn.execute(f"DROP TABLE IF EXISTS {table_name} CASCADE;")
+    deleteditem_count = db_.query(db_models.DeletedItem).delete()
+    return deleteditem_count
