@@ -1,4 +1,7 @@
-'''Test cases for deleted items related APIs'''
+'''Test cases for deleted items related APIs
+* Dangling tables generated in testcase are in use.
+* It prevents table deletion and the query could get stuck waiting for a response from the database.
+* Hence test cases are commented'''
 # from . import client
 # from . import assert_not_available_content
 # from .test_languages import test_delete_default_superadmin as delete_language
