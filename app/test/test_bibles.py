@@ -171,7 +171,6 @@ def test_post_optional():
     resp = check_post(post_data)[0]
     assert resp.status_code == 201
     assert resp.json()['message'] == "Bible books uploaded and processed successfully"
-    print(resp.json()['data'])
     assert len(resp.json()['data']) == 2
 
 def test_post_put_split_verse():
@@ -466,6 +465,59 @@ def test_put_books():
     response5 = client.put(UNIT_URL+src+"/books", json=update_data, headers=headers_auth)
     assert response5.status_code == 404
     assert response5.json()['error'] == "Requested Content Not Available"
+
+def test_upload_book_after_source_update():
+    '''Bugfix test for #529 '''
+    resp = check_post([gospel_books_data[0]])[0]
+    assert resp.status_code == 201
+    assert resp.json()['message'] == "Bible books uploaded and processed successfully"
+
+    # Case 1 : Update language field in source
+    source_data_update = {
+        "sourceName": 'gu_TTT_1_bible',
+        "language": 'ml' 
+    }
+    response = client.put(SOURCE_URL, headers=headers_auth, json=source_data_update)
+    table_name = response.json()['data']['sourceName']
+
+    # Post same bible book after updating source - negative test
+    response = client.post(UNIT_URL+table_name+'/books', headers=headers_auth, json=[gospel_books_data[0]])
+    assert response.status_code == 409
+    assert response.json()['error'] == "Already Exists"
+
+    # Post different bible book after updating source - positive test
+    new_book_data = [
+            {"USFM":"\\id luk\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"}
+        ]
+    response = client.post(UNIT_URL+table_name+'/books', headers=headers_auth, json=new_book_data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Bible books uploaded and processed successfully"
+
+    # Case 2 : Update version field in source
+    version_data = {
+        "versionAbbreviation": "XYZ",
+        "versionName": "Xyz version to test",
+    }
+    add_version(version_data)
+    source_update_data = {
+        "sourceName": 'ml_TTT_1_bible',
+        "version": 'XYZ' 
+    }
+    response = client.put(SOURCE_URL, headers=headers_auth, json=source_update_data)
+    table_name = response.json()['data']['sourceName']
+
+    # Post same bible book after updating source
+    response = client.post(UNIT_URL+table_name+'/books', headers=headers_auth, json=new_book_data)
+    assert response.status_code == 409
+    assert response.json()['error'] == "Already Exists"
+
+    # Post different bible book after updating source
+    new_book_data = [
+            {"USFM":"\\id jhn\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"}
+        ]
+    response = client.post(UNIT_URL+table_name+'/books', headers=headers_auth, json=new_book_data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Bible books uploaded and processed successfully"
 
 
 def test_put_audios():

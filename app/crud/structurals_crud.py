@@ -519,7 +519,7 @@ def update_source_sourcename(db_, source, db_content):
     db_content.sourceName = "_".join([table_name_parts[0],ver, rev, table_name_parts[-1]])
     return db_content
 
-def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
+def update_source(db_: Session, source: schemas.SourceEdit, user_id = None): #pylint: disable=too-many-branches
     '''changes one or more fields of sources, selected via sourceName or table_name'''
     db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source.sourceName).first()
@@ -564,6 +564,11 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
     # db_.refresh(db_content)
     if not source.sourceName.split("_")[-1] == db_models.ContentTypeName.GITLABREPO.value:
         db_models.dynamicTables[db_content.sourceName] = db_models.dynamicTables[source.sourceName]
+        if source.sourceName.split("_")[-1] == 'bible':
+            db_models.dynamicTables[db_content.sourceName+'_cleaned'] = \
+                db_models.dynamicTables[source.sourceName+'_cleaned']
+            db_models.dynamicTables[db_content.sourceName+'_audio'] = \
+                db_models.dynamicTables[source.sourceName+'_audio']
     return db_content
 
 def delete_source(db_: Session, delitem: schemas.DeleteIdentity):
