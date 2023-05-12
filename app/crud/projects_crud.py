@@ -363,6 +363,8 @@ def update_project_draft(db_:Session, project_id, sentence_list, user_id):
         sent.draft = input_sent.draft
         sent.draftMeta = input_sent.draftMeta
         sent.updatedUser = user_id
+    project_row.updatedUser = user_id
+    project_row.updateTime = datetime.datetime.now()
     response_result = {
         'db_content':sentences,
         'project_content':project_row
@@ -624,7 +626,7 @@ def obtain_project_source(db_:Session, project_id, books=None, sentence_id_range
         }
     return response
 
-def remove_project_sentence(db_, project_id, sentence_id):
+def remove_project_sentence(db_, project_id, sentence_id,user_id):
     '''To remove a sentence'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
@@ -637,6 +639,8 @@ def remove_project_sentence(db_, project_id, sentence_id):
     # if user_id == current_user:
     #     raise PermissionException("A user cannot remove oneself from a project.")
     db_.delete(sentence_row)
+    project_row.updatedUser = user_id
+    project_row.updateTime = datetime.datetime.now()
     # db_.commit()
     response = {
         "db_content": sentence_row,

@@ -319,7 +319,8 @@ async def remove_sentence(request: Request,project_id:int=Query(...,example="102
     '''Remove sentence.'''
     log.info('In remove_sentence')
     log.debug('project_id:%s, sentence_id:%s',project_id, sentence_id)
-    deleted_content = projects_crud.remove_project_sentence(db_, project_id,sentence_id)
+    deleted_content = projects_crud.remove_project_sentence(db_, project_id,sentence_id,
+        user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_, del_content=  deleted_content['db_content'],
         table_name = "translation_sentences", deleting_user=user_details['user_id'])
     return {'message': f"Sentence with identity {sentence_id} deleted successfully",
@@ -376,8 +377,8 @@ async def suggest_auto_translation(request: Request,project_id:int=Query(...,exa
     log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s',
         project_id, books, sentence_id_list, sentence_id_range)
     return nlp_crud.project_suggest_translations(db_, project_id, books,
-        sentence_id_list=sentence_id_list, sentence_id_range=sentence_id_range,
-        confirm_all=confirm_all)
+        sentence_id_list = sentence_id_list, user_id = user_details['user_id'],
+        sentence_id_range = sentence_id_range,confirm_all = confirm_all)
 
 ########### Generic Translation ##################
 @router.put('/v2/translation/tokens', response_model=List[schemas_nlp.Token],
