@@ -192,6 +192,7 @@ def save_project_translations(db_, project_id, token_translations,
     else:
         result = None
     project_row.updatedUser = user_id
+    project_row.updateTime = datetime.now()
     response = {
         'db_content':result,
         'project_content':project_row
@@ -806,6 +807,7 @@ def project_suggest_translations(db_:Session, project_id, books, #pylint: disabl
         updated_drafts = auto_translate(**args)
         db_.add_all(updated_drafts)
     project_row.updatedUser = user_id
+    project_row.updateTime = datetime.now()
     response = {
         'db_content':updated_drafts,
         'project_content':project_row
