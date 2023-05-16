@@ -1,4 +1,4 @@
-'''Test cases for Agmt projects related APIs'''
+'''Test cases for SanketMAST projects related APIs'''
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
@@ -12,10 +12,10 @@ UNIT_URL = '/v2/translation/projects'
 USER_URL = '/v2/translation/project/user'
 SENTENCE_URL = '/v2/translation/project/sentences'
 RESTORE_URL = '/v2/restore'
-headers = {"contentType": "application/json", "accept": "application/json", "app":"Autographa"}
+headers = {"contentType": "application/json", "accept": "application/json", "app":"SanketMAST"}
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
-                "app":"Autographa"
+                "app":"SanketMAST"
             }
 
 bible_books = {
@@ -56,9 +56,9 @@ def check_post(data, auth_token=None):
     '''creates a projects'''
     headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
-                "app":"Autographa"}
+                "app":"SanketMAST"}
     if not auth_token:
-        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     else:
         headers_auth['Authorization'] = "Bearer"+" "+auth_token
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
@@ -66,7 +66,7 @@ def check_post(data, auth_token=None):
 
 def test_default_post_put_get():
     '''Positive test to create a project'''
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     resp = client.get(UNIT_URL+'?project_name=Test project 1',headers=headers_auth)
     assert_not_available_content(resp)
 
@@ -307,7 +307,7 @@ def test_put_invalid():
 
 def check_project_user(project_name, user_id, role=None, status=None, metadata = None):
     '''Make sure the user is in project and if specified, check for other values'''
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     response = client.get(UNIT_URL+'?project_name='+project_name,headers=headers_auth)
     found_user = False
     found_owner = False
@@ -344,8 +344,8 @@ def test_add_user():
     assert response.status_code == 404
     assert response.json()['error'] == 'Requested Content Not Available'
     #exising user
-    new_user_id = initial_test_users['AgUser']['test_user_id']
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    new_user_id = initial_test_users['SanketMASTUser']['test_user_id']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     response = client.post(USER_URL+'?project_id='+str(new_project['projectId'])+
         '&user_id='+str(new_user_id),headers=headers_auth)
     assert response.status_code == 201
@@ -401,7 +401,7 @@ def test_update_user():
     resp = check_post(project_data)
     assert resp.json()['message'] == "Project created successfully"
     new_project = resp.json()['data']
-    new_user_id = initial_test_users['AgUser']['test_user_id']
+    new_user_id = initial_test_users['SanketMASTUser']['test_user_id']
 
     resp = client.post(USER_URL+'?project_id='+str(new_project['projectId'])+
         '&user_id='+str(new_user_id),headers=headers_auth)
@@ -448,7 +448,7 @@ def test_update_user_invlaid():
     resp = check_post(project_data)
     assert resp.json()['message'] == "Project created successfully"
     new_project = resp.json()['data']
-    new_user_id = initial_test_users['AgUser']['test_user_id']
+    new_user_id = initial_test_users['SanketMASTUser']['test_user_id']
 
     resp = client.post(USER_URL+'?project_id='+str(new_project['projectId'])+
         '&user_id='+str(new_user_id),headers=headers_auth)
@@ -572,15 +572,15 @@ def test_agmt_projects_access_rule():
     response = client.post(UNIT_URL, headers=headers, json=post_data)
     assert response.status_code == 401
     assert 'error' in response.json()
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"
     project1_id = response.json()['data']['projectId']
 
-    #create from app other than Autographa
+    #create from app other than SanketMAST
     post_data["projectName"] = "Test project 2"
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     headers_auth["app"] = "API-user"
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert response.status_code == 403
@@ -598,7 +598,7 @@ def test_agmt_projects_access_rule():
 
     #create project by not allowed users
     post_data["projectName"] = "Test project 5"
-    headers_auth["app"] = "Autographa"
+    headers_auth["app"] = "SanketMAST"
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert response.status_code == 403
@@ -627,7 +627,7 @@ def test_agmt_projects_access_rule():
 
     #create with AGUser and SA
     post_data["projectName"] = "Test project 6"
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"
@@ -645,18 +645,18 @@ def test_agmt_projects_access_rule():
     "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
     #update with Owner of project
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
     response2 = client.put(UNIT_URL, headers=headers_auth, json=put_data)
     assert response2.status_code == 201
     assert response2.json()['message'] == "Project updated successfully"
     updated_project = response2.json()['data']
     assert updated_project['metaData']['books'] == ['mat', 'mrk']
 
-    #aguser project can be updated by super admin and Ag admin
+    #aguser project can be updated by super admin and SanketMAST admin
     put_data = {
         "projectId":project6_id,
         "projectName":"New name for old project6"}
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     response2 = client.put(UNIT_URL, headers=headers_auth, json=put_data)
     assert response2.status_code == 201
     assert response2.json()['message'] == "Project updated successfully"
@@ -670,15 +670,15 @@ def test_agmt_projects_access_rule():
 
     #update project with not Owner
     put_data["projectId"] = project7_id
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
     response2 = client.put(UNIT_URL, headers=headers_auth, json=put_data)
     assert response2.status_code == 403
     assert response2.json()['error'] == 'Permission Denied'
 
     #project user create
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    new_user_id = initial_test_users['AgUser']['test_user_id']
-    #add user from another app than Autographa
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
+    new_user_id = initial_test_users['SanketMASTUser']['test_user_id']
+    #add user from another app than SanketMAST
     headers_auth["app"] = "VachanAdmin"
     response = client.post(USER_URL+'?project_id='+str(project1_id)+
         '&user_id='+str(new_user_id),headers=headers_auth)
@@ -695,14 +695,14 @@ def test_agmt_projects_access_rule():
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
     #add user by not owner
-    headers_auth["app"] = "Autographa"
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    headers_auth["app"] = "SanketMAST"
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
     response = client.post(USER_URL+'?project_id='+str(project1_id)+
         '&user_id='+str(new_user_id),headers=headers_auth)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
     #add from Autograpaha by allowed user
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     post_data["projectName"] = "Test project 8"
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert response.status_code == 201
@@ -720,7 +720,7 @@ def test_agmt_projects_access_rule():
     assert data['active']
 
     #update user with not owner
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
     update_data = {
         "project_id": project8_id,
         "userId": new_user_id
@@ -733,7 +733,7 @@ def test_agmt_projects_access_rule():
     assert response3.json()['error'] == 'Permission Denied'
     #update with owner
     post_data['projectName'] = 'Test project 1'
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     response3 = client.put(USER_URL, headers=headers_auth, json=update_data)
     assert response3.status_code == 201
     assert response3.json()['message'] == "User updated in project successfully"
@@ -746,21 +746,21 @@ def test_get_project_access_rules():
     "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml"
     }
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"
     project1_id = response.json()['data']['projectId']
 
     post_data["projectName"] = "Test project 2"
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"
     project2_id = response.json()['data']['projectId']
 
     post_data["projectName"] = "Test project 3"
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"
@@ -776,7 +776,7 @@ def test_get_project_access_rules():
     test_SA_token = response.json()["token"]
 
     #get project from apps other than autographa
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     headers_auth["app"] = "API-user"
     response = client.get(UNIT_URL,headers=headers_auth)
     assert response.status_code == 403
@@ -790,8 +790,8 @@ def test_get_project_access_rules():
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
 
-    #get project from Autographa with not allowed users get empty result
-    headers_auth["app"] = "Autographa"
+    #get project from SanketMAST with not allowed users get empty result
+    headers_auth["app"] = "SanketMAST"
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     response = client.get(UNIT_URL,headers=headers_auth)
     assert len(response.json()) == 0
@@ -802,8 +802,8 @@ def test_get_project_access_rules():
     response = client.get(UNIT_URL,headers=headers_auth)
     assert len(response.json()) == 0
 
-    #get all project by SA , AgAdmin, Bcs internal dev
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    #get all project by SA , SanketMASTAdmin, Bcs internal dev
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     response = client.get(UNIT_URL,headers=headers_auth)
     assert len(response.json()) >= 3
 
@@ -815,12 +815,12 @@ def test_get_project_access_rules():
     response = client.get(UNIT_URL,headers=headers_auth)
     assert len(response.json()) >= 3
 
-    #get project by project owner Aguser only get owner project
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    #get project by project owner SanketMASTuser only get owner project
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
     response = client.get(UNIT_URL,headers=headers_auth)
     assert len(response.json()) >= 2
 
-    #create project by SA and add Aguser as member to the project
+    #create project by SA and add SanketMASTuser as member to the project
     post_data["projectName"] = 'Test project 4'
     headers_auth['Authorization'] = "Bearer"+" "+ test_SA_token
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
@@ -828,7 +828,7 @@ def test_get_project_access_rules():
     assert response.json()['message'] == "Project created successfully"
     project4_id = response.json()['data']['projectId']
 
-    new_user_id = initial_test_users['AgUser']['test_user_id']
+    new_user_id = initial_test_users['SanketMASTUser']['test_user_id']
     response = client.post(USER_URL+'?project_id='+str(project4_id)+
         '&user_id='+str(new_user_id),headers=headers_auth)
     assert response.status_code == 201
@@ -840,24 +840,24 @@ def test_get_project_access_rules():
     assert data['active']
 
     #get after add as member
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
     response = client.get(UNIT_URL+"?user_id="+new_user_id,headers=headers_auth)
     assert len(response.json()) >= 3
     for proj in response.json():
         assert proj['projectName'] in ["Test project 4","Test project 3","Test project 2"]
 
-   #A new Aguser requesting for all projecrts
+   #A new SanketMASTuser requesting for all projecrts
     # test_ag_user_data = {
     #     "email": "testaguser@test.com",
     #     "password": "passwordag@1"
     # }
-    # response = register(test_ag_user_data, apptype='Autographa')
+    # response = register(test_ag_user_data, apptype='SanketMAST')
     # ag_user_id = [response.json()["registered_details"]["id"]]
     # ag_user_token = response.json()["token"]
 
     #get projects where user have no projects result is []
-    headers_auth["app"] = "Autographa"
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser2']['token']
+    headers_auth["app"] = "SanketMAST"
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser2']['token']
     # headers_auth['Authorization'] = "Bearer"+" "+ag_user_token
     response = client.get(UNIT_URL,headers=headers_auth)
     assert len(response.json()) == 0
@@ -866,7 +866,7 @@ def test_get_project_access_rules():
 
 def test_create_n_update_times():
     '''Test to ensure created time and last updated time are included in project GET response'''
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     resp = client.get(UNIT_URL+'?project_name=Test project 1',headers=headers_auth)
     assert_not_available_content(resp)
 
@@ -910,7 +910,7 @@ def test_delete_project():
         "sourceLanguageCode": "hi",
         "targetLanguageCode": "ml"
     }
-    resp = check_post(project_data, auth_token=initial_test_users['AgAdmin']['token'])
+    resp = check_post(project_data, auth_token=initial_test_users['SanketMASTAdmin']['token'])
     assert resp.status_code == 201
     assert resp.json()['message'] == "Project created successfully"
     new_project = resp.json()['data']
@@ -918,7 +918,7 @@ def test_delete_project():
     assert_positive_get(new_project)
 
     # fetch project
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     get_response = client.get(UNIT_URL,headers=headers_auth)
     assert len(get_response.json()) >= 1
     found_project = False
@@ -940,7 +940,7 @@ def test_delete_project():
 
     # deleting non existing  project
     invalid_project_id = 9999
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     resp = client.delete(UNIT_URL+'?project_id='+str(invalid_project_id),headers=headers_auth)
     assert resp.status_code == 404
     assert resp.json()['details'] == f"Project with id {invalid_project_id} not found"
@@ -952,8 +952,8 @@ def test_delete_project():
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
-    # Delete as AgAdmin- Positive test
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    # Delete as SanketMASTAdmin- Positive test
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     resp = client.delete(UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
     assert resp.status_code == 201
     assert "successfull" in resp.json()['message']
@@ -962,9 +962,9 @@ def test_delete_project():
     resp = client.get(UNIT_URL+'?project_name=Test project 1',headers=headers_auth)
     assert_not_available_content(resp)
 
-    #Create and Delete Project with AgUser - Positive Test
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    post_resp_aguser = check_post(project_data, auth_token=initial_test_users['AgUser']['token'])
+    #Create and Delete Project with SanketMASTUser - Positive Test
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
+    post_resp_aguser = check_post(project_data, auth_token=initial_test_users['SanketMASTUser']['token'])
     assert post_resp_aguser.status_code == 201
     #Ensure presence of created project
     get_response = client.get(UNIT_URL,headers=headers_auth)
@@ -1028,14 +1028,14 @@ def test_restore_project():
         "sourceLanguageCode": "hi",
         "targetLanguageCode": "ml"
     }
-    post_resp= check_post(project_data, auth_token=initial_test_users['AgAdmin']['token'])
+    post_resp= check_post(project_data, auth_token=initial_test_users['SanketMASTAdmin']['token'])
     assert post_resp.status_code == 201
 
     #Get project Id
     project_id = post_resp.json()['data']['projectId']
 
     #Delete
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     delete_resp= client.delete(UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
     assert delete_resp.status_code == 201
     #Ensure deleted project is not present
@@ -1051,8 +1051,8 @@ def test_restore_project():
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
-    #Restore project with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev and APIUSer2 - Negative Test
-    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2']:
+    #Restore project with other API user,VachanAdmin,SanketMASTAdmin,SanketMASTUser,VachanUser,BcsDev and APIUSer2 - Negative Test
+    for user in ['APIUser','VachanAdmin','SanketMASTAdmin','SanketMASTUser','VachanUser','BcsDev','APIUser2']:
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
         response = client.put(RESTORE_URL, headers=headers_auth, json=data)
         assert response.status_code == 403
@@ -1104,12 +1104,12 @@ def test_delete_user():
         "sourceLanguageCode": "hi",
         "targetLanguageCode": "ml"
     }
-    resp = check_post(project_data, auth_token=initial_test_users['AgAdmin']['token'])
+    resp = check_post(project_data, auth_token=initial_test_users['SanketMASTAdmin']['token'])
     assert resp.json()['message'] == "Project created successfully"
     new_project = resp.json()['data']
-    new_user_id = initial_test_users['AgUser']['test_user_id']
+    new_user_id = initial_test_users['SanketMASTUser']['test_user_id']
 
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     resp = client.post(USER_URL+'?project_id='+str(new_project['projectId'])+
         '&user_id='+str(new_user_id),headers=headers_auth)
     assert resp.json()['message'] == "User added to project successfully"
@@ -1125,8 +1125,8 @@ def test_delete_user():
     check_project_user(project_data['projectName'], new_user_id, role='projectMember')
 
     # deleting non existing user
-    second_user_id = initial_test_users['AgUser2']['test_user_id']
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    second_user_id = initial_test_users['SanketMASTUser2']['test_user_id']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     resp = client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
         '&user_id='+str(second_user_id),headers=headers_auth)
     assert resp.status_code == 404
@@ -1138,8 +1138,8 @@ def test_delete_user():
     check_project_user(project_data['projectName'], second_user_id, role='projectMember')
 
     #  as non-owner user
-    user_id = initial_test_users['AgUser2']['test_user_id']
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    user_id = initial_test_users['SanketMASTUser2']['test_user_id']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
     resp = client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
         '&user_id='+str(user_id),headers=headers_auth)
     assert resp.status_code == 403
@@ -1147,8 +1147,8 @@ def test_delete_user():
     check_project_user(project_data['projectName'], user_id, role='projectMember')
 
     # as same user
-    user_id = initial_test_users['AgAdmin']['test_user_id']
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    user_id = initial_test_users['SanketMASTAdmin']['test_user_id']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     resp = client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
         '&user_id='+str(user_id),headers=headers_auth)
     assert resp.status_code == 403
@@ -1156,8 +1156,8 @@ def test_delete_user():
     check_project_user(project_data['projectName'], user_id, role='projectOwner')
 
     # as project owner - Positive test
-    user_id = initial_test_users['AgUser2']['test_user_id']
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    user_id = initial_test_users['SanketMASTUser2']['test_user_id']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     resp = client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
         '&user_id='+str(user_id),headers=headers_auth)
     assert resp.status_code == 201
@@ -1184,14 +1184,14 @@ def test_restore_user():
         "sourceLanguageCode": "hi",
         "targetLanguageCode": "ml"
     }
-    resp = check_post(project_data, auth_token=initial_test_users['AgAdmin']['token'])
+    resp = check_post(project_data, auth_token=initial_test_users['SanketMASTAdmin']['token'])
     assert resp.json()['message'] == "Project created successfully"
     #  Get project Id
     project_id = resp.json()['data']['projectId']
     new_project = resp.json()['data']
-    user_id = initial_test_users['AgUser']['test_user_id']
+    user_id = initial_test_users['SanketMASTUser']['test_user_id']
 
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     resp = client.post(USER_URL+'?project_id='+str(new_project['projectId'])+
         '&user_id='+str(user_id),headers=headers_auth)
     assert resp.json()['message'] == "User added to project successfully"
@@ -1200,8 +1200,8 @@ def test_restore_user():
     check_project_user(project_data['projectName'], user_id, role='projectMember')
     
     #Delete
-    # user_id = initial_test_users['AgUser']['test_user_id']
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    # user_id = initial_test_users['SanketMASTUser']['test_user_id']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     delete_resp = client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
         '&user_id='+str(user_id),headers=headers_auth)
     assert delete_resp.status_code == 201
@@ -1230,8 +1230,8 @@ def test_restore_user():
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
-    #Restore project user with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev and APIUSer2 - Negative Test
-    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2']:
+    #Restore project user with other API user,VachanAdmin,SanketMASTAdmin,SanketMASTUser,VachanUser,BcsDev and APIUSer2 - Negative Test
+    for user in ['APIUser','VachanAdmin','SanketMASTAdmin','SanketMASTUser','VachanUser','BcsDev','APIUser2']:
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
         response = client.put(RESTORE_URL, headers=headers_auth, json=data)
         assert response.status_code == 403
@@ -1275,7 +1275,7 @@ def test_bugfix_split_n_merged_verse():
     "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml"
     }
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"

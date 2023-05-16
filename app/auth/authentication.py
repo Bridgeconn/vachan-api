@@ -492,7 +492,7 @@ def register_check_success(reg_response):
     user_permision = data["registered_details"]['Permissions']
     switcher = {
         schema_auth.AdminRoles.AGUSER.value : schema_auth.App.AG.value,
-        schema_auth.AdminRoles.SAMSTUSER.value : schema_auth.App.SMAST.value,
+        schema_auth.AdminRoles.SMASTUSER.value : schema_auth.App.SMAST.value,
         schema_auth.AdminRoles.VACHANUSER.value : schema_auth.App.VACHAN.value,
         # schema_auth.AdminRoles.VACHANADMIN.value : schema_auth.AdminRoles.VACHANADMIN.value
             }
@@ -541,7 +541,7 @@ def register_flow_fail(reg_response,email,user_role,reg_req):
             for perm in user_permision:
                 switcher = {
                     schema_auth.AdminRoles.AGUSER.value : schema_auth.App.AG.value,
-                    schema_auth.AdminRoles.SMAST.value : schema_auth.App.SMAST.value,
+                    schema_auth.AdminRoles.SMASTUSER.value : schema_auth.App.SMAST.value,
                     schema_auth.AdminRoles.VACHANUSER.value : schema_auth.App.VACHAN.value,
                     # schema_auth.AdminRoles.VACHANADMIN.value : schema_auth.App.VACHANADMIN.value
                     }

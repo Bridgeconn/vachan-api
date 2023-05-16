@@ -171,6 +171,13 @@ def create_user_session_run_at_start():
         assert response.status_code == 201
         assert response.json()["role_list"] == \
             [schema_auth.AdminRoles.AGUSER.value, schema_auth.AdminRoles.AGADMIN.value]
+        #SanketMASTAdmin
+        role_user_id = initial_test_users["SanketMASTAdmin"]["test_user_id"]
+        role_list = [schema_auth.AdminRoles.SMASTADMIN.value]
+        response = assign_roles(super_data,role_user_id,role_list)
+        assert response.status_code == 201
+        assert response.json()["role_list"] == \
+            [schema_auth.AdminRoles.SMASTUSER.value, schema_auth.AdminRoles.SMASTADMIN.value]
         #VachanAdmin
         role_user_id = initial_test_users["VachanAdmin"]["test_user_id"]
         role_list = [schema_auth.AdminRoles.VACHANADMIN.value]
