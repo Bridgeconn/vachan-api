@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 import db_models
 from schema import schemas_nlp
+from dependencies import log
 from crud import utils, nlp_crud
 from custom_exceptions import NotAvailableException, TypeException,\
     UnprocessableException, PermissionException
@@ -71,6 +72,59 @@ def update_translation_project_sentences(db_, project_obj, new_books, user_id):
             updatedUser=user_id)
         db_.add(draft_row)
 
+def get_sentences_from_usfm_json(chapters_json, book_code, book_id):
+    '''Obtain the following from USFM content
+    * sentence id as per bcv value in int
+    * surrogate id as human readable reference
+    * sentence from verse text
+    * Handle merged verses. Keep one entry using id with first verse number
+    * Handle split verses, by combining all parts to form one entry'''
+    draft_rows = []
+    for chap in chapters_json:
+        chapter_number = chap['chapterNumber']
+        found_split_verse = None
+        splits = []
+        for cont in chap['contents']:
+            if "verseNumber" in cont:
+                verse_number = cont['verseNumber']
+                verse_text = cont['verseText']
+                try:
+                    verse_number_int = int(verse_number)
+                    surrogate_id = book_code+" "+str(chapter_number)+":"+verse_number
+                except Exception as exe: #pylint: disable=W0703
+                    log.error(str(exe))
+                    log.warning(
+                        "Found a special verse %s. Checking for split verse or merged verses...",
+                        verse_number)
+                    if "-" in verse_number:
+                        verse_number_int = int(verse_number.split('-')[0])
+                        surrogate_id = book_code+" "+str(chapter_number)+":"+str(verse_number)
+                    elif re.match(r'\d+\D+$', verse_number):
+                        split_verse_obj = re.match(r'(\d+)(\D+)$', verse_number)
+                        verse_number_int = int(split_verse_obj.group(1))
+                        if found_split_verse and found_split_verse == verse_number_int:
+                            # found a continuation
+                            splits.append(split_verse_obj.group(2))
+                            verse_text = draft_rows[-1]['sentence'] +" "+ verse_text
+                            draft_rows.pop(-1)
+                        else:
+                            # found the start of a split verse
+                            found_split_verse = verse_number_int
+                            splits = [split_verse_obj.group(2)]
+                        surrogate_id = book_code+" "+str(chapter_number)+":"+\
+                            str(verse_number_int)+ "-".join(splits)
+                    else:
+                        raise UnprocessableException(
+                            f"Error with verse number {verse_number}") from exe
+                draft_rows.append({
+                    "sentenceId": book_id*1000000+\
+                                int(chapter_number)*1000+verse_number_int,
+                    "surrogateId": surrogate_id,
+                    "sentence": verse_text,
+                    "draftMeta": [[[0, len(verse_text)],[0,0], "untranslated"]],
+                    })
+    return draft_rows
+
 def update_translation_project_uploaded_book(db_,project_obj,new_books,user_id):
     """bulk uploaded book update in update translation project"""
     for usfm in project_obj.uploadedUSFMs:
@@ -81,23 +135,16 @@ def update_translation_project_uploaded_book(db_,project_obj,new_books,user_id):
         if not book:
             raise NotAvailableException(f"Book, {book_code}, not found in database")
         new_books.append(book_code)
-        for chap in usfm_json['chapters']:
-            chapter_number = chap['chapterNumber']
-            for cont in chap['contents']:
-                if "verseNumber" in cont:
-                    verse_number = cont['verseNumber']
-                    verse_text = cont['verseText']
-                    offsets = [0, len(verse_text)]
-                    draft_row = db_models.TranslationDraft(
-                        project_id=project_obj.projectId,
-                        sentenceId=book.bookId*1000000+
-                            int(chapter_number)*1000+int(verse_number),
-                        surrogateId=book_code+" "+str(chapter_number)+":"+str(verse_number),
-                        sentence=verse_text,
-                        draft="",
-                        draftMeta=[[offsets,[0,0], "untranslated"]],
-                        updatedUser=user_id)
-                    db_.add(draft_row)
+        draft_rows = get_sentences_from_usfm_json(usfm_json['chapters'], book_code, book.bookId)
+        for item in draft_rows:
+            db_.add(db_models.TranslationDraft(
+                project_id=project_obj.projectId,
+                sentenceId=item['sentenceId'],
+                surrogateId=item['surrogateId'],
+                sentence=item['sentence'],
+                draft="",
+                draftMeta=item['draftMeta'],
+                updatedUser=user_id))
 
 def update_translation_project(db_:Session, project_obj, user_id=None):
     '''Either activate or deactivate a project or Add more books to a project,
@@ -316,6 +363,8 @@ def update_project_draft(db_:Session, project_id, sentence_list, user_id):
         sent.draft = input_sent.draft
         sent.draftMeta = input_sent.draftMeta
         sent.updatedUser = user_id
+    project_row.updatedUser = user_id
+    project_row.updateTime = datetime.datetime.now()
     response_result = {
         'db_content':sentences,
         'project_content':project_row
@@ -577,7 +626,7 @@ def obtain_project_source(db_:Session, project_id, books=None, sentence_id_range
         }
     return response
 
-def remove_project_sentence(db_, project_id, sentence_id):
+def remove_project_sentence(db_, project_id, sentence_id,user_id):
     '''To remove a sentence'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
@@ -590,6 +639,8 @@ def remove_project_sentence(db_, project_id, sentence_id):
     # if user_id == current_user:
     #     raise PermissionException("A user cannot remove oneself from a project.")
     db_.delete(sentence_row)
+    project_row.updatedUser = user_id
+    project_row.updateTime = datetime.datetime.now()
     # db_.commit()
     response = {
         "db_content": sentence_row,

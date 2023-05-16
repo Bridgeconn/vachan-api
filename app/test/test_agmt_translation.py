@@ -813,6 +813,89 @@ def test_agmt_translation_access_rule_app():
     assert response.status_code == 403
     assert response.json()['error'] == "Permission Denied"
 
+def test_data_updated_time():
+    '''Bugfix of issue #563:https://github.com/Bridgeconn/vachan-api/issues/563 '''
+
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+
+    #create an empty project
+    create_project_resp = add_project(project_data)
+    assert create_project_resp.json()['message'] == "Project created successfully"
+    project_id = create_project_resp.json()['data']['projectId']
+    project_name =create_project_resp.json()['data']['projectName']
+    project_create_time = create_project_resp.json()['data']['createTime']
+
+    # Add book into empty project
+    put_data = {
+        "projectId": project_id,
+        "uploadedUSFMs":[bible_books['mat']]
+    }
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    assert resp.json()['message'] == "Project updated successfully"
+
+    # Get tokens
+    resp = client.get("/v2/translation/project/tokens?project_id="+str(project_id)
+         ,headers=headers_auth)
+
+    # Case 1:PUT Tokens
+    #Apply token translations
+    all_tokens = resp.json()
+    post_obj_list = [
+      {
+        "token": all_tokens[0]['token'],
+        "occurrences": [all_tokens[0]["occurrences"][0]],
+        "translation": "test translation"
+      }
+    ]
+    response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
+        headers=headers_auth, json=post_obj_list)
+
+    # Get project details
+    project_url = f"/v2/translation/projects?project_name={project_name}"
+    project_resp = client.get(project_url, headers=headers_auth)
+    project_update_time = project_resp.json()[0]['updateTime']
+    assert not project_create_time == project_update_time
+
+    # Check sentences are added
+    resp = client.get(f"{UNIT_URL}/sentences?project_id={project_id}", headers=headers_auth)
+    sentence_id = resp.json()[0]['sentenceId']
+
+    # Case 2 : PUT Draft
+    put_data = [
+            {"sentenceId":sentence_id,
+             "draft": "കാട്",
+             "draftMeta":[
+                  [ [5,11], [0,4], "confirmed"]
+                ]
+            }
+    ]
+    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
+        headers=headers_auth, json=put_data)
+    # Get project details
+    project_resp = client.get(project_url, headers=headers_auth)
+    project_update_time = project_resp.json()[0]['updateTime']
+    assert not project_create_time == project_update_time
+ 
+    #Case 3: Update suggestions
+    resp = client.put(f"/v2/translation/project/suggestions?project_id={project_id}&sentenceIdList={sentence_id}",
+        headers=headers_auth)
+    assert resp.status_code == 201
+     # Get project details
+    project_resp = client.get(project_url, headers=headers_auth)
+    project_update_time = project_resp.json()[0]['updateTime']
+    assert not project_create_time == project_update_time
+
+    # Case 4 : Delete Sentence
+    response = client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id}",
+            headers=headers_auth)
+    assert response.status_code == 201
+    assert "successfull" in response.json()['message']
+     # Get project details
+    project_resp = client.get(project_url, headers=headers_auth)
+    project_update_time = project_resp.json()[0]['updateTime']
+    assert not project_create_time == project_update_time
+
+
 #Project translation Access rules based permission
 def test_agmt_translation_access_permissions():
     """test for access permission to project translation"""
@@ -898,6 +981,7 @@ def test_agmt_translation_access_permissions():
     response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
         headers=headers_auth, json=post_obj_list)
     assert response.status_code == 201
+    print("resp after put token:",resp.json())
 
     response = client.put('/v2/translation/project/token-sentences?project_id='+
         str(project_id)+'&token='+our_token,

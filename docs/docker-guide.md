@@ -74,21 +74,13 @@ To turn down the running containers
 ## To deploy on server
 Install docker, docker-compose & git and set up the right repo and branch. 
 
-In the production-deploy version, we would connect the app to the centrally hosted Kratos user DB.
-(To start that DB, in the same or different server, use the [this](../docker/Kratos_config/database.yml) docker-compose file.)
-```
-cd Kratos_config
-docker-compose -f database.yml up -d
-cd ..
-```
-
 Back in the vachan-api server,along with VACHAN_SUPER_USERNAME and VACHAN_SUPER_PASSWORD, need to set VACHAN_AUTH_DATABASE, VACHAN_SUPPORT_EMAIL_CREDS and VACHAN_SUPPORT_EMAIL as environment variables along with other required values, in the `prod.env` file.
 
 Refer the following format
 ```
 VACHAN_SUPER_USERNAME="<super-admin-emial-id>"
 VACHAN_SUPER_PASSWORD="<a-strong-password>"
-VACHAN_AUTH_DATABASE="postgresql://<DB-user>:<DB-passwords>@<server-ip>:<DB-port>/<DB-name>"
+VACHAN_AUTH_DATABASE="postgresql://<DB-user>:<DB-passwords>@postgresd:<DB-port>/<DB-name>"
 VACHAN_SUPPORT_EMAIL_CREDS="smtps://<email-id>:<password>:<email-service>:<smtp-port>/?skip_ssl_verify=true&legacy_ssl=true"
 VACHAN_SUPPORT_EMAIL="<email-id>"
 ```

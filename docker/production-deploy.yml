@@ -1,5 +1,39 @@
 version: '3.9'
 services:
+ kratos-migrate:
+    image: oryd/kratos:v0.7.0-alpha.1
+    environment:
+      - DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
+    volumes:
+      - type: volume
+        source: kratos-sqlite
+        target: /var/lib/sqlite
+        read_only: false
+      - type: bind
+        source: ./Kratos_config/email-password
+        target: /etc/config/kratos
+    command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
+    restart: on-failure
+    depends_on:
+      - postgresd
+    networks:
+      - my-network
+
+ postgresd:
+    image: postgres:9.6
+    ports:
+      - "5432:5432"
+    restart: always
+    environment:
+      - POSTGRES_USER=${VACHAN_KRATOS_DB_USER:-kratos}
+      - POSTGRES_PASSWORD=${VACHAN_KRATOS_DB_PASSWORD:-secret}
+      - POSTGRES_DB=${VACHAN_KRATOS_DB_NAME:-kratos}
+      - POSTGRES_HOST_AUTH_METHOD=md5
+    networks:
+      - my-network
+    volumes: 
+      - kratos-postgres-vol:/var/lib/postgresql/data
+ 
  kratos:
   image: oryd/kratos:v0.7.0-alpha.1
   ports:
@@ -238,4 +272,5 @@ volumes:
   vachan-db-vol:
   logs-vol:
   redis-data:
-  # kratos-sqlite:
+  kratos-sqlite:
+  kratos-postgres-vol:

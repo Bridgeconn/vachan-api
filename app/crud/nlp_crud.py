@@ -191,6 +191,8 @@ def save_project_translations(db_, project_id, token_translations,
         result =  sorted(result, key=lambda x: x.sentenceId)
     else:
         result = None
+    project_row.updatedUser = user_id
+    project_row.updateTime = datetime.now()
     response = {
         'db_content':result,
         'project_content':project_row
@@ -776,10 +778,11 @@ def auto_translate(db_, sentence_list, source_lang, target_lang, **kwargs):
         auto_translate_token_logic(db_,tokens, sent, source_lang, target_lang)
     return sentence_list
 
-def project_suggest_translations(db_:Session, project_id, books, sentence_id_range,
-    sentence_id_list, **kwargs):
+def project_suggest_translations(db_:Session, project_id, books, #pylint: disable=too-many-locals
+    sentence_id_list,user_id, **kwargs):
     '''Tokenize and auto fill draft with top suggestions'''
-    confirm_all= kwargs.get("confirm_all",False)
+    sentence_id_range = kwargs.get("sentence_id_range")
+    confirm_all = kwargs.get("confirm_all",False)
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
@@ -803,6 +806,8 @@ def project_suggest_translations(db_:Session, project_id, books, sentence_id_ran
             args['punctuations'] = project_row.metaData['punctuations']
         updated_drafts = auto_translate(**args)
         db_.add_all(updated_drafts)
+    project_row.updatedUser = user_id
+    project_row.updateTime = datetime.now()
     response = {
         'db_content':updated_drafts,
         'project_content':project_row

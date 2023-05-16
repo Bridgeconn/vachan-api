@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text
 from sqlalchemy.dialects.postgresql import array
+from sqlalchemy import MetaData
 import db_models
 from schema import schemas
 from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException
@@ -518,7 +519,7 @@ def update_source_sourcename(db_, source, db_content):
     db_content.sourceName = "_".join([table_name_parts[0],ver, rev, table_name_parts[-1]])
     return db_content
 
-def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
+def update_source(db_: Session, source: schemas.SourceEdit, user_id = None): #pylint: disable=too-many-branches
     '''changes one or more fields of sources, selected via sourceName or table_name'''
     db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source.sourceName).first()
@@ -563,6 +564,11 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None):
     # db_.refresh(db_content)
     if not source.sourceName.split("_")[-1] == db_models.ContentTypeName.GITLABREPO.value:
         db_models.dynamicTables[db_content.sourceName] = db_models.dynamicTables[source.sourceName]
+        if source.sourceName.split("_")[-1] == 'bible':
+            db_models.dynamicTables[db_content.sourceName+'_cleaned'] = \
+                db_models.dynamicTables[source.sourceName+'_cleaned']
+            db_models.dynamicTables[db_content.sourceName+'_audio'] = \
+                db_models.dynamicTables[source.sourceName+'_audio']
     return db_content
 
 def delete_source(db_: Session, delitem: schemas.DeleteIdentity):
@@ -584,3 +590,21 @@ def get_bible_books(db_:Session, book_id=None, book_code=None, book_name=None,
     if book_name is not None:
         query = query.filter(db_models.BibleBook.bookName == book_name.lower())
     return query.offset(skip).limit(limit).all()
+
+def cleanup_database(db_: Session):
+    '''Periodic cleanup of database'''
+    metadata = MetaData(bind=engine)
+    metadata.reflect()
+    for table_name in metadata.tables:
+        if table_name.startswith('table'):
+            if table_name.endswith("audio"):
+                tb_name = table_name.replace("_audio", "")
+            elif table_name.endswith("cleaned"):
+                tb_name = table_name.replace("_cleaned", "")
+            else:
+                tb_name = table_name
+            if not  get_sources(db_, table_name = tb_name):
+                with engine.connect() as conn:
+                    conn.execute(f"DROP TABLE IF EXISTS {table_name} CASCADE;")
+    deleteditem_count = db_.query(db_models.DeletedItem).delete()
+    return deleteditem_count

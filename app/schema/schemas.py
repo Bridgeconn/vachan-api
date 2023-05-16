@@ -491,3 +491,8 @@ BookCodePattern = constr(regex=r"^[a-zA-Z1-9][a-zA-Z][a-zA-Z]$")
 class RefreshCache(BaseModel):
     '''List of file paths'''
     mediaList: List[str] = None
+
+class CleanupDB(BaseModel):
+    '''Response object of periodic clean-up of database'''
+    message: str = Field(...,example="Database cleanup done!!")
+    deletedItemCount: int

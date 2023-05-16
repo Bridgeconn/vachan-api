@@ -84,6 +84,7 @@
         "delete/deactivate":["SuperAdmin", "resourceCreatedUser"]
     },
     "data-manipulation": {
-        "data-restore" : ["SuperAdmin"]
+        "data-restore" : ["SuperAdmin"],
+        "delete/deactivate":["SuperAdmin"]
     }
 }
