@@ -1125,9 +1125,10 @@ def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, 
 
     API = types.App.API.value
     AG = types.App.AG.value
+    SMAST = types.App.SMAST.value
     VACHAN = types.App.VACHAN.value
     VACHANADMIN = types.App.VACHANADMIN.value
-    Apps = [ API,AG,VACHAN,VACHANADMIN]
+    Apps = [ API,AG,VACHAN,VACHANADMIN,SMAST]
 
     #Get without Login headers=headers_auth
     #permision -------------------------> content , downloadable , derivable
@@ -1287,8 +1288,8 @@ def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, 
                 assert "errors" in response
         print(f"Test passed -----> AG ADMIN")
 
-        #Get with SannketMASTAdmin
-        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SannketMASTAdmin']['token']
+        #Get with SanketMASTAdmin
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
         for num in range(4):
             headers_auth['app'] = Apps[num]
             if bible:
@@ -1306,7 +1307,7 @@ def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, 
                 response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
                     headers=headers_auth)
                 assert "errors" in response
-        print(f"Test passed -----> SannketMASTAdmin")
+        print(f"Test passed -----> SanketMASTAdmin")
 
         #Get with SuperAdmin
         headers_auth['Authorization'] = SA_TOKEN
