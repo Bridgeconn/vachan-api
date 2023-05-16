@@ -410,7 +410,6 @@ def test_update_glossary():
         "translation": "പരീക്ഷിക്കുന്നു"
         }
     response = client.put(NLP_UNIT_URL+'/gloss',headers=headers_auth, json=data)
-    print("resp :",response.json())
     assert response.json()['data']['translation'] == "പരീക്ഷിക്കുന്നു"
     assert response.json()['data']["metaData"]["tense"] == "present"
 
@@ -476,6 +475,20 @@ def test_delete_glossary():
 
     # Ensure deleted glossary is not present
     get_response =client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
+                headers=headers_auth)
+    assert get_response.status_code == 200
+    assert isinstance(get_response.json(), dict)
+    assert len(get_response.json()['translations']) == 0
+
+    #Deleting glossary with empty translation - Positive Test
+    response = client.delete(NLP_UNIT_URL+
+        '/gloss?source_lang=en&target_lang=ml&token=the&translation=',
+        headers=headers_auth)
+    assert response.status_code == 201
+    assert "successfull" in response.json()['message']
+
+    # Ensure deleted glossary is not present
+    get_response =client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=the',
                 headers=headers_auth)
     assert get_response.status_code == 200
     assert isinstance(get_response.json(), dict)
@@ -567,7 +580,6 @@ def test_restore_glossary():
     assert response.json()['message'] == "Login Succesfull"
     test_user_token = response.json()["token"]
     headers_auth['Authorization'] = "Bearer"+" "+test_user_token
-
     response = client.put(RESTORE_URL, headers=headers_auth, json=data)
     assert response.status_code == 201
     assert response.json()['message'] == \

@@ -839,6 +839,8 @@ def remove_glossary(db_, source_lang,target_lang, token,translation):
             db_models.Language.code == target_lang).first()
         if not target_lang:
             raise NotAvailableException("Target language not available")
+    if translation is None:
+        translation = ""
     token_row = db_.query(db_models.TranslationMemory).filter(
             db_models.TranslationMemory.source_lang_id == source_lang.languageId,
             db_models.TranslationMemory.target_lang_id == target_lang.languageId,
