@@ -575,7 +575,7 @@ async def remove_glossary(request: Request,
     source_lang:schemas.LangCodePattern=Query(...,example="en"),
     target_lang:schemas.LangCodePattern=Query(...,example="hi"),
     token:str=Query(...,example="duck"),
-    translation:str=Query(...,example="बत्तख"),
+    translation:str=Query(None,example="बत्तख"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Remove glossary.'''
     log.info('In remove_gloss')
