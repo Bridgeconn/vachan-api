@@ -395,7 +395,8 @@ def get_users_kratos_filter(base_url,name,roles,limit,skip):#pylint: disable=too
                 switcher = {
                     schema_auth.FilterRoles.AG.value : schema_auth.FilterRoles.AG,
                     schema_auth.FilterRoles.VACHAN.value : schema_auth.FilterRoles.VACHAN,
-                    schema_auth.FilterRoles.API.value : schema_auth.FilterRoles.API
+                    schema_auth.FilterRoles.API.value : schema_auth.FilterRoles.API,
+                    schema_auth.FilterRoles.SMAST.value : schema_auth.FilterRoles.SMAST
                         }
                 for role in roles:
                     user_role =  switcher.get(role)
@@ -491,6 +492,7 @@ def register_check_success(reg_response):
     user_permision = data["registered_details"]['Permissions']
     switcher = {
         schema_auth.AdminRoles.AGUSER.value : schema_auth.App.AG.value,
+        schema_auth.AdminRoles.SMASTUSER.value : schema_auth.App.SMAST.value,
         schema_auth.AdminRoles.VACHANUSER.value : schema_auth.App.VACHAN.value,
         # schema_auth.AdminRoles.VACHANADMIN.value : schema_auth.AdminRoles.VACHANADMIN.value
             }
@@ -539,6 +541,7 @@ def register_flow_fail(reg_response,email,user_role,reg_req):
             for perm in user_permision:
                 switcher = {
                     schema_auth.AdminRoles.AGUSER.value : schema_auth.App.AG.value,
+                    schema_auth.AdminRoles.SMASTUSER.value : schema_auth.App.SMAST.value,
                     schema_auth.AdminRoles.VACHANUSER.value : schema_auth.App.VACHAN.value,
                     # schema_auth.AdminRoles.VACHANADMIN.value : schema_auth.App.VACHANADMIN.value
                     }
@@ -563,6 +566,7 @@ def user_register_kratos(register_details,app_type):
 
     switcher = {
         schema_auth.App.AG : schema_auth.AdminRoles.AGUSER.value,
+        schema_auth.App.SMAST : schema_auth.AdminRoles.SMASTUSER.value,
         schema_auth.App.VACHAN: schema_auth.AdminRoles.VACHANUSER.value,
         # schema_auth.App.VACHANADMIN: schema_auth.AdminRoles.VACHANADMIN.value
             }

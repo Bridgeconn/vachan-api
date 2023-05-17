@@ -18,35 +18,35 @@
     "open-access":{
         "read-via-api":["noAuthRequired"],
         "view-on-web":["noAuthRequired"],
-        "refer-for-translation": ["SuperAdmin", "AgAdmin", "AgUser"],
-        "translate":["SuperAdmin", "AgAdmin", "AgUser"]
+        "refer-for-translation": ["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "AgUser", "SanketMASTUser"],
+        "translate":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "AgUser", "SanketMASTUser"]
     },
     "editable":{
-        "create": ["SuperAdmin", "VachanAdmin", "AgAdmin", "AgUser"],
-        "edit": ["SuperAdmin", "VachanAdmin", "AgAdmin", "AgUser"]
+        "create": ["SuperAdmin", "VachanAdmin", "AgAdmin", "SanketMASTAdmin", "AgUser", "SanketMASTUser"],
+        "edit": ["SuperAdmin", "VachanAdmin", "AgAdmin", "SanketMASTAdmin", "AgUser", "SanketMASTUser"]
     },
     "publishable":{
         "read-via-api":["registeredUser"],
         "view-on-web":["noAuthRequired"],
-        "refer-for-translation":["SuperAdmin", "AgAdmin", "AgUser"]
+        "refer-for-translation":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "AgUser", "SanketMASTUser"]
     },
     "downloadable":{
         "download-n-save":["SuperAdmin", "VachanAdmin", "VachanUser"]
     },
     "derivable":{
-        "translate":["SuperAdmin", "AgAdmin", "AgUser"]
+        "translate":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "AgUser", "SanketMASTUser"]
     },
     "translation-project":{
-        "create":["SuperAdmin", "AgAdmin", "AgUser"],
-        "delete":["SuperAdmin", "AgAdmin", "projectOwner"],
-        "create-user":["SuperAdmin", "AgAdmin", "projectOwner"],
-        "delete-user":["SuperAdmin", "AgAdmin", "projectOwner"],
-        "edit-Settings":["SuperAdmin", "AgAdmin", "projectOwner"],
-        "read-settings":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember"],
-        "edit-draft": ["SuperAdmin", "AgAdmin", "projectOwner", "projectMember"],
-        "read-draft":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"],
-        "view-project":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"],
-        "delete-sentence": ["SuperAdmin", "AgAdmin", "projectOwner","projectMember"]
+        "create":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "AgUser", "SanketMASTUser"],
+        "delete":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "projectOwner"],
+        "create-user":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "projectOwner"],
+        "delete-user":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "projectOwner"],
+        "edit-Settings":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "projectOwner"],
+        "read-settings":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "projectOwner", "projectMember"],
+        "edit-draft": ["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "projectOwner", "projectMember"],
+        "read-draft":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "projectOwner", "projectMember", "BcsDeveloper"],
+        "view-project":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "projectOwner", "projectMember", "BcsDeveloper"],
+        "delete-sentence": ["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "projectOwner","projectMember"]
     },
     "generic-translation":{
         "read":["registeredUser"],

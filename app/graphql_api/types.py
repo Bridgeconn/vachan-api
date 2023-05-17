@@ -717,12 +717,14 @@ class App(graphene.Enum):
     VACHAN = "Vachan-online or vachan-app"
     VACHANADMIN = "VachanAdmin"
     API = "API-user"
+    SMAST = "SanketMAST"
 
 class AppInput(graphene.Enum):
     '''available choices for permission'''
     AG = "Autographa"
     VACHAN = "Vachan-online or vachan-app"
     API = "API-user"
+    SMAST = "SanketMAST"
 
 class RegisterInput(graphene.InputObjectType):
     """Register Input"""
@@ -743,6 +745,7 @@ class FilterRoles(graphene.Enum):
     AG = "Autographa"
     VACHAN = "Vachan-online or vachan-app"
     API = "API-user"
+    SMAST = "SanketMAST"
 
 class IdentitityListResponse(graphene.ObjectType):#pylint: disable=too-few-public-methods
     """Response object of getusers"""
@@ -770,10 +773,12 @@ class AdminRoles(graphene.Enum):
     SUPERADMIN = 'SuperAdmin'
     VACHANADMIN = 'VachanAdmin'
     AGADMIN = 'AgAdmin'
+    SMASTADMIN = "SanketMASTAdmin"
     AGUSER = 'AgUser'
     VACHANUSER = 'VachanUser'
     APIUSER = 'APIUser'
     BCSDEV = 'BcsDeveloper'
+    SMASTUSER = "SanketMASTUser"
 
 class UserroleInput(graphene.InputObjectType):
     """input for user role update"""
