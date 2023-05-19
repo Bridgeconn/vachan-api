@@ -21,6 +21,6 @@ jobs:
           cd /home/gitautodeploy/vachan-api
           git pull origin version-2
           cd docker
-          docker-compose --env-file prod.env -f production-deploy.yml up --force-recreate --build -d
+          docker compose --env-file prod.env -f production-deploy.yml up --force-recreate --build -d
 
 
