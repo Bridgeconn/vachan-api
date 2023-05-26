@@ -7,13 +7,32 @@ from sqlalchemy.orm import Session
 from schema import schema_auth, schemas
 from custom_exceptions import NotAvailableException
 from dependencies import log , get_db
-from auth.authentication import user_register_kratos,login_kratos,user_role_add ,\
-    delete_identity , get_auth_access_check_decorator , get_user_or_none, kratos_logout,\
-    get_all_or_one_kratos_users,update_kratos_user
+from auth.authentication import (
+    user_register_kratos,
+    login_kratos,
+    user_role_add,
+    delete_identity,
+    get_auth_access_check_decorator,
+    get_user_or_none, kratos_logout,
+    get_all_or_one_kratos_users,
+    update_kratos_user
+)
 from auth.auth_app import app_register_kratos, app_update_kratos, get_filter_apps
-from crud.auth_crud import create_auth_permission, update_auth_permission,\
-    get_auth_permission, create_role, get_role, update_role, create_access_rules,\
-    update_access_rules, get_access_rules, create_permission_map
+# from crud.auth_crud import create_auth_permission, update_auth_permission,\
+#     get_auth_permission, create_role, get_role, update_role, create_access_rules,\
+#     update_access_rules, get_access_rules, create_permission_map
+from crud.auth_crud import (
+    create_auth_permission,
+    update_auth_permission,
+    get_auth_permission,
+    create_role,
+    get_role,
+    update_role,
+    create_access_rules,
+    update_access_rules,
+    get_access_rules,
+    create_permission_map
+)
 
 router = APIRouter()
 
@@ -464,7 +483,10 @@ db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     * requestApp - one of the registered app name (mandatory)
     * resourceType - one of the available resource/entitlement name (mandatory)
     * permission - one of the available permission/tag name (mandatory)
-    * filterResults permission map allow or not to filter the result (default False ) '''
+    * filterResults - permission map allow or not to filter the result (default False ). ,\
+        For example for an endpoint that returns a list of items like bibles in the DB,\
+        setting this to true is needed to ensure the bibles are filtered based on user's \
+        role and the bible's access permissions. '''
     log.info('In create permission map')
     log.debug('Permission Map  Create In:%s',details)
     data = create_permission_map(db_, details, user_id = user_details['user_id'])
