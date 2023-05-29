@@ -471,9 +471,12 @@ def display_tree(tree):
 def rebuild_trie(db_, src, trg):
     '''Collect suggestions data from translation memory and traning data directory
     and rebuild the trie for language pair in memory'''
-    db_sents = db_.query(db_models.TranslationDraft, db_models.TranslationProject).filter(
-        db_models.TranslationProject.sourceLanguage.has(code = src),
-        db_models.TranslationProject.targetLanguage.has(code = trg)).all()
+    db_sents = db_.query(db_models.TranslationDraft, db_models.TranslationProject).\
+    join(db_models.TranslationProject, db_models.TranslationProject.projectId ==\
+        db_models.TranslationDraft.project_id).\
+    filter(db_models.TranslationProject.sourceLanguage.has(code=src),
+           db_models.TranslationProject.targetLanguage.has(code=trg)).\
+    all()
     training_data = get_training_data_from_drafts([item[0] for item in db_sents])
     new_trie = build_trie(training_data)
     files_on_disc = SUGGESTION_DATA_PATH.glob(src+"-"+trg+'*.json')
