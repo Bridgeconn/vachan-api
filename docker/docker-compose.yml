@@ -178,6 +178,11 @@ services:
      - VACHAN_LOGGING_LEVEL=INFO
     volumes:
      - logs-vol:/app/logs
+    depends_on:
+     - vachan-api
+    profiles:
+     - local-run
+     - deployment
     networks:
      - VE-network
 
