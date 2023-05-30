@@ -27,15 +27,10 @@ Change the workflow file as per the decided location
 ## Docker and docker-compose
 
 prefered versions
-docker: 20.10.6
-docker-compose version1.29.2
+docker: 24.0.1
 
 for docker installation, if required
 https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository
-
-to re-install docker-compose if required
-> `sudo rm $(which docker-compose)`
-> https://docs.docker.com/compose/install .
 
 to remove sudo need
 ```
@@ -49,7 +44,7 @@ to remove sudo need
 
 ```
 cd vachan-api/docker
-docker-compose --env-file prod.env -f production-deploy.yml up --build --force-recreate -d
+docker compose --env-file prod.env --profile deployment up --build --force-recreate -d
 ```
 
 ## Enable Auto deployment via github actions
