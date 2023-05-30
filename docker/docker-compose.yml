@@ -124,6 +124,9 @@ services:
      - kratos-postgresd
     expose:
      - 8000
+    profiles:
+     - local-run
+     - deployment
     networks:
      - VE-network
 
@@ -154,6 +157,8 @@ services:
     volumes:
      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
      - logs-vol:/var/log/nginx/
+    profiles:
+     - local-run
     networks:
      - VE-network
 
@@ -185,6 +190,8 @@ services:
     volumes:
       # - ./redisinsight:/db
       - redisinsight:/app/db
+    profiles:
+     - local-run
     networks:
      - VE-network
 
