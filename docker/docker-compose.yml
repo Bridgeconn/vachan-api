@@ -15,7 +15,7 @@ services:
     command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
     restart: on-failure
     networks:
-      - my-network
+      - VE-network
 
  kratos-postgresd:
     image: postgres:9.6
@@ -27,7 +27,7 @@ services:
       - POSTGRES_DB=kratos
       - POSTGRES_HOST_AUTH_METHOD=trust
     networks:
-      - my-network
+      - VE-network
     volumes: 
       - kratos-postgres-vol:/var/lib/postgresql/data
 
@@ -55,7 +55,7 @@ services:
       - 4434
       - 4433
     networks:
-      - my-network
+      - VE-network
 
  vachan-db:
     image: postgres:12.7
@@ -80,7 +80,7 @@ services:
      # HOST:CONTAINER
      - "5433:5432"
     networks:
-     - my-network
+     - VE-network
     volumes:
      # - ${VACHAN_POSTGRES_DATA_DIR:-./pgdata}:/var/lib/postgresql/data
      - vachan-db-vol:/var/lib/postgresql/data
@@ -125,7 +125,7 @@ services:
     expose:
      - 8000
     networks:
-     - my-network
+     - VE-network
 
  vachan-demos:
     image: kavitha3797/vachan-demos:latest
@@ -139,7 +139,7 @@ services:
     volumes:
      - logs-vol:/app/logs
     networks:
-     - my-network
+     - VE-network
 
  # Web Server
  web-server:
@@ -155,7 +155,7 @@ services:
      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
      - logs-vol:/var/log/nginx/
     networks:
-     - my-network
+     - VE-network
 
  #redis caching DB
  redis:
@@ -174,7 +174,7 @@ services:
     links:
       - vachan-api
     networks:
-     - my-network
+     - VE-network
 
  # redis db visualization dashboard
  redisinsight:
@@ -186,10 +186,10 @@ services:
       # - ./redisinsight:/db
       - redisinsight:/app/db
     networks:
-     - my-network
+     - VE-network
 
 networks:
-   my-network:
+   VE-network:
 
 volumes:
   vachan-db-vol:
