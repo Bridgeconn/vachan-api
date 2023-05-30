@@ -1,5 +1,21 @@
 version: '3.9'
 services:
+ kratos-postgresd:
+    image: postgres:9.6
+    ports:
+      - "5432:5432"
+    expose:
+      - 5432
+    restart: always
+    environment:
+      - POSTGRES_USER=${VACHAN_KRATOS_DB_USER:-kratos}
+      - POSTGRES_PASSWORD=${VACHAN_KRATOS_DB_PASSWORD:-secret}
+      - POSTGRES_DB=${VACHAN_KRATOS_DB_NAME:-kratos}
+      - POSTGRES_HOST_AUTH_METHOD=md5
+    networks:
+      - VE-network
+    volumes: 
+      - kratos-postgres-vol:/var/lib/postgresql/data
  kratos-migrate:
     image: oryd/kratos:v0.7.0-alpha.1
     environment:
@@ -14,26 +30,12 @@ services:
         target: /etc/config/kratos
     command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
     restart: on-failure
+    links:
+      - kratos-postgresd
     depends_on:
       - kratos-postgresd
     networks:
       - VE-network
-
- kratos-postgresd:
-    image: postgres:9.6
-    ports:
-      - "5432:5432"
-    expose:
-      - 5432
-    environment:
-      - POSTGRES_USER=kratos
-      - POSTGRES_PASSWORD=secret
-      - POSTGRES_DB=kratos
-      - POSTGRES_HOST_AUTH_METHOD=md5
-    networks:
-      - VE-network
-    volumes: 
-      - kratos-postgres-vol:/var/lib/postgresql/data
 
  kratos:
     image: oryd/kratos:v0.7.0-alpha.1
@@ -56,6 +58,10 @@ services:
       - type: bind
         source: ./Kratos_config/email-password
         target: /etc/config/kratos
+    links:
+      - kratos-postgresd
+    depends_on:
+      - kratos-postgresd
     expose:
       - 4434
       - 4433
