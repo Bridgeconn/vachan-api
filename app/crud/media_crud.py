@@ -47,7 +47,7 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
 
     content_type = mimetypes.guess_type(url.split("/")[-1], strict=True)
     if content_type is None:
-        raise Exception("Unsupported media format!")
+        raise Exception("Unsupported media format!")#pylint: disable=W0719
 
     if "video" not in content_type[0] and "audio" not in content_type[0]:
         raise HTTPException(status_code=406,
