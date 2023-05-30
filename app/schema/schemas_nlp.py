@@ -358,7 +358,3 @@ class JobStatusResponse(BaseModel):
     '''Response object for job'''
     message: str = Field(..., example="Automatically generated stopwords for the given language")
     data: Job
-
-class DeleteIdentity(BaseModel):
-    """ ID input of item to be deleted"""
-    itemId: int = Field(..., example=100000)

@@ -692,16 +692,3 @@ class UploadedUsfm(BaseModel):
                 "USFM": "\\id MAT\n\\c 1\n\\p\n\\v 1 इब्राहीम की सन्‍तान, दाऊद की ...",
             }
         }
-
-class DeleteIdentity(BaseModel):
-    """ ID input of item to be deleted"""
-    itemId: int
-    sourceName : str
-    class Config:
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "itemId": 100000,
-                "sourceName" : "en_KJV_1_dictionary"
-            }
-        }
