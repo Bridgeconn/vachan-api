@@ -145,7 +145,7 @@ services:
      - VE-network
 
  # Web Server
- web-server:
+ web-server-local:
     image: nginx:latest
     ports:
      - 80:80
@@ -161,6 +161,124 @@ services:
      - local-run
     networks:
      - VE-network
+
+ web-server-with-cert:
+  image: nginx:latest
+  ports:
+   - 80:80
+   - 443:443
+  restart: always
+  expose:
+   - 80
+   - 443
+  depends_on:
+   - vachan-api
+  volumes:
+   - ./nginx/prod/app.conf.template:/etc/nginx/templates/default.conf.template:ro
+   - ./certbot/www:/var/www/certbot/:ro
+   - ./certbot/conf/:/etc/nginx/ssl/:ro
+   - logs-vol:/var/log/nginx/
+  environment:
+    - VACHAN_DOMAIN=${VACHAN_DOMAIN}
+  profiles:
+   - deployment
+  networks:
+   - VE-network
+
+ certbot:
+  image: certbot/certbot:latest
+  volumes:
+   - ./certbot/www/:/var/www/certbot/:rw
+   - ./certbot/conf/:/etc/letsencrypt/:rw
+  profiles:
+   - deployment
+  networks:
+   - VE-network
+ 
+ # offen backup
+ offen-backup_vachan_daily: &backup_service
+  image: offen/docker-volume-backup:latest
+  restart: always
+  environment: &backup_environment
+      #Daily 00 : 00
+      BACKUP_CRON_EXPRESSION: "0 0 * * *"
+      BACKUP_FILENAME: backup-vachan-daily-%Y-%m-%dT%H-%M-%S.tar.gz
+      BACKUP_SOURCES: /docker_vachan-db-vol
+      BACKUP_PRUNING_PREFIX: backup-vachan-daily-
+      BACKUP_RETENTION_DAYS: 5
+  depends_on:
+   - vachan-db
+  volumes:
+      - vachan-db-vol:/docker_vachan-db-vol:ro
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/backups:/archive
+  profiles:
+   - deployment
+  networks:
+   - VE-network
+ 
+ offen-backup_vachan_week:
+  <<: *backup_service
+  environment:
+      <<: *backup_environment
+      # SAT 00 : 00
+      BACKUP_CRON_EXPRESSION: "0 0 * * 6"
+      BACKUP_FILENAME: backup-vachan-week-%Y-%m-%dT%H-%M-%S.tar.gz
+      BACKUP_SOURCES: /docker_vachan-db-vol
+      BACKUP_PRUNING_PREFIX: backup-vachan-week-
+      BACKUP_RETENTION_DAYS: 49
+  depends_on:
+   - vachan-db
+  volumes:
+      - vachan-db-vol:/docker_vachan-db-vol:ro
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/backups:/archive
+  profiles:
+   - deployment
+  networks:
+   - VE-network
+
+ offen-backup_vachan_month:
+  <<: *backup_service
+  environment:
+      <<: *backup_environment
+      # monthly 28th day 00 : 00
+      BACKUP_CRON_EXPRESSION: "0 0 28 * *"
+      BACKUP_FILENAME: backup-vachan-month-%Y-%m-%dT%H-%M-%S.tar.gz
+      BACKUP_SOURCES: /docker_vachan-db-vol
+      BACKUP_PRUNING_PREFIX: backup-vachan-month-
+      BACKUP_RETENTION_DAYS: 365
+  depends_on:
+   - vachan-db
+  volumes:
+      - vachan-db-vol:/docker_vachan-db-vol:ro
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/backups:/archive
+  profiles:
+   - deployment
+  networks:
+   - VE-network
+ 
+ offen-backup_vachan_year:
+  <<: *backup_service
+  environment:
+      <<: *backup_environment
+      # yearly DEC 31 day 00 : 00
+      BACKUP_CRON_EXPRESSION: "0 0 31 12 *"
+      BACKUP_FILENAME: backup-vachan-year-%Y-%m-%dT%H-%M-%S.tar.gz
+      BACKUP_SOURCES: /docker_vachan-db-vol
+      BACKUP_PRUNING_PREFIX: backup-vachan-year-
+      BACKUP_RETENTION_DAYS: 2555
+  depends_on:
+   - vachan-db
+  volumes:
+      - vachan-db-vol:/docker_vachan-db-vol:ro
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/backups:/archive
+  profiles:
+   - deployment
+  networks:
+   - VE-network
 
  #redis caching DB
  redis:
