@@ -3,7 +3,7 @@ services:
  kratos-migrate:
     image: oryd/kratos:v0.7.0-alpha.1
     environment:
-      - DSN=postgres://kratos:secret@kratos-postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
+      - DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@kratos-postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
     volumes:
       - type: volume
         source: kratos-sqlite
@@ -14,6 +14,8 @@ services:
         target: /etc/config/kratos
     command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
     restart: on-failure
+    depends_on:
+      - kratos-postgresd
     networks:
       - VE-network
 
@@ -22,10 +24,10 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=kratos
-      - POSTGRES_PASSWORD=secret
-      - POSTGRES_DB=kratos
-      - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_USER=${VACHAN_KRATOS_DB_USER:-kratos}
+      - POSTGRES_PASSWORD=${VACHAN_KRATOS_DB_PASSWORD:-secret}
+      - POSTGRES_DB=${VACHAN_KRATOS_DB_NAME:-kratos}
+      - POSTGRES_HOST_AUTH_METHOD=md5
     networks:
       - VE-network
     volumes: 
@@ -38,11 +40,12 @@ services:
       # - '4434:4434' # admin
     restart: unless-stopped
     environment:
-      - DSN=postgres://kratos:secret@kratos-postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
+      - DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@kratos-postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
       - LOG_LEVEL=trace
       - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS:-smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true}
       - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL:-EMAIL_ADDRESS@bridgeconn.com}
-    command: serve -c /etc/config/kratos/kratos.yml --dev --watch-courier
+      - SERVE_PUBLIC_BASE_URL=http://${VACHAN_DOMAIN:-kratos}:4433
+    command: serve -c /etc/config/kratos/kratos.yml  --watch-courier
     volumes:
       # - type: volume
       #   source: kratos-sqlite
@@ -54,8 +57,6 @@ services:
     expose:
       - 4434
       - 4433
-    depends_on:
-      - kratos-migrate
     networks:
       - VE-network
 
@@ -104,7 +105,7 @@ services:
      - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
      - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
      - VACHAN_POSTGRES_PORT=5432
-     - VACHAN_KRATOS_PUBLIC_URL=http://kratos:4433/
+     - VACHAN_KRATOS_PUBLIC_URL=${VACHAN_KRATOS_PUBLIC_URL:-http://kratos:4433/}
      - VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
      - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME}
      - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD}
@@ -112,7 +113,7 @@ services:
      - VACHAN_LOGGING_LEVEL=INFO
      - VACHAN_GITLAB_TOKEN=${VACHAN_GITLAB_TOKEN:-none}
      - VACHAN_REDIS_HOST=redis
-     - VACHAN_REDIS_PORT=${VACHAN_REDIS_PORT:-6379}
+     - VACHAN_REDIS_PORT=6379
      - VACHAN_REDIS_PASS=${VACHAN_REDIS_PASS:-vsfrgetd}
     command: uvicorn main:app --host 0.0.0.0 --port 8000
     volumes:
@@ -159,6 +160,9 @@ services:
   restart: "no"
   expose:
    - 8000
+  links:
+   - vachan-db
+   - kratos
   depends_on:
    - kratos-postgresd
    - kratos
