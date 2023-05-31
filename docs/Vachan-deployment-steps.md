@@ -47,6 +47,27 @@ cd vachan-api/docker
 docker compose --env-file prod.env --profile deployment up --build --force-recreate -d
 ```
 
+
+The environment values to be set in `prod.env` or `.env`  file and their expected format are:
+```
+VACHAN_SUPER_USERNAME="<super-admin-emial-id>"
+VACHAN_SUPER_PASSWORD="<a-strong-password>"
+VACHAN_AUTH_DATABASE="postgresql://<DB-user>:<DB-passwords>@kratos-postgresd:<DB-port>/<DB-name>"
+VACHAN_SUPPORT_EMAIL_CREDS="smtps://<email-id>:<password>:<email-service>:<smtp-port>/?skip_ssl_verify=true&legacy_ssl=true"
+VACHAN_SUPPORT_EMAIL="<email-id>"
+VACHAN_DOMAIN=api.vachanengine.org
+VACHAN_KRATOS_PUBLIC_URL="http://api.vachanengine.org:4433/"
+VACHAN_KRATOS_ADMIN_URL="http://api.vachanengine.org:4434/"
+VACHAN_POSTGRES_PASSWORD="<a-strong-password>"
+
+VACHAN_KRATOS_DB_USER="<vachan_auth_user>"
+VACHAN_KRATOS_DB_PASSWORD="<a-strong-password>"
+VACHAN_KRATOS_DB_NAME="<vachan_auth_db>"
+VACHAN_GITLAB_TOKEN="<api-token-from-gitlab>"
+VACHAN_REDIS_PASS="<a-strong-password>"
+
+```
+
 ## Enable Auto deployment via github actions
 
 ### RSA Keys

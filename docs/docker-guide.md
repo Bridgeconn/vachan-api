@@ -56,15 +56,18 @@ If all goes well you should be able to get proper outputs at `http://localhost`,
 
 To turn the app down, use
 
-```docker compose down```
+```docker compose --profile local-run down```
 
 ## To run tests
 
 This method is recommended to just run all the tests once to make sure everything works, like in production, CI/CD or locally when verifying a PR. While doing local development and when we may have to run tests selectively and multiple times, after code changes, use the method specificed in [readme](../README.md#set-up-locally-for-development-and-testingwithout-docker).
 
-```docker compose --profile testing run vachan-api-test --build --force-recreate```
+```
+docker compose up # to start the dependancies
+docker compose run vachan-api-test --build
+```
 
-To turn down the running containers after test has been existed,
+To turn down the running containers after test has been exited,
 
 ```docker compose down```
 
@@ -92,6 +95,10 @@ VACHAN_GITLAB_TOKEN="<api-token-from-gitlab>"
 VACHAN_REDIS_PASS="<a-strong-password>"
 
 ```
+Once the ENV file is ready, pass it to CLI and start the services as below:
+```
+docker compose --env-file=prod.env --profile deployment up --build --force-recreate -d
+```
 
 To re-create SSL certificates, follow instructions [here](https://mindsers.blog/post/https-using-nginx-certbot-docker/)
 
@@ -100,10 +107,6 @@ docker compose --profile deployment run --rm certbot renew
 ```
 
 After this make sure the certificate folder in the app root has access permission. or change it with `sudo chmod -R 777 certbot/`. Then the App needs to be restarted as shown below to use the updated ceritifcate.
-
-```
-docker compose --env-file=prod.env --profile deployment up --build --force-recreate -d
-```
 
 ### To start the app
 
