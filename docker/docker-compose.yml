@@ -1,6 +1,6 @@
 version: '3.9'
 services:
- kratos-postgresd:
+ kratospostgresd:
     image: postgres:9.6
     healthcheck:
       test: ["CMD-SHELL", "pg_isready", "-q", "-d", "postgres", "-U", "postgres" ]
@@ -25,7 +25,7 @@ services:
  kratos-migrate:
     image: oryd/kratos:v0.7.0-alpha.1
     environment:
-      - DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@kratos-postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
+      - DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@kratospostgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
     volumes:
       - type: volume
         source: kratos-sqlite
@@ -37,9 +37,9 @@ services:
     command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
     restart: on-failure
     links:
-      - kratos-postgresd
+      - kratospostgresd
     depends_on:
-      - kratos-postgresd
+      - kratospostgresd
     networks:
       - VE-network
 
@@ -50,24 +50,20 @@ services:
       # - '4434:4434' # admin
     restart: unless-stopped
     environment:
-      - DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@kratos-postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
+      - DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@kratospostgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
       - LOG_LEVEL=trace
       - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS:-smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true}
       - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL:-EMAIL_ADDRESS@bridgeconn.com}
       - SERVE_PUBLIC_BASE_URL=http://${VACHAN_DOMAIN:-kratos}:4433
     command: serve -c /etc/config/kratos/kratos.yml  --watch-courier
     volumes:
-      # - type: volume
-      #   source: kratos-sqlite
-      #   target: /var/lib/sqlite
-      #   read_only: false
       - type: bind
         source: ./Kratos_config/email-password
         target: /etc/config/kratos
     links:
-      - kratos-postgresd
+      - kratospostgresd
     depends_on:
-      - kratos-postgresd
+      - kratospostgresd
     expose:
       - 4434
       - 4433
@@ -138,7 +134,7 @@ services:
      - kratos
     depends_on:
      - kratos
-     - kratos-postgresd
+     - kratospostgresd
     expose:
      - 8000
     profiles:
@@ -178,7 +174,7 @@ services:
    - vachan-db
    - kratos
   depends_on:
-   - kratos-postgresd
+   - kratospostgresd
    - kratos
    - vachan-db
   profiles:
