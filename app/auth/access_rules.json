@@ -23,7 +23,8 @@
     },
     "editable":{
         "create": ["SuperAdmin", "VachanAdmin", "AgAdmin", "SanketMASTAdmin", "AgUser", "SanketMASTUser"],
-        "edit": ["SuperAdmin", "VachanAdmin", "AgAdmin", "SanketMASTAdmin", "AgUser", "SanketMASTUser"]
+        "edit": ["SuperAdmin", "VachanAdmin", "AgAdmin", "SanketMASTAdmin", "AgUser", "SanketMASTUser"],
+        "delete/deactivate": ["SuperAdmin", "VachanAdmin", "AgAdmin", "SanketMASTAdmin", "AgUser", "SanketMASTUser"]
     },
     "publishable":{
         "read-via-api":["registeredUser"],

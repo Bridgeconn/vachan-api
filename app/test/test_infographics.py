@@ -433,8 +433,7 @@ def test_delete_default():
     infographic_response = client.get(UNIT_URL+source_name,headers=headers_auth)
     infographic_id = infographic_response.json()[0]['infographicId']
     data = {
-      "itemId":infographic_id,
-      "sourceName":source_name
+      "itemId":infographic_id
     }
 
     #Delete without authentication
@@ -492,8 +491,7 @@ def test_delete_default_superadmin():
     infographic_id = infographic_response.json()[0]['infographicId']
 
     data = {
-      "itemId":infographic_id,
-      "sourceName":source_name
+      "itemId":infographic_id
     }
 
      #Delete infographic with Super Admin
@@ -528,8 +526,7 @@ def test_delete_infographic_id_string():
     infographic_id = str(infographic_id)
 
     data = {
-      "itemId":infographic_id,
-      "sourceName":source_name
+      "itemId":infographic_id
     }
 
     #Delete infographic with Super Admin
@@ -560,7 +557,7 @@ def test_delete_incorrectdatatype():
 
     infographic_response = client.get(UNIT_URL+source_name,headers=headers_sa)
     infographic_id = infographic_response.json()[0]['infographicId']
-    data = infographic_id,source_name
+    data = infographic_id
 
     #Delete infographic with Super Admin
     response = client.delete(UNIT_URL+source_name, headers=headers_sa, json=data)
@@ -630,8 +627,7 @@ def test_delete_notavailable_content():
             }
 
     data = {
-      "itemId":99999,
-      "sourceName":source_name
+      "itemId":99999
     }
 
      #Delete infographic with Super Admin
