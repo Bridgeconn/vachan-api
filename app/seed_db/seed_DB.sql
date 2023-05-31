@@ -293,7 +293,7 @@ CREATE TABLE public.api_permissions_map (
     last_updated_at  timestamp with time zone DEFAULT NOW(),
     last_updated_user text NULL,
     active boolean DEFAULT true NOT NULL,
-    UNIQUE(permission_map_id),
+    UNIQUE(api_endpoint, method, resource_type_id, permission_id, request_app_id),
     CONSTRAINT fk_request_app FOREIGN KEY(request_app_id) REFERENCES public.apps(app_id),
     CONSTRAINT fk_resource_type FOREIGN KEY(resource_type_id) REFERENCES public.resource_types(resource_type_id),
     CONSTRAINT fk_permission FOREIGN KEY(permission_id) REFERENCES public.permissions(permission_id)

@@ -5,7 +5,8 @@ from sqlalchemy import func
 from sqlalchemy.sql import text
 import db_models
 from custom_exceptions import NotAvailableException
-from auth.auth_globals import generate_roles, APPS, generate_access_rules_dict
+from auth.auth_globals import generate_roles, APPS, generate_access_rules_dict,\
+    APIPERMISSIONTABLE, generate_permission_map_table
 from schema import schema_auth
 from auth.authentication import get_all_or_one_kratos_users #pylint: disable=ungrouped-imports
 
@@ -210,3 +211,56 @@ def get_access_rules(db_: Session, entitlement=None, tag=None, role=None, **kwar
         else:
             query = query.filter(db_models.AccessRules.active == False) #pylint: disable=singleton-comparison
     return query.offset(skip).limit(limit).all()
+
+
+def create_permission_map(db_: Session, details: schema_auth.PermissionMapCreateInput,\
+    user_id= None):
+    '''Add a row to permission map table'''
+
+    validate_endpoint = False
+    # identity the api endpoint is valid and map is not duplicate
+    for row in APIPERMISSIONTABLE:
+        if details.apiEndpoint.lower().strip() == row[0].lower():
+            validate_endpoint = True
+    if not validate_endpoint:
+        raise NotAvailableException(f"apiEndpoint, {details.apiEndpoint.strip()},"+\
+            " is not a valid one")
+
+    app_row = db_.query(db_models.Apps).filter(
+        func.lower(db_models.Apps.appName) ==\
+            func.lower(details.requestApp.strip())).first()
+    if not app_row:
+        raise NotAvailableException(f"requestApp, {details.requestApp.strip()},"+\
+            " is not a registered app")
+
+    resource = db_.query(db_models.ResourceTypes).filter(
+        func.lower(db_models.ResourceTypes.resourceTypeName) ==\
+            func.lower(details.resourceType.strip())).first()
+    if not resource:
+        raise NotAvailableException(f"resourceType, {details.resourceType.strip()},"+\
+            " not found in Database")
+
+    permission = db_.query(db_models.Permissions).filter(
+        func.lower(db_models.Permissions.permissionName) == \
+            func.lower(details.permission.strip())).first()
+    if not permission:
+        raise NotAvailableException(f"permission, {details.permission.strip()},"+\
+            " not found in Database")
+
+    db_content = db_models.ApiPermissionsMap(
+        apiEndpoint = details.apiEndpoint.lower().strip(),
+        method= details.method.strip(),
+        requestAppId=app_row.appId,
+        resourceTypeId=resource.resourceTypeId,
+        permissionId=permission.permissionId,
+        filterResults=details.filterResults,
+        createdUser= user_id,
+        updatedUser=user_id,
+        active=True)
+    db_.add(db_content)
+
+    response = {
+        'db_content':db_content,
+        'refresh_auth_func':generate_permission_map_table
+    }
+    return response
