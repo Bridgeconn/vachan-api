@@ -20,13 +20,13 @@ Implemented Using
 
 ```cd vachan-api/docker```
 
-```docker-compose up```
+```docker compose --profile local-run up```
 or
-```sudo -E docker-compose up```
+```sudo -E docker compose --profile local-run up```
 
 Set environment variables VACHAN_SUPER_USERNAME, VACHAN_SUPER_PASSWORD. Use `--build` and `--force-recreate` flags if there has been code change. Refer [the detailed usage guide](./docs/docker-guide.md#to-start-app-locally) and [section on environments variables](#set-up-environmental-variables), for more information.
 
-If all goes well you should be able to get proper outputs at `http://localhost`, `http://localhost/docs`,
+If all goes well you should be able to get proper outputs at `http://localhost`, `http://localhost/docs`, `http://localhost/v2/demos`, 
 `http://127.0.0.1:4434/identities` and connect to postgresDB at `localhost`, `5433`
 
 
