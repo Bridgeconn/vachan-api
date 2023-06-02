@@ -407,6 +407,28 @@ class PermissionMapCreateInput(BaseModel):
                 "filterResults":False
             }}
 
+class PermissionMapUpdateInput(BaseModel):
+    """auth Permission Map update input"""
+    permissionMapId:int
+    apiEndpoint:str =None
+    method:Methods =None
+    requestApp:str =None
+    resourceType:str =None
+    permission:str =None
+    filterResults:bool =False
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "permissionMapId":100000,
+                "apiEndpoint":'v2/access/permission-map',
+                "method": "GET",
+                "requestApp":"vachan",
+                "resourceType":"app",
+                "permission":"create",
+                "filterResults":False
+            }}
+
 class PermissionMapOut(BaseModel):
     """auth permission map output object"""
     permissionMapId:int
@@ -439,4 +461,9 @@ class PermissionMapOut(BaseModel):
 class PermissionMapsResponse(BaseModel):
     """Response object of Permission map creation"""
     message:str = Field(..., example="Permission map created successfully")
+    data: PermissionMapOut
+
+class PermissionMapsUpdateResponse(BaseModel):
+    """Response object of Permission map updation"""
+    message:str = Field(..., example="Permission map updated successfully")
     data: PermissionMapOut

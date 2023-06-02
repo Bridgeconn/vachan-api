@@ -264,3 +264,63 @@ def create_permission_map(db_: Session, details: schema_auth.PermissionMapCreate
         'refresh_auth_func':generate_permission_map_table
     }
     return response
+
+def update_permission_map(db_: Session, details: schema_auth.PermissionMapUpdateInput,\
+    user_id= None):#pylint: disable=too-many-branches
+    '''update a row in permission map table'''
+    db_content = db_.query(db_models.ApiPermissionsMap).get(details.permissionMapId)
+    if not db_content:
+        raise NotAvailableException(f"Api Permission Map of Id {details.permissionMapId},"+\
+        " not found in Database")
+
+    if details.apiEndpoint:
+        validate_endpoint = False
+        for row in APIPERMISSIONTABLE:
+            if details.apiEndpoint.lower().strip() == row[0].lower():
+                validate_endpoint = True
+        if not validate_endpoint:
+            raise NotAvailableException(f"apiEndpoint, {details.apiEndpoint.strip()},"+\
+                " is not a valid one")
+        db_content.apiEndpoint = details.apiEndpoint.lower().strip()
+
+    if details.method:
+        db_content.method = details.method.strip()
+
+    if details.requestApp:
+        app_row = db_.query(db_models.Apps).filter(
+            func.lower(db_models.Apps.appName) ==\
+            func.lower(details.requestApp.strip())).first()
+        if not app_row:
+            raise NotAvailableException(f"requestApp, {details.requestApp.strip()},"+\
+                " is not a registered app")
+        db_content.requestAppId = app_row.appId
+
+    if details.resourceType:
+        resource = db_.query(db_models.ResourceTypes).filter(
+            func.lower(db_models.ResourceTypes.resourceTypeName) ==\
+                func.lower(details.resourceType.strip())).first()
+        if not resource:
+            raise NotAvailableException(f"resourceType, {details.resourceType.strip()},"+\
+                " not found in Database")
+        db_content.resourceTypeId = resource.resourceTypeId
+
+    if details.permission:
+        permission = db_.query(db_models.Permissions).filter(
+            func.lower(db_models.Permissions.permissionName) == \
+                func.lower(details.permission.strip())).first()
+        if not permission:
+            raise NotAvailableException(f"permission, {details.permission.strip()},"+\
+                " not found in Database")
+        db_content.permissionId = permission.permissionId
+
+    if details.filterResults:
+        db_content.filterResults = details.filterResults
+
+    db_content.updatedUser = user_id
+    db_content.active = True
+
+    response = {
+        'db_content':db_content,
+        'refresh_auth_func':generate_permission_map_table
+    }
+    return response
