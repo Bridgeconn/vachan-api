@@ -34,7 +34,8 @@ from crud.auth_crud import (
     create_permission_map,
     create_endpoint,
     update_endpoint,
-    get_endpoints
+    get_endpoints,
+    update_permission_map
 )
 
 router = APIRouter()
@@ -418,7 +419,6 @@ db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     return {'message': "Access rule created successfully",
             "data": data}
 
-# need to check this api route as per the cnfig requiered single / multiple update
 @router.put('/v2/access/rules',response_model=schema_auth.AccessRulesUpdateResponse,
     responses={400: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
     500: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
@@ -557,6 +557,33 @@ db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     log.debug('Permission Map  Create In:%s',details)
     data = create_permission_map(db_, details, user_id = user_details['user_id'])
     return {'message': "Permission Map created successfully",
+            "data": data}
+
+@router.put('/v2/access/permission-maps',response_model=schema_auth.PermissionMapsUpdateResponse,
+    responses={400: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
+    500: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    status_code=201,tags=["Access-Control"])
+@get_auth_access_check_decorator
+async def edit_auth_permission_map(details:schema_auth.PermissionMapUpdateInput,request: Request,#pylint: disable=unused-argument
+app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
+user_details =Depends(get_user_or_none),
+db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+    '''Update Authentication Permission Maps
+    * ruleId is mandatory
+    * others are optional, provide fields need to be updated.
+    * apiEndpoint - should be one of the avaialble api (mandatory)
+    * method - one from method enum (mandatory)
+    * requestApp - one of the registered app name (mandatory)
+    * resourceType - one of the available resource/entitlement name (mandatory)
+    * permission - one of the available permission/tag name (mandatory)
+    * filterResults - permission map allow or not to filter the result (default False ). ,\
+        For example for an endpoint that returns a list of items like bibles in the DB,\
+        setting this to true is needed to ensure the bibles are filtered based on user's \
+        role and the bible's access permissions. '''
+    log.debug('In create permission map:%s',details)
+    log.info('In create permission map')
+    data = update_permission_map(db_, details, user_id = user_details['user_id'])
+    return {'message': "Permission Map updated successfully",
             "data": data}
 
 
