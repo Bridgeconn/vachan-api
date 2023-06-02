@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #ff3366;
+            animation: running-title 10s linear infinite;
+        }
+        h2 {
+            color: blue;
+            text-align: center; 
+        }
+
+        @keyframes running-title {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.5;
+            color: black;
+            text-align: justify;
+        }
+        pre {
+            background-color: rgb(199, 228, 207);
+            padding: 0;
+            overflow: auto;
+            width: 100%;
+            margin: 10px;
+        }
+        .container {
+            margin: auto;
+            }
+        button {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        button:hover {
+            background-color: #45a049;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{{ message }}</h1>
+        <h2>Vachan API</h2>
+        <button onclick="window.location.href = 'auth_access_management_module.html';">Auth & Access Management</button>
+        <pre> <p style="margin: 0;">
+        Vachan API is a server application that offers REST APIs for seamless 
+        interaction with underlying Databases (SQL and Graph) and modules 
+        within the Vachan-Engine ecosystem. It caters to a diverse range of 
+        client applications, including the Vachan Online website, Vachan Admin,
+        Vachan Mobile App, IntelliSign - Smart Sign Language Translation 
+        Platform and the AutographaMT Bible translation tool. 
+        </p></pre>
+         </div>
+</body>
+</html>

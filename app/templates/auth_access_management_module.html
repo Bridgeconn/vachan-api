@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<head>
+<style>
+  body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+ 
+  h1 {
+    color: blue;
+    text-align: center; 
+    animation: blink 1s infinite; 
+  }
+
+  h2 {
+    color: green;
+    text-align: center; 
+  }
+
+  p {
+    color: black;
+  }
+
+
+  pre {
+    background-color: rgb(199, 228, 207);
+    padding: 5px;
+    overflow: auto;
+    width: 70%;
+    margin: 0 auto;
+  }
+  .container {
+  margin: 1px;
+  }
+  @keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+   <h1 id="vachan-engine-v2--authaccess-rules-permissions">Vachan Engine V2- Auth,Access rules &amp; Permissions</h1>
+<p>Vachan Engine V2 contains a set of apis to interact with the underlying Databases and modules,which are refered under multiple categories according to the application.</p>
+<h2 id="authentication-methods-user-register-login-token-generation-app-key-generation">Authentication Methods (User register, Login, Token generation, App Key generation)</h2>
+<p>implement security measures like user authentication to ensure the safety of user data.</p>
+<h3 id="user-registration-login">User Registration &amp; Login</h3>
+<ul>
+<li>To register as a user, the user need to provide Email, password, first name &amp; last name (first name &amp; last name are optional fields)</li>
+</ul>
+<p>Example:</p>
+<pre><code>curl -X &#39;POST&#39; \
+  &#39;http://127.0.0.1:8000/v2/user/register&#39; \
+  -H &#39;accept: application/json&#39; \
+  -H &#39;Authorization: Bearer Ok2xZkiPfGie2s0TPgOU7JyXV6Su3Jsm&#39; \
+  -H &#39;Content-Type: application/json&#39; \
+  -d &#39;{
+  &quot;email&quot;: &quot;user.register@bridgeconn.com&quot;,
+  &quot;password&quot;: &quot;Qwerty123@&quot;,
+  &quot;firstname&quot;: &quot;string&quot;,
+  &quot;lastname&quot;: &quot;string&quot;
+}&#39;</code></pre>
+<p>Response: (All external users as API User)</p>
+<pre><code>{
+  &quot;message&quot;: &quot;Registration Successfull&quot;,
+  &quot;registered_details&quot;: {
+    &quot;id&quot;: &quot;8752e5b4-ff7a-400b-a1ab-10948d3f04be&quot;,
+    &quot;email&quot;: &quot;user.register@bridgeconn.com&quot;,
+    &quot;Permissions&quot;: [
+      &quot;API-user&quot;
+    ]
+  },
+  &quot;token&quot;: &quot;51PBQ6vYfeiNGccNPDmbnamkFVwvvxNd&quot;
+}</code></pre>
+<ul>
+<li>Now the user can use registered user details to login, successful login will return a token for user for a time period.</li>
+<li>Access Api via HTTP request the valid token must provide in the header ‘Authorization: Bearer TOKEN_VALUE’ (Token generation)</li>
+<li><h4 id="what-an-api-tokens-can-do">What an API Tokens can do :</h4>
+<ul>
+<li>API tokens are used to verify the identity of the user or application that is making a request to the API.</li>
+<li>The token is typically issued by the API provider when the user or application registers for an account or requests access to the API.</li>
+</ul></li>
+</ul>
+<p>Example:</p>
+<pre><code>curl -X &#39;GET&#39; \
+  &#39;http://127.0.0.1:8000/v2/user/login?user_email=user.login%40bridgeconn.com&amp;password=userlogin123%40&#39; \
+  -H &#39;accept: application/json&#39; \
+  -H &#39;Authorization: Bearer hj3mSSRks5jCnE1B5r0pA8MkeXISli4L&#39;
+
+  Response:
+  {
+  &quot;message&quot;: &quot;Login Succesfull&quot;,
+  &quot;token&quot;: &quot;vsz7N9YROByCzxHmEASKYNYFwqZOpc4c&quot;,
+  &quot;userId&quot;: &quot;a686c080-3526-4afc-b635-ab045e5fa5cc&quot;
+}</code></pre>
+<h2 id="app-registration-login">App Registration &amp; Login</h2>
+<ul>
+<li><p>To register an app user need email, name, organization, password &amp; one contact detail as mandatory.</p></li>
+<li><p>The registered user’s can login into the App.</p></li>
+<li><p>The auth system is the “dynamic authentication system”.</p></li>
+<li><p>for documentation refer swagger documentation : <code>http://127.0.0.1:8000/docs#/</code> to authorize click the <code>Authorize button with Lock symbol</code> and provide the username, password and submit will automatically validate credentials &amp; the user can access the authorized apis.</p></li>
+</ul>
+<h3 id="how-to-generate-an-app-key">How to Generate an App Key</h3>
+<ul>
+<li><p>for that user need to login with valid credentials used by the default app in the App to get App Key(with 1 year validation).</p></li>
+<li><p>Now the user can use the app key, for authorized access. They are unique to each application. They are used to ensure that only authorized applications are able to access certain features or data within the service.</p></li>
+<li><p>Eg: request curl (generate app key)</p></li>
+</ul>
+<pre><code>  curl -X &#39;GET&#39; \
+  &#39;http://127.0.0.1:8000/v2/app/key?app_email=vachanadmin%40vachan.testing&amp;password=secret%40%21%40%23%24&#39; \
+  -H &#39;accept: application/json&#39; \
+  -H &#39;Authorization: Bearer 83CtHeoYxF0L8w82BmnjKFc4GagsxS70&#39;</code></pre>
+<pre><code>  Response:
+
+   {
+  &quot;message&quot;: &quot;Key generated successfully&quot;,
+  &quot;key&quot;: &quot;wPPEew3ZvNkefnDnPfdGgi2ZAtP14TjF&quot;,
+  &quot;appId&quot;: &quot;cf2d6017-569b-4521-922e-efa5eb28296f&quot;
+  }&#39;</code></pre>
+<h3 id="how-to-use-the-key-api">How to use the Key API</h3>
+<ul>
+<li><p>app identification based on key,query params for key added for all endpoints.</p></li>
+<li><p>API keys are used to authenticate requests made to an API, and to track and control usage of the API by different developers or applications. it is used for authentication, but its specific purpose is to control access to a particular API.</p>
+<p>Eg: request curl (create source)</p></li>
+</ul>
+<pre><code>    curl -X &#39;POST&#39; \
+    &#39;http://127.0.0.1:8000/v2/sources?app_key=GH4Zo9zlvKl4eyPDdndbSSVvgtQ3WSNu&#39; \
+    -H &#39;accept: application/json&#39; \
+    -H &#39;Authorization: Bearer hj3mSSRks5jCnE1B5r0pA8MkeXISli4L&#39; \
+    -H &#39;Content-Type: application/json&#39; \
+    -d &#39;{
+    &quot;contentType&quot;: &quot;bible&quot;,
+    &quot;language&quot;: &quot;af&quot;,
+    &quot;version&quot;: &quot;TTT&quot;,
+    &quot;revision&quot;: 1,
+    &quot;year&quot;: 2022,
+    &quot;license&quot;: &quot;ISC&quot;,
+    &quot;accessPermissions&quot;: [
+    &quot;content&quot;
+      ],
+    &quot;metaData&quot;: {
+    &quot;otherName&quot;: &quot;Test Source&quot;
+    }
+   }</code></pre>
+<pre><code>   Response:
+
+   {
+   &quot;message&quot;: &quot;Source created successfully&quot;,
+   &quot;data&quot;: {
+    &quot;sourceName&quot;: &quot;af_TTT_1_bible&quot;,
+    &quot;contentType&quot;: {},
+    &quot;language&quot;: {},
+    &quot;version&quot;: {},
+    &quot;revision&quot;: 1,
+    &quot;year&quot;: 2022,
+    &quot;license&quot;: {},
+    &quot;metaData&quot;: {
+      &quot;otherName&quot;: &quot;Test Source&quot;
+    },
+    &quot;active&quot;: true
+    }</code></pre>
+<p>Access Restriction is implemented for all the endpoints in different levels based on the apis content priority. User level, Content level, Application level based security is added to each endpoints. Some of the endpoints are open accessible and others are restricted to particular type of user-roles only. User with specific role permission can only access those apis.</p>
+<h2 id="access-rulesrbac--role-based-access-control">Access Rules(RBAC)- Role-Based Access Control</h2>
+<p>The user will register and allow the app to access certain endpoints based on certain rules. (Kratos match response will identify the user role and permissions for the App) The security implemented for the contents are based on Role Based Access Control(RBAC). RBAC restrict the access based on user’s role, access-tags etc. RBAC Structure :</p>
+<pre><code>{
+    &quot;Entitlement&quot; :{
+            &quot;tags&quot; : [role-group]
+        }
+}</code></pre>
+<ul>
+<li>Roles describe humans in the identity system (authentication).</li>
+<li>Tags are the actions or operations related to the resource.</li>
+<li>Entitlements permitted by (Role, Tag) pairs. The role-tag pair grand the permissions for an action in the request to a particular resource type.</li>
+</ul>
+<h4 id="app-operations">App operations</h4>
+<ul>
+<li><p>Once an App is created by the SuperAdmin or the VachanAdmin, it can also be edited by them.</p></li>
+<li><p>App key generation &amp; deletion can be proccessed only by the SuperAdmin or the VachanAdmin.</p></li>
+<li><p>App details can be read or viewed by the SuperAdmin or the VachanAdmin.</p></li>
+<li><p>App can be deleted/ deactivated by the SuperAdmin/VachanAdmin.</p></li>
+<li><p>operations via api can be done only by the SuperAdmin.</p></li>
+</ul>
+<h2 id="apps-content-management">App’s content management :</h2>
+<p>VachanEngine V2 deals with different types of contents and all of the contents are connected with source. So While creating a <code>source</code> the admin must specify the resource type or access-permission-tag for that particular source to ensure the security based on the value of content that is going to be uploaded.</p>
+<p>To access certain contents in the app the user can access without any authentication so called role (NoAuthRequired)</p>
+<p>The User-roles can be <code>RegisteredUser</code>, <code>VachanAdmin</code>, <code>SuperAdmin</code>, <code>NoAuthRequired</code>, <code>resourceCreatedUser</code>..,etc</p>
+<p>SuperAdmin have access to almost every endpoints.</p>
+<h2 id="implemented-tags-permissions-roles">Implemented tags, Permissions, roles</h2>
+<ul>
+<li><p>content, open-access, publishable, downloadable, derivable, research-use., etc : Resource Type (AccessPermissions of Sources)</p></li>
+<li><p>Permissions: create,login,edit,read,view-profile,logout,edit-role,access-via-api,generate-key,delete-key,refer-for-translation,etc<br />
+</p></li>
+<li><p>when a request comes we get the Resource type/Access permission, Operations &amp; User details from it.</p></li>
+</ul>
+<h2 id="operations-on-app-resources">Operations on App resources :</h2>
+<ul>
+<li>Let’s see what all contents can be accessed, if a user is either authenticated &amp; not.</li>
+</ul>
+<p>user, app, meta-content, content, access-control,..etc are the examples of Resource type.</p>
+<h4 id="user-related-operations-like-register-login-logoutedit-read-etc..user">User related operations like register, login, logout,edit, read etc..(<code>user</code>)</h4>
+<ul>
+<li><p>To create &amp; login ‘no auth’ is required for a user,</p></li>
+<li><p>Edit &amp; read account by SuperAdmin,resource Created User,</p></li>
+<li><p>Only registered user has only the permission to read about the user details.</p></li>
+<li><p>SuperAdmin can only delete/deactivate a user.</p></li>
+<li><p>operations on the resources like #### Languages, Content type, Licenses, Versions etc (<code>meta-content</code>)</p>
+<ul>
+<li><p>Only the SuperAdmin &amp; the resource created User can edit it.</p></li>
+<li><p>To read the contents in languages ‘no auth’ is required for the user.</p></li>
+<li><p>All the registered user can refer for translations.</p></li>
+</ul></li>
+</ul>
+<h4 id="commentaries-infographics-dictionary-or-videos-content">Commentaries, Infographics, Dictionary or Videos (<code>content</code>)</h4>
+<p>If some contents need to - upload to the server via create, - retrieve by read-via-vachanadmin, read-via-api &amp; edit the uploaded contents, the following user-roles can perform the actions:</p>
+<ul>
+<li>edited by the SuperAdmin &amp; the Resource created User,</li>
+<li>If the auth permission is read-via-vachanadmin then the contents can be viewed by - SuperAdmin &amp; VachanAdmin.</li>
+<li>If the auth permission is read-via-api then the developer can also read the contents.</li>
+</ul>
+<p><code>open-access</code> is where no auth is required to access some endpoints.</p>
+<p><code>publishable</code> if the published contents’s auth permission is read-via-api then all the registered users can access it.</p>
+<ul>
+<li><p>‘No auth’ is required if the auth permission is view-on-web.</p></li>
+<li><p>Publishable contents related to the auth permission ‘refer-for-translation’ then – SuperAdmin,AgAdmin &amp; AgUser have the permission to access.</p></li>
+<li><p>The contents in the app can be download-n-save by – SuperAdmin,VachanAdmin &amp; VachanUser (<code>downloadable</code>) (the admin can control changes regarding to who can download &amp; save the contents )</p></li>
+<li><p><code>research-use</code> Research-Material from the app with auth permission ‘read-via-api’ can be accessed by – SuperAdmin &amp; Developer.</p></li>
+</ul>
+<h4 id="mediastreamed-downloadedmedia">Media(Streamed &amp; Downloaded)(<code>media</code>)</h4>
+<ul>
+<li>media contents can be streamed &amp; downloaded only by the Registered user.</li>
+</ul>
+<h4 id="file-handling">File Handling:</h4>
+<p>-In case of file operation ‘no auth’ is required</p>
+<h4 id="autographa-or-translation-project">Autographa or translation project</h4>
+<ul>
+<li><p>can be viewed by SuperAdmin,AgAdmin,projectOwner,projectMember,Developer</p></li>
+<li><p>editing can be done by the SuperAdmin,AgAdmin &amp; projectOwner.</p></li>
+<li><p>General translation can be viewed &amp; edited only by the Registered user.</p></li>
+</ul>
+<h5 id="bible">bible:</h5>
+<ul>
+<li>All users can read all the books available in the specified bible</li>
+</ul>
+<h4 id="access-control-roles-of-app">Access control (Roles of app)</h4>
+<p>Roles for default app can be - created, read, edited &amp; deleted by SuperAdmin &amp; VachanAdmin only.</p>
+</body>
+</html>

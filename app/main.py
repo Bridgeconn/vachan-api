@@ -1,9 +1,10 @@
 '''Defines all API endpoints for the web server app'''
 import os
-from fastapi import FastAPI, Depends
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Depends, Request
+from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
@@ -14,7 +15,6 @@ from custom_exceptions import GenericException,TypeException , PermissionExcepti
 import db_models
 from database import engine
 from dependencies import get_db, log
-from schema.schemas import NormalResponse
 from routers import content_apis, translation_apis, auth_api, media_api, filehandling_apis
 from graphql_api import router as gql_router
 from auth.authentication import create_super_user
@@ -30,6 +30,7 @@ if os.environ.get("VACHAN_TEST_MODE", "False") != 'True':
 app = FastAPI(title="Vachan-API", version="2.0.0-beta.8",
     description="The server application that provides APIs to interact \
 with the underlying Databases and modules in Vachan-Engine.")
+template = Jinja2Templates(directory="templates")
 
 app.add_middleware(
     CORSMiddleware,
@@ -205,11 +206,23 @@ async def gitlab_exception_handler(request, exc: GitlabException):
 db_models.map_all_dynamic_tables(db_= next(get_db()))
 db_models.Base.metadata.create_all(bind=engine)
 
-@app.get('/', response_model=NormalResponse, status_code=200)
-def test(db_: Session = Depends(get_db)):
+@app.get('/', response_class=HTMLResponse, status_code=200)
+def test(request: Request, db_: Session = Depends(get_db)):
     '''tests if app is running and the DB connection is active'''
     db_.query(db_models.Language).first()
-    return {"message": "App is up and running"}
+    return template.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "message": "App is up and running",
+        },
+    )
+
+
+@app.get('/auth_access_management_module.html', response_class=HTMLResponse, status_code=200)
+def load_other(request: Request):
+    '''Loads the other.html page'''
+    return template.TemplateResponse("auth_access_management_module.html", {"request": request})
 
 app.include_router(auth_api.router)
 app.include_router(content_apis.router)

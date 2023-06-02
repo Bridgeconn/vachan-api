@@ -15,3 +15,4 @@ starlette==0.14.2
 pylint==2.16.1
 usfm-grammar==3.0.0a4
 jsonpickle==2.2.0
+Jinga2==3.0.3
