@@ -45,10 +45,10 @@
    `alter user postgres password 'yourpassword';`
 
 
-
 ### 6) Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Get [How to fix Docker Permission Denied](http://%2Fvar%2Frun%2Fdocker.sock/v1.24/version): dial unix /var/run/docker.sock: connect: permission denied 
    
    **Solution:** 
+
    1. Enter the command below to create the docker group on the system:
 
       `sudo groupadd -f docker`
@@ -104,7 +104,6 @@
 **Solution:** 
 
 This error occurs when the required module is not installed or not found. You can try installing the module using pip or the package manager specific to your programming language. For example, if you're using Python, you can run `pip install module_name` to install the missing module.
-
 
 
 
