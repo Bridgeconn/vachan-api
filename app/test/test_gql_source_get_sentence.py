@@ -1,18 +1,18 @@
-'''Test cases for extract text contents related APIs'''
-from .test_gql_versions import GLOBAL_QUERY as version_query
-from .test_gql_versions import check_post as version_add
-#pylint: disable=E0611
-#pylint: disable=R0914
-#pylint: disable=R0915
-from . import  assert_not_available_content_gql, gql_request, check_skip_limit_gql
-from .conftest import initial_test_users
-from . test_gql_auth_basic import login,SUPER_PASSWORD,SUPER_USER
-from .test_gql_sources import check_post as source_add , SOURCE_GLOBAL_QUERY
-from .test_source_get_sentence import assert_positive_get, commentary_data
-from .test_gql_bibles import BOOK_ADD_QUERY
-from .test_gql_commentaries import ADD_COMMENTARY
+# '''Test cases for extract text contents related APIs'''
+# from .test_gql_versions import GLOBAL_QUERY as version_query
+# from .test_gql_versions import check_post as version_add
+# #pylint: disable=E0611
+# #pylint: disable=R0914
+# #pylint: disable=R0915
+# from . import  assert_not_available_content_gql, gql_request, check_skip_limit_gql
+# from .conftest import initial_test_users
+# from . test_gql_auth_basic import login,SUPER_PASSWORD,SUPER_USER
+# from .test_gql_sources import check_post as source_add , SOURCE_GLOBAL_QUERY
+# from .test_source_get_sentence import assert_positive_get, commentary_data
+# from .test_gql_bibles import BOOK_ADD_QUERY
+# from .test_gql_commentaries import ADD_COMMENTARY
 
-from .test_source_get_sentence import assert_positive_get
+# from .test_source_get_sentence import assert_positive_get
 
 # headers_auth = {"contentType": "application/json",
 #                 "accept": "application/json"}

@@ -16,7 +16,7 @@ import db_models
 from database import engine
 from dependencies import get_db, log
 from routers import content_apis, translation_apis, auth_api, media_api, filehandling_apis
-from graphql_api import router as gql_router
+# from graphql_api import router as gql_router
 from auth.authentication import create_super_user
 # pylint: enable=E0401
 
@@ -227,6 +227,6 @@ def load_other(request: Request):
 app.include_router(auth_api.router)
 app.include_router(content_apis.router)
 app.include_router(translation_apis.router)
-app.include_router(gql_router)
+# app.include_router(gql_router)
 app.include_router(media_api.router)
 app.include_router(filehandling_apis.router)

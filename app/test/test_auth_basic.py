@@ -96,6 +96,7 @@ def delete_user_identity(users_list):
         data = {
             "userid": identity
         }
+        print("#######data:",data)
         headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+token
