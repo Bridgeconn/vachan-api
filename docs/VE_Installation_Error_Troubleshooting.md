@@ -20,7 +20,7 @@
    - Optionally, you can try changing the server mirror to a different location and then retry the installation.
    
 
-### 3) The virtual environment was not created successfully because ensurepip is not available.Failing command: ['/home/athulya/vachan-api/vachan-ENV/bin/python3', '-Im', 'ensurepip', '--upgrade', '--default-pip']
+### 3) The virtual environment was not created successfully because ensurepip is not available.Failing command: ['~/vachan-api/vachan-ENV/bin/python3', '-Im', 'ensurepip', '--upgrade', '--default-pip']
   
    **Solution:** 
 
@@ -46,7 +46,7 @@
 
 
 
-### 6) Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Get [http://%2Fvar%2Frun%2Fdocker.sock/v1.24/version](http://%2Fvar%2Frun%2Fdocker.sock/v1.24/version): dial unix /var/run/docker.sock: connect: permission denied 
+### 6) Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Get [How to fix Docker Permission Denied](http://%2Fvar%2Frun%2Fdocker.sock/v1.24/version): dial unix /var/run/docker.sock: connect: permission denied 
    
    **Solution:** 
    1. Enter the command below to create the docker group on the system:
@@ -110,7 +110,7 @@ This error occurs when the required module is not installed or not found. You ca
 
 ## NOTES:
 - Ubuntu version 22 already includes Python 3.10.6 as the default version.
-- Tried to install usfm-grammar in the initial part of installation.
+- install usfm-grammar before installing any other package in case there are any installation issues with it.
 
 
 
