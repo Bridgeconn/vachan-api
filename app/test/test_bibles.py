@@ -967,8 +967,7 @@ def test_delete_default():
     biblebook_response = client.get(UNIT_URL+source_name+'/books',headers=headers_auth)
     biblebook_id = biblebook_response.json()[0]['bookContentId']
     data = {
-      "itemId":biblebook_id,
-      "sourceName":source_name
+      "itemId":biblebook_id
     }
 
     #Delete without authentication
@@ -1030,8 +1029,7 @@ def test_delete_default_superadmin():
     biblebook_id = biblebook_response.json()[0]['bookContentId']
 
     data = {
-      "itemId":biblebook_id,
-      "sourceName":source_name
+      "itemId":biblebook_id
     }
 
      #Delete biblebook with Super Admin
@@ -1066,8 +1064,7 @@ def test_delete_biblebook_id_string():
     biblebook_id = str(biblebook_id)
 
     data = {
-      "itemId":biblebook_id,
-      "sourceName":source_name
+      "itemId":biblebook_id
     }
 
     #Delete biblebook with Super Admin
@@ -1098,7 +1095,7 @@ def test_delete_incorrectdatatype():
 
     biblebook_response = client.get(UNIT_URL+source_name+'/books',headers=headers_sa)
     biblebook_id = biblebook_response.json()[0]['bookContentId']
-    data = biblebook_id,source_name
+    data = biblebook_id
 
     #Delete biblebook with Super Admin
     response = client.delete(UNIT_URL+source_name+'/books', headers=headers_sa, json=data)
@@ -1122,7 +1119,7 @@ def test_delete_missingvalue_biblebook_id():
                     'Authorization': "Bearer"+" "+test_user_token
             }
 
-    data = {"sourceName":source_name}
+    data = {}
     response = client.delete(UNIT_URL+source_name+'/books', headers=headers_sa, json=data)
     assert_input_validation_error(response)
     logout_user(test_user_token)
@@ -1146,8 +1143,8 @@ def test_delete_missingvalue_source_name():
     biblebook_response = client.get(UNIT_URL+source_name+'/books',headers=headers_sa)
     biblebook_id = biblebook_response.json()[0]['bookContentId']
     data = {"itemId":biblebook_id}
-    response = client.delete(UNIT_URL+source_name+'/books', headers=headers_sa, json=data)
-    assert_input_validation_error(response)
+    response = client.delete(UNIT_URL+'/books', headers=headers_sa, json=data)
+    assert response.status_code == 404
     logout_user(test_user_token)
 
 def test_delete_notavailable_content():
@@ -1168,8 +1165,7 @@ def test_delete_notavailable_content():
             }
 
     data = {
-      "itemId":9999,
-      "sourceName":source_name
+      "itemId":9999
     }
 
      #Delete biblebook with Super Admin
@@ -1378,8 +1374,7 @@ def test_delete_audio_default():
     assert len(post_response.json()) == 1
     #Get bible audioId
     data = {
-      "itemId":audio_id,
-      "sourceName":source_name
+      "itemId":audio_id
     }
 
     #Delete without authentication
@@ -1431,8 +1426,7 @@ def test_delete_audio_superadmin_default():
                     'Authorization': "Bearer"+" "+test_user_token
             }
     data = {
-      "itemId":audio_id,
-      "sourceName":source_name
+      "itemId":audio_id
     }
     #Delete bibleaudio with Super Admin
     response = client.delete(UNIT_URL+source_name+'/audios', headers=headers_sa, json=data)
@@ -1462,8 +1456,7 @@ def test_delete_bibleaudio_id_string():
             }
 
     data = {
-      "itemId":audio_id,
-      "sourceName":source_name
+      "itemId":audio_id
     }
 
     #Delete bibleaudio with Super Admin
@@ -1490,7 +1483,7 @@ def test_delete_audio_incorrectdatatype():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
-    data = audio_id,source_name
+    data = audio_id
 
     #Delete bibleaudio with Super Admin
     response = client.delete(UNIT_URL+source_name+'/audios', headers=headers_sa, json=data)
@@ -1500,7 +1493,6 @@ def test_delete_audio_incorrectdatatype():
 def test_delete_missingvalue_bibleaudio_id():
     '''Negative Testcase. Passing input data without audioId'''
     response, source_name = check_post(audio_data, 'audio')
-    audio_id = response.json()['data'][0]['audioId']
 
     #Login as Super Admin
     as_data = {
@@ -1515,14 +1507,14 @@ def test_delete_missingvalue_bibleaudio_id():
                     'Authorization': "Bearer"+" "+test_user_token
             }
 
-    data = {"sourceName":source_name}
+    data = {}
     response = client.delete(UNIT_URL+source_name+'/audios', headers=headers_sa, json=data)
     assert_input_validation_error(response)
     logout_user(test_user_token)
 
 def test_delete_audio_missingvalue_source_name():
     '''Negative Testcase. Passing input data without sourceName'''
-    response, source_name = check_post(audio_data, 'audio')
+    response = check_post(audio_data, 'audio')[0]
     audio_id = response.json()['data'][0]['audioId']
 
     #Login as Super Admin
@@ -1538,8 +1530,8 @@ def test_delete_audio_missingvalue_source_name():
                     'Authorization': "Bearer"+" "+test_user_token
             }
     data = {"itemId":audio_id}
-    response = client.delete(UNIT_URL+source_name+'/audios', headers=headers_sa, json=data)
-    assert_input_validation_error(response)
+    response = client.delete(UNIT_URL+'/audios', headers=headers_sa, json=data)
+    assert response.status_code == 404
     logout_user(test_user_token)
 
 def test_delete_audio_notavailable_content():
@@ -1560,8 +1552,7 @@ def test_delete_audio_notavailable_content():
             }
 
     data = {
-      "itemId":99999,
-      "sourceName":source_name
+      "itemId":99999
     }
 
      #Delete bibleaudio with Super Admin

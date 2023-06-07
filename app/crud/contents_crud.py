@@ -9,7 +9,7 @@ from sqlalchemy.sql import text
 import db_models #pylint: disable=import-error
 from crud import utils  #pylint: disable=import-error
 from crud.nlp_sw_crud import update_job #pylint: disable=import-error
-from schema import schemas_nlp, schema_content #pylint: disable=import-error
+from schema import schemas_nlp,schemas #pylint: disable=import-error
 from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException  #pylint: disable=import-error
 
 def get_commentaries(db_: Session,**kwargs):
@@ -193,7 +193,7 @@ def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=
         "output": {"message": "Commentaries updated successfully","data": db_content_out}}
     update_job(db_, job_id, user_id, update_args)
 # pylint: disable=duplicate-code
-def delete_commentary(db_: Session, delitem: schemas_nlp.DeleteIdentity,table_name = None,\
+def delete_commentary(db_: Session, delitem: schemas.DeleteIdentity,table_name = None,\
     source_name=None,user_id=None):
     '''delete particular commentary, selected via source id'''
     source_db_content = db_.query(db_models.Source).filter(
@@ -312,7 +312,7 @@ def update_dictionary_words(db_: Session, source_name, dictionary_words, user_id
         }
     return response
 
-def delete_dictionary(db_: Session, delitem: schema_content.DeleteIdentity,table_name = None,\
+def delete_dictionary(db_: Session, delitem : schemas.DeleteIdentity,table_name = None,\
     source_name=None,user_id=None):
     '''delete particular word from dictionary, selected via sourcename and word id'''
     source_db_content = db_.query(db_models.Source).filter(
@@ -429,7 +429,7 @@ def update_infographics(db_: Session, source_name, infographics, user_id=None):
         }
     return response
 
-def delete_infographic(db_: Session, delitem: schema_content.DeleteIdentity,table_name = None,\
+def delete_infographic(db_: Session, delitem: schemas.DeleteIdentity,table_name = None,\
     source_name=None,user_id=None):
     '''delete particular item from infographic, selected via sourcename and infographic id'''
     source_db_content = db_.query(db_models.Source).filter(
@@ -800,7 +800,7 @@ def update_bible_audios(db_: Session, source_name, audios, user_id=None):
         }
     return response
 
-def delete_bible_audio(db_: Session, delitem: schema_content.DeleteIdentity,\
+def delete_bible_audio(db_: Session, delitem: schemas.DeleteIdentity,\
     source_name=None,user_id=None):
     '''delete particular item from bible audio, selected via sourcename and bible audio id'''
     source_db_content = db_.query(db_models.Source).filter(
@@ -905,7 +905,7 @@ def get_available_bible_books(db_, source_name,book_code=None, content_type=None
         }
     return response
 
-def delete_bible_book(db_: Session, delitem: schema_content.DeleteIdentity,\
+def delete_bible_book(db_: Session, delitem: schemas.DeleteIdentity,\
     source_name=None,user_id=None):
     '''delete particular item from bible, selected via sourcename and bible content id'''
     source_db_content = db_.query(db_models.Source).filter(

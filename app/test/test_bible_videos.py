@@ -566,8 +566,7 @@ def test_delete_default():
     biblevideo_response = client.get(UNIT_URL+source_name,headers=headers_auth)
     biblevideo_id = biblevideo_response.json()[0]['bibleVideoId']
     data = {
-      "itemId":biblevideo_id,
-      "sourceName":source_name
+      "itemId":biblevideo_id
     }
 
     #Delete without authentication
@@ -625,8 +624,7 @@ def test_delete_default_superadmin():
     biblevideo_id = biblevideo_response.json()[0]['bibleVideoId']
 
     data = {
-      "itemId":biblevideo_id,
-      "sourceName":source_name
+      "itemId":biblevideo_id
     }
 
      #Delete biblevideo with Super Admin
@@ -661,8 +659,7 @@ def test_delete_biblevideo_id_string():
     biblevideo_id = str(biblevideo_id)
 
     data = {
-      "itemId":biblevideo_id,
-      "sourceName":source_name
+      "itemId":biblevideo_id
     }
 
     #Delete biblevideo with Super Admin
@@ -693,7 +690,7 @@ def test_delete_incorrectdatatype():
 
     biblevideo_response = client.get(UNIT_URL+source_name,headers=headers_sa)
     biblevideo_id = biblevideo_response.json()[0]['bibleVideoId']
-    data = biblevideo_id,source_name
+    data = biblevideo_id
 
     #Delete biblevideo with Super Admin
     response = client.delete(UNIT_URL+source_name, headers=headers_sa, json=data)
@@ -717,7 +714,7 @@ def test_delete_missingvalue_biblevideo_id():
                     'Authorization': "Bearer"+" "+test_user_token
             }
 
-    data = {"sourceName":source_name}
+    data = {}
     response = client.delete(UNIT_URL, headers=headers_sa, json=data)
     assert response.status_code == 404
     logout_user(test_user_token)
@@ -763,8 +760,7 @@ def test_delete_notavailable_content():
             }
 
     data = {
-      "itemId":99999,
-      "sourceName":source_name
+      "itemId":99999
     }
 
      #Delete biblevideo with Super Admin

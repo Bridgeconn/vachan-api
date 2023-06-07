@@ -14,7 +14,7 @@ import db_models
 from dependencies import log
 from crud import utils
 from crud.contents_crud import ref_to_bcv, bcv_to_ref
-from schema import schema_content
+from schema import schemas
 from custom_exceptions import NotAvailableException, TypeException, GitlabException
 
 access_token = os.environ.get("VACHAN_GITLAB_TOKEN")
@@ -295,7 +295,7 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
         }
     return response
 # pylint: disable=duplicate-code
-def delete_biblevideo(db_: Session, delitem: schema_content.DeleteIdentity,table_name = None,\
+def delete_biblevideo(db_: Session, delitem: schemas.DeleteIdentity,table_name = None,\
     source_name=None,user_id=None):
     '''delete particular item from biblevideo, selected via sourcename and biblevideo id'''
     source_db_content = db_.query(db_models.Source).filter(

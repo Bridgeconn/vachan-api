@@ -572,14 +572,15 @@ async def get_available_bible_book(request: Request,
     502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Bibles"])
 @get_auth_access_check_decorator
-async def delete_bible_book(request: Request, delete_obj: schema_content.DeleteIdentity = \
-    Body(...),user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+async def delete_bible_book(request: Request,
+    source_name: str = Path(...,example="en_KJV_1_bible"),
+    delete_obj: schemas.DeleteIdentity = Body(...),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Bible Book
     * unique bible content Id with source name can be used to delete an exisiting identity'''
     log.info('In delete_biblebook')
     log.debug('biblebook-delete:%s',delete_obj)
     biblecontent_id= delete_obj.itemId
-    source_name = delete_obj.sourceName
     tb_name = db_models.dynamicTables[source_name]
     dbtable_name = tb_name.__name__
     cleaned_tablename = dbtable_name+'_cleaned'
@@ -696,19 +697,18 @@ async def edit_audio_bible(request: Request,
     502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Bibles"])
 @get_auth_access_check_decorator
-async def delete_bible_audios(request: Request, delete_obj: schema_content.DeleteIdentity = \
-    Body(...),user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
-
+async def delete_bible_audios(request: Request,
+    source_name: str = Path(...,example="en_KJV_1_bible"),
+    delete_obj: schemas.DeleteIdentity = Body(...),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Bible Audio
     * unique Bible Audio Id  with source name can be used to delete an exisiting identity'''
     log.info('In delete_bibleaudios')
     log.debug('bibleaudio-delete:%s',delete_obj)
     bibleaudio_id= delete_obj.itemId
-    source_name = delete_obj.sourceName
     tb_name = db_models.dynamicTables[source_name]
     dbtable_name = tb_name.__name__
     audio_tablename = dbtable_name+'_audio'
-    # model_cls_audio = db_models.dynamicTables[source_name+'_audio']
     get_bible_response = contents_crud.get_available_bible_books(db_, source_name=source_name, \
         bibleaudio_id= delete_obj.itemId)
     if len(get_bible_response['db_content']) == 0:
@@ -836,7 +836,7 @@ async def edit_commentary(request: Request,background_tasks: BackgroundTasks,
 @get_auth_access_check_decorator
 async def delete_commentary(request: Request,
     source_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
-    delete_obj: schemas_nlp.DeleteIdentity = Body(...),
+    delete_obj: schemas.DeleteIdentity = Body(...),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Commentary
     * unique Commentary Id can be used to delete an exisiting identity'''
@@ -974,14 +974,15 @@ async def edit_dictionary_word(request: Request,
     502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Dictionaries"])
 @get_auth_access_check_decorator
-async def delete_dictionaries(request: Request, delete_obj: schema_content.DeleteIdentity = \
+async def delete_dictionaries(request: Request,
+    source_name: str = Path(...,example="en_KJV_1_dictionary"),
+    delete_obj: schemas.DeleteIdentity = \
     Body(...),user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Dictionary
     * unique Dictionary Id with source name can be used to delete an exisiting identity'''
     log.info('In delete_dictionaries')
     log.debug('dictionary-delete:%s',delete_obj)
     word_id= delete_obj.itemId
-    source_name = delete_obj.sourceName
     tb_name = db_models.dynamicTables[source_name]
     dbtable_name = tb_name.__name__
     get_dictionary_response = contents_crud.get_dictionary_words(db_, source_name=source_name, \
@@ -1071,14 +1072,15 @@ async def edit_infographics(request: Request,
     502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Infographics"])
 @get_auth_access_check_decorator
-async def delete_infographics(request: Request, delete_obj: schema_content.DeleteIdentity = \
+async def delete_infographics(request: Request,
+    source_name: str = Path(...,example="en_KJV_1_infographic"),
+    delete_obj: schemas.DeleteIdentity = \
     Body(...),user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Infographic
     * unique Infographic Id with source name can be used to delete an exisiting identity'''
     log.info('In delete_infographics')
     log.debug('infographics-delete:%s',delete_obj)
     infographic_id= delete_obj.itemId
-    source_name = delete_obj.sourceName
     tb_name = db_models.dynamicTables[source_name]
     dbtable_name = tb_name.__name__
     get_infographic_response = contents_crud.get_infographics(db_, source_name=source_name, \
@@ -1170,14 +1172,15 @@ async def edit_biblevideo(request: Request,
     502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Bible Videos"])
 @get_auth_access_check_decorator
-async def delete_biblevideos(request: Request, delete_obj: schema_content.DeleteIdentity = \
-    Body(...),user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+async def delete_biblevideos(request: Request,
+    source_name: str = Path(...,example="en_KJV_1_biblevideo"),
+    delete_obj: schemas.DeleteIdentity = Body(...),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Bible Video
     * unique bibleVideoId with source name can be used to delete an exisiting identity'''
     log.info('In delete_biblevideos')
     log.debug('biblevideos-delete:%s',delete_obj)
     biblevideo_id= delete_obj.itemId
-    source_name = delete_obj.sourceName
     tb_name = db_models.dynamicTables[source_name]
     dbtable_name = tb_name.__name__
     get_biblevideo_response = media_crud.get_bible_videos(db_, source_name=source_name, \

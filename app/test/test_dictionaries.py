@@ -481,8 +481,7 @@ def test_delete_default():
     dictionary_response = client.get(UNIT_URL+source_name,headers=headers_auth)
     word_id = dictionary_response.json()[0]['wordId'] 
     data = {
-      "itemId":word_id,
-      "sourceName":source_name
+      "itemId":word_id
     }
 
     #Delete without authentication
@@ -510,12 +509,80 @@ def test_delete_default():
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Dictionary id {word_id} deleted successfully"
-    #Check commentray is deleted from table
+    #Check dictionary is deleted from table
     dictionary_response = client.get(UNIT_URL+source_name,headers=headers_auth)
     assert dictionary_response.status_code == 200
     delete_response = client.get(UNIT_URL+source_name+'?search_word=one',\
         headers=headers_auth)
     assert_not_available_content(delete_response)
+
+def test_delete_with_editable_permission():
+    '''Delete operation of item with access permission editable upon source creation
+    * As per the request https://github.com/Bridgeconn/vachan-api/issues/572'''
+    # Create Version
+    version_data = {
+        "versionAbbreviation": "TTT",
+        "versionName": "test version for dictionaries",
+    }
+    add_version(version_data)
+    # Create Source with access permission "editable by VachanAdmin"
+    source_data = {
+        "contentType": "dictionary",
+        "language": "en",
+        "version": "TTT",
+        "revision": 1,
+        "year": 2000,
+        "accessPermissions": ["editable"]
+    }
+    response = add_source(source_data)
+    source_name = response.json()['data']['sourceName']
+    # Add items to table by VachanAdmin
+    headers_va = {"contentType": "application/json",
+                "accept": "application/json"}
+    headers_va['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    data = [
+    	{"word": "one", "details":{"digit": 1, "type":"odd"}},
+    	{"word": "two", "details":{"digit": 2, "type":"even"}},
+    	{"word": "three", "details":{"digit": 3, "type":"odd"}},
+    	{"word": "four", "details":{"digit": 4, "type":"even"}}
+    ]
+    response = client.post(UNIT_URL+source_name, headers=headers_va, json=data)
+    #get item ids
+    dictionary_response = client.get(UNIT_URL+source_name,headers=headers_va)
+    item_ids = [item['wordId'] for item in dictionary_response.json()]
+    data = {
+      "itemId":item_ids[0]
+    }
+
+    #Delete item with API user,VachanUser,BcsDev - Negative Test
+    for user in ['APIUser','VachanUser','BcsDev']:
+        headers_noauth = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
+        }
+        response = client.delete(UNIT_URL+source_name, headers=headers_noauth, json=data)
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
+
+    #Delete item with AgAdmin, SanketMASTAdmin, AgUser, SanketMASTUser- Positive Test
+    users = ["AgAdmin", "SanketMASTAdmin", "AgUser", "SanketMASTUser"]
+    for item_id, user in zip(item_ids, users):
+        data = {
+            "itemId": item_id
+        }
+        headers_users = {
+            "contentType": "application/json",
+            "accept": "application/json",
+            'Authorization': "Bearer " + initial_test_users[user]['token']
+        }
+
+        response = client.delete(UNIT_URL + source_name, headers=headers_users, json=data)
+        assert response.status_code == 200
+        assert response.json()['message'] == f"Dictionary id {item_id} deleted successfully"
+
+    #Confirm deleted items does not exist in table
+    dictionary_response = client.get(UNIT_URL+source_name,headers=headers_va)
+    assert_not_available_content(dictionary_response)
 
 def test_delete_default_superadmin():
     ''' positive test case, checking for correct return of deleted word ID'''
@@ -540,8 +607,7 @@ def test_delete_default_superadmin():
     word_id = dictionary_response.json()[0]['wordId']
 
     data = {
-      "itemId":word_id,
-      "sourceName":source_name
+      "itemId":word_id
     }
 
      #Delete word with Super Admin
@@ -576,8 +642,7 @@ def test_delete_word_id_string():
     word_id = str(word_id)
 
     data = {
-      "itemId":word_id,
-      "sourceName":source_name
+      "itemId":word_id
     }
 
     #Delete dictionary with Super Admin
@@ -678,8 +743,7 @@ def test_delete_notavailable_content():
             }
 
     data = {
-      "itemId":99999,
-      "sourceName":source_name
+      "itemId":99999
     }
 
      #Delete dictionary with Super Admin
