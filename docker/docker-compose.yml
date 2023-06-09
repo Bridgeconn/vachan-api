@@ -178,7 +178,7 @@ services:
    - VE-network
 
  vachan-demos:
-    image: kavitha3797/vachan-demos:latest
+    image: kavitha3797/vachan-demos:v2-0-0-alpha-8
     expose:
       - 8002
     command: uvicorn main:app --host 0.0.0.0 --port 8002
