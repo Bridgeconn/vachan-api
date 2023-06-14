@@ -24,8 +24,8 @@ def generate_permission_map_table():
         db_api_permisison = db_instance.query(db_models.ApiPermissionsMap).all()
         for permisison_row in db_api_permisison:
             temp_row = [
-                permisison_row.apiEndpoint,
-                permisison_row.method,
+                permisison_row.endpoint.endpoint,
+                permisison_row.endpoint.method,
                 permisison_row.requestApp.appName,
                 permisison_row.filterResults,
                 permisison_row.resourceType.resourceTypeName,

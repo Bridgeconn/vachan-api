@@ -486,6 +486,22 @@ class Apps(Base): # pylint: disable=too-few-public-methods
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
     active = Column('active', Boolean)
 
+class ApiEndpoints(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table endpoints in the App(postgres)'''
+    __tablename__ = 'api_endpoints'
+
+    endpointId = Column('endpoint_id', Integer, primary_key=True)
+    endpoint = Column('endpoint', String)
+    method = Column('method', String)
+    createdUser = Column('created_user', String)
+    updatedUser = Column('last_updated_user', String)
+    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    active = Column('active', Boolean)
+    __table_args__ = (
+        UniqueConstraint('endpoint', 'method'),
+        {'extend_existing': True}
+                     )
+
 class AccessRules(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table access rules of auth in vachan DB(postgres)'''
     __tablename__ = 'access_rules'
@@ -512,8 +528,8 @@ class ApiPermissionsMap(Base): # pylint: disable=too-few-public-methods
     __tablename__ = 'api_permissions_map'
 
     permissionMapId = Column('permission_map_id', Integer, primary_key=True)
-    apiEndpoint = Column('api_endpoint', String, unique=True, index=True)
-    method = Column('method', String)
+    endpointId = Column('endpoint_id', Integer, ForeignKey('api_endpoints.endpoint_id'))
+    endpoint = relationship(ApiEndpoints)
     requestAppId = Column('request_app_id', Integer, ForeignKey('apps.app_id'))
     requestApp = relationship(Apps)
     filterResults = Column('filter_results', Boolean)
@@ -527,7 +543,7 @@ class ApiPermissionsMap(Base): # pylint: disable=too-few-public-methods
     updatedUser = Column('last_updated_user', String)
     updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
     _table_args__ = (
-        UniqueConstraint('api_endpoint', 'method', 'request_app_id', \
+        UniqueConstraint('endpointId', 'request_app_id', \
             'resource_type_id', 'permission_id'),
         {'extend_existing': True}
     )
