@@ -16,10 +16,11 @@ class Query(graphene.ObjectType):
         search_word=graphene.String(),
         language_name=graphene.String(), language_code=graphene.String(
             description="language code as per bcp47(usually 2 letter code)"),
+        localscript_name=graphene.String(),
         skip=graphene.Int(), limit=graphene.Int())
     def resolve_languages(self, info,
         search_word=None, language_code=None, language_name=None,
-        skip=0, limit=100):
+        localscript_name=None,skip=0, limit=100):
         '''resolver'''
         log.info('In GraphQL Get Language')
         db_ = info.context["request"].db_session
@@ -28,8 +29,8 @@ class Query(graphene.ObjectType):
         req.scope['method'] = "GET"
         req.scope['path'] = "/v2/languages"
         return content_apis.get_language(request=req, language_code=language_code,
-        language_name=language_name, search_word=search_word, skip=skip,
-        limit=limit, user_details=user_details, db_=db_)
+        language_name=language_name, search_word=search_word,
+        localscript_name=localscript_name, skip=skip,limit=limit,user_details=user_details, db_=db_)
         # return structurals_crud.get_languages(db_, language_code=language_code,
         #     language_name=language_name, search_word=search_word,
         #     skip=skip, limit=limit)
