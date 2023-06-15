@@ -353,7 +353,6 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
     access_tags = kwargs.get("access_tag",None)
     latest_revision = kwargs.get("latest_revision",True)
     labels = kwargs.get("labels", [])
-    # localscript_name = kwargs.get("localscript_name",None)
     active = kwargs.get("active",True)
     source_name = kwargs.get("source_name",None)
     table_name = kwargs.get("table_name",None)
@@ -376,8 +375,6 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
         query = query.filter(db_models.Source.license.has(code = license_abbreviation.strip()))
     if language_code:
         query = query.filter(db_models.Source.language.has(code = language_code.strip()))
-    # if localscript_name:
-    #     query = query.filter(db_models.Source.language.has(localScriptName = localscript_name))
     if metadata:
         meta = json.loads(metadata)
         for key in meta:

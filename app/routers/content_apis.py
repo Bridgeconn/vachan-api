@@ -341,7 +341,6 @@ async def get_source(request: Request, #pylint: disable=too-many-locals
     version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
     version_tag: schemas.VersionTagPattern=Query(None, example="1611.12.31"),
     language_code: schemas.LangCodePattern=Query(None,example="en"),
-    # localscript_name: str=Query(None,example="हिंदी"),
     license_code: schemas.LicenseCodePattern=Query(None,example="ISC"),
     metadata: schemas.MetaDataPattern=Query(None,
         example='{"otherName": "KJBC, King James Bible Commentaries"}'),

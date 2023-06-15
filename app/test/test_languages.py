@@ -17,7 +17,7 @@ def assert_positive_get(item):
     assert "language" in item
     assert "code" in item
     assert "scriptDirection" in item
-    if "locatScriptName" in item and item['localScriptName'] is not None:
+    if "localScriptName" in item and item['localScriptName'] is not None:
         assert isinstance(item['localScriptName'], str)
     if "metaData" in item and item['metaData'] is not None:
         assert isinstance(item['metaData'], dict)
