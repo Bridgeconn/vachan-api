@@ -21,6 +21,7 @@ CREATE TABLE public.languages (
     language_code text UNIQUE NOT NULL,
     language_name text NOT NULL,
     script_direction text,
+    localscript_name text NULL,
     metadata jsonb,
     created_at timestamp with time zone DEFAULT NOW(),
     created_user text NULL,

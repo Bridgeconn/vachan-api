@@ -47,6 +47,7 @@ class Language(Base): # pylint: disable=too-few-public-methods
     code = Column('language_code', String, unique=True, index=True)
     language = Column('language_name', String)
     scriptDirection = Column('script_direction', String)
+    localScriptName = Column('localscript_name',String)
     metaData = Column('metadata', JSON)
     createdUser = Column('created_user', String)
     updatedUser = Column('last_updated_user', String)

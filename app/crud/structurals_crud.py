@@ -46,6 +46,7 @@ def delete_content(db_: Session, content: schemas.DeleteIdentity):
 def get_languages(db_: Session, language_code = None, language_name = None, search_word=None,
     language_id = None, **kwargs):
     '''Fetches rows of language, with pagination and various filters'''
+    localscript_name = kwargs.get("localscript_name",None)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
     query = db_.query(db_models.Language)
@@ -60,6 +61,8 @@ def get_languages(db_: Session, language_code = None, language_name = None, sear
             " language_name || ' ' || "+\
             "jsonb_to_tsvector('simple', metadata, '[\"string\", \"numeric\"]') || ' ')"+\
             " @@ to_tsquery('simple', :pattern)").bindparams(pattern=search_pattern))
+    if localscript_name:
+        query = query.filter(db_models.Language.localScriptName == localscript_name)
     if language_id is not None:
         query = query.filter(db_models.Language.languageId == language_id)
     return query.offset(skip).limit(limit).all()
@@ -73,6 +76,7 @@ def create_language(db_: Session, lang: schemas.LanguageCreate, user_id=None):
     db_content = db_models.Language(code = lang.code,
         language = lang.language.lower(),
         scriptDirection = lang.scriptDirection,
+        localScriptName = lang.localScriptName,
         metaData = lang.metaData,
         createdUser= user_id,
         updatedUser=user_id)
@@ -94,6 +98,8 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
         db_content.language = lang.language
     if lang.scriptDirection:
         db_content.scriptDirection = lang.scriptDirection
+    if lang.localScriptName:
+        db_content.localScriptName = lang.localScriptName
     if lang.metaData:
         db_content.metaData = lang.metaData
         flag_modified(db_content, "metaData")

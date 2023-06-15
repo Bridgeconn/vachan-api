@@ -91,6 +91,7 @@ async def get_language(request: Request,
     language_code : schemas.LangCodePattern = Query(None, example="hi"),
     language_name: str = Query(None, example="hindi"),
     search_word: str = Query(None, example="Sri Lanka"),
+    localscript_name: str = Query(None,example="हिंदी"),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     '''fetches all the languages supported in the DB, their code and other details.
@@ -99,10 +100,10 @@ async def get_language(request: Request,
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
     log.info('In get_language')
-    log.debug('langauge_code:%s, language_name: %s, search_word:%s, skip: %s, limit: %s',
-        language_code, language_name, search_word, skip, limit)
+    log.debug('langauge_code:%s,language_name:%s,search_word:%s,localscript:%s,skip:%s,limit:%s',
+        language_code, language_name, search_word,localscript_name, skip, limit)
     return structurals_crud.get_languages(db_, language_code, language_name, search_word,
-        skip = skip, limit = limit)
+        localscript_name = localscript_name, skip = skip, limit = limit)
 
 @router.post('/v2/languages', response_model=schemas.LanguageCreateResponse,
     responses={502: {"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
@@ -366,11 +367,10 @@ async def get_source(request: Request, #pylint: disable=too-many-locals
         content_type, version_abbreviation, version_tag, language_code, license_code, metadata,
         access_tag, latest_revision, labels, active, skip, limit)
     return structurals_crud.get_sources(db_, content_type, version_abbreviation,
-        version_tag=version_tag,
-        language_code=language_code, license_code=license_code, metadata=metadata,
-        access_tag=access_tag,latest_revision=latest_revision, labels=labels,
-        active=active,skip=skip, limit=limit,
-        source_name=source_name)
+        version_tag=version_tag,language_code=language_code, license_code=license_code,
+        metadata=metadata,access_tag=access_tag,
+        latest_revision=latest_revision, labels=labels,active=active,
+        skip=skip, limit=limit,source_name=source_name)
 
 @router.post('/v2/sources', response_model=schemas.SourceCreateResponse,
     responses={502: {"model": schemas.ErrorResponse},
