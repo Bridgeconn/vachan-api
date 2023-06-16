@@ -1024,8 +1024,8 @@ def test_agmt_translation_access_permissions():
                 "data2": data_str2
             } ,
             headers=headers_auth)
-            assert response.status_code == 200
-            assert len(response.json()) > 0
+        assert response.status_code == 200
+        assert len(response.json()) > 0
 
         response = client.get(UNIT_URL+'/draft?project_id='+str(project_id)+
             "&output_format=alignment-json",headers=headers_auth)
