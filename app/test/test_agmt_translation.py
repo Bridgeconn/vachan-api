@@ -758,8 +758,7 @@ def test_agmt_translation_access_rule_app():
                 "sentence_id": "41001001",
                 "offset": ["0", "4"],
                 "data": data_str
-                },
-            headers=headers_auth)
+                })
     assert response.json()['error'] == "Permission Denied"
 
     #Get Token Sentences PUT
