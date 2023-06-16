@@ -750,7 +750,7 @@ def test_agmt_translation_access_rule_app():
     assert response.json()['error'] == 'Authentication Error'
     #Without Auth and not from Autographa
     data_str3= json.dumps(post_obj_list)
-        response = client.get(
+    response = client.get(
          UNIT_URL + "/token-translations",
             params={
                 "project_id": str(project_id),
