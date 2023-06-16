@@ -723,23 +723,28 @@ def test_agmt_translation_access_rule_app():
     ##################################################################################
     ########################################
     data_str = json.dumps(post_obj_list)
-    params={
+    response = client.get(UNIT_URL + "/token-translations",
+        params={
             "project_id": str(project_id),
             "token": all_tokens[0]['token'],
             "sentence_id": "41001001",
             "offset": ["0", "4"],
             "data": data_str
         },
-    response = client.get(UNIT_URL + "/token-translations",
-        params=params,
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) > 0
     #Without Auth from Autographa
-    data_str= json.dumps(post_obj_list)
+    data_str = json.dumps(post_obj_list)
     response = client.get(UNIT_URL + "/token-translations",
-        params=params,
-        headers=headers
+        params={
+            "project_id": str(project_id),
+            "token": all_tokens[0]['token'],
+            "sentence_id": "41001001",
+            "offset": ["0", "4"],
+            "data2": data_str
+        },
+        headers=headers_auth
         )
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
@@ -747,7 +752,14 @@ def test_agmt_translation_access_rule_app():
     data_str= json.dumps(post_obj_list)
     response = client.get(
          UNIT_URL + "/token-translations",
-        params=params)
+            params={
+                "project_id": str(project_id),
+                "token": all_tokens[0]['token'],
+                "sentence_id": "41001001",
+                "offset": ["0", "4"],
+                "data": data_str
+                },
+            headers=headers_auth)
     assert response.json()['error'] == "Permission Denied"
 
     #Get Token Sentences PUT
@@ -1021,8 +1033,14 @@ def test_agmt_translation_access_permissions():
         
         data_str= json.dumps(post_obj_list)
         response = client.get(
-          UNIT_URL + "/token-translations",
-            params=params,
+        UNIT_URL + "/token-translations",
+         params={
+            "project_id": str(project_id),
+            "token": all_tokens[0]['token'],
+            "sentence_id": "41001001",
+            "offset": ["0", "4"],
+            "data": data_str
+            },
             headers=headers_auth)
         assert response.status_code == 200
         assert len(response.json()) > 0
@@ -1065,7 +1083,13 @@ def test_agmt_translation_access_permissions():
         data_str= json.dumps(post_obj_list)
         response = client.get(
             UNIT_URL + "/token-translations",
-             params=params,
+         params={
+            "project_id": str(project_id),
+            "token": all_tokens[0]['token'],
+            "sentence_id": "41001001",
+            "offset": ["0", "4"],
+            "data": data_str
+            },
              headers=headers_auth)
         assert response.status_code == 403
         assert response.json()['error'] == "Permission Denied"

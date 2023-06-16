@@ -720,31 +720,42 @@ def test_agmt_translation_access_rule_app():
     assert response.json()['error'] == "Permission Denied"
 
     #get token translation
-    params={
+    
+    data_str = json.dumps(post_obj_list)
+    response = client.get(UNIT_URL + "/token-translations",
+        params={
             "project_id": str(project_id),
             "token": all_tokens[0]['token'],
             "sentence_id": "41001001",
             "offset": ["0", "4"],
             "data": data_str
-     }
-    data_str = json.dumps(post_obj_list)
-    response = client.get(UNIT_URL + "/token-translations",
-        params=params,
-        headers=headers_auth)
+    },
+    headers=headers_auth)
     
     assert response.status_code == 200
     assert len(response.json()) > 0
     #Without Auth from SanketMAST
     data_str = json.dumps(post_obj_list)
     response = client.get(UNIT_URL + "/token-translations",
-         params=params,
-         headers=headers)
+        params={
+            "project_id": str(project_id),
+            "token": all_tokens[0]['token'],
+            "sentence_id": "41001001",
+            "offset": ["0", "4"],
+            "data": data_str
+    },
+    headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
     #Without Auth and not from SanketMAST
     data_str = json.dumps(post_obj_list)
     response = client.get(UNIT_URL + "/token-translations",
-         params=params
+        params={
+            "project_id": str(project_id),
+            "token": all_tokens[0]['token'],
+            "sentence_id": "41001001",
+            "offset": ["0", "4"],
+            "data": data_str},
                 )
     assert response.json()['error'] == "Permission Denied"
 
@@ -1019,7 +1030,13 @@ def test_agmt_translation_access_permissions():
         
         data_str = json.dumps(post_obj_list)
         response = client.get(UNIT_URL + "/token-translations",
-            params=params,
+            params={
+                "project_id": str(project_id),
+                "token": all_tokens[0]['token'],
+                "sentence_id": "41001001",
+                "offset": ["0", "4"],
+                "data": data_str
+            } ,
             headers=headers_auth)
         assert response.status_code == 200
         assert len(response.json()) > 0
@@ -1061,7 +1078,13 @@ def test_agmt_translation_access_permissions():
 
         data_str = json.dumps(post_obj_list)
         response = client.get(UNIT_URL + "/token-translations",
-            params=params,
+            params={
+                "project_id": str(project_id),
+                "token": all_tokens[0]['token'],
+                "sentence_id": "41001001",
+                "offset": ["0", "4"],
+                "data": data_str
+                    },
             headers=headers_auth)
         assert response.status_code == 403
         assert response.json()['error'] == "Permission Denied"
