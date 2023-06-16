@@ -60,6 +60,7 @@ class LanguageCreate(BaseModel):
     language : str
     code : LangCodePattern
     scriptDirection : Direction = None
+    localScriptName : str = None
     metaData: dict = None
     class Config:
         '''display example value in API documentation'''
@@ -68,6 +69,7 @@ class LanguageCreate(BaseModel):
                 "language": "Hindi",
                 "code": "hi",
                 "scriptDirection": "left-to-right",
+                "localScriptName": "हिंदी",
                 "metaData": {"region": "India, Asia",
                     "alternate-names": ["Khadi Boli", "Khari Boli", "Dakhini", "Khariboli"],
                     "suppress-script": "Deva", "is-gateway-language": True}
@@ -82,6 +84,7 @@ class LanguageResponse(BaseModel):
     code : LangCodePattern
     createdUser : str = None
     scriptDirection : Direction = None
+    localScriptName : str = None
     metaData: dict = None
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
@@ -95,6 +98,7 @@ class LanguageResponse(BaseModel):
                 "code": "hi",
                 "createdUser": "token",
                 "scriptDirection": "left-to-right",
+                "localScriptName": "हिंदी",
                 "metaData": {"region": "India, Asia",
                     "alternate-names": ["Khadi Boli", "Khari Boli", "Dakhini", "Khariboli"],
                     "suppress-script": "Deva", "is-gateway-language": True}
@@ -118,6 +122,7 @@ class LanguageEdit (BaseModel):
     language : str = None
     code : LangCodePattern = None
     scriptDirection : Direction = None
+    localScriptName: str = None
     metaData: dict = None
     class Config:
         '''display example value in API documentation'''
@@ -127,6 +132,7 @@ class LanguageEdit (BaseModel):
                 "language": "Hindi",
                 "code": "hi",
                 "scriptDirection":"left-to-right",
+                "localScriptName": "हिंदी",
                 "metaData": {"region": "India, Asia",
                     "alternate-names": ["Khadi Boli", "Khari Boli", "Dakhini", "Khariboli"],
                     "suppress-script": "Deva", "is-gateway-language": True}

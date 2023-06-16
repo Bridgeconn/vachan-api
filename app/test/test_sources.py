@@ -26,6 +26,9 @@ def assert_positive_get(item):
     assert "code" in item["language"]
     assert "language" in item['language']
     assert "languageId" in item["language"]
+    if "localScriptName" in item["language"]:
+        assert item['language']['localScriptName'] is None or \
+            isinstance(item['language']['localScriptName'], str)
     assert "version" in item
     assert "versionAbbreviation" in item['version']
     assert "versionId" in item['version']

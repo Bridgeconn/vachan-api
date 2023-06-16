@@ -17,6 +17,8 @@ def assert_positive_get(item):
     assert "language" in item
     assert "code" in item
     assert "scriptDirection" in item
+    if "localScriptName" in item and item['localScriptName'] is not None:
+        assert isinstance(item['localScriptName'], str)
     if "metaData" in item and item['metaData'] is not None:
         assert isinstance(item['metaData'], dict)
 
@@ -151,6 +153,31 @@ def test_post_upper_case_code():
     assert_positive_get(response.json()['data'])
     assert response.json()["data"]["code"] == "X-AAJ"
 
+def test_post_localscript_name():
+    '''positive test case, checking for localscript name
+    Enhancement based on https://github.com/Bridgeconn/vachan-api/issues/588'''
+    data = {
+      "language": "new-lang",
+      "code": "X-AAJ",
+      "scriptDirection": "left-to-right",
+      "localScriptName": "टेस्ट"
+    }
+    #Add Language without Auth
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    response = client.post(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
+    #Add with Auth
+    headers = {"contentType": "application/json",
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+            }
+    response = client.post(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Language created successfully"
+    assert_positive_get(response.json()['data'])
+    assert response.json()["data"]["localScriptName"] == "टेस्ट"
+
 def test_post_optional_script_direction():
     '''positive test case, checking for correct return object'''
     data = {
@@ -245,6 +272,7 @@ def test_put_languages():
     data = {
       "languageId": language_id,
       "language": "new-lang-test-edited",
+      "localScriptName":"टेस्ट",
       "code": "x-abc"
     }
     response = client.put(UNIT_URL, headers=headers_auth, json=data)
@@ -252,6 +280,7 @@ def test_put_languages():
     assert response.json()['message'] == "Language edited successfully"
     assert_positive_get(response.json()['data'])
     assert response.json()["data"]["language"] == "new-lang-test-edited"
+    assert response.json()["data"]["localScriptName"] == "टेस्ट"
 
     # #delete the user
     # delete_user_identity(test_user_id)
@@ -283,7 +312,8 @@ def test_put_languages():
     data = {
       "languageId": language_id,
       "language": "new-lang-test-edited-by-admin",
-      "code": "x-abc"
+      "code": "x-abc",
+      "localScriptName":"टेस्टेड"
     }
     headers_admin = {"contentType": "application/json",
                     "accept": "application/json",
@@ -294,6 +324,7 @@ def test_put_languages():
     assert response.json()['message'] == "Language edited successfully"
     assert_positive_get(response.json()['data'])
     assert response.json()["data"]["language"] == "new-lang-test-edited-by-admin"
+    assert response.json()["data"]["localScriptName"] == "टेस्टेड"
 
     logout_user(token_admin)
 
