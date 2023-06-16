@@ -100,7 +100,7 @@ def delete_user_identity(users_list):
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+token
                 }
-        response = client.delete(DELETE_URL, headers=headers, json=data)
+        response = client.request("delete",DELETE_URL, headers=headers, json=data)
         assert response.status_code == 200
         assert response.json()["message"] == \
             "deleted identity "+ str(identity)

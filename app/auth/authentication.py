@@ -625,8 +625,9 @@ def user_login_kratos(user_email,password):#pylint: disable=R1710
 #delete an identity
 def delete_identity(user_id):
     """delete identity"""
-    base_url = ADMIN_BASE_URL+"identities/"+user_id
-    response = requests.delete(base_url, timeout=10)
+    base_url = ADMIN_BASE_URL+"identities/"
+    url = base_url + str(user_id)
+    response = requests.delete(url, timeout=10)
     if response.status_code == 404:
         raise NotAvailableException("Unable to locate the resource")
     # log.warning(response)

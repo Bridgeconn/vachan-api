@@ -359,7 +359,7 @@ def test_delete_default():
 
     #Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}
-    response = client.delete(UNIT_URL, headers=headers, json=data)
+    response = client.request("delete" ,UNIT_URL, headers=headers, json=data)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
@@ -369,7 +369,7 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
-        response = client.delete(UNIT_URL, headers=headers, json=data)
+        response = client.request("delete" ,UNIT_URL, headers=headers, json=data)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
@@ -378,7 +378,7 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
+    response = client.request("delete" ,UNIT_URL, headers=headers, json=data)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Language with identity {language_id} deleted successfully"
@@ -408,7 +408,7 @@ def test_delete_default_superadmin():
                     'Authorization': "Bearer"+" "+test_user_token
             }
     #Delete language
-    response = client.delete(UNIT_URL, headers=headers_auth, json=data)
+    response = client.request("delete" ,UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 200
     assert response.json()['message'] == \
     f"Language with identity {language_id} deleted successfully"
@@ -433,7 +433,7 @@ def test_delete_language_id_string():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
-    response = client.delete(UNIT_URL, headers=headers_auth, json=data)
+    response = client.request("delete" ,UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 200
     assert response.json()['message'] == \
          f"Language with identity {language_id} deleted successfully"
@@ -449,7 +449,7 @@ def test_delete_incorrectdatatype():
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
+    response = client.request("delete" ,UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
 
 def test_delete_missingvalue_language_id():
@@ -459,7 +459,7 @@ def test_delete_missingvalue_language_id():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
+    response = client.request("delete" ,UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
 
 def test_delete_notavailable_language():
@@ -469,7 +469,7 @@ def test_delete_notavailable_language():
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.delete(UNIT_URL,headers=headers,json=data)
+    response = client.request("delete" ,UNIT_URL,headers=headers,json=data)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
 
@@ -506,7 +506,7 @@ def test_language_used_by_source():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
+    response = client.request("delete" ,UNIT_URL, headers=headers, json=data)
     assert response.status_code == 409
     assert response.json()['error'] == 'Conflict'
 

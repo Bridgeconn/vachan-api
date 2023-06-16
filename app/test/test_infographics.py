@@ -438,7 +438,7 @@ def test_delete_default():
 
     #Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}#pylint: disable=redefined-outer-name
-    response = client.delete(UNIT_URL+source_name, headers=headers, json=data)
+    response = client.request("delete" ,UNIT_URL+source_name, headers=headers, json=data)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
@@ -448,7 +448,7 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
-        response = client.delete(UNIT_URL+source_name, headers=headers_au, json=data)
+        response = client.request("delete" ,UNIT_URL+source_name, headers=headers_au, json=data)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
@@ -457,7 +457,7 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
-    response = client.delete(UNIT_URL+source_name, headers=headers_va, json=data)
+    response = client.request("delete" ,UNIT_URL+source_name, headers=headers_va, json=data)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Infographic id {infographic_id} deleted successfully"
@@ -495,7 +495,7 @@ def test_delete_default_superadmin():
     }
 
      #Delete infographic with Super Admin
-    response = client.delete(UNIT_URL+source_name, headers=headers_sa, json=data)
+    response = client.request("delete" ,UNIT_URL+source_name, headers=headers_sa, json=data)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Infographic id {infographic_id} deleted successfully"
@@ -530,7 +530,7 @@ def test_delete_infographic_id_string():
     }
 
     #Delete infographic with Super Admin
-    response = client.delete(UNIT_URL+source_name, headers=headers_sa, json=data)
+    response = client.request("delete" ,UNIT_URL+source_name, headers=headers_sa, json=data)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Infographic id {infographic_id} deleted successfully"
@@ -560,7 +560,7 @@ def test_delete_incorrectdatatype():
     data = infographic_id
 
     #Delete infographic with Super Admin
-    response = client.delete(UNIT_URL+source_name, headers=headers_sa, json=data)
+    response = client.request("delete" ,UNIT_URL+source_name, headers=headers_sa, json=data)
     assert_input_validation_error(response)
     logout_user(test_user_token)
 
@@ -582,7 +582,7 @@ def test_delete_missingvalue_infographic_id():
             }
 
     data = {"sourceName":source_name}
-    response = client.delete(UNIT_URL, headers=headers_sa, json=data)
+    response = client.request("delete" ,UNIT_URL, headers=headers_sa, json=data)
     assert response.status_code == 404
     logout_user(test_user_token)
 
@@ -605,7 +605,7 @@ def test_delete_missingvalue_source_name():
     infographic_response = client.get(UNIT_URL+source_name,headers=headers_sa)
     infographic_id = infographic_response.json()[0]['infographicId']
     data = {"itemId":infographic_id}
-    response = client.delete(UNIT_URL, headers=headers_sa, json=data)
+    response = client.request("delete" ,UNIT_URL, headers=headers_sa, json=data)
     assert response.status_code == 404
     logout_user(test_user_token)
 
@@ -631,7 +631,7 @@ def test_delete_notavailable_content():
     }
 
      #Delete infographic with Super Admin
-    response = client.delete(UNIT_URL+source_name, headers=headers_sa, json=data)
+    response = client.request("delete" ,UNIT_URL+source_name, headers=headers_sa, json=data)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
     logout_user(test_user_token)
@@ -804,7 +804,7 @@ def test_restoreitem_with_notavailable_source():
     get_source_response = client.get(SOURCE_URL + "?source_name="+source_name, headers=headers_auth)
     source_id = get_source_response.json()[0]["sourceId"]
     source_data = {"itemId":source_id}
-    response = client.delete(SOURCE_URL, headers=headers_auth, json=source_data)
+    response = client.request("delete" ,SOURCE_URL, headers=headers_auth, json=source_data)
     assert response.status_code == 200
     #Restoring data
     #Restore content with Super Admin after deleting source

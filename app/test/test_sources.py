@@ -1295,7 +1295,7 @@ def test_delete_default():
     data = {"itemId":source_id}
     # Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}
-    response = client.delete(UNIT_URL, headers=headers, json=data)
+    response = client.request("delete" ,UNIT_URL, headers=headers, json=data)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
      #Delete source with other API user,AgAdmin,AgUser,VachanUser,BcsDev
@@ -1304,12 +1304,12 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
-        response = client.delete(UNIT_URL, headers=headers_au, json=data)
+        response = client.request("delete" ,UNIT_URL, headers=headers_au, json=data)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
     #Delete source with createdUser(VachanAdmin)
-    response = client.delete(UNIT_URL, headers=headers_va, json=data)
+    response = client.request("delete" ,UNIT_URL, headers=headers_va, json=data)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Source with identity {source_id} deleted successfully"
@@ -1347,7 +1347,7 @@ def test_delete_default_superadmin():
     data = {"itemId":source_id}
 
     #Delete source
-    response = client.delete(UNIT_URL, headers=headers_sa, json=data)
+    response =client.request("delete" ,UNIT_URL, headers=headers_sa, json=data)
     assert response.status_code == 200
     assert response.json()['message'] == \
     f"Source with identity {source_id} deleted successfully"
@@ -1375,7 +1375,7 @@ def test_delete_source_id_string():
     source_id = response.json()[0]["sourceId"]
     source_id = str(source_id)
     data = {"itemId":source_id}
-    response = client.delete(UNIT_URL, headers=headers_sa, json=data)
+    response =client.request("delete" ,UNIT_URL, headers=headers_sa, json=data)
     assert response.status_code == 200
     assert response.json()['message'] == \
          f"Source with identity {source_id} deleted successfully"
@@ -1402,7 +1402,7 @@ def test_delete_incorrectdatatype():
     response = client.get(UNIT_URL + "?source_name="+source_name, headers=headers_sa)
     source_id = response.json()[0]["sourceId"]
     data = source_id
-    response = client.delete(UNIT_URL, headers=headers_sa, json=data)
+    response = client.request("delete" ,UNIT_URL, headers=headers_sa, json=data)
     assert_input_validation_error(response)
 
 def test_delete_missingvalue_source_id():
@@ -1412,7 +1412,7 @@ def test_delete_missingvalue_source_id():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
+    response =client.request("delete" ,UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
 
 def test_delete_notavailable_source():
@@ -1422,7 +1422,7 @@ def test_delete_notavailable_source():
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
-    response = client.delete(UNIT_URL,headers=headers,json=data)
+    response = client.request("delete" ,UNIT_URL,headers=headers,json=data)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
 

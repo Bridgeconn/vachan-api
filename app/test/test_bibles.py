@@ -972,7 +972,7 @@ def test_delete_default():
 
     #Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}#pylint: disable=redefined-outer-name
-    response = client.delete(UNIT_URL+source_name+'/books', headers=headers, json=data)
+    response = client.request("delete",UNIT_URL+source_name+'/books', headers=headers, json=data)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
@@ -982,7 +982,7 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
-        response = client.delete(UNIT_URL+source_name+'/books', headers=headers_au, json=data)
+        response = client.request("delete" ,UNIT_URL+source_name+'/books', headers=headers_au, json=data)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
@@ -991,7 +991,7 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
-    response = client.delete(UNIT_URL+source_name+'/books', headers=headers_va, json=data)
+    response = client.request("delete" ,UNIT_URL+source_name+'/books', headers=headers_va, json=data)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Bible Book with id {biblebook_id} deleted successfully"
@@ -1033,7 +1033,7 @@ def test_delete_default_superadmin():
     }
 
      #Delete biblebook with Super Admin
-    response = client.delete(UNIT_URL+source_name+'/books', headers=headers_sa, json=data)
+    response = client.request("delete",UNIT_URL+source_name+'/books', headers=headers_sa, json=data)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Bible Book with id {biblebook_id} deleted successfully"
@@ -1068,7 +1068,7 @@ def test_delete_biblebook_id_string():
     }
 
     #Delete biblebook with Super Admin
-    response = client.delete(UNIT_URL+source_name+'/books', headers=headers_sa, json=data)
+    response = client.request("delete" ,UNIT_URL+source_name+'/books', headers=headers_sa, json=data)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Bible Book with id {biblebook_id} deleted successfully"
@@ -1098,7 +1098,7 @@ def test_delete_incorrectdatatype():
     data = biblebook_id
 
     #Delete biblebook with Super Admin
-    response = client.delete(UNIT_URL+source_name+'/books', headers=headers_sa, json=data)
+    response = client.request("delete" ,UNIT_URL+source_name+'/books', headers=headers_sa, json=data)
     assert_input_validation_error(response)
     logout_user(test_user_token)
 
@@ -1120,7 +1120,7 @@ def test_delete_missingvalue_biblebook_id():
             }
 
     data = {}
-    response = client.delete(UNIT_URL+source_name+'/books', headers=headers_sa, json=data)
+    response = client.request("delete" ,UNIT_URL+source_name+'/books', headers=headers_sa, json=data)
     assert_input_validation_error(response)
     logout_user(test_user_token)
 
@@ -1143,7 +1143,7 @@ def test_delete_missingvalue_source_name():
     biblebook_response = client.get(UNIT_URL+source_name+'/books',headers=headers_sa)
     biblebook_id = biblebook_response.json()[0]['bookContentId']
     data = {"itemId":biblebook_id}
-    response = client.delete(UNIT_URL+'/books', headers=headers_sa, json=data)
+    response = client.request("delete" ,UNIT_URL+'/books', headers=headers_sa, json=data)
     assert response.status_code == 404
     logout_user(test_user_token)
 
@@ -1169,7 +1169,7 @@ def test_delete_notavailable_content():
     }
 
      #Delete biblebook with Super Admin
-    response = client.delete(UNIT_URL+source_name+'/books', headers=headers_sa, json=data)
+    response = client.request("delete" ,UNIT_URL+source_name+'/books', headers=headers_sa, json=data)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
     logout_user(test_user_token)
@@ -1347,7 +1347,7 @@ def test_restoreitem_with_notavailable_source():
     get_source_response = client.get(SOURCE_URL + "?source_name="+source_name, headers=headers_auth)
     source_id = get_source_response.json()[0]["sourceId"]
     source_data = {"itemId":source_id}
-    response = client.delete(SOURCE_URL, headers=headers_auth, json=source_data)
+    response = client.request("delete" ,SOURCE_URL, headers=headers_auth, json=source_data)
     assert response.status_code == 200
     #Restoring data
     #Restore content with Super Admin after deleting source
@@ -1379,7 +1379,7 @@ def test_delete_audio_default():
 
     #Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}#pylint: disable=redefined-outer-name
-    response = client.delete(UNIT_URL+source_name+'/audios', headers=headers, json=data)
+    response = client.request("delete" ,UNIT_URL+source_name+'/audios', headers=headers, json=data)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
@@ -1389,7 +1389,7 @@ def test_delete_audio_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
-        response = client.delete(UNIT_URL+source_name+'/audios', headers=headers_au, json=data)
+        response = client.request("delete" ,UNIT_URL+source_name+'/audios', headers=headers_au, json=data)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
@@ -1398,7 +1398,7 @@ def test_delete_audio_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
-    response = client.delete(UNIT_URL+source_name+'/audios', headers=headers_va, json=data)
+    response = client.request("delete" ,UNIT_URL+source_name+'/audios', headers=headers_va, json=data)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Bible Audio with id {audio_id} deleted successfully"
@@ -1429,7 +1429,7 @@ def test_delete_audio_superadmin_default():
       "itemId":audio_id
     }
     #Delete bibleaudio with Super Admin
-    response = client.delete(UNIT_URL+source_name+'/audios', headers=headers_sa, json=data)
+    response = client.request("delete" ,UNIT_URL+source_name+'/audios', headers=headers_sa, json=data)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Bible Audio with id {audio_id} deleted successfully"
@@ -1460,7 +1460,7 @@ def test_delete_bibleaudio_id_string():
     }
 
     #Delete bibleaudio with Super Admin
-    response = client.delete(UNIT_URL+source_name+'/audios', headers=headers_sa, json=data)
+    response = client.request("delete" ,UNIT_URL+source_name+'/audios', headers=headers_sa, json=data)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Bible Audio with id {audio_id} deleted successfully"
@@ -1486,7 +1486,7 @@ def test_delete_audio_incorrectdatatype():
     data = audio_id
 
     #Delete bibleaudio with Super Admin
-    response = client.delete(UNIT_URL+source_name+'/audios', headers=headers_sa, json=data)
+    response = client.request("delete" ,UNIT_URL+source_name+'/audios', headers=headers_sa, json=data)
     assert_input_validation_error(response)
     logout_user(test_user_token)
 
@@ -1508,7 +1508,7 @@ def test_delete_missingvalue_bibleaudio_id():
             }
 
     data = {}
-    response = client.delete(UNIT_URL+source_name+'/audios', headers=headers_sa, json=data)
+    response = client.request("delete" ,UNIT_URL+source_name+'/audios', headers=headers_sa, json=data)
     assert_input_validation_error(response)
     logout_user(test_user_token)
 
@@ -1530,7 +1530,7 @@ def test_delete_audio_missingvalue_source_name():
                     'Authorization': "Bearer"+" "+test_user_token
             }
     data = {"itemId":audio_id}
-    response = client.delete(UNIT_URL+'/audios', headers=headers_sa, json=data)
+    response = client.request("delete" ,UNIT_URL+'/audios', headers=headers_sa, json=data)
     assert response.status_code == 404
     logout_user(test_user_token)
 
@@ -1556,7 +1556,7 @@ def test_delete_audio_notavailable_content():
     }
 
      #Delete bibleaudio with Super Admin
-    response = client.delete(UNIT_URL+source_name+'/audios', headers=headers_sa, json=data)
+    response = client.request("delete" ,UNIT_URL+source_name+'/audios', headers=headers_sa, json=data)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
     logout_user(test_user_token)
@@ -1727,7 +1727,7 @@ def test_restoreaudioitem_with_notavailable_source():
     get_source_response = client.get(SOURCE_URL + "?source_name="+source_name, headers=headers_auth)
     source_id = get_source_response.json()[0]["sourceId"]
     source_data = {"itemId":source_id}
-    response = client.delete(SOURCE_URL, headers=headers_auth, json=source_data)
+    response = client.request("delete" ,SOURCE_URL, headers=headers_auth, json=source_data)
     assert response.status_code == 200
     #Restoring data
     #Restore content with Super Admin after deleting source

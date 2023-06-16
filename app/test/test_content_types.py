@@ -84,7 +84,7 @@ def test_post_missingvalue_contenttype():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.post(UNIT_URL, headers=headers, json=data)
+    response = client.request("delete" ,UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
 
 def test_post_incorrectvalue_contenttype():
@@ -108,7 +108,7 @@ def test_delete_default():
 
     #Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}
-    response = client.delete(UNIT_URL, headers=headers, json=data)
+    response = client.request("delete" ,UNIT_URL, headers=headers, json=data)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
@@ -118,7 +118,7 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
-        response = client.delete(UNIT_URL, headers=headers, json=data)
+        response = client.request("delete" ,UNIT_URL, headers=headers, json=data)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
@@ -129,7 +129,7 @@ def test_delete_default():
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
 
-    response = client.delete(UNIT_URL, headers=headers, json=data)
+    response = client.request("delete" ,UNIT_URL, headers=headers, json=data)
     assert response.status_code == 200
     assert response.json()['message'] ==  \
         f"Content with identity {content_id} deleted successfully"
@@ -159,7 +159,7 @@ def test_delete_default_superadmin():
                     'Authorization': "Bearer"+" "+test_user_token
             }
     #Delete content
-    response = client.delete(UNIT_URL, headers=headers_auth, json=data)
+    response = client.request("delete" ,UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 200
     assert response.json()['message'] == \
     f"Content with identity {content_id} deleted successfully"
@@ -184,7 +184,7 @@ def test_delete_content_id_string():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
-    response = client.delete(UNIT_URL, headers=headers_auth, json=data)
+    response = client.request("delete" ,UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 200
     assert response.json()['message'] == \
         f"Content with identity {content_id} deleted successfully"
@@ -200,7 +200,7 @@ def test_delete_incorrectdatatype():
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
+    response = client.request("delete" ,UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
 
 def test_delete_missingvalue_content_id():
@@ -210,7 +210,7 @@ def test_delete_missingvalue_content_id():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
+    response = client.request("delete" ,UNIT_URL, headers=headers, json=data)
     assert_input_validation_error(response)
 
 def test_delete_notavailable_content():
@@ -220,7 +220,7 @@ def test_delete_notavailable_content():
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.delete(UNIT_URL,headers=headers,json=data)
+    response = client.request("delete" ,UNIT_URL,headers=headers,json=data)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
 
@@ -262,7 +262,7 @@ def test_content_used_by_source():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+token_admin
                      }
-    response = client.delete(UNIT_URL, headers=headers_admin, json=data)
+    response = client.request("delete" ,UNIT_URL, headers=headers_admin, json=data)
     assert response.status_code == 409
     assert response.json()['error'] == 'Conflict'
     logout_user(token_admin)

@@ -459,7 +459,7 @@ def test_delete_glossary():
     assert found_test
 
     #deleting glossary with no auth - Negative Test
-    resp = client.delete(NLP_UNIT_URL+
+    resp =client.request("delete" ,NLP_UNIT_URL+
         '/gloss?source_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
              headers=headers)
     assert resp.status_code == 401
@@ -467,7 +467,7 @@ def test_delete_glossary():
 
     #Deleting glossary with different auth of registerdUser - Positive Test
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
-    response = client.delete(NLP_UNIT_URL+
+    response =client.request("delete" ,NLP_UNIT_URL+
         '/gloss?source_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
         headers=headers_auth)
     assert response.status_code == 201
@@ -481,7 +481,7 @@ def test_delete_glossary():
     assert len(get_response.json()['translations']) == 0
 
     #Deleting glossary with empty translation - Positive Test
-    response = client.delete(NLP_UNIT_URL+
+    response =client.request("delete" ,NLP_UNIT_URL+
         '/gloss?source_lang=en&target_lang=ml&token=the&translation=',
         headers=headers_auth)
     assert response.status_code == 201
@@ -506,7 +506,7 @@ def test_delete_glossary():
     headers_auth['Authorization'] = "Bearer"+" "+test_user_token
     response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
         headers=headers_auth, json=tokens_trans)
-    response = client.delete(NLP_UNIT_URL+
+    response = client.request("delete" ,NLP_UNIT_URL+
         '/gloss?source_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
         headers=headers_auth)
     assert response.status_code == 201
@@ -520,14 +520,14 @@ def test_delete_glossary():
     assert len(get_response.json()['translations']) == 0
 
     #Delete with not available source language
-    response = client.delete(NLP_UNIT_URL+
+    response = client.request("delete" ,NLP_UNIT_URL+
         '/gloss?source_lang=x-ttt&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
         headers=headers_auth)
     assert response.status_code == 404
     assert "Source language not available" in response.json()['details']
 
      #Delete not available target language
-    response = client.delete(NLP_UNIT_URL+
+    response = client.request("delete" ,NLP_UNIT_URL+
         '/gloss?source_lang=en&target_lang=x-ttt&token=test&translation=ടെസ്റ്റ്',
         headers=headers_auth)
     assert response.status_code == 404
@@ -543,7 +543,7 @@ def test_restore_glossary():
     response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
         headers=headers_auth, json=tokens_trans)
     # Deleting
-    delete_resp = client.delete(NLP_UNIT_URL+
+    delete_resp = client.request("delete" ,NLP_UNIT_URL+
         '/gloss?source_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
         headers=headers_auth)
 
