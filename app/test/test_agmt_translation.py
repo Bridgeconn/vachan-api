@@ -744,7 +744,7 @@ def test_agmt_translation_access_rule_app():
             "offset": ["0", "4"],
             "data2": data_str
         },
-        headers=headers_auth
+        headers=headers
         )
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
