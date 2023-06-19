@@ -894,8 +894,8 @@ def get_available_bible_books(db_, source_name,book_code=None, content_type=None
     elif content_type is None:
         query = query.options(defer(model_cls.JSON), defer(model_cls.USFM))
     if not fetched:
-        fetched =query(model_cls_audio).join(model_cls).\
-            filter(model_cls.active == active).offset(skip).limit(limit).all()
+        fetched = db_.query(model_cls).join(model_cls_audio).\
+        filter(model_cls.active == active).offset(skip).limit(limit).all()
     results = [res.__dict__ for res in fetched]
     # return results
     source_db_content = db_.query(db_models.Source).filter(
