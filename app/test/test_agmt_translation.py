@@ -1069,10 +1069,16 @@ def test_agmt_translation_access_permissions():
         assert resp.status_code == 403
         assert resp.json()['error'] == "Permission Denied"
 
-        
+        data_str = json.dumps(post_obj_list)
         response = client.get(
             UNIT_URL + "/token-translations",
-         params=params,
+         params={
+                "project_id": str(project_id),
+                "token": all_tokens[0]['token'],
+                "sentence_id": "41001001",
+                "offset": ["0", "4"],
+                "data": data_str
+                },
              headers=headers_auth)
         assert response.status_code == 403
         assert response.json()['error'] == "Permission Denied"
