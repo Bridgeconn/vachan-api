@@ -1019,18 +1019,18 @@ def test_agmt_translation_access_permissions():
         assert isinstance(resp.json(), list)
         for item in resp.json():
             assert_positive_get_tokens(item)
-        
-        params={
-            "project_id": str(project_id),
-            "token": all_tokens[0]['token'],
-            "sentence_id": "41001001",
-            "offset": ["0", "4"],
-            "data": data_str
-            },
+            
+        data_str = json.dumps(post_obj_list)
         response = client.get(
-        UNIT_URL + "/token-translations",
-         params=params,
-         headers=headers_auth)
+            UNIT_URL + "/token-translations",
+            params={
+                "project_id": str(project_id),
+                "token": all_tokens[0]['token'],
+                "sentence_id": "41001001",
+                "offset": ["0", "4"],
+                "data": data_str
+                },
+            headers=headers_auth)
         assert response.status_code == 200
         assert len(response.json()) > 0
 

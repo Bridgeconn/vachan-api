@@ -1017,6 +1017,7 @@ def test_agmt_translation_access_permissions():
         for item in resp.json():
             assert_positive_get_tokens(item)
         
+        data_str = json.dumps(post_obj_list)
         response = client.get(UNIT_URL + "/token-translations",
             params={
                 "project_id": str(project_id),
