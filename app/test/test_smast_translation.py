@@ -1017,9 +1017,14 @@ def test_agmt_translation_access_permissions():
         for item in resp.json():
             assert_positive_get_tokens(item)
         
-        
         response = client.get(UNIT_URL + "/token-translations",
-            params=params,
+            params={
+                "project_id": str(project_id),
+                "token": all_tokens[0]['token'],
+                "sentence_id": "41001001",
+                "offset": ["0", "4"],
+                "data": data_str
+            } ,
             headers=headers_auth)
         assert response.status_code == 200
         assert len(response.json()) > 0
