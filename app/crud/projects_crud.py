@@ -369,6 +369,19 @@ def update_project_draft(db_:Session, project_id, sentence_list, user_id):
         'db_content':sentences,
         'project_content':project_row
         }
+    #Also add any new confirmed translations to translation memory
+    gloss_list = []
+    for sent in sentences:
+        for meta_item in sent.draftMeta:
+            if meta_item[2] != "confirmed":
+                continue
+            gloss_list.append({
+                "token": sent.sentence[meta_item[0][0]:meta_item[0][1]],
+                "translations":[sent.draft[meta_item[1][0]:meta_item[1][1]]]
+                })
+    nlp_crud.add_to_translation_memory(db_,
+        project_row.sourceLanguage.code,
+        project_row.targetLanguage.code, gloss_list, default_val=1)
     return response_result
 
 def obtain_project_progress(db_, project_id, books, sentence_id_list, sentence_id_range):#pylint: disable=too-many-locals
