@@ -552,3 +552,45 @@ def test_suggestion_when_token_overlaps_confirmed_segment():
                                       'app':"Autographa"})
     assert suggest_resp.status_code == 201
 
+def test_glossupdate_upon_draft_update():
+    '''If a draft update contain confirmed translations, 
+    it should also be fed into translation memory
+    issue #592'''
+    resp = add_project(project_data, auth_token=initial_test_users['AgUser']['token'])
+    assert resp.json()['message'] == "Project created successfully"
+    project_id = resp.json()['data']['projectId']
+
+    put_data = {
+        "projectId": project_id,
+        "sentenceList":source_sentences
+    }
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    assert resp.json()['message'] == "Project updated successfully"
+
+    resp = client.get(f"{UNIT_URL}/sentences?project_id={project_id}", headers=headers_auth)
+    for sent in resp.json():
+        assert_positive_get_sentence(sent)
+
+    # translate just one word
+    put_data = [
+            {"sentenceId":100,
+             "draft": "കാട്",
+             "draftMeta":[
+                  [ [5,11], [0,4], "confirmed"]
+                ]
+            }
+    ]
+    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
+        headers=headers_auth, json=put_data)
+    sents = resp.json()
+    assert len(sents) == 1
+    assert_positive_get_sentence(sents[0])
+    assert sents[0]["draft"] == "കാട്"
+    assert sents[0]["draftMeta"] == put_data[0]['draftMeta']
+
+    resp = client.get(f"/v2/nlp/gloss?source_language={project_data['sourceLanguageCode']}"+\
+        f"&target_language={project_data['targetLanguageCode']}&token=jungle",
+        headers=headers_auth)
+    assert resp.status_code == 200
+    assert "കാട്" in resp.json()['translations']
