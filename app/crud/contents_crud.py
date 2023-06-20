@@ -997,3 +997,4 @@ def extract_text(db_:Session, tables, books, skip=0, limit=100):
             sentence_list = sentence_list[:limit]
             break
     return sentence_list
+    
