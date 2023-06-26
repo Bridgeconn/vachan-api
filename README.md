@@ -113,14 +113,16 @@ Set up node and npm and install [usfm-grammar](https://www.npmjs.com/package/usf
 
 ### Set up a Kratos instance
 
-Refer instructions and use config files [here](./Kratos_config) and run a Kratos server on localhost
+Refer instructions and use config files [here](./docker/Kratos_config) and run a Kratos server on localhost
+
+Make sure you have installed Docker Version 24.0.1 before setting Kratos instance.
+Refer [detailed guide for docker usage](./docs/docker-guide.md) for more details.
 
 ```
 cd docker/Kratos_config
 docker-compose -f quickstart.yml up 
 ```
 
-Refer [detailed guide for docker usage](./docs/docker-guide.md) for more details.
 
 ### Run the app
 
