@@ -465,8 +465,50 @@ def test_delete_glossary():
     assert resp.status_code == 401
     assert resp.json()['details'] == "Access token not provided or user not recognized."
 
-    #Deleting glossary with different auth of registerdUser - Positive Test
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
+    #Delete content with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev
+    for user in ['APIUser','AgUser','VachanUser','SanketMASTUser','BcsDev']:
+        headers_au = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
+        }
+        response = client.delete(NLP_UNIT_URL+
+        '/gloss?source_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
+        headers=headers_au)
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
+
+    #Deleting glossary with AgAdmin used - Positive Test
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    response = client.delete(NLP_UNIT_URL+
+        '/gloss?source_lang=en&target_lang=ml&token=developer&translation=ടെവെലപ്പര്‍',
+        headers=headers_auth)
+    assert response.status_code == 201
+    assert "successfull" in response.json()['message']
+
+    # Ensure deleted glossary is not present
+    get_response =client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=developer',
+                headers=headers_auth)
+    assert get_response.status_code == 200
+    assert isinstance(get_response.json(), dict)
+    assert len(get_response.json()['translations']) == 0
+
+    #Deleting glossary with VachanAdmin used - Positive Test
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    response = client.delete(NLP_UNIT_URL+
+        '/gloss?source_lang=en&target_lang=ml&token=test case&translation=ടെസ്റ്റ് കേസ്',
+        headers=headers_auth)
+    assert response.status_code == 201
+    assert "successfull" in response.json()['message']
+
+    # Ensure deleted glossary is not present
+    get_response =client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test case',
+                headers=headers_auth)
+    assert get_response.status_code == 200
+    assert isinstance(get_response.json(), dict)
+    assert len(get_response.json()['translations']) == 0
+    
+    #Deleting glossary with SanketMASTAdmin used - Positive Test
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     response = client.delete(NLP_UNIT_URL+
         '/gloss?source_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
         headers=headers_auth)
@@ -539,7 +581,7 @@ def test_restore_glossary():
     '''positive test case, checking for correct return object'''
     #only Super Admin can restore deleted data
     #Adding a suggestion for translation
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
         headers=headers_auth, json=tokens_trans)
     # Deleting
