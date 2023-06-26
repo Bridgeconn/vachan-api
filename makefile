@@ -9,11 +9,10 @@ SHELL := /bin/bash
 venv-configure: ## Configure virtual environment and install dependencies
 	@echo ">>> Configure virtual environment..."
 	python3 -m venv $(ENVPATH)
-	@echo ">>> Activated virtual environment."
+	@echo ">>> Virtual environment configured..."
 
 venv-activate: ## Activate virtual-env
-	@echo ">>> Activating virtual environment..."
-	@echo ">>> Virtual environment activation:"
+	@echo ">>> Virtual environment activation..."
 	@echo $$(source $(ENVPATH)/bin/activate && python -c "import sys; print(sys.prefix)")
 
 install-dependencies: ## Install dependencies from requirements
@@ -28,6 +27,12 @@ check-package: ## Check if packages from requirements.txt are installed
 	else \
 		echo "Some packages are missing or failed to install."; \
 	fi
+
+installing-psql: #installing psql
+	sudo apt update
+	sudo apt install postgresql postgresql-contrib
+
+
 
 into-database: ## Accessing the database folder
 	sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='vachan_db'" | grep -q 1 || sudo -u postgres psql -c "CREATE DATABASE vachan_db"
@@ -62,6 +67,7 @@ setup:
 	make venv-activate
 	make install-dependencies
 	make check-package
+	make install-psql
 	make into-database
 	make environmental-variables
 	make installing-usfmgrammar
