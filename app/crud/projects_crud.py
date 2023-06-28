@@ -337,6 +337,18 @@ def validate_draft_meta(sentence, draft, draft_meta):
         for meta in draft_meta:
             assert meta[2] in ['confirmed', 'suggestion', 'untranslated'],\
                 "invalid value where confirmed, suggestion or untranslated is expected"
+
+        # Ensure all portions of draft have a target segment corresponding to it
+        sorted_trg_segs = sorted(trg_segs)
+        pointer = 0
+        for seg in sorted_trg_segs:
+            assert seg[0] == pointer, "All portions of the draft should have "+\
+                                    "a draftmeta segment showing its status. "+\
+                                    f"Expecting a draft segment starting with {pointer}"
+            pointer = seg[1]
+        assert sorted_trg_segs[-1][1] == trg_len, "All portions of the draft should have "+\
+                                    "a draftmeta segment showing its status. "+\
+                                    f"Expecting a draft segment ending in {pointer}"
     except AssertionError as exe:
         raise UnprocessableException("Incorrect metadata:"+str(exe)) from exe
     except Exception as exe:

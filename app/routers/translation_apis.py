@@ -444,6 +444,8 @@ async def generate_draft(request: Request,sentence_list:List[schemas_nlp.DraftIn
     usfm, text, csv or alignment-json'''
     log.info('In generate_draft')
     log.debug('sentence_list:%s, doc_type:%s',sentence_list, doc_type)
+    for sent in sentence_list:
+        projects_crud.validate_draft_meta(sent.sentence, sent.draft, sent.draftMeta)
     return nlp_crud.obtain_draft(sentence_list, doc_type)
 
 @router.put('/v2/translation/suggestions', response_model=List[schemas_nlp.Sentence],
@@ -463,6 +465,8 @@ async def suggest_translation(request: Request,
     log.info("In suggest_translation")
     log.debug('source_language:%s, target_language:%s, sentence_list:%s,punctuations:%s\
         stopwords:%s', source_language, target_language, sentence_list, punctuations, stopwords)
+    for sent in sentence_list:
+        projects_crud.validate_draft_meta(sent.sentence, sent.draft, sent.draftMeta)
     return nlp_crud.auto_translate(db_, sentence_list, source_language, target_language,
         punctuations=punctuations, stopwords=stopwords)
 
