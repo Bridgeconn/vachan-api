@@ -319,8 +319,12 @@ def replace_token(source, token_offset, translation,draft_meta, tag="confirmed",
         src_seg_offset = meta[0]
         draft_seg_offset = meta[1]
         status = meta[2]
-        intersection = set(range(token_offset[0],token_offset[1])).intersection(
-            range(src_seg_offset[0],src_seg_offset[1]))
+        if src_seg_offset[0] == src_seg_offset[1] and src_seg_offset[0] != token_offset[0]:
+            intersection = set(range(token_offset[0],token_offset[1])). intersection(
+                [src_seg_offset[0]])
+        else:
+            intersection = set(range(token_offset[0],token_offset[1])).intersection(
+                range(src_seg_offset[0],src_seg_offset[1]))
         if len(intersection) > 0: # our area of interest overlaps with this segment
             updated_draft, updated_meta, translation_offset = replace_token_inside(
                 token_offset=token_offset,
@@ -343,4 +347,5 @@ def replace_token(source, token_offset, translation,draft_meta, tag="confirmed",
                 updated_meta=updated_meta,
                 meta=meta
                 )
+    utils.validate_draft_meta(source, updated_draft, updated_meta)
     return updated_draft, updated_meta
