@@ -432,9 +432,6 @@ def test_delete_default():
         assert_positive_get(item)
     infographic_response = client.get(UNIT_URL+source_name,headers=headers_auth)
     infographic_id = infographic_response.json()[0]['infographicId']
-    data = {
-      "itemId":infographic_id
-    }
 
     #Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}#pylint: disable=redefined-outer-name
@@ -490,9 +487,6 @@ def test_delete_default_superadmin():
     infographic_response = client.get(UNIT_URL+source_name,headers=headers_sa)
     infographic_id = infographic_response.json()[0]['infographicId']
 
-    data = {
-      "itemId":infographic_id
-    }
 
      #Delete infographic with Super Admin
     response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(infographic_id), headers=headers_sa)
@@ -524,10 +518,6 @@ def test_delete_infographic_id_string():
     infographic_response = client.get(UNIT_URL+source_name,headers=headers_sa)
     infographic_id = infographic_response.json()[0]['infographicId']
     infographic_id = str(infographic_id)
-
-    data = {
-      "itemId":infographic_id
-    }
 
     #Delete infographic with Super Admin
     response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(infographic_id), headers=headers_sa)
@@ -803,7 +793,6 @@ def test_restoreitem_with_notavailable_source():
     #Delete Associated Source
     get_source_response = client.get(SOURCE_URL + "?source_name="+source_name, headers=headers_auth)
     source_id = get_source_response.json()[0]["sourceId"]
-    source_data = {"itemId":source_id}
     response = client.delete(SOURCE_URL + "?delete_id=" + str(source_id), headers=headers_auth)
     assert response.status_code == 200
     #Restoring data

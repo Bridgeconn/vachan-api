@@ -934,27 +934,27 @@ def test_delete_project():
     assert fetched_project['targetLanguage']['code'] == project_data['targetLanguageCode']
 
     #Delete Project with no auth
-    resp = client.request("delete" ,UNIT_URL+'?project_id='+str(new_project['projectId']),headers=headers)
+    resp = client.delete(UNIT_URL+'?project_id='+str(new_project['projectId']),headers=headers)
     assert resp.status_code == 401
     assert resp.json()['details'] == "Access token not provided or user not recognized."
 
     # deleting non existing  project
     invalid_project_id = 9999
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    resp = client.request("delete" ,UNIT_URL+'?project_id='+str(invalid_project_id),headers=headers_auth)
+    resp = client.delete(UNIT_URL+'?project_id='+str(invalid_project_id),headers=headers_auth)
     assert resp.status_code == 404
     assert resp.json()['details'] == f"Project with id {invalid_project_id} not found"
 
     # Delete as unauthorized users
     for user in ['APIUser','VachanAdmin','VachanUser','BcsDev']:
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
-        response = client.request("delete" ,UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
+        response = client.delete(UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
     # Delete as AgAdmin- Positive test
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    resp = client.request("delete" ,UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
+    resp = client.delete(UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
     assert resp.status_code == 201
     assert "successfull" in resp.json()['message']
 
@@ -980,7 +980,7 @@ def test_delete_project():
     new_project = post_resp_aguser.json()['data']
     project_id = new_project['projectId']
     #Delete
-    delete_resp_aguser = client.request("delete" ,UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
+    delete_resp_aguser = client.delete(UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
     assert delete_resp_aguser.status_code == 201
     #Ensure deleted project is not present
     resp = client.get(UNIT_URL+'?project_name=Test project 1',headers=headers_auth)
@@ -1012,7 +1012,7 @@ def test_delete_project():
     new_project = post_resp_sa.json()['data']
     project_id = new_project['projectId']
     #Delete
-    delete_resp_sa= client.request("delete" ,UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
+    delete_resp_sa= client.delete(UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
     assert delete_resp_sa.status_code == 201
     #Ensure deleted project is not present
     resp = client.get(UNIT_URL+'?project_name=Test project 1',headers=headers_auth)
@@ -1036,7 +1036,7 @@ def test_restore_project():
 
     #Delete
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    delete_resp= client.request("delete" ,UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
+    delete_resp= client.delete(UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
     assert delete_resp.status_code == 201
     #Ensure deleted project is not present
     resp = client.get(UNIT_URL+'?project_name=Test project 1',headers=headers_auth)
@@ -1118,7 +1118,7 @@ def test_delete_user():
     check_project_user(project_data['projectName'], new_user_id, role='projectMember')
 
     #no auth
-    resp = client.request("delete" ,USER_URL+'?project_id='+str(new_project['projectId'])+
+    resp = client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
         '&user_id='+str(new_user_id),headers=headers)
     assert resp.status_code == 401
     assert resp.json()['details'] == "Access token not provided or user not recognized."
@@ -1127,7 +1127,7 @@ def test_delete_user():
     # deleting non existing user
     second_user_id = initial_test_users['AgUser2']['test_user_id']
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    resp = client.request("delete" ,USER_URL+'?project_id='+str(new_project['projectId'])+
+    resp = client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
         '&user_id='+str(second_user_id),headers=headers_auth)
     assert resp.status_code == 404
     assert resp.json()['details'] == "User-project pair not found"
@@ -1140,7 +1140,7 @@ def test_delete_user():
     #  as non-owner user
     user_id = initial_test_users['AgUser2']['test_user_id']
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp =client.request("delete" ,USER_URL+'?project_id='+str(new_project['projectId'])+
+    resp =client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
         '&user_id='+str(user_id),headers=headers_auth)
     assert resp.status_code == 403
     assert resp.json()['error'] == "Permission Denied"
@@ -1149,7 +1149,7 @@ def test_delete_user():
     # as same user
     user_id = initial_test_users['AgAdmin']['test_user_id']
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    resp =client.request("delete" ,USER_URL+'?project_id='+str(new_project['projectId'])+
+    resp =client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
         '&user_id='+str(user_id),headers=headers_auth)
     assert resp.status_code == 403
     assert resp.json()['details'] == "A user cannot remove oneself from a project."
@@ -1158,7 +1158,7 @@ def test_delete_user():
     # as project owner - Positive test
     user_id = initial_test_users['AgUser2']['test_user_id']
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    resp =client.request("delete" ,USER_URL+'?project_id='+str(new_project['projectId'])+
+    resp =client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
         '&user_id='+str(user_id),headers=headers_auth)
     assert resp.status_code == 201
     assert "successfull" in resp.json()['message']
@@ -1202,7 +1202,7 @@ def test_restore_user():
     #Delete
     # user_id = initial_test_users['AgUser']['test_user_id']
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    delete_resp = client.request("delete" ,USER_URL+'?project_id='+str(new_project['projectId'])+
+    delete_resp = client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
         '&user_id='+str(user_id),headers=headers_auth)
     assert delete_resp.status_code == 201
     assert "successfull" in delete_resp.json()['message']

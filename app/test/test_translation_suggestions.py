@@ -465,9 +465,6 @@ def test_delete_glossary():
     assert resp.status_code == 401
     assert resp.json()['details'] == "Access token not provided or user not recognized."
 
-    #Deleting glossary with different auth of registerdUser - Positive Test
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
-    response =client.delete(NLP_UNIT_URL+
     #Delete content with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev
     for user in ['APIUser','AgUser','VachanUser','SanketMASTUser','BcsDev']:
         headers_au = {"contentType": "application/json",
