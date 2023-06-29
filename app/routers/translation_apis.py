@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from dependencies import get_db, log, AddHiddenInput
 from schema import schemas, schemas_nlp, schema_auth, schema_content
-from crud import nlp_crud, projects_crud, nlp_sw_crud, structurals_crud
+from crud import nlp_crud, projects_crud, nlp_sw_crud, structurals_crud, utils
 from custom_exceptions import GenericException
 from routers import content_apis
 from auth.authentication import get_user_or_none,get_auth_access_check_decorator
@@ -444,6 +444,9 @@ async def generate_draft(request: Request,sentence_list:List[schemas_nlp.DraftIn
     usfm, text, csv or alignment-json'''
     log.info('In generate_draft')
     log.debug('sentence_list:%s, doc_type:%s',sentence_list, doc_type)
+    for sent in sentence_list:
+        if sent.draftMeta is not None and sent.draftMeta != []:
+            utils.validate_draft_meta(sent.sentence, sent.draft, sent.draftMeta)
     return nlp_crud.obtain_draft(sentence_list, doc_type)
 
 @router.put('/v2/translation/suggestions', response_model=List[schemas_nlp.Sentence],
@@ -463,6 +466,9 @@ async def suggest_translation(request: Request,
     log.info("In suggest_translation")
     log.debug('source_language:%s, target_language:%s, sentence_list:%s,punctuations:%s\
         stopwords:%s', source_language, target_language, sentence_list, punctuations, stopwords)
+    for sent in sentence_list:
+        if sent.draftMeta is not None and sent.draftMeta != []:
+            utils.validate_draft_meta(sent.sentence, sent.draft, sent.draftMeta)
     return nlp_crud.auto_translate(db_, sentence_list, source_language, target_language,
         punctuations=punctuations, stopwords=stopwords)
 

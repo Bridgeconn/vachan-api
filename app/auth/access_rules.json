@@ -53,7 +53,7 @@
         "read":["registeredUser"],
         "create":["registeredUser"],
         "process":["registeredUser"],
-        "delete":["registeredUser"]
+        "delete":["SuperAdmin", "VachanAdmin", "AgAdmin", "SanketMASTAdmin"]
     },
     "lookup-content":{
         "read":["noAuthRequired"],

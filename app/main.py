@@ -4,6 +4,7 @@ from fastapi import FastAPI, Depends
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
@@ -26,7 +27,7 @@ if os.environ.get("VACHAN_TEST_MODE", "False") != 'True':
 
     create_super_user()
 
-app = FastAPI(title="Vachan-API", version="2.0.0-beta.8",
+app = FastAPI(title="Vachan-API", version="2.0.0-beta.9",
     description="The server application that provides APIs to interact \
 with the underlying Databases and modules in Vachan-Engine.")
 
@@ -215,3 +216,31 @@ app.include_router(content_apis.router)
 app.include_router(translation_apis.router)
 app.include_router(media_api.router)
 app.include_router(filehandling_apis.router)
+
+beta_endpoints = [
+    "/graphql",  # Specify the paths of the beta endpoints
+    "/v2/bibles/{source_name}/versification",
+    "/v2/bibles/{source_name}/books/{book_code}/format/{output_format}",
+    "/v2/translation/project/versification",
+    "/v2/media/gitlab/stream",
+    "/v2/media/gitlab/download",
+    "/v2/files/usfm/to/{output_format}"
+]
+
+def custom_openapi():
+    '''Modify the auto generated openapi schema for API docs'''
+    openapi_schema = get_openapi(title="Vachan-API", version="2.0.0-beta.9",
+        description="The server application that provides APIs to interact \
+        with the underlying Databases and modules in Vachan-Engine.",
+        routes=app.routes)
+
+    # Add version information to specific endpoints
+    for path, path_data in openapi_schema["paths"].items():
+        for _, method_data in path_data.items():
+            if path in beta_endpoints:
+                # Set endpoints as experimental in the API-docs
+                method_data.setdefault("x-experimental", True)
+
+    return openapi_schema
+
+app.openapi = custom_openapi
