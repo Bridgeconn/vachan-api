@@ -398,7 +398,7 @@ def test_delete_sentence():
                 "accept": "application/json",
                 "app":"Autographa"
             }
-    resp = client.request("delete" ,f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id1}",
+    resp = client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id1}",
             headers=headers)
     assert resp.status_code == 401
     assert resp.json()['details'] == "Access token not provided or user not recognized."
@@ -406,14 +406,14 @@ def test_delete_sentence():
     #Deleting Sentence with unauthorized users - Negative Test
     for user in ['APIUser','VachanAdmin','VachanUser','BcsDev','AgUser']:
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
-        response =client.request("delete" ,f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id1}",
+        response =client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id1}",
                 headers=headers_auth)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
     # Delete as AgAdmin - Positive test
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    response = client.request("delete" ,f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id1}",
+    response = client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id1}",
             headers=headers_auth)
     assert response.status_code == 201
     assert "successfull" in response.json()['message']
@@ -434,7 +434,7 @@ def test_delete_sentence():
     test_user_token = response.json()["token"]
     headers_auth['Authorization'] = "Bearer"+" "+test_user_token
 
-    response = client.request("delete" ,f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id2}",
+    response = client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id2}",
             headers=headers_auth)
     assert response.status_code == 201
     assert "successfull" in response.json()['message']
@@ -445,7 +445,7 @@ def test_delete_sentence():
     assert_not_available_content(get_response)
 
     #Delete not available sentence
-    response =client.request("delete" ,f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id=9999",
+    response =client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id=9999",
             headers=headers_auth)
     assert response.status_code == 404
     assert "Requested Content Not Available" in response.json()['error']
@@ -465,7 +465,7 @@ def test_restore_sentence():
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
-    delete_resp =client.request("delete" ,f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id=100",
+    delete_resp =client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id=100",
             headers=headers_auth)
 
     #Ensure deleted sentence is not present
