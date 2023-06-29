@@ -1298,7 +1298,8 @@ def test_delete_default():
     data = {"itemId":source_id}
     # Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}
-    response = client.request("delete" ,UNIT_URL, headers=headers, json=data)
+    response = client.delete(UNIT_URL + "?delete_id=" + str(source_id), headers=headers)
+    
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
      #Delete source with other API user,AgAdmin,AgUser,VachanUser,BcsDev
@@ -1307,12 +1308,12 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
-        response = client.request("delete" ,UNIT_URL, headers=headers_au, json=data)
+        response = client.delete(UNIT_URL + "?delete_id=" + str(source_id), headers=headers_au)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
     #Delete source with createdUser(VachanAdmin)
-    response = client.request("delete" ,UNIT_URL, headers=headers_va, json=data)
+    response = client.delete(UNIT_URL + "?delete_id=" + str(source_id),headers=headers_va)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Source with identity {source_id} deleted successfully"
@@ -1350,7 +1351,7 @@ def test_delete_default_superadmin():
     data = {"itemId":source_id}
 
     #Delete source
-    response =client.request("delete" ,UNIT_URL, headers=headers_sa, json=data)
+    response =response = client.delete(UNIT_URL + "?delete_id=" + str(source_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] == \
     f"Source with identity {source_id} deleted successfully"
@@ -1378,7 +1379,7 @@ def test_delete_source_id_string():
     source_id = response.json()[0]["sourceId"]
     source_id = str(source_id)
     data = {"itemId":source_id}
-    response =client.request("delete" ,UNIT_URL, headers=headers_sa, json=data)
+    response = client.delete(UNIT_URL + "?delete_id=" + str(source_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] == \
          f"Source with identity {source_id} deleted successfully"
@@ -1401,31 +1402,34 @@ def test_delete_incorrectdatatype():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
+    source_id = {}
 
     response = client.get(UNIT_URL + "?source_name="+source_name, headers=headers_sa)
     source_id = response.json()[0]["sourceId"]
-    data = source_id
-    response = client.request("delete" ,UNIT_URL, headers=headers_sa, json=data)
+    source_id = {}
+    response = client.delete(UNIT_URL + "?delete_id=" + str(source_id), headers=headers_sa)
     assert_input_validation_error(response)
 
 def test_delete_missingvalue_source_id():
     '''Negative Testcase. Passing input data without source Id'''
     data = {}
+    source_id =" "
     headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
-    response =client.request("delete" ,UNIT_URL, headers=headers, json=data)
+    response = client.delete(UNIT_URL + "?delete_id=" + str(source_id), headers=headers)
     assert_input_validation_error(response)
 
 def test_delete_notavailable_source():
     ''' request a non existing source ID, Ensure there is no partial matching'''
     data = {"itemId":99999}
+    source_id=9999
     headers = {"contentType": "application/json",
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
-    response = client.request("delete" ,UNIT_URL,headers=headers,json=data)
+    response = client.delete(UNIT_URL + "?delete_id=" + str(source_id),headers=headers)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
 

@@ -897,7 +897,7 @@ def test_data_updated_time():
     assert not project_create_time == project_update_time
 
     # Case 4 : Delete Sentence
-    response = client.request("delete" ,f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id}",
+    response = client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id}",
             headers=headers_auth)
     assert response.status_code == 201
     assert "successfull" in response.json()['message']
