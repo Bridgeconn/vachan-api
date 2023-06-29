@@ -4,7 +4,6 @@ projects are included in nlp_crud module'''
 
 import re
 import datetime
-import itertools
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
@@ -310,37 +309,6 @@ def obtain_project_draft(db_:Session, project_id, books, sentence_id_list, sente
         }
     return response
 
-def validate_draft_meta(sentence, draft, draft_meta):
-    '''Check if indices are proper in draftMeta, as per values in sentence and draft'''
-    src_segs = [meta[0] for meta in draft_meta]
-    trg_segs = [meta[1] for meta in draft_meta]
-    try:
-        #Ensure the offset ranges dont overlap
-        for seg1, seg2 in itertools.product(src_segs, src_segs):
-            if seg1 != seg2:
-                intersection = set(range(seg1[0],seg1[1])).intersection(
-                    range(seg2[0],seg2[1]))
-                assert not intersection, f"Source segments {seg1} and {seg2} overlaps!"
-        for seg1, seg2 in itertools.product(trg_segs, trg_segs):
-            if seg1 != seg2:
-                intersection = set(range(seg1[0],seg1[1])).intersection(
-                    range(seg2[0],seg2[1]))
-                assert not intersection, f"Target segments {seg1} and {seg2} overlaps!"
-        # Ensure the index values are within the range of string length and from left to right
-        # and non empty
-        src_len = len(sentence)
-        for seg in src_segs:
-            assert 0 <= seg[0] <= seg[1] <= src_len, f"Source segment {seg}, is improper!"
-        trg_len = len(draft)
-        for seg in trg_segs:
-            assert 0 <= seg[0] <= seg[1] <= trg_len, f"Target segment {seg}, is improper!"
-        for meta in draft_meta:
-            assert meta[2] in ['confirmed', 'suggestion', 'untranslated'],\
-                "invalid value where confirmed, suggestion or untranslated is expected"
-    except AssertionError as exe:
-        raise UnprocessableException("Incorrect metadata:"+str(exe)) from exe
-    except Exception as exe:
-        raise UnprocessableException("Incorrect metadata.") from exe
 
 def update_project_draft(db_:Session, project_id, sentence_list, user_id):
     '''Directly write to the draft and draftMeta fields of project sentences'''
@@ -358,7 +326,7 @@ def update_project_draft(db_:Session, project_id, sentence_list, user_id):
         if not sent:
             raise NotAvailableException(f"Sentence id: {input_sent.sentenceId},"+\
                 " not found in project")
-        validate_draft_meta(sentence=sent.sentence, draft=input_sent.draft,
+        utils.validate_draft_meta(sentence=sent.sentence, draft=input_sent.draft,
             draft_meta=input_sent.draftMeta)
         sent.draft = input_sent.draft
         sent.draftMeta = input_sent.draftMeta
