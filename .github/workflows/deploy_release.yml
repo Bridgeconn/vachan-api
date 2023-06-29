@@ -32,8 +32,9 @@ jobs:
       - name: Move release tag to latest commit
         run: |
           git tag -a $(git describe --tags --abbrev=0) -m "moving tag to new commit" -f $(git rev-parse HEAD)
-          git config --global user.name 'Gitactions bot'
-          git config --global user.email '<>'
+          git config --global user.name "${{ secrets.CICD_BOT_USER }}"
+          git config --global user.email "${{ secrets.CICD_BOT_EMAIL }}"
+          git config --global user.password "${{ secrets.CICD_BOT_PASS }}"
           git push -f origin refs/tags/$(git describe --tags --abbrev=0)
 
   pull-n-deploy:
