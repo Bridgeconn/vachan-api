@@ -26,3 +26,4 @@ echo ""   # Add a newline here
 
 source ~/.bashrc
 gedit ~/.bashrc
+# tail -n 15 ~/.bashrc
