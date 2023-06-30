@@ -36,9 +36,9 @@ def create_content_type(db_: Session, content: schemas.ContentTypeCreate,user_id
     # db_.refresh(db_content)
     return db_content
 
-def delete_content(db_: Session, content: schemas.DeleteIdentity):
+def delete_content(db_: Session, content:int):
     '''delete particular content, selected via content id'''
-    db_content = db_.query(db_models.ContentType).get(content.itemId)
+    db_content = db_.query(db_models.ContentType).get(content)
     db_.delete(db_content)
     #db_.commit()
     return db_content
@@ -203,9 +203,9 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
     #db_.commit()
     return db_content
 
-def delete_language(db_: Session, lang: schemas.DeleteIdentity):
+def delete_language(db_: Session, lang:int):
     '''delete particular language, selected via language id'''
-    db_content = db_.query(db_models.Language).get(lang.itemId)
+    db_content = db_.query(db_models.Language).get(lang)
     db_.delete(db_content)
     #db_.commit()
     return db_content
@@ -260,9 +260,9 @@ def update_license(db_: Session, license_obj: schemas.LicenseEdit, user_id=None)
     # db_.refresh(db_content)
     return db_content
 
-def delete_license(db_: Session, content: schemas.DeleteIdentity):
+def delete_license(db_: Session, content: int):
     '''delete particular license, selected via license id'''
-    db_content = db_.query(db_models.License).get(content.itemId)
+    db_content = db_.query(db_models.License).get(content)
     db_.delete(db_content)
     #db_.commit()
     return db_content
@@ -337,9 +337,9 @@ def update_version(db_: Session, version: schemas.VersionEdit, user_id=None):
     # db_.refresh(db_content)
     return db_content
 
-def delete_version(db_: Session, ver: schemas.DeleteIdentity):
+def delete_version(db_: Session, ver: int):
     '''delete particular version, selected via version id'''
-    db_content = db_.query(db_models.Version).get(ver.itemId)
+    db_content = db_.query(db_models.Version).get(ver)
     db_.delete(db_content)
     #db_.commit()
     return db_content
@@ -577,9 +577,9 @@ def update_source(db_: Session, source: schemas.SourceEdit, user_id = None): #py
                 db_models.dynamicTables[source.sourceName+'_audio']
     return db_content
 
-def delete_source(db_: Session, delitem: schemas.DeleteIdentity):
+def delete_source(db_: Session, delitem: int):
     '''delete particular source, selected via source id'''
-    db_content = db_.query(db_models.Source).get(delitem.itemId)
+    db_content = db_.query(db_models.Source).get(delitem)
     db_.delete(db_content)
     return db_content
 

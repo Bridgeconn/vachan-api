@@ -9,7 +9,7 @@ from sqlalchemy.sql import text
 import db_models #pylint: disable=import-error
 from crud import utils  #pylint: disable=import-error
 from crud.nlp_sw_crud import update_job #pylint: disable=import-error
-from schema import schemas_nlp,schemas #pylint: disable=import-error
+from schema import schemas_nlp #pylint: disable=import-error
 from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException  #pylint: disable=import-error
 
 def get_commentaries(db_: Session,**kwargs):
@@ -193,14 +193,14 @@ def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=
         "output": {"message": "Commentaries updated successfully","data": db_content_out}}
     update_job(db_, job_id, user_id, update_args)
 # pylint: disable=duplicate-code
-def delete_commentary(db_: Session, delitem: schemas.DeleteIdentity,table_name = None,\
+def delete_commentary(db_: Session, delitem:int,table_name=None,
     source_name=None,user_id=None):
     '''delete particular commentary, selected via source id'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     model_cls = table_name
     query = db_.query(model_cls)
-    db_content = query.filter(model_cls.commentaryId == delitem.itemId).first()
+    db_content = query.filter(model_cls.commentaryId == delitem).first()
     source_db_content.updatedUser = user_id
     response = {
         'db_content':db_content,
@@ -312,14 +312,14 @@ def update_dictionary_words(db_: Session, source_name, dictionary_words, user_id
         }
     return response
 
-def delete_dictionary(db_: Session, delitem : schemas.DeleteIdentity,table_name = None,\
+def delete_dictionary(db_: Session, delitem : int,table_name = None,
     source_name=None,user_id=None):
     '''delete particular word from dictionary, selected via sourcename and word id'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     model_cls = table_name
     query = db_.query(model_cls)
-    db_content = query.filter(model_cls.wordId == delitem.itemId).first()
+    db_content = query.filter(model_cls.wordId == delitem).first()
     source_db_content.updatedUser = user_id
     response = {
         'db_content':db_content,
@@ -429,14 +429,14 @@ def update_infographics(db_: Session, source_name, infographics, user_id=None):
         }
     return response
 
-def delete_infographic(db_: Session, delitem: schemas.DeleteIdentity,table_name = None,\
+def delete_infographic(db_: Session, delitem: int,table_name = None,\
     source_name=None,user_id=None):
     '''delete particular item from infographic, selected via sourcename and infographic id'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     model_cls = table_name
     query = db_.query(model_cls)
-    db_content = query.filter(model_cls.infographicId == delitem.itemId).first()
+    db_content = query.filter(model_cls.infographicId == delitem).first()
     db_.flush()
     db_.delete(db_content)
     #db_.commit()
@@ -800,14 +800,14 @@ def update_bible_audios(db_: Session, source_name, audios, user_id=None):
         }
     return response
 
-def delete_bible_audio(db_: Session, delitem: schemas.DeleteIdentity,\
+def delete_bible_audio(db_: Session, delitem: int,\
     source_name=None,user_id=None):
     '''delete particular item from bible audio, selected via sourcename and bible audio id'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     model_cls =  db_models.dynamicTables[source_name+'_audio']
     query = db_.query(model_cls)
-    db_content = query.filter(model_cls.audioId == delitem.itemId).first()
+    db_content = query.filter(model_cls.audioId == delitem).first()
     db_.flush()
     db_.delete(db_content)
     #db_.commit()
@@ -905,7 +905,7 @@ def get_available_bible_books(db_, source_name,book_code=None, content_type=None
         }
     return response
 
-def delete_bible_book(db_: Session, delitem: schemas.DeleteIdentity,\
+def delete_bible_book(db_: Session, delitem: int,\
     source_name=None,user_id=None):
     '''delete particular item from bible, selected via sourcename and bible content id'''
     source_db_content = db_.query(db_models.Source).filter(
@@ -914,7 +914,7 @@ def delete_bible_book(db_: Session, delitem: schemas.DeleteIdentity,\
     model_cls2 =  db_models.dynamicTables[source_name+'_cleaned']
     query = db_.query(model_cls)
     query2 = db_.query(model_cls2)
-    db_content = query.filter(model_cls.bookContentId == delitem.itemId).first()
+    db_content = query.filter(model_cls.bookContentId == delitem).first()
     db_content2 = query2.filter(db_content.book_id == model_cls2.book_id).first()
     db_.flush()
     db_.delete(db_content)
@@ -997,3 +997,4 @@ def extract_text(db_:Session, tables, books, skip=0, limit=100):
             sentence_list = sentence_list[:limit]
             break
     return sentence_list
+    

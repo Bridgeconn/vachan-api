@@ -604,13 +604,9 @@ def test_delete_default():
     commentary_response = client.get(UNIT_URL+source_name,headers=headers_auth)
     commentary_id = commentary_response.json()[0]['commentaryId']
 
-    data = {
-      "itemId":commentary_id
-    }
-
     #Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}#pylint: disable=redefined-outer-name
-    response = client.delete(UNIT_URL+source_name, headers=headers, json=data)
+    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(commentary_id), headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
@@ -620,7 +616,7 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
-        response = client.delete(UNIT_URL+source_name, headers=headers_au, json=data)
+        response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(commentary_id), headers=headers_au)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
@@ -629,7 +625,7 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
-    response = client.delete(UNIT_URL+source_name, headers=headers_va, json=data)
+    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(commentary_id), headers=headers_va)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Commentary id {commentary_id} deleted successfully"
@@ -661,12 +657,9 @@ def test_delete_default_superadmin():
 
     commentary_response = client.get(UNIT_URL+source_name,headers=headers_sa)
     commentary_id = commentary_response.json()[0]['commentaryId']
-    data = {
-      "itemId":commentary_id
-    }
-
+    
      #Delete commentary with Super Admin
-    response = client.delete(UNIT_URL+source_name, headers=headers_sa, json=data)
+    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(commentary_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Commentary id {commentary_id} deleted successfully"
@@ -696,12 +689,9 @@ def test_delete_commentary_id_string():
     commentary_id = commentary_response.json()[0]['commentaryId']
     commentary_id = str(commentary_id)
 
-    data = {
-      "itemId":commentary_id
-    }
 
     #Delete commentary with Super Admin
-    response = client.delete(UNIT_URL+source_name, headers=headers_sa, json=data)
+    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(commentary_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Commentary id {commentary_id} deleted successfully"
@@ -730,9 +720,9 @@ def test_delete_incorrectdatatype():
     commentary_id = commentary_response.json()[0]['commentaryId']
     commentary_id = str(commentary_id)
 
-    data = commentary_id
+    commentary_id={}
     #Delete commentary with Super Admin
-    response = client.delete(UNIT_URL+source_name, headers=headers_sa, json=data)
+    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(commentary_id), headers=headers_sa)
     assert_input_validation_error(response)
     logout_user(test_user_token)
 
@@ -753,9 +743,9 @@ def test_delete_missingvalue_commentary_id():
                     'Authorization': "Bearer"+" "+test_user_token
             }
 
-    data = {}
-    response = client.delete(UNIT_URL, headers=headers_sa, json=data)
-    assert response.status_code == 404
+    commentary_id=""
+    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(commentary_id), headers=headers_sa)
+    assert_input_validation_error(response)
     logout_user(test_user_token)
 
 def test_delete_missingvalue_source_name():
@@ -776,10 +766,11 @@ def test_delete_missingvalue_source_name():
             }
     commentary_response = client.get(UNIT_URL+source_name,headers=headers_sa)
     commentary_id = commentary_response.json()[0]['commentaryId']
-    commentary_id = str(commentary_id)
+    # commentary_id = str(commentary_id)
 
-    data = {"itemId":commentary_id}
-    response = client.delete(UNIT_URL, headers=headers_sa, json=data)
+    
+    
+    response = client.delete(UNIT_URL+ "?delete_id=" + str(commentary_id), headers=headers_sa)
     assert response.status_code == 404
     logout_user(test_user_token)
 
@@ -800,12 +791,10 @@ def test_delete_notavailable_content():
                     'Authorization': "Bearer"+" "+test_user_token
             }
 
-    data = {
-      "itemId":99999
-    }
-
+    
+    commentary_id=9999
      #Delete commentary with Super Admin
-    response = client.delete(UNIT_URL+source_name, headers=headers_sa, json=data)
+    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(commentary_id), headers=headers_sa)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
     logout_user(test_user_token)
@@ -975,8 +964,7 @@ def test_restoreitem_with_notavailable_source():
     #Delete Associated Source
     get_source_response = client.get(SOURCE_URL + "?source_name="+source_name, headers=headers_auth)
     source_id = get_source_response.json()[0]["sourceId"]
-    source_data = {"itemId":source_id}
-    response = client.delete(SOURCE_URL, headers=headers_auth, json=source_data)
+    response = client.delete(SOURCE_URL  + "?delete_id=" + str(source_id), headers=headers_auth)
     assert response.status_code == 200
     #Restoring data
     #Restore content with Super Admin after deleting source

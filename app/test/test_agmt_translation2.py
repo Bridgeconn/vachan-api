@@ -1,5 +1,5 @@
 '''tests for the translation workflow within AgMT projects continued'''
-
+import json
 from . import client
 from .test_agmt_projects import check_post as add_project
 from .conftest import initial_test_users
@@ -73,9 +73,17 @@ def test_draft_update_positive():
     assert sents[0]["draftMeta"] == put_data[0]['draftMeta']
 
     #fetch sentences to make sure
-    resp = client.get("/v2/translation/project/sentences?"+\
-        f"project_id={project_id}&sentence_id_list=100&with_draft=True",
-        headers=headers_auth, json=put_data)
+    data_str = json.dumps(put_data)
+    resp = client.get(
+        "/v2/translation/project/sentences",
+        params={
+        "project_id": project_id,
+        "sentence_id_list": 100,
+        "with_draft": True,
+        "data": data_str
+        },
+        headers=headers_auth,
+        )
     sents = resp.json()
     print(sents)
     assert sents[0]["draft"] == "കാട്"
@@ -87,23 +95,37 @@ def test_draft_update_positive():
              "draft": "ഒരു കാട്ടില്‍ ഒരു കുറുക്കന്‍ ജീവിച്ചിരുന്നു",
              "draftMeta":[
                   [ [3,4], [0,3], "confirmed"],
+                  [ [5,5], [3,4], "confirmed"],
                   [ [5,11], [4,11], "confirmed"],
+                  [ [11,11], [11,13], "confirmed"],
                   [ [32,33], [13,16], "confirmed"],
-                  [ [35,38], [18,26], "confirmed"]
+                  [ [33,33], [16,18], "confirmed"],
+                  [ [35,38], [18,26], "confirmed"],
+                  [ [38,38], [26,43], "untranslated"],
                 ]
             }
     ]
     resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data2)
     sents = resp.json()
+    print(sents)
     assert_positive_get_sentence(sents[0])
     assert sents[0]["draft"] == "ഒരു കാട്ടില്‍ ഒരു കുറുക്കന്‍ ജീവിച്ചിരുന്നു"
     assert sents[0]["draftMeta"] == put_data2[0]['draftMeta']
 
     #fetch sentences again
-    resp = client.get("/v2/translation/project/sentences?"+\
-        f"project_id={project_id}&sentence_id_list=100&with_draft=True",
-        headers=headers_auth, json=put_data2)
+    data_str2 = json.dumps(put_data2)  # Convert put_data to JSON
+
+    resp = client.get(
+        "/v2/translation/project/sentences",
+        params={
+        "project_id": project_id,
+        "sentence_id_list": 100,
+        "with_draft": True,
+        "data2":data_str2
+    },
+    headers=headers_auth
+    )
     sents = resp.json()
     assert sents[0]["draft"] == put_data2[0]['draft']
     assert sents[0]["draftMeta"] == put_data2[0]['draftMeta']
@@ -209,7 +231,7 @@ def test_draft_update_negative():
     resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data2)
     assert resp.status_code == 422
-    assert resp.json()['details'] == "Incorrect metadata:Target segment (0, 10), is improper!"
+    assert resp.json()['details'] == "Incorrect metadata:Target segment [0, 10], is improper!"
 
 
 def test_empty_draft_initalization():
@@ -384,7 +406,7 @@ def test_delete_sentence():
     #Deleting Sentence with unauthorized users - Negative Test
     for user in ['APIUser','VachanAdmin','VachanUser','BcsDev','AgUser']:
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
-        response = client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id1}",
+        response =client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id1}",
                 headers=headers_auth)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
@@ -423,7 +445,7 @@ def test_delete_sentence():
     assert_not_available_content(get_response)
 
     #Delete not available sentence
-    response = client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id=9999",
+    response =client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id=9999",
             headers=headers_auth)
     assert response.status_code == 404
     assert "Requested Content Not Available" in response.json()['error']
@@ -443,7 +465,7 @@ def test_restore_sentence():
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
-    delete_resp = client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id=100",
+    delete_resp =client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id=100",
             headers=headers_auth)
 
     #Ensure deleted sentence is not present
@@ -529,7 +551,46 @@ def test_suggestion_when_token_overlaps_confirmed_segment():
     # add a translation for just "not" when it occurs as "doesnot"
     update_draft_url = f"/v2/translation/project/draft?project_id={project_id}"
     data = [{ "draft": "they this",
-        "draftMeta": [ [ [ 0, 4 ], [ 9, 9 ], "untranslated" ], [ [ 4, 5 ], [ 9, 9 ], "untranslated" ], [ [ 5, 10 ], [ 9, 9 ], "untranslated" ], [ [ 10, 11 ], [ 9, 9 ], "untranslated" ], [ [ 11, 24 ], [ 9, 9 ], "untranslated" ], [ [ 24, 25 ], [ 9, 9 ], "untranslated" ], [ [ 25, 29 ], [ 9, 9 ], "untranslated" ], [ [ 29, 30 ], [ 9, 9 ], "untranslated" ], [ [ 30, 32 ], [ 9, 9 ], "untranslated" ], [ [ 32, 33 ], [ 9, 9 ], "untranslated" ], [ [ 33, 37 ], [ 9, 9 ], "untranslated" ], [ [ 37, 38 ], [ 9, 9 ], "untranslated" ], [ [ 38, 42 ], [ 9, 9 ], "untranslated" ], [ [ 42, 43 ], [ 9, 9 ], "untranslated" ], [ [ 43, 45 ], [ 9, 9 ], "untranslated" ], [ [ 45, 46 ], [ 9, 9 ], "untranslated" ], [ [ 46, 58 ], [ 9, 9 ], "untranslated" ], [ [ 58, 59 ], [ 9, 9 ], "untranslated" ], [ [ 59, 63 ], [ 9, 9 ], "untranslated" ], [ [ 63, 65 ], [ 9, 9 ], "untranslated" ], [ [ 65, 68 ], [ 9, 9 ], "untranslated" ], [ [ 68, 69 ], [ 9, 9 ], "untranslated" ], [ [ 69, 77 ], [ 9, 9 ], "untranslated" ], [ [ 77, 78 ], [ 9, 9 ], "untranslated" ], [ [ 78, 82 ], [ 9, 9 ], "untranslated" ], [ [ 82, 83 ], [ 9, 9 ], "untranslated" ], [ [ 83, 87 ], [ 9, 9 ], "untranslated" ], [ [ 87, 88 ], [ 9, 9 ], "untranslated" ], [ [ 88, 93 ], [ 9, 9 ], "untranslated" ], [ [ 93, 94 ], [ 9, 9 ], "untranslated" ], [ [ 94, 105 ], [ 9, 9 ], "untranslated" ], [ [ 105, 106 ], [ 9, 9 ], "untranslated" ], [ [ 106, 111 ], [ 9, 9 ], "untranslated" ], [ [ 111, 112 ], [ 9, 9 ], "untranslated" ], [ [ 112, 119 ], [ 9, 9 ], "untranslated" ], [ [ 119, 120 ], [ 9, 9 ], "untranslated" ], [ [ 132, 133 ], [ 9, 9 ], "untranslated" ], [ [ 125, 128 ], [ 5, 9 ], "confirmed" ], [ [ 129, 132 ], [ 0, 4 ], "confirmed" ] ],
+        "draftMeta": [ [ [ 0, 4 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 4, 5 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 5, 10 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 10, 11 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 11, 24 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 24, 25 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 25, 29 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 29, 30 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 30, 32 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 32, 33 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 33, 37 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 37, 38 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 38, 42 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 42, 43 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 43, 45 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 45, 46 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 46, 58 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 58, 59 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 59, 63 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 63, 65 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 65, 68 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 68, 69 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 69, 77 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 77, 78 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 78, 82 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 82, 83 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 83, 87 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 87, 88 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 88, 93 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 93, 94 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 94, 105 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 105, 106 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 106, 111 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 111, 112 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 112, 119 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 119, 120 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 132, 133 ], [ 9, 9 ], "untranslated" ],
+                       [ [ 125, 128 ], [ 5, 9 ], "confirmed" ],
+                       [ [ 129, 132 ], [ 0, 4 ], "confirmed" ],
+                       [ [ 125, 125 ], [ 4, 5 ], "confirmed" ] ],
         "sentenceId": 57001002 }]
     update_resp = client.put(update_draft_url,
                            json=data,
@@ -594,3 +655,36 @@ def test_glossupdate_upon_draft_update():
         headers=headers_auth)
     assert resp.status_code == 200
     assert "കാട്" in resp.json()['translations']
+
+def test_draftmeta_validation():
+    '''All protions of the draft should have a draftmeta segment
+    issue #602'''
+    resp = add_project(project_data, auth_token=initial_test_users['AgUser']['token'])
+    assert resp.json()['message'] == "Project created successfully"
+    project_id = resp.json()['data']['projectId']
+
+    put_data = {
+        "projectId": project_id,
+        "sentenceList":source_sentences
+    }
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    assert resp.json()['message'] == "Project updated successfully"
+
+    ## Spaces not accounted for
+    put_data2 = [
+            {"sentenceId":100,
+             "draft": "ഒരു കാട്ടില്‍ ഒരു കുറുക്കന്‍ ജീവിച്ചിരുന്നു",
+             "draftMeta":[
+                  [ [3,4], [0,3], "confirmed"],
+                  [ [5,11], [4,11], "confirmed"],
+                  [ [32,33], [13,16], "confirmed"],
+                  [ [35,38], [18,26], "confirmed"]
+                ]
+            }
+    ]
+    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
+        headers=headers_auth, json=put_data2)
+    assert resp.status_code == 422
+    assert "error" in resp.json()
+    assert resp.json()['error'] == "Unprocessable Data"

@@ -389,7 +389,7 @@ def test_delete_stopword():
         assert_positive_get_stopwords(item)
 
     #deleting stopword with no auth - Negative Test
-    resp = client.delete(UNIT_URL+'/aa?lang=aa&stopword=asd',headers=headers)
+    resp =client.delete(UNIT_URL+'/aa?lang=aa&stopword=asd',headers=headers)
     assert resp.status_code == 401
     assert resp.json()['details'] == "Access token not provided or user not recognized."
 
@@ -416,7 +416,7 @@ def test_delete_stopword():
     test_user_token = response.json()["token"]
     headers_auth['Authorization'] = "Bearer"+" "+test_user_token
     response = client.post(UNIT_URL+'/aa?',headers=headers_auth, json=add_obj)
-    response = client.delete(UNIT_URL+'/aa?lang=aa&stopword=asd',headers=headers_auth)
+    response =client.delete(UNIT_URL+'/aa?lang=aa&stopword=asd',headers=headers_auth)
     assert response.status_code == 201
     assert "successfull" in response.json()['message']
 
@@ -427,7 +427,7 @@ def test_delete_stopword():
     assert len(get_response.json())==2
 
     #Delete with not available source language
-    response = client.delete(UNIT_URL+'/aa?lang=x-ttt&stopword=asd',headers=headers_auth)
+    response =client.delete(UNIT_URL+'/aa?lang=x-ttt&stopword=asd',headers=headers_auth)
     assert response.status_code == 404
     assert "Language not available" in response.json()['details']
     logout_user(test_user_token)
