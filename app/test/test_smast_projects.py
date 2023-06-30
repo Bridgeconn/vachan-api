@@ -954,7 +954,7 @@ def test_delete_project():
 
     # Delete as SanketMASTAdmin- Positive test
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
-    resp = client.delete(UNIT_URL'?project_id='+str(project_id),headers=headers_auth)
+    resp = client.delete(UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
     assert resp.status_code == 201
     assert "successfull" in resp.json()['message']
 
