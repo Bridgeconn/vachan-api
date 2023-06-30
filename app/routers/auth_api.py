@@ -31,7 +31,10 @@ from crud.auth_crud import (
     create_access_rules,
     update_access_rules,
     get_access_rules,
-    create_permission_map
+    create_permission_map,
+    create_endpoint,
+    update_endpoint,
+    get_endpoints
 )
 
 router = APIRouter()
@@ -466,6 +469,69 @@ async def get_auth_rules(request: Request,user_details =Depends(get_user_or_none
         entitlement, tag, role, active, skip, limit)
     return get_access_rules(db_, entitlement, tag, role, user_id=user_id,
         rule_id=rule_id, active = active, skip=skip, limit=limit)
+
+#------------------------  Api Endpoints -------------------------------------------
+@router.post('/v2/access/endpoints',response_model=schema_auth.EndpointResponse,
+    responses={400: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
+    500: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse}},
+    status_code=201,tags=["Access-Control"])
+@get_auth_access_check_decorator
+async def add_endpoint(details:schema_auth.EndpointCreateInput,request: Request,#pylint: disable=unused-argument
+app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
+user_details =Depends(get_user_or_none),
+db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+    '''Create Endpoint
+    * endpoint is mandatory
+    * method is mandatory'''
+    log.info('In create Endpoint')
+    log.debug('Endpoint  Create In:%s',details)
+    data = create_endpoint(db_, details, user_id = user_details['user_id'])
+    return {'message': "Endpoint created successfully",
+            "data": data}
+
+@router.put('/v2/access/endpoints',response_model=schema_auth.EndpointUpdateResponse,
+    responses={400: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
+    500: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse}},
+    status_code=201,tags=["Access-Control"])
+@get_auth_access_check_decorator
+async def edit_endpoint(details:schema_auth.EndpointUpdateInput,request: Request,#pylint: disable=unused-argument
+app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument
+user_details =Depends(get_user_or_none),
+db_: Session = Depends(get_db)):#pylint: disable=unused-argument
+    '''Update endpoint
+    * endpointId is mandatory
+    * others are optional, provide fields need to be updated'''
+    log.debug('endpoint Update In:%s',details)
+    log.info('In update endpoint')
+    data = update_endpoint(db_, details, user_id = user_details['user_id'])
+    return {'message': "Endpoint updated successfully",
+            "data": data}
+
+@router.get('/v2/access/endpoints',response_model=List[schema_auth.EndpointOut],
+responses={401: {"model": schemas.ErrorResponse}}
+,tags=["Access-Control"])
+@get_auth_access_check_decorator
+async def get_auth_endpoints(request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument,
+    endpoint_id: int = Query(None, example=100001),
+    endpoint: str = Query(None, example='v2/access/permission-map'),
+    method: schema_auth.Methods = Query(None, example=schema_auth.Methods.GET),
+    search_word: str = Query(None, example="v2/access/"),
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
+    db_: Session = Depends(get_db)):
+    '''Fetch endpoints
+    * all endpoints : with out giving any query params.
+    * endpoint_id : if endpoint id is provided , priority will be for endpointId.
+    * skip=n: skips the first n objects in return list
+    * limit=n: limits the no. of items to be returned to n
+    * returns [] if no content match'''
+    log.info('In get endpoint')
+    log.debug('endpoint_id: %s, endpoint: %s, method: %s,\
+            skip: %s, limit:%s', endpoint_id,
+        endpoint, method, skip, limit)
+    data = get_endpoints(db_, endpoint_id, endpoint, method,
+        search_word=search_word,skip=skip, limit=limit)
+    return data
 
 # --------------------------- Api Permission Map -------------------------------------
 @router.post('/v2/access/permission-maps',response_model=schema_auth.PermissionMapsResponse,

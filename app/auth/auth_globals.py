@@ -30,7 +30,7 @@ def generate_permission_map_table():
                 permisison_row.filterResults,
                 permisison_row.resourceType.resourceTypeName,
                 permisison_row.permission.permissionName
-                ]
+            ]
             APIPERMISSIONTABLE.append(temp_row[:])
         print("APi permisison map  : ", len(APIPERMISSIONTABLE))
         if len(APIPERMISSIONTABLE) <= 0:

@@ -165,9 +165,8 @@ def seed_data_to_created_tables_no_fk(cursor,conn, csv_dict):
         insert_sql_cmd = f"INSERT INTO public.api_endpoints ({keys_string}) VALUES %s"
         execute_values(cursor, insert_sql_cmd, uniq_csv_data_tuple)
         conn.commit()
-        print(f"uploaded csv data for api_endpoints")
+        print("uploaded csv data for api_endpoints")
 
-        
     except Exception as err:
         # print("Error in seed csv to dbs from dict : ", err)
         raise err
@@ -259,7 +258,7 @@ def create_database_and_seed():
             qry = "SELECT * FROM public.api_endpoints ORDER BY endpoint_id ASC "
             cursor.execute(query=qry)
             endpoint_data = cursor.fetchall()
-            # endpoint_heads = cursor.description 
+            # endpoint_heads = cursor.description
             APIPERMISSIONTABLE_TEMP =  copy.deepcopy(APIPERMISSIONTABLE)
             # repalce endpointname with endpoint-method combo id
             for row in APIPERMISSIONTABLE_TEMP:

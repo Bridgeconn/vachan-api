@@ -264,3 +264,43 @@ def create_permission_map(db_: Session, details: schema_auth.PermissionMapCreate
         'refresh_auth_func':generate_permission_map_table
     }
     return response
+
+def create_endpoint(db_: Session, details, user_id= None):
+    '''Add a row to endpoint table'''
+    db_content = db_models.ApiEndpoints(endpoint = details.endpoint.lower(),
+        method = details.method.upper(),
+        createdUser= user_id,
+        updatedUser=user_id,
+        active=True)
+    db_.add(db_content)
+    return db_content
+
+def update_endpoint(db_: Session, details, user_id= None):
+    '''update a row to endpoint table'''
+    db_content = db_.query(db_models.ApiEndpoints).get(details.endpointId)
+    if details.endpoint:
+        db_content.endpoint = details.endpoint
+    if details.method:
+        db_content.method = details.method
+    db_content.updatedUser = user_id
+    return db_content
+
+def get_endpoints(db_: Session, endpoint_id, endpoint_name, method, **kwargs):
+    '''get rows from endpoint table'''
+    search_word = kwargs.get("search_word",None)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
+
+    query = db_.query(db_models.ApiEndpoints)
+    if endpoint_name:
+        query = query.filter(db_models.ApiEndpoints.endpoint ==\
+            endpoint_name.lower())
+    if method is not None:
+        query = query.filter(func.lower(db_models.ApiEndpoints.method) ==\
+            method.value.lower())
+    if search_word:
+        search = f"%{search_word.lower()}%"
+        query = query.filter(func.lower(db_models.ApiEndpoints.endpoint).like(search))
+    if endpoint_id is not None:
+        query = query.filter(db_models.ApiEndpoints.endpointId == endpoint_id)
+    return query.offset(skip).limit(limit).all()
