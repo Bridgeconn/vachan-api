@@ -346,8 +346,8 @@ services:
     # command: redis-server --bind 172.28.1.4
     # command: redis-server /usr/local/etc/redis/redis.conf
     restart: on-failure
-    links:
-      - vachan-api
+    # links:
+    #   - vachan-api
     networks:
      - VE-network
 
