@@ -1,5 +1,5 @@
 '''tests for the translation workflow within SMAST projects continued'''
-
+import json
 from . import client
 from .test_agmt_projects import check_post as add_project
 from .conftest import initial_test_users
@@ -73,14 +73,21 @@ def test_draft_update_positive():
     assert sents[0]["draftMeta"] == put_data[0]['draftMeta']
 
     #fetch sentences to make sure
-    resp = client.get("/v2/translation/project/sentences?"+\
-        f"project_id={project_id}&sentence_id_list=100&with_draft=True",
-        headers=headers_auth, json=put_data)
+    data_str = json.dumps(put_data)
+    resp = client.get(
+    "/v2/translation/project/sentences",
+    params={
+        "project_id": project_id,
+        "sentence_id_list": "100",
+        "with_draft": "true",
+        "data": data_str
+    },
+    headers=headers_auth
+    )
     sents = resp.json()
     print(sents)
     assert sents[0]["draft"] == "കാട്"
     assert sents[0]["draftMeta"] == put_data[0]['draftMeta']
-
     # edit the existing draft
     put_data2 = [
             {"sentenceId":100,
@@ -105,9 +112,16 @@ def test_draft_update_positive():
     assert sents[0]["draftMeta"] == put_data2[0]['draftMeta']
 
     #fetch sentences again
-    resp = client.get("/v2/translation/project/sentences?"+\
-        f"project_id={project_id}&sentence_id_list=100&with_draft=True",
-        headers=headers_auth, json=put_data2)
+    data_str2 = json.dumps(put_data2)
+    resp = client.get(
+            "/v2/translation/project/sentences",
+            params={
+                "project_id": project_id,
+                "sentence_id_list": "100",
+                "with_draft": "true",
+                "data2": data_str2
+            },
+            headers=headers_auth)
     sents = resp.json()
     assert sents[0]["draft"] == put_data2[0]['draft']
     assert sents[0]["draftMeta"] == put_data2[0]['draftMeta']

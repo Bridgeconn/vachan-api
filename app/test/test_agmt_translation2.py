@@ -1,5 +1,5 @@
 '''tests for the translation workflow within AgMT projects continued'''
-
+import json
 from . import client
 from .test_agmt_projects import check_post as add_project
 from .conftest import initial_test_users
@@ -73,9 +73,17 @@ def test_draft_update_positive():
     assert sents[0]["draftMeta"] == put_data[0]['draftMeta']
 
     #fetch sentences to make sure
-    resp = client.get("/v2/translation/project/sentences?"+\
-        f"project_id={project_id}&sentence_id_list=100&with_draft=True",
-        headers=headers_auth, json=put_data)
+    data_str = json.dumps(put_data)
+    resp = client.get(
+        "/v2/translation/project/sentences",
+        params={
+        "project_id": project_id,
+        "sentence_id_list": 100,
+        "with_draft": True,
+        "data": data_str
+        },
+        headers=headers_auth,
+        )
     sents = resp.json()
     print(sents)
     assert sents[0]["draft"] == "കാട്"
@@ -106,9 +114,18 @@ def test_draft_update_positive():
     assert sents[0]["draftMeta"] == put_data2[0]['draftMeta']
 
     #fetch sentences again
-    resp = client.get("/v2/translation/project/sentences?"+\
-        f"project_id={project_id}&sentence_id_list=100&with_draft=True",
-        headers=headers_auth, json=put_data2)
+    data_str2 = json.dumps(put_data2)  # Convert put_data to JSON
+
+    resp = client.get(
+        "/v2/translation/project/sentences",
+        params={
+        "project_id": project_id,
+        "sentence_id_list": 100,
+        "with_draft": True,
+        "data2":data_str2
+    },
+    headers=headers_auth
+    )
     sents = resp.json()
     assert sents[0]["draft"] == put_data2[0]['draft']
     assert sents[0]["draftMeta"] == put_data2[0]['draftMeta']
@@ -389,7 +406,7 @@ def test_delete_sentence():
     #Deleting Sentence with unauthorized users - Negative Test
     for user in ['APIUser','VachanAdmin','VachanUser','BcsDev','AgUser']:
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
-        response = client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id1}",
+        response =client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id1}",
                 headers=headers_auth)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
@@ -428,7 +445,7 @@ def test_delete_sentence():
     assert_not_available_content(get_response)
 
     #Delete not available sentence
-    response = client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id=9999",
+    response =client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id=9999",
             headers=headers_auth)
     assert response.status_code == 404
     assert "Requested Content Not Available" in response.json()['error']
@@ -448,7 +465,7 @@ def test_restore_sentence():
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
-    delete_resp = client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id=100",
+    delete_resp =client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id=100",
             headers=headers_auth)
 
     #Ensure deleted sentence is not present

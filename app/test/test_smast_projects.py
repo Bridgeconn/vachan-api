@@ -948,7 +948,7 @@ def test_delete_project():
     # Delete as unauthorized users
     for user in ['APIUser','VachanAdmin','VachanUser','BcsDev']:
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
-        response = client.delete(UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
+        response =client.delete(UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
@@ -1158,7 +1158,7 @@ def test_delete_user():
     # as project owner - Positive test
     user_id = initial_test_users['SanketMASTUser2']['test_user_id']
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
-    resp = client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
+    resp =client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
         '&user_id='+str(user_id),headers=headers_auth)
     assert resp.status_code == 201
     assert "successfull" in resp.json()['message']

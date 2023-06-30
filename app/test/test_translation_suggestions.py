@@ -459,7 +459,7 @@ def test_delete_glossary():
     assert found_test
 
     #deleting glossary with no auth - Negative Test
-    resp = client.delete(NLP_UNIT_URL+
+    resp =client.delete(NLP_UNIT_URL+
         '/gloss?source_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
              headers=headers)
     assert resp.status_code == 401
@@ -523,7 +523,7 @@ def test_delete_glossary():
     assert len(get_response.json()['translations']) == 0
 
     #Deleting glossary with empty translation - Positive Test
-    response = client.delete(NLP_UNIT_URL+
+    response =client.delete(NLP_UNIT_URL+
         '/gloss?source_lang=en&target_lang=ml&token=the&translation=',
         headers=headers_auth)
     assert response.status_code == 201
