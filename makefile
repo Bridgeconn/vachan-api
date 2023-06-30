@@ -93,6 +93,7 @@ installing-usfmgrammar:
 # 		fi \
 # 	fi
 
+
 kratosconfig:
 	cd docker/Kratos_config && docker compose -f quickstart.yml up 
 
