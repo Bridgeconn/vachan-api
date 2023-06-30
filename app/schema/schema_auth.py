@@ -469,7 +469,7 @@ class EndpointUpdateInput(BaseModel):
 
 class EndpointOut(BaseModel):
     """auth endpoint output object"""
-    endpointId:int=None
+    endpointId:int
     endpoint:str
     method:Methods
     active:bool
