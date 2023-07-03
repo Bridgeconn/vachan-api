@@ -52,6 +52,9 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/access/permission-maps,GET,VachanAdmin,FALSE,access-control,read
 /v2/access/permission-maps,POST,VachanAdmin,FALSE,access-control,create
 /v2/access/permission-maps,PUT,VachanAdmin,FALSE,access-control,edit
+/v2/access/endpoints,GET,VachanAdmin,FALSE,access-control,read
+/v2/access/endpoints,POST,VachanAdmin,FALSE,access-control,create
+/v2/access/endpoints,PUT,VachanAdmin,FALSE,access-control,edit
 /v2/contents,GET,Autographa,FALSE,meta-content,refer-for-translation
 /v2/contents,GET,Vachan-online or vachan-app,FALSE,meta-content,view-on-web
 /v2/contents,GET,VachanAdmin,FALSE,meta-content,read-via-vachanadmin

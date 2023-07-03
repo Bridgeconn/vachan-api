@@ -2,6 +2,7 @@
 import os
 import csv
 import re
+import copy
 import psycopg2
 from psycopg2.extras import execute_values
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
@@ -54,6 +55,7 @@ RESOURCE_TYPE_DICT =dict()
 APIPERMISSIONTABLE=[]
 ACCESSRULESTABLE=[]
 ROLES_DICT = dict()
+ENDPOINT_DICT = dict()
 
 def db_real_dict_cursor_to_dict_with_custom_key(data, dict_key, headers_list):
     '''convert db realdictcursor data to dict with custom field as key'''
@@ -152,6 +154,19 @@ def seed_data_to_created_tables_no_fk(cursor,conn, csv_dict):
                 conn.commit()
                 print(f"uploaded csv data for {db_name}")
         print("Finished upload csv to tables --------------------")
+
+        # create upload endpoints table
+        permisison_temp = []
+        endpoint_csv_data = read_csv(os.path.join('csvs','api_permissions.csv'), permisison_temp)
+        unique_endpoints_data = [x[:2] for x in endpoint_csv_data]
+        unique_endpoints_data = [list(x) for x in set(tuple(x) for x in unique_endpoints_data)]
+        uniq_csv_data_tuple = [tuple(l) for l in unique_endpoints_data]
+        keys_string = str.join(',', ['endpoint', 'method'])
+        insert_sql_cmd = f"INSERT INTO public.api_endpoints ({keys_string}) VALUES %s"
+        execute_values(cursor, insert_sql_cmd, uniq_csv_data_tuple)
+        conn.commit()
+        print("uploaded csv data for api_endpoints")
+
     except Exception as err:
         # print("Error in seed csv to dbs from dict : ", err)
         raise err
@@ -237,18 +252,33 @@ def create_database_and_seed():
 
             # Upload Permission Map CSV to DB with ID as FK
             read_csv('csvs/api_permissions.csv', APIPERMISSIONTABLE)
+
+            # change endpoint | method with endpoint fk id
+            # get all endpoints data
+            qry = "SELECT * FROM public.api_endpoints ORDER BY endpoint_id ASC "
+            cursor.execute(query=qry)
+            endpoint_data = cursor.fetchall()
+            # endpoint_heads = cursor.description
+            APIPERMISSIONTABLE_TEMP =  copy.deepcopy(APIPERMISSIONTABLE)
+            # repalce endpointname with endpoint-method combo id
+            for row in APIPERMISSIONTABLE_TEMP:
+                matched_id = [x for x in endpoint_data if row[0] in x and row[1] in x][0][0]
+                row[0] = matched_id
+                # remove Method column from table
+                del row[1]
+            # update other fields with FK
             update_map = {
-                'columns':[2,4,5],
+                'columns':[1,3,4],
                 'fieldDict':[APP_DICT,RESOURCE_TYPE_DICT,PERMISSION_DICT],
                 'fieldNames':['app_id','resource_type_id','permission_id'],
             }
             csv_table_modified_permission_map = \
                 update_csv_row_with_custom_fieldvalue_convert_to_tupple\
-                (APIPERMISSIONTABLE, update_map)
+                (APIPERMISSIONTABLE_TEMP, update_map)
 
             # insert converted tuple to DB
             insert_sql_map = "INSERT INTO public.api_permissions_map\
-                (api_endpoint,method,request_app_id,filter_results,resource_type_id,permission_id) \
+                (endpoint_id,request_app_id,filter_results,resource_type_id,permission_id) \
                     VALUES %s"
             execute_values(cursor, insert_sql_map, csv_table_modified_permission_map)
             conn.commit()

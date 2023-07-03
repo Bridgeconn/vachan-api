@@ -262,6 +262,22 @@ INSERT INTO apps(app_name,default_role,app_key,use_for_registration) VALUES('API
 
 ALTER SEQUENCE public.apps_app_id_seq RESTART WITH 100000;
 
+CREATE TABLE public.api_endpoints (
+    endpoint_id SERIAL PRIMARY KEY,
+    endpoint text NOT NULL,
+    method text NOT NULL,
+    created_at timestamp with time zone DEFAULT NOW(),
+    created_user text NULL,
+    last_updated_at  timestamp with time zone DEFAULT NOW(),
+    last_updated_user text NULL,
+    active boolean DEFAULT true NOT NULL,
+    UNIQUE(endpoint, method)
+);
+
+ALTER SEQUENCE public.api_endpoints_endpoint_id_seq RESTART WITH 100000;
+
+ALTER TABLE public.api_endpoints ADD CONSTRAINT check_method_type CHECK (public.api_endpoints.method IN ('GET', 'POST', 'PUT', 'DELETE', 'PATCH'));
+
 CREATE TABLE public.access_rules (
     rule_id SERIAL PRIMARY KEY,
     entitlement_id int NOT NULL,
@@ -282,8 +298,7 @@ ALTER SEQUENCE public.access_rules_rule_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.api_permissions_map (
     permission_map_id SERIAL PRIMARY KEY,
-    api_endpoint text NOT NULL,
-    method text NOT NULL,
+    endpoint_id int NOT NULL,
     request_app_id int NOT NULL,
     filter_results boolean DEFAULT false NOT NULL,
     resource_type_id int NOT NULL,
@@ -293,12 +308,11 @@ CREATE TABLE public.api_permissions_map (
     last_updated_at  timestamp with time zone DEFAULT NOW(),
     last_updated_user text NULL,
     active boolean DEFAULT true NOT NULL,
-    UNIQUE(api_endpoint, method, resource_type_id, permission_id, request_app_id),
+    UNIQUE(endpoint_id, resource_type_id, permission_id, request_app_id),
+    CONSTRAINT fk_endpoint FOREIGN KEY(endpoint_id) REFERENCES public.api_endpoints(endpoint_id),
     CONSTRAINT fk_request_app FOREIGN KEY(request_app_id) REFERENCES public.apps(app_id),
     CONSTRAINT fk_resource_type FOREIGN KEY(resource_type_id) REFERENCES public.resource_types(resource_type_id),
     CONSTRAINT fk_permission FOREIGN KEY(permission_id) REFERENCES public.permissions(permission_id)
 );
 
 ALTER SEQUENCE public.api_permissions_map_permission_map_id_seq RESTART WITH 100000;
-
-ALTER TABLE public.api_permissions_map ADD CONSTRAINT check_type CHECK (public.api_permissions_map.method IN ('GET', 'POST', 'PUT', 'DELETE', 'PATCH'));
