@@ -21,16 +21,15 @@ We follow fork and merge git workflow.
 ## Step 2 : Installing and Executing Makefile
 
 For your convinience we have made our installation steps into an single Makefile. So after cloning the vachan-api repository into your local machine you can see yourself it will have an makefile. So in order to run this makefile first you need to install 
-
 <br>
 
 ```sudo apt update ```
 
 ```sudo apt install make```
-
 <br>
 
 with this command to you can succesfully install **make**  which is important to run our makefile
+
 
 ### **To run the makefile**
 In order to run the makefile you need to go inside the _vachan-api_  folder and run the following command on your terminal
@@ -39,8 +38,8 @@ In order to run the makefile you need to go inside the _vachan-api_  folder and 
 
 ```Make setup```
 
-
 During the execution of this command, the Makefile will initiate and prompt for your permission at various stages of the setup process, which you will need to provide manually.
+
 
 ### **Important Considerations: Key Points to Remember During Makefile Execution**
 
@@ -48,10 +47,9 @@ During the execution of this command, the Makefile will initiate and prompt for 
 <br>
 
 #### **To install basic python pre-requisite into your system**
+```make pre-requisite```
 
 *This will install python3-pip and python3-venv into your local machine.*
-
-```make pre-requisite```
 <br>
 
 #### **To make an virtual environment onto your system**
