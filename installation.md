@@ -1,7 +1,7 @@
 
 ## Step 1 : Initializing and Setting Up 'vachan-api' Repository
 
->### Set up Vachan Engine locally for development and testing
+### Set up Vachan Engine locally for development and testing
 
 We follow fork and merge git workflow.
 * Fork the repo, https://github.com/Bridgeconn/vachan-api.git, to your github account
