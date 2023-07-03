@@ -1,6 +1,7 @@
 ''' Defines SQL Alchemy models for each Database Table'''
 
 from enum import Enum
+from datetime import datetime
 from sqlalchemy import Column, Integer, String, JSON, ARRAY, Float, text
 from sqlalchemy import Boolean, ForeignKey, DateTime
 from sqlalchemy import UniqueConstraint, Index
@@ -10,9 +11,11 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.schema import Sequence
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
-
+from pytz import timezone
 from database import Base  # pylint: disable=import-error
 from custom_exceptions import GenericException # pylint: disable=import-error
+
+ist_time = datetime.now(timezone("Asia/Kolkata")).strftime('%Y-%m-%d %H:%M:%S')
 
 dynamicTables = {}
 
@@ -50,8 +53,9 @@ class Language(Base): # pylint: disable=too-few-public-methods
     localScriptName = Column('localscript_name',String)
     metaData = Column('metadata', JSON)
     createdUser = Column('created_user', String)
+    createTime = Column('created_at',DateTime,default=ist_time)
     updatedUser = Column('last_updated_user', String)
-    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    updateTime = Column('last_updated_at', DateTime, onupdate=ist_time)
 
 class License(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table licenses in vachan DB(postgres)'''
@@ -65,8 +69,9 @@ class License(Base): # pylint: disable=too-few-public-methods
     active = Column('active', Boolean)
     # metaData = Column('metadata', JSON)
     createdUser = Column('created_user', String)
+    createTime = Column('created_at',DateTime,default=ist_time)
     updatedUser = Column('last_updated_user', String)
-    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    updateTime = Column('last_updated_at', DateTime, onupdate=ist_time)
 
 class Version(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table versions in vachan DB(postgres)'''
@@ -78,8 +83,9 @@ class Version(Base): # pylint: disable=too-few-public-methods
     versionTag = Column('version_tag', ARRAY(String))
     metaData = Column('metadata', JSON)
     createdUser = Column('created_user', String)
+    createTime = Column('created_at',DateTime,default=ist_time)
     updatedUser = Column('last_updated_user', String)
-    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    updateTime = Column('last_updated_at', DateTime, onupdate=ist_time)
 
 class Source(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table sources in vachan DB(postgres)'''
@@ -101,8 +107,9 @@ class Source(Base): # pylint: disable=too-few-public-methods
     active = Column('active', Boolean)
     metaData = Column('metadata', JSONB)
     createdUser = Column('created_user', String)
+    createTime = Column('created_at',DateTime,default=ist_time)
     updatedUser = Column('last_updated_user', String)
-    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    updateTime = Column('last_updated_at', DateTime, onupdate=ist_time)
 
 class BibleBook(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table bible_books_look_up in vachan DB(postgres)'''
@@ -341,9 +348,8 @@ class TranslationProject(Base): # pylint: disable=too-few-public-methods
     active = Column('active', Boolean, default=True)
     createdUser = Column('created_user', String)
     updatedUser = Column('last_updated_user', String)
-    createTime = Column('created_at', DateTime, default=func.now())
-    updateTime = Column('last_updated_at', DateTime, onupdate=func.now(),
-        default=func.now())
+    createTime = Column('created_at', DateTime, default=ist_time)
+    updateTime = Column('last_updated_at', DateTime, onupdate= ist_time,default=ist_time)
 
 class TranslationDraft(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table translation_drafts in vachan DB used by Autographa MT mode'''
@@ -364,7 +370,7 @@ class TranslationDraft(Base): # pylint: disable=too-few-public-methods
     draft = Column('draft', String)
     draftMeta = Column('draft_metadata', JSON)
     updatedUser = Column('last_updated_user', String)
-    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    updateTime = Column('last_updated_at', DateTime, onupdate=ist_time)
 
 class TranslationMemory(Base):  # pylint: disable=too-few-public-methods
     '''Corresponds to table translation_memory in vachan DB used by Autographa MT mode'''
@@ -424,8 +430,9 @@ class StopWords(Base): # pylint: disable=too-few-public-methods
     metaData = Column('metadata', JSON)
     active = Column('active', Boolean, default=True)
     createdUser = Column('created_user', String)
+    createTime = Column('created_at',DateTime,default=ist_time)
     updatedUser = Column('last_updated_user', String)
-    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    updateTime = Column('last_updated_at', DateTime, onupdate=ist_time)
 
 class Jobs(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table jobs in vachan DB '''
@@ -445,6 +452,6 @@ class DeletedItem(Base): # pylint: disable=too-few-public-methods
     itemId = Column('item_id', Integer, primary_key=True,autoincrement=True)
     deletedData = Column('deleted_data', JSON)
     createdUser = Column('deleted_user', String)
-    deletedTime = Column('deleted_time', DateTime, default=func.now())
+    deletedTime = Column('deleted_time', DateTime, default=ist_time)
     deletedFrom = Column('deleted_from', String)
     
