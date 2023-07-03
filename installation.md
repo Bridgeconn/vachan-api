@@ -1,67 +1,35 @@
-# Vachan-api
 
-The server application that provides REST APIs to interact with the underlying Databases (SQL and Graph) and modules in Vachan-Engine.
+## Step 1 : Initializing and Setting Up 'vachan-api' Repository
 
-Currently serving 3 client applications, VachanOnline website, the Vachan Mobile App and AutographaMT Bible translation tool.
+>### Set up Vachan Engine locally for development and testing
 
-## Implementation Details
+We follow fork and merge git workflow.
+* Fork the repo, https://github.com/Bridgeconn/vachan-api.git, to your github account
+* Then clone you account locally and keep that as "origin"
+* Add the central Bridgeconn repo as "upstream".
+* Contribute back via pull requests to the "version-2" branch on this repo.
 
-Implemented Using
-- Python 3.10.6
-- Fastapi framework
-- Postgresql Database
-- Ory Kratos for Authentication
-- Redis for caching and job queueing 
-- Usfm-grammar
-- Makefile
+### Clone git repo
 
-
-## Set up locally for development and testing
-
-
-### **_Steps_**
-
->Fork the repo into your github account and then use the terminal to clone the repository on your local machine with the following steps
-
-```mkdir vachan-api```
+```git clone https://github.com/<your-account>/vachan-api.git```
 
 ```cd vachan-api```
 
-```git init```
-
-```git remote add upstream https://github.com/Bridgeconn/vachan-api.git```
-
-```git remote add origin  https://github.com/<your-account>/vachan-api.git```
-
-```git fetch upstream```
-
-```git checkout -b version-2```
-
-```git pull upstream version-2```
+```git checkout version-2```
 
 
-## Things going on in Makefile
-
-Since you probably don't know much about makefile, its automatiting our installation process. So we will guide through whats going on here.
-
-*  ### Set up virtual Environment 
-*  ### Activate the Virtual Environment
-*  ### Installing required python packages to run the project
-*  ### Install PostgreSQL 15.3
-*  ### Populate the database with data
-*  ### Install Usfm-Grammar2.0
-*  ### Install Docker and Docker-compose
-*  ### Run kratos-config
-
-
-## Installation of Vachan-Engine into your localhost
+## Step 2 : Installing and Executing Makefile
 
 For your convinience we have made our installation steps into an single Makefile. So after cloning the vachan-api repository into your local machine you can see yourself it will have an makefile. So in order to run this makefile first you need to install 
+
+<br>
 
 > sudo apt update\
 sudo apt install make
 
-so with this you can run the makefile easily.
+<br>
+
+with this command to you can succesfully install **make**  which is important to run our makefile
 
 ### **To run the makefile**
 In order to run the makefile you need to go inside the _vachan-api_  folder and run the following command on your terminal
@@ -70,71 +38,98 @@ In order to run the makefile you need to go inside the _vachan-api_  folder and 
 
 > Make setup
 
-With this command the makefile will run and as the setup process goes on it will ask permission from yourself which you have to give by yourself.
 
-### **Things to remember**
+During the execution of this command, the Makefile will initiate and prompt for your permission at various stages of the setup process, which you will need to provide manually.
 
-*There are somethings to remember while running the makefile. Since the makefile is an automated process of our installation, if it stops in midway you can try run that process again without running the whole makefile again.So that i will provide you commands for each process.*
+<br>
+
+### **Important Considerations: Key Points to Remember During Makefile Execution**
+
+*When running the Makefile, it is crucial to keep a few things in mind. As the Makefile automates the installation process, in case it halts midway, you have the option to rerun that particular process without restarting the entire Makefile. Consequently, I will provide you with specific commands for each process, allowing for more targeted execution and troubleshooting.*
+
+<br>
 
 #### **To install basic python pre-requisite into your system**
-
 
 *This will install python3-pip and python3-venv into your local machine.*
 
 > make pre-requisite
 
+<br>
+
 #### **To make an virtual environment onto your system**
 
 >	make venv-configure
+
+<br>
 
 #### **To activate the Virtual Environment**
 
 >	make venv-activate
 
+<br>
+
+
 #### **To install python packages required for the project**
 
-*This will install requirements.txt file which is important python packages we need to run for the vachan-api and it will be installed onto your virtual environment
-
 >	make install-dependencies
+
+*This will install requirements.txt file which is important python packages we need to run for the vachan-api and it will be installed onto your virtual environment*
+
+<br>
 
 ####  **To check if all the above mentioned packages are installed onto your virtual environment**
 
 >	make check-package
 
+<br>
+
 #### **To install PostgreSQL 15.3 onto your system**
 
 >	make installing-psql
+
+<br>
 
 ####  **To populate your database with data**
 
 >	make into-database
 
+<br>
+
 #### **To modify your _.bashrc_ file**
-
-_Some things to note_
-
-* Provide a valid email address for the SuperAdmin username
-
-* Ensure that your password incorporates a combination of uppercase and   lowercase letters, special characters, and numbers.
-
-* Avoid using passwords that closely resemble  your username
-
-and to run it
-
 >	make environmental-variables
+
+<br>
+
+#### _**Important points to remember**_
+
+*Provide a valid email address for the SuperAdmin username*
+
+*Ensure that your password incorporates a combination of uppercase and   lowercase letters, special characters, and numbers*
+
+*Avoid using passwords that closely resemble  your username and to run it*
+
+
+
+<br>
 
 #### **To install Usfm-Grammar 2.0**
 
 >	make installing-usfmgrammar
 
+<br>
 
 #### **To install Docker and Docker-Compose**
 
 >	make installing-docker
 
+<br>
+
 #### **To run kratos-Config from your system**
 
 >	make kratosconfig
 
+<br>
 
-### If the make file doesn't work or you cant run it properly you can try our mannual method and you can find it on README.md 
+### In case the Makefile fails to work or encounters issues during execution, an alternative option is to follow our manual method. Detailed instructions for the manual setup can be found in the [README.md](README.md).
+
