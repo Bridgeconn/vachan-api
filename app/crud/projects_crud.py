@@ -4,6 +4,7 @@ projects are included in nlp_crud module'''
 
 import re
 import datetime
+from pytz import timezone
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
@@ -14,6 +15,8 @@ from crud import utils, nlp_crud
 from custom_exceptions import NotAvailableException, TypeException,\
     UnprocessableException, PermissionException
 from auth.authentication import get_all_or_one_kratos_users
+
+ist_timezone = timezone("Asia/Kolkata")
 
 #pylint: disable=W0143,E1101
 ###################### Translation Project Mangement ######################
@@ -175,7 +178,7 @@ def update_translation_project(db_:Session, project_obj, user_id=None):
         project_row.metaData['punctuations'] = project_obj.punctuations
         flag_modified(project_row, "metaData")
     project_row.updatedUser = user_id
-    project_row.updateTime = datetime.datetime.now()
+    project_row.updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
     if len(new_books) > 0:
         project_row.metaData['books'] += new_books
         flag_modified(project_row, "metaData")
@@ -332,7 +335,7 @@ def update_project_draft(db_:Session, project_id, sentence_list, user_id):
         sent.draftMeta = input_sent.draftMeta
         sent.updatedUser = user_id
     project_row.updatedUser = user_id
-    project_row.updateTime = datetime.datetime.now()
+    project_row.updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
     response_result = {
         'db_content':sentences,
         'project_content':project_row
@@ -621,7 +624,7 @@ def remove_project_sentence(db_, project_id, sentence_id,user_id):
     #     raise PermissionException("A user cannot remove oneself from a project.")
     db_.delete(sentence_row)
     project_row.updatedUser = user_id
-    project_row.updateTime = datetime.datetime.now()
+    project_row.updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
     # db_.commit()
     response = {
         "db_content": sentence_row,

@@ -5,6 +5,7 @@ import json
 import re
 from datetime import datetime
 import jsonpickle
+from pytz import timezone
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
@@ -18,6 +19,7 @@ from database import engine
 from dependencies import log
 from crud import utils
 
+ist_timezone = timezone("Asia/Kolkata")
 def get_content_types(db_: Session, content_type: str =None, content_id: int = None,
     skip: int = 0, limit: int = 100):
     '''Fetches all content types, with pagination'''
@@ -121,7 +123,7 @@ def add_deleted_data(db_: Session, del_content, table_name : str = None,\
     del_item_createduser = deleting_user
     db_content =  db_models.DeletedItem(deletedData = json_string,
         createdUser = del_item_createduser,
-        deletedTime = datetime.now(),
+        deletedTime=datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S'),
         deletedFrom = table_name)
     db_.add(db_content)
 
