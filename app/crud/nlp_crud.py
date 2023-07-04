@@ -8,6 +8,7 @@ from datetime import datetime
 from math import floor, ceil
 from pathlib import Path
 import pygtrie
+from pytz import timezone
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text,func
@@ -19,6 +20,7 @@ from custom_exceptions import NotAvailableException, TypeException, GenericExcep
 from schema.schemas_nlp import TranslationDocumentType
 from redis_db.utils import  get_routes_from_cache, set_routes_to_cache
 
+ist_timezone = timezone("Asia/Kolkata")
 #Based on sqlalchemy
 #pylint: disable=W0102,E1101,W0143,C0206
 ###################### Tokenization ######################
@@ -192,7 +194,7 @@ def save_project_translations(db_, project_id, token_translations,
     else:
         result = None
     project_row.updatedUser = user_id
-    project_row.updateTime = datetime.now()
+    project_row.updateTime = datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
     response = {
         'db_content':result,
         'project_content':project_row
@@ -807,7 +809,7 @@ def project_suggest_translations(db_:Session, project_id, books, #pylint: disabl
         updated_drafts = auto_translate(**args)
         db_.add_all(updated_drafts)
     project_row.updatedUser = user_id
-    project_row.updateTime = datetime.now()
+    project_row.updateTime = datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
     response = {
         'db_content':updated_drafts,
         'project_content':project_row

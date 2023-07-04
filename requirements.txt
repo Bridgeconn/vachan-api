@@ -14,4 +14,4 @@ starlette==0.26.1
 pylint==2.16.1
 jsonpickle==2.2.0
 usfm-grammar==3.0.0a4
-
+pytz==2023.3
