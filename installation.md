@@ -12,7 +12,7 @@ For your convinience we have made our installation steps into an single Makefile
 ```sudo apt install make```
 <br>
 
-with this command to you can succesfully install **make**  which is important to run our makefile
+with this command to you can succesfully install **make**  which is important to run our makefile.
 
 
 ### **To run the makefile**
@@ -80,7 +80,7 @@ During the execution of this command, the Makefile will initiate and prompt for 
 * Ensure that your password incorporates a combination of uppercase and   lowercase letters, special characters, and numbers
 
 * Avoid using passwords that closely resemble  your username and to run it
-<br>
+
 
 #### **To install Usfm-Grammar 2.0**
 

@@ -78,20 +78,34 @@ installing-usfmgrammar:
 	sudo apt install npm
 	sudo npm install -g usfm-grammar@2.2.0
 	
-
-# installing-docker:
-# 	@if docker --version | grep -q "24.0.1"; then \
-# 		echo "You already have Docker 24.0.1 installed."; \
-# 	else \
-# 		read -p "Do you want to remove the existing Docker installation and install Docker 24.0.1? (y/N) " response; \
-# 		if [[ $$response =~ ^[Yy]$$ ]]; then \
-# 			sudo apt-get remove docker docker-ce docker-compose docker-compose-plugin; \
-# 			sudo apt-get update; \
-# 			sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin; \
-# 		else \
-# 			echo "Docker 24.0.1 not installed."; \
-# 		fi \
-# 	fi
+installing-docker:
+	@if docker --version | grep -q "24.0.2"; then \
+		echo "You already have Docker 24.0.2 installed."; \
+	else \
+		read -p "Do you want to install/update Docker 24.0.2? (y/N) " response; \
+		if [[ $$response =~ ^[Yy]$$ ]]; then \
+			if docker --version | grep -q "Docker version"; then \
+				echo "Removing existing Docker installation..."; \
+				for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do sudo apt-get remove $$pkg; done; \
+			fi; \
+			echo "Installing Docker 24.0.2..."; \
+			sudo apt-get update; \
+			sudo apt-get install -y ca-certificates curl gnupg; \
+			sudo install -m 0755 -d /etc/apt/keyrings; \
+			curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg; \
+			sudo chmod a+r /etc/apt/keyrings/docker.gpg; \
+			echo "deb [arch=$$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu bionic stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null; \
+			sudo apt-get update --allow-releaseinfo-change; \
+			sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin; \
+			if [[ $$? -eq 0 ]]; then \
+				echo "Docker 24.0.2 has been installed/updated."; \
+			else \
+				echo "Docker installation/update failed. Refer to the Docker installation documentation for manual installation: https://docs.docker.com/engine/install/debian/"; \
+			fi; \
+		else \
+			echo "Docker 24.0.2 installation/update canceled."; \
+		fi; \
+	fi
 
 
 kratosconfig:
