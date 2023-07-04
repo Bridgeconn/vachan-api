@@ -77,18 +77,18 @@ environmental-variables:
 installing-usfmgrammar:
 	sudo apt install npm
 	sudo npm install -g usfm-grammar@2.2.0
-	
+
 installing-docker:
-	@if docker --version | grep -q "24.0.2"; then \
-		echo "You already have Docker 24.0.2 installed."; \
+	@if docker --version | grep -q "Docker version 24.0."; then \
+		echo "You already have Docker 24.0.1 or above installed."; \
 	else \
-		read -p "Do you want to install/update Docker 24.0.2? (y/N) " response; \
+		read -p Do you want to install/update to latest docker version? (y/N) " response; \
 		if [[ $$response =~ ^[Yy]$$ ]]; then \
 			if docker --version | grep -q "Docker version"; then \
 				echo "Removing existing Docker installation..."; \
 				for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do sudo apt-get remove $$pkg; done; \
 			fi; \
-			echo "Installing Docker 24.0.2..."; \
+			echo "Installing latest version of docker....."; \
 			sudo apt-get update; \
 			sudo apt-get install -y ca-certificates curl gnupg; \
 			sudo install -m 0755 -d /etc/apt/keyrings; \
@@ -98,12 +98,12 @@ installing-docker:
 			sudo apt-get update --allow-releaseinfo-change; \
 			sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin; \
 			if [[ $$? -eq 0 ]]; then \
-				echo "Docker 24.0.2 has been installed/updated."; \
+				echo "Docker  has been installed/updated to latest version."; \
 			else \
 				echo "Docker installation/update failed. Refer to the Docker installation documentation for manual installation: https://docs.docker.com/engine/install/debian/"; \
 			fi; \
 		else \
-			echo "Docker 24.0.2 installation/update canceled."; \
+			echo "Docker installation/update canceled."; \
 		fi; \
 	fi
 
