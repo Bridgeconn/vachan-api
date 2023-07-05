@@ -433,6 +433,7 @@ class SourceResponse(BaseModel):
     license: LicenseShortResponse
     metaData: dict = None
     active: bool = True
+    createdUser : str
     class Config:
         '''For Pydantic'''
         orm_mode = True
@@ -448,7 +449,8 @@ class SourceResponse(BaseModel):
                 "year": 2020,
                 "license": {},
                 "metaData": {"otherName": "KJBC, King James Bible Commentaries"},
-                "active": True
+                "active": True,
+                "createdUser": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
             }
         }
 

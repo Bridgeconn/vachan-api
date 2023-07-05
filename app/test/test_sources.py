@@ -58,6 +58,7 @@ def assert_positive_get(item):
         tag, item['contentType']['contentType']]
     table_name = "_".join(parts)
     assert item["sourceName"] == table_name
+    assert "createdUser" in item
 
 
 def check_post(data: dict):
