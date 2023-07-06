@@ -160,6 +160,7 @@ services:
    - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD:-Just4Complexity!}
    - VACHAN_TEST_MODE="False"
    - VACHAN_LOGGING_LEVEL=INFO
+   - VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost:8000}
   command: python -m pytest
   volumes:
    - logs-test-vol:/app/logs
