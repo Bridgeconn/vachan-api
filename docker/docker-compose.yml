@@ -120,6 +120,7 @@ services:
      - VACHAN_REDIS_HOST=redis
      - VACHAN_REDIS_PORT=6379
      - VACHAN_REDIS_PASS=${VACHAN_REDIS_PASS:-vsfrgetd}
+     - VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost:8000}
     command: uvicorn main:app --host 0.0.0.0 --port 8000
     volumes:
      - logs-vol:/app/logs
