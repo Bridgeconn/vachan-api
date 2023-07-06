@@ -870,7 +870,8 @@ def get_available_bible_books(db_, source_name,book_code=None, content_type=None
         raise TypeException('The operation is supported only on bible')
     model_cls = db_models.dynamicTables[source_name]
     model_cls_audio = db_models.dynamicTables[source_name+"_audio"]
-    query = db_.query(model_cls).options(joinedload(model_cls.book))
+    query = db_.query(model_cls).outerjoin(model_cls_audio, model_cls_audio.book_id ==
+        model_cls.book_id).options(joinedload(model_cls.book))
     fetched = None
     if biblecontent_id:
         query = query.filter(model_cls.bookContentId  == biblecontent_id)
