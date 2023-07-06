@@ -1,5 +1,5 @@
 '''tests for the translation workflow within AgMT projects'''
-
+import json
 import re
 from math import ceil, floor
 from . import client
@@ -9,7 +9,7 @@ from .conftest import initial_test_users
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER
 
 
-UNIT_URL = '/v2/autographa/project'
+UNIT_URL = '/v2/translation/project'
 headers = {"contentType": "application/json", "accept": "application/json","app":"Autographa"}
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
@@ -60,7 +60,7 @@ def test_get_tokens():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # after adding books
@@ -201,7 +201,7 @@ def test_save_translation():
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
 
-    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
@@ -273,7 +273,7 @@ def test_save_translation_invalid():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
@@ -354,7 +354,7 @@ def test_drafts():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
@@ -412,17 +412,17 @@ def test_get_token_sentences():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
-    resp = client.get("/v2/autographa/project/tokens?project_id="+str(project_id)
+    resp = client.get("/v2/translation/project/tokens?project_id="+str(project_id)
         ,headers=headers_auth)
     tokens = resp.json()
     our_token = tokens[0]['token']
     occurrences = tokens[0]['occurrences']
 
     #before translating
-    response = client.put('/v2/autographa/project/token-sentences?project_id='+
+    response = client.put('/v2/translation/project/token-sentences?project_id='+
         str(project_id)+'&token='+our_token,
         json=occurrences, headers=headers_auth)
     assert response.status_code == 200
@@ -448,7 +448,7 @@ def test_get_token_sentences():
     assert response.json()['message'] == 'Token translations saved'
 
     # after translation
-    response2 = client.put('/v2/autographa/project/token-sentences?project_id='+
+    response2 = client.put('/v2/translation/project/token-sentences?project_id='+
         str(project_id)+'&token='+our_token, headers=headers_auth,
         json=occurrences)
     assert response2.status_code == 200
@@ -462,7 +462,7 @@ def test_get_token_sentences():
         assert found_slice
 
     #Without auth
-    response2 = client.put('/v2/autographa/project/token-sentences?project_id='+
+    response2 = client.put('/v2/translation/project/token-sentences?project_id='+
         str(project_id)+'&token='+our_token, json=occurrences)
     assert response2.json()['error'] == 'Permission Denied'
 
@@ -481,7 +481,7 @@ def test_get_sentence():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # before translation
@@ -491,7 +491,8 @@ def test_get_sentence():
     assert len(response.json()) > 1
     for item in response.json():
         assert_positive_get_sentence(item)
-        assert item['sentence'] == item['draft']
+        assert item['sentence'] != ""
+        assert item['draft'] == ""
 
 
     # translate all tokens at once
@@ -531,6 +532,17 @@ def test_get_sentence():
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
+    # With only_ids
+    response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id)+
+        "&only_ids=True",headers=headers_auth)
+    assert response.status_code ==200
+    for item in response.json():
+        assert "sentenceId" in item
+        assert "surrogateId" in item
+        assert "sentence" not in item
+        assert "draft" not in item
+        assert "draftMeta" not in item
+
 def test_progress_n_suggestion():
     '''tests for project progress API of AgMT'''
     resp = add_project(project_data)
@@ -549,7 +561,7 @@ def test_progress_n_suggestion():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # before translation
@@ -626,7 +638,7 @@ def test_get_versification():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     response = client.get(UNIT_URL+"/versification?project_id="+str(project_id)
@@ -662,20 +674,20 @@ def test_agmt_translation_access_rule_app():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     #get tokens
     #without auth not from Autographa
-    resp = client.get("/v2/autographa/project/tokens?project_id="+str(project_id))
+    resp = client.get("/v2/translation/project/tokens?project_id="+str(project_id))
     assert resp.json()['error'] == "Permission Denied"
     #without auth and from Autographa
-    resp = client.get("/v2/autographa/project/tokens?project_id="+str(project_id)
+    resp = client.get("/v2/translation/project/tokens?project_id="+str(project_id)
         ,headers=headers)
     assert resp.status_code == 401
     assert resp.json()['error'] == 'Authentication Error'
     #With Auth and From Autographa
-    resp = client.get("/v2/autographa/project/tokens?project_id="+str(project_id)
+    resp = client.get("/v2/translation/project/tokens?project_id="+str(project_id)
         ,headers=headers_auth)
     assert resp.status_code == 200
     assert isinstance(resp.json(), list)
@@ -708,36 +720,50 @@ def test_agmt_translation_access_rule_app():
     assert response.json()['error'] == "Permission Denied"
 
     #get token translation
-    response = client.get(UNIT_URL+"/token-translations?project_id="+str(project_id)+
-        "&token="+all_tokens[0]['token']+"&sentence_id=41001001&offset=0&offset=4",
-        headers=headers_auth, json=post_obj_list)
+    ##################################################################################
+    ########################################
+    data_str = json.dumps(post_obj_list)
+    params={
+            "project_id": str(project_id),
+            "token": all_tokens[0]['token'],
+            "sentence_id": "41001001",
+            "offset": ["0", "4"],
+            "data": data_str
+        }
+
+    response = client.get(UNIT_URL + "/token-translations",
+        params=params,
+        headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) > 0
     #Without Auth from Autographa
-    response = client.get(UNIT_URL+"/token-translations?project_id="+str(project_id)+
-        "&token="+all_tokens[0]['token']+"&sentence_id=41001001&offset=0&offset=4",
-        headers=headers, json=post_obj_list)
+    
+    response = client.get(UNIT_URL + "/token-translations",
+        params=params,
+        headers=headers
+        )
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
     #Without Auth and not from Autographa
-    response = client.get(UNIT_URL+"/token-translations?project_id="+str(project_id)+
-        "&token="+all_tokens[0]['token']+"&sentence_id=41001001&offset=0&offset=4",
-        json=post_obj_list)
+    
+    response = client.get(
+         UNIT_URL + "/token-translations",
+            params=params)
     assert response.json()['error'] == "Permission Denied"
 
     #Get Token Sentences PUT
-    response = client.put('/v2/autographa/project/token-sentences?project_id='+
+    response = client.put('/v2/translation/project/token-sentences?project_id='+
         str(project_id)+'&token='+our_token,
         json=occurrences, headers=headers_auth)
     assert response.status_code == 200
     #Without Auth and from Autographa
-    response = client.put('/v2/autographa/project/token-sentences?project_id='+
+    response = client.put('/v2/translation/project/token-sentences?project_id='+
         str(project_id)+'&token='+our_token,
         json=occurrences, headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == "Authentication Error"
     #Without Auth and not from Autographa
-    response = client.put('/v2/autographa/project/token-sentences?project_id='+
+    response = client.put('/v2/translation/project/token-sentences?project_id='+
         str(project_id)+'&token='+our_token,
         json=occurrences)
     assert response.status_code == 403
@@ -801,6 +827,89 @@ def test_agmt_translation_access_rule_app():
     assert response.status_code == 403
     assert response.json()['error'] == "Permission Denied"
 
+def test_data_updated_time():
+    '''Bugfix of issue #563:https://github.com/Bridgeconn/vachan-api/issues/563 '''
+
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+
+    #create an empty project
+    create_project_resp = add_project(project_data)
+    assert create_project_resp.json()['message'] == "Project created successfully"
+    project_id = create_project_resp.json()['data']['projectId']
+    project_name =create_project_resp.json()['data']['projectName']
+    project_create_time = create_project_resp.json()['data']['createTime']
+
+    # Add book into empty project
+    put_data = {
+        "projectId": project_id,
+        "uploadedUSFMs":[bible_books['mat']]
+    }
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    assert resp.json()['message'] == "Project updated successfully"
+
+    # Get tokens
+    resp = client.get("/v2/translation/project/tokens?project_id="+str(project_id)
+         ,headers=headers_auth)
+
+    # Case 1:PUT Tokens
+    #Apply token translations
+    all_tokens = resp.json()
+    post_obj_list = [
+      {
+        "token": all_tokens[0]['token'],
+        "occurrences": [all_tokens[0]["occurrences"][0]],
+        "translation": "test translation"
+      }
+    ]
+    response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
+        headers=headers_auth, json=post_obj_list)
+
+    # Get project details
+    project_url = f"/v2/translation/projects?project_name={project_name}"
+    project_resp = client.get(project_url, headers=headers_auth)
+    project_update_time = project_resp.json()[0]['updateTime']
+    assert not project_create_time == project_update_time
+
+    # Check sentences are added
+    resp = client.get(f"{UNIT_URL}/sentences?project_id={project_id}", headers=headers_auth)
+    sentence_id = resp.json()[0]['sentenceId']
+
+    # Case 2 : PUT Draft
+    put_data = [
+            {"sentenceId":sentence_id,
+             "draft": "കാട്",
+             "draftMeta":[
+                  [ [5,11], [0,4], "confirmed"]
+                ]
+            }
+    ]
+    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
+        headers=headers_auth, json=put_data)
+    # Get project details
+    project_resp = client.get(project_url, headers=headers_auth)
+    project_update_time = project_resp.json()[0]['updateTime']
+    assert not project_create_time == project_update_time
+ 
+    #Case 3: Update suggestions
+    resp = client.put(f"/v2/translation/project/suggestions?project_id={project_id}&sentenceIdList={sentence_id}",
+        headers=headers_auth)
+    assert resp.status_code == 201
+     # Get project details
+    project_resp = client.get(project_url, headers=headers_auth)
+    project_update_time = project_resp.json()[0]['updateTime']
+    assert not project_create_time == project_update_time
+
+    # Case 4 : Delete Sentence
+    response = client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id}",
+            headers=headers_auth)
+    assert response.status_code == 201
+    assert "successfull" in response.json()['message']
+     # Get project details
+    project_resp = client.get(project_url, headers=headers_auth)
+    project_update_time = project_resp.json()[0]['updateTime']
+    assert not project_create_time == project_update_time
+
+
 #Project translation Access rules based permission
 def test_agmt_translation_access_permissions():
     """test for access permission to project translation"""
@@ -814,10 +923,10 @@ def test_agmt_translation_access_permissions():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/autographa/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
-    resp = client.get("/v2/autographa/project/tokens?project_id="+str(project_id)
+    resp = client.get("/v2/translation/project/tokens?project_id="+str(project_id)
         ,headers=headers_auth)
     assert resp.status_code == 200
     assert isinstance(resp.json(), list)
@@ -868,7 +977,7 @@ def test_agmt_translation_access_permissions():
     assert response.status_code == 403
     assert response.json()['error'] == "Permission Denied"
 
-    response = client.put('/v2/autographa/project/token-sentences?project_id='+
+    response = client.put('/v2/translation/project/token-sentences?project_id='+
         str(project_id)+'&token='+our_token,
         json=occurrences, headers=headers_auth)
     assert response.status_code == 403
@@ -876,7 +985,7 @@ def test_agmt_translation_access_permissions():
 
     #Add AgUser as memeber to projects
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    response = client.post('/v2/autographa/project/user'+'?project_id='+str(project_id)+
+    response = client.post('/v2/translation/project/user'+'?project_id='+str(project_id)+
         '&user_id='+str(initial_test_users['AgUser2']["test_user_id"]),headers=headers_auth)
     assert response.status_code == 201
     assert response.json()['message'] == "User added to project successfully"
@@ -886,8 +995,9 @@ def test_agmt_translation_access_permissions():
     response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
         headers=headers_auth, json=post_obj_list)
     assert response.status_code == 201
+    print("resp after put token:",resp.json())
 
-    response = client.put('/v2/autographa/project/token-sentences?project_id='+
+    response = client.put('/v2/translation/project/token-sentences?project_id='+
         str(project_id)+'&token='+our_token,
         json=occurrences, headers=headers_auth)
     assert response.status_code == 200
@@ -903,16 +1013,24 @@ def test_agmt_translation_access_permissions():
 
     for user_token in token_list:
         headers_auth['Authorization'] = "Bearer"+" "+user_token
-        resp = client.get("/v2/autographa/project/tokens?project_id="+str(project_id)
+        resp = client.get("/v2/translation/project/tokens?project_id="+str(project_id)
             ,headers=headers_auth)
         assert resp.status_code == 200
         assert isinstance(resp.json(), list)
         for item in resp.json():
             assert_positive_get_tokens(item)
-
-        response = client.get(UNIT_URL+"/token-translations?project_id="+str(project_id)+
-            "&token="+all_tokens[0]['token']+"&sentence_id=41001001&offset=0&offset=4",
-            headers=headers_auth, json=post_obj_list)
+            
+        data_str = json.dumps(post_obj_list)
+        response = client.get(
+            UNIT_URL + "/token-translations",
+            params={
+                "project_id": str(project_id),
+                "token": all_tokens[0]['token'],
+                "sentence_id": "41001001",
+                "offset": ["0", "4"],
+                "data": data_str
+                },
+            headers=headers_auth)
         assert response.status_code == 200
         assert len(response.json()) > 0
 
@@ -946,14 +1064,22 @@ def test_agmt_translation_access_permissions():
 
     for user_token in token_list:
         headers_auth['Authorization'] = "Bearer"+" "+user_token
-        resp = client.get("/v2/autographa/project/tokens?project_id="+str(project_id)
+        resp = client.get("/v2/translation/project/tokens?project_id="+str(project_id)
             ,headers=headers_auth)    
         assert resp.status_code == 403
         assert resp.json()['error'] == "Permission Denied"
 
-        response = client.get(UNIT_URL+"/token-translations?project_id="+str(project_id)+
-            "&token="+all_tokens[0]['token']+"&sentence_id=41001001&offset=0&offset=4",
-            headers=headers_auth, json=post_obj_list)
+        data_str = json.dumps(post_obj_list)
+        response = client.get(
+            UNIT_URL + "/token-translations",
+         params={
+                "project_id": str(project_id),
+                "token": all_tokens[0]['token'],
+                "sentence_id": "41001001",
+                "offset": ["0", "4"],
+                "data": data_str
+                },
+             headers=headers_auth)
         assert response.status_code == 403
         assert response.json()['error'] == "Permission Denied"
 

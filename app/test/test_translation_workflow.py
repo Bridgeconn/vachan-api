@@ -389,37 +389,37 @@ def test_end_to_end_translation():
     assert resp.json()['message'] == "Bible books uploaded and processed successfully"
 
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    resp = client.post(BASE_URL+"autographa/projects", headers=headers_auth, json=project_post_data)
+    resp = client.post(BASE_URL+"translation/projects", headers=headers_auth, json=project_post_data)
     assert resp.json()['message'] == "Project created successfully"
     project_update_data['projectId'] = resp.json()['data']['projectId']
     project_id = resp.json()['data']['projectId']
 
-    resp = client.put(BASE_URL+"autographa/projects", headers=headers_auth, json=project_update_data)
+    resp = client.put(BASE_URL+"translation/projects", headers=headers_auth, json=project_update_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # tokenize
-    resp = client.get(BASE_URL+"autographa/project/tokens?project_id="+str(project_id),headers=headers_auth)
+    resp = client.get(BASE_URL+"translation/project/tokens?project_id="+str(project_id),headers=headers_auth)
     assert resp.status_code == 200
 
     # translate
-    resp = client.put(BASE_URL+"autographa/project/tokens?project_id="+str(project_id),
+    resp = client.put(BASE_URL+"translation/project/tokens?project_id="+str(project_id),
     	headers=headers_auth, json=token_update_data)
     assert resp.json()['message'] == "Token translations saved"
 
     # Additional user
     NEW_USER_ID = initial_test_users['AgUser']['test_user_id']
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    resp = client.post(BASE_URL+"autographa/project/user?project_id="+str(project_id)+
+    resp = client.post(BASE_URL+"translation/project/user?project_id="+str(project_id)+
     	"&user_id="+str(NEW_USER_ID), headers=headers_auth)
     assert resp.json()['message'] == "User added to project successfully"
 
     user_data['project_id'] = project_id
     user_data['userId'] = NEW_USER_ID
-    resp = client.put(BASE_URL+"autographa/project/user", headers=headers_auth, json=user_data)
+    resp = client.put(BASE_URL+"translation/project/user", headers=headers_auth, json=user_data)
     print(resp.json())
     assert resp.json()['message'] == "User updated in project successfully"
 
-    resp = client.get(BASE_URL+"autographa/projects?user_id="+str(NEW_USER_ID),headers=headers_auth)
+    resp = client.get(BASE_URL+"translation/projects?user_id="+str(NEW_USER_ID),headers=headers_auth)
     assert len(resp.json()) > 0
 
     # # Suggestions
@@ -431,7 +431,7 @@ def test_end_to_end_translation():
     # print(resp.json())
 
     # tokenize after adding token "परमेश्वर" via alignment
-    resp = client.put(BASE_URL+"autographa/project/suggestions?project_id="+str(project_id)+
+    resp = client.put(BASE_URL+"translation/project/suggestions?project_id="+str(project_id)+
         "&sentence_id_list=42001001",
     	headers=headers_auth)
     draft = resp.json()[0]['draft']

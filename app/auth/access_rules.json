@@ -12,47 +12,54 @@
         "read-via-api":["SuperAdmin", "VachanAdmin", "BcsDeveloper"],
         "read-via-vachanadmin":["SuperAdmin", "VachanAdmin"],
         "create": ["SuperAdmin", "VachanAdmin"],
-        "edit": ["SuperAdmin", "resourceCreatedUser"]
+        "edit": ["SuperAdmin", "resourceCreatedUser"],
+        "delete/deactivate":["SuperAdmin", "resourceCreatedUser"]
     },
     "open-access":{
         "read-via-api":["noAuthRequired"],
         "view-on-web":["noAuthRequired"],
-        "refer-for-translation": ["SuperAdmin", "AgAdmin", "AgUser"],
-        "translate":["SuperAdmin", "AgAdmin", "AgUser"]
+        "refer-for-translation": ["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "AgUser", "SanketMASTUser"],
+        "translate":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "AgUser", "SanketMASTUser"]
     },
     "editable":{
-        "create": ["SuperAdmin", "VachanAdmin", "AgAdmin", "AgUser"],
-        "edit": ["SuperAdmin", "VachanAdmin", "AgAdmin", "AgUser"]
+        "create": ["SuperAdmin", "VachanAdmin", "AgAdmin", "SanketMASTAdmin", "AgUser", "SanketMASTUser"],
+        "edit": ["SuperAdmin", "VachanAdmin", "AgAdmin", "SanketMASTAdmin", "AgUser", "SanketMASTUser"],
+        "delete/deactivate": ["SuperAdmin", "VachanAdmin", "AgAdmin", "SanketMASTAdmin", "AgUser", "SanketMASTUser"]
     },
     "publishable":{
         "read-via-api":["registeredUser"],
         "view-on-web":["noAuthRequired"],
-        "refer-for-translation":["SuperAdmin", "AgAdmin", "AgUser"]
+        "refer-for-translation":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "AgUser", "SanketMASTUser"]
     },
     "downloadable":{
         "download-n-save":["SuperAdmin", "VachanAdmin", "VachanUser"]
     },
     "derivable":{
-        "translate":["SuperAdmin", "AgAdmin", "AgUser"]
+        "translate":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "AgUser", "SanketMASTUser"]
     },
     "translation-project":{
-        "create":["SuperAdmin", "AgAdmin", "AgUser"],
-        "create-user":["SuperAdmin", "AgAdmin", "projectOwner"],
-        "edit-Settings":["SuperAdmin", "AgAdmin", "projectOwner"],
-        "read-settings":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember"],
-        "edit-draft": ["SuperAdmin", "AgAdmin", "projectOwner", "projectMember"],
-        "read-draft":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"],
-        "view-project":["SuperAdmin", "AgAdmin", "projectOwner", "projectMember", "BcsDeveloper"]
+        "create":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "AgUser", "SanketMASTUser"],
+        "delete":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "projectOwner"],
+        "create-user":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "projectOwner"],
+        "delete-user":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "projectOwner"],
+        "edit-Settings":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "projectOwner"],
+        "read-settings":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "projectOwner", "projectMember"],
+        "edit-draft": ["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "projectOwner", "projectMember"],
+        "read-draft":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "projectOwner", "projectMember", "BcsDeveloper"],
+        "view-project":["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "projectOwner", "projectMember", "BcsDeveloper"],
+        "delete-sentence": ["SuperAdmin", "AgAdmin", "SanketMASTAdmin", "projectOwner","projectMember"]
     },
     "generic-translation":{
         "read":["registeredUser"],
         "create":["registeredUser"],
-        "process":["registeredUser"]
+        "process":["registeredUser"],
+        "delete":["SuperAdmin", "VachanAdmin", "AgAdmin", "SanketMASTAdmin"]
     },
     "lookup-content":{
         "read":["noAuthRequired"],
         "create":["registeredUser"],
-        "edit":["registeredUser"]
+        "edit":["registeredUser"],
+        "delete":["registeredUser"]
     },
     "research-use":{
         "read-via-api":["SuperAdmin", "BcsDeveloper"]
@@ -78,6 +85,11 @@
         "delete/deactivate":["SuperAdmin", "resourceCreatedUser"]
     },
     "data-manipulation": {
+<<<<<<< HEAD
         "data-restore" : ["SuperAdmin"]
+=======
+        "data-restore" : ["SuperAdmin"],
+        "delete/deactivate":["SuperAdmin"]
+>>>>>>> upstream/version-2
     }
 }

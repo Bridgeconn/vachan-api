@@ -1,11 +1,13 @@
 '''Utility functions'''
 import subprocess
 import json
+import itertools
+
 import unicodedata
 from unidecode import unidecode
 import requests
 
-from custom_exceptions import TypeException
+from custom_exceptions import TypeException, UnprocessableException
 #pylint: disable=R1732
 def normalize_unicode(text, form="NFKC"):
     '''to normalize text contents before adding them to DB'''
@@ -178,3 +180,57 @@ def convert_dict_obj_to_pydantic(input_obj, target_class):
         kwargs[key] = input_obj[key]
     new_obj = target_class(**kwargs)
     return new_obj
+
+def convert_dict_to_sqlalchemy(input_obj, target_class):
+    '''convert a dictionary object into specified db_model object,
+    if all key names are identical'''
+    kwargs = {}
+    for key in input_obj:
+        kwargs[key] = input_obj[key]
+    new_obj = target_class(**kwargs)
+    return new_obj
+
+def validate_draft_meta(sentence, draft, draft_meta):
+    '''Check if indices are proper in draftMeta, as per values in sentence and draft'''
+    src_segs = [list(meta[0]) for meta in draft_meta]
+    trg_segs = [list(meta[1]) for meta in draft_meta]
+    try:
+        #Ensure the offset ranges dont overlap
+        for seg1, seg2 in itertools.product(src_segs, src_segs):
+            if seg1 != seg2:
+                intersection = set(range(seg1[0],seg1[1])).intersection(
+                    range(seg2[0],seg2[1]))
+                assert not intersection, f"Source segments {seg1} and {seg2} overlaps!"
+        for seg1, seg2 in itertools.product(trg_segs, trg_segs):
+            if seg1 != seg2:
+                intersection = set(range(seg1[0],seg1[1])).intersection(
+                    range(seg2[0],seg2[1]))
+                assert not intersection, f"Target segments {seg1} and {seg2} overlaps!"
+        # Ensure the index values are within the range of string length and from left to right
+        # and non empty
+        src_len = len(sentence)
+        for seg in src_segs:
+            assert 0 <= seg[0] <= seg[1] <= src_len, f"Source segment {seg}, is improper!"
+        trg_len = len(draft)
+        for seg in trg_segs:
+            assert 0 <= seg[0] <= seg[1] <= trg_len, f"Target segment {seg}, is improper!"
+        for meta in draft_meta:
+            assert meta[2] in ['confirmed', 'suggestion', 'untranslated'],\
+                "invalid value where confirmed, suggestion or untranslated is expected"
+
+        # Ensure all portions of draft have a target segment corresponding to it
+        sorted_trg_segs = sorted(trg_segs)
+        pointer = 0
+        for seg in sorted_trg_segs:
+            assert seg[0] == pointer, "All portions of the draft should have "+\
+                                    "a draftmeta segment showing its status. "+\
+                                    f"Expecting a draft segment starting with {pointer}"
+            pointer = seg[1]
+        if trg_len > 0:
+            assert sorted_trg_segs[-1][1] == trg_len, "All portions of the draft should have "+\
+                                    "a draftmeta segment showing its status. "+\
+                                    f"Expecting a draft segment ending in {trg_len}"
+    except AssertionError as exe:
+        raise UnprocessableException("Incorrect metadata:"+str(exe)) from exe
+    except Exception as exe:
+        raise UnprocessableException("Incorrect metadata.") from exe

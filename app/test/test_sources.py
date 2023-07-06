@@ -1,13 +1,16 @@
 '''Test cases for versions related APIs'''
+import re
 from app.schema import schemas, schema_auth
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
 from .test_versions import check_post as add_version
-from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER
+from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 from .conftest import initial_test_users
 
 UNIT_URL = '/v2/sources'
+RESTORE_URL = '/v2/restore'
+COMMENTARY_URL = '/v2/commentaries/'
 
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json"
@@ -23,6 +26,9 @@ def assert_positive_get(item):
     assert "code" in item["language"]
     assert "language" in item['language']
     assert "languageId" in item["language"]
+    if "localScriptName" in item["language"]:
+        assert item['language']['localScriptName'] is None or \
+            isinstance(item['language']['localScriptName'], str)
     assert "version" in item
     assert "versionAbbreviation" in item['version']
     assert "versionId" in item['version']
@@ -34,10 +40,25 @@ def assert_positive_get(item):
     assert 'accessPermissions' in item['metaData'].keys()
     assert "active" in item
     assert item["active"] in [True, False]
+    if item['version']['versionTag'] is None:
+        tag = "1"
+    elif isinstance(item['version']['versionTag'], list):
+        tag = ".".join(item['version']['versionTag'])
+        # tag = re.sub(r'(\.0)+$', "", tag)
+    elif isinstance(item['version']['versionTag'], int):
+        tag = str(item['version']['versionTag'])
+    elif isinstance(item['version']['versionTag'], str):
+        if item['version']['versionTag'].startswith("["):
+            items = item['version']['versionTag'][1:-1].split(",")
+            tag = ".".join([itm.strip() for itm in items])
+            tag = re.sub(r"'", "", tag)
+        else:
+            tag = item['version']['versionTag']
     parts = [item['language']['code'], item['version']['versionAbbreviation'],
-        str(item['version']['revision']), item['contentType']['contentType']]
+        tag, item['contentType']['contentType']]
     table_name = "_".join(parts)
     assert item["sourceName"] == table_name
+    assert "createdUser" in item
 
 
 def check_post(data: dict):
@@ -47,7 +68,7 @@ def check_post(data: dict):
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
-    
+
     #With auth Only vachan and super admin can only create source
     headers_auth['Authorization'] = "Bearer"+" "+ initial_test_users['APIUser']['token']
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
@@ -76,15 +97,18 @@ def test_post_default():
         "contentType": "commentary",
         "language": "hi",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
+        "labels": ["latest"],
         "year": 2020,
         "license": "CC-BY-SA",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
-    check_post(data)
+    create_source = check_post(data)
+    assert create_source.json()['data']['labels'] == ["latest"]
+    return create_source
 
 def test_post_wrong_version():
-    '''Negative test with not available version or revision'''
+    '''Negative test with not available version or versionTag'''
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version",
@@ -94,7 +118,7 @@ def test_post_wrong_version():
         "contentType": "commentary",
         "language": "hi",
         "version": "TTD",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2020,
         "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
@@ -110,7 +134,7 @@ def test_post_wrong_version():
         "contentType": "commentary",
         "language": "hi",
         "version": "TTT",
-        "revision": 2,
+        "versionTag": 2,
         "year": 2020,
         "license": "CC-BY-SA",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
@@ -124,7 +148,7 @@ def test_post_wrong_version():
         "contentType": "commentary",
         "language": "hi",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2020,
         "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
@@ -142,7 +166,7 @@ def test_post_wrong_lang():
         "contentType": "commentary",
         "language": "aaj",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2020,
         "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
@@ -165,7 +189,7 @@ def test_post_wrong_content():
         "contentType": "bibl",
         "language": "hi",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2020,
         "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
@@ -181,7 +205,7 @@ def test_post_wrong_content():
         "contentType": "infographic",
         "language": "hi",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2020,
         "license": "XYZ-123",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
@@ -191,13 +215,80 @@ def test_post_wrong_content():
     assert response.json()['error'] == "Requested Content Not Available"
     assert "License" in response.json()['details']
 
+def test_post_wrong_label():
+    '''Negative test with invalid label'''
+    version_data = {
+        "versionAbbreviation": "TTT",
+        "versionName": "test version",
+    }
+    add_version(version_data)
+    data = {
+        "contentType": "bible",
+        "language": "hi",
+        "version": "TTT",
+        "versionTag": 1,
+        "labels": ["testlabel"],
+        "year": 2020,
+        "license": "ISC",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
+    assert_input_validation_error(response)
+
+def test_post_multiple_labels():
+    '''Positive test  case to add multiple labels'''
+    version_data = {
+        "versionAbbreviation": "TTT",
+        "versionName": "test version",
+    }
+    add_version(version_data)
+    data = {
+        "contentType": "bible",
+        "language": "hi",
+        "version": "TTT",
+        "versionTag": 1,
+        "labels": ["latest","test"],
+        "year": 2020,
+        "license": "ISC",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    headers_auth = {"contentType": "application/json", "accept": "application/json"}
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Source created successfully"
+    assert_positive_get(response.json()['data'])
+    assert response.json()['data']['labels'] == ["latest","test"]
+
+def test_post_wrong_label_format():
+    '''Negative test case to labe in incorrect format.'''
+    # Label(s) should pass as a list of strings
+    version_data = {
+        "versionAbbreviation": "TTT",
+        "versionName": "test version",
+    }
+    add_version(version_data)
+    data = {
+        "contentType": "bible",
+        "language": "hi",
+        "version": "TTT",
+        "versionTag": 1,
+        "labels": "latest",
+        "year": 2020,
+        "license": "ISC",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    response = client.post(UNIT_URL, headers=headers_auth, json=data)
+    assert_input_validation_error(response)
+
+
 def test_post_wrong_year():
     '''Negative test with text in year field'''
     data = {
         "contentType": "commentary",
         "language": "hi",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": "twenty twenty",
         "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
@@ -213,7 +304,7 @@ def test_post_wrong_metadata():
         "contentType": "commentary",
         "language": "hi",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": "twenty twenty",
         "license": "ISC",
         "metaData": '["owner"="someone", "access-key"="123xyz"]'
@@ -228,7 +319,7 @@ def test_post_missing_mandatory_info():
     data = {
         "language": "hi",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2020
     }
     # headers = {"contentType": "application/json", "accept": "application/json"}
@@ -239,7 +330,7 @@ def test_post_missing_mandatory_info():
     data = {
         "contentType": "commentary",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2020
     }
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
@@ -249,7 +340,7 @@ def test_post_missing_mandatory_info():
     data = {
         "contentType": "commentary",
         "language": "hi",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2020
     }
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
@@ -266,7 +357,7 @@ def test_post_missing_mandatory_info():
 
 def test_post_missing_some_info():
     '''Positive test with non mandatory contents missing.
-    If revision not specified, 1 is assumed. Other fields are nullable or have default value'''
+    If versionTag not specified, 1 is assumed. Other fields are nullable or have default value'''
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version",
@@ -279,7 +370,6 @@ def test_post_missing_some_info():
         "year": 2020
     }
     check_post(data)
-    # response = client.post(UNIT_URL, headers=headers_auth, json=data)
 
 def test_post_duplicate():
     '''Add the same source twice'''
@@ -294,7 +384,7 @@ def test_post_duplicate():
         "version": "TTT",
         "year": 2020
     }
-    headers = {"contentType": "application/json", "accept": "application/json"}
+    headers = {"contentType": "application/json", "accept": "application/json"} #pylint: disable=unused-variable
     check_post(data)
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 409
@@ -307,7 +397,7 @@ def test_put_default():
         "versionName": "test version",
     }
     add_version(version_data)
-    version_data['revision'] = 2
+    version_data['versionTag'] = 2
     add_version(version_data)
     data = {
         "contentType": "commentary",
@@ -319,7 +409,7 @@ def test_put_default():
 
     data_update = {
         "sourceName": 'ml_TTT_1_commentary',
-        "revision": 2
+        "versionTag": 2
     }
     #update source without auth
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -334,7 +424,7 @@ def test_put_default():
     assert response.status_code == 201
     assert response.json()['message'] == "Source edited successfully"
     assert_positive_get(response.json()['data'])
-    assert response.json()['data']['version']['revision'] == 2
+    assert response.json()['data']['version']['versionTag'] == "2"
     assert response.json()['data']['sourceName'] == "ml_TTT_2_commentary"
 
     data_update = {
@@ -347,6 +437,17 @@ def test_put_default():
     assert_positive_get(response.json()['data'])
     assert response.json()['data']['metaData'] == \
         {'accessPermissions': [schemas.SourcePermissions.CONTENT], 'owner': 'new owner'}
+
+    # updating label
+    data_update = {
+        'sourceName': 'ml_TTT_2_commentary',
+        'labels': ["test"]
+    }
+    response = client.put(UNIT_URL, headers=headers_auth, json=data_update)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Source edited successfully"
+    assert_positive_get(response.json()['data'])
+    assert response.json()['data']['labels'] == ["test"]
 
 def test_post_put_gitlab_source():
     '''Positive test for gitlab content type'''
@@ -405,12 +506,12 @@ def test_post_put_gitlab_source():
 
 def test_created_user_can_only_edit():
     """source edit can do by created user and Super Admin"""
-    SA_user_data = {
+    sa_user_data = {
             "user_email": SUPER_USER,
             "password": SUPER_PASSWORD
         }
     #creating one data with Super Admin and try to edit with VachanAdmin
-    response = login(SA_user_data)
+    response = login(sa_user_data)
     assert response.json()['message'] == "Login Succesfull"
     test_user_token = response.json()["token"]
     headers_auth['Authorization'] = "Bearer"+" "+test_user_token
@@ -420,7 +521,7 @@ def test_created_user_can_only_edit():
         "versionName": "test version",
     }
     add_version(version_data)
-    version_data['revision'] = 2
+    version_data['versionTag'] = 2
     add_version(version_data)
     data = {
         "contentType": "commentary",
@@ -436,7 +537,7 @@ def test_created_user_can_only_edit():
 
     data_update = {
         "sourceName": 'ml_TTT_1_commentary',
-        "revision": 2
+        "versionTag": 2
     }
 
     #edit with SA who also the createdUser
@@ -444,17 +545,15 @@ def test_created_user_can_only_edit():
     assert response.status_code == 201
     assert response.json()['message'] == "Source edited successfully"
     assert_positive_get(response.json()['data'])
-    assert response.json()['data']['version']['revision'] == 2
+    assert response.json()['data']['version']['versionTag'] == "2"
     assert response.json()['data']['sourceName'] == "ml_TTT_2_commentary"
 
     #edit with a non permited user VachanAdmin (not createdUser)
     data_update = {
         "sourceName": 'ml_TTT_2_commentary',
-        "revision": 1
+        "versionTag": 1
     }
-    
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-
     response = client.put(UNIT_URL, headers=headers_auth, json=data_update)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
@@ -506,13 +605,10 @@ def test_get_wrong_values():
     response = client.get(UNIT_URL + '?version_abbreviation=1')
     assert_input_validation_error(response)
 
-    response = client.get(UNIT_URL + '?revision=X')
-    assert_input_validation_error(response)
-
     response = client.get(UNIT_URL + '?language_code=hin6i')
     assert_input_validation_error(response)
 
-def test_get_after_adding_data():
+def test_get_after_adding_data(): #pylint: disable=too-many-statements
     '''Add some sources to DB and test fecthing those data'''
     version_data = {
         "versionAbbreviation": "TTT",
@@ -528,15 +624,15 @@ def test_get_after_adding_data():
         data['language'] = lang
         check_post(data)
 
-    version_data['revision'] = 2
+    version_data['versionTag'] = 2
     add_version(version_data)
-    data['revision'] = 2
+    data['versionTag'] = 2
     for lang in ['hi', 'mr', 'te']:
         data['language'] = lang
         check_post(data)
 
     data['contentType'] = 'commentary'
-    data['revision'] = 1
+    data['versionTag'] = 1
     data['metaData'] = {'owner': 'myself'}
     data['license'] = "ISC"
     for lang in ['hi', 'mr', 'te']:
@@ -561,7 +657,8 @@ def test_get_after_adding_data():
 
     # filter with language
     #without auth
-    response = client.get(UNIT_URL + "?language_code=hi&&version_abbreviation=TTT&latest_revision=false")
+    response = client.get(UNIT_URL + \
+         "?language_code=hi&&version_abbreviation=TTT&latest_revision=false")
     assert_not_available_content(response)
     #with auth
     response = client.get(UNIT_URL + "?language_code=hi&&version_abbreviation=TTT"+
@@ -571,35 +668,39 @@ def test_get_after_adding_data():
     for item in response.json():
         assert_positive_get(item)
 
-    # filter with revision  #WITH AUTH
-    response = client.get(UNIT_URL + "?revision=2&version_abbreviation=TTT",headers=headers_auth)
+    # filter with versionTag  #WITH AUTH
+    response = client.get(UNIT_URL + "?version_tag=2&version_abbreviation=TTT",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) >= 3
     for item in response.json():
         assert_positive_get(item)
 
     # filter with source name
-    response = client.get(UNIT_URL + "?source_name=hi_TTT_1_commentary",headers=headers_auth)
+    response = client.get(UNIT_URL + \
+         "?source_name=hi_TTT_1_commentary",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
     for item in response.json():
         assert_positive_get(item)
 
     # filter with version
-    response = client.get(UNIT_URL + "?version_abbreviation=TTT&latest_revision=false",headers=headers_auth)
+    response = client.get(UNIT_URL + \
+         "?version_abbreviation=TTT&latest_revision=false",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) >= 9
     for item in response.json():
         assert_positive_get(item)
 
     # filter with license
-    response = client.get(UNIT_URL + "?license=CC-BY-SA&version_abbreviation=TTT",headers=headers_auth)
+    response = client.get(UNIT_URL + \
+         "?license=CC-BY-SA&version_abbreviation=TTT",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) >= 6
     for item in response.json():
         assert_positive_get(item)
 
-    response = client.get(UNIT_URL + "?license=ISC&version_abbreviation=TTT",headers=headers_auth)
+    response = client.get(UNIT_URL + \
+         "?license=ISC&version_abbreviation=TTT",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) >= 3
     for item in response.json():
@@ -613,8 +714,8 @@ def test_get_after_adding_data():
     for item in response.json():
         assert_positive_get(item)
 
-    # filter with revsion and revision
-    response = client.get(UNIT_URL + '?version_abbreviation=TTT&revision=1',headers=headers_auth)
+    # filter with revsion and versionTag
+    response = client.get(UNIT_URL + '?version_abbreviation=TTT&version_tag=1',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) >= 3
     for item in response.json():
@@ -643,32 +744,37 @@ def test_get_source_filter_access_tag():
     data['language'] = 'te'
     data['accessPermissions'] = ['publishable']
     check_post(data)
-    
+
     response1 = client.get(UNIT_URL,headers=headers_auth)
     assert response1.status_code == 200
     assert len(response1.json()) >= 3
     for item in response1.json():
         assert_positive_get(item)
 
-    response2 = client.get(UNIT_URL + '?version_abbreviation=TTT&access_tag=open-access',headers=headers_auth)
+    response2 = client.get(UNIT_URL + \
+         '?version_abbreviation=TTT&access_tag=open-access',headers=headers_auth)
     assert response2.status_code == 200
     assert len(response2.json()) == 1
     for item in response2.json():
         assert_positive_get(item)
 
-    response3 = client.get(UNIT_URL + '?version_abbreviation=TTT&access_tag=publishable',headers=headers_auth)
+    response3 = client.get(UNIT_URL + \
+         '?version_abbreviation=TTT&access_tag=publishable',headers=headers_auth)
     assert response3.status_code == 200
     assert len(response3.json()) == 1
     for item in response3.json():
         assert_positive_get(item)
 
-    response4 = client.get(UNIT_URL + '?version_abbreviation=TTT&access_tag=content',headers=headers_auth)
+    response4 = client.get(UNIT_URL + \
+         '?version_abbreviation=TTT&access_tag=content',headers=headers_auth)
     assert response4.status_code == 200
     assert len(response4.json()) == 3
     for item in response4.json():
         assert_positive_get(item)
 
-    response5 = client.get(UNIT_URL + '?version_abbreviation=TTT&access_tag=publishable&access_tag=open-access',headers=headers_auth)
+    response5 = client.get(UNIT_URL + \
+       '?version_abbreviation=TTT&access_tag=publishable&access_tag=open-access', \
+        headers=headers_auth)
     assert response5.status_code == 200
     assert len(response5.json()) == 0
 
@@ -677,22 +783,21 @@ def test_get_source_filter_access_tag():
     data['accessPermissions'] = ['publishable','open-access']
     check_post(data)
 
-    response6 = client.get(UNIT_URL + '?version_abbreviation=TTT&access_tag=publishable&access_tag=open-access',headers=headers_auth)
+    response6 = client.get(UNIT_URL + \
+        '?version_abbreviation=TTT&access_tag=publishable&access_tag=open-access', \
+            headers=headers_auth)
     assert response6.status_code == 200
     assert len(response6.json()) == 1
-    
 
-def test_diffrernt_sources_with_app_and_roles():
-    """Test getting sources with users having different permissions and 
+def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-statements
+    """Test getting sources with users having different permissions and
     also from multiple apps"""
-    headers_auth = {"contentType": "application/json",
-                "accept": "application/json"
-            }
+    headers_auth = {"contentType": "application/json","accept": "application/json"} #pylint: disable=redefined-outer-name
     #app names
-    API = schema_auth.App.API.value
-    AG = schema_auth.App.AG.value
-    VACHAN = schema_auth.App.VACHAN.value
-    VACHANADMIN = schema_auth.AdminRoles.VACHANADMIN.value
+    # API = schema_auth.App.API.value
+    AG = schema_auth.App.AG.value #pylint: disable=invalid-name
+    VACHAN = schema_auth.App.VACHAN.value #pylint: disable=invalid-name
+    VACHANADMIN = schema_auth.AdminRoles.VACHANADMIN.value #pylint: disable=invalid-name
 
     #create sources for test with different access permissions
     #content is default
@@ -705,7 +810,7 @@ def test_diffrernt_sources_with_app_and_roles():
         "contentType": "commentary",
         "language": "hi",
         "version": "TTT",
-        "revision": 1,
+        "versionTag": 1,
         "year": 2020,
         "license": "CC-BY-SA",
         "accessPermissions": [
@@ -764,7 +869,7 @@ def test_diffrernt_sources_with_app_and_roles():
             elif item["sourceName"] == "af_TTT_1_commentary":
                 assert "downloadable" in item['metaData']['accessPermissions']
             elif item["sourceName"] == "ak_TTT_1_commentary":
-                assert "derivable" in item['metaData']['accessPermissions']            
+                assert "derivable" in item['metaData']['accessPermissions']
 
     #Get without Login
     #default : API
@@ -991,11 +1096,11 @@ def test_diffrernt_sources_with_app_and_roles():
     assert_not_available_content(response)
 
     #Super Admin
-    SA_user_data = {
+    sa_user_data = {
             "user_email": SUPER_USER,
             "password": SUPER_PASSWORD
         }
-    response = login(SA_user_data)
+    response = login(sa_user_data)
     assert response.json()['message'] == "Login Succesfull"
     test_user_token = response.json()["token"]
 
@@ -1043,3 +1148,435 @@ def test_diffrernt_sources_with_app_and_roles():
     # assert 'derivable' in response.json()[4]['metaData']['accessPermissions']
     check_list = ['open-access','publishable','downloadable','derivable','content']
     check_resp_permission(response, check_list)
+
+def test_version_tag():
+    '''version tag support a flexible pattern. Ensure its different forms are supported'''
+    data = {
+        "versionAbbreviation": "XYZ",
+        "versionName": "Xyz version to test"
+    }
+
+    # No versionTag
+    add_version(data)
+
+    # One digit versionTag
+    data['versionTag'] = "2"
+    add_version(data)
+
+    # Dot separated numbers and varying number of parts
+    data['versionTag'] = "2.0.1"
+    add_version(data)
+
+    # with string parts
+    data['versionTag'] = "2.0.1.aplha.1"
+    add_version(data)
+
+    source_data = {
+        "contentType": "commentary",
+        "language": "hi",
+        "version": "XYZ",
+        "versionTag": 1,
+        "year": 2020,
+        "license": "CC-BY-SA",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    check_post(source_data)
+
+    source_data['versionTag'] = "2"
+    check_post(source_data)
+
+    source_data['versionTag'] = "2.0.1"
+    check_post(source_data)
+
+    source_data['versionTag'] = "2.0.1.aplha.1"
+    check_post(source_data)
+
+    headers_auth = {"contentType": "application/json", "accept": "application/json"}
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    response = client.get(UNIT_URL+"?version_abbreviation=XYZ&latest_revision=false",headers=headers_auth)
+    assert len(response.json()) == 4
+
+    response = client.get(UNIT_URL+"?version_abbreviation=XYZ",headers=headers_auth)
+    assert len(response.json()) == 1
+    assert response.json()[0]['version']['versionTag'] == "2.0.1.aplha.1"
+
+def test_version_tag_sorting_numeric():
+    '''version tag support a flexible pattern. Ensure its sorted properly'''
+    data = {
+        "versionAbbreviation": "TTT",
+        "versionName": "TTT version to test"
+    }
+
+    version_tags = ["10", "9", "9.1", "9.3.5.alpha.1", "9.3.5.alpha.2"]
+    for tag in version_tags:
+        data['versionTag'] = tag
+        add_version(data)
+
+    source_data = {
+        "contentType": "commentary",
+        "language": "hi",
+        "version": "TTT",
+        "year": 2020,
+        "license": "CC-BY-SA",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    for tag in version_tags:
+        source_data['versionTag'] = tag
+        check_post(source_data)
+
+    headers_auth = {"contentType": "application/json", "accept": "application/json"}
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    response = client.get(UNIT_URL+"?version_abbreviation=TTT&latest_revision=false",headers=headers_auth)
+    assert len(response.json()) == 5
+    assert response.json()[0]['version']['versionTag'] == "10"
+    assert response.json()[1]['version']['versionTag'] == "9.3.5.alpha.2"
+    assert response.json()[2]['version']['versionTag'] == "9.3.5.alpha.1"
+    assert response.json()[3]['version']['versionTag'] == "9.1"
+    assert response.json()[4]['version']['versionTag'] == "9"
+
+def test_version_tag_sorting_dates():
+    '''version tag support a flexible pattern. Ensure its sorted properly'''
+    data = {
+        "versionAbbreviation": "TTT",
+        "versionName": "TTT version to test"
+    }
+
+    version_tags = ["1161", "2000.1", "2000.2.28", "1999.3.3", "2022.12.12"]
+    for tag in version_tags:
+        data['versionTag'] = tag
+        add_version(data)
+
+    source_data = {
+        "contentType": "commentary",
+        "language": "hi",
+        "version": "TTT",
+        "year": 2020,
+        "license": "CC-BY-SA",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    for tag in version_tags:
+        source_data['versionTag'] = tag
+        check_post(source_data)
+
+    headers_auth = {"contentType": "application/json", "accept": "application/json"}
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    response = client.get(UNIT_URL+"?version_abbreviation=TTT&latest_revision=false",headers=headers_auth)
+    assert len(response.json()) == 5
+    assert response.json()[0]['version']['versionTag'] == "2022.12.12"
+    assert response.json()[1]['version']['versionTag'] == "2000.2.28"
+    assert response.json()[2]['version']['versionTag'] == "2000.1"
+    assert response.json()[3]['version']['versionTag'] == "1999.3.3"
+    assert response.json()[4]['version']['versionTag'] == "1161"
+
+
+def test_delete_default():
+    ''' positive test case, checking for correct return of deleted source ID'''
+    from .test_commentaries import assert_positive_get as check_commentary  #pylint: disable=import-outside-toplevel
+
+    #create new data
+    response = test_post_default()
+    headers_va = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+            }
+    source_name = response.json()['data']['sourceName']
+
+     #Check Commentary table is created
+    commentary_data = [
+    	{'bookCode':'gen', 'chapter':1, 'verseStart':3, 'verseEnd': 30,
+    		'commentary':'the creation'}
+     ]
+    # headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    response = client.post(COMMENTARY_URL+source_name, headers=headers_va, json=commentary_data)
+    response = client.get(COMMENTARY_URL+source_name,headers=headers_va)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    for item in response.json():
+        check_commentary(item)
+
+    response = client.get(UNIT_URL + "?source_name="+source_name, headers=headers_va)
+    source_id = response.json()[0]["sourceId"]
+    data = {"itemId":source_id}
+    # Delete without authentication
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    response = client.delete(UNIT_URL + "?delete_id=" + str(source_id), headers=headers)
+    
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
+     #Delete source with other API user,AgAdmin,AgUser,VachanUser,BcsDev
+    for user in ['APIUser','AgAdmin','AgUser','VachanUser','BcsDev']:
+        headers_au = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
+        }
+        response = client.delete(UNIT_URL + "?delete_id=" + str(source_id), headers=headers_au)
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
+
+    #Delete source with createdUser(VachanAdmin)
+    response = client.delete(UNIT_URL + "?delete_id=" + str(source_id),headers=headers_va)
+    assert response.status_code == 200
+    assert response.json()['message'] ==\
+         f"Source with identity {source_id} deleted successfully"
+
+    #Check source is deleted from sources table
+    check_source_name = client.get(UNIT_URL + "?source_name="+source_name, \
+        headers=headers_auth)
+    assert_not_available_content(check_source_name)
+    #Check commentary exists
+    response = client.get(COMMENTARY_URL+source_name,headers=headers_va)
+    assert response.status_code == 404
+
+def test_delete_default_superadmin():
+    ''' positive test case, checking for correct return of deleted source ID'''
+    #Created User or Super Admin can only delete source
+    #creating data
+    response = test_post_default()
+    source_name = response.json()['data']['sourceName']
+
+    #Login as Super Admin
+    sa_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(sa_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    response = client.get(UNIT_URL + "?source_name="+source_name, headers=headers_sa)
+    source_id = response.json()[0]["sourceId"]
+    data = {"itemId":source_id}
+
+    #Delete source
+    response =response = client.delete(UNIT_URL + "?delete_id=" + str(source_id), headers=headers_sa)
+    assert response.status_code == 200
+    assert response.json()['message'] == \
+    f"Source with identity {source_id} deleted successfully"
+    logout_user(test_user_token)
+    return response,source_name
+
+def test_delete_source_id_string():
+    '''positive test case, source id as string'''
+    response= test_post_default()
+    source_name = response.json()['data']['sourceName']
+    #Login as Super Admin
+    sa_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(sa_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    response = client.get(UNIT_URL + "?source_name="+source_name, headers=headers_sa)
+    source_id = response.json()[0]["sourceId"]
+    source_id = str(source_id)
+    data = {"itemId":source_id}
+    response = client.delete(UNIT_URL + "?delete_id=" + str(source_id), headers=headers_sa)
+    assert response.status_code == 200
+    assert response.json()['message'] == \
+         f"Source with identity {source_id} deleted successfully"
+    logout_user(test_user_token)
+
+def test_delete_incorrectdatatype():
+    '''negative testcase. Passing input data not in json format'''
+    response = test_post_default()
+    source_name = response.json()['data']['sourceName']
+
+    #Login as Super Admin
+    sa_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(sa_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+    source_id = {}
+
+    response = client.get(UNIT_URL + "?source_name="+source_name, headers=headers_sa)
+    source_id = response.json()[0]["sourceId"]
+    source_id = {}
+    response = client.delete(UNIT_URL + "?delete_id=" + str(source_id), headers=headers_sa)
+    assert_input_validation_error(response)
+
+def test_delete_missingvalue_source_id():
+    '''Negative Testcase. Passing input data without source Id'''
+    data = {}
+    source_id =" "
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+            }
+    response = client.delete(UNIT_URL + "?delete_id=" + str(source_id), headers=headers)
+    assert_input_validation_error(response)
+
+def test_delete_notavailable_source():
+    ''' request a non existing source ID, Ensure there is no partial matching'''
+    data = {"itemId":99999}
+    source_id=9999
+    headers = {"contentType": "application/json",
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+            }
+    response = client.delete(UNIT_URL + "?delete_id=" + str(source_id),headers=headers)
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"
+
+
+def test_restore_default():
+    '''positive test case, checking for correct return object'''
+    #only Super Admin can restore deleted data
+    #Creating and Deelting data
+    response, source_name = test_delete_default_superadmin()
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Restoring data
+    #Restore without authentication
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    response = client.put(RESTORE_URL, headers=headers, json=data)
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
+
+    #Restore source with other API user,VachanAdmin,AgAdmin, \
+    # AgUser,VachanUser,BcsDev
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev']:
+        headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
+        }
+        response = client.put(RESTORE_URL, headers=headers, json=data)
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
+
+    # Restore source with Super Admin
+    # Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    response = client.put(RESTORE_URL, headers=headers_sa, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == \
+    f"Deleted Item with identity {deleteditem_id} restored successfully"
+    response = client.get(UNIT_URL + "?source_name="+source_name,headers=headers_sa)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    for item in response.json():
+        assert_positive_get(item)
+     #Check commentary exists
+    response =client.get(COMMENTARY_URL+source_name,headers=headers_sa)
+    assert response.status_code == 200
+
+def test_restore_item_id_string():
+    '''positive test case, passing deleted item id as string'''
+    #only Super Admin can restore deleted data
+    #Creating and Deleting data
+    response = test_delete_default_superadmin()[0]
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Restoring string data
+    deleteditem_id = str(deleteditem_id)
+    data = {"itemId": deleteditem_id}
+
+    #Login as Super Admin
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_sa = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                     }
+    response = client.put(RESTORE_URL, headers=headers_sa, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == \
+    f"Deleted Item with identity {deleteditem_id} restored successfully"
+    logout_user(token_admin)
+
+def test_restore_incorrectdatatype():
+    '''Negative Test Case. Passing input data not in json format'''
+    #Creating and Deleting data
+    response = test_delete_default_superadmin()[0]
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Login as Super Admin
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_sa = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                     }
+
+    #Passing input data not in json format
+    data = deleteditem_id
+    response = client.put(RESTORE_URL, headers=headers_sa, json=data)
+    assert_input_validation_error(response)
+    logout_user(token_admin)
+
+def test_restore_missingvalue_itemid():
+    '''itemId is mandatory in input data object'''
+    data = {}
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_admin = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                    }
+    response = client.put(RESTORE_URL, headers=headers_admin, json=data)
+    assert_input_validation_error(response)
+    logout_user(token_admin)
+
+def test_restore_notavailable_item():
+    ''' request a non existing restore ID, Ensure there is no partial matching'''
+    data = {"itemId":20000}
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_admin = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                    }
+
+    response = client.put(RESTORE_URL, headers=headers_admin, json=data)
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"

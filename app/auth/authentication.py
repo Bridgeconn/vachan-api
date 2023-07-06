@@ -11,10 +11,10 @@ import db_models
 # from auth.api_permission_map import api_permission_map
 from auth import utils
 from schema import schema_auth
-from dependencies import log
+from dependencies import log, get_db
 from custom_exceptions import GenericException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
-    UnprocessableException, PermissionException
+    UnprocessableException, PermissionException, AuthException
 
 PUBLIC_BASE_URL = os.environ.get("VACHAN_KRATOS_PUBLIC_URL",
                                     "http://127.0.0.1:4433/")+"self-service/"
@@ -30,7 +30,10 @@ def get_current_user_data(recieve_token):
     headers = {}
     headers["Accept"] = "application/json"
     headers["Authorization"] = f"Bearer {recieve_token}"
-    user_data = requests.get(USER_SESSION_URL, headers=headers, timeout=10)
+    try:
+        user_data = requests.get(USER_SESSION_URL, headers=headers, timeout=10)
+    except Exception as exe:
+        raise AuthException(detail="Connection error from Kratos.") from exe
     data = json.loads(user_data.content)
     if user_data.status_code == 200:
         user_details["user_id"] = data["identity"]["id"]
@@ -89,7 +92,7 @@ def api_resourcetype_map(endpoint, path_params=None):
     '''Default correlation between API endpoints and resource they act upon'''
     if endpoint.split('/')[2] in ["contents", "languages", "licenses", 'versions']:
         resource_type = schema_auth.ResourceType.METACONTENT.value
-    elif endpoint.startswith('/v2/autographa/project'):
+    elif endpoint.startswith('/v2/translation/project'):
         resource_type = schema_auth.ResourceType.PROJECT.value
     elif endpoint.startswith('/v2/user'):
         resource_type = schema_auth.ResourceType.USER.value
@@ -106,7 +109,7 @@ def api_resourcetype_map(endpoint, path_params=None):
     elif endpoint.startswith("/v2/sources") or (
         path_params is not None and "source_name" in path_params):
         resource_type = schema_auth.ResourceType.CONTENT.value
-    elif endpoint.split('/')[2] == "restore":
+    elif endpoint.split('/')[2] in ["restore","deleted-items"]:
         resource_type = schema_auth.ResourceType.DATAMANIPULATION.value
     else:
         raise GenericException("Resource Type of API not defined")
@@ -212,8 +215,8 @@ def check_right(user_details, required_rights, resp_obj=None, db_=None):
         return True
     if resp_obj is not None and db_ is not None:
         try:
-            if "resourceCreatedUser" in required_rights and \
-                    user_details['user_id'] == resp_obj.createdUser:
+            if "resourceCreatedUser" in required_rights  and \
+                user_details['user_id'] == resp_obj.createdUser:
                 valid = True
             if "projectOwner" in required_rights and \
                 is_project_owner(db_, resp_obj, user_details['user_id']):
@@ -301,12 +304,19 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             # All no-auth and role based cases checked and appoved if applicable
             if db_:
                 db_.commit()
+                # if (method == "DELETE" and "source" in endpoint) or "restore" in endpoint:
+                #     db_models.map_all_dynamic_tables(db_= next(get_db()))
 
         elif obj is not None:
             # Resource(item) specific checks
             if check_right(user_details, required_rights, obj, db_):
                 if db_:
                     db_.commit()
+                    if (method == "DELETE" and "source" in endpoint):
+                        db_models.dynamicTables = {}
+                        db_models.map_all_dynamic_tables(db_= next(get_db()))
+                    if "restore" in endpoint:
+                        db_models.map_all_dynamic_tables(db_= next(get_db()))
             else:
                 if user_details['user_id'] is None:
                     raise UnAuthorizedException("Access token not provided or user not recognized.")
@@ -385,7 +395,8 @@ def get_users_kratos_filter(base_url,name,roles,limit,skip):#pylint: disable=too
                 switcher = {
                     schema_auth.FilterRoles.AG.value : schema_auth.FilterRoles.AG,
                     schema_auth.FilterRoles.VACHAN.value : schema_auth.FilterRoles.VACHAN,
-                    schema_auth.FilterRoles.API.value : schema_auth.FilterRoles.API
+                    schema_auth.FilterRoles.API.value : schema_auth.FilterRoles.API,
+                    schema_auth.FilterRoles.SMAST.value : schema_auth.FilterRoles.SMAST
                         }
                 for role in roles:
                     user_role =  switcher.get(role)
@@ -481,6 +492,7 @@ def register_check_success(reg_response):
     user_permision = data["registered_details"]['Permissions']
     switcher = {
         schema_auth.AdminRoles.AGUSER.value : schema_auth.App.AG.value,
+        schema_auth.AdminRoles.SMASTUSER.value : schema_auth.App.SMAST.value,
         schema_auth.AdminRoles.VACHANUSER.value : schema_auth.App.VACHAN.value,
         # schema_auth.AdminRoles.VACHANADMIN.value : schema_auth.AdminRoles.VACHANADMIN.value
             }
@@ -529,6 +541,7 @@ def register_flow_fail(reg_response,email,user_role,reg_req):
             for perm in user_permision:
                 switcher = {
                     schema_auth.AdminRoles.AGUSER.value : schema_auth.App.AG.value,
+                    schema_auth.AdminRoles.SMASTUSER.value : schema_auth.App.SMAST.value,
                     schema_auth.AdminRoles.VACHANUSER.value : schema_auth.App.VACHAN.value,
                     # schema_auth.AdminRoles.VACHANADMIN.value : schema_auth.App.VACHANADMIN.value
                     }
@@ -553,6 +566,7 @@ def user_register_kratos(register_details,app_type):
 
     switcher = {
         schema_auth.App.AG : schema_auth.AdminRoles.AGUSER.value,
+        schema_auth.App.SMAST : schema_auth.AdminRoles.SMASTUSER.value,
         schema_auth.App.VACHAN: schema_auth.AdminRoles.VACHANUSER.value,
         # schema_auth.App.VACHANADMIN: schema_auth.AdminRoles.VACHANADMIN.value
             }
@@ -611,8 +625,9 @@ def user_login_kratos(user_email,password):#pylint: disable=R1710
 #delete an identity
 def delete_identity(user_id):
     """delete identity"""
-    base_url = ADMIN_BASE_URL+"identities/"+user_id
-    response = requests.delete(base_url, timeout=10)
+    base_url = ADMIN_BASE_URL+"identities/"
+    url = base_url + str(user_id)
+    response = requests.delete(url, timeout=10)
     if response.status_code == 404:
         raise NotAvailableException("Unable to locate the resource")
     # log.warning(response)

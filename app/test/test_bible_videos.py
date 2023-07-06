@@ -4,10 +4,12 @@ from . import check_default_get, check_soft_delete
 from .test_sources import check_post as add_source
 from .test_versions import check_post as add_version
 from . import assert_input_validation_error, assert_not_available_content
-from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER
+from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 from .conftest import initial_test_users
 
 UNIT_URL = '/v2/biblevideos/'
+SOURCE_URL = '/v2/sources'
+RESTORE_URL = '/v2/restore'
 headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json"}
@@ -38,7 +40,7 @@ def check_post(data: list):
         "language": "mr",
         "version": "TTT",
         "year": 1999,
-        "revision": 1
+        "versionTag": 1
     }
     source = add_source(source_data)
     table_name = source.json()['data']['sourceName']
@@ -65,12 +67,13 @@ def test_post_default():
             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
     
-    resp = check_post(data)[0]
+    resp,source_name = check_post(data)
     assert resp.status_code == 201
     assert resp.json()['message'] == "Bible videos added successfully"
     for item in resp.json()['data']:
         assert_positive_get(item)
     assert len(data) == len(resp.json()['data'])
+    return resp,source_name
 
 def test_post_duplicate():
     '''Negative test to add two bible videos Links with same title'''
@@ -444,7 +447,7 @@ def test_put_incorrect_data():
     assert response.status_code == 404
 
 def test_soft_delete():
-    '''check soft delete in infographics'''
+    '''check soft delete in biblevideos'''
     data = [
         {'title':'Words of Jesus', 'series': 'New testament',
             'description':"brief description",
@@ -495,7 +498,7 @@ def test_created_user_can_only_edit():
         "language": "mr",
         "version": "TTT",
         "year": 1999,
-        "revision": 1
+        "versionTag": 1
     }
     #create source
     response = client.post('/v2/sources', headers=headers_auth, json=source_data)
@@ -546,3 +549,386 @@ def test_get_access_with_user_roles_and_apps():
             'status':True}
     ]
     contetapi_get_accessrule_checks_app_userroles("biblevideo",UNIT_URL,data)
+
+def test_delete_default():
+    ''' positive test case, checking for correct return of deleted biblevideo ID'''
+    #create new data
+    response,source_name = test_post_default()
+    headers_auth = {"contentType": "application/json",#pylint: disable=redefined-outer-name
+                "accept": "application/json"}
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    post_response = client.get(UNIT_URL+source_name+'?title=Overview:%20Genesis',\
+        headers=headers_auth)
+    assert post_response.status_code == 200
+    assert len(post_response.json()) == 1
+    for item in post_response.json():
+        assert_positive_get(item)
+    biblevideo_response = client.get(UNIT_URL+source_name,headers=headers_auth)
+    biblevideo_id = biblevideo_response.json()[0]['bibleVideoId']
+    
+    #Delete without authentication
+    headers = {"contentType": "application/json", "accept": "application/json"}#pylint: disable=redefined-outer-name
+    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(biblevideo_id), headers=headers)
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
+
+     #Delete infpgraphic with other API user,AgAdmin,AgUser,VachanUser,BcsDev
+    for user in ['APIUser','AgAdmin','AgUser','VachanUser','BcsDev']:
+        headers_au = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
+        }
+        response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(biblevideo_id), headers=headers_au)
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
+
+    #Delete biblevideo with Vachan Admin
+    headers_va = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+            }
+    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(biblevideo_id), headers=headers_va)
+    assert response.status_code == 200
+    assert response.json()['message'] ==\
+         f"Bible Video id {biblevideo_id} deleted successfully"
+    biblevideo_response = client.get(UNIT_URL+source_name,headers=headers_auth)
+    assert biblevideo_response.status_code == 200
+    #Check biblevideo is deleted from table
+    delete_response = client.get(UNIT_URL+source_name+'?title=Overview:%20Genesis',\
+        headers=headers_auth)
+    assert_not_available_content(delete_response)
+
+def test_delete_default_superadmin():
+    ''' positive test case, checking for correct return of deleted biblevideo ID'''
+    #Created User or Super Admin can only delete biblevideo
+    #creating data
+    response,source_name = test_post_default()
+
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa= {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    biblevideo_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    biblevideo_id = biblevideo_response.json()[0]['bibleVideoId']
+
+     #Delete biblevideo with Super Admin
+    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(biblevideo_id), headers=headers_sa)
+    assert response.status_code == 200
+    assert response.json()['message'] ==\
+         f"Bible Video id {biblevideo_id} deleted successfully"
+    #Check biblevideo is deleted from table
+    biblevideo_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    logout_user(test_user_token)
+    return response,source_name
+
+def test_delete_biblevideo_id_string():
+    '''positive test case, biblevideo id as string'''
+    response,source_name = test_post_default()
+
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa= {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    biblevideo_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    biblevideo_id = biblevideo_response.json()[0]['bibleVideoId']
+    biblevideo_id = str(biblevideo_id)
+
+    #Delete biblevideo with Super Admin
+    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(biblevideo_id), headers=headers_sa)
+    assert response.status_code == 200
+    assert response.json()['message'] ==\
+         f"Bible Video id {biblevideo_id} deleted successfully"
+    #Check biblevideo biblevideo is deleted from table
+    biblevideo_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    logout_user(test_user_token)
+
+def test_delete_incorrectdatatype():
+    '''negative testcase. Passing input data not in json format'''
+    response,source_name = test_post_default()
+
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa= {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    biblevideo_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    biblevideo_id = biblevideo_response.json()[0]['bibleVideoId']
+    biblevideo_id={ }
+
+    #Delete biblevideo with Super Admin
+    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(biblevideo_id), headers=headers_sa)
+    assert_input_validation_error(response)
+    logout_user(test_user_token)
+
+def test_delete_missingvalue_biblevideo_id():
+    '''Negative Testcase. Passing input data without bibleVideoId'''
+    response,source_name = test_post_default()
+
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa= {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    biblevideo_id=" "
+    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(biblevideo_id), headers=headers_sa)
+    assert_input_validation_error(response)
+    logout_user(test_user_token)
+
+def test_delete_missingvalue_source_name():
+    '''Negative Testcase. Passing input data without sourceName'''
+    response,source_name = test_post_default()
+
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa= {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+    biblevideo_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    biblevideo_id = biblevideo_response.json()[0]['bibleVideoId']
+    biblevideo_id=" "
+    response = client.delete(UNIT_URL +"?delete_id=" + str(biblevideo_id), headers=headers_sa)
+    assert response.status_code == 404
+    logout_user(test_user_token)
+
+def test_delete_notavailable_content():
+    ''' request a non existing biblevideo ID, Ensure there is no partial matching'''
+    response,source_name = test_post_default()
+
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_sa= {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+
+    biblevideo_id=99999
+    
+
+     #Delete biblevideo with Super Admin
+    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(biblevideo_id), headers=headers_sa)
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"
+    logout_user(test_user_token)
+
+def test_restore_default():
+    '''positive test case, checking for correct return object'''
+    #only Super Admin can restore deleted data
+    #Creating and Deleting data
+    response,source_name = test_delete_default_superadmin()
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+    #Restoring data
+    #Restore without authentication
+    headers = {"contentType": "application/json", "accept": "application/json"}#pylint: disable=redefined-outer-name
+    response = client.put(RESTORE_URL, headers=headers, json=data)
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
+
+
+    #Restore content with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev']:
+        headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users[user]['token']
+        }
+        response = client.put(RESTORE_URL, headers=headers, json=data)
+        assert response.status_code == 403
+        assert response.json()['error'] == 'Permission Denied'
+
+    #Restore content with Super Admin
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_auth = {"contentType": "application/json",#pylint: disable=redefined-outer-name
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == \
+    f"Deleted Item with identity {deleteditem_id} restored successfully"
+    #Check Infpgraphic exists after restore
+    restore_response =  client.get(UNIT_URL+source_name+'?title=Overview:%20Genesis',\
+        headers=headers_auth)
+    assert restore_response.status_code == 200
+    assert len(restore_response.json()) == 1
+    for item in restore_response.json():
+        assert_positive_get(item)
+    logout_user(test_user_token)
+
+def test_restore_item_id_string():
+    '''positive test case, passing deleted item id as string'''
+    #only Super Admin can restore deleted data
+    #Creating and Deleting data
+    response = test_delete_default_superadmin()[0]
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Restoring string data
+    deleteditem_id = str(deleteditem_id)
+    data = {"itemId": deleteditem_id}
+
+#Login as Super Admin
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_auth = {"contentType": "application/json",#pylint: disable=redefined-outer-name
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                     }
+
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == \
+    f"Deleted Item with identity {deleteditem_id} restored successfully"
+    logout_user(token_admin)
+
+def test_restore_incorrectdatatype():
+    '''Negative Test Case. Passing input data not in json format'''
+    #Creating and Deleting data
+    response = test_delete_default_superadmin()[0]
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+
+    #Login as Super Admin
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_auth = {"contentType": "application/json",#pylint: disable=redefined-outer-name
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                     }
+
+    #Passing input data not in json format
+    data = deleteditem_id
+    response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    assert_input_validation_error(response)
+    logout_user(token_admin)
+
+def test_restore_missingvalue_itemid():
+    '''itemId is mandatory in input data object'''
+    data = {}
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_admin = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                    }
+    response = client.put(RESTORE_URL, headers=headers_admin, json=data)
+    assert_input_validation_error(response)
+    logout_user(token_admin)
+
+def test_restore_notavailable_item():
+    ''' request a non existing restore ID, Ensure there is no partial matching'''
+    data = {"itemId":20000}
+    data_admin   = {
+    "user_email": SUPER_USER,
+    "password": SUPER_PASSWORD
+    }
+    response =login(data_admin)
+    assert response.json()['message'] == "Login Succesfull"
+    token_admin =  response.json()['token']
+    headers_admin = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+token_admin
+                    }
+
+    response = client.put(RESTORE_URL, headers=headers_admin, json=data)
+    assert response.status_code == 404
+    assert response.json()['error'] == "Requested Content Not Available"
+
+def test_restoreitem_with_notavailable_source():
+    ''' Negative test case.request to restore an item whoose source is not available'''
+    #only Super Admin can restore deleted data
+    #Creating and Deleting data
+    response,source_name = test_delete_default_superadmin()
+    deleteditem_id = response.json()['data']['itemId']
+    data = {"itemId": deleteditem_id}
+    #Login as Super Admin
+    as_data = {
+            "user_email": SUPER_USER,
+            "password": SUPER_PASSWORD
+        }
+    response = login(as_data)
+    assert response.json()['message'] == "Login Succesfull"
+    test_user_token = response.json()["token"]
+    headers_auth = {"contentType": "application/json",#pylint: disable=redefined-outer-name
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+test_user_token
+            }
+    #Delete Associated Source
+    get_source_response = client.get(SOURCE_URL + "?source_name="+source_name, headers=headers_auth)
+    source_id = get_source_response.json()[0]["sourceId"]
+
+    response = client.delete(SOURCE_URL + "?delete_id=" + str(source_id), headers=headers_auth)
+    assert response.status_code == 200
+    #Restoring data
+    #Restore content with Super Admin after deleting source
+    restore_response = client.put(RESTORE_URL, headers=headers_auth, json=data)
+    restore_response.status_code = 404
+    logout_user(test_user_token)

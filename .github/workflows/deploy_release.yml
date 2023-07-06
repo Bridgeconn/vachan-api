@@ -1,0 +1,55 @@
+name: Deploy-to-production
+
+on:
+  release:
+    types: [published]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  get-versiontag-n-update-code:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the branch
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: change the version in main.py
+        run: |
+          VERSION=$(echo $GITHUB_REF | sed 's|.*/v||')
+          echo ${VERSION}
+          sed -i "s|version=\".*\",|version=\"${VERSION}\",|" app/main.py
+          head -n 33 app/main.py | tail -n 4
+
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          default_author: github_actor
+          message: 'Bump version automatically on release'
+          add: './app/main.py'
+          push: 'origin HEAD:version-2 --force'
+
+      - name: Move release tag to latest commit
+        run: |
+          git tag -a $(git describe --tags --abbrev=0) -m "moving tag to new commit" -f $(git rev-parse HEAD)
+          git config --global user.name "${{ secrets.CICD_BOT_USER }}"
+          git config --global user.email "${{ secrets.CICD_BOT_EMAIL }}"
+          git config --global user.password "${{ secrets.CICD_BOT_PASS }}"
+          git push -f origin refs/tags/$(git describe --tags --abbrev=0)
+
+  pull-n-deploy:
+    needs: get-versiontag-n-update-code
+    runs-on: ubuntu-latest
+    steps:
+    - name: executing remote ssh commands using password
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.VACHAN_DO_HOST_PROD }}
+        username: ${{ secrets.VACHAN_DO_USERNAME_PROD }}
+        key: ${{ secrets.SSH_KEY_PROD }}
+        port: 22
+        script: |
+          cd /home/vachanstaging/vachan-api
+          git pull origin version-2
+          cd docker
+          docker compose --profile deployment --env-file prod.env up --force-recreate --build -d

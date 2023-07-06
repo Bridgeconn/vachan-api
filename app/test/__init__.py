@@ -33,45 +33,53 @@ def assert_not_available_content(response):
 
 def check_skip(unit_url,headers):
     '''All tests for the skip parameter of an API endpoint'''
-    response1 = client.get(unit_url+"?skip=0",headers=headers)
+    if "?" not in unit_url:
+        unit_url += "?"
+    else:
+        unit_url += "&"
+    response1 = client.get(unit_url+"skip=0",headers=headers)
     assert response1.status_code == 200
     assert isinstance( response1.json(), list)
     if len(response1.json()) > 1:
-        response2 = client.get(unit_url+"?skip=1",headers=headers)
+        response2 = client.get(unit_url+"skip=1",headers=headers)
         assert response2.status_code == 200
         assert isinstance( response2.json(), list)
         assert response1.json()[1] == response2.json()[0]
 
     # fetch a non existant page, with skip and limit values
-    response = client.get(unit_url+"?skip=50000&limit=10",headers=headers)
+    response = client.get(unit_url+"skip=50000&limit=10",headers=headers)
     assert_not_available_content(response)
 
     # skip should be an integer
-    response = client.get(unit_url+"?skip=abc",headers=headers)
+    response = client.get(unit_url+"skip=abc",headers=headers)
     assert_input_validation_error(response)
 
     # skip should be a positive integer
-    response = client.get(unit_url+"?skip=-10",headers=headers)
+    response = client.get(unit_url+"skip=-10",headers=headers)
     assert_input_validation_error(response)
 
 
 def check_limit(unit_url,headers):
     '''All tests for the limit parameter of an API endpoint'''
-    response = client.get(unit_url+"?limit=3",headers=headers)
+    if "?" not in unit_url:
+        unit_url += "?"
+    else:
+        unit_url += "&"
+    response = client.get(unit_url+"limit=3",headers=headers)
     assert response.status_code == 200
     assert isinstance( response.json(), list)
     assert len(response.json()) <= 3
 
     # fetch a non existant page, with skip and limit values
-    response = client.get(unit_url+"?skip=50000&limit=10",headers=headers)
+    response = client.get(unit_url+"skip=50000&limit=10",headers=headers)
     assert_not_available_content(response)
 
     # limit should be an integer
-    response = client.get(unit_url+"?limit=abc",headers=headers)
+    response = client.get(unit_url+"limit=abc",headers=headers)
     assert_input_validation_error(response)
 
     # limit should be a positive integer
-    response = client.get(unit_url+"?limit=-1",headers=headers)
+    response = client.get(unit_url+"limit=-1",headers=headers)
     assert_input_validation_error(response)
 
 def check_default_get(unit_url, headers, assert_positive_get):
@@ -106,7 +114,7 @@ def check_soft_delete(unit_url, check_post, data, delete_data , headers):
     for item in response.json()['data']:
         assert not item['active']
 
-    get_response2 = client.get(unit_url+source_name, headers=headers)
+    get_response2 = client.get(unit_url+source_name+'?active=true', headers=headers)
     assert len(get_response2.json()) == len(data) - len(delete_data)
 
     get_response3 = client.get(unit_url+source_name+'?active=false',headers=headers)
@@ -253,9 +261,10 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
 
     API = schema_auth.App.API.value
     AG = schema_auth.App.AG.value
+    SMAST = schema_auth.App.SMAST.value
     VACHAN = schema_auth.App.VACHAN.value
     VACHANADMIN = schema_auth.AdminRoles.VACHANADMIN.value
-    Apps = [ API,AG,VACHAN,VACHANADMIN]
+    Apps = [ API,AG,VACHAN,VACHANADMIN, SMAST]
 
     #Get without Login headers=headers_auth
     #permision -------------------------> content , downloadable , derivable
@@ -305,6 +314,26 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response.status_code == 403
                 assert response.json()["error"] == "Permission Denied"
         print(f"Test passed -----> AG USER")
+
+        #Get with SanketMASTUser
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
+        for num in range(4):
+            headers_auth['app'] = Apps[num]
+            if bible:
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()["error"] == "Permission Denied"
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()["error"] == "Permission Denied"
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()["error"] == "Permission Denied"
+            else:
+                response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()["error"] == "Permission Denied"
+        print(f"Test passed -----> SanketMASTUser")
 
         #Get with VachanUser
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
@@ -393,6 +422,26 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response.status_code == 403
                 assert response.json()["error"] == "Permission Denied"
         print(f"Test passed -----> AG ADMIN")
+
+        #Get with SanketMASTAdmin
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
+        for num in range(4):
+            headers_auth['app'] = Apps[num]
+            if bible:
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()["error"] == "Permission Denied"
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()["error"] == "Permission Denied"
+                response = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()["error"] == "Permission Denied"
+            else:
+                response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
+                assert response.status_code == 403
+                assert response.json()["error"] == "Permission Denied"
+        print(f"Test passed -----> SanketMASTAdmin")
 
         #Get with SuperAdmin
         headers_auth['Authorization'] = SA_TOKEN
@@ -512,6 +561,36 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response.json()["error"] == "Permission Denied"
     print(f"Test passed -----> AG USER")
 
+    #Get with SanketMASTUser
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = client.get(UNIT_URL+sourcename_list[1]+'/books',headers=headers_auth)
+            response2 = client.get(UNIT_URL+sourcename_list[1]+'/versification',headers=headers_auth)
+            response3 = client.get(UNIT_URL+sourcename_list[1]+'/verses',headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
+                or headers_auth['app'] == AG:
+                assert response1.status_code == 200
+                assert response2.status_code == 200
+                assert response3.status_code == 200
+            else:
+                assert response1.status_code == 403
+                assert response1.json()["error"] == "Permission Denied"
+                assert response2.status_code == 403
+                assert response2.json()["error"] == "Permission Denied"
+                assert response3.status_code == 403
+                assert response3.json()["error"] == "Permission Denied"
+        else:
+            response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
+                or headers_auth['app'] == AG:
+                assert response.status_code == 200
+            else:    
+                assert response.status_code == 403
+                assert response.json()["error"] == "Permission Denied"
+    print(f"Test passed -----> SanketMASTUser")
+
     #Get with VachanUser
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
     for num in range(4):
@@ -627,6 +706,36 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response.status_code == 403
                 assert response.json()["error"] == "Permission Denied"
     print(f"Test passed -----> AG ADMIN")
+
+    #Get with SanketMASTAdmin
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = client.get(UNIT_URL+sourcename_list[1]+'/books',headers=headers_auth)
+            response2 = client.get(UNIT_URL+sourcename_list[1]+'/versification',headers=headers_auth)
+            response3 = client.get(UNIT_URL+sourcename_list[1]+'/verses',headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
+                or headers_auth['app'] == AG:
+                assert response1.status_code == 200
+                assert response2.status_code == 200
+                assert response3.status_code == 200
+            else:
+                assert response1.status_code == 403
+                assert response1.json()["error"] == "Permission Denied"
+                assert response2.status_code == 403
+                assert response2.json()["error"] == "Permission Denied"
+                assert response3.status_code == 403
+                assert response3.json()["error"] == "Permission Denied"
+        else:
+            response = client.get(UNIT_URL+sourcename_list[1],headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
+                or headers_auth['app'] == AG:
+                assert response.status_code == 200
+            else:    
+                assert response.status_code == 403
+                assert response.json()["error"] == "Permission Denied"
+    print(f"Test passed -----> SanketMASTAdmin")
 
     #Get with SuperAdmin
     headers_auth['Authorization'] = SA_TOKEN
@@ -734,6 +843,36 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response.json()["error"] == "Permission Denied"
     print(f"Test passed -----> AG USER")
 
+    #Get with SanketMASTUser
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = client.get(UNIT_URL+sourcename_list[2]+'/books',headers=headers_auth)
+            response2 = client.get(UNIT_URL+sourcename_list[2]+'/versification',headers=headers_auth)
+            response3 = client.get(UNIT_URL+sourcename_list[2]+'/verses',headers=headers_auth)
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
+                or headers_auth['app'] == API:
+                assert response1.status_code == 200
+                assert response2.status_code == 200
+                assert response3.status_code == 200
+            else:
+                assert response1.status_code == 403
+                assert response1.json()["error"] == "Permission Denied"
+                assert response2.status_code == 403
+                assert response2.json()["error"] == "Permission Denied"
+                assert response3.status_code == 403
+                assert response3.json()["error"] == "Permission Denied"
+        else:
+            response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
+                or headers_auth['app'] == API:
+                assert response.status_code == 200
+            else:    
+                assert response.status_code == 403
+                assert response.json()["error"] == "Permission Denied"
+    print(f"Test passed -----> SanketMASTUser")
+
     #Get with VachanUser
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
     for num in range(4):
@@ -850,6 +989,36 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response.json()["error"] == "Permission Denied"
     print(f"Test passed -----> AG ADMIN")
 
+    #Get with SanketMASTAdmin
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = client.get(UNIT_URL+sourcename_list[2]+'/books',headers=headers_auth)
+            response2 = client.get(UNIT_URL+sourcename_list[2]+'/versification',headers=headers_auth)
+            response3 = client.get(UNIT_URL+sourcename_list[2]+'/verses',headers=headers_auth)
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
+                or headers_auth['app'] == API:
+                assert response1.status_code == 200
+                assert response2.status_code == 200
+                assert response3.status_code == 200
+            else:
+                assert response1.status_code == 403
+                assert response1.json()["error"] == "Permission Denied"
+                assert response2.status_code == 403
+                assert response2.json()["error"] == "Permission Denied"
+                assert response3.status_code == 403
+                assert response3.json()["error"] == "Permission Denied"
+        else:
+            response = client.get(UNIT_URL+sourcename_list[2],headers=headers_auth)
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
+                or headers_auth['app'] == API:
+                assert response.status_code == 200
+            else:    
+                assert response.status_code == 403
+                assert response.json()["error"] == "Permission Denied"
+    print(f"Test passed -----> SanketMASTAdmin")
+
     #Get with SuperAdmin
     headers_auth['Authorization'] = SA_TOKEN
     for num in range(4):
@@ -956,9 +1125,10 @@ def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, 
 
     API = types.App.API.value
     AG = types.App.AG.value
+    SMAST = types.App.SMAST.value
     VACHAN = types.App.VACHAN.value
     VACHANADMIN = types.App.VACHANADMIN.value
-    Apps = [ API,AG,VACHAN,VACHANADMIN]
+    Apps = [ API,AG,VACHAN,VACHANADMIN,SMAST]
 
     #Get without Login headers=headers_auth
     #permision -------------------------> content , downloadable , derivable
@@ -1007,6 +1177,25 @@ def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, 
                 response = gql_request(query=test_data["get_query"],variables=test_data["get_var"],headers=headers_auth)
                 assert "errors" in response
         print(f"Test passed -----> AG USER")
+
+        #Get with SanketMASTUser
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
+        for num in range(4):
+            headers_auth['app'] = Apps[num]
+            if bible:
+                response = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+                response = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+                response = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+            else:
+                response = gql_request(query=test_data["get_query"],variables=test_data["get_var"],headers=headers_auth)
+                assert "errors" in response
+        print(f"Test passed -----> SanketMASTUser")
 
         #Get with VachanUser
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
@@ -1098,6 +1287,27 @@ def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, 
                     headers=headers_auth)
                 assert "errors" in response
         print(f"Test passed -----> AG ADMIN")
+
+        #Get with SanketMASTAdmin
+        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
+        for num in range(4):
+            headers_auth['app'] = Apps[num]
+            if bible:
+                response = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+                response = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+                response = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+                pass
+            else:
+                response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+                assert "errors" in response
+        print(f"Test passed -----> SanketMASTAdmin")
 
         #Get with SuperAdmin
         headers_auth['Authorization'] = SA_TOKEN
@@ -1224,6 +1434,37 @@ def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, 
                 assert "errors" in response      
     print(f"Test passed -----> AG USER")
 
+    #Get with SanketMASTUser
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
+                or headers_auth['app'] == AG:
+                assert not  "errors" in response1
+                assert not "errors" in response2
+                assert not "errors" in response3
+            else:
+                assert "errors" in response1
+                assert "errors" in response2
+                assert "errors" in response3
+        else:
+            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
+                or headers_auth['app'] == AG:
+                assert not "errors" in response
+                assert len(response["data"]) > 0
+            else:
+                assert "errors" in response      
+    print(f"Test passed -----> SanketMASTUser")
+
     #Get with VachanUser
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
     for num in range(4):
@@ -1344,6 +1585,37 @@ def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, 
                 assert "errors" in response              
     print(f"Test passed -----> AG ADMIN")
 
+    #Get with SanketMASTAdmin
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
+                or headers_auth['app'] == AG:
+                assert not  "errors" in response1
+                assert not "errors" in response2
+                assert not "errors" in response3
+            else:
+                assert "errors" in response1
+                assert "errors" in response2
+                assert "errors" in response3
+        else:
+            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
+                or headers_auth['app'] == AG:
+                assert not "errors" in response
+                assert len(response["data"]) > 0
+            else:
+                assert "errors" in response              
+    print(f"Test passed -----> SanketMASTAdmin")
+
     #Get with SuperAdmin
     headers_auth['Authorization'] = SA_TOKEN
     for num in range(4):
@@ -1457,6 +1729,37 @@ def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, 
             else:
                 assert "errors" in response              
     print(f"Test passed -----> AG USER")
+
+    #Get with SanketMASTUser
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
+                or headers_auth['app'] == API:
+                assert not  "errors" in response1
+                assert not "errors" in response2
+                assert not "errors" in response3
+            else:
+                assert "errors" in response1
+                assert "errors" in response2
+                assert "errors" in response3
+        else:
+            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
+                or headers_auth['app'] == API:
+                assert not "errors" in response
+                assert len(response["data"]) > 0
+            else:
+                assert "errors" in response              
+    print(f"Test passed -----> SanketMASTUser")
 
     #Get with VachanUser
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
@@ -1577,6 +1880,37 @@ def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, 
             else:
                 assert "errors" in response     
     print(f"Test passed -----> AG ADMIN")
+
+    #Get with SanketMASTAdmin
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
+    for num in range(4):
+        headers_auth['app'] = Apps[num]
+        if bible:
+            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
+                or headers_auth['app'] == API:
+                assert not  "errors" in response1
+                assert not "errors" in response2
+                assert not "errors" in response3
+            else:
+                assert "errors" in response1
+                assert "errors" in response2
+                assert "errors" in response3
+        else:
+            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
+                    headers=headers_auth)
+            if headers_auth['app'] == VACHAN or headers_auth['app'] == AG\
+                or headers_auth['app'] == API:
+                assert not "errors" in response
+                assert len(response["data"]) > 0
+            else:
+                assert "errors" in response     
+    print(f"Test passed -----> SanketMASTAdmin")
 
     #Get with SuperAdmin
     headers_auth['Authorization'] = SA_TOKEN

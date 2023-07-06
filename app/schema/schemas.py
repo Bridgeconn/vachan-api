@@ -2,7 +2,7 @@
 #pylint: disable=too-many-lines
 from typing import List
 from enum import Enum
-from pydantic import BaseModel, constr, Field
+from pydantic import BaseModel, constr, Field, validator
 
 
 #pylint: disable=too-few-public-methods
@@ -60,6 +60,7 @@ class LanguageCreate(BaseModel):
     language : str
     code : LangCodePattern
     scriptDirection : Direction = None
+    localScriptName : str = None
     metaData: dict = None
     class Config:
         '''display example value in API documentation'''
@@ -68,6 +69,7 @@ class LanguageCreate(BaseModel):
                 "language": "Hindi",
                 "code": "hi",
                 "scriptDirection": "left-to-right",
+                "localScriptName": "हिंदी",
                 "metaData": {"region": "India, Asia",
                     "alternate-names": ["Khadi Boli", "Khari Boli", "Dakhini", "Khariboli"],
                     "suppress-script": "Deva", "is-gateway-language": True}
@@ -82,6 +84,7 @@ class LanguageResponse(BaseModel):
     code : LangCodePattern
     createdUser : str = None
     scriptDirection : Direction = None
+    localScriptName : str = None
     metaData: dict = None
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
@@ -95,6 +98,7 @@ class LanguageResponse(BaseModel):
                 "code": "hi",
                 "createdUser": "token",
                 "scriptDirection": "left-to-right",
+                "localScriptName": "हिंदी",
                 "metaData": {"region": "India, Asia",
                     "alternate-names": ["Khadi Boli", "Khari Boli", "Dakhini", "Khariboli"],
                     "suppress-script": "Deva", "is-gateway-language": True}
@@ -118,6 +122,7 @@ class LanguageEdit (BaseModel):
     language : str = None
     code : LangCodePattern = None
     scriptDirection : Direction = None
+    localScriptName: str = None
     metaData: dict = None
     class Config:
         '''display example value in API documentation'''
@@ -127,6 +132,7 @@ class LanguageEdit (BaseModel):
                 "language": "Hindi",
                 "code": "hi",
                 "scriptDirection":"left-to-right",
+                "localScriptName": "हिंदी",
                 "metaData": {"region": "India, Asia",
                     "alternate-names": ["Khadi Boli", "Khari Boli", "Dakhini", "Khariboli"],
                     "suppress-script": "Deva", "is-gateway-language": True}
@@ -141,7 +147,7 @@ class RestoreIdentity(BaseModel):
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "itemId": 40
+                "itemId": 100002
             }
         }
 
@@ -153,7 +159,6 @@ class DataRestoreResponse(BaseModel):
 class DeletedItemResponse(BaseModel):
     '''returns object of deleted items'''
     itemId : int
-    createdUser :str = None
     deletedFrom :str
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
@@ -163,9 +168,7 @@ class DeletedItemResponse(BaseModel):
         schema_extra = {
             "example": {
                 "itemId": 100057,
-                "createdUser": "access_token",
-                "deletedFrom": "languages",
-                "scriptDirection": "left-to-right"
+                "deletedFrom": "languages"
 
             }
         }
@@ -249,6 +252,7 @@ class LicenseShortResponse(BaseModel):
 
 class LicenseResponse(BaseModel):
     '''Return object of licenses'''
+    licenseId : int
     name : str
     code : LicenseCodePattern
     license : str
@@ -305,11 +309,12 @@ MetaDataPattern = constr(
         r"(,\s*[\"\'][^\"]+[\"\']\s*:\s*[\"\'][^\"]*[\"\']\s*)*")
 
 VersionPattern = constr(regex=r"^[A-Z]+$")
+VersionTagPattern = constr(regex=r"^[a-z\d]+(\.[a-z\d]+)*$")
 class VersionCreate(BaseModel):
     '''input object of version'''
     versionAbbreviation : VersionPattern
     versionName : str
-    revision : int = 1
+    versionTag : VersionTagPattern = "1"
     metaData : dict = None
     class Config:
         '''display example value in API documentation'''
@@ -317,7 +322,7 @@ class VersionCreate(BaseModel):
             "example": {
                 "versionAbbreviation": "KJV",
                 "versionName": "King James Version",
-                "revision": 1,
+                "versionTag": "1611.12.31",
                 "metaData": {"publishedIn": "1611"}
             }
         }
@@ -327,7 +332,7 @@ class VersionResponse(BaseModel):
     versionId : int
     versionAbbreviation : VersionPattern
     versionName : str
-    revision : int
+    versionTag : List[str]
     metaData : dict = None
     class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
@@ -338,10 +343,15 @@ class VersionResponse(BaseModel):
                 "versionId": 1,
                 "versionAbbreviation": "KJV",
                 "versionName": "King James Version",
-                "revision": 1,
+                "versionTag": "1611.12.31",
                 "metaData": {"publishedIn": "1611"}
             }
         }
+    @validator('versionTag')
+    def convert_array_to_str(cls, val):  # pylint: disable=E0213
+        '''versionTag Array to versionTag str'''
+        from crud.structurals_crud import version_array_to_tag  # pylint: disable=C0415, E0401
+        return version_array_to_tag(val)
 
 class VersionCreateResponse(BaseModel):
     '''Return object of version update'''
@@ -358,7 +368,7 @@ class VersionEdit(BaseModel):
     versionId: int
     versionAbbreviation : VersionPattern = None
     versionName : str = None
-    revision : int = None
+    versionTag : VersionTagPattern = None
     metaData : dict = None
     class Config:
         '''display example value in API documentation'''
@@ -367,19 +377,29 @@ class VersionEdit(BaseModel):
                 "versionId": 1,
                 "versionAbbreviation": "KJV",
                 "versionName": "King James Version",
-                "revision": 1,
+                "versionTag": "1611.12.31",
                 "metaData": {"publishedIn": "1611"}
             }
         }
 
-TableNamePattern = constr(regex=r"^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_\w+_[a-z]+$")
+TableNamePattern = constr(regex=r"^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_[\w\.]+_[a-z]+$")
+
+class SourceLabel(str, Enum):
+    '''Markers for source items to be able to filter contents as per different usecases'''
+    LATEST = "latest"
+    PUBLISHED = "published"
+    PRERELEASE = "pre-release"
+    PRIVATE = "private"
+    DEPRECATED = "deprecated"
+    TEST = "test"
 
 class SourceCreate(BaseModel):
     '''Input object of sources'''
     contentType : str
     language : LangCodePattern
     version : VersionPattern
-    revision: str = "1"
+    versionTag: VersionTagPattern = "1"
+    labels: List[SourceLabel] = None
     year: int
     license: LicenseCodePattern = "CC-BY-SA"
     accessPermissions : List[SourcePermissions] = [SourcePermissions.CONTENT]
@@ -391,7 +411,8 @@ class SourceCreate(BaseModel):
                 "contentType": "commentary",
                 "language": "en",
                 "version": "KJV",
-                "revision": 1,
+                "versionTag": "1611.12.31",
+                "label":["latest"],
                 "year": 2020,
                 "license": "ISC",
                 "accessPermissions" : ["content"],
@@ -401,30 +422,35 @@ class SourceCreate(BaseModel):
 
 class SourceResponse(BaseModel):
     '''Output object of sources'''
+    sourceId : int
     sourceName : TableNamePattern
     contentType : ContentType = None
     language : LanguageResponse = None
     version : VersionResponse = None
     # revision: str = "1"
+    labels: List[SourceLabel] = None
     year: int
     license: LicenseShortResponse
     metaData: dict = None
     active: bool = True
+    createdUser : str
     class Config:
         '''For Pydantic'''
         orm_mode = True
         # '''display example value in API documentation'''
         schema_extra = {
             "example": {
+                "sourceId" : 100090,
                 "sourceName": "en_KJV_1_commentary",
                 "contentType": {},
                 "language": {},
                 "version": {},
-                "revision": 1,
+                "latest":True,
                 "year": 2020,
                 "license": {},
                 "metaData": {"otherName": "KJBC, King James Bible Commentaries"},
-                "active": True
+                "active": True,
+                "createdUser": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
             }
         }
 
@@ -444,7 +470,8 @@ class SourceEdit(BaseModel):
     sourceName : TableNamePattern
     language : LangCodePattern = None
     version : VersionPattern = None
-    revision: str = None
+    versionTag: VersionTagPattern = None
+    labels: List[SourceLabel] = None
     year: int = None
     license: LicenseCodePattern = None
     accessPermissions : List[SourcePermissions] = [SourcePermissions.CONTENT]
@@ -457,7 +484,8 @@ class SourceEdit(BaseModel):
                 "sourceName": "en_KJV_1_commentary",
                 "language": "en",
                 "version": "KJV",
-                "revision": 1,
+                "versionTag": "1611.12.31",
+                "label":["latest"],
                 "year": 2020,
                 "license": "ISC",
                 "accessPermissions" : ["content"],
@@ -471,3 +499,8 @@ BookCodePattern = constr(regex=r"^[a-zA-Z1-9][a-zA-Z][a-zA-Z]$")
 class RefreshCache(BaseModel):
     '''List of file paths'''
     mediaList: List[str] = None
+
+class CleanupDB(BaseModel):
+    '''Response object of periodic clean-up of database'''
+    message: str = Field(...,example="Database cleanup done!!")
+    deletedItemCount: int

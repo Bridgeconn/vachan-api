@@ -1,22 +1,25 @@
 '''Defines all API endpoints for the web server app'''
 import os
-from fastapi import FastAPI, Depends
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Depends, Request
+from fastapi.responses import JSONResponse,HTMLResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+# pylint: disable=E0401
 from custom_exceptions import GenericException,TypeException , PermissionException,\
     UnprocessableException,NotAvailableException, AlreadyExistsException,\
         UnAuthorizedException, GitlabException
 import db_models
 from database import engine
 from dependencies import get_db, log
-from schema.schemas import NormalResponse
 from routers import content_apis, translation_apis, auth_api, media_api, filehandling_apis
-from graphql_api import router as gql_router
 from auth.authentication import create_super_user
+# pylint: enable=E0401
 
 # from auth.api_permission_map import initialize_apipermissions
 
@@ -25,9 +28,11 @@ if os.environ.get("VACHAN_TEST_MODE", "False") != 'True':
 
     create_super_user()
 
-app = FastAPI(title="Vachan-API", version="2.0.0-beta.1",
+app = FastAPI(title="Vachan-API", version="2.0.0-beta.10",
     description="The server application that provides APIs to interact \
 with the underlying Databases and modules in Vachan-Engine.")
+template = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
@@ -176,11 +181,18 @@ async def unique_violation_exception_handler(request, exc: IntegrityError):
     '''logs and returns error details'''
     log.error("Request URL:%s %s,  from : %s",
         request.method ,request.url.path, request.client.host)
-    log.exception("%s: %s","Already Exists", exc.__dict__)
-    return JSONResponse(
+    log.exception("%s: %s","Already Exists/Conflict", exc.__dict__)
+
+    if "unique constraint" in str(exc.orig):
+        return JSONResponse(
         status_code=409,
         content={"error": "Already Exists", "details" : str(exc.orig).replace("DETAIL","")},
-    )
+        )
+    if "foreign key constraint" in str(exc.orig):
+        return JSONResponse(
+        status_code=409,
+        content={"error": "Conflict", "details" : str(exc.orig).replace("DETAIL","")},
+        )
 
 @app.exception_handler(GitlabException)
 async def gitlab_exception_handler(request, exc: GitlabException):
@@ -193,19 +205,52 @@ async def gitlab_exception_handler(request, exc: GitlabException):
         content={"error": exc.name, "details": str(exc.detail)}
     )
 ######################################################
-
 db_models.map_all_dynamic_tables(db_= next(get_db()))
 db_models.Base.metadata.create_all(bind=engine)
 
-@app.get('/', response_model=NormalResponse, status_code=200)
-def test(db_: Session = Depends(get_db)):
-    '''tests if app is running and the DB connection is active'''
+
+@app.get('/', response_class=HTMLResponse, status_code=200)
+def test(request: Request,db_: Session = Depends(get_db)):
+    '''Tests if app is running and the DB connection is active
+    * Also displays API documentation page upon successful connection on root endpoint'''
     db_.query(db_models.Language).first()
-    return {"message": "App is up and running"}
+    return template.TemplateResponse(
+        "landing_page.html",
+        {
+            "request": request
+        }
+    )
 
 app.include_router(auth_api.router)
 app.include_router(content_apis.router)
 app.include_router(translation_apis.router)
-app.include_router(gql_router)
 app.include_router(media_api.router)
 app.include_router(filehandling_apis.router)
+
+beta_endpoints = [
+    "/graphql",  # Specify the paths of the beta endpoints
+    "/v2/bibles/{source_name}/versification",
+    "/v2/bibles/{source_name}/books/{book_code}/format/{output_format}",
+    "/v2/translation/project/versification",
+    "/v2/media/gitlab/stream",
+    "/v2/media/gitlab/download",
+    "/v2/files/usfm/to/{output_format}"
+]
+
+def custom_openapi():
+    '''Modify the auto generated openapi schema for API docs'''
+    openapi_schema = get_openapi(title="Vachan-API", version="2.0.0-beta.10",
+        description="The server application that provides APIs to interact \
+        with the underlying Databases and modules in Vachan-Engine.",
+        routes=app.routes)
+
+    # Add version information to specific endpoints
+    for path, path_data in openapi_schema["paths"].items():
+        for _, method_data in path_data.items():
+            if path in beta_endpoints:
+                # Set endpoints as experimental in the API-docs
+                method_data.setdefault("x-experimental", True)
+
+    return openapi_schema
+
+app.openapi = custom_openapi

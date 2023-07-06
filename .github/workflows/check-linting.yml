@@ -33,20 +33,4 @@ jobs:
         
       - name: Run linter
         working-directory: ./app
-        run: pylint --rcfile=.pylintrc --extension-pkg-whitelist='pydantic' *.py
-
-      - name: Run linter in crud module
-        working-directory: ./app
-        run: pylint --extension-pkg-whitelist='pydantic' crud/*.py
-
-      - name: Run linter in routers module
-        working-directory: ./app
-        run: pylint --extension-pkg-whitelist='pydantic' routers/*.py
-
-      - name: Run linter in graphql module
-        working-directory: ./app
-        run: pylint --extension-pkg-whitelist='pydantic' graphql_api/*.py
-      
-      - name: Run linter in auth module
-        working-directory: ./app
-        run: pylint --extension-pkg-whitelist='pydantic' auth/*.py
+        run: pylint --rcfile=.pylintrc *.py crud/*.py routers/*.py auth/*.py

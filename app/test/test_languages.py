@@ -3,6 +3,8 @@ import csv
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
+from .test_versions import check_post as add_version
+from .test_sources import check_post as add_source
 from .test_auth_basic import SUPER_USER,SUPER_PASSWORD, login, logout_user
 from .conftest import initial_test_users
 
@@ -16,6 +18,8 @@ def assert_positive_get(item):
     assert "language" in item
     assert "code" in item
     assert "scriptDirection" in item
+    if "localScriptName" in item and item['localScriptName'] is not None:
+        assert isinstance(item['localScriptName'], str)
     if "metaData" in item and item['metaData'] is not None:
         assert isinstance(item['metaData'], dict)
 
@@ -150,6 +154,31 @@ def test_post_upper_case_code():
     assert_positive_get(response.json()['data'])
     assert response.json()["data"]["code"] == "X-AAJ"
 
+def test_post_localscript_name():
+    '''positive test case, checking for localscript name
+    Enhancement based on https://github.com/Bridgeconn/vachan-api/issues/588'''
+    data = {
+      "language": "new-lang",
+      "code": "X-AAJ",
+      "scriptDirection": "left-to-right",
+      "localScriptName": "टेस्ट"
+    }
+    #Add Language without Auth
+    headers = {"contentType": "application/json", "accept": "application/json"}
+    response = client.post(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
+    #Add with Auth
+    headers = {"contentType": "application/json",
+                "accept": "application/json",
+                'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+            }
+    response = client.post(UNIT_URL, headers=headers, json=data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Language created successfully"
+    assert_positive_get(response.json()['data'])
+    assert response.json()["data"]["localScriptName"] == "टेस्ट"
+
 def test_post_optional_script_direction():
     '''positive test case, checking for correct return object'''
     data = {
@@ -244,6 +273,7 @@ def test_put_languages():
     data = {
       "languageId": language_id,
       "language": "new-lang-test-edited",
+      "localScriptName":"टेस्ट",
       "code": "x-abc"
     }
     response = client.put(UNIT_URL, headers=headers_auth, json=data)
@@ -251,6 +281,7 @@ def test_put_languages():
     assert response.json()['message'] == "Language edited successfully"
     assert_positive_get(response.json()['data'])
     assert response.json()["data"]["language"] == "new-lang-test-edited"
+    assert response.json()["data"]["localScriptName"] == "टेस्ट"
 
     # #delete the user
     # delete_user_identity(test_user_id)
@@ -282,7 +313,8 @@ def test_put_languages():
     data = {
       "languageId": language_id,
       "language": "new-lang-test-edited-by-admin",
-      "code": "x-abc"
+      "code": "x-abc",
+      "localScriptName":"टेस्टेड"
     }
     headers_admin = {"contentType": "application/json",
                     "accept": "application/json",
@@ -293,6 +325,7 @@ def test_put_languages():
     assert response.json()['message'] == "Language edited successfully"
     assert_positive_get(response.json()['data'])
     assert response.json()["data"]["language"] == "new-lang-test-edited-by-admin"
+    assert response.json()["data"]["localScriptName"] == "टेस्टेड"
 
     logout_user(token_admin)
 
@@ -354,11 +387,11 @@ def test_delete_default():
     response = test_post_default()
     language_id = response.json()["data"]["languageId"]
 
-    data = {"itemId":language_id}
+    
 
     #Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}
-    response = client.delete(UNIT_URL, headers=headers, json=data)
+    response = client.delete(UNIT_URL + "?lang_id=" + str(language_id), headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
@@ -368,7 +401,7 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
-        response = client.delete(UNIT_URL, headers=headers, json=data)
+        response = client.delete(UNIT_URL + "?lang_id=" + str(language_id), headers=headers)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
@@ -377,7 +410,7 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
+    response = client.delete(UNIT_URL + "?lang_id=" + str(language_id), headers=headers)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Language with identity {language_id} deleted successfully"
@@ -407,7 +440,7 @@ def test_delete_default_superadmin():
                     'Authorization': "Bearer"+" "+test_user_token
             }
     #Delete language
-    response = client.delete(UNIT_URL, headers=headers_auth, json=data)
+    response = client.delete(UNIT_URL + "?lang_id=" + str(language_id), headers=headers_auth)
     assert response.status_code == 200
     assert response.json()['message'] == \
     f"Language with identity {language_id} deleted successfully"
@@ -432,7 +465,7 @@ def test_delete_language_id_string():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
-    response = client.delete(UNIT_URL, headers=headers_auth, json=data)
+    response = client.delete(UNIT_URL + "?lang_id=" + str(language_id), headers=headers_auth)
     assert response.status_code == 200
     assert response.json()['message'] == \
          f"Language with identity {language_id} deleted successfully"
@@ -443,53 +476,72 @@ def test_delete_incorrectdatatype():
     response = test_post_default()
     #Deleting created data
     language_id = response.json()['data']['languageId']
-    data = language_id
+    language_id = {}
     headers = {"contentType": "application/json",
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
+    response = client.delete(UNIT_URL + "?lang_id=" + str(language_id), headers=headers)
     assert_input_validation_error(response)
 
 def test_delete_missingvalue_language_id():
     '''Negative Testcase. Passing input data without languageId'''
-    data = {}
+
     headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.delete(UNIT_URL, headers=headers, json=data)
+    language_id =" "
+    response = client.delete(UNIT_URL + "?lang_id=" + str(language_id), headers=headers)
     assert_input_validation_error(response)
 
 def test_delete_notavailable_language():
     ''' request a non existing content ID, Ensure there is no partial matching'''
-    data = {"itemId":20000}
+    
+    language_id =9999
     headers = {"contentType": "application/json",
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.delete(UNIT_URL,headers=headers,json=data)
+    response = client.delete(UNIT_URL + "?lang_id=" + str(language_id), headers=headers)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
 
+def test_language_used_by_source():
+    '''  Negativetest case, trying to delete that language which is used to create a source'''
+    #create new data
+    response = test_post_default()
+    language_id = response.json()["data"]["languageId"]
 
-def test_delete_seed_data():
-    '''negative test case, trying to delete a langauge that is the part of seed db'''
-    response = client.get(UNIT_URL+'?language_code=hi')
-    language_code = response.json()[0]['code']
-    data_present = False
-    with open('../db/csvs/consolidated_languages.csv', 'rt') as file: # pylint: disable=W1514
-        reader = csv.reader(file, delimiter=',')
-        for row in reader:
-            if language_code == row[0]:
-                data_present = True
-                if data_present:
-                    try:
-                        raise Exception
-                    except Exception: # pylint: disable=W0703
-                        print('Seed data cannot be deleted')
-        if not data_present:
-            response = client.delete(UNIT_URL+'?language_code=hi')
+    response = client.get(UNIT_URL+"?language_code=x-aaj")
+    language_code = response.json()[0]["code"]
+
+    #Create Version with associated with source
+    version_data = {
+        "versionAbbreviation": "TTT",
+        "versionName": "test version or licenses",
+    }
+    add_version(version_data)
+
+    #Create Source with language
+    source_data = {
+        "contentType": "commentary",
+        "language": language_code,
+        "version": "TTT",
+        "revision": 1,
+        "year": 2020,
+        "license": "ISC",
+        "metaData": {"owner": "someone", "access-key": "123xyz"}
+    }
+    add_source(source_data)
+    #Delete language with item created API User
+    headers = {"contentType": "application/json",
+                    "accept": "application/json",
+                    'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
+            }
+    response = client.delete(UNIT_URL + "?lang_id=" + str(language_id), headers=headers)
+    assert response.status_code == 409
+    assert response.json()['error'] == 'Conflict'
 
 def test_restore_default():
     '''positive test case, checking for correct return object'''
@@ -591,7 +643,6 @@ def test_restore_incorrectdatatype():
 
     #Passing input data not in json format
     data = deleteditem_id
-
     response = client.put(RESTORE_URL, headers=headers_auth, json=data)
     assert_input_validation_error(response)
     logout_user(token_admin)
@@ -628,6 +679,7 @@ def test_restore_notavailable_item():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+token_admin
                     }
+
     response = client.put(RESTORE_URL, headers=headers_admin, json=data)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"

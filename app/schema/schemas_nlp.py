@@ -1,4 +1,5 @@
 '''Defines all input and output classes for translation Apps related API endpoints'''
+import datetime
 from typing import List, Tuple
 from enum import Enum
 from pydantic import BaseModel, Field, constr, root_validator
@@ -23,7 +24,7 @@ class Stopwords(BaseModel):
         example=["के", "का", "में", "की", "है", "और", "से", "हैं", "को", "पर"])
 
 class ProjectUser(BaseModel):
-    '''Input object for AgMT user update'''
+    '''Input object for Translation project user update'''
     project_id: int
     userId: str
     userRole: str = Field(None, example='projectOwner')
@@ -36,7 +37,7 @@ class ProjectUser(BaseModel):
         orm_mode = True
 
 class UserUpdateResponse(BaseModel):
-    '''Response for user addition and updation on AgMT project'''
+    '''Response for user addition and updation on Translation project'''
     message: str = Field(..., example='User added to/updated in project successfully')
     data: ProjectUser
 
@@ -61,6 +62,8 @@ class TranslationProject(BaseModel):
     targetLanguage : LanguageResponse = Field(...)
     documentFormat: TranslationDocumentType
     users: List[ProjectUser] = None
+    createTime: datetime.datetime = Field(None)
+    updateTime: datetime.datetime = Field(None)
     metaData: dict = Field(None, example={"books":['mat', 'mrk', 'luk', 'jhn'],
         "useDataForLearning":True})
     active: bool
@@ -81,7 +84,7 @@ class SentenceInput(BaseModel):
     sentence: str = Field(...,
         example="इब्राहीम के वंशज दाऊद के पुत्र यीशु मसीह की वंशावली इस प्रकार है")
     @root_validator
-    def set_surrogate_id(cls, values): # pylint: disable=R0201 disable=E0213
+    def set_surrogate_id(cls, values): # pylint: disable=E0213
         '''Set surrogate id value, if not provided and make id int'''
         if values['surrogateId'] is None:
             values['surrogateId'] = values['sentenceId']
@@ -134,7 +137,7 @@ class Sentence(BaseModel):
     '''Response object for sentences and plain-text draft'''
     sentenceId: int
     surrogateId: str
-    sentence: str
+    sentence: str = None
     draft: str = None
     draftMeta: List[Tuple[Tuple[int, int], Tuple[int,int],'str']] = Field(None,
         example=[[[0,8], [0,8],"confirmed"],
@@ -161,7 +164,7 @@ class DraftInput(BaseModel):
         example=[[[0,8], [0,8],"confirmed"],
             [[8,64],[8,64],"untranslated"]])
     @root_validator
-    def set_surrogate_id(cls, values): # pylint: disable=R0201 disable=E0213
+    def set_surrogate_id(cls, values): # pylint: disable=E0213
         '''Set surrogate id value, if not provided and make id int'''
         if values['surrogateId'] is None:
             values['surrogateId'] = values['sentenceId']
@@ -193,7 +196,7 @@ class Suggestion(BaseModel):
         orm_mode = True
 
 class Progress(BaseModel):
-    '''Response object for AgMT project progress'''
+    '''Response object for translation project progress'''
     confirmed: float
     suggestion: float
     untranslated: float
@@ -216,27 +219,56 @@ class Alignment(BaseModel):
 class GlossInput(BaseModel):
     '''Import object for glossary(dictionary) data for learning'''
     token: str = Field(..., example="love")
-    translations: List[str] = Field(None, example=['प्यार', "प्रेम", "प्रेम करना"])
-    tokenMetaData: dict = Field(None, example={"word-class":["noun", "verb"]})
+    translations: List[str] = Field(None, example=['प्यार'])
+    metaData: dict =Field(None, example={"word-class":"noun"})
 
 class GlossOutput(BaseModel):
     '''Output object for translation memory or gloss'''
     token: str = Field(..., example="love")
-    translations: dict = Field(None, example={'प्यार':3, "प्रेम":1.2,
-        "प्रेम करना":0})
-    metaData: dict = Field(None, example={"word-class":["noun", "verb"]})
+    translations: dict = Field(None, example={'प्यार':3})
+    metaData: dict = Field(None, example={"word-class":["noun"]})
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
         orm_mode = True
+
+class TranslationMemoryOut(BaseModel):
+    '''Output object to directly examine Translation memory entries'''
+    tmID: int = Field(..., example= 100000)
+    token: str = Field(..., example="love")
+    translation: str = Field(..., example="प्यार")
+    frequency: int = Field(None)
+    metaData: dict = Field(None, example={"word-class":["noun"]})
+
+    class Config:
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
+
+class TranslationMemoryUpdate(BaseModel):
+    '''Translation memory update'''
+    tmID: int= Field(...,example=100000)
+    token:str = Field(..., example="love")
+    translation: str = Field(..., example="पसन्द")
+    metaData: dict = Field(None, example={"word-class":["noun"]})
+
+class TranslationMemoryUpdateResponse(BaseModel):
+    '''Response object for translation memory/gloss update'''
+    message: str = Field(..., example="Glossary updated")
+    data : TranslationMemoryOut
 
 class GlossUpdateResponse(BaseModel):
     '''Response object for learn/gloss and learn/alignments'''
     message: str = Field(..., example="Added to glossary/Alignments used for learning")
     data: List[GlossOutput]
 
+class GlossCount(BaseModel):
+    '''Response object for counting glossary entries'''
+    tokenTranslationCount : int = Field(...,example=10)
+    tokenCount : int = Field(...,example=5)
+
 class Translation(BaseModel):
-    '''Response of what is the current translation of a specific token in agmt'''
+    '''Response of what is the current translation of a specific token in translation'''
     token: str = Field(..., example="duck")
     translation: str = Field(..., example="താറാവ്")
     occurrence: TokenOccurence
@@ -257,7 +289,7 @@ class StopWords(BaseModel):
     metaData: dict = Field(None, example={
         "type":'postposition'})
     @root_validator
-    def set_stopword_type(cls, values): # pylint: disable=R0201 disable=E0213
+    def set_stopword_type(cls, values): # pylint: disable=E0213
         '''Set stopword type based on confidence score'''
         if values['stopwordType'] is None:
             if values['confidence'] == 2:

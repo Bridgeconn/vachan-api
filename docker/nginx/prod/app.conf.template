@@ -8,7 +8,7 @@ server {
     proxy_connect_timeout 300;
     proxy_send_timeout 300;
 
-    server_name stagingapi.vachanengine.org  www.stagingapi.vachanengine.org;
+    server_name ${VACHAN_DOMAIN}  www.${VACHAN_DOMAIN};
     server_tokens off;
 
     location /.well-known/acme-challenge/ {
@@ -16,7 +16,7 @@ server {
     }
 
     location / {
-        return 301 https://stagingapi.vachanengine.org$request_uri;
+        return 301 https://${VACHAN_DOMAIN}$request_uri;
 #    proxy_pass http://vachan-api:8000;
     }
 }
@@ -25,7 +25,7 @@ server {
     listen 443 default_server ssl http2;
     listen [::]:443 ssl http2;
 
-    server_name stagingapi.vachanengine.org;
+    server_name ${VACHAN_DOMAIN};
 
     client_max_body_size 100M;
 
@@ -33,9 +33,13 @@ server {
     proxy_connect_timeout 300;
     proxy_send_timeout 300;
 
-    ssl_certificate /etc/nginx/ssl/live/stagingapi.vachanengine.org/fullchain.pem;
-    ssl_certificate_key /etc/nginx/ssl/live/stagingapi.vachanengine.org/privkey.pem;
-    
+    ssl_certificate /etc/nginx/ssl/live/${VACHAN_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/live/${VACHAN_DOMAIN}/privkey.pem;
+ 
+    location /v2/demos/ {
+        proxy_pass http://vachan-demos:8002;    
+    }
+   
     location / {
         proxy_pass http://vachan-api:8000;
     }

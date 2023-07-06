@@ -20,21 +20,27 @@ Implemented Using
 
 ```cd vachan-api/docker```
 
-```docker-compose up```
+```docker compose --profile local-run up```
 or
-```sudo -E docker-compose up```
+```sudo -E docker compose --profile local-run up```
 
 Set environment variables VACHAN_SUPER_USERNAME, VACHAN_SUPER_PASSWORD. Use `--build` and `--force-recreate` flags if there has been code change. Refer [the detailed usage guide](./docs/docker-guide.md#to-start-app-locally) and [section on environments variables](#set-up-environmental-variables), for more information.
 
-If all goes well you should be able to get proper outputs at `http://localhost`, `http://localhost/docs`,
+If all goes well you should be able to get proper outputs at `http://localhost`, `http://localhost/docs`, `http://localhost/v2/demos`, 
 `http://127.0.0.1:4434/identities` and connect to postgresDB at `localhost`, `5433`
 
 
 ## Set up locally for development and testing(without docker)
 
+We follow fork and merge git workflow.
+* Fork the repo, https://github.com/Bridgeconn/vachan-api.git, to your github account
+* Then clone you account locally and keep that as "origin"
+* Add the central Bridgeconn repo as "upstream".
+* Contribute back via pull requests to the "version-2" branch on this repo.
+
 ### Clone git repo
 
-```git clone https://github.com/Bridgeconn/vachan-api.git```
+```git clone https://github.com/<your-account>/vachan-api.git```
 
 ```cd vachan-api```
 
@@ -107,14 +113,16 @@ Set up node and npm and install [usfm-grammar](https://www.npmjs.com/package/usf
 
 ### Set up a Kratos instance
 
-Refer instructions and use config files [here](./Kratos_config) and run a Kratos server on localhost
+Refer instructions and use config files [here](./docker/Kratos_config) and run a Kratos server on localhost
+
+Make sure you have installed Docker Version 24.0.1 before setting Kratos instance.
+Refer [detailed guide for docker usage](./docs/docker-guide.md) for more details.
 
 ```
 cd docker/Kratos_config
 docker-compose -f quickstart.yml up 
 ```
 
-Refer [detailed guide for docker usage](./docs/docker-guide.md) for more details.
 
 ### Run the app
 

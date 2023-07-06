@@ -6,19 +6,20 @@ from datetime import datetime
 import sqlalchemy
 from sqlalchemy.orm import Session, defer, joinedload
 from sqlalchemy.sql import text
-import db_models
-from crud import utils
-from crud.nlp_sw_crud import update_job
-from schema import schemas_nlp
-from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException
+import db_models #pylint: disable=import-error
+from crud import utils  #pylint: disable=import-error
+from crud.nlp_sw_crud import update_job #pylint: disable=import-error
+from schema import schemas_nlp #pylint: disable=import-error
+from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException  #pylint: disable=import-error
 
-def get_commentaries(db_:Session, *args,**kwargs):
+def get_commentaries(db_: Session,**kwargs):
     '''Fetches rows of commentries from the table specified by source_name'''
-    source_name = args[0]
-    book_code = args[1]
-    chapter = args[2]
-    verse = args[3]
-    last_verse = args[4]
+    source_name = kwargs.get("source_name")
+    book_code = kwargs.get("book_code",None)
+    chapter = kwargs.get("chapter",None)
+    verse = kwargs.get("verse",None)
+    last_verse = kwargs.get("last_verse",None)
+    commentary_id = kwargs.get("commentary_id",None)
     active = kwargs.get("active",True)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
@@ -32,6 +33,8 @@ def get_commentaries(db_:Session, *args,**kwargs):
         query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
     if chapter is not None:
         query = query.filter(model_cls.chapter == chapter)
+    if commentary_id is not None:
+        query = query.filter(model_cls.commentaryId == commentary_id)
     if verse is not None:
         if last_verse is None:
             last_verse = verse
@@ -189,9 +192,29 @@ def update_commentaries(db_: Session, source_name, commentaries,job_id, user_id=
         "endTime": datetime.now(),
         "output": {"message": "Commentaries updated successfully","data": db_content_out}}
     update_job(db_, job_id, user_id, update_args)
+# pylint: disable=duplicate-code
+def delete_commentary(db_: Session, delitem:int,table_name=None,
+    source_name=None,user_id=None):
+    '''delete particular commentary, selected via source id'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    model_cls = table_name
+    query = db_.query(model_cls)
+    db_content = query.filter(model_cls.commentaryId == delitem).first()
+    source_db_content.updatedUser = user_id
+    response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+        }
+    db_.delete(db_content)
+    return response
+# pylint: enable=duplicate-code
 
-def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):#pylint: disable=too-many-locals
+def get_dictionary_words(db_:Session,**kwargs):#pylint: disable=too-many-locals
     '''Fetches rows of dictionary from the table specified by source_name'''
+    source_name=kwargs.get("source_name")
+    search_word=kwargs.get("search_word",None)
+    word_id=kwargs.get("word_id",None)
     details = kwargs.get("details",None)
     exact_match = kwargs.get("exact_match",False)
     word_list_only = kwargs.get("word_list_only",False)
@@ -207,6 +230,9 @@ def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):#
         query = db_.query(model_cls.word)
     else:
         query = db_.query(model_cls)
+    if word_id:
+        query = query.filter(model_cls.wordId == word_id)
+        # return query.offset(skip).limit(limit).all()
     if search_word and exact_match:
         query = query.filter(model_cls.word == utils.normalize_unicode(search_word))
     elif search_word:
@@ -219,8 +245,13 @@ def get_dictionary_words(db_:Session, source_name,search_word =None, **kwargs):#
         det = json.loads(details)
         for key in det:
             query = query.filter(model_cls.details.op('->>')(key) == det[key])
-    query = query.filter(model_cls.active == active)
-    res = query.offset(skip).limit(limit).all()
+    if active is not None:
+        query = query.filter(model_cls.active == active)
+    if skip is not None:
+        query = query.offset(skip)
+    if limit is not None:
+        query = query.limit(limit)
+    res = query.all()
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     response = {
@@ -281,11 +312,28 @@ def update_dictionary_words(db_: Session, source_name, dictionary_words, user_id
         }
     return response
 
+def delete_dictionary(db_: Session, delitem : int,table_name = None,
+    source_name=None,user_id=None):
+    '''delete particular word from dictionary, selected via sourcename and word id'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    model_cls = table_name
+    query = db_.query(model_cls)
+    db_content = query.filter(model_cls.wordId == delitem).first()
+    source_db_content.updatedUser = user_id
+    response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+        }
+    db_.delete(db_content)
+    return response
+
 def get_infographics(db_:Session, source_name, book_code=None, title=None,**kwargs):
     '''Fetches rows of infographics from the table specified by source_name'''
     active = kwargs.get("active",True)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
+    infographic_id=kwargs.get("infographic_id",None)
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException(f'{source_name} not found in database.')
     if not source_name.endswith(db_models.ContentTypeName.INFOGRAPHIC.value):
@@ -296,6 +344,8 @@ def get_infographics(db_:Session, source_name, book_code=None, title=None,**kwar
         query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
     if title:
         query = query.filter(model_cls.title == utils.normalize_unicode(title.strip()))
+    if infographic_id:
+        query = query.filter(model_cls.infographicId == infographic_id)
     query = query.filter(model_cls.active == active)
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
@@ -331,11 +381,8 @@ def upload_infographics(db_: Session, source_name, infographics, user_id=None):
             active=item.active)
         db_content.append(row)
     db_.add_all(db_content)
-    # db_.commit()
     db_.expire_all()
     source_db_content.updatedUser = user_id
-    # db_.commit()
-    # return db_content
     response = {
         'db_content':db_content,
         'source_content':source_db_content
@@ -375,6 +422,24 @@ def update_infographics(db_: Session, source_name, infographics, user_id=None):
             row.active = item.active
         db_.flush()
         db_content.append(row)
+    source_db_content.updatedUser = user_id
+    response = {
+        'db_content':db_content,
+        'source_content':source_db_content
+        }
+    return response
+
+def delete_infographic(db_: Session, delitem: int,table_name = None,\
+    source_name=None,user_id=None):
+    '''delete particular item from infographic, selected via sourcename and infographic id'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    model_cls = table_name
+    query = db_.query(model_cls)
+    db_content = query.filter(model_cls.infographicId == delitem).first()
+    db_.flush()
+    db_.delete(db_content)
+    #db_.commit()
     source_db_content.updatedUser = user_id
     response = {
         'db_content':db_content,
@@ -452,8 +517,7 @@ def bible_verse_type_check(content, model_cls_2, book, db_content2, chapter_numb
                 "verseNumber":verse_number}
         else:
             #first time split verse
-            split_indexs.append(len(db_content2)) if len(split_indexs) != 0\
-                else split_indexs.append(0)#pylint: disable=expression-not-assigned
+            split_indexs.append(len(db_content2))
             metadata_field["tempcontent"] = {
                 post_script:{"verseText":utils.normalize_unicode(content['verseText'].strip()),
                 "verseNumber":verse_number}}
@@ -736,6 +800,24 @@ def update_bible_audios(db_: Session, source_name, audios, user_id=None):
         }
     return response
 
+def delete_bible_audio(db_: Session, delitem: int,\
+    source_name=None,user_id=None):
+    '''delete particular item from bible audio, selected via sourcename and bible audio id'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    model_cls =  db_models.dynamicTables[source_name+'_audio']
+    query = db_.query(model_cls)
+    db_content = query.filter(model_cls.audioId == delitem).first()
+    db_.flush()
+    db_.delete(db_content)
+    #db_.commit()
+    source_db_content.updatedUser = user_id
+    response = {
+        'db_content'    :db_content,
+        'source_content':source_db_content
+        }
+    return response
+
 def get_bible_versification(db_, source_name):
     '''select the reference list from bible_cleaned table'''
     model_cls = db_models.dynamicTables[source_name+"_cleaned"]
@@ -775,21 +857,26 @@ def get_bible_versification(db_, source_name):
         }
     return response
 
-
-def get_available_bible_books(db_, source_name, book_code=None, content_type=None,
-    **kwargs):
+def get_available_bible_books(db_, source_name,book_code=None, content_type=None,#pylint: disable=too-many-locals
+    biblecontent_id=None, **kwargs):
     '''fetches the contents of .._bible table based of provided source_name and other options'''
     active = kwargs.get("active",True)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
+    bibleaudio_id = kwargs.get("bibleaudio_id",None)
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException(f'{source_name} not found in database.')
     if not source_name.endswith('_bible'):
         raise TypeException('The operation is supported only on bible')
     model_cls = db_models.dynamicTables[source_name]
-    # model_cls_audio = db_models.dynamicTables[source_name+"_audio"]
-    query = db_.query(model_cls).options(joinedload(model_cls.book))
+    model_cls_audio = db_models.dynamicTables[source_name+"_audio"]
+    query = db_.query(model_cls).outerjoin(model_cls_audio, model_cls_audio.book_id ==
+        model_cls.book_id).options(joinedload(model_cls.book))
     fetched = None
+    if biblecontent_id:
+        query = query.filter(model_cls.bookContentId  == biblecontent_id)
+    if bibleaudio_id:
+        query = query.filter(model_cls_audio.audioId  == bibleaudio_id)
     if book_code:
         query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
     if content_type == "usfm":
@@ -815,6 +902,29 @@ def get_available_bible_books(db_, source_name, book_code=None, content_type=Non
         db_models.Source.sourceName == source_name).first()
     response = {
         'db_content':results,
+        'source_content':source_db_content
+        }
+    return response
+
+def delete_bible_book(db_: Session, delitem: int,\
+    source_name=None,user_id=None):
+    '''delete particular item from bible, selected via sourcename and bible content id'''
+    source_db_content = db_.query(db_models.Source).filter(
+        db_models.Source.sourceName == source_name).first()
+    model_cls  = db_models.dynamicTables[source_name]
+    model_cls2 =  db_models.dynamicTables[source_name+'_cleaned']
+    query = db_.query(model_cls)
+    query2 = db_.query(model_cls2)
+    db_content = query.filter(model_cls.bookContentId == delitem).first()
+    db_content2 = query2.filter(db_content.book_id == model_cls2.book_id).first()
+    db_.flush()
+    db_.delete(db_content)
+    db_.delete(db_content2)
+    #db_.commit()
+    source_db_content.updatedUser = user_id
+    response = {
+        'db_content'    :db_content,
+        'db_content2'   :db_content2,
         'source_content':source_db_content
         }
     return response
@@ -888,3 +998,4 @@ def extract_text(db_:Session, tables, books, skip=0, limit=100):
             sentence_list = sentence_list[:limit]
             break
     return sentence_list
+    
