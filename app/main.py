@@ -215,6 +215,8 @@ def test(request: Request,db_: Session = Depends(get_db)):
     * Also displays API documentation page upon successful connection on root endpoint'''
     db_.query(db_models.Language).first()
     root_url = os.getenv("VACHAN_DOMAIN")
+    if root_url is not None and not root_url.startswith("http://"):
+        root_url = "http://" + root_url
     return template.TemplateResponse(
         "landing_page.html",
         {
