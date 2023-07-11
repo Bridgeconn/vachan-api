@@ -347,5 +347,23 @@ def replace_token(source, token_offset, translation,draft_meta, tag="confirmed",
                 updated_meta=updated_meta,
                 meta=meta
                 )
+    updated_meta = remove_over_lapping_metas(updated_meta, token_offset, translation_offset)
     utils.validate_draft_meta(source, updated_draft, updated_meta)
     return updated_draft, updated_meta
+
+def remove_over_lapping_metas(unclean_meta, token_offset, translation_offset):
+    '''Remove all segments that overlaps with the newly added segment'''
+    cleaned_meta = []
+    for seg in unclean_meta:
+        intersection1 = set(range(token_offset[0],token_offset[1])).intersection(
+                range(seg[0][0],seg[0][1]))
+        if translation_offset == [None, None]:
+            intersection2 = []
+        else:
+            intersection2 = set(range(translation_offset[0],translation_offset[1])).intersection(
+                range(seg[1][0],seg[1][1]))
+        if len(intersection1)==0 and len(intersection2)==0:
+            cleaned_meta.append(seg)
+        elif token_offset==seg[0] and translation_offset==seg[1]:
+            cleaned_meta.append(seg)
+    return cleaned_meta
