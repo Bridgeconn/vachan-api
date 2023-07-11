@@ -1,6 +1,7 @@
 ''' Defines SQL Alchemy models for each Database Table'''
 
 from enum import Enum
+from datetime import datetime
 from sqlalchemy import Column, Integer, String, JSON, ARRAY, Float, text
 from sqlalchemy import Boolean, ForeignKey, DateTime
 from sqlalchemy import UniqueConstraint, Index
@@ -10,9 +11,11 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.schema import Sequence
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
-
+from pytz import timezone
 from database import Base  # pylint: disable=import-error
 from custom_exceptions import GenericException # pylint: disable=import-error
+
+ist_time = datetime.now(timezone("Asia/Kolkata")).strftime('%Y-%m-%d %H:%M:%S')
 
 dynamicTables = {}
 
@@ -50,8 +53,9 @@ class Language(Base): # pylint: disable=too-few-public-methods
     localScriptName = Column('localscript_name',String)
     metaData = Column('metadata', JSON)
     createdUser = Column('created_user', String)
+    createTime = Column('created_at',DateTime,default=ist_time)
     updatedUser = Column('last_updated_user', String)
-    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    updateTime = Column('last_updated_at', DateTime, onupdate=ist_time)
 
 class License(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table licenses in vachan DB(postgres)'''
@@ -65,8 +69,9 @@ class License(Base): # pylint: disable=too-few-public-methods
     active = Column('active', Boolean)
     # metaData = Column('metadata', JSON)
     createdUser = Column('created_user', String)
+    createTime = Column('created_at',DateTime,default=ist_time)
     updatedUser = Column('last_updated_user', String)
-    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    updateTime = Column('last_updated_at', DateTime, onupdate=ist_time)
 
 class Version(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table versions in vachan DB(postgres)'''
@@ -78,16 +83,17 @@ class Version(Base): # pylint: disable=too-few-public-methods
     versionTag = Column('version_tag', ARRAY(String))
     metaData = Column('metadata', JSON)
     createdUser = Column('created_user', String)
+    createTime = Column('created_at',DateTime,default=ist_time)
     updatedUser = Column('last_updated_user', String)
-    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    updateTime = Column('last_updated_at', DateTime, onupdate=ist_time)
 
-class Source(Base): # pylint: disable=too-few-public-methods
-    '''Corresponds to table sources in vachan DB(postgres)'''
-    __tablename__ = 'sources'
+class Resource(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table resources in vachan DB(postgres)'''
+    __tablename__ = 'resources'
 
-    sourceId = Column('source_id', Integer, primary_key=True)
-    sourceName = Column('version', String, unique=True)
-    tableName = Column('source_table', String, unique=True)
+    resourceId = Column('resource_id', Integer, primary_key=True)
+    resourceName = Column('version', String, unique=True)
+    tableName = Column('resource_table', String, unique=True)
     year = Column('year', Integer)
     labels = Column('labels', ARRAY(String))
     licenseId = Column('license_id', Integer, ForeignKey('licenses.license_id'))
@@ -101,8 +107,9 @@ class Source(Base): # pylint: disable=too-few-public-methods
     active = Column('active', Boolean)
     metaData = Column('metadata', JSONB)
     createdUser = Column('created_user', String)
+    createTime = Column('created_at',DateTime,default=ist_time)
     updatedUser = Column('last_updated_user', String)
-    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    updateTime = Column('last_updated_at', DateTime, onupdate=ist_time)
 
 class BibleBook(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table bible_books_look_up in vachan DB(postgres)'''
@@ -264,23 +271,23 @@ class BibleContentCleaned(): # pylint: disable=too-few-public-methods
         {'extend_existing': True}
                      )
 
-def create_dynamic_table(source_name, table_name, content_type):
+def create_dynamic_table(resource_name, table_name, content_type):
     '''To map or create one dynamic table based on the content Type'''
     if content_type == ContentTypeName.BIBLE.value:
-        dynamicTables[source_name+'_audio'] = type(
+        dynamicTables[resource_name+'_audio'] = type(
             table_name+'_audio',(BibleAudio, Base,),
             {"__tablename__": table_name+'_audio'})
-        dynamicTables[source_name] = type(
+        dynamicTables[resource_name] = type(
             table_name,(BibleContent, Base,),
             {"__tablename__": table_name})
-        dynamicTables[source_name+'_cleaned'] = type(
+        dynamicTables[resource_name+'_cleaned'] = type(
             table_name+'_cleaned',(BibleContentCleaned, Base,),
             {"__tablename__": table_name+'_cleaned'})
     elif content_type == ContentTypeName.COMMENTARY.value:
-        dynamicTables[source_name] = type(
+        dynamicTables[resource_name] = type(
             table_name,(Commentary, Base,),{"__tablename__": table_name})
     elif content_type == ContentTypeName.DICTIONARY.value:
-        dynamicTables[source_name] = type(
+        dynamicTables[resource_name] = type(
             table_name,(Dictionary, Base,),{"__tablename__": table_name})
         new_index = Index(table_name+'_word_details_ix',  # pylint: disable=W0612
             text("to_tsvector('simple', word || ' ' ||"+\
@@ -288,10 +295,10 @@ def create_dynamic_table(source_name, table_name, content_type):
             postgresql_using="gin",
             )
     elif content_type == ContentTypeName.INFOGRAPHIC.value:
-        dynamicTables[source_name] = type(
+        dynamicTables[resource_name] = type(
             table_name,(Infographic, Base,),{"__tablename__": table_name})
     elif content_type == ContentTypeName.BIBLEVIDEO.value:
-        dynamicTables[source_name] = type(
+        dynamicTables[resource_name] = type(
             table_name,(BibleVideo, Base,),{"__tablename__": table_name})
     elif content_type == ContentTypeName.GITLABREPO.value:
         pass
@@ -300,12 +307,12 @@ def create_dynamic_table(source_name, table_name, content_type):
 
 
 def map_all_dynamic_tables(db_: Session):
-    '''Fetches list of dynamic tables from sources table
+    '''Fetches list of dynamic tables from resources table
     and maps them according to their content types'''
 
-    all_src = db_.query(Source).all()
+    all_src = db_.query(Resource).all()
     for src in all_src:
-        create_dynamic_table(src.sourceName, src.tableName, src.contentType.contentType)
+        create_dynamic_table(src.resourceName, src.tableName, src.contentType.contentType)
 
 ############ Translation Tables ##########
 
@@ -316,13 +323,13 @@ class TranslationProject(Base): # pylint: disable=too-few-public-methods
     projectId = Column('project_id', Integer, primary_key=True, autoincrement=True)
     projectName = Column('project_name', String, index=True)
     @declared_attr
-    def source_lang_id(cls): # pylint: disable=E0213
-        '''For modelling the sourceLanguage field in this class'''
-        return Column('source_lang_id', Integer, ForeignKey('languages.language_id'))
+    def resource_lang_id(cls): # pylint: disable=E0213
+        '''For modelling the resourceLanguage field in this class'''
+        return Column('resource_lang_id', Integer, ForeignKey('languages.language_id'))
     @declared_attr
-    def sourceLanguage(cls): # pylint: disable=E0213, disable=C0103
-        '''For modelling the sourceLanguage field in this class'''
-        return relationship(Language, foreign_keys=cls.source_lang_id, uselist=False)
+    def resourceLanguage(cls): # pylint: disable=E0213, disable=C0103
+        '''For modelling the resourceLanguage field in this class'''
+        return relationship(Language, foreign_keys=cls.resource_lang_id, uselist=False)
     @declared_attr
     def target_lang_id(cls): # pylint: disable=E0213
         '''For modelling the targetLanguage field in this class'''
@@ -336,14 +343,13 @@ class TranslationProject(Base): # pylint: disable=too-few-public-methods
         '''For modelling project users from translation_project_users'''
         return relationship('TranslationProjectUser', uselist=True,
             back_populates='project')
-    documentFormat = Column('source_document_format', String)
+    documentFormat = Column('resource_document_format', String)
     metaData = Column('metadata', JSON)
     active = Column('active', Boolean, default=True)
     createdUser = Column('created_user', String)
     updatedUser = Column('last_updated_user', String)
-    createTime = Column('created_at', DateTime, default=func.now())
-    updateTime = Column('last_updated_at', DateTime, onupdate=func.now(),
-        default=func.now())
+    createTime = Column('created_at', DateTime, default=ist_time)
+    updateTime = Column('last_updated_at', DateTime, onupdate= ist_time,default=ist_time)
 
 class TranslationDraft(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table translation_drafts in vachan DB used by Autographa MT mode'''
@@ -364,7 +370,7 @@ class TranslationDraft(Base): # pylint: disable=too-few-public-methods
     draft = Column('draft', String)
     draftMeta = Column('draft_metadata', JSON)
     updatedUser = Column('last_updated_user', String)
-    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    updateTime = Column('last_updated_at', DateTime, onupdate=ist_time)
 
 class TranslationMemory(Base):  # pylint: disable=too-few-public-methods
     '''Corresponds to table translation_memory in vachan DB used by Autographa MT mode'''
@@ -372,13 +378,13 @@ class TranslationMemory(Base):  # pylint: disable=too-few-public-methods
 
     tmID = Column('token_id', Integer, primary_key=True, autoincrement=True)
     @declared_attr
-    def source_lang_id(cls): # pylint: disable=E0213
-        '''For modelling the sourceLanguage field in this class'''
-        return Column('source_lang_id', Integer, ForeignKey('languages.language_id'))
+    def resource_lang_id(cls): # pylint: disable=E0213
+        '''For modelling the resourceLanguage field in this class'''
+        return Column('resource_lang_id', Integer, ForeignKey('languages.language_id'))
     @declared_attr
-    def source_language(cls): # pylint: disable=E0213
-        '''For modelling the sourceLanguage field in this class'''
-        return relationship(Language, foreign_keys=cls.source_lang_id, uselist=False)
+    def resource_language(cls): # pylint: disable=E0213
+        '''For modelling the resourceLanguage field in this class'''
+        return relationship(Language, foreign_keys=cls.resource_lang_id, uselist=False)
     @declared_attr
     def target_lang_id(cls): # pylint: disable=E0213
         '''For modelling the targetLanguage field in this class'''
@@ -387,12 +393,12 @@ class TranslationMemory(Base):  # pylint: disable=too-few-public-methods
     def target_language(cls): # pylint: disable=E0213
         '''For modelling the targetLanguage field in this class'''
         return relationship(Language, foreign_keys=cls.target_lang_id, uselist=False)
-    token = Column('source_token', String)
-    tokenRom = Column('source_token_romanized', String)
+    token = Column('resource_token', String)
+    tokenRom = Column('resource_token_romanized', String)
     translation = Column('translation', String)
     translationRom = Column('translation_romanized', String)
     frequency = Column('frequency', Integer)
-    metaData = Column('source_token_metadata', JSON)
+    metaData = Column('resource_token_metadata', JSON)
 
 class TranslationProjectUser(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table translation_users in vachan DB used by Autographa MT mode'''
@@ -424,8 +430,9 @@ class StopWords(Base): # pylint: disable=too-few-public-methods
     metaData = Column('metadata', JSON)
     active = Column('active', Boolean, default=True)
     createdUser = Column('created_user', String)
+    createTime = Column('created_at',DateTime,default=ist_time)
     updatedUser = Column('last_updated_user', String)
-    updateTime = Column('last_updated_at', DateTime, onupdate=func.now())
+    updateTime = Column('last_updated_at', DateTime, onupdate=ist_time)
 
 class Jobs(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table jobs in vachan DB '''
@@ -445,6 +452,6 @@ class DeletedItem(Base): # pylint: disable=too-few-public-methods
     itemId = Column('item_id', Integer, primary_key=True,autoincrement=True)
     deletedData = Column('deleted_data', JSON)
     createdUser = Column('deleted_user', String)
-    deletedTime = Column('deleted_time', DateTime, default=func.now())
+    deletedTime = Column('deleted_time', DateTime, default=ist_time)
     deletedFrom = Column('deleted_from', String)
     

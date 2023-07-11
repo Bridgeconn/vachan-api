@@ -15,13 +15,13 @@ router = APIRouter()
 
 #################### USFM Grammar ####################
 
-@router.get('/v2/bibles/{source_name}/books/{book_code}/format/{output_format}',
+@router.get('/v2/bibles/{resource_name}/books/{book_code}/format/{output_format}',
     responses={404: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
     500: {"model": schemas.ErrorResponse}},
     status_code=200, tags=['File Handling', 'Bibles'])
 @get_auth_access_check_decorator
-async def usfm_parse_source_bible(request: Request,
-    source_name: schemas.TableNamePattern = Path(..., example="hi_IRV_1_bible"),
+async def usfm_parse_resource_bible(request: Request,
+    resource_name: schemas.TableNamePattern = Path(..., example="hi_IRV_1_bible"),
     book_code: schemas.BookCodePattern=Path(..., example="mat"),
     output_format: usfm_grammar.Format = Path(..., example="usx"),
     content_filter: usfm_grammar.Filter = Query(usfm_grammar.Filter.SCRIPTURE_PARAGRAPHS),
@@ -32,11 +32,12 @@ async def usfm_parse_source_bible(request: Request,
     user_details = Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
     '''Selects a bible from servers and converts it to required format using usfm-grammar'''
-    log.info("In usfm_parse_source_bible router function")
-    log.debug('source_name: %s, format: %s, filter: %s', source_name,output_format,content_filter)
+    log.info("In usfm_parse_resource_bible router function")
+    log.debug('resource_name: %s, format: %s, filter: %s', resource_name,
+              output_format,content_filter)
     src_response = await content_apis.get_available_bible_book(
         request=request,
-        source_name=source_name,
+        resource_name=resource_name,
         book_code=book_code,
         content_type=schema_content.BookContentType.USFM,
         active=active,
@@ -47,9 +48,9 @@ async def usfm_parse_source_bible(request: Request,
     if "error" in src_response:
         raise GenericException(src_response['error'])
     if len(src_response) == 0:
-        raise NotAvailableException(f"Book, {book_code}, is not available in {source_name}")
+        raise NotAvailableException(f"Book, {book_code}, is not available in {resource_name}")
     input_usfm = src_response[0]['USFM']
-    log.debug("Obtained usfm from source bible, %s", input_usfm[:50])
+    log.debug("Obtained usfm from resource bible, %s", input_usfm[:50])
     return files_crud.parse_with_usfm_grammar(input_usfm, output_format, content_filter, chapter)
 
 @router.put('/v2/files/usfm/to/{output_format}',

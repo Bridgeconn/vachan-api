@@ -26,26 +26,26 @@ tokens_trans = [
 ]
 
 align_data = [
-    {   "sourceTokenList": ["This", "is", "a test case"],
+    {   "resourceTokenList": ["This", "is", "a test case"],
         "targetTokenList": ["ഇത്", "ഒരു ടെസ്റ്റ് കേസ്", "ആണ്"],
         "alignedTokens":[
-            {"sourceTokenIndex":0, "targetTokenIndex":0},
-            {"sourceTokenIndex":1, "targetTokenIndex":2},
-            {"sourceTokenIndex":2, "targetTokenIndex":1}]
+            {"resourceTokenIndex":0, "targetTokenIndex":0},
+            {"resourceTokenIndex":1, "targetTokenIndex":2},
+            {"resourceTokenIndex":2, "targetTokenIndex":1}]
     },
-    {   "sourceTokenList": ["Developer", "is not", "happy"],
+    {   "resourceTokenList": ["Developer", "is not", "happy"],
         "targetTokenList": ["ടെവെലപ്പര്‍", "സന്തോഷവാന്‍", "അല്ല"],
         "alignedTokens":[
-            {"sourceTokenIndex":0, "targetTokenIndex":0},
-            {"sourceTokenIndex":1, "targetTokenIndex":2},
-            {"sourceTokenIndex":2, "targetTokenIndex":1}]
+            {"resourceTokenIndex":0, "targetTokenIndex":0},
+            {"resourceTokenIndex":1, "targetTokenIndex":2},
+            {"resourceTokenIndex":2, "targetTokenIndex":1}]
     },
-    {   "sourceTokenList": ["Happy", "user", "is here"],
+    {   "resourceTokenList": ["Happy", "user", "is here"],
         "targetTokenList": ["സന്തോഷവാന്‍ ആയ", "ഉപയോക്താവ്" , "ഇവിടുണ്ട്"],
         "alignedTokens":[
-            {"sourceTokenIndex":0, "targetTokenIndex":0},
-            {"sourceTokenIndex":1, "targetTokenIndex":1},
-            {"sourceTokenIndex":2, "targetTokenIndex":2}]
+            {"resourceTokenIndex":0, "targetTokenIndex":0},
+            {"resourceTokenIndex":1, "targetTokenIndex":1},
+            {"resourceTokenIndex":2, "targetTokenIndex":2}]
     }
 
 ]
@@ -66,25 +66,25 @@ def test_learn_n_suggest():
     # add dictionary
     #without auth
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
-    response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
+    response = client.post(NLP_UNIT_URL+'/learn/gloss?resource_language=en&target_language=ml',
         headers=headers, json=tokens_trans)
     assert response.json()['error'] == "Authentication Error"
     assert response.status_code == 401
     #with auth
-    response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
+    response = client.post(NLP_UNIT_URL+'/learn/gloss?resource_language=en&target_language=ml',
         headers=headers_auth, json=tokens_trans)
     assert response.status_code == 201
     assert response.json()['message'] == "Added to glossary"
 
     # check if suggestions are given in token list
     #without auth
-    token_response = client.put(UNIT_URL+'/tokens?source_language=en&target_language=ml',
+    token_response = client.put(UNIT_URL+'/tokens?resource_language=en&target_language=ml',
         headers=headers, json={"sentence_list":sentence_list})
     assert token_response.json()['error'] == "Authentication Error"
     assert token_response.status_code == 401
     #with auth another registered user
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
-    token_response = client.put(UNIT_URL+'/tokens?source_language=en&target_language=ml',
+    token_response = client.put(UNIT_URL+'/tokens?resource_language=en&target_language=ml',
         headers=headers_auth, json={"sentence_list":sentence_list})
     assert token_response.status_code == 200
     assert len(token_response.json()) >10
@@ -104,12 +104,12 @@ def test_learn_n_suggest():
     assert found_testcase
 
     # add alignmnet
-    response = client.post(NLP_UNIT_URL+'/learn/alignment?source_language=en&target_language=ml',
+    response = client.post(NLP_UNIT_URL+'/learn/alignment?resource_language=en&target_language=ml',
         headers=headers, json=align_data)
     assert response.json()['error'] == "Authentication Error"
     assert response.status_code == 401
     #with auth
-    response = client.post(NLP_UNIT_URL+'/learn/alignment?source_language=en&target_language=ml',
+    response = client.post(NLP_UNIT_URL+'/learn/alignment?resource_language=en&target_language=ml',
         headers=headers_auth, json=align_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Alignments used for learning"
@@ -120,12 +120,12 @@ def test_learn_n_suggest():
     assert found_lower_developer
 
     # try tokenizing again
-    token_response = client.put(UNIT_URL+'/tokens?source_language=en&target_language=ml',
+    token_response = client.put(UNIT_URL+'/tokens?resource_language=en&target_language=ml',
         headers=headers, json={"sentence_list":sentence_list})
     assert token_response.json()['error'] == "Authentication Error"
     assert token_response.status_code == 401
     #with auth
-    token_response = client.put(UNIT_URL+'/tokens?source_language=en&target_language=ml',
+    token_response = client.put(UNIT_URL+'/tokens?resource_language=en&target_language=ml',
         headers=headers_auth, json={"sentence_list":sentence_list})
     assert token_response.status_code == 200
     found_atestcase  = False
@@ -144,12 +144,12 @@ def test_learn_n_suggest():
     # get gloss
 
     # only a dict entry not in draft or alignment
-    response = client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
+    response = client.get(NLP_UNIT_URL+'/gloss?resource_language=en&target_language=ml&token=test',
     headers=headers)
     assert response.json()['error'] == "Authentication Error"
     assert response.status_code == 401
     #with auth
-    response = client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
+    response = client.get(NLP_UNIT_URL+'/gloss?resource_language=en&target_language=ml&token=test',
     headers=headers_auth)
     assert response.status_code ==200
     assert isinstance(response.json(), dict)
@@ -163,12 +163,12 @@ def test_learn_n_suggest():
 
     # learnt from alignment
     response = client.get(NLP_UNIT_URL+
-        '/gloss?source_language=en&target_language=ml&token=a%20test%20case',headers=headers)
+        '/gloss?resource_language=en&target_language=ml&token=a%20test%20case',headers=headers)
     assert response.json()['error'] == "Authentication Error"
     assert response.status_code == 401
     #with auth
     response = client.get(NLP_UNIT_URL+
-        '/gloss?source_language=en&target_language=ml&token=a%20test%20case',headers=headers_auth)
+        '/gloss?resource_language=en&target_language=ml&token=a%20test%20case',headers=headers_auth)
     assert response.status_code ==200
     assert_positive_get_suggetion(response.json())
     found_atestcase = False
@@ -182,12 +182,12 @@ def test_learn_n_suggest():
     sense2 = "സന്തോഷവാന്‍ ആയ"
 
     #no context
-    response = client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy',
+    response = client.get(NLP_UNIT_URL+'/gloss?resource_language=en&target_language=ml&token=happy',
     headers=headers)
     assert response.json()['error'] == "Authentication Error"
     assert response.status_code == 401
     #with auth
-    response = client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy',
+    response = client.get(NLP_UNIT_URL+'/gloss?resource_language=en&target_language=ml&token=happy',
     headers=headers_auth)
     assert response.status_code ==200
     assert_positive_get_suggetion(response.json())
@@ -206,7 +206,7 @@ def test_learn_n_suggest():
 
 
     # context 1
-    response = client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy'+
+    response = client.get(NLP_UNIT_URL+'/gloss?resource_language=en&target_language=ml&token=happy'+
         '&context=the%20happy%20user%20went%20home',headers=headers_auth)
     assert response.status_code ==200
     assert_positive_get_suggetion(response.json())
@@ -224,7 +224,7 @@ def test_learn_n_suggest():
     assert score1 < score2
 
     # context 2
-    response = client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=happy'+
+    response = client.get(NLP_UNIT_URL+'/gloss?resource_language=en&target_language=ml&token=happy'+
         '&context=now%20user%20is%20not%20happy',headers=headers_auth)
     assert response.status_code ==200
     assert_positive_get_suggetion(response.json())
@@ -243,15 +243,15 @@ def test_learn_n_suggest():
 
     # auto translate
     sentence_list[0]['sentence'] = "This his wish "+sentence_list[0]['sentence']
-    response = client.put(UNIT_URL+'/suggestions?source_language=en&target_language=ml',
+    response = client.put(UNIT_URL+'/suggestions?resource_language=en&target_language=ml',
         headers=headers, json={"sentence_list":sentence_list})
     assert response.json()['error'] == "Authentication Error"
     assert response.status_code == 401
     #with auth
-    response = client.put(UNIT_URL+'/suggestions?source_language=en&target_language=ml',
+    response = client.put(UNIT_URL+'/suggestions?resource_language=en&target_language=ml',
         headers=headers_auth, json={"sentence_list":sentence_list})
 
-    # ensures that source is tokenized in draftmeta, even when there is no suggestion
+    # ensures that resource is tokenized in draftmeta, even when there is no suggestion
     assert len(response.json()[0]["draftMeta"]) > 7 
     assert len([meta for meta in response.json()[0]["draftMeta"] if meta[2]=="untranslated"]) > 4
     
@@ -284,19 +284,19 @@ def test_bug_fix():
         }
       }
     ]
-    response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=hi&target_language=en',
+    response = client.post(NLP_UNIT_URL+'/learn/gloss?resource_language=hi&target_language=en',
         headers=headers_auth, json=tokens_abraham)
     assert response.status_code == 201
     assert response.json()['message'] == "Added to glossary"    
     
-    response = client.get(NLP_UNIT_URL+'/gloss?source_language=hi&target_language=en&token=अब्राहम से',
+    response = client.get(NLP_UNIT_URL+'/gloss?resource_language=hi&target_language=en&token=अब्राहम से',
         headers=headers_auth)
     assert response.status_code ==200
     assert response.json()["token"] == "अब्राहम से"
     assert list(response.json()["translations"].keys())[0] == "Abraham".lower()
     assert response.json()["metaData"]["for"] == "अब्राहम से"
 
-    response = client.get(NLP_UNIT_URL+'/gloss?source_language=hi&target_language=en&token=अब्राहम की',
+    response = client.get(NLP_UNIT_URL+'/gloss?resource_language=hi&target_language=en&token=अब्राहम की',
         headers=headers_auth)
     assert response.status_code ==200
     assert response.json()["token"] == "अब्राहम की"
@@ -306,13 +306,13 @@ def test_bug_fix():
 def test_metadata_to_same_gloss():
     '''testing metadata is added to the same token-translation pair'''
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
-    response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
+    response = client.post(NLP_UNIT_URL+'/learn/gloss?resource_language=en&target_language=ml',
         headers=headers_auth, json=tokens_trans)
     assert response.status_code == 201
     assert response.json()['message'] == "Added to glossary"
 
     response = \
-        client.get(NLP_UNIT_URL+'/gloss-entries?source_language=en&target_language=ml&token=tested',
+        client.get(NLP_UNIT_URL+'/gloss-entries?resource_language=en&target_language=ml&token=tested',
         headers=headers_auth)
     assert response.status_code ==200
     # Ensuring metadata is added to the correct token-translation pair - positive test
@@ -324,43 +324,43 @@ def test_metadata_to_same_gloss():
     tokens_test = [
     {"token":"test", "translations":["ടെസ്റ്റ്"],"metaData":"translations"}
     ]
-    response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
+    response = client.post(NLP_UNIT_URL+'/learn/gloss?resource_language=en&target_language=ml',
         headers=headers_auth, json=tokens_test)
     assert response.status_code == 422
     assert response.json()['error'] == "Input Validation Error"
 
     #Adding a sentences and ensuring frequency is incremented for same token-translation pair
     response = \
-        client.get(NLP_UNIT_URL+'/gloss-entries?source_language=en&target_language=ml&token=developer',
+        client.get(NLP_UNIT_URL+'/gloss-entries?resource_language=en&target_language=ml&token=developer',
         headers=headers_auth)
     freq_before = response.json()[0]['frequency']
     align_data1 = [
         {
-            "sourceTokenList": ["This","is","a","developer"],
+            "resourceTokenList": ["This","is","a","developer"],
             "targetTokenList": ["ഇത്", "ഒരു", "ടെവെലപ്പര്‍", "ആണ്"],
             "alignedTokens": [
-            {"sourceTokenIndex": 0,"targetTokenIndex": 0},
-            {"sourceTokenIndex": 1,"targetTokenIndex": 3},
-            {"sourceTokenIndex": 2,"targetTokenIndex": 1},
-            {"sourceTokenIndex": 3,"targetTokenIndex": 2}
+            {"resourceTokenIndex": 0,"targetTokenIndex": 0},
+            {"resourceTokenIndex": 1,"targetTokenIndex": 3},
+            {"resourceTokenIndex": 2,"targetTokenIndex": 1},
+            {"resourceTokenIndex": 3,"targetTokenIndex": 2}
             ]
         },
         {
-            "sourceTokenList": ["Developer","is","happy"],
+            "resourceTokenList": ["Developer","is","happy"],
             "targetTokenList": ["ടെവെലപ്പര്‍","സന്തോഷവാന്‍", "ആണ്"],
             "alignedTokens": [
-            {"sourceTokenIndex": 0,"targetTokenIndex": 0},
-            {"sourceTokenIndex": 1,"targetTokenIndex": 2},
-            {"sourceTokenIndex": 2,"targetTokenIndex": 1}
+            {"resourceTokenIndex": 0,"targetTokenIndex": 0},
+            {"resourceTokenIndex": 1,"targetTokenIndex": 2},
+            {"resourceTokenIndex": 2,"targetTokenIndex": 1}
             ]
             }
     ]
-    response = client.post(NLP_UNIT_URL+'/learn/alignment?source_language=en&target_language=ml',
+    response = client.post(NLP_UNIT_URL+'/learn/alignment?resource_language=en&target_language=ml',
         headers=headers_auth, json=align_data1)
     assert response.status_code == 201
     assert response.json()['message'] == "Alignments used for learning"
     response = \
-        client.get(NLP_UNIT_URL+'/gloss-entries?source_language=en&target_language=ml&token=developer',
+        client.get(NLP_UNIT_URL+'/gloss-entries?resource_language=en&target_language=ml&token=developer',
         headers=headers_auth)
     freq_after = response.json()[0]['frequency']
     assert freq_after == freq_before + 2
@@ -370,12 +370,12 @@ def test_update_glossary():
 
     # Adding glossary
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
-    response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
+    response = client.post(NLP_UNIT_URL+'/learn/gloss?resource_language=en&target_language=ml',
         headers=headers_auth, json=tokens_trans)
     assert response.status_code == 201
     assert response.json()['message'] == "Added to glossary"
     response = \
-        client.get(NLP_UNIT_URL+'/gloss-entries?source_language=en&target_language=ml&token=tested',
+        client.get(NLP_UNIT_URL+'/gloss-entries?resource_language=en&target_language=ml&token=tested',
         headers=headers_auth)
     assert response.status_code ==200
 
@@ -440,13 +440,13 @@ def test_delete_glossary():
 
     #Adding a suggestion for translation
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
-    response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
+    response = client.post(NLP_UNIT_URL+'/learn/gloss?resource_language=en&target_language=ml',
         headers=headers_auth, json=tokens_trans)
     assert response.status_code == 201
     assert response.json()['message'] == "Added to glossary"
 
     # Check glossary is added
-    response = client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
+    response = client.get(NLP_UNIT_URL+'/gloss?resource_language=en&target_language=ml&token=test',
     headers=headers_auth)
     assert response.status_code ==200
     assert isinstance(response.json(), dict)
@@ -460,7 +460,7 @@ def test_delete_glossary():
 
     #deleting glossary with no auth - Negative Test
     resp =client.delete(NLP_UNIT_URL+
-        '/gloss?source_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
+        '/gloss?resource_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
              headers=headers)
     assert resp.status_code == 401
     assert resp.json()['details'] == "Access token not provided or user not recognized."
@@ -472,7 +472,7 @@ def test_delete_glossary():
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
         response = client.delete(NLP_UNIT_URL+
-        '/gloss?source_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
+        '/gloss?resource_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
         headers=headers_au)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
@@ -480,13 +480,13 @@ def test_delete_glossary():
     #Deleting glossary with AgAdmin used - Positive Test
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     response = client.delete(NLP_UNIT_URL+
-        '/gloss?source_lang=en&target_lang=ml&token=developer&translation=ടെവെലപ്പര്‍',
+        '/gloss?resource_lang=en&target_lang=ml&token=developer&translation=ടെവെലപ്പര്‍',
         headers=headers_auth)
     assert response.status_code == 201
     assert "successfull" in response.json()['message']
 
     # Ensure deleted glossary is not present
-    get_response =client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=developer',
+    get_response =client.get(NLP_UNIT_URL+'/gloss?resource_language=en&target_language=ml&token=developer',
                 headers=headers_auth)
     assert get_response.status_code == 200
     assert isinstance(get_response.json(), dict)
@@ -495,13 +495,13 @@ def test_delete_glossary():
     #Deleting glossary with VachanAdmin used - Positive Test
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     response = client.delete(NLP_UNIT_URL+
-        '/gloss?source_lang=en&target_lang=ml&token=test case&translation=ടെസ്റ്റ് കേസ്',
+        '/gloss?resource_lang=en&target_lang=ml&token=test case&translation=ടെസ്റ്റ് കേസ്',
         headers=headers_auth)
     assert response.status_code == 201
     assert "successfull" in response.json()['message']
 
     # Ensure deleted glossary is not present
-    get_response =client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test case',
+    get_response =client.get(NLP_UNIT_URL+'/gloss?resource_language=en&target_language=ml&token=test case',
                 headers=headers_auth)
     assert get_response.status_code == 200
     assert isinstance(get_response.json(), dict)
@@ -510,13 +510,13 @@ def test_delete_glossary():
     #Deleting glossary with SanketMASTAdmin used - Positive Test
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     response = client.delete(NLP_UNIT_URL+
-        '/gloss?source_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
+        '/gloss?resource_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
         headers=headers_auth)
     assert response.status_code == 201
     assert "successfull" in response.json()['message']
 
     # Ensure deleted glossary is not present
-    get_response =client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
+    get_response =client.get(NLP_UNIT_URL+'/gloss?resource_language=en&target_language=ml&token=test',
                 headers=headers_auth)
     assert get_response.status_code == 200
     assert isinstance(get_response.json(), dict)
@@ -524,13 +524,13 @@ def test_delete_glossary():
 
     #Deleting glossary with empty translation - Positive Test
     response =client.delete(NLP_UNIT_URL+
-        '/gloss?source_lang=en&target_lang=ml&token=the&translation=',
+        '/gloss?resource_lang=en&target_lang=ml&token=the&translation=',
         headers=headers_auth)
     assert response.status_code == 201
     assert "successfull" in response.json()['message']
 
     # Ensure deleted glossary is not present
-    get_response =client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=the',
+    get_response =client.get(NLP_UNIT_URL+'/gloss?resource_language=en&target_language=ml&token=the',
                 headers=headers_auth)
     assert get_response.status_code == 200
     assert isinstance(get_response.json(), dict)
@@ -546,31 +546,31 @@ def test_delete_glossary():
     assert response.json()['message'] == "Login Succesfull"
     test_user_token = response.json()["token"]
     headers_auth['Authorization'] = "Bearer"+" "+test_user_token
-    response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
+    response = client.post(NLP_UNIT_URL+'/learn/gloss?resource_language=en&target_language=ml',
         headers=headers_auth, json=tokens_trans)
     response = client.delete(NLP_UNIT_URL+
-        '/gloss?source_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
+        '/gloss?resource_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
         headers=headers_auth)
     assert response.status_code == 201
     assert "successfull" in response.json()['message']
 
     # Ensure deleted sentence is not present
-    get_response =client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
+    get_response =client.get(NLP_UNIT_URL+'/gloss?resource_language=en&target_language=ml&token=test',
                 headers=headers_auth)
     assert get_response.status_code == 200
     assert isinstance(get_response.json(), dict)
     assert len(get_response.json()['translations']) == 0
 
-    #Delete with not available source language
+    #Delete with not available resource language
     response = client.delete(NLP_UNIT_URL+
-        '/gloss?source_lang=x-ttt&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
+        '/gloss?resource_lang=x-ttt&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
         headers=headers_auth)
     assert response.status_code == 404
-    assert "Source language not available" in response.json()['details']
+    assert "Resource language not available" in response.json()['details']
 
      #Delete not available target language
     response = client.delete(NLP_UNIT_URL+
-        '/gloss?source_lang=en&target_lang=x-ttt&token=test&translation=ടെസ്റ്റ്',
+        '/gloss?resource_lang=en&target_lang=x-ttt&token=test&translation=ടെസ്റ്റ്',
         headers=headers_auth)
     assert response.status_code == 404
     assert "Target language not available" in response.json()['details']
@@ -582,15 +582,15 @@ def test_restore_glossary():
     #only Super Admin can restore deleted data
     #Adding a suggestion for translation
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
+    response = client.post(NLP_UNIT_URL+'/learn/gloss?resource_language=en&target_language=ml',
         headers=headers_auth, json=tokens_trans)
     # Deleting
     delete_resp = client.delete(NLP_UNIT_URL+
-        '/gloss?source_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
+        '/gloss?resource_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
         headers=headers_auth)
 
     # Ensure deleted glossary is not present
-    get_response =client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
+    get_response =client.get(NLP_UNIT_URL+'/gloss?resource_language=en&target_language=ml&token=test',
                 headers=headers_auth)
     assert get_response.status_code == 200
     assert isinstance(get_response.json(), dict)
@@ -628,7 +628,7 @@ def test_restore_glossary():
     f"Deleted Item with identity {deleteditem_id} restored successfully"
 
     # Check glossary is restored
-    response = client.get(NLP_UNIT_URL+'/gloss?source_language=en&target_language=ml&token=test',
+    response = client.get(NLP_UNIT_URL+'/gloss?resource_language=en&target_language=ml&token=test',
     headers=headers_auth)
     assert response.status_code ==200
     assert isinstance(response.json(), dict)

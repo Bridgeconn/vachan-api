@@ -16,11 +16,11 @@ headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token
 
 project_data = {
     "projectName": "Test agmt draft",
-    "sourceLanguageCode": "en",
+    "resourceLanguageCode": "en",
     "targetLanguageCode": "ml"
 }
 
-source_sentences = [
+resource_sentences = [
     {"sentenceId": 100,
      "sentence": "In a jungle far away there lived a fox"},
     {"sentenceId": 101,
@@ -45,7 +45,7 @@ def test_draft_update_positive():
 
     put_data = {
         "projectId": project_id,
-        "sentenceList":source_sentences
+        "sentenceList":resource_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
     resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
@@ -156,13 +156,13 @@ def test_draft_update_negative():
         headers=headers_auth, json=put_data)
     assert resp.json()['error'] == "Requested Content Not Available"
 
-    # upload source and repeat last action
-    put_data_source = {
+    # upload resource and repeat last action
+    put_data_resource = {
         "projectId": project_id,
-        "sentenceList":source_sentences
+        "sentenceList":resource_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data_source)
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data_resource)
     assert resp.json()['message'] == "Project updated successfully"
 
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
@@ -242,7 +242,7 @@ def test_empty_draft_initalization():
 
     put_data = {
         "projectId": project_id,
-        "sentenceList":source_sentences
+        "sentenceList":resource_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
     resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
@@ -265,7 +265,7 @@ def test_empty_draft_initalization():
     tokens_trans = [
         {"token":"jungle", "translations":["കാട്"]}
     ]
-    response = client.post('/v2/nlp/learn/gloss?source_language=en&target_language=ml',
+    response = client.post('/v2/nlp/learn/gloss?resource_language=en&target_language=ml',
         headers=headers_auth, json=tokens_trans)
     assert response.status_code == 201
     assert response.json()['message'] == "Added to glossary"
@@ -298,7 +298,7 @@ def test_draft_meta_validation():
 
     put_data = {
         "projectId": project_id,
-        "sentenceList":source_sentences
+        "sentenceList":resource_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
     resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
@@ -335,7 +335,7 @@ def test_space_in_suggested_draft():
 
     put_data = {
         "projectId": project_id,
-        "sentenceList":source_sentences
+        "sentenceList":resource_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
     resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
@@ -347,7 +347,7 @@ def test_space_in_suggested_draft():
         {"token":"far", "translations":["ദൂരെ"]},
         {"token":"fox", "translations":["കുറുക്കന്‍"]}
     ]
-    response = client.post('/v2/nlp/learn/gloss?source_language=en&target_language=ml',
+    response = client.post('/v2/nlp/learn/gloss?resource_language=en&target_language=ml',
         headers=headers_auth, json=tokens_trans)
     assert response.status_code == 201
     assert response.json()['message'] == "Added to glossary"
@@ -379,7 +379,7 @@ def test_delete_sentence():
 
     put_data = {
         "projectId": project_id,
-        "sentenceList":source_sentences
+        "sentenceList":resource_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
     resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
@@ -461,7 +461,7 @@ def test_restore_sentence():
 
     put_data = {
         "projectId": project_id,
-        "sentenceList":source_sentences
+        "sentenceList":resource_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
@@ -623,7 +623,7 @@ def test_glossupdate_upon_draft_update():
 
     put_data = {
         "projectId": project_id,
-        "sentenceList":source_sentences
+        "sentenceList":resource_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
     resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
@@ -650,7 +650,7 @@ def test_glossupdate_upon_draft_update():
     assert sents[0]["draft"] == "കാട്"
     assert sents[0]["draftMeta"] == put_data[0]['draftMeta']
 
-    resp = client.get(f"/v2/nlp/gloss?source_language={project_data['sourceLanguageCode']}"+\
+    resp = client.get(f"/v2/nlp/gloss?resource_language={project_data['resourceLanguageCode']}"+\
         f"&target_language={project_data['targetLanguageCode']}&token=jungle",
         headers=headers_auth)
     assert resp.status_code == 200
@@ -665,7 +665,7 @@ def test_draftmeta_validation():
 
     put_data = {
         "projectId": project_id,
-        "sentenceList":source_sentences
+        "sentenceList":resource_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
     resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)

@@ -106,8 +106,8 @@ def api_resourcetype_map(endpoint, path_params=None):
         resource_type = schema_auth.ResourceType.MEDIA.value
     elif endpoint.startswith("/v2/files"):
         resource_type = schema_auth.ResourceType.FILE.value
-    elif endpoint.startswith("/v2/sources") or (
-        path_params is not None and "source_name" in path_params):
+    elif endpoint.startswith("/v2/resources") or (
+        path_params is not None and "resource_name" in path_params):
         resource_type = schema_auth.ResourceType.CONTENT.value
     elif endpoint.split('/')[2] in ["restore","deleted-items"]:
         resource_type = schema_auth.ResourceType.DATAMANIPULATION.value
@@ -161,14 +161,14 @@ def get_access_tag(db_, resource_type, path_params=None, kw_args = None, resourc
     }
     if resource_type in resource_tag_map:
         return resource_tag_map[resource_type]
-    if path_params is not None and "source_name" in path_params:
-        db_entry = db_.query(db_models.Source.metaData['accessPermissions']).filter(
-            db_models.Source.sourceName == path_params['source_name']).first()
+    if path_params is not None and "resource_name" in path_params:
+        db_entry = db_.query(db_models.Resource.metaData['accessPermissions']).filter(
+            db_models.Resource.resourceName == path_params['resource_name']).first()
         if db_entry is not None:
             return db_entry[0]
-    if kw_args is not None and "source_name" in kw_args:
-        db_entry = db_.query(db_models.Source.metaData['accessPermissions']).filter(
-            db_models.Source.sourceName == kw_args['source_name']).first()
+    if kw_args is not None and "resource_name" in kw_args:
+        db_entry = db_.query(db_models.Resource.metaData['accessPermissions']).filter(
+            db_models.Resource.resourceName == kw_args['resource_name']).first()
         if db_entry is not None:
             return db_entry[0]
     if resource:
@@ -282,17 +282,17 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         #########################################
         obj = None
         if isinstance(response, dict):
-            # separating out intended response and (source/project)object passed for auth check
+            # separating out intended response and (resource/project)object passed for auth check
             if "db_content" in response:
-                if "source_content" in response:
-                    obj = response['source_content']
+                if "resource_content" in response:
+                    obj = response['resource_content']
                 if "project_content" in response:
                     obj = response['project_content']
                 response = response['db_content']
             elif "data" in response:
                 if isinstance(response['data'], dict) and "db_content" in response['data']:
-                    if "source_content" in response['data']:
-                        obj = response['data']['source_content']
+                    if "resource_content" in response['data']:
+                        obj = response['data']['resource_content']
                     if "project_content" in response['data']:
                         obj = response['data']['project_content']
                     response['data'] = response['data']['db_content']
@@ -304,7 +304,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             # All no-auth and role based cases checked and appoved if applicable
             if db_:
                 db_.commit()
-                # if (method == "DELETE" and "source" in endpoint) or "restore" in endpoint:
+                # if (method == "DELETE" and "resource" in endpoint) or "restore" in endpoint:
                 #     db_models.map_all_dynamic_tables(db_= next(get_db()))
 
         elif obj is not None:
@@ -312,7 +312,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             if check_right(user_details, required_rights, obj, db_):
                 if db_:
                     db_.commit()
-                    if (method == "DELETE" and "source" in endpoint):
+                    if (method == "DELETE" and "resource" in endpoint):
                         db_models.dynamicTables = {}
                         db_models.map_all_dynamic_tables(db_= next(get_db()))
                     if "restore" in endpoint:

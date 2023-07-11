@@ -148,7 +148,7 @@ async def get_data(db_, request, language_code, sentence_list, **kwargs):
     if use_server_data:
         server_data = await content_apis.extract_text_contents(
             request=request, #pylint: disable=W0613
-            source_name=None,
+            resource_name=None,
             books=None,
             language_code=language_code,
             content_type=None,
@@ -176,7 +176,7 @@ def find_knee(sentences):
         sw_scored.append((word, score))
     return sw_scored
 
-async def filter_translation_words(db_, request, source_name, stopwords, user_details=None):
+async def filter_translation_words(db_, request, resource_name, stopwords, user_details=None):
     '''Filter the translation words from generated stopwords using tws of gl'''
     # tw_lookup = {'hi': 'hi_TW_1_dictionary', 'ml': 'ml_TW_1_dictionary', 'te':
     #     'te_TW_1_dictionary', 'kan': 'kan_TW_1_dictionary', 'ta': 'ta_TW_1_dictionary',
@@ -189,11 +189,11 @@ async def filter_translation_words(db_, request, source_name, stopwords, user_de
     #     raise NotAvailableException("Gateway Language with code %s, not in database. "
     #             %gl_lang_code)
     # gl_id = gl_id[0]
-    # source_name = tw_lookup[gl_lang_code]
+    # resource_name = tw_lookup[gl_lang_code]
     try:
         response = await content_apis.get_dictionary_word(
             request=request, #pylint: disable=W0613
-            source_name=source_name,
+            resource_name=resource_name,
             search_word =None,
             details=None,
             active=True,
@@ -235,17 +235,17 @@ def add_generated_sws(db_, language_id, stopwords, user_id):
     db_.flush()
 
 
-async def extract_stopwords(db_, request, language_id, language_code, source_name, *args):
+async def extract_stopwords(db_, request, language_id, language_code, resource_name, *args):
     '''Extract stopwords from available data and stores in db'''
     user_details = args[0]
     sentences = args[1]
     msg = ''
     result = []
     stopwords = find_knee(sentences)
-    if source_name is None:
+    if resource_name is None:
         msg = "Stopwords identified out of limited resources. Manual verification recommended"
     else:
-        stopwords = await filter_translation_words(db_, request, source_name, stopwords,
+        stopwords = await filter_translation_words(db_, request, resource_name, stopwords,
             user_details)
     result = []
     if stopwords:
@@ -291,7 +291,7 @@ async def generate_stopwords(db_: Session, request: Request, *args, user_details
     '''Automatically generate stopwords for given language'''
     msg = ''
     language_code = args[0]
-    source_name = args[1]
+    resource_name = args[1]
     sentence_list = args[2]
     job_id = args[3]
     user_id = None
@@ -306,23 +306,23 @@ async def generate_stopwords(db_: Session, request: Request, *args, user_details
     language_id = db_.query(db_models.Language.languageId).filter(func.lower(
                             db_models.Language.code) == language_code.lower()).first()
 
-    if source_name:
+    if resource_name:
         update_args = {
                     "status" : schemas_nlp.JobStatus.ERROR.value,
                     "endTime": datetime.now(),
                     "output": {}
                     }
-        if source_name not in db_models.dynamicTables:
+        if resource_name not in db_models.dynamicTables:
             update_args["output"]= {
-                "message": f'{source_name} not found in database.',
-                "source_name": source_name,"data": None
+                "message": f'{resource_name} not found in database.',
+                "resource_name": resource_name,"data": None
                 }
             update_job(db_, job_id, user_id, update_args)
-            raise NotAvailableException(f'{source_name} not found in database.')
-        if not source_name.endswith(db_models.ContentTypeName.DICTIONARY.value):
+            raise NotAvailableException(f'{resource_name} not found in database.')
+        if not resource_name.endswith(db_models.ContentTypeName.DICTIONARY.value):
             update_args["output"]= {
                 "message": 'The operation is supported only on dictionaries',
-                "source_name": source_name,"data": None
+                "resource_name": resource_name,"data": None
                 }
             update_job(db_, job_id, user_id, update_args)
             raise TypeException('The operation is supported only on dictionaries')
@@ -360,7 +360,7 @@ async def generate_stopwords(db_: Session, request: Request, *args, user_details
         update_job(db_, job_id, user_id, update_args)
         try:
             update_args = await extract_stopwords(db_, request, language_id, language_code,
-                                     source_name, user_details, sentences)
+                                     resource_name, user_details, sentences)
         except Exception as exe: #pylint: disable=W0703
             update_args = {
                         "status" : schemas_nlp.JobStatus.FINISHED.value,

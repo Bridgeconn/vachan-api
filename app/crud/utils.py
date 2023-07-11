@@ -14,7 +14,7 @@ def normalize_unicode(text, form="NFKC"):
     return unicodedata.normalize(form, text)
 
 def punctuations():
-    '''list of punctuations commonly seen in our source files'''
+    '''list of punctuations commonly seen in our resource files'''
     return [',', '"', '!', '.', ':', ';', '\n', '\\','“','”',
         '“','*','।','?',';',"'","’","(",")","‘","—"]
 
@@ -200,7 +200,7 @@ def validate_draft_meta(sentence, draft, draft_meta):
             if seg1 != seg2:
                 intersection = set(range(seg1[0],seg1[1])).intersection(
                     range(seg2[0],seg2[1]))
-                assert not intersection, f"Source segments {seg1} and {seg2} overlaps!"
+                assert not intersection, f"Resource segments {seg1} and {seg2} overlaps!"
         for seg1, seg2 in itertools.product(trg_segs, trg_segs):
             if seg1 != seg2:
                 intersection = set(range(seg1[0],seg1[1])).intersection(
@@ -210,7 +210,7 @@ def validate_draft_meta(sentence, draft, draft_meta):
         # and non empty
         src_len = len(sentence)
         for seg in src_segs:
-            assert 0 <= seg[0] <= seg[1] <= src_len, f"Source segment {seg}, is improper!"
+            assert 0 <= seg[0] <= seg[1] <= src_len, f"Resource segment {seg}, is improper!"
         trg_len = len(draft)
         for seg in trg_segs:
             assert 0 <= seg[0] <= seg[1] <= trg_len, f"Target segment {seg}, is improper!"

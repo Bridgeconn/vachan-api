@@ -18,7 +18,7 @@ headers_auth = {"contentType": "application/json",
 
 project_data = {
     "projectName": "Test agmt workflow",
-    "sourceLanguageCode": "hi",
+    "resourceLanguageCode": "hi",
     "targetLanguageCode": "ml"
 }
 
@@ -784,7 +784,7 @@ def test_agmt_translation_access_rule_app():
     assert response.status_code == 403
     assert response.json()['error'] == "Permission Denied"
 
-    #Project Source Get
+    #Project Resource Get
     response = client.get(UNIT_URL+"/sentences?project_id="+str(project_id)+
         "&with_draft=True",headers=headers_auth)
     assert response.status_code ==200

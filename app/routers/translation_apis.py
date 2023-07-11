@@ -23,7 +23,7 @@ router = APIRouter()
 @get_auth_access_check_decorator
 async def get_projects(request: Request,
     project_name:str=Query(None,example="Hindi-Bilaspuri Gospels"),
-    source_language:schemas.LangCodePattern=Query(None,example='en'),
+    resource_language:schemas.LangCodePattern=Query(None,example='en'),
     target_language:schemas.LangCodePattern=Query(None,example='ml'),
     active:bool=True, user_id:str=Query(None),
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
@@ -31,9 +31,9 @@ async def get_projects(request: Request,
     filtering_required=Depends(AddHiddenInput(value=True))):
     '''Fetches the list of proejct and their details'''
     log.info('In get_projects')
-    log.debug('project_name: %s, source_language:%s, target_language:%s,\
-        active:%s, user_id:%s',project_name, source_language, target_language, active, user_id)
-    return projects_crud.get_translation_projects(db_, project_name, source_language,
+    log.debug('project_name: %s, resource_language:%s, target_language:%s,\
+        active:%s, user_id:%s',project_name, resource_language, target_language, active, user_id)
+    return projects_crud.get_translation_projects(db_, project_name, resource_language,
         target_language, active=active, user_id=user_id, skip=skip, limit=limit)
 
 @router.post('/v2/translation/projects', status_code=201,
@@ -63,7 +63,7 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.PROJECT.value))):
     # operates_on=schema_auth.ResourceType.PROJECT.value):
-    '''Adds more books to a Translation project's source. Delete or activate project.'''
+    '''Adds more books to a Translation project's resource. Delete or activate project.'''
     log.info('In update_project')
     log.debug('project_obj: %s',project_obj)
     if project_obj.selectedBooks:
@@ -73,10 +73,10 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
             books_param_list += f"&books={buk}"#pylint: disable=R1713
 
         # request.scope['method'] = 'GET'
-        # request._url = URL('/v2/sources')#pylint: disable=protected-access
+        # request._url = URL('/v2/resources')#pylint: disable=protected-access
         response = await content_apis.extract_text_contents(
             request=request,
-            source_name=project_obj.selectedBooks.bible,
+            resource_name=project_obj.selectedBooks.bible,
             books=project_obj.selectedBooks.books,
             language_code=None,
             content_type='bible',
@@ -179,8 +179,8 @@ async def get_tokens(request: Request, project_id:int=Query(...,example="1022004
     sentence_id_list:List[int]=Query(None, example=[41001001,41001002,41001003]),
     use_translation_memory:bool=True, include_phrases:bool=True, include_stopwords:bool=False,
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
-    '''Tokenize the source texts. Optional params books,
-    sentence_id_range or sentence_id_list can be used to specify the source verses.
+    '''Tokenize the resource texts. Optional params books,
+    sentence_id_range or sentence_id_list can be used to specify the resource verses.
     If more than one of these filters are given, only one would be used
     in the following order of priority: books, range, list.
     Flags use_translation_memory, include_phrases and include_stopwords can be
@@ -222,7 +222,7 @@ async def get_token_translation(request: Request,project_id:int=Query(...,exampl
     sentence_id:int=Query(..., example="41001001"),
     offset:List[int]=Query(..., max_items=2,min_items=2,example=[0,4]),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
-    '''Get the current translation for specific tokens providing their occurence in source'''
+    '''Get the current translation for specific tokens providing their occurence in resource'''
     log.info('In get_token_translation')
     occurrences = [{"sentenceId":sentence_id, "offset":offset}]
     log.debug('project_id: %s, token:%s, occurrences:%s',project_id, token, occurrences)
@@ -244,7 +244,7 @@ async def get_token_sentences(request: Request,project_id:int=Query(...,example=
     that allows easy highlight of token and translation'''
     log.info('In get_token_sentences')
     log.debug('project_id: %s, token:%s, occurrences:%s',project_id, token, occurrences)
-    return projects_crud.get_project_source_per_token(db_, project_id, token, occurrences)
+    return projects_crud.get_project_resource_per_token(db_, project_id, token, occurrences)
 
 @router.get('/v2/translation/project/draft', status_code=200,
     responses={502: {"model": schemas.ErrorResponse},
@@ -292,18 +292,18 @@ async def update_draft(request: Request,project_id:int=Query(...,example="102200
     404: {"model": schemas.ErrorResponse}},
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
-async def get_project_source(request: Request,project_id:int=Query(...,example="1022004"),
+async def get_project_resource(request: Request,project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
     with_draft:bool=False, only_ids:bool=False, user_details =Depends(get_user_or_none),
     db_:Session=Depends(get_db)):
-    '''Obtains source sentences or verses, as per the filters'''
-    log.info('In get_source')
+    '''Obtains resource sentences or verses, as per the filters'''
+    log.info('In get_resource')
     log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s, \
          with_draft:%s, only_ids:%s',project_id, books, sentence_id_list, sentence_id_range,
         with_draft, only_ids)
-    return projects_crud.obtain_project_source(db_, project_id, books, sentence_id_range,
+    return projects_crud.obtain_project_resource(db_, project_id, books, sentence_id_range,
         sentence_id_list, with_draft=with_draft, only_ids=only_ids)
 
 @router.delete('/v2/translation/project/sentences', status_code=201,
@@ -338,7 +338,7 @@ async def get_progress(request: Request,project_id:int=Query(...,example="102200
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
-    '''Obtains source sentences or verses, as per the filters'''
+    '''Obtains resource sentences or verses, as per the filters'''
     log.info('In get_progress')
     log.debug('project_id: %s, books:%s, sentence_id_list:%s, sentence_id_range:%s',
         project_id, books, sentence_id_list, sentence_id_range)
@@ -354,10 +354,10 @@ async def get_progress(request: Request,project_id:int=Query(...,example="102200
 @get_auth_access_check_decorator
 async def get_project_versification(request: Request,project_id:int=Query(...,example="1022004"),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
-    '''Obtains versification structure for source sentences or verses'''
+    '''Obtains versification structure for resource sentences or verses'''
     log.info('In get_project_versification')
     log.debug('project_id: %s', project_id)
-    return projects_crud.get_project_source_versification(db_, project_id)
+    return projects_crud.get_project_resource_versification(db_, project_id)
 
 @router.put('/v2/translation/project/suggestions', status_code=201,
     response_model=List[schemas_nlp.Sentence],
@@ -388,7 +388,8 @@ async def suggest_auto_translation(request: Request,project_id:int=Query(...,exa
     404: {"model": schemas.ErrorResponse}},
     tags=['Generic Translation'])
 @get_auth_access_check_decorator
-async def tokenize(request: Request,source_language:schemas.LangCodePattern=Query(...,example="hi"),
+async def tokenize(request: Request,
+                   resource_language:schemas.LangCodePattern=Query(...,example="hi"),
     sentence_list:List[schemas_nlp.SentenceInput]=Body(...),
     target_language:schemas.LangCodePattern=Query(None,example="ml"),
     use_translation_memory:bool=True, include_phrases:bool=True, include_stopwords:bool=False,
@@ -399,11 +400,11 @@ async def tokenize(request: Request,source_language:schemas.LangCodePattern=Quer
     Flags use_translation_memory, include_phrases and include_stopwords can be
     used to alter the tokens output as per user need'''
     log.info('In tokenize')
-    log.debug('source_language: %s, sentence_list:%s, target_language:%s, punctuations:%s,\
+    log.debug('resource_language: %s, sentence_list:%s, target_language:%s, punctuations:%s,\
         stopwords:%s, use_translation_memory:%s, include_phrases:%s, include_stopwords:%s',
-        source_language, sentence_list, target_language, punctuations, stopwords,
+        resource_language, sentence_list, target_language, punctuations, stopwords,
         use_translation_memory, include_phrases, include_stopwords)
-    return nlp_crud.get_generic_tokens(db_, source_language, sentence_list, target_language,
+    return nlp_crud.get_generic_tokens(db_, resource_language, sentence_list, target_language,
         punctuations =punctuations, stopwords = stopwords,
         use_translation_memory = use_translation_memory, include_phrases = include_phrases,
         include_stopwords = include_stopwords)
@@ -417,7 +418,7 @@ async def tokenize(request: Request,source_language:schemas.LangCodePattern=Quer
 @get_auth_access_check_decorator
 async def token_replace(request: Request,sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     token_translations:List[schemas_nlp.TokenUpdate]=Body(...),
-    source_language:schemas.LangCodePattern=Query(...,example='hi'),
+    resource_language:schemas.LangCodePattern=Query(...,example='hi'),
     target_language:schemas.LangCodePattern=Query(...,example='ml'),
     use_data_for_learning:bool=True,
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
@@ -425,9 +426,10 @@ async def token_replace(request: Request,sentence_list:List[schemas_nlp.DraftInp
     returns obtained drafts and draft_meta'''
     log.info('In token_replace')
     log.debug('sentence_list:%s, token_translations:%s,\
-        source_lanuage:%s, target_language:%s, use_data_for_learning:%s',
-        sentence_list, token_translations, source_language, target_language, use_data_for_learning)
-    result = nlp_crud.replace_bulk_tokens(db_, sentence_list, token_translations, source_language,
+        resource_lanuage:%s, target_language:%s, use_data_for_learning:%s',
+        sentence_list, token_translations, resource_language,
+        target_language, use_data_for_learning)
+    result = nlp_crud.replace_bulk_tokens(db_, sentence_list, token_translations, resource_language,
         target_language, use_data_for_learning=use_data_for_learning)
     return {"message": "Tokens replaced with translations", "data": result}
 
@@ -455,7 +457,7 @@ async def generate_draft(request: Request,sentence_list:List[schemas_nlp.DraftIn
     tags=["Translation Suggestion"])
 @get_auth_access_check_decorator
 async def suggest_translation(request: Request,
-    source_language:schemas.LangCodePattern=Query(...,example="hi"),
+    resource_language:schemas.LangCodePattern=Query(...,example="hi"),
     target_language:schemas.LangCodePattern=Query(...,example="ml"),
     sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     punctuations:List[str]=Body(None), stopwords:schemas_nlp.Stopwords=Body(None),
@@ -464,12 +466,12 @@ async def suggest_translation(request: Request,
     If draft and draft_meta are provided indicating some portion of sentence is user translated,
     then it is left untouched.'''
     log.info("In suggest_translation")
-    log.debug('source_language:%s, target_language:%s, sentence_list:%s,punctuations:%s\
-        stopwords:%s', source_language, target_language, sentence_list, punctuations, stopwords)
+    log.debug('resource_language:%s, target_language:%s, sentence_list:%s,punctuations:%s\
+        stopwords:%s', resource_language, target_language, sentence_list, punctuations, stopwords)
     for sent in sentence_list:
         if sent.draftMeta is not None and sent.draftMeta != []:
             utils.validate_draft_meta(sent.sentence, sent.draft, sent.draftMeta)
-    return nlp_crud.auto_translate(db_, sentence_list, source_language, target_language,
+    return nlp_crud.auto_translate(db_, sentence_list, resource_language, target_language,
         punctuations=punctuations, stopwords=stopwords)
 
 @router.get('/v2/nlp/gloss', response_model=schemas_nlp.GlossOutput,
@@ -478,7 +480,7 @@ async def suggest_translation(request: Request,
     tags=["Nlp"])
 @get_auth_access_check_decorator
 async def get_glossary(request: Request,
-    source_language:schemas.LangCodePattern=Query(...,example="en"),
+    resource_language:schemas.LangCodePattern=Query(...,example="en"),
     target_language:schemas.LangCodePattern=Query(...,example="hi"),
     token:str=Query(...,example="duck"),
     context:str=Query(None,example="The duck swam in the lake"),
@@ -486,10 +488,10 @@ async def get_glossary(request: Request,
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Finds translation suggestions or gloss for one token in the given context'''
     log.info('In get_glossary')
-    log.debug('source_language:%s, target_language:%s, token:%s, context:%s,\
-        token_offset:%s',source_language, target_language, token,
+    log.debug('resource_language:%s, target_language:%s, token:%s, context:%s,\
+        token_offset:%s',resource_language, target_language, token,
             context, token_offset)
-    return nlp_crud.glossary(db_, source_language, target_language, token,
+    return nlp_crud.glossary(db_, resource_language, target_language, token,
     context=context, token_offset=token_offset)
 
 @router.get('/v2/nlp/gloss-entries', response_model=List[schemas_nlp.TranslationMemoryOut],
@@ -498,16 +500,16 @@ async def get_glossary(request: Request,
     tags=["Nlp"])
 @get_auth_access_check_decorator
 async def get_glossary_entries(request: Request,
-    source_language:schemas.LangCodePattern=Query(...,example="en"),
+    resource_language:schemas.LangCodePattern=Query(...,example="en"),
     target_language:schemas.LangCodePattern=Query(...,example="hi"),
     token:str=Query(None,example="duck"),
     skip: int=Query(None, ge=0), limit: int=Query(None, ge=0),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Searches the translation memory for matching entries. Not context aware'''
     log.info('In get_glossary_entries')
-    log.debug('source_language:%s, target_language:%s, token:%s',
-        source_language, target_language, token)
-    response = nlp_crud.get_glossary_list(db_, source_language, target_language, token,
+    log.debug('resource_language:%s, target_language:%s, token:%s',
+        resource_language, target_language, token)
+    response = nlp_crud.get_glossary_list(db_, resource_language, target_language, token,
     skip=skip, limit=limit)
     return response['token_translation_count']
 
@@ -518,22 +520,22 @@ async def get_glossary_entries(request: Request,
     404:{"model": schemas.ErrorResponse},}, status_code=200, tags=["Nlp"])
 @get_auth_access_check_decorator
 async def get_gloss_count(request: Request,
-    source_language:schemas.LangCodePattern=Query(...,example="en"),
+    resource_language:schemas.LangCodePattern=Query(...,example="en"),
     target_language:schemas.LangCodePattern=Query(...,example="hi"),
     token:str=Query(None,example="love"),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Counts all glossary entries in translation memory between two languages.
         * Also counts unique tokens in translation memory
    `    * Can filter with or without search word/token
-        * Source and target language should be specified
+        * Resource and target language should be specified
         * "tokenTranslationCount" in response counts different
             translations of same word as different.
         * "tokenCount" in response doesn't consider the multiple translations
-            but give the count of unique source tokens.'''
+            but give the count of unique resource tokens.'''
     log.info('In get_glossary_count')
-    log.debug('source_language:%s, target_language:%s, token:%s',
-        source_language, target_language, token)
-    response = nlp_crud.get_glossary_list(db_, source_language, target_language, token)
+    log.debug('resource_language:%s, target_language:%s, token:%s',
+        resource_language, target_language, token)
+    response = nlp_crud.get_glossary_list(db_, resource_language, target_language, token)
     response['tokenTranslationCount'] = len(response['token_translation_count'])
     response['tokenCount'] = len(response['token_count'])
     return response
@@ -545,15 +547,15 @@ async def get_gloss_count(request: Request,
     tags=["Nlp"])
 @get_auth_access_check_decorator
 async def add_gloss(request: Request,
-    source_language:schemas.LangCodePattern=Query(...,example='en'),
+    resource_language:schemas.LangCodePattern=Query(...,example='en'),
     target_language:schemas.LangCodePattern=Query(..., example="hi"),
     token_translations:List[schemas_nlp.GlossInput]=Body(...),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Load a list of predefined tokens and translations to improve tokenization and suggestion'''
     log.info('In add_gloss')
-    log.debug('source_language:%s, target_language:%s, token_translations:%s',
-        source_language, target_language, token_translations)
-    tw_data = nlp_crud.add_to_translation_memory(db_,source_language, target_language,
+    log.debug('resource_language:%s, target_language:%s, token_translations:%s',
+        resource_language, target_language, token_translations)
+    tw_data = nlp_crud.add_to_translation_memory(db_,resource_language, target_language,
         token_translations)
     return { "message": "Added to glossary", "data":tw_data }
 
@@ -578,16 +580,16 @@ async def update_glossary(request: Request,
     tags=['Nlp'])
 @get_auth_access_check_decorator
 async def remove_glossary(request: Request,
-    source_lang:schemas.LangCodePattern=Query(...,example="en"),
+    resource_lang:schemas.LangCodePattern=Query(...,example="en"),
     target_lang:schemas.LangCodePattern=Query(...,example="hi"),
     token:str=Query(...,example="duck"),
     translation:str=Query(None,example="बत्तख"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Remove glossary.'''
     log.info('In remove_gloss')
-    log.debug('source_language:%s,target_language:%s,token:%s,translation:%s',
-        source_lang,target_lang,token,translation)
-    deleted_content = nlp_crud.remove_glossary(db_, source_lang,target_lang,token,translation)
+    log.debug('resource_language:%s,target_language:%s,token:%s,translation:%s',
+        resource_lang,target_lang,token,translation)
+    deleted_content = nlp_crud.remove_glossary(db_, resource_lang,target_lang,token,translation)
     delcont = structurals_crud.add_deleted_data(db_, del_content=  deleted_content['db_content'],
         table_name = "translation_memory", deleting_user=user_details['user_id'])
     return {'message': f"Token-Translation pair {token} -> {translation} deleted successfully",
@@ -599,14 +601,14 @@ async def remove_glossary(request: Request,
     415: {"model": schemas.ErrorResponse}},tags=["Nlp"])
 @get_auth_access_check_decorator
 async def add_alignments(request: Request,
-    source_language:schemas.LangCodePattern, target_language:schemas.LangCodePattern,
+    resource_language:schemas.LangCodePattern, target_language:schemas.LangCodePattern,
     alignments:List[schemas_nlp.Alignment],
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Prepares training data with alignments and update translation memory & suggestion models'''
     log.info('In add_alignments')
-    log.debug('source_language:%s, target_language:%s, alignments:%s',
-        source_language, target_language, alignments)
-    tw_data = nlp_crud.alignments_to_trainingdata(db_,src_lang=source_language,
+    log.debug('resource_language:%s, target_language:%s, alignments:%s',
+        resource_language, target_language, alignments)
+    tw_data = nlp_crud.alignments_to_trainingdata(db_,src_lang=resource_language,
     trg_lang=target_language, alignment_list=alignments, user_id=user_details['user_id'])
     return { "message": "Alignments used for learning", "data":tw_data }
 
@@ -698,14 +700,14 @@ async def remove_stopword(request: Request,
 async def generate_stopwords(request: Request, background_tasks: BackgroundTasks,
     language_code:schemas.LangCodePattern=Query(...,example="bi"),
     use_server_data:bool=True,
-    source_name: schemas.TableNamePattern=Query(None,example="en_TW_1_dictionary"),
+    resource_name: schemas.TableNamePattern=Query(None,example="en_TW_1_dictionary"),
     user_details =Depends(get_user_or_none),
     sentence_list:List[schemas_nlp.SentenceInput]=Body(None), db_:Session=Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.LOOKUP.value))):#pylint: disable=unused-argument
     '''Auto generate stop words for a given language'''
     log.info('In generate_stopwords')
-    log.debug('language_code:%s, use_server_data:%s, source_name:%s, sentence_list:%s',
-        language_code, use_server_data, source_name, sentence_list)
+    log.debug('language_code:%s, use_server_data:%s, resource_name:%s, sentence_list:%s',
+        language_code, use_server_data, resource_name, sentence_list)
 
     # job_info = create_job(
     #         request=request, #pylint: disable=W0613
@@ -713,7 +715,7 @@ async def generate_stopwords(request: Request, background_tasks: BackgroundTasks
     job_info = nlp_sw_crud.create_job(db_=db_, user_id=user_details['user_id'])
     job_id = job_info.jobId
     background_tasks.add_task(nlp_sw_crud.generate_stopwords, db_, request, language_code,
-        source_name, sentence_list, job_id, use_server_data=use_server_data,
+        resource_name, sentence_list, job_id, use_server_data=use_server_data,
         user_details=user_details)
     msg = "Generating stop words in background"
     # data = {"jobId": job_info['data']['jobId'], "status": job_info['data']['status']}

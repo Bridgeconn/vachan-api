@@ -18,7 +18,7 @@ headers_auth = {"contentType": "application/json",
 
 project_data = {
     "projectName": "Test SanketMAST workflow",
-    "sourceLanguageCode": "hi",
+    "resourceLanguageCode": "hi",
     "targetLanguageCode": "ml"
 }
 

@@ -1,14 +1,14 @@
 '''Test cases for bible videos related APIs'''
 from . import client, contetapi_get_accessrule_checks_app_userroles
 from . import check_default_get, check_soft_delete
-from .test_sources import check_post as add_source
+from .test_resources import check_post as add_resource
 from .test_versions import check_post as add_version
 from . import assert_input_validation_error, assert_not_available_content
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 from .conftest import initial_test_users
 
 UNIT_URL = '/v2/biblevideos/'
-SOURCE_URL = '/v2/sources'
+RESOURCE_URL = '/v2/resources'
 RESTORE_URL = '/v2/restore'
 headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json",
@@ -35,15 +35,15 @@ def check_post(data: list):
         "versionName": "test version for biblevideo",
     }
     add_version(version_data)
-    source_data = {
+    resource_data = {
         "contentType": "biblevideo",
         "language": "mr",
         "version": "TTT",
         "year": 1999,
         "versionTag": 1
     }
-    source = add_source(source_data)
-    table_name = source.json()['data']['sourceName']
+    resource = add_resource(resource_data)
+    table_name = resource.json()['data']['resourceName']
     # without auth
     response = client.post(UNIT_URL+table_name, headers=headers, json=data)
     if response.status_code == 422:
@@ -67,13 +67,13 @@ def test_post_default():
             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
     
-    resp,source_name = check_post(data)
+    resp,resource_name = check_post(data)
     assert resp.status_code == 201
     assert resp.json()['message'] == "Bible videos added successfully"
     for item in resp.json()['data']:
         assert_positive_get(item)
     assert len(data) == len(resp.json()['data'])
-    return resp,source_name
+    return resp,resource_name
 
 def test_post_duplicate():
     '''Negative test to add two bible videos Links with same title'''
@@ -82,12 +82,12 @@ def test_post_duplicate():
             'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 3}],
             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
-    response1, source_name = check_post(data)
+    response1, resource_name = check_post(data)
     assert response1.status_code == 201
     assert response1.json()['message'] == "Bible videos added successfully"
 
     data[0]['videoLink'] = 'https://www.youtube.com/biblevideos/anothervid'
-    response2 = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response2 = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert response2.status_code == 409
     assert response2.json()['error'] == "Already Exists"
 
@@ -98,7 +98,7 @@ def test_post_no_reference_field():
         {'title':'Overview: Full OT', 'series': 'Old testament', 'description':"No reference filed",
             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
-    response, source_name = check_post(data)
+    response, resource_name = check_post(data)
     assert response.status_code == 201
     print(response.json())
     assert response.json()['message'] == "Bible videos added successfully"
@@ -114,7 +114,7 @@ def test_post_incorrect_data():
         'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 3}],
          'videoLink': 'https://www.youtube.com/biblevideos/vid'}
 
-    resp, source_name = check_post(one_row)
+    resp, resource_name = check_post(one_row)
     assert_input_validation_error(resp)
 
     # data object with missing mandatory fields
@@ -124,21 +124,21 @@ def test_post_incorrect_data():
             'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 3}],
              'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
-    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     # data = [
     #     {'title':'Overview: Genesis', 'series': 'Old testament', 'description':"brief description",
     #         'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     # ]
-    # response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    # response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     # assert_input_validation_error(response)
 
     data = [
         {'title':'Overview: Genesis', 'series': 'Old testament', 'description':"brief description",
             'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 3}]}
     ]
-    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     # incorrect data values in fields
@@ -147,7 +147,7 @@ def test_post_incorrect_data():
             'references': [{"verseStart": 1,"verseEnd": 3}],
              'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
-    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     data = [
@@ -155,7 +155,7 @@ def test_post_incorrect_data():
             'references': [{"bookCode": "gen","chapter": 10,"verseStart": 1,"verseEnd": 3}],
             'videoLink': 'vid'}
     ]
-    response = client.post(UNIT_URL+source_name, headers=headers, json=data)
+    response = client.post(UNIT_URL+resource_name, headers=headers, json=data)
     assert_input_validation_error(response)
 
     data = [
@@ -163,16 +163,16 @@ def test_post_incorrect_data():
             'references': [{"bookCode": "genesis","chapter": 10,"verseStart": 1,"verseEnd": 3}],
              'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
-    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
-    source_name1 = source_name.replace('biblevideo', 'video')
+    resource_name1 = resource_name.replace('biblevideo', 'video')
     data = []
-    response = client.post(UNIT_URL+source_name1, headers=headers_auth, json=data)
+    response = client.post(UNIT_URL+resource_name1, headers=headers_auth, json=data)
     assert response.status_code == 404
 
-    source_name2 = source_name.replace('1', '22')
-    response = client.post(UNIT_URL+source_name2, headers=headers_auth, json=[])
+    resource_name2 = resource_name.replace('1', '22')
+    response = client.post(UNIT_URL+resource_name2, headers=headers_auth, json=[])
     assert response.status_code == 404
 
 def test_get_after_data_upload():
@@ -199,66 +199,66 @@ def test_get_after_data_upload():
             'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    res, source_name = check_post(input_data)
+    res, resource_name = check_post(input_data)
     assert res.status_code == 201
-    check_default_get(UNIT_URL+source_name, headers_auth, assert_positive_get)
+    check_default_get(UNIT_URL+resource_name, headers_auth, assert_positive_get)
 
     #filter by book
     #without auth 
-    response = client.get(UNIT_URL+source_name+'?book_code=gen')
+    response = client.get(UNIT_URL+resource_name+'?book_code=gen')
     assert response.status_code == 401
     assert response.json()["error"] == "Authentication Error"
     #with auth
-    response = client.get(UNIT_URL+source_name+'?book_code=gen',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?book_code=gen',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
-    response = client.get(UNIT_URL+source_name+'?book_code=mat',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?book_code=mat',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
 
     #Filter by BCV
-    response = client.get(UNIT_URL+source_name+'?book_code=act&chapter=10&verse=1',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?book_code=act&chapter=10&verse=1',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
     #Filter by book and chapter
-    response = client.get(UNIT_URL+source_name+'?book_code=mat&chapter=5',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?book_code=mat&chapter=5',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
     #Filter by searchword
-    response = client.get(UNIT_URL+source_name+'?search_word=creation',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?search_word=creation',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
     #Filter by searchword not exist
-    response = client.get(UNIT_URL+source_name+'?search_word=ffffrrrttt',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?search_word=ffffrrrttt',headers=headers_auth)
     assert_not_available_content(response)
 
     # filter with title
-    response = client.get(UNIT_URL+source_name+'?title=Overview:%20Matthew')
+    response = client.get(UNIT_URL+resource_name+'?title=Overview:%20Matthew')
     assert response.status_code == 401
     assert response.json()["error"] == "Authentication Error"
     #with auth
-    response = client.get(UNIT_URL+source_name+'?title=Overview:%20Matthew',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?title=Overview:%20Matthew',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
     # filter with Series
-    response = client.get(UNIT_URL+source_name+"?series=Old%20testament",headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+"?series=Old%20testament",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
 
-    response = client.get(UNIT_URL+source_name+"?series=New%20testament",headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+"?series=New%20testament",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 3
 
     # not available
-    response = client.get(UNIT_URL+source_name+'?book_code=rev',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?book_code=rev',headers=headers_auth)
     assert_not_available_content(response)
 
-    response = client.get(UNIT_URL+source_name+'?book_code=mat&series=Old%20testament',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?book_code=mat&series=Old%20testament',headers=headers_auth)
     assert_not_available_content(response)
 
 def test_get_reference_filter():
@@ -281,50 +281,50 @@ def test_get_reference_filter():
              'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    res, source_name = check_post(input_data)
+    res, resource_name = check_post(input_data)
     assert res.status_code == 201
-    check_default_get(UNIT_URL+source_name, headers_auth, assert_positive_get)
+    check_default_get(UNIT_URL+resource_name, headers_auth, assert_positive_get)
 
     #Filter by book all
-    response = client.get(UNIT_URL+source_name+'?book_code=gen',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?book_code=gen',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 5
 
     #Filter by book and capter gives all related to that chapter and book
-    response = client.get(UNIT_URL+source_name+'?book_code=gen&chapter=10',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?book_code=gen&chapter=10',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 4
 
     #Filter by specfic verse gives full book, chapter and verse only
-    response = client.get(UNIT_URL+source_name+'?book_code=gen&chapter=10&verse=4',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?book_code=gen&chapter=10&verse=4',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 3
 
-    response = client.get(UNIT_URL+source_name+'?book_code=gen&chapter=12&verse=1',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?book_code=gen&chapter=12&verse=1',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
 
 def test_get_incorrect_data():
     '''Check for input validations in get'''
-    source_name = 'mr_TTT'
-    response = client.get(UNIT_URL+source_name)
+    resource_name = 'mr_TTT'
+    response = client.get(UNIT_URL+resource_name)
     assert_input_validation_error(response)
 
-    source_name = 'mr_TTT_1_biblevideo'
-    response = client.get(UNIT_URL+source_name+'?book_code=61',headers=headers_auth)
+    resource_name = 'mr_TTT_1_biblevideo'
+    response = client.get(UNIT_URL+resource_name+'?book_code=61',headers=headers_auth)
     assert_input_validation_error(response)
 
-    response = client.get(UNIT_URL+source_name+'?book_code=luke',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?book_code=luke',headers=headers_auth)
     assert_input_validation_error(response)
 
-    response = client.get(UNIT_URL+source_name+'?book_code=[gen]',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?book_code=[gen]',headers=headers_auth)
     assert_input_validation_error(response)
 
-    resp, source_name = check_post([])
+    resp, resource_name = check_post([])
     assert resp.status_code == 201
 
-    source_name_edited = source_name.replace('bible', '')
-    response = client.get(UNIT_URL+source_name_edited,headers=headers_auth)
+    resource_name_edited = resource_name.replace('bible', '')
+    response = client.get(UNIT_URL+resource_name_edited,headers=headers_auth)
     assert response.status_code == 404
 
 def test_put_after_upload():
@@ -341,7 +341,7 @@ def test_put_after_upload():
             'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1}],
              'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
-    response, source_name = check_post(data)
+    response, resource_name = check_post(data)
     assert response.status_code == 201
 
     # positive PUT
@@ -352,11 +352,11 @@ def test_put_after_upload():
     ]
     # headers = {"contentType": "application/json", "accept": "application/json"}
     #Without Auth
-    new_response = client.put(UNIT_URL+source_name,headers=headers, json=new_data)
+    new_response = client.put(UNIT_URL+resource_name,headers=headers, json=new_data)
     assert new_response.status_code == 401
     assert new_response.json()['error'] == 'Authentication Error'
     #with auth
-    new_response = client.put(UNIT_URL+source_name,headers=headers_auth, json=new_data)
+    new_response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=new_data)
     assert new_response.status_code == 201
     assert new_response.json()['message'] == 'Bible videos updated successfully'
     for item in new_response.json()['data']:
@@ -372,11 +372,11 @@ def test_put_after_upload():
     new_data = [
         {'title':'Overview: Acts', 'series': 'New testament history'}
     ]
-    response = client.put(UNIT_URL+source_name, headers=headers_auth, json=new_data)
+    response = client.put(UNIT_URL+resource_name, headers=headers_auth, json=new_data)
     assert response.status_code == 404
 
-    source_name = source_name.replace('1', '20')
-    response = client.put(UNIT_URL+source_name, headers=headers_auth, json=[])
+    resource_name = resource_name.replace('1', '20')
+    response = client.put(UNIT_URL+resource_name, headers=headers_auth, json=[])
     assert response.status_code == 404
 
 def test_put_incorrect_data():
@@ -396,13 +396,13 @@ def test_put_incorrect_data():
             'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1}],
              'videoLink': 'https://www.youtube.com/biblevideos/vid', 'status':True}
     ]
-    resp, source_name = check_post(post_data)
+    resp, resource_name = check_post(post_data)
     assert resp.status_code == 201
 
     # single data object instead of list
     headers = {"contentType": "application/json", "accept": "application/json"}
     data =  {'title':'Overview: Acts of Apostles', 'series': 'Old testament'}
-    response = client.put(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.put(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     # data object with missing mandatory fields
@@ -410,7 +410,7 @@ def test_put_incorrect_data():
         {'series': 'New testament',
         "videoLink":"http://anotherplace.com/something"}
             ]
-    response = client.put(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.put(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     # incorrect data values in fields
@@ -418,32 +418,32 @@ def test_put_incorrect_data():
     data = [
         {'title':'Overview: Acts of Apostles', 'references': 'acts'}
     ]
-    response = client.put(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.put(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     data = [
         {'title':'Overview: Acts of Apostles', 'active': 'deactivate'}
     ]
-    response = client.put(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.put(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     data = [
         {'title':'Overview: Acts of Apostles', 'references': [1,2,3]}
     ]
-    response = client.put(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.put(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
 
     data = [ {'title':'Overview: Acts of Apostles', "videoLink":"Not a link"} ]
-    response = client.put(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.put(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
-    source_name1 = source_name.replace('bible', '')
-    response = client.put(UNIT_URL+source_name1, headers=headers_auth, json=[])
+    resource_name1 = resource_name.replace('bible', '')
+    response = client.put(UNIT_URL+resource_name1, headers=headers_auth, json=[])
     assert response.status_code == 404
 
-    source_name2 = source_name.replace('1', '13')
-    response = client.put(UNIT_URL+source_name2, headers=headers_auth, json=[])
+    resource_name2 = resource_name.replace('1', '13')
+    response = client.put(UNIT_URL+resource_name2, headers=headers_auth, json=[])
     assert response.status_code == 404
 
 def test_soft_delete():
@@ -493,18 +493,18 @@ def test_created_user_can_only_edit():
         "versionName": "test version for biblevideo",
     }
     add_version(version_data)
-    source_data = {
+    resource_data = {
         "contentType": "biblevideo",
         "language": "mr",
         "version": "TTT",
         "year": 1999,
         "versionTag": 1
     }
-    #create source
-    response = client.post('/v2/sources', headers=headers_auth, json=source_data)
+    #create resource
+    response = client.post('/v2/resources', headers=headers_auth, json=resource_data)
     assert response.status_code == 201
-    assert response.json()['message'] == "Source created successfully"
-    source_name = response.json()['data']['sourceName']
+    assert response.json()['message'] == "Resource created successfully"
+    resource_name = response.json()['data']['resourceName']
     
     #create bible videos
     data = [
@@ -519,7 +519,7 @@ def test_created_user_can_only_edit():
             'references': [{"bookCode": "exo","chapter": 10,"verseStart": 1}],
              'videoLink': 'https://www.youtube.com/biblevideos/vid'}
     ]
-    resp = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    resp = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert resp.status_code == 201
     assert resp.json()['message'] == 'Bible videos added successfully'
 
@@ -529,13 +529,13 @@ def test_created_user_can_only_edit():
         {'title':'Overview: Acts of Apostles', 'series': 'New testament history'},
         {'title':'Overview: Exodus', 'videoLink': 'https://www.youtube.com/biblevideos/newvid'}
     ]
-    new_response = client.put(UNIT_URL+source_name,headers=headers_auth, json=new_data)
+    new_response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=new_data)
     assert new_response.status_code == 201
     assert new_response.json()['message'] == 'Bible videos updated successfully'
 
     #update with VA not created user
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    new_response = client.put(UNIT_URL+source_name,headers=headers_auth, json=new_data)
+    new_response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=new_data)
     assert new_response.status_code == 403
     assert new_response.json()['error'] == 'Permission Denied'
 
@@ -553,22 +553,22 @@ def test_get_access_with_user_roles_and_apps():
 def test_delete_default():
     ''' positive test case, checking for correct return of deleted biblevideo ID'''
     #create new data
-    response,source_name = test_post_default()
+    response,resource_name = test_post_default()
     headers_auth = {"contentType": "application/json",#pylint: disable=redefined-outer-name
                 "accept": "application/json"}
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    post_response = client.get(UNIT_URL+source_name+'?title=Overview:%20Genesis',\
+    post_response = client.get(UNIT_URL+resource_name+'?title=Overview:%20Genesis',\
         headers=headers_auth)
     assert post_response.status_code == 200
     assert len(post_response.json()) == 1
     for item in post_response.json():
         assert_positive_get(item)
-    biblevideo_response = client.get(UNIT_URL+source_name,headers=headers_auth)
+    biblevideo_response = client.get(UNIT_URL+resource_name,headers=headers_auth)
     biblevideo_id = biblevideo_response.json()[0]['bibleVideoId']
     
     #Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}#pylint: disable=redefined-outer-name
-    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(biblevideo_id), headers=headers)
+    response = client.delete(UNIT_URL+resource_name + "?delete_id=" + str(biblevideo_id), headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
@@ -578,7 +578,7 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
-        response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(biblevideo_id), headers=headers_au)
+        response = client.delete(UNIT_URL+resource_name + "?delete_id=" + str(biblevideo_id), headers=headers_au)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
@@ -587,14 +587,14 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
-    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(biblevideo_id), headers=headers_va)
+    response = client.delete(UNIT_URL+resource_name + "?delete_id=" + str(biblevideo_id), headers=headers_va)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Bible Video id {biblevideo_id} deleted successfully"
-    biblevideo_response = client.get(UNIT_URL+source_name,headers=headers_auth)
+    biblevideo_response = client.get(UNIT_URL+resource_name,headers=headers_auth)
     assert biblevideo_response.status_code == 200
     #Check biblevideo is deleted from table
-    delete_response = client.get(UNIT_URL+source_name+'?title=Overview:%20Genesis',\
+    delete_response = client.get(UNIT_URL+resource_name+'?title=Overview:%20Genesis',\
         headers=headers_auth)
     assert_not_available_content(delete_response)
 
@@ -602,7 +602,7 @@ def test_delete_default_superadmin():
     ''' positive test case, checking for correct return of deleted biblevideo ID'''
     #Created User or Super Admin can only delete biblevideo
     #creating data
-    response,source_name = test_post_default()
+    response,resource_name = test_post_default()
 
     #Login as Super Admin
     as_data = {
@@ -617,22 +617,22 @@ def test_delete_default_superadmin():
                     'Authorization': "Bearer"+" "+test_user_token
             }
 
-    biblevideo_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    biblevideo_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
     biblevideo_id = biblevideo_response.json()[0]['bibleVideoId']
 
      #Delete biblevideo with Super Admin
-    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(biblevideo_id), headers=headers_sa)
+    response = client.delete(UNIT_URL+resource_name + "?delete_id=" + str(biblevideo_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Bible Video id {biblevideo_id} deleted successfully"
     #Check biblevideo is deleted from table
-    biblevideo_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    biblevideo_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
     logout_user(test_user_token)
-    return response,source_name
+    return response,resource_name
 
 def test_delete_biblevideo_id_string():
     '''positive test case, biblevideo id as string'''
-    response,source_name = test_post_default()
+    response,resource_name = test_post_default()
 
     #Login as Super Admin
     as_data = {
@@ -647,22 +647,22 @@ def test_delete_biblevideo_id_string():
                     'Authorization': "Bearer"+" "+test_user_token
             }
 
-    biblevideo_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    biblevideo_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
     biblevideo_id = biblevideo_response.json()[0]['bibleVideoId']
     biblevideo_id = str(biblevideo_id)
 
     #Delete biblevideo with Super Admin
-    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(biblevideo_id), headers=headers_sa)
+    response = client.delete(UNIT_URL+resource_name + "?delete_id=" + str(biblevideo_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Bible Video id {biblevideo_id} deleted successfully"
     #Check biblevideo biblevideo is deleted from table
-    biblevideo_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    biblevideo_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
     logout_user(test_user_token)
 
 def test_delete_incorrectdatatype():
     '''negative testcase. Passing input data not in json format'''
-    response,source_name = test_post_default()
+    response,resource_name = test_post_default()
 
     #Login as Super Admin
     as_data = {
@@ -677,18 +677,18 @@ def test_delete_incorrectdatatype():
                     'Authorization': "Bearer"+" "+test_user_token
             }
 
-    biblevideo_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    biblevideo_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
     biblevideo_id = biblevideo_response.json()[0]['bibleVideoId']
     biblevideo_id={ }
 
     #Delete biblevideo with Super Admin
-    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(biblevideo_id), headers=headers_sa)
+    response = client.delete(UNIT_URL+resource_name + "?delete_id=" + str(biblevideo_id), headers=headers_sa)
     assert_input_validation_error(response)
     logout_user(test_user_token)
 
 def test_delete_missingvalue_biblevideo_id():
     '''Negative Testcase. Passing input data without bibleVideoId'''
-    response,source_name = test_post_default()
+    response,resource_name = test_post_default()
 
     #Login as Super Admin
     as_data = {
@@ -704,13 +704,13 @@ def test_delete_missingvalue_biblevideo_id():
             }
 
     biblevideo_id=" "
-    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(biblevideo_id), headers=headers_sa)
+    response = client.delete(UNIT_URL+resource_name + "?delete_id=" + str(biblevideo_id), headers=headers_sa)
     assert_input_validation_error(response)
     logout_user(test_user_token)
 
-def test_delete_missingvalue_source_name():
-    '''Negative Testcase. Passing input data without sourceName'''
-    response,source_name = test_post_default()
+def test_delete_missingvalue_resource_name():
+    '''Negative Testcase. Passing input data without resourceName'''
+    response,resource_name = test_post_default()
 
     #Login as Super Admin
     as_data = {
@@ -724,7 +724,7 @@ def test_delete_missingvalue_source_name():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
-    biblevideo_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    biblevideo_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
     biblevideo_id = biblevideo_response.json()[0]['bibleVideoId']
     biblevideo_id=" "
     response = client.delete(UNIT_URL +"?delete_id=" + str(biblevideo_id), headers=headers_sa)
@@ -733,7 +733,7 @@ def test_delete_missingvalue_source_name():
 
 def test_delete_notavailable_content():
     ''' request a non existing biblevideo ID, Ensure there is no partial matching'''
-    response,source_name = test_post_default()
+    response,resource_name = test_post_default()
 
     #Login as Super Admin
     as_data = {
@@ -752,7 +752,7 @@ def test_delete_notavailable_content():
     
 
      #Delete biblevideo with Super Admin
-    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(biblevideo_id), headers=headers_sa)
+    response = client.delete(UNIT_URL+resource_name + "?delete_id=" + str(biblevideo_id), headers=headers_sa)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
     logout_user(test_user_token)
@@ -761,7 +761,7 @@ def test_restore_default():
     '''positive test case, checking for correct return object'''
     #only Super Admin can restore deleted data
     #Creating and Deleting data
-    response,source_name = test_delete_default_superadmin()
+    response,resource_name = test_delete_default_superadmin()
     deleteditem_id = response.json()['data']['itemId']
     data = {"itemId": deleteditem_id}
     #Restoring data
@@ -800,7 +800,7 @@ def test_restore_default():
     assert response.json()['message'] == \
     f"Deleted Item with identity {deleteditem_id} restored successfully"
     #Check Infpgraphic exists after restore
-    restore_response =  client.get(UNIT_URL+source_name+'?title=Overview:%20Genesis',\
+    restore_response =  client.get(UNIT_URL+resource_name+'?title=Overview:%20Genesis',\
         headers=headers_auth)
     assert restore_response.status_code == 200
     assert len(restore_response.json()) == 1
@@ -902,11 +902,11 @@ def test_restore_notavailable_item():
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
 
-def test_restoreitem_with_notavailable_source():
-    ''' Negative test case.request to restore an item whoose source is not available'''
+def test_restoreitem_with_notavailable_resource():
+    ''' Negative test case.request to restore an item whoose resource is not available'''
     #only Super Admin can restore deleted data
     #Creating and Deleting data
-    response,source_name = test_delete_default_superadmin()
+    response,resource_name = test_delete_default_superadmin()
     deleteditem_id = response.json()['data']['itemId']
     data = {"itemId": deleteditem_id}
     #Login as Super Admin
@@ -921,14 +921,14 @@ def test_restoreitem_with_notavailable_source():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
-    #Delete Associated Source
-    get_source_response = client.get(SOURCE_URL + "?source_name="+source_name, headers=headers_auth)
-    source_id = get_source_response.json()[0]["sourceId"]
+    #Delete Associated Resource
+    get_resource_response = client.get(RESOURCE_URL + "?resource_name="+resource_name, headers=headers_auth)
+    resource_id = get_resource_response.json()[0]["resourceId"]
 
-    response = client.delete(SOURCE_URL + "?delete_id=" + str(source_id), headers=headers_auth)
+    response = client.delete(RESOURCE_URL + "?delete_id=" + str(resource_id), headers=headers_auth)
     assert response.status_code == 200
     #Restoring data
-    #Restore content with Super Admin after deleting source
+    #Restore content with Super Admin after deleting resource
     restore_response = client.put(RESTORE_URL, headers=headers_auth, json=data)
     restore_response.status_code = 404
     logout_user(test_user_token)

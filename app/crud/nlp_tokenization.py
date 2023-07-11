@@ -12,7 +12,8 @@ from dependencies import log
 
 
 def build_memory_trie(translation_memory):
-    '''form a trie from a list of known tokens in a source language, to be used for tokenization'''
+    '''form a trie from a list of known tokens in a resource language,
+     to be used for tokenization'''
     memory_trie = pygtrie.StringTrie()
     space_pattern = re.compile(r'\s+')
     for token in translation_memory:
@@ -162,7 +163,7 @@ def get_token_trie(db_, src_lang):
         memory_trie = pickle.loads(cached_trie)
     else:
         translation_memory = db_.query(db_models.TranslationMemory.token).filter(
-            db_models.TranslationMemory.source_language.has(code=src_lang)).all()#pylint: disable=E1101
+            db_models.TranslationMemory.resource_language.has(code=src_lang)).all()#pylint: disable=E1101
         reverse_memory = db_.query(db_models.TranslationMemory.translation).filter(
             db_models.TranslationMemory.target_language.has(code=src_lang)).all()#pylint: disable=E1101
         memory_trie = build_memory_trie(translation_memory+reverse_memory)
@@ -174,7 +175,7 @@ def get_token_trie(db_, src_lang):
 def tokenize(db_:Session, src_lang, sent_list, #pylint: disable=too-many-locals
     use_translation_memory=True, include_phrases=True,**kwargs):
     '''Get phrase and single word tokens and their occurances from input sentence list.
-    Performs tokenization using two knowledge sources: translation memory and stopwords list
+    Performs tokenization using two knowledge resources: translation memory and stopwords list
     input: [(sent_id, sent_text), (sent_id, sent_text), ...]
     output: {"token": [(sent_id, start_offset, end_offset),
                             (sent_id, start_offset, end_offset)..],
@@ -300,12 +301,12 @@ def replace_token_outside(token_offset, draft, **kwargs):
             [draft_seg_offset[0]+offset_diff, draft_seg_offset[1]+offset_diff], status])
     return updated_draft, updated_meta
 
-def replace_token(source, token_offset, translation,draft_meta, tag="confirmed",#pylint: disable=too-many-locals
+def replace_token(resource, token_offset, translation,draft_meta, tag="confirmed",#pylint: disable=too-many-locals
     **kwargs):
     '''Make a token replacement in draft and return updated draft and draft_meta.
-    Assumption: All characters of source and draft will have corresponding entry in draftMeta.
-    Alignment: draftMeta for words in source or draft that are not aligned
-        for source word s1-s5: [[1,5],[0,0], "untranslated"]
+    Assumption: All characters of resource and draft will have corresponding entry in draftMeta.
+    Alignment: draftMeta for words in resource or draft that are not aligned
+        for resource word s1-s5: [[1,5],[0,0], "untranslated"]
         for draft word d10-d17: [[8,8],[10,17, "untranslated"]'''
     draft= kwargs.get("draft","")
     updated_meta = []
@@ -313,7 +314,7 @@ def replace_token(source, token_offset, translation,draft_meta, tag="confirmed",
     translation_offset = [None, None]
     if draft_meta is None or len(draft_meta) == 0:
         draft = ""
-        draft_meta = [[[0,len(source)], [0,0], "untranslated"]]
+        draft_meta = [[[0,len(resource)], [0,0], "untranslated"]]
     draft_meta = sorted(draft_meta, key=lambda meta: tuple(meta[1])) # sort in order of draft
     for meta in draft_meta:
         src_seg_offset = meta[0]
@@ -347,5 +348,5 @@ def replace_token(source, token_offset, translation,draft_meta, tag="confirmed",
                 updated_meta=updated_meta,
                 meta=meta
                 )
-    utils.validate_draft_meta(source, updated_draft, updated_meta)
+    utils.validate_draft_meta(resource, updated_draft, updated_meta)
     return updated_draft, updated_meta

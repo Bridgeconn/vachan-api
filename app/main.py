@@ -219,8 +219,8 @@ app.include_router(filehandling_apis.router)
 
 beta_endpoints = [
     "/graphql",  # Specify the paths of the beta endpoints
-    "/v2/bibles/{source_name}/versification",
-    "/v2/bibles/{source_name}/books/{book_code}/format/{output_format}",
+    "/v2/bibles/{resource_name}/versification",
+    "/v2/bibles/{resource_name}/books/{book_code}/format/{output_format}",
     "/v2/translation/project/versification",
     "/v2/media/gitlab/stream",
     "/v2/media/gitlab/download",

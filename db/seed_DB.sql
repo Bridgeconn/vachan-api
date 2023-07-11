@@ -75,10 +75,10 @@ CREATE TABLE public.versions (
 
 ALTER SEQUENCE public.versions_version_id_seq RESTART WITH 100000;
 
-CREATE TABLE public.sources (
-    source_id SERIAL PRIMARY KEY,
+CREATE TABLE public.resources (
+    resource_id SERIAL PRIMARY KEY,
     version text UNIQUE,
-    source_table text UNIQUE,
+    resource_table text UNIQUE,
     year integer NOT NULL,
     labels text[],
     license_id int REFERENCES licenses(license_id),
@@ -93,7 +93,7 @@ CREATE TABLE public.sources (
     metadata jsonb NULL
 );
 
-ALTER SEQUENCE public.sources_source_id_seq RESTART WITH 100000;
+ALTER SEQUENCE public.resources_resource_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.bible_books_look_up (
     book_id int PRIMARY KEY,
@@ -106,11 +106,11 @@ CREATE TABLE public.bible_books_look_up (
 CREATE TABLE public.translation_projects(
     project_id SERIAL PRIMARY KEY,
     project_name TEXT NOT NULL,
-    source_lang_id int NOT NULL
+    resource_lang_id int NOT NULL
         REFERENCES languages(language_id),
     target_lang_id int NOT NULL 
         REFERENCES languages(language_id),
-    source_document_format text DEFAULT 'Bible USFM',
+    resource_document_format text DEFAULT 'Bible USFM',
     active boolean default true,
     metadata jsonb,
     created_user text NULL,
@@ -138,20 +138,20 @@ ALTER SEQUENCE public.translation_sentences_draft_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.translation_memory(
     token_id SERIAL PRIMARY KEY,
-    source_lang_id int NOT NULL
+    resource_lang_id int NOT NULL
         REFERENCES languages(language_id),
     target_lang_id int 
         REFERENCES languages(language_id),
-    source_token text NOT NULL,
-    source_token_romanized text,
-    source_token_metadata jsonb NULL,
+    resource_token text NOT NULL,
+    resource_token_romanized text,
+    resource_token_metadata jsonb NULL,
     translation text,
     translation_romanized text,
     frequency int,
-    UNIQUE(source_lang_id, target_lang_id, source_token, translation)
+    UNIQUE(resource_lang_id, target_lang_id, resource_token, translation)
 );
 CREATE EXTENSION fuzzystrmatch;
-CREATE INDEX token_soundex ON translation_memory (SOUNDEX(source_token_romanized));
+CREATE INDEX token_soundex ON translation_memory (SOUNDEX(resource_token_romanized));
 CREATE INDEX translation_soundex ON translation_memory (SOUNDEX(translation_romanized));
 ALTER SEQUENCE public.translation_memory_token_id_seq RESTART WITH 100000;
 

@@ -8,6 +8,7 @@ from datetime import datetime
 from math import floor, ceil
 from pathlib import Path
 import pygtrie
+from pytz import timezone
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text,func
@@ -19,6 +20,7 @@ from custom_exceptions import NotAvailableException, TypeException, GenericExcep
 from schema.schemas_nlp import TranslationDocumentType
 from redis_db.utils import  get_routes_from_cache, set_routes_to_cache
 
+ist_timezone = timezone("Asia/Kolkata")
 #Based on sqlalchemy
 #pylint: disable=W0102,E1101,W0143,C0206
 ###################### Tokenization ######################
@@ -80,10 +82,10 @@ def get_project_tokens(db_:Session, project_id, books, sentence_id_range, senten
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
-    sentences = projects_crud.obtain_project_source(db_, project_id, books, sentence_id_range,
+    sentences = projects_crud.obtain_project_resource(db_, project_id, books, sentence_id_range,
         sentence_id_list)
     sentences = sentences['db_content']
-    args = {"db_":db_, "src_language":project_row.sourceLanguage, "sentence_list":sentences,
+    args = {"db_":db_, "src_language":project_row.resourceLanguage, "sentence_list":sentences,
         'trg_language':project_row.targetLanguage,
         "use_translation_memory":use_translation_memory, "include_phrases":include_phrases,
         "include_stopwords":include_stopwords}
@@ -124,19 +126,19 @@ def replace_bulk_tokens(db_, sentence_list, token_translations, src_code, trg_co
     '''Substitute tokens with provided trabslations and get updated drafts, draftMetas
     and add knowledge to translation memory'''
     use_data = kwargs.get("use_data_for_learning",True)
-    source = db_.query(db_models.Language).filter(
+    resource = db_.query(db_models.Language).filter(
         db_models.Language.code == src_code).first()
-    if not source:
+    if not resource:
         raise NotAvailableException(f"Language, {src_code}, not in DB. Please create if required")
     target = db_.query(db_models.Language).filter(
         db_models.Language.code == trg_code).first()
-    if not source:
+    if not resource:
         raise NotAvailableException(f"Language, {trg_code}, not in DB. Please create if required")
     updated_sentences = {sent.sentenceId:sent for sent in sentence_list}
     #get gloss list
     gloss_list = replace_bulk_tokens_gloss_list(token_translations, updated_sentences)
     if use_data:
-        add_to_translation_memory(db_, source, target, gloss_list)
+        add_to_translation_memory(db_, resource, target, gloss_list)
     result = [updated_sentences[key] for key in updated_sentences]
     return result
 
@@ -184,7 +186,7 @@ def save_project_translations(db_, project_id, token_translations,
     db_.add(project_row)
     # db_.commit()
     if use_data:
-        add_to_translation_memory(db_, project_row.sourceLanguage, project_row.targetLanguage,
+        add_to_translation_memory(db_, project_row.resourceLanguage, project_row.targetLanguage,
             gloss_list)
     if return_drafts:
         result = set(db_content)
@@ -192,7 +194,7 @@ def save_project_translations(db_, project_id, token_translations,
     else:
         result = None
     project_row.updatedUser = user_id
-    project_row.updateTime = datetime.now()
+    project_row.updateTime = datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
     response = {
         'db_content':result,
         'project_content':project_row
@@ -227,11 +229,11 @@ def get_training_data_from_drafts(sentence_list, window_size=WINDOW_SIZE):
     '''identify user confirmed token translations and their contexts'''
     training_data = []
     for row in sentence_list:
-        source = row.sentence
+        resource = row.sentence
         for meta in row.draftMeta:
             if meta[2] == "confirmed":
-                token = source[meta[0][0]:meta[0][1]]
-                index, context = extract_context(token, meta[0], source, window_size)
+                token = resource[meta[0][0]:meta[0][1]]
+                index, context = extract_context(token, meta[0], resource, window_size)
                 trans = row.draft[meta[1][0]:meta[1][1]]
                 training_data.append((index, context, trans))
     return training_data
@@ -259,7 +261,7 @@ def check_eliminate_phrase_alignemnts(phrases, src_tok_list, trg_tok_list):
 
 def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
     '''Takes one sentence's alignments and finds aligned phrases
-    input: src-trg token alignments, a list of {"sourceTokenIndex", "targetTokenIndex"} pairs
+    input: src-trg token alignments, a list of {"resourceTokenIndex", "targetTokenIndex"} pairs
     output: aligned multi-token pharses, if available, based on one to many mappings in input'''
     phrases = []
     seen_src = []
@@ -267,23 +269,23 @@ def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
     src_tok_list = [tok.lower() for tok in src_tok_list]
     trg_tok_list = [tok.lower() for tok in trg_tok_list]
     for align in align_pairs:
-        if (align.sourceTokenIndex not in seen_src and
+        if (align.resourceTokenIndex not in seen_src and
             align.targetTokenIndex not in seen_trg): #New single token entry
-            new_token = src_tok_list[align.sourceTokenIndex]
+            new_token = src_tok_list[align.resourceTokenIndex]
             new_translation = trg_tok_list[align.targetTokenIndex]
-            phrases.append( {"src_indices": [align.sourceTokenIndex],
+            phrases.append( {"src_indices": [align.resourceTokenIndex],
                 "trg_indices":[align.targetTokenIndex],
                 "translation": new_translation, "token": new_token})
         else:
-            if align.sourceTokenIndex in seen_src: # Some other trg word is aleady aligned to src
+            if align.resourceTokenIndex in seen_src: # Some other trg word is aleady aligned to src
                 old_align = None
                 for obj in phrases:
-                    if align.sourceTokenIndex in obj['src_indices']:
+                    if align.resourceTokenIndex in obj['src_indices']:
                         old_align = obj
                         break
                 if not old_align:
-                    raise NotAvailableException("Can't find source token, "+\
-                        f"{src_tok_list[align.sourceTokenIndex]}, in {phrases}")
+                    raise NotAvailableException("Can't find resource token, "+\
+                        f"{src_tok_list[align.resourceTokenIndex]}, in {phrases}")
                 trg_indices = sorted(old_align['trg_indices']+ [align.targetTokenIndex])
                 translation = " ".join(trg_tok_list[trg_indices[0]:trg_indices[-1]+1])
                 phrases.remove(old_align)
@@ -299,13 +301,13 @@ def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
                 if not old_align:
                     raise NotAvailableException("Cant find target token,"+\
                         f" {trg_tok_list[align.targetTokenIndex]}, in {phrases}")
-                src_indices = sorted(old_align['src_indices']+ [align.sourceTokenIndex])
+                src_indices = sorted(old_align['src_indices']+ [align.resourceTokenIndex])
                 new_token = " ".join(src_tok_list[src_indices[0]:src_indices[-1]+1])
                 phrases.remove(old_align)
                 old_align['src_indices'] = src_indices
                 old_align['token'] = new_token
                 phrases.append(old_align)
-        seen_src.append(align.sourceTokenIndex)
+        seen_src.append(align.resourceTokenIndex)
         seen_trg.append(align.targetTokenIndex)
     #check and eliminate non-continuous phrase alignments
     phrases = check_eliminate_phrase_alignemnts(phrases, src_tok_list, trg_tok_list)
@@ -316,8 +318,8 @@ def alignment_prepare_trainingdata(alignment_list, window_size):
     dict_data = {}
     sugg_data = []
     for sent in alignment_list:
-        src_len = len(sent.sourceTokenList)
-        src_toks = [utils.normalize_unicode(tok) for tok in sent.sourceTokenList]
+        src_len = len(sent.resourceTokenList)
+        src_toks = [utils.normalize_unicode(tok) for tok in sent.resourceTokenList]
         trg_toks = [utils.normalize_unicode(tok) for tok in sent.targetTokenList]
         phrases = find_pharses_from_alignments(src_toks, trg_toks, sent.alignedTokens)
         for obj in phrases:
@@ -333,17 +335,17 @@ def alignment_prepare_trainingdata(alignment_list, window_size):
                 pre_context = []
             elif end-ceil(window_size/2) >= 0:
                 start = end-ceil(WINDOW_SIZE/2)
-                pre_context = sent.sourceTokenList[start:end]
+                pre_context = sent.resourceTokenList[start:end]
             else:
-                pre_context = sent.sourceTokenList[0:end]
+                pre_context = sent.resourceTokenList[0:end]
             start = obj['src_indices'][-1]+1
             if start == src_len:
                 post_context = []
             elif start + floor(window_size/2) <= src_len:
                 end = start + floor(window_size/2)
-                post_context = sent.sourceTokenList[start:end]
+                post_context = sent.resourceTokenList[start:end]
             else:
-                post_context = sent.sourceTokenList[start:]
+                post_context = sent.resourceTokenList[start:]
             # split multiword tokens in context
             pre_context = ' '.join(pre_context).split(' ')
             post_context = ' '.join(post_context).split(' ')
@@ -472,7 +474,7 @@ def rebuild_trie(db_, src, trg):
     '''Collect suggestions data from translation memory and traning data directory
     and rebuild the trie for language pair in memory'''
     db_sents = db_.query(db_models.TranslationDraft).join(db_models.TranslationProject).\
-            filter(db_models.TranslationProject.sourceLanguage.has(code=src),
+            filter(db_models.TranslationProject.resourceLanguage.has(code=src),
             db_models.TranslationProject.targetLanguage.has(code=trg)).all()
     training_data = get_training_data_from_drafts(list(db_sents))
     new_trie = build_trie(training_data)
@@ -485,7 +487,7 @@ def rebuild_trie(db_, src, trg):
                 new_trie[key] = json_data[key]
     return new_trie
 
-def add_translation_memory_gloss_dataprocess(db_, gloss_list, source_lang, #pylint: disable=R0912
+def add_translation_memory_gloss_dataprocess(db_, gloss_list, resource_lang, #pylint: disable=R0912
     target_lang, default_val):
     """gloss data process"""
     db_content = []
@@ -493,7 +495,7 @@ def add_translation_memory_gloss_dataprocess(db_, gloss_list, source_lang, #pyli
         if not isinstance(gloss, dict):
             gloss = gloss.__dict__
         gloss['token'] = utils.normalize_unicode(gloss['token']).lower()
-        args = {"source_lang_id":source_lang.languageId,
+        args = {"resource_lang_id":resource_lang.languageId,
                 "target_lang_id": target_lang.languageId,
                 "token":gloss['token'],
                 "tokenRom":utils.to_eng(gloss['token'])}
@@ -506,7 +508,7 @@ def add_translation_memory_gloss_dataprocess(db_, gloss_list, source_lang, #pyli
                     freq_val = default_val
                 trans = utils.normalize_unicode(trans).lower()
                 token_row = db_.query(db_models.TranslationMemory).filter(
-                    db_models.TranslationMemory.source_lang_id == source_lang.languageId,
+                    db_models.TranslationMemory.resource_lang_id == resource_lang.languageId,
                     db_models.TranslationMemory.target_lang_id == target_lang.languageId,
                     db_models.TranslationMemory.token == gloss['token'],
                     db_models.TranslationMemory.translation == trans).first()
@@ -534,12 +536,12 @@ def add_translation_memory_gloss_dataprocess(db_, gloss_list, source_lang, #pyli
 def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0):
     '''Add glossary data to translation memory'''
     if isinstance(src_lang, str):
-        source_lang = db_.query(db_models.Language).filter(
+        resource_lang = db_.query(db_models.Language).filter(
             db_models.Language.code == src_lang).first()
-        if not source_lang:
+        if not resource_lang:
             raise NotAvailableException(f"Language, {src_lang}, not available")
     else:
-        source_lang = src_lang
+        resource_lang = src_lang
     if isinstance(trg_lang, str):
         target_lang = db_.query(db_models.Language).filter(
             db_models.Language.code == trg_lang).first()
@@ -548,7 +550,7 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0
     else:
         target_lang = trg_lang
     #function for gloss data process
-    db_content= add_translation_memory_gloss_dataprocess(db_, gloss_list, source_lang,
+    db_content= add_translation_memory_gloss_dataprocess(db_, gloss_list, resource_lang,
             target_lang, default_val)
     cached_trie = get_routes_from_cache(key=f"token_trie/{src_lang}")
     space_pattern = re.compile(r'\s+')
@@ -575,12 +577,12 @@ def get_gloss_chop_word(db_, no_trie_match, trans, matched_word,*args):
     total = args[0]
     word = args[1]
     pass_no = args[2]
-    source_lang = args[3]
+    resource_lang = args[3]
     target_lang = args[4]
     if len(trans) == 0 and pass_no<3 and len(word)>4:
         # try chopping off the last letter
         chopped_word = word[:-1]
-        result = get_gloss(db_, 0, [chopped_word], source_lang, target_lang,
+        result = get_gloss(db_, 0, [chopped_word], resource_lang, target_lang,
             pass_no=pass_no+1)
         if len(result['translations']) > 0:
             return result
@@ -598,20 +600,20 @@ def get_gloss_chop_word(db_, no_trie_match, trans, matched_word,*args):
     result['translations'] = scored_trans
     return result
 
-def gloss_forward_reverse_query(db_, word, source_lang, target_lang, total, *args):
+def gloss_forward_reverse_query(db_, word, resource_lang, target_lang, total, *args):
     """get forward and reverse query"""
     trans = args[0]
     forward_query = db_.query(db_models.TranslationMemory).with_entities(
         db_models.TranslationMemory.token,
         db_models.TranslationMemory.translation,
         db_models.TranslationMemory.frequency,
-        text("levenshtein(source_token,:word1) as lev_score").bindparams(word1=word)
+        text("levenshtein(resource_token,:word1) as lev_score").bindparams(word1=word)
         ).filter(
-            db_models.TranslationMemory.source_language.has(code=source_lang),
+            db_models.TranslationMemory.resource_language.has(code=resource_lang),
             db_models.TranslationMemory.target_language.has(code=target_lang),
-            text("soundex(source_token_romanized) = soundex(:word2)").\
+            text("soundex(resource_token_romanized) = soundex(:word2)").\
                 bindparams(word2=utils.to_eng(word)),
-            text("levenshtein(source_token,:word3) < 4").bindparams(word3=word)
+            text("levenshtein(resource_token,:word3) < 4").bindparams(word3=word)
             ).order_by(text("lev_score"))
     reverse_query = db_.query(db_models.TranslationMemory).with_entities(
         db_models.TranslationMemory.translation,
@@ -619,8 +621,8 @@ def gloss_forward_reverse_query(db_, word, source_lang, target_lang, total, *arg
         db_models.TranslationMemory.frequency,
         text("levenshtein(translation,:word1) as lev_score").bindparams(word1=word)
         ).filter(
-            db_models.TranslationMemory.source_language.has(code=target_lang),
-            db_models.TranslationMemory.target_language.has(code=source_lang),
+            db_models.TranslationMemory.resource_language.has(code=target_lang),
+            db_models.TranslationMemory.target_language.has(code=resource_lang),
             text("soundex(translation_romanized) = soundex(:word2)").\
                 bindparams(word2=utils.to_eng(word)),
             text("levenshtein(translation,:word3) < 4").bindparams(word3=word)
@@ -642,7 +644,7 @@ def get_gloss(db_:Session, *args, **kwargs):#pylint: disable=too-many-locals,too
     output format: [(translation1, score1), (translation2, score2), ...]'''
     index = args[0]
     context = args[1]
-    source_lang = args[2]
+    resource_lang = args[2]
     target_lang = args[3]
     pass_no = kwargs.get("pass_no",1)
     if isinstance(index, int):
@@ -659,11 +661,11 @@ def get_gloss(db_:Session, *args, **kwargs):#pylint: disable=too-many-locals,too
     no_trie_match = True
     if len(to_right)+len(to_left) > 0:#pylint: disable=too-many-nested-blocks
         keys = form_trie_keys(word, to_left, to_right, [word], False)
-        if source_lang+"-"+target_lang in suggestion_trie_in_mem: # check if aleady loaded in memory
-            tree = suggestion_trie_in_mem[source_lang+"-"+target_lang]
+        if resource_lang+"-"+target_lang in suggestion_trie_in_mem: # check if loaded in memory
+            tree = suggestion_trie_in_mem[resource_lang+"-"+target_lang]
         else:  # build trie loading data from disk and DB
-            tree = rebuild_trie(db_, source_lang, target_lang)
-            suggestion_trie_in_mem[source_lang+"-"+target_lang] = tree
+            tree = rebuild_trie(db_, resource_lang, target_lang)
+            suggestion_trie_in_mem[resource_lang+"-"+target_lang] = tree
         for key in keys:
             if tree.has_subtrie(key) or tree.has_key(key):
                 no_trie_match = False
@@ -680,10 +682,10 @@ def get_gloss(db_:Session, *args, **kwargs):#pylint: disable=too-many-locals,too
                 pass
     #get forward reverse query
     matched_word , total = \
-        gloss_forward_reverse_query(db_, word, source_lang, target_lang, total, trans)
+        gloss_forward_reverse_query(db_, word, resource_lang, target_lang, total, trans)
     #get gloss chop word
     result = get_gloss_chop_word(db_, no_trie_match,
-        trans, matched_word, total, word, pass_no, source_lang, target_lang)
+        trans, matched_word, total, word, pass_no, resource_lang, target_lang)
     # check for metadata
     metadata_query = db_.query(db_models.TranslationMemory.metaData).filter(
         db_models.TranslationMemory.token == word,
@@ -694,7 +696,7 @@ def get_gloss(db_:Session, *args, **kwargs):#pylint: disable=too-many-locals,too
         result['metaData'] = mdt[0]
     return result
 
-def glossary(db_:Session, source_language, target_language, token, **kwargs):
+def glossary(db_:Session, resource_language, target_language, token, **kwargs):
     '''finds possible translation suggestion for a token'''
     context = kwargs.get("context",None)
     token_offset = kwargs.get("token_offset",None)
@@ -704,21 +706,21 @@ def glossary(db_:Session, source_language, target_language, token, **kwargs):
         start = context.index(token)
         token_offset= (start, start+len(token))
     index, context_list = extract_context(token, token_offset, context)
-    suggs = get_gloss(db_, index, context_list, source_language, target_language)
+    suggs = get_gloss(db_, index, context_list, resource_language, target_language)
     return suggs
 
-def get_glossary_list(db_: Session, source_language, target_language, token, **kwargs):
+def get_glossary_list(db_: Session, resource_language, target_language, token, **kwargs):
     '''Get the list of all matching items in translation memory. Not content aware'''
     skip = kwargs.get("skip", 0)
     limit = kwargs.get("limit", 100)
     token_list = db_.query(db_models.TranslationMemory.token,func.count(
             db_models.TranslationMemory.token)).group_by(db_models.TranslationMemory.token).all()
     query = db_.query(db_models.TranslationMemory)
-    source = db_.query(db_models.Language).filter(db_models.Language.code == source_language
+    resource = db_.query(db_models.Language).filter(db_models.Language.code == resource_language
         ).first()
-    if not source:
-        raise NotAvailableException(f"Language, {source_language}, not found")
-    query = query.filter(db_models.TranslationMemory.source_lang_id == source.languageId)
+    if not resource:
+        raise NotAvailableException(f"Language, {resource_language}, not found")
+    query = query.filter(db_models.TranslationMemory.resource_lang_id == resource.languageId)
     target = db_.query(db_models.Language).filter(db_models.Language.code == target_language
         ).first()
     if not target:
@@ -737,33 +739,33 @@ def get_glossary_list(db_: Session, source_language, target_language, token, **k
             }
     return response
 
-def auto_translate_token_logic(db_,tokens, sent, source_lang, target_lang):
+def auto_translate_token_logic(db_,tokens, sent, resource_lang, target_lang):
     """auto translate token loop"""
     for token in tokens:
         for occurence in tokens[token]['occurrences']:
             offset = occurence['offset']
             index, context = extract_context(token, offset,
                 sent.sentence)
-            gloss = get_gloss(db_, index, context, source_lang, target_lang)
+            gloss = get_gloss(db_, index, context, resource_lang, target_lang)
             suggestions = list(gloss['translations'].keys())
             if len(suggestions) > 0:
                 draft, meta = nlp_utils.replace_token(sent.sentence, offset,
                     suggestions[0], sent.draftMeta, "suggestion",draft=sent.draft)
             else:
-                # splits the source sentence into tokens(in draftmeta)
+                # splits the resource sentence into tokens(in draftmeta)
                 # even if there is no transltion suggestion available.
                 draft, meta = nlp_utils.replace_token(sent.sentence, offset,
                     "", sent.draftMeta, "untranslated",draft=sent.draft)
             sent.draft = draft
             sent.draftMeta = meta
 
-def auto_translate(db_, sentence_list, source_lang, target_lang, **kwargs):
+def auto_translate(db_, sentence_list, resource_lang, target_lang, **kwargs):
     '''Attempts to tokenize the input sentence and replace each token with top suggestion.
     If draft_meta is provided indicating some portion of sentence is user translated,
     then it is left untouched.'''
     punctuations = kwargs.get("punctuations",None)
     stop_words = kwargs.get("stop_words",None)
-    args = {"db_":db_, "src_lang":source_lang, "include_stopwords":False, "include_phrases":True}
+    args = {"db_":db_, "src_lang":resource_lang, "include_stopwords":False, "include_phrases":True}
     if punctuations:
         args['punctuations'] = punctuations
     if stop_words:
@@ -775,7 +777,7 @@ def auto_translate(db_, sentence_list, source_lang, target_lang, **kwargs):
         tokens = nlp_utils.tokenize(**args)
 
         #auto tranaslte token loop
-        auto_translate_token_logic(db_,tokens, sent, source_lang, target_lang)
+        auto_translate_token_logic(db_,tokens, sent, resource_lang, target_lang)
     return sentence_list
 
 def project_suggest_translations(db_:Session, project_id, books, #pylint: disable=too-many-locals
@@ -786,7 +788,7 @@ def project_suggest_translations(db_:Session, project_id, books, #pylint: disabl
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
-    draft_rows = projects_crud.obtain_project_source(db_, project_id, books, sentence_id_range,
+    draft_rows = projects_crud.obtain_project_resource(db_, project_id, books, sentence_id_range,
         sentence_id_list, with_draft=True)
     draft_rows = draft_rows['db_content']
     if confirm_all:
@@ -798,7 +800,7 @@ def project_suggest_translations(db_:Session, project_id, books, #pylint: disabl
         updated_drafts = draft_rows
     else:
         args = {"db_":db_, "sentence_list":draft_rows,
-            "source_lang":project_row.sourceLanguage.code,
+            "resource_lang":project_row.resourceLanguage.code,
             "target_lang":project_row.targetLanguage.code}
         if "stopwords" in project_row.metaData:
             args['stop_words'] = project_row.metaData['stopwords']
@@ -807,7 +809,7 @@ def project_suggest_translations(db_:Session, project_id, books, #pylint: disabl
         updated_drafts = auto_translate(**args)
         db_.add_all(updated_drafts)
     project_row.updatedUser = user_id
-    project_row.updateTime = datetime.now()
+    project_row.updateTime = datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
     response = {
         'db_content':updated_drafts,
         'project_content':project_row
@@ -827,13 +829,13 @@ def edit_glossary(db_: Session,token_info):
         db_content.metaData = token_info.metaData
     return db_content
 
-def remove_glossary(db_, source_lang,target_lang, token,translation):
+def remove_glossary(db_, resource_lang,target_lang, token,translation):
     '''To remove a suggestion'''
-    if isinstance(source_lang, str):
-        source_lang = db_.query(db_models.Language).filter(
-            db_models.Language.code == source_lang).first()
-        if not source_lang:
-            raise NotAvailableException("Source language not available")
+    if isinstance(resource_lang, str):
+        resource_lang = db_.query(db_models.Language).filter(
+            db_models.Language.code == resource_lang).first()
+        if not resource_lang:
+            raise NotAvailableException("Resource language not available")
     if isinstance(target_lang, str):
         target_lang = db_.query(db_models.Language).filter(
             db_models.Language.code == target_lang).first()
@@ -842,7 +844,7 @@ def remove_glossary(db_, source_lang,target_lang, token,translation):
     if translation is None:
         translation = ""
     token_row = db_.query(db_models.TranslationMemory).filter(
-            db_models.TranslationMemory.source_lang_id == source_lang.languageId,
+            db_models.TranslationMemory.resource_lang_id == resource_lang.languageId,
             db_models.TranslationMemory.target_lang_id == target_lang.languageId,
             db_models.TranslationMemory.token == token,
             db_models.TranslationMemory.translation == translation).first()
@@ -933,15 +935,15 @@ def export_to_print(sentence_list):
         output_json[row.surrogateId] = row.draft
     return output_json
 
-def export_to_json(source_lang, target_lang, sentence_list, last_modified):
-    '''input sentence_list is List of (sent_id, source_sent, draft, draft_meta)
+def export_to_json(resource_lang, target_lang, sentence_list, last_modified):
+    '''input sentence_list is List of (sent_id, resource_sent, draft, draft_meta)
     output:json in alignment format'''
     json_output = {#"conformsTo": "alignment-0.1",
                    "metadata":{
                       "resources":{
                           "r0": {
-                            # "languageCode": source_lang.code,
-                            # "name": source_lang.language,
+                            # "languageCode": resource_lang.code,
+                            # "name": resource_lang.language,
                             # "version": "0.1"
                           },
                           "r1": {
@@ -951,9 +953,9 @@ def export_to_json(source_lang, target_lang, sentence_list, last_modified):
                            }},
                       "modified": last_modified},
                    "segments": []}
-    if source_lang:
-        json_output['metadata']['resources']['r0'] = {"languageCode": source_lang.code,
-            "name": source_lang.language}
+    if resource_lang:
+        json_output['metadata']['resources']['r0'] = {"languageCode": resource_lang.code,
+            "name": resource_lang.language}
     if target_lang:
         json_output['metadata']['resources']['r1'] = {"languageCode": target_lang.code,
             "name": target_lang.language}

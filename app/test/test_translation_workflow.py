@@ -5,14 +5,14 @@ import json
 import requests
 from . import client
 from .test_versions import check_post
-from .test_sources import check_post as source_post
+from .test_resources import check_post as resource_post
 from .conftest import initial_test_users
 
 BASE_URL = "v2/"
 headers = {"contentType": "application/json", "accept": "application/json"}
 
-# have a bible source to be used
-source_name = "hi_XYZ_1_bible" # pylint: disable=C0103
+# have a bible resource to be used
+resource_name = "hi_XYZ_1_bible" # pylint: disable=C0103
 project_id = None # pylint: disable=C0103
 
 ver_data = {
@@ -184,7 +184,7 @@ gospel_books_data = [
 
 project_post_data = {
     "projectName": "Test project 4",
-    "sourceLanguageCode": "hi",
+    "resourceLanguageCode": "hi",
     "targetLanguageCode": "ml"
 }
 
@@ -206,7 +206,7 @@ bible_books = {
 project_update_data = {
 	"projectId":project_id,
     "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']],
-    "selectedBooks":{"bible": source_name,
+    "selectedBooks":{"bible": resource_name,
     				 "books": ['luk', 'jhn']}
 
 }
@@ -245,7 +245,7 @@ ALIGNMENT_SRC = "hi"
 ALIGNMENT_TRG = "ml"
 alignment_data = [
 {
-    "sourceTokenList": [
+    "resourceTokenList": [
       "क्योंकि","परमेश्वर","ने","जगत","से","ऐसा","प्रेम","रखा","कि","उसने",
       "अपना","एकलौता","पुत्र","दे","दिया","ताकि","जो","कोई","उस","पर","विश्वास","करे",
       "वह","नाश","न","हो","परन्तु","अनन्त","जीवन","पाए"
@@ -259,108 +259,108 @@ alignment_data = [
     ],
     "alignedTokens": [
       {
-        "sourceTokenIndex": 1,
+        "resourceTokenIndex": 1,
         "targetTokenIndex": 8
       },
       # {
-      #   "sourceTokenIndex": 2,
+      #   "resourceTokenIndex": 2,
       #   "targetTokenIndex": 8
       # },
       {
-        "sourceTokenIndex": 3,
+        "resourceTokenIndex": 3,
         "targetTokenIndex": 12
       },
       {
-        "sourceTokenIndex": 4,
+        "resourceTokenIndex": 4,
         "targetTokenIndex": 12
       },
       {
-        "sourceTokenIndex": 5,
+        "resourceTokenIndex": 5,
         "targetTokenIndex": 11
       },
       {
-        "sourceTokenIndex": 6,
+        "resourceTokenIndex": 6,
         "targetTokenIndex": 13
       },
       {
-        "sourceTokenIndex": 7,
+        "resourceTokenIndex": 7,
         "targetTokenIndex": 13
       },
       {
-        "sourceTokenIndex": 8,
+        "resourceTokenIndex": 8,
         "targetTokenIndex": 13
       },
       {
-        "sourceTokenIndex": 9,
+        "resourceTokenIndex": 9,
         "targetTokenIndex": 0
       },
       {
-        "sourceTokenIndex": 10,
+        "resourceTokenIndex": 10,
         "targetTokenIndex": 0
       },
       {
-        "sourceTokenIndex": 11,
+        "resourceTokenIndex": 11,
         "targetTokenIndex": 1
       },
       {
-        "sourceTokenIndex": 12,
+        "resourceTokenIndex": 12,
         "targetTokenIndex": 1
       },
       {
-        "sourceTokenIndex": 11,
+        "resourceTokenIndex": 11,
         "targetTokenIndex": 2
       },
       {
-        "sourceTokenIndex": 12,
+        "resourceTokenIndex": 12,
         "targetTokenIndex": 2
       },
       {
-        "sourceTokenIndex": 13,
+        "resourceTokenIndex": 13,
         "targetTokenIndex": 10
       },
       {
-        "sourceTokenIndex": 14,
+        "resourceTokenIndex": 14,
         "targetTokenIndex": 10
       },
       {
-        "sourceTokenIndex": 20,
+        "resourceTokenIndex": 20,
         "targetTokenIndex": 3
       },
       {
-        "sourceTokenIndex": 21,
+        "resourceTokenIndex": 21,
         "targetTokenIndex": 3
       },
       {
-        "sourceTokenIndex": 18,
+        "resourceTokenIndex": 18,
         "targetTokenIndex": 4
       },
       {
-        "sourceTokenIndex": 19,
+        "resourceTokenIndex": 19,
         "targetTokenIndex": 4
       },
 
       {
-        "sourceTokenIndex": 23,
+        "resourceTokenIndex": 23,
         "targetTokenIndex": 5
       },
       {
-        "sourceTokenIndex": 24,
+        "resourceTokenIndex": 24,
         "targetTokenIndex": 5
       },
       {
-        "sourceTokenIndex": 25,
+        "resourceTokenIndex": 25,
         "targetTokenIndex": 5
       },
       {
-        "sourceTokenIndex": 27,
+        "resourceTokenIndex": 27,
         "targetTokenIndex": 6
       },
       {
-        "sourceTokenIndex": 28,
+        "resourceTokenIndex": 28,
         "targetTokenIndex": 6
       },
       {
-        "sourceTokenIndex": 29,
+        "resourceTokenIndex": 29,
         "targetTokenIndex": 7
       }
 	]
@@ -374,17 +374,17 @@ def test_end_to_end_translation():
     assert resp.json()['message'] == "Version created successfully"
 
 
-    # resp = client.post(BASE_URL+"sources", headers=headers, json=src_data)
-    resp = source_post(src_data)
-    assert resp.json()['message'] == "Source created successfully"
-    source_name = resp.json()['data']['sourceName']
+    # resp = client.post(BASE_URL+"resources", headers=headers, json=src_data)
+    resp = resource_post(src_data)
+    assert resp.json()['message'] == "Resource created successfully"
+    resource_name = resp.json()['data']['resourceName']
 
     headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
                 "app":"Autographa"
             }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    resp = client.post(BASE_URL+"bibles/"+source_name+"/books", headers=headers_auth,
+    resp = client.post(BASE_URL+"bibles/"+resource_name+"/books", headers=headers_auth,
     json=gospel_books_data)
     assert resp.json()['message'] == "Bible books uploaded and processed successfully"
 
@@ -424,7 +424,7 @@ def test_end_to_end_translation():
 
     # # Suggestions
 
-    resp = client.post(BASE_URL+"nlp/learn/alignment?source_language="+ALIGNMENT_SRC+
+    resp = client.post(BASE_URL+"nlp/learn/alignment?resource_language="+ALIGNMENT_SRC+
     	"&target_language="+ALIGNMENT_TRG, headers=headers_auth, json=alignment_data)
     assert resp.status_code == 201
     # print(resp)

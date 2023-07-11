@@ -231,8 +231,8 @@ def add_version():
     result = client.post('/v2/versions', headers=headers_auth, json=version_data)
     assert result.status_code == 201
 
-def add_bible_source():
-    '''creates bible source'''
+def add_bible_resource():
+    '''creates bible resource'''
     src_data = {
     "contentType": "bible",
     "language": "hi",
@@ -241,28 +241,28 @@ def add_bible_source():
     "year": 2020,
     "license": "CC-BY-SA",
     "metaData": {"owner": "someone" },
-    "accessPermissions": [schemas.SourcePermissions.OPENACCESS, schemas.SourcePermissions.CONTENT]
+    "accessPermissions": [schemas.ResourcePermissions.OPENACCESS, schemas.ResourcePermissions.CONTENT]
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    source = client.post('/v2/sources', headers=headers_auth, json=src_data)
-    assert source.status_code == 201
-    table_name = source.json()['data']['sourceName']
+    resource = client.post('/v2/resources', headers=headers_auth, json=src_data)
+    assert resource.status_code == 201
+    table_name = resource.json()['data']['resourceName']
     return table_name
 
-def add_dict_source():
-    '''creates dictionary source'''
-    source_data = {
+def add_dict_resource():
+    '''creates dictionary resource'''
+    resource_data = {
         "contentType": "dictionary",
         "language": "hi",
         "version": "TW",
         "revision": 1,
         "year": 2000,
-        "accessPermissions": [schemas.SourcePermissions.OPENACCESS, schemas.SourcePermissions.CONTENT]
+        "accessPermissions": [schemas.ResourcePermissions.OPENACCESS, schemas.ResourcePermissions.CONTENT]
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    source = client.post('/v2/sources', headers=headers_auth, json=source_data)
-    assert source.status_code == 201
-    table_name = source.json()['data']['sourceName']
+    resource = client.post('/v2/resources', headers=headers_auth, json=resource_data)
+    assert resource.status_code == 201
+    table_name = resource.json()['data']['resourceName']
     return table_name
 
 def add_bible_books(table_name):
@@ -287,10 +287,10 @@ def add_tw_dict(table_name):
 def test_generate_stopwords():
     '''Positve tests for generate stopwords API'''
     add_version()
-    table_name = add_bible_source()
+    table_name = add_bible_resource()
     add_bible_books(table_name)
 
-    dict_table_name = add_dict_source()
+    dict_table_name = add_dict_resource()
     add_tw_dict(dict_table_name)
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
 
@@ -350,7 +350,7 @@ def test_generate_stopwords():
     assert job_response1.json()['message'] == "Stopwords identified out of limited resources. Manual verification recommended"
 
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    response = client.post(GER_URL+'/generate?language_code=hi&source_name='+dict_table_name,
+    response = client.post(GER_URL+'/generate?language_code=hi&resource_name='+dict_table_name,
         headers=headers_auth, json=sentence_list)
     assert response.status_code == 201
     assert_positive_response(response.json())
@@ -426,7 +426,7 @@ def test_delete_stopword():
     assert isinstance( get_response.json(), list)
     assert len(get_response.json())==2
 
-    #Delete with not available source language
+    #Delete with not available resource language
     response =client.delete(UNIT_URL+'/aa?lang=x-ttt&stopword=asd',headers=headers_auth)
     assert response.status_code == 404
     assert "Language not available" in response.json()['details']
