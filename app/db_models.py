@@ -24,8 +24,7 @@ class ContentTypeName(Enum):
     and also used to as the ending of respective database table names'''
     BIBLE = "bible"
     COMMENTARY = "commentary"
-    INFOGRAPHIC = "infographic"
-    BIBLEVIDEO = "biblevideo"
+    PARASCRIPTURAL = "parascriptural"
     DICTIONARY = "dictionary"
     GITLABREPO = "gitlabrepo"
 
@@ -163,38 +162,21 @@ class Dictionary(): # pylint: disable=too-few-public-methods
         {'extend_existing': True},
                      )
 
-class Infographic(): # pylint: disable=too-few-public-methods
-    '''Corresponds to the dynamically created infographics tables in vachan Db(postgres)'''
-    infographicId = Column('infographic_id', Integer,
-        Sequence('infographic_id_seq', start=100001, increment=1), primary_key=True)
-    @declared_attr
-    def book_id(cls): # pylint: disable=E0213
-        '''For modelling the bookId field in derived classes'''
-        return Column('book_id', Integer, ForeignKey('bible_books_look_up.book_id'))
-    @declared_attr
-    def book(cls): # pylint: disable=E0213
-        '''For modelling the book field in derived classes'''
-        return relationship(BibleBook)
+class Parascriptural():# pylint: disable=too-few-public-methods
+    '''Corresponds to the dynamically created parascripturals tables in vachan Db(postgres)'''
+    parascriptId = Column('parascript_id', Integer,
+        Sequence('parascriptural_id_seq', start=100001, increment=1), primary_key=True)
+    paratype = Column('paratype',String)
     title = Column('title', String)
-    infographicLink = Column('infographic_url', String)
-    active = Column('active', Boolean)
+    description = Column('description', String)
+    content = Column('content', String)
+    reference = Column('reference', JSONB)
+    link = Column('link', String)
+    metaData = Column('metadata', JSONB)
     __table_args__ = (
-        UniqueConstraint('book_id', 'title'),
+        UniqueConstraint('paratype', 'title'),
         {'extend_existing': True}
                      )
-
-class BibleVideo(): # pylint: disable=too-few-public-methods
-    '''Corresponds to the dynamically created bible videos tables in vachan Db(postgres)'''
-    bibleVideoId  = Column('biblevideo_id', Integer,
-        Sequence('biblevideo_id_seq', start=100001, increment=1), primary_key=True)
-    refIds  = Column('ref_ids', ARRAY(Integer))
-    title = Column('title', String, unique=True)
-    series = Column('series', String)
-    description = Column('description', String)
-    videoLink = Column('video_link', String)
-    active = Column('active', Boolean)
-    __table_args__ = {'extend_existing': True}
-
 class BibleAudio(): # pylint: disable=too-few-public-methods
     '''Corresponds to the dynamically created bible_audio tables in vachan Db(postgres)'''
     audioId  = Column('bible_audio_id', Integer,
@@ -294,12 +276,9 @@ def create_dynamic_table(source_name, table_name, content_type):
             "jsonb_to_tsvector('simple', details, '[\"string\", \"numeric\"]') || ' ')"),
             postgresql_using="gin",
             )
-    elif content_type == ContentTypeName.INFOGRAPHIC.value:
+    elif content_type == ContentTypeName.PARASCRIPTURAL.value:
         dynamicTables[source_name] = type(
-            table_name,(Infographic, Base,),{"__tablename__": table_name})
-    elif content_type == ContentTypeName.BIBLEVIDEO.value:
-        dynamicTables[source_name] = type(
-            table_name,(BibleVideo, Base,),{"__tablename__": table_name})
+            table_name,(Parascriptural, Base,),{"__tablename__": table_name})
     elif content_type == ContentTypeName.GITLABREPO.value:
         pass
     else:

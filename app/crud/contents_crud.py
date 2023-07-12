@@ -1,5 +1,5 @@
 ''' Place to define all Database CRUD operations for content tables
-bible, commentary, infographic, biblevideo, dictionary etc'''
+bible, commentary, parascriptural, dictionary etc'''
 import json
 import re
 from datetime import datetime
@@ -328,25 +328,30 @@ def delete_dictionary(db_: Session, delitem : int,table_name = None,
     db_.delete(db_content)
     return response
 
-def get_infographics(db_:Session, source_name, book_code=None, title=None,**kwargs):
-    '''Fetches rows of infographics from the table specified by source_name'''
-    active = kwargs.get("active",True)
+def get_parascripturals(db_:Session, source_name, paratype=None, title=None,**kwargs):
+    '''Fetches rows of parascripturals from the table specified by source_name'''
+    search_word = kwargs.get("search_word",None)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
-    infographic_id=kwargs.get("infographic_id",None)
+    parascript_id=kwargs.get("parascript_id",None)
     if source_name not in db_models.dynamicTables:
         raise NotAvailableException(f'{source_name} not found in database.')
-    if not source_name.endswith(db_models.ContentTypeName.INFOGRAPHIC.value):
-        raise TypeException('The operation is supported only on infographics')
+    if not source_name.endswith(db_models.ContentTypeName.PARASCRIPTURAL.value):
+        raise TypeException('The operation is supported only on parascripturals')
     model_cls = db_models.dynamicTables[source_name]
     query = db_.query(model_cls)
-    if book_code:
-        query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
+    if paratype:
+        query = query.filter(model_cls.paratype == paratype)
     if title:
         query = query.filter(model_cls.title == utils.normalize_unicode(title.strip()))
-    if infographic_id:
-        query = query.filter(model_cls.infographicId == infographic_id)
-    query = query.filter(model_cls.active == active)
+    if parascript_id:
+        query = query.filter(model_cls.parascriptId == parascript_id)
+    if search_word:
+        search_pattern = " & ".join(re.findall(r'\w+', search_word))
+        search_pattern += ":*"
+        query = query.filter(text("to_tsvector('simple', title || ' ' ||"+\
+            " content || ' ' || description || ' '  || reference || ' ')"+\
+            " @@ to_tsquery('simple', :pattern)").bindparams(pattern=search_pattern))
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     response = {
@@ -355,30 +360,25 @@ def get_infographics(db_:Session, source_name, book_code=None, title=None,**kwar
         }
     return response
 
-def upload_infographics(db_: Session, source_name, infographics, user_id=None):
-    '''Adds rows to the infographics table specified by source_name'''
+def upload_parascripturals(db_: Session, source_name, parascriptural, user_id=None):
+    '''Adds rows to the parascripturals table specified by source_name'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
         raise NotAvailableException(f'Source {source_name}, not found in database')
-    if source_db_content.contentType.contentType != db_models.ContentTypeName.INFOGRAPHIC.value:
-        raise TypeException('The operation is supported only on infographics')
+    if source_db_content.contentType.contentType != db_models.ContentTypeName.PARASCRIPTURAL.value:
+        raise TypeException('The operation is supported only on parascripturals')
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
-    prev_book_code = None
-    for item in infographics:
-        if item.bookCode != prev_book_code:
-            book = db_.query(db_models.BibleBook).filter(
-                db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
-            prev_book_code = item.bookCode
-            if not book:
-                raise NotAvailableException(f'Bible Book code, {item.bookCode}, '+\
-                    'not found in database')
+    for item in parascriptural:
         row = model_cls(
-            book_id = book.bookId,
+            paratype = item.paratype,
             title = utils.normalize_unicode(item.title.strip()),
-            infographicLink = item.infographicLink,
-            active=item.active)
+            description = item.description,
+            content = item.content,
+            reference = item.reference,
+            link = item.link,
+            metadata = item.metaData)
         db_content.append(row)
     db_.add_all(db_content)
     db_.expire_all()
@@ -389,37 +389,31 @@ def upload_infographics(db_: Session, source_name, infographics, user_id=None):
         }
     return response
 
-def update_infographics(db_: Session, source_name, infographics, user_id=None):
-    '''Update rows, that matches book, and title in the infographic table
+def update_parascripturals(db_: Session, source_name, parascripturals, user_id=None):
+    '''Update rows, that matches type, and title in the parascriptural table
     specified by source_name'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     if not source_db_content:
         raise NotAvailableException(f'Source {source_name}, not found in database')
-    if source_db_content.contentType.contentType != db_models.ContentTypeName.INFOGRAPHIC.value:
-        raise TypeException('The operation is supported only on infographics')
+    if source_db_content.contentType.contentType != db_models.ContentTypeName.PARASCRIPTURAL.value:
+        raise TypeException('The operation is supported only on parascripturals')
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
-    prev_book_code = None
-    for item in infographics:
-        if item.bookCode != prev_book_code:
-            book = db_.query(db_models.BibleBook).filter(
-                db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
-            prev_book_code = item.bookCode
-            if not book:
-                raise NotAvailableException(f'Bible Book code, {item.bookCode}, '+\
-                    'not found in database')
+    for item in parascripturals:
         row = db_.query(model_cls).filter(
-            model_cls.book_id == book.bookId,
+            model_cls.paratype == item.paratype,
             model_cls.title == utils.normalize_unicode(item.title.strip())).first()
         if not row:
-            raise NotAvailableException(f"Infographics row with bookCode:{item.bookCode}, "+\
+            raise NotAvailableException(f"Parascripturals row with type:{item.paratype}, "+\
                 f"title:{item.title}, "+\
                 f"not found for {source_name}")
-        if item.infographicLink:
-            row.infographicLink = item.infographicLink
-        if item.active is not None:
-            row.active = item.active
+        if item.description:
+            row.description = item.description
+        if item.content:
+            row.content = item.content
+        if item.link:
+            row.link = item.link
         db_.flush()
         db_content.append(row)
     source_db_content.updatedUser = user_id
@@ -429,14 +423,14 @@ def update_infographics(db_: Session, source_name, infographics, user_id=None):
         }
     return response
 
-def delete_infographic(db_: Session, delitem: int,table_name = None,\
+def delete_parascriptural(db_: Session, delitem: int,table_name = None,\
     source_name=None,user_id=None):
-    '''delete particular item from infographic, selected via sourcename and infographic id'''
+    '''delete particular item from parascriptural, selected via sourcename and parascript id'''
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     model_cls = table_name
     query = db_.query(model_cls)
-    db_content = query.filter(model_cls.infographicId == delitem).first()
+    db_content = query.filter(model_cls.parascriptId == delitem).first()
     db_.flush()
     db_.delete(db_content)
     #db_.commit()

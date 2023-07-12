@@ -8,7 +8,7 @@ from pydantic import types
 class ResourceType(str, Enum):
     '''Classify DB resources for defineing access rights on them'''
     METACONTENT = "meta contents like licences, languages, versions or content types"
-    CONTENT = "contents like bibles, commentaries, infographics, dictionary or videos"
+    CONTENT = "contents like bibles, commentaries,dictionaries or parascripturals"
     PROJECT = "Ag or translation project"
     USER = "all users in our system (Kratos)"
     TRANSLATION = "generic translation apis"
