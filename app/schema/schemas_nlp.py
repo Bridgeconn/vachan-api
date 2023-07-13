@@ -58,7 +58,7 @@ class TranslationProject(BaseModel):
     '''Output object for project creation'''
     projectId: int= Field(..., example=100001)
     projectName: str= Field(..., example="Hindi Malayalam Gospels")
-    resourceLanguage : LanguageResponse = Field(...)
+    sourceLanguage : LanguageResponse = Field(...)
     targetLanguage : LanguageResponse = Field(...)
     documentFormat: TranslationDocumentType
     users: List[ProjectUser] = None

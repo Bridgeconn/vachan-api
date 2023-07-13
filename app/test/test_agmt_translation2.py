@@ -265,7 +265,7 @@ def test_empty_draft_initalization():
     tokens_trans = [
         {"token":"jungle", "translations":["കാട്"]}
     ]
-    response = client.post('/v2/nlp/learn/gloss?resource_language=en&target_language=ml',
+    response = client.post('/v2/nlp/learn/gloss?source_language=en&target_language=ml',
         headers=headers_auth, json=tokens_trans)
     assert response.status_code == 201
     assert response.json()['message'] == "Added to glossary"
@@ -347,7 +347,7 @@ def test_space_in_suggested_draft():
         {"token":"far", "translations":["ദൂരെ"]},
         {"token":"fox", "translations":["കുറുക്കന്‍"]}
     ]
-    response = client.post('/v2/nlp/learn/gloss?resource_language=en&target_language=ml',
+    response = client.post('/v2/nlp/learn/gloss?source_language=en&target_language=ml',
         headers=headers_auth, json=tokens_trans)
     assert response.status_code == 201
     assert response.json()['message'] == "Added to glossary"
@@ -650,7 +650,7 @@ def test_glossupdate_upon_draft_update():
     assert sents[0]["draft"] == "കാട്"
     assert sents[0]["draftMeta"] == put_data[0]['draftMeta']
 
-    resp = client.get(f"/v2/nlp/gloss?resource_language={project_data['resourceLanguageCode']}"+\
+    resp = client.get(f"/v2/nlp/gloss?source_language={project_data['resourceLanguageCode']}"+\
         f"&target_language={project_data['targetLanguageCode']}&token=jungle",
         headers=headers_auth)
     assert resp.status_code == 200

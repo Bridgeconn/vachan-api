@@ -163,7 +163,7 @@ def get_token_trie(db_, src_lang):
         memory_trie = pickle.loads(cached_trie)
     else:
         translation_memory = db_.query(db_models.TranslationMemory.token).filter(
-            db_models.TranslationMemory.resource_language.has(code=src_lang)).all()#pylint: disable=E1101
+            db_models.TranslationMemory.source_language.has(code=src_lang)).all()#pylint: disable=E1101
         reverse_memory = db_.query(db_models.TranslationMemory.translation).filter(
             db_models.TranslationMemory.target_language.has(code=src_lang)).all()#pylint: disable=E1101
         memory_trie = build_memory_trie(translation_memory+reverse_memory)

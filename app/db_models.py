@@ -323,13 +323,13 @@ class TranslationProject(Base): # pylint: disable=too-few-public-methods
     projectId = Column('project_id', Integer, primary_key=True, autoincrement=True)
     projectName = Column('project_name', String, index=True)
     @declared_attr
-    def resource_lang_id(cls): # pylint: disable=E0213
-        '''For modelling the resourceLanguage field in this class'''
-        return Column('resource_lang_id', Integer, ForeignKey('languages.language_id'))
+    def source_lang_id(cls): # pylint: disable=E0213
+        '''For modelling the sourceLanguage field in this class'''
+        return Column('source_lang_id', Integer, ForeignKey('languages.language_id'))
     @declared_attr
-    def resourceLanguage(cls): # pylint: disable=E0213, disable=C0103
-        '''For modelling the resourceLanguage field in this class'''
-        return relationship(Language, foreign_keys=cls.resource_lang_id, uselist=False)
+    def sourceLanguage(cls): # pylint: disable=E0213, disable=C0103
+        '''For modelling the sourceLanguage field in this class'''
+        return relationship(Language, foreign_keys=cls.source_lang_id, uselist=False)
     @declared_attr
     def target_lang_id(cls): # pylint: disable=E0213
         '''For modelling the targetLanguage field in this class'''
@@ -343,7 +343,7 @@ class TranslationProject(Base): # pylint: disable=too-few-public-methods
         '''For modelling project users from translation_project_users'''
         return relationship('TranslationProjectUser', uselist=True,
             back_populates='project')
-    documentFormat = Column('resource_document_format', String)
+    documentFormat = Column('source_document_format', String)
     metaData = Column('metadata', JSON)
     active = Column('active', Boolean, default=True)
     createdUser = Column('created_user', String)
@@ -378,13 +378,13 @@ class TranslationMemory(Base):  # pylint: disable=too-few-public-methods
 
     tmID = Column('token_id', Integer, primary_key=True, autoincrement=True)
     @declared_attr
-    def resource_lang_id(cls): # pylint: disable=E0213
-        '''For modelling the resourceLanguage field in this class'''
-        return Column('resource_lang_id', Integer, ForeignKey('languages.language_id'))
+    def source_lang_id(cls): # pylint: disable=E0213
+        '''For modelling the sourceLanguage field in this class'''
+        return Column('source_lang_id', Integer, ForeignKey('languages.language_id'))
     @declared_attr
-    def resource_language(cls): # pylint: disable=E0213
-        '''For modelling the resourceLanguage field in this class'''
-        return relationship(Language, foreign_keys=cls.resource_lang_id, uselist=False)
+    def source_language(cls): # pylint: disable=E0213
+        '''For modelling the sourceLanguage field in this class'''
+        return relationship(Language, foreign_keys=cls.source_lang_id, uselist=False)
     @declared_attr
     def target_lang_id(cls): # pylint: disable=E0213
         '''For modelling the targetLanguage field in this class'''
@@ -393,12 +393,12 @@ class TranslationMemory(Base):  # pylint: disable=too-few-public-methods
     def target_language(cls): # pylint: disable=E0213
         '''For modelling the targetLanguage field in this class'''
         return relationship(Language, foreign_keys=cls.target_lang_id, uselist=False)
-    token = Column('resource_token', String)
-    tokenRom = Column('resource_token_romanized', String)
+    token = Column('source_token', String)
+    tokenRom = Column('source_token_romanized', String)
     translation = Column('translation', String)
     translationRom = Column('translation_romanized', String)
     frequency = Column('frequency', Integer)
-    metaData = Column('resource_token_metadata', JSON)
+    metaData = Column('source_token_metadata', JSON)
 
 class TranslationProjectUser(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table translation_users in vachan DB used by Autographa MT mode'''

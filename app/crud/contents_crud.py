@@ -531,8 +531,7 @@ def bible_verse_type_check(content, model_cls_2, book, db_content2, chapter_numb
             verseText = '',
             metaData = metadata_field)
             db_content2.append(row_other)
-    #mergedVerseNumber Pattern
-    #keep the whole text in first verseNumber of merged verses
+    #mergedVerseNumber Pattern , keep the whole text in first verseNumber of merged verses
     elif merged_verse_pattern.match(str(content['verseNumber'])):
         match_obj = merged_verse_pattern.match(content['verseNumber'])
         verse_number = match_obj.group(1)
@@ -871,7 +870,8 @@ def get_available_bible_books(db_, resource_name,book_code=None, content_type=No
         raise TypeException('The operation is supported only on bible')
     model_cls = db_models.dynamicTables[resource_name]
     model_cls_audio = db_models.dynamicTables[resource_name+"_audio"]
-    query = db_.query(model_cls).options(joinedload(model_cls.book))
+    query = db_.query(model_cls).outerjoin(model_cls_audio, model_cls_audio.book_id ==
+        model_cls.book_id).options(joinedload(model_cls.book))
     fetched = None
     if biblecontent_id:
         query = query.filter(model_cls.bookContentId  == biblecontent_id)

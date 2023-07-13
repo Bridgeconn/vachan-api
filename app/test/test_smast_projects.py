@@ -38,8 +38,8 @@ def assert_positive_get(item):
     assert "projectId" in item
     assert isinstance(item['projectId'], int)
     assert "projectName" in item
-    assert "resourceLanguage" in item
-    assert "code" in item['resourceLanguage']
+    assert "sourceLanguage" in item
+    assert "code" in item['sourceLanguage']
     assert "targetLanguage" in item
     assert "code" in item['targetLanguage']
     assert 'metaData' in item
@@ -159,7 +159,7 @@ def test_default_post_put_get():
     assert_positive_get(fetched_project)
 
     assert fetched_project['projectName'] == post_data['projectName']
-    assert fetched_project['resourceLanguage']['code'] == post_data['resourceLanguageCode']
+    assert fetched_project['sourceLanguage']['code'] == post_data['resourceLanguageCode']
     assert fetched_project['targetLanguage']['code'] == post_data['targetLanguageCode']
     assert fetched_project['metaData']['books'] == ['mat', 'mrk', 'luk', 'jhn']
 
@@ -930,7 +930,7 @@ def test_delete_project():
     assert_positive_get(fetched_project)
 
     assert fetched_project['projectName'] == project_data['projectName']
-    assert fetched_project['resourceLanguage']['code'] == project_data['resourceLanguageCode']
+    assert fetched_project['sourceLanguage']['code'] == project_data['resourceLanguageCode']
     assert fetched_project['targetLanguage']['code'] == project_data['targetLanguageCode']
 
     #Delete Project with no auth

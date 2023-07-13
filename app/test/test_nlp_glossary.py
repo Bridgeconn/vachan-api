@@ -30,7 +30,7 @@ def assert_positive_get(item):
 def check_post(src, trg, data, headers):
     '''common steps for positive post test cases'''
     response = client.post(POST_URL+\
-        f"?resource_language={src}&target_language={trg}", headers=headers, json=data)
+        f"?source_language={src}&target_language={trg}", headers=headers, json=data)
     assert response.status_code == 201
     assert "added" in response.json()['message'].lower()
 
@@ -43,7 +43,7 @@ def test_get_gloss_entries():
     # upload data before GET call
     check_post(src_lang, trg_lang, gloss_data, headers_auth)
 
-    GET_URL = GET_LIST_URL+f"?resource_language={src_lang}&target_language={trg_lang}"
+    GET_URL = GET_LIST_URL+f"?source_language={src_lang}&target_language={trg_lang}"
 
     check_default_get(GET_URL, headers_auth, assert_positive_get)
 
@@ -80,7 +80,7 @@ def test_get_gloss_count():
     # upload data before GET call
     check_post(src_lang, trg_lang, gloss_data, headers_auth)
 
-    GET_URL = GET_COUNT_URL+f"?resource_language={src_lang}&target_language={trg_lang}"
+    GET_URL = GET_COUNT_URL+f"?source_language={src_lang}&target_language={trg_lang}"
 
     # Without authentication - Negative Test
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -119,13 +119,13 @@ def test_get_gloss_count():
     assert resp.json()['tokenCount'] == 0
 
     # With notavailable resource language - Negative Test
-    GET_URL = GET_COUNT_URL+f"?resource_language=x-ttt&target_language={trg_lang}"
+    GET_URL = GET_COUNT_URL+f"?source_language=x-ttt&target_language={trg_lang}"
     resp = client.get(GET_URL,headers=headers_auth)
     assert resp.status_code == 404
     assert resp.json()['error'] == 'Requested Content Not Available'
 
     # With notavailable target language - Negative Test
-    GET_URL = GET_COUNT_URL+f"?resource_language={src_lang}&target_language=x-ttt"
+    GET_URL = GET_COUNT_URL+f"?source_language={src_lang}&target_language=x-ttt"
     resp = client.get(GET_URL,headers=headers_auth)
     assert resp.status_code == 404
     assert resp.json()['error'] == 'Requested Content Not Available'

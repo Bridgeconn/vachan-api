@@ -1,10 +1,12 @@
 '''Defines all API endpoints for the web server app'''
 import os
-from fastapi import FastAPI, Depends
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Depends, Request
+from fastapi.responses import JSONResponse,HTMLResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
@@ -15,7 +17,6 @@ from custom_exceptions import GenericException,TypeException , PermissionExcepti
 import db_models
 from database import engine
 from dependencies import get_db, log
-from schema.schemas import NormalResponse
 from routers import content_apis, translation_apis, auth_api, media_api, filehandling_apis
 from auth.authentication import create_super_user
 # pylint: enable=E0401
@@ -30,6 +31,8 @@ if os.environ.get("VACHAN_TEST_MODE", "False") != 'True':
 app = FastAPI(title="Vachan-API", version="2.0.0-beta.10",
     description="The server application that provides APIs to interact \
 with the underlying Databases and modules in Vachan-Engine.")
+template = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
@@ -205,11 +208,22 @@ async def gitlab_exception_handler(request, exc: GitlabException):
 db_models.map_all_dynamic_tables(db_= next(get_db()))
 db_models.Base.metadata.create_all(bind=engine)
 
-@app.get('/', response_model=NormalResponse, status_code=200)
-def test(db_: Session = Depends(get_db)):
-    '''tests if app is running and the DB connection is active'''
+
+@app.get('/', response_class=HTMLResponse, status_code=200)
+def test(request: Request,db_: Session = Depends(get_db)):
+    '''Tests if app is running and the DB connection is active
+    * Also displays API documentation page upon successful connection on root endpoint'''
     db_.query(db_models.Language).first()
-    return {"message": "App is up and running"}
+    root_url = os.getenv("VACHAN_DOMAIN")
+    if root_url is not None and not root_url.startswith("http://"):
+        root_url = "http://" + root_url
+    return template.TemplateResponse(
+        "landing_page.html",
+        {
+            "request": request,
+            "root_url": root_url
+        }
+    )
 
 app.include_router(auth_api.router)
 app.include_router(content_apis.router)

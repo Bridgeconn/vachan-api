@@ -22,7 +22,7 @@ ist_timezone = timezone("Asia/Kolkata")
 ###################### Translation Project Mangement ######################
 def create_translation_project(db_:Session, project, user_id=None):
     '''Add a new project entry to the translation projects table'''
-    resource = db_.query(db_models.Language).filter(
+    source = db_.query(db_models.Language).filter(
         db_models.Language.code==project.resourceLanguageCode).first()
     target = db_.query(db_models.Language).filter(
         db_models.Language.code==project.targetLanguageCode).first()
@@ -35,7 +35,7 @@ def create_translation_project(db_:Session, project, user_id=None):
         meta['punctuations'] = project.punctuations
     db_content = db_models.TranslationProject(
         projectName=utils.normalize_unicode(project.projectName),
-        resource_lang_id=resource.languageId,
+        source_lang_id=source.languageId,
         target_lang_id=target.languageId,
         documentFormat=project.documentFormat.value,
         active=project.active,
@@ -187,7 +187,7 @@ def update_translation_project(db_:Session, project_obj, user_id=None):
     # db_.refresh(project_row)
     return project_row
 
-def get_translation_projects(db_:Session, project_name=None, resource_language=None,
+def get_translation_projects(db_:Session, project_name=None, source_language=None,
     target_language=None, **kwargs):
     '''Fetch autographa projects as per the query options'''
     active = kwargs.get("active",True)
@@ -198,12 +198,12 @@ def get_translation_projects(db_:Session, project_name=None, resource_language=N
     if project_name:
         query = query.filter(
             db_models.TranslationProject.projectName == utils.normalize_unicode(project_name))
-    if resource_language:
-        resource = db_.query(db_models.Language).filter(db_models.Language.code == resource_language
+    if source_language:
+        source = db_.query(db_models.Language).filter(db_models.Language.code == source_language
             ).first()
-        if not resource:
-            raise NotAvailableException(f"Language, {resource_language}, not found")
-        query = query.filter(db_models.TranslationProject.resource_lang_id == resource.languageId)
+        if not source:
+            raise NotAvailableException(f"Language, {source_language}, not found")
+        query = query.filter(db_models.TranslationProject.source_lang_id == source.languageId)
     if target_language:
         target = db_.query(db_models.Language).filter(db_models.Language.code == target_language
             ).first()
@@ -294,13 +294,13 @@ def obtain_project_draft(db_:Session, project_id, books, sentence_id_list, sente
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
-    draft_rows = obtain_project_resource(db_, project_id, books, sentence_id_list,
+    draft_rows = obtain_project_source(db_, project_id, books, sentence_id_list,
         sentence_id_range, with_draft=True)
     draft_rows = draft_rows['db_content']
     if output_format == schemas_nlp.DraftFormats.USFM :
         draft_out = nlp_crud.create_usfm(draft_rows)
     elif output_format == schemas_nlp.DraftFormats.JSON:
-        draft_out = nlp_crud.export_to_json(project_row.resourceLanguage,
+        draft_out = nlp_crud.export_to_json(project_row.sourceLanguage,
             project_row.targetLanguage, draft_rows, None)
     elif output_format == schemas_nlp.DraftFormats.PRINT:
         draft_out = nlp_crud.export_to_print(draft_rows)
@@ -312,11 +312,10 @@ def obtain_project_draft(db_:Session, project_id, books, sentence_id_list, sente
         }
     return response
 
-
 def update_project_draft(db_:Session, project_id, sentence_list, user_id):
     '''Directly write to the draft and draftMeta fields of project sentences'''
     sentence_id_list = [sent.sentenceId for sent in sentence_list]
-    resource_resp = obtain_project_resource(db_, project_id,
+    resource_resp = obtain_project_source(db_, project_id,
         sentence_id_list=sentence_id_list, with_draft=True)
     project_row = resource_resp['project_content']
     sentences = resource_resp['db_content']
@@ -351,7 +350,7 @@ def update_project_draft(db_:Session, project_id, sentence_list, user_id):
                 "translations":[sent.draft[meta_item[1][0]:meta_item[1][1]]]
                 })
     nlp_crud.add_to_translation_memory(db_,
-        project_row.resourceLanguage.code,
+        project_row.sourceLanguage.code,
         project_row.targetLanguage.code, gloss_list, default_val=1)
     return response_result
 
@@ -360,7 +359,7 @@ def obtain_project_progress(db_, project_id, books, sentence_id_list, sentence_i
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
-    draft_rows = obtain_project_resource(db_, project_id, books, sentence_id_list,
+    draft_rows = obtain_project_source(db_, project_id, books, sentence_id_list,
         sentence_id_range, with_draft=True)
     draft_rows = draft_rows["db_content"]
     confirmed_length = 0
@@ -403,7 +402,7 @@ def obtain_project_token_translation(db_, project_id, token, occurrences): # pyl
             new_occurences.append(occur)
     occurrences = new_occurences
     sentence_list = [occur["sentenceId"] for occur in occurrences]
-    draft_rows = obtain_project_resource(db_, project_id, sentence_id_list=sentence_list,
+    draft_rows = obtain_project_source(db_, project_id, sentence_id_list=sentence_list,
         with_draft=True)
     draft_rows = draft_rows["db_content"]
     translations = pin_point_token_in_draft(occurrences, draft_rows)
@@ -472,7 +471,7 @@ def get_project_resource_per_token(db_:Session, project_id, token, occurrences):
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not present")
     sent_ids = [occur.sentenceId for occur in occurrences]
-    draft_rows = obtain_project_resource(db_, project_id,
+    draft_rows = obtain_project_source(db_, project_id,
         sentence_id_list=sent_ids, with_draft=True)
     draft_rows = draft_rows['db_content']
     occur_list = []
@@ -561,7 +560,7 @@ def pin_point_token_in_draft(occurrences, draft_rows):#pylint: disable=too-many-
     return translations
 
 #########################################################
-def obtain_project_resource(db_:Session, project_id, books=None, sentence_id_range=None,#pylint: disable=too-many-locals
+def obtain_project_source(db_:Session, project_id, books=None, sentence_id_range=None,#pylint: disable=too-many-locals
     sentence_id_list=None, **kwargs):
     '''fetches all or selected resource sentences from translation_sentences table'''
     with_draft= kwargs.get("with_draft",False)
