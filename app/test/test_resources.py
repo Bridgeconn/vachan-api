@@ -484,7 +484,7 @@ def test_post_put_gitlab_resource():
     assert response.status_code == 409
     assert response.json()['details'] == "already present Resource with same repo link"
 
-    # update another resource with exising repo link
+    # update another resource with exising repo  link
     data["language"] = "af"
     data["metaData"] = {"repo":link2}
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
