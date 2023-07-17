@@ -29,20 +29,13 @@ jobs:
           git add ./app/main.py
           git commit -m 'Bump version automatically on release'
           git tag -a $(git describe --tags --abbrev=0) -m "moving tag to new commit" -f $(git rev-parse HEAD)
+          git push -f origin refs/tags/$(git describe --tags --abbrev=0)
 
       - name: Pushing to the protected branch 'version-2'
         uses: CasperWA/push-protected@v2
         with:
           token: ${{ secrets.CICD_BOT_PAT }}
           branch: version-2
-          tags: true
-          unprotect_reviews: true
-
-      - name: Pushing to the tag
-        uses: CasperWA/push-protected@v2
-        with:
-          token: ${{ secrets.CICD_BOT_PAT }}
-          ref: refs/tags/$(git describe --tags --abbrev=0)
           tags: true
           unprotect_reviews: true
 
