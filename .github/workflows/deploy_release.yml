@@ -35,6 +35,7 @@ jobs:
         with:
           token: ${{ secrets.CICD_BOT_PAT }}
           branch: version-2
+          ref: $GITHUB_REF
           tags: true
           unprotect_reviews: true
 
