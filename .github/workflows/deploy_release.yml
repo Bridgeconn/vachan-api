@@ -28,7 +28,7 @@ jobs:
           git config --global user.password "${{ secrets.CICD_BOT_PASS }}"
           git add ./app/main.py
           git commit -m 'Bump version automatically on release'
-          git push -f origin version-2
+          git push -f origin HEAD:version-2
 
       - name: Move release tag to latest commit
         run: |
