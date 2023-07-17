@@ -22,15 +22,18 @@ jobs:
           head -n 33 app/main.py | tail -n 4
 
       - name: Commit changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.CICD_BOT_PAT }}
         run: |
           git config --global user.name "${{ secrets.CICD_BOT_USER }}"
           git config --global user.email "${{ secrets.CICD_BOT_EMAIL }}"
-          git config --global user.password "${{ secrets.CICD_BOT_PASS }}"
           git add ./app/main.py
           git commit -m 'Bump version automatically on release'
           git push -f origin HEAD:version-2
 
       - name: Move release tag to latest commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.CICD_BOT_PAT }}
         run: |
           git tag -a $(git describe --tags --abbrev=0) -m "moving tag to new commit" -f $(git rev-parse HEAD)
           git push -f origin refs/tags/$(git describe --tags --abbrev=0)
