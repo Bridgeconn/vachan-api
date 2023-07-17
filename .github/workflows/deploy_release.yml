@@ -42,7 +42,7 @@ jobs:
         uses: CasperWA/push-protected@v2
         with:
           token: ${{ secrets.CICD_BOT_PAT }}
-          ref: $GITHUB_REF
+          ref: ${{ $GITHUB_REF }}
           tags: true
           unprotect_reviews: true
 
