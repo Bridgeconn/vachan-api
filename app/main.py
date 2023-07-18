@@ -28,7 +28,7 @@ if os.environ.get("VACHAN_TEST_MODE", "False") != 'True':
 
     create_super_user()
 
-app = FastAPI(title="Vachan-API", version="2.0.0-beta.22",
+app = FastAPI(title="Vachan-API", version="2.0.0-beta.23",
     description="The server application that provides APIs to interact \
 with the underlying Databases and modules in Vachan-Engine.")
 template = Jinja2Templates(directory="templates")
@@ -243,7 +243,7 @@ beta_endpoints = [
 
 def custom_openapi():
     '''Modify the auto generated openapi schema for API docs'''
-    openapi_schema = get_openapi(title="Vachan-API", version="2.0.0-beta.22",
+    openapi_schema = get_openapi(title="Vachan-API", version="2.0.0-beta.23",
         description="The server application that provides APIs to interact \
         with the underlying Databases and modules in Vachan-Engine.",
         routes=app.routes)
