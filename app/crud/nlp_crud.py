@@ -313,6 +313,7 @@ def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
     phrases = check_eliminate_phrase_alignemnts(phrases, src_tok_list, trg_tok_list)
     return phrases
 
+
 def alignment_prepare_trainingdata(alignment_list, window_size):
     """prepare data for translation memory/gloss"""
     dict_data = {}
