@@ -184,7 +184,7 @@ gospel_books_data = [
 
 project_post_data = {
     "projectName": "Test project 4",
-    "resourceLanguageCode": "hi",
+    "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml"
 }
 
@@ -245,7 +245,7 @@ ALIGNMENT_SRC = "hi"
 ALIGNMENT_TRG = "ml"
 alignment_data = [
 {
-    "resourceTokenList": [
+    "sourceTokenList": [
       "क्योंकि","परमेश्वर","ने","जगत","से","ऐसा","प्रेम","रखा","कि","उसने",
       "अपना","एकलौता","पुत्र","दे","दिया","ताकि","जो","कोई","उस","पर","विश्वास","करे",
       "वह","नाश","न","हो","परन्तु","अनन्त","जीवन","पाए"
@@ -259,108 +259,108 @@ alignment_data = [
     ],
     "alignedTokens": [
       {
-        "resourceTokenIndex": 1,
+        "sourceTokenIndex": 1,
         "targetTokenIndex": 8
       },
       # {
-      #   "resourceTokenIndex": 2,
+      #   "sourceTokenIndex": 2,
       #   "targetTokenIndex": 8
       # },
       {
-        "resourceTokenIndex": 3,
+        "sourceTokenIndex": 3,
         "targetTokenIndex": 12
       },
       {
-        "resourceTokenIndex": 4,
+        "sourceTokenIndex": 4,
         "targetTokenIndex": 12
       },
       {
-        "resourceTokenIndex": 5,
+        "sourceTokenIndex": 5,
         "targetTokenIndex": 11
       },
       {
-        "resourceTokenIndex": 6,
+        "sourceTokenIndex": 6,
         "targetTokenIndex": 13
       },
       {
-        "resourceTokenIndex": 7,
+        "sourceTokenIndex": 7,
         "targetTokenIndex": 13
       },
       {
-        "resourceTokenIndex": 8,
+        "sourceTokenIndex": 8,
         "targetTokenIndex": 13
       },
       {
-        "resourceTokenIndex": 9,
+        "sourceTokenIndex": 9,
         "targetTokenIndex": 0
       },
       {
-        "resourceTokenIndex": 10,
+        "sourceTokenIndex": 10,
         "targetTokenIndex": 0
       },
       {
-        "resourceTokenIndex": 11,
+        "sourceTokenIndex": 11,
         "targetTokenIndex": 1
       },
       {
-        "resourceTokenIndex": 12,
+        "sourceTokenIndex": 12,
         "targetTokenIndex": 1
       },
       {
-        "resourceTokenIndex": 11,
+        "sourceTokenIndex": 11,
         "targetTokenIndex": 2
       },
       {
-        "resourceTokenIndex": 12,
+        "sourceTokenIndex": 12,
         "targetTokenIndex": 2
       },
       {
-        "resourceTokenIndex": 13,
+        "sourceTokenIndex": 13,
         "targetTokenIndex": 10
       },
       {
-        "resourceTokenIndex": 14,
+        "sourceTokenIndex": 14,
         "targetTokenIndex": 10
       },
       {
-        "resourceTokenIndex": 20,
+        "sourceTokenIndex": 20,
         "targetTokenIndex": 3
       },
       {
-        "resourceTokenIndex": 21,
+        "sourceTokenIndex": 21,
         "targetTokenIndex": 3
       },
       {
-        "resourceTokenIndex": 18,
+        "sourceTokenIndex": 18,
         "targetTokenIndex": 4
       },
       {
-        "resourceTokenIndex": 19,
+        "sourceTokenIndex": 19,
         "targetTokenIndex": 4
       },
 
       {
-        "resourceTokenIndex": 23,
+        "sourceTokenIndex": 23,
         "targetTokenIndex": 5
       },
       {
-        "resourceTokenIndex": 24,
+        "sourceTokenIndex": 24,
         "targetTokenIndex": 5
       },
       {
-        "resourceTokenIndex": 25,
+        "sourceTokenIndex": 25,
         "targetTokenIndex": 5
       },
       {
-        "resourceTokenIndex": 27,
+        "sourceTokenIndex": 27,
         "targetTokenIndex": 6
       },
       {
-        "resourceTokenIndex": 28,
+        "sourceTokenIndex": 28,
         "targetTokenIndex": 6
       },
       {
-        "resourceTokenIndex": 29,
+        "sourceTokenIndex": 29,
         "targetTokenIndex": 7
       }
 	]
@@ -416,7 +416,7 @@ def test_end_to_end_translation():
     user_data['project_id'] = project_id
     user_data['userId'] = NEW_USER_ID
     resp = client.put(BASE_URL+"translation/project/user", headers=headers_auth, json=user_data)
-    print(resp.json())
+    # print(resp.json())
     assert resp.json()['message'] == "User updated in project successfully"
 
     resp = client.get(BASE_URL+"translation/projects?user_id="+str(NEW_USER_ID),headers=headers_auth)
@@ -426,9 +426,10 @@ def test_end_to_end_translation():
 
     resp = client.post(BASE_URL+"nlp/learn/alignment?source_language="+ALIGNMENT_SRC+
     	"&target_language="+ALIGNMENT_TRG, headers=headers_auth, json=alignment_data)
+    print("**",resp)
     assert resp.status_code == 201
     # print(resp)
-    # print(resp.json())
+    
 
     # tokenize after adding token "परमेश्वर" via alignment
     resp = client.put(BASE_URL+"translation/project/suggestions?project_id="+str(project_id)+

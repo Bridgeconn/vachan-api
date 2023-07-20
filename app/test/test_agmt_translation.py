@@ -18,7 +18,7 @@ headers_auth = {"contentType": "application/json",
 
 project_data = {
     "projectName": "Test agmt workflow",
-    "resourceLanguageCode": "hi",
+    "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml"
 }
 

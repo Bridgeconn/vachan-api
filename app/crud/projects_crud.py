@@ -23,7 +23,7 @@ ist_timezone = timezone("Asia/Kolkata")
 def create_translation_project(db_:Session, project, user_id=None):
     '''Add a new project entry to the translation projects table'''
     source = db_.query(db_models.Language).filter(
-        db_models.Language.code==project.resourceLanguageCode).first()
+        db_models.Language.code==project.sourceLanguageCode).first()
     target = db_.query(db_models.Language).filter(
         db_models.Language.code==project.targetLanguageCode).first()
     meta= {}
@@ -315,10 +315,10 @@ def obtain_project_draft(db_:Session, project_id, books, sentence_id_list, sente
 def update_project_draft(db_:Session, project_id, sentence_list, user_id):
     '''Directly write to the draft and draftMeta fields of project sentences'''
     sentence_id_list = [sent.sentenceId for sent in sentence_list]
-    resource_resp = obtain_project_source(db_, project_id,
+    source_resp = obtain_project_source(db_, project_id,
         sentence_id_list=sentence_id_list, with_draft=True)
-    project_row = resource_resp['project_content']
-    sentences = resource_resp['db_content']
+    project_row = source_resp['project_content']
+    sentences = source_resp['db_content']
     for input_sent in sentence_list:
         sent = None
         for read_sent in sentences:
@@ -390,7 +390,7 @@ def obtain_project_progress(db_, project_id, books, sentence_id_list, sentence_i
     return response_result
 
 def obtain_project_token_translation(db_, project_id, token, occurrences): # pylint: disable=unused-argument
-    '''Get the current translation for specific tokens providing their occurence in resource'''
+    '''Get the current translation for specific tokens providing their occurence in source'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
@@ -414,7 +414,7 @@ def obtain_project_token_translation(db_, project_id, token, occurrences): # pyl
     return response
 
 def versification_check(row, prev_book_code, versification, prev_verse, prev_chapter):
-    """versification check for project resource versification"""
+    """versification check for project source versification"""
     if row.sentenceId not in range(1000000,68000000):
         raise TypeException("For versification, sentenceIds need to be refids(bbcccvvv)")
     book_id = int(row.sentenceId/1000000)
@@ -439,8 +439,8 @@ def versification_check(row, prev_book_code, versification, prev_verse, prev_cha
     prev_verse = verse
     return prev_book_code, versification, prev_verse
 
-def get_project_resource_versification(db_, project_id):
-    '''considering the project resource is always bible verses, get their versification structure'''
+def get_project_source_versification(db_, project_id):
+    '''considering the project source is always bible verses, get their versification structure'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
@@ -464,7 +464,7 @@ def get_project_resource_versification(db_, project_id):
         }
     return response
 
-def get_project_resource_per_token(db_:Session, project_id, token, occurrences): #pylint: disable=unused-argument
+def get_project_source_per_token(db_:Session, project_id, token, occurrences): #pylint: disable=unused-argument
     '''get sentences and drafts for the token, which splits the token & translation in metadraft
     allowing it to be easily identifiable and highlightable at UI'''
     project_row = db_.query(db_models.TranslationProject).get(project_id)
@@ -562,7 +562,7 @@ def pin_point_token_in_draft(occurrences, draft_rows):#pylint: disable=too-many-
 #########################################################
 def obtain_project_source(db_:Session, project_id, books=None, sentence_id_range=None,#pylint: disable=too-many-locals
     sentence_id_list=None, **kwargs):
-    '''fetches all or selected resource sentences from translation_sentences table'''
+    '''fetches all or selected source sentences from translation_sentences table'''
     with_draft= kwargs.get("with_draft",False)
     only_ids = kwargs.get("only_ids",False)
     project_row = db_.query(db_models.TranslationProject).get(project_id)

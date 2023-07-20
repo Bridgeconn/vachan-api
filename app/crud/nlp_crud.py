@@ -126,19 +126,19 @@ def replace_bulk_tokens(db_, sentence_list, token_translations, src_code, trg_co
     '''Substitute tokens with provided trabslations and get updated drafts, draftMetas
     and add knowledge to translation memory'''
     use_data = kwargs.get("use_data_for_learning",True)
-    resource = db_.query(db_models.Language).filter(
+    source = db_.query(db_models.Language).filter(
         db_models.Language.code == src_code).first()
-    if not resource:
+    if not source:
         raise NotAvailableException(f"Language, {src_code}, not in DB. Please create if required")
     target = db_.query(db_models.Language).filter(
         db_models.Language.code == trg_code).first()
-    if not resource:
+    if not source:
         raise NotAvailableException(f"Language, {trg_code}, not in DB. Please create if required")
     updated_sentences = {sent.sentenceId:sent for sent in sentence_list}
     #get gloss list
     gloss_list = replace_bulk_tokens_gloss_list(token_translations, updated_sentences)
     if use_data:
-        add_to_translation_memory(db_, resource, target, gloss_list)
+        add_to_translation_memory(db_, source, target, gloss_list)
     result = [updated_sentences[key] for key in updated_sentences]
     return result
 
@@ -229,11 +229,11 @@ def get_training_data_from_drafts(sentence_list, window_size=WINDOW_SIZE):
     '''identify user confirmed token translations and their contexts'''
     training_data = []
     for row in sentence_list:
-        resource = row.sentence
+        source = row.sentence
         for meta in row.draftMeta:
             if meta[2] == "confirmed":
-                token = resource[meta[0][0]:meta[0][1]]
-                index, context = extract_context(token, meta[0], resource, window_size)
+                token = source[meta[0][0]:meta[0][1]]
+                index, context = extract_context(token, meta[0], source, window_size)
                 trans = row.draft[meta[1][0]:meta[1][1]]
                 training_data.append((index, context, trans))
     return training_data
@@ -261,7 +261,7 @@ def check_eliminate_phrase_alignemnts(phrases, src_tok_list, trg_tok_list):
 
 def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
     '''Takes one sentence's alignments and finds aligned phrases
-    input: src-trg token alignments, a list of {"resourceTokenIndex", "targetTokenIndex"} pairs
+    input: src-trg token alignments, a list of {"sourceTokenIndex", "targetTokenIndex"} pairs
     output: aligned multi-token pharses, if available, based on one to many mappings in input'''
     phrases = []
     seen_src = []
@@ -269,23 +269,23 @@ def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
     src_tok_list = [tok.lower() for tok in src_tok_list]
     trg_tok_list = [tok.lower() for tok in trg_tok_list]
     for align in align_pairs:
-        if (align.resourceTokenIndex not in seen_src and
+        if (align.sourceTokenIndex not in seen_src and
             align.targetTokenIndex not in seen_trg): #New single token entry
-            new_token = src_tok_list[align.resourceTokenIndex]
+            new_token = src_tok_list[align.sourceTokenIndex]
             new_translation = trg_tok_list[align.targetTokenIndex]
-            phrases.append( {"src_indices": [align.resourceTokenIndex],
+            phrases.append( {"src_indices": [align.sourceTokenIndex],
                 "trg_indices":[align.targetTokenIndex],
                 "translation": new_translation, "token": new_token})
         else:
-            if align.resourceTokenIndex in seen_src: # Some other trg word is aleady aligned to src
+            if align.sourceTokenIndex in seen_src: # Some other trg word is aleady aligned to src
                 old_align = None
                 for obj in phrases:
-                    if align.resourceTokenIndex in obj['src_indices']:
+                    if align.sourceTokenIndex in obj['src_indices']:
                         old_align = obj
                         break
                 if not old_align:
-                    raise NotAvailableException("Can't find resource token, "+\
-                        f"{src_tok_list[align.resourceTokenIndex]}, in {phrases}")
+                    raise NotAvailableException("Can't find source token, "+\
+                        f"{src_tok_list[align.sourceTokenIndex]}, in {phrases}")
                 trg_indices = sorted(old_align['trg_indices']+ [align.targetTokenIndex])
                 translation = " ".join(trg_tok_list[trg_indices[0]:trg_indices[-1]+1])
                 phrases.remove(old_align)
@@ -301,13 +301,13 @@ def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
                 if not old_align:
                     raise NotAvailableException("Cant find target token,"+\
                         f" {trg_tok_list[align.targetTokenIndex]}, in {phrases}")
-                src_indices = sorted(old_align['src_indices']+ [align.resourceTokenIndex])
+                src_indices = sorted(old_align['src_indices']+ [align.sourceTokenIndex])
                 new_token = " ".join(src_tok_list[src_indices[0]:src_indices[-1]+1])
                 phrases.remove(old_align)
                 old_align['src_indices'] = src_indices
                 old_align['token'] = new_token
                 phrases.append(old_align)
-        seen_src.append(align.resourceTokenIndex)
+        seen_src.append(align.sourceTokenIndex)
         seen_trg.append(align.targetTokenIndex)
     #check and eliminate non-continuous phrase alignments
     phrases = check_eliminate_phrase_alignemnts(phrases, src_tok_list, trg_tok_list)
@@ -319,8 +319,8 @@ def alignment_prepare_trainingdata(alignment_list, window_size):
     dict_data = {}
     sugg_data = []
     for sent in alignment_list:
-        src_len = len(sent.resourceTokenList)
-        src_toks = [utils.normalize_unicode(tok) for tok in sent.resourceTokenList]
+        src_len = len(sent.sourceTokenList)
+        src_toks = [utils.normalize_unicode(tok) for tok in sent.sourceTokenList]
         trg_toks = [utils.normalize_unicode(tok) for tok in sent.targetTokenList]
         phrases = find_pharses_from_alignments(src_toks, trg_toks, sent.alignedTokens)
         for obj in phrases:
@@ -336,17 +336,17 @@ def alignment_prepare_trainingdata(alignment_list, window_size):
                 pre_context = []
             elif end-ceil(window_size/2) >= 0:
                 start = end-ceil(WINDOW_SIZE/2)
-                pre_context = sent.resourceTokenList[start:end]
+                pre_context = sent.sourceTokenList[start:end]
             else:
-                pre_context = sent.resourceTokenList[0:end]
+                pre_context = sent.sourceTokenList[0:end]
             start = obj['src_indices'][-1]+1
             if start == src_len:
                 post_context = []
             elif start + floor(window_size/2) <= src_len:
                 end = start + floor(window_size/2)
-                post_context = sent.resourceTokenList[start:end]
+                post_context = sent.sourceTokenList[start:end]
             else:
-                post_context = sent.resourceTokenList[start:]
+                post_context = sent.sourceTokenList[start:]
             # split multiword tokens in context
             pre_context = ' '.join(pre_context).split(' ')
             post_context = ' '.join(post_context).split(' ')
@@ -538,12 +538,12 @@ def add_translation_memory_gloss_dataprocess(db_, gloss_list, source_lang, #pyli
 def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0):
     '''Add glossary data to translation memory'''
     if isinstance(src_lang, str):
-        resource_lang = db_.query(db_models.Language).filter(
+        source_lang = db_.query(db_models.Language).filter(
             db_models.Language.code == src_lang).first()
-        if not resource_lang:
+        if not source_lang:
             raise NotAvailableException(f"Language, {src_lang}, not available")
     else:
-        resource_lang = src_lang
+        source_lang = src_lang
     if isinstance(trg_lang, str):
         target_lang = db_.query(db_models.Language).filter(
             db_models.Language.code == trg_lang).first()
@@ -552,7 +552,7 @@ def add_to_translation_memory(db_, src_lang, trg_lang, gloss_list, default_val=0
     else:
         target_lang = trg_lang
     #function for gloss data process
-    db_content= add_translation_memory_gloss_dataprocess(db_, gloss_list, resource_lang,
+    db_content= add_translation_memory_gloss_dataprocess(db_, gloss_list, source_lang,
             target_lang, default_val)
     cached_trie = get_routes_from_cache(key=f"token_trie/{src_lang}")
     space_pattern = re.compile(r'\s+')
@@ -579,12 +579,12 @@ def get_gloss_chop_word(db_, no_trie_match, trans, matched_word,*args):
     total = args[0]
     word = args[1]
     pass_no = args[2]
-    resource_lang = args[3]
+    source_lang = args[3]
     target_lang = args[4]
     if len(trans) == 0 and pass_no<3 and len(word)>4:
         # try chopping off the last letter
         chopped_word = word[:-1]
-        result = get_gloss(db_, 0, [chopped_word], resource_lang, target_lang,
+        result = get_gloss(db_, 0, [chopped_word], source_lang, target_lang,
             pass_no=pass_no+1)
         if len(result['translations']) > 0:
             return result
@@ -646,7 +646,7 @@ def get_gloss(db_:Session, *args, **kwargs):#pylint: disable=too-many-locals,too
     output format: [(translation1, score1), (translation2, score2), ...]'''
     index = args[0]
     context = args[1]
-    resource_lang = args[2]
+    source_lang = args[2]
     target_lang = args[3]
     pass_no = kwargs.get("pass_no",1)
     if isinstance(index, int):
@@ -663,11 +663,11 @@ def get_gloss(db_:Session, *args, **kwargs):#pylint: disable=too-many-locals,too
     no_trie_match = True
     if len(to_right)+len(to_left) > 0:#pylint: disable=too-many-nested-blocks
         keys = form_trie_keys(word, to_left, to_right, [word], False)
-        if resource_lang+"-"+target_lang in suggestion_trie_in_mem: #check if loaded in memory
-            tree = suggestion_trie_in_mem[resource_lang+"-"+target_lang]
+        if source_lang+"-"+target_lang in suggestion_trie_in_mem: #check if loaded in memory
+            tree = suggestion_trie_in_mem[source_lang+"-"+target_lang]
         else:  # build trie loading data from disk and DB
-            tree = rebuild_trie(db_, resource_lang, target_lang)
-            suggestion_trie_in_mem[resource_lang+"-"+target_lang] = tree
+            tree = rebuild_trie(db_, source_lang, target_lang)
+            suggestion_trie_in_mem[source_lang+"-"+target_lang] = tree
         for key in keys:
             if tree.has_subtrie(key) or tree.has_key(key):
                 no_trie_match = False
@@ -684,10 +684,10 @@ def get_gloss(db_:Session, *args, **kwargs):#pylint: disable=too-many-locals,too
                 pass
     #get forward reverse query
     matched_word , total = \
-        gloss_forward_reverse_query(db_, word, resource_lang, target_lang, total, trans)
+        gloss_forward_reverse_query(db_, word, source_lang, target_lang, total, trans)
     #get gloss chop word
     result = get_gloss_chop_word(db_, no_trie_match,
-        trans, matched_word, total, word, pass_no, resource_lang, target_lang)
+        trans, matched_word, total, word, pass_no, source_lang, target_lang)
     # check for metadata
     metadata_query = db_.query(db_models.TranslationMemory.metaData).filter(
         db_models.TranslationMemory.token == word,
@@ -755,7 +755,7 @@ def auto_translate_token_logic(db_,tokens, sent, source_lang, target_lang):
                 draft, meta = nlp_utils.replace_token(sent.sentence, offset,
                     suggestions[0], sent.draftMeta, "suggestion",draft=sent.draft)
             else:
-                # splits the resource sentence into tokens(in draftmeta)
+                # splits the source sentence into tokens(in draftmeta)
                 # even if there is no transltion suggestion available.
                 draft, meta = nlp_utils.replace_token(sent.sentence, offset,
                     "", sent.draftMeta, "untranslated",draft=sent.draft)
@@ -938,15 +938,15 @@ def export_to_print(sentence_list):
         output_json[row.surrogateId] = row.draft
     return output_json
 
-def export_to_json(resource_lang, target_lang, sentence_list, last_modified):
-    '''input sentence_list is List of (sent_id, resource_sent, draft, draft_meta)
+def export_to_json(source_lang, target_lang, sentence_list, last_modified):
+    '''input sentence_list is List of (sent_id, source_sent, draft, draft_meta)
     output:json in alignment format'''
     json_output = {#"conformsTo": "alignment-0.1",
                    "metadata":{
                       "resources":{
                           "r0": {
-                            # "languageCode": resource_lang.code,
-                            # "name": resource_lang.language,
+                            # "languageCode": source_lang.code,
+                            # "name": source_lang.language,
                             # "version": "0.1"
                           },
                           "r1": {
@@ -956,9 +956,9 @@ def export_to_json(resource_lang, target_lang, sentence_list, last_modified):
                            }},
                       "modified": last_modified},
                    "segments": []}
-    if resource_lang:
-        json_output['metadata']['resources']['r0'] = {"languageCode": resource_lang.code,
-            "name": resource_lang.language}
+    if source_lang:
+        json_output['metadata']['resources']['r0'] = {"languageCode": source_lang.code,
+            "name": source_lang.language}
     if target_lang:
         json_output['metadata']['resources']['r1'] = {"languageCode": target_lang.code,
             "name": target_lang.language}

@@ -16,7 +16,7 @@ headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token
 
 project_data = {
     "projectName": "Test agmt draft",
-    "resourceLanguageCode": "en",
+    "sourceLanguageCode": "en",
     "targetLanguageCode": "ml"
 }
 
@@ -650,7 +650,7 @@ def test_glossupdate_upon_draft_update():
     assert sents[0]["draft"] == "കാട്"
     assert sents[0]["draftMeta"] == put_data[0]['draftMeta']
 
-    resp = client.get(f"/v2/nlp/gloss?source_language={project_data['resourceLanguageCode']}"+\
+    resp = client.get(f"/v2/nlp/gloss?source_language={project_data['sourceLanguageCode']}"+\
         f"&target_language={project_data['targetLanguageCode']}&token=jungle",
         headers=headers_auth)
     assert resp.status_code == 200

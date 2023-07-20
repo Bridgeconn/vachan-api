@@ -44,7 +44,7 @@ class UserUpdateResponse(BaseModel):
 class TranslationProjectCreate(BaseModel):
     '''Input object for project creation'''
     projectName: str = Field(..., example="Hindi Malayalam Gospels")
-    resourceLanguageCode : LangCodePattern =Field(...,example='hi')
+    sourceLanguageCode : LangCodePattern =Field(...,example='hi')
     targetLanguageCode : LangCodePattern =Field(...,example='ml')
     documentFormat: TranslationDocumentType = TranslationDocumentType.USFM
     useDataForLearning: bool = True
@@ -203,18 +203,18 @@ class Progress(BaseModel):
 
 class IndexPair(BaseModel):
     '''Index pair showing alignment of soure token and target Token'''
-    resourceTokenIndex: int
+    sourceTokenIndex: int
     targetTokenIndex: int
 
 class Alignment(BaseModel):
     '''Import object of alignment data for learning'''
-    resourceTokenList: List[str] = Field(..., example=["This", "is", "an", "apple"])
+    sourceTokenList: List[str] = Field(..., example=["This", "is", "an", "apple"])
     targetTokenList: List[str] = Field(..., example=["यह","एक","सेब","है"])
     alignedTokens: List[IndexPair] = Field(..., example=[
-        {"resourceTokenIndex": 0, "targetTokenIndex": 0},
-        {"resourceTokenIndex": 1, "targetTokenIndex": 3},
-        {"resourceTokenIndex": 2, "targetTokenIndex": 1},
-        {"resourceTokenIndex": 3, "targetTokenIndex": 2} ])
+        {"sourceTokenIndex": 0, "targetTokenIndex": 0},
+        {"sourceTokenIndex": 1, "targetTokenIndex": 3},
+        {"sourceTokenIndex": 2, "targetTokenIndex": 1},
+        {"sourceTokenIndex": 3, "targetTokenIndex": 2} ])
 
 class GlossInput(BaseModel):
     '''Import object for glossary(dictionary) data for learning'''

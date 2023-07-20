@@ -73,7 +73,7 @@ def test_default_post_put_get():
     # create with minimum data
     post_data = {
     "projectName": "Test project 1",
-    "resourceLanguageCode": "hi",
+    "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml"
     }
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
@@ -159,7 +159,7 @@ def test_default_post_put_get():
     assert_positive_get(fetched_project)
 
     assert fetched_project['projectName'] == post_data['projectName']
-    assert fetched_project['sourceLanguage']['code'] == post_data['resourceLanguageCode']
+    assert fetched_project['sourceLanguage']['code'] == post_data['sourceLanguageCode']
     assert fetched_project['targetLanguage']['code'] == post_data['targetLanguageCode']
     assert fetched_project['metaData']['books'] == ['mat', 'mrk', 'luk', 'jhn']
 
@@ -178,7 +178,7 @@ def test_default_post_put_get():
     # create with all possible options
     post_data = {
       "projectName": "Test Project 2",
-      "resourceLanguageCode": "hi",
+      "sourceLanguageCode": "hi",
       "targetLanguageCode": "ml",
       "useDataForLearning": True,
       "stopwords": {
@@ -198,14 +198,14 @@ def test_default_post_put_get():
     # add a few more projects
     post_data = {
       "projectName": "Test Project 3",
-      "resourceLanguageCode": "hi",
+      "sourceLanguageCode": "hi",
       "targetLanguageCode": "ml"
     }
     resp = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert resp.status_code == 201
     post_data = {
       "projectName": "Test Project 4",
-      "resourceLanguageCode": "hi",
+      "sourceLanguageCode": "hi",
       "targetLanguageCode": "ml"
     }
     resp = client.post(UNIT_URL, headers=headers_auth, json=post_data)
@@ -226,13 +226,13 @@ def test_post_invalid():
 
     data2 = {
     "projectName": "Test project 1",
-    "resourceLanguageCode": "hi",
+    "sourceLanguageCode": "hi",
     }
     res2 = client.post(UNIT_URL, headers=headers_auth, json=data2)
     assert_input_validation_error(res2)
 
     data3 = {
-    "resourceLanguageCode": "hi",
+    "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml"
     }
     res3 = client.post(UNIT_URL, headers=headers_auth, json=data3)
@@ -241,7 +241,7 @@ def test_post_invalid():
     # incorrect data in fields
     data1 = {
     "projectName": "Test project 1",
-    "resourceLanguageCode": "2hindi",
+    "sourceLanguageCode": "2hindi",
     "targetLanguageCode": "ml"
     }
     res1 = client.post(UNIT_URL, headers=headers_auth, json=data1)
@@ -249,7 +249,7 @@ def test_post_invalid():
 
     data2 = {
     "projectName": "Test project 1",
-    "resourceLanguageCode": "hi",
+    "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml",
     "useDataForLearning": "use"
     }
@@ -258,7 +258,7 @@ def test_post_invalid():
 
     data3 = {
     "projectName": "Test project 1",
-    "resourceLanguageCode": "hi",
+    "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml",
     "stopwords": ["a", "mromal", "list"]
     }
@@ -267,7 +267,7 @@ def test_post_invalid():
 
     data4 = {
     "projectName": "Test project 1",
-    "resourceLanguageCode": "hi",
+    "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml",
     "punctuations": "+_*())^%$#<>?:'"
     }
@@ -277,7 +277,7 @@ def test_post_invalid():
 def test_put_invalid():
     '''Give incorrect data for project update'''
     post_data = {"projectName": "Test project 1",
-    "resourceLanguageCode": "hi",
+    "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml"}
     resp = check_post(post_data)
     assert resp.json()['message'] == "Project created successfully"
@@ -330,7 +330,7 @@ def test_add_user():
     '''Positive test to add a user to a project'''
     project_data = {
         "projectName": "Test project 1",
-        "resourceLanguageCode": "hi",
+        "sourceLanguageCode": "hi",
         "targetLanguageCode": "ml"
     }
     resp = check_post(project_data)
@@ -364,7 +364,7 @@ def test_add_user_invalid():
     '''Negative tests to add a user to a project'''
     project_data = {
         "projectName": "Test project 10",
-        "resourceLanguageCode": "hi",
+        "sourceLanguageCode": "hi",
         "targetLanguageCode": "ml"
     }
     resp = check_post(project_data)
@@ -395,7 +395,7 @@ def test_update_user():
     '''Positive tests to change role, status & metadata of a user'''
     project_data = {
         "projectName": "Test project 1",
-        "resourceLanguageCode": "hi",
+        "sourceLanguageCode": "hi",
         "targetLanguageCode": "ml"
     }
     resp = check_post(project_data)
@@ -442,7 +442,7 @@ def test_update_user_invlaid():
     '''Negative test for update user'''
     project_data = {
         "projectName": "Test project 101",
-        "resourceLanguageCode": "hi",
+        "sourceLanguageCode": "hi",
         "targetLanguageCode": "ml"
     }
     resp = check_post(project_data)
@@ -499,27 +499,27 @@ def test_soft_delete():
     data = [
         {
           "projectName": "Test Project 1",
-          "resourceLanguageCode": "hi",
+          "sourceLanguageCode": "hi",
           "targetLanguageCode": "ml"
         },
         {
           "projectName": "Test Project 2",
-          "resourceLanguageCode": "hi",
+          "sourceLanguageCode": "hi",
           "targetLanguageCode": "ml"
         },
         {
           "projectName": "Test Project 3",
-          "resourceLanguageCode": "hi",
+          "sourceLanguageCode": "hi",
           "targetLanguageCode": "ml"
         },
         {
           "projectName": "Test Project 4",
-          "resourceLanguageCode": "hi",
+          "sourceLanguageCode": "hi",
           "targetLanguageCode": "ml"
         },
         {
           "projectName": "Test Project 5",
-          "resourceLanguageCode": "hi",
+          "sourceLanguageCode": "hi",
           "targetLanguageCode": "ml"
         }
     ]
@@ -566,7 +566,7 @@ def test_agmt_projects_access_rule():
     #with and without auth
     post_data = {
     "projectName": "Test project 1",
-    "resourceLanguageCode": "hi",
+    "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml"
     }
     response = client.post(UNIT_URL, headers=headers, json=post_data)
@@ -743,7 +743,7 @@ def test_get_project_access_rules():
     #create projects
     post_data = {
     "projectName": "Test project 1",
-    "resourceLanguageCode": "hi",
+    "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml"
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
@@ -873,7 +873,7 @@ def test_create_n_update_times():
     # create with minimum data
     post_data = {
     "projectName": "Test project 1",
-    "resourceLanguageCode": "hi",
+    "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml"
     }
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
@@ -907,7 +907,7 @@ def test_delete_project():
     #Create Project
     project_data = {
         "projectName": "Test project 1",
-        "resourceLanguageCode": "hi",
+        "sourceLanguageCode": "hi",
         "targetLanguageCode": "ml"
     }
     resp = check_post(project_data, auth_token=initial_test_users['AgAdmin']['token'])
@@ -930,7 +930,7 @@ def test_delete_project():
     assert_positive_get(fetched_project)
 
     assert fetched_project['projectName'] == project_data['projectName']
-    assert fetched_project['sourceLanguage']['code'] == project_data['resourceLanguageCode']
+    assert fetched_project['sourceLanguage']['code'] == project_data['sourceLanguageCode']
     assert fetched_project['targetLanguage']['code'] == project_data['targetLanguageCode']
 
     #Delete Project with no auth
@@ -1025,7 +1025,7 @@ def test_restore_project():
     #Creating and Deleting project
     project_data = {
         "projectName": "Test project 1",
-        "resourceLanguageCode": "hi",
+        "sourceLanguageCode": "hi",
         "targetLanguageCode": "ml"
     }
     post_resp= check_post(project_data, auth_token=initial_test_users['AgAdmin']['token'])
@@ -1101,7 +1101,7 @@ def test_delete_user():
     '''Test the removal of a user from a project'''
     project_data = {
         "projectName": "Test project 1",
-        "resourceLanguageCode": "hi",
+        "sourceLanguageCode": "hi",
         "targetLanguageCode": "ml"
     }
     resp = check_post(project_data, auth_token=initial_test_users['AgAdmin']['token'])
@@ -1181,7 +1181,7 @@ def test_restore_user():
     #Creating and Deleting project user
     project_data = {
         "projectName": "Test project 1",
-        "resourceLanguageCode": "hi",
+        "sourceLanguageCode": "hi",
         "targetLanguageCode": "ml"
     }
     resp = check_post(project_data, auth_token=initial_test_users['AgAdmin']['token'])
@@ -1272,7 +1272,7 @@ def test_bugfix_split_n_merged_verse():
     '''BUg fix for https://github.com/Bridgeconn/vachan-api/issues/543'''
     post_data = {
     "projectName": "Test project usfm upload",
-    "resourceLanguageCode": "hi",
+    "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml"
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']

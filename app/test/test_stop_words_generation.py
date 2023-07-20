@@ -350,7 +350,7 @@ def test_generate_stopwords():
     assert job_response1.json()['message'] == "Stopwords identified out of limited resources. Manual verification recommended"
 
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    response = client.post(GER_URL+'/generate?language_code=hi&resource_name='+dict_table_name,
+    response = client.post(GER_URL+'/generate?language_code=hi&source_name='+dict_table_name,
         headers=headers_auth, json=sentence_list)
     assert response.status_code == 201
     assert_positive_response(response.json())

@@ -16,7 +16,7 @@ headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser'
 
 project_data = {
     "projectName": "Test agmt draft",
-    "resourceLanguageCode": "en",
+    "sourceLanguageCode": "en",
     "targetLanguageCode": "ml"
 }
 

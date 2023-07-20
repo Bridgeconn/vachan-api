@@ -26,26 +26,26 @@ tokens_trans = [
 ]
 
 align_data = [
-    {   "resourceTokenList": ["This", "is", "a test case"],
+    {   "sourceTokenList": ["This", "is", "a test case"],
         "targetTokenList": ["ഇത്", "ഒരു ടെസ്റ്റ് കേസ്", "ആണ്"],
         "alignedTokens":[
-            {"resourceTokenIndex":0, "targetTokenIndex":0},
-            {"resourceTokenIndex":1, "targetTokenIndex":2},
-            {"resourceTokenIndex":2, "targetTokenIndex":1}]
+            {"sourceTokenIndex":0, "targetTokenIndex":0},
+            {"sourceTokenIndex":1, "targetTokenIndex":2},
+            {"sourceTokenIndex":2, "targetTokenIndex":1}]
     },
-    {   "resourceTokenList": ["Developer", "is not", "happy"],
+    {   "sourceTokenList": ["Developer", "is not", "happy"],
         "targetTokenList": ["ടെവെലപ്പര്‍", "സന്തോഷവാന്‍", "അല്ല"],
         "alignedTokens":[
-            {"resourceTokenIndex":0, "targetTokenIndex":0},
-            {"resourceTokenIndex":1, "targetTokenIndex":2},
-            {"resourceTokenIndex":2, "targetTokenIndex":1}]
+            {"sourceTokenIndex":0, "targetTokenIndex":0},
+            {"sourceTokenIndex":1, "targetTokenIndex":2},
+            {"sourceTokenIndex":2, "targetTokenIndex":1}]
     },
-    {   "resourceTokenList": ["Happy", "user", "is here"],
+    {   "sourceTokenList": ["Happy", "user", "is here"],
         "targetTokenList": ["സന്തോഷവാന്‍ ആയ", "ഉപയോക്താവ്" , "ഇവിടുണ്ട്"],
         "alignedTokens":[
-            {"resourceTokenIndex":0, "targetTokenIndex":0},
-            {"resourceTokenIndex":1, "targetTokenIndex":1},
-            {"resourceTokenIndex":2, "targetTokenIndex":2}]
+            {"sourceTokenIndex":0, "targetTokenIndex":0},
+            {"sourceTokenIndex":1, "targetTokenIndex":1},
+            {"sourceTokenIndex":2, "targetTokenIndex":2}]
     }
 
 ]
@@ -336,22 +336,22 @@ def test_metadata_to_same_gloss():
     freq_before = response.json()[0]['frequency']
     align_data1 = [
         {
-            "resourceTokenList": ["This","is","a","developer"],
+            "sourceTokenList": ["This","is","a","developer"],
             "targetTokenList": ["ഇത്", "ഒരു", "ടെവെലപ്പര്‍", "ആണ്"],
             "alignedTokens": [
-            {"resourceTokenIndex": 0,"targetTokenIndex": 0},
-            {"resourceTokenIndex": 1,"targetTokenIndex": 3},
-            {"resourceTokenIndex": 2,"targetTokenIndex": 1},
-            {"resourceTokenIndex": 3,"targetTokenIndex": 2}
+            {"sourceTokenIndex": 0,"targetTokenIndex": 0},
+            {"sourceTokenIndex": 1,"targetTokenIndex": 3},
+            {"sourceTokenIndex": 2,"targetTokenIndex": 1},
+            {"sourceTokenIndex": 3,"targetTokenIndex": 2}
             ]
         },
         {
-            "resourceTokenList": ["Developer","is","happy"],
+            "sourceTokenList": ["Developer","is","happy"],
             "targetTokenList": ["ടെവെലപ്പര്‍","സന്തോഷവാന്‍", "ആണ്"],
             "alignedTokens": [
-            {"resourceTokenIndex": 0,"targetTokenIndex": 0},
-            {"resourceTokenIndex": 1,"targetTokenIndex": 2},
-            {"resourceTokenIndex": 2,"targetTokenIndex": 1}
+            {"sourceTokenIndex": 0,"targetTokenIndex": 0},
+            {"sourceTokenIndex": 1,"targetTokenIndex": 2},
+            {"sourceTokenIndex": 2,"targetTokenIndex": 1}
             ]
             }
     ]
@@ -460,7 +460,7 @@ def test_delete_glossary():
 
     #deleting glossary with no auth - Negative Test
     resp =client.delete(NLP_UNIT_URL+
-        '/gloss?resource_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
+        '/gloss?source_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
              headers=headers)
     assert resp.status_code == 401
     assert resp.json()['details'] == "Access token not provided or user not recognized."
@@ -472,7 +472,7 @@ def test_delete_glossary():
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
         response = client.delete(NLP_UNIT_URL+
-        '/gloss?resource_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
+        '/gloss?source_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
         headers=headers_au)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
@@ -480,7 +480,7 @@ def test_delete_glossary():
     #Deleting glossary with AgAdmin used - Positive Test
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     response = client.delete(NLP_UNIT_URL+
-        '/gloss?resource_lang=en&target_lang=ml&token=developer&translation=ടെവെലപ്പര്‍',
+        '/gloss?source_lang=en&target_lang=ml&token=developer&translation=ടെവെലപ്പര്‍',
         headers=headers_auth)
     assert response.status_code == 201
     assert "successfull" in response.json()['message']
@@ -495,7 +495,7 @@ def test_delete_glossary():
     #Deleting glossary with VachanAdmin used - Positive Test
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     response = client.delete(NLP_UNIT_URL+
-        '/gloss?resource_lang=en&target_lang=ml&token=test case&translation=ടെസ്റ്റ് കേസ്',
+        '/gloss?source_lang=en&target_lang=ml&token=test case&translation=ടെസ്റ്റ് കേസ്',
         headers=headers_auth)
     assert response.status_code == 201
     assert "successfull" in response.json()['message']
@@ -510,7 +510,7 @@ def test_delete_glossary():
     #Deleting glossary with SanketMASTAdmin used - Positive Test
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     response = client.delete(NLP_UNIT_URL+
-        '/gloss?resource_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
+        '/gloss?source_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
         headers=headers_auth)
     assert response.status_code == 201
     assert "successfull" in response.json()['message']
@@ -524,7 +524,7 @@ def test_delete_glossary():
 
     #Deleting glossary with empty translation - Positive Test
     response =client.delete(NLP_UNIT_URL+
-        '/gloss?resource_lang=en&target_lang=ml&token=the&translation=',
+        '/gloss?source_lang=en&target_lang=ml&token=the&translation=',
         headers=headers_auth)
     assert response.status_code == 201
     assert "successfull" in response.json()['message']
@@ -549,7 +549,7 @@ def test_delete_glossary():
     response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
         headers=headers_auth, json=tokens_trans)
     response = client.delete(NLP_UNIT_URL+
-        '/gloss?resource_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
+        '/gloss?source_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
         headers=headers_auth)
     assert response.status_code == 201
     assert "successfull" in response.json()['message']
@@ -563,14 +563,14 @@ def test_delete_glossary():
 
     #Delete with not available resource language
     response = client.delete(NLP_UNIT_URL+
-        '/gloss?resource_lang=x-ttt&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
+        '/gloss?source_lang=x-ttt&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
         headers=headers_auth)
     assert response.status_code == 404
     assert "Source language not available" in response.json()['details']
 
      #Delete not available target language
     response = client.delete(NLP_UNIT_URL+
-        '/gloss?resource_lang=en&target_lang=x-ttt&token=test&translation=ടെസ്റ്റ്',
+        '/gloss?source_lang=en&target_lang=x-ttt&token=test&translation=ടെസ്റ്റ്',
         headers=headers_auth)
     assert response.status_code == 404
     assert "Target language not available" in response.json()['details']
@@ -586,7 +586,7 @@ def test_restore_glossary():
         headers=headers_auth, json=tokens_trans)
     # Deleting
     delete_resp = client.delete(NLP_UNIT_URL+
-        '/gloss?resource_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
+        '/gloss?source_lang=en&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
         headers=headers_auth)
 
     # Ensure deleted glossary is not present
