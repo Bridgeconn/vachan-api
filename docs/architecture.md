@@ -48,7 +48,7 @@ They are easily configuarable as per the changes in our bussiness rules and poli
 * Performs various data processings before or/and after CRUD operations
 * Three sub modules
 > * structuals: which contain operations related to the predefined tables that make up the DB structure like Content_types, Languages, Licenses, versions, sources and bible_book_loopup
-> * contents: which contain operations related to the content carrying dynamically created tables like bible, commentary, infographic, biblevideo, dictionary etc
+> * contents: which contain operations related to the content carrying dynamically created tables like bible, commentary, parascriptural, dictionary etc
 > * nlp: which contain tables and operations related to AgMT stuff like tokenization, draft generartion, alignment, model building, stopwords etc. The module is sub-divided into multiple files to limit per file size.
 
 ### app/schemas

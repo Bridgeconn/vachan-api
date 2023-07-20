@@ -1,8 +1,10 @@
 ''' Place to define all Database CRUD operations for content tables
 bible, commentary, parascriptural, dictionary etc'''
+#pylint: disable=too-many-lines
 import json
 import re
 from datetime import datetime
+import jsonpickle
 import sqlalchemy
 from sqlalchemy.orm import Session, defer, joinedload
 from sqlalchemy.sql import text
@@ -328,9 +330,33 @@ def delete_dictionary(db_: Session, delitem : int,table_name = None,
     db_.delete(db_content)
     return response
 
-def get_parascripturals(db_:Session, source_name, paratype=None, title=None,**kwargs):
+def filter_by_reference(db_:Session,query, model_cls, reference):
+    '''check reference is present in the given ranges of refStart and refEnd'''
+
+    reference_end = ['bookEnd', 'chapterEnd', 'verseEnd']
+    if any(item in reference for item in reference_end):
+        # search for cross-chapter references and mutliple verses within chapter
+        ref_start_id = create_parascript_ref_id(
+            db_,reference['bookStart'], reference['chapterStart'], reference['verseStart'])
+        ref_end_id   = create_parascript_ref_id(
+            db_,reference['bookEnd'], reference['chapterEnd'], reference['verseEnd'])
+        query = query.filter(model_cls.refStart <= ref_start_id, model_cls.refEnd >= ref_end_id)
+    else:
+        # search for a single verse
+        ref_id = create_parascript_ref_id(
+            db_,reference['bookStart'], reference['chapterStart'], reference['verseStart'])
+        query = query.filter(model_cls.refStart <= ref_id, model_cls.refEnd >= ref_id)
+    return query
+
+def get_parascripturals(db_:Session, source_name, category=None, title=None,**kwargs): #pylint: disable=too-many-locals
     '''Fetches rows of parascripturals from the table specified by source_name'''
+    description = kwargs.get("description",None)
+    content = kwargs.get("content",None)
     search_word = kwargs.get("search_word",None)
+    reference = kwargs.get("reference",None)
+    link = kwargs.get("link",None)
+    metadata = kwargs.get("metadata",None)
+    active = kwargs.get("active",True)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
     parascript_id=kwargs.get("parascript_id",None)
@@ -340,18 +366,40 @@ def get_parascripturals(db_:Session, source_name, paratype=None, title=None,**kw
         raise TypeException('The operation is supported only on parascripturals')
     model_cls = db_models.dynamicTables[source_name]
     query = db_.query(model_cls)
-    if paratype:
-        query = query.filter(model_cls.paratype == paratype)
+    if category:
+        query = query.filter(model_cls.category == category)
     if title:
         query = query.filter(model_cls.title == utils.normalize_unicode(title.strip()))
+    if  description:
+        query = query.filter(model_cls.description.contains(
+            utils.normalize_unicode(description.strip())))
+    if content:
+        query = query.filter(model_cls.content.contains(utils.normalize_unicode(content.strip())))
+    if link:
+        query = query.filter(model_cls.link == link)
     if parascript_id:
         query = query.filter(model_cls.parascriptId == parascript_id)
+    if reference:
+        query = filter_by_reference(db_,query, model_cls, reference)
+    if metadata:
+        meta = json.loads(metadata)
+        for key in meta:
+            key_match = db_models.Parascriptural.metaData.op('->>')(key).ilike(f'%{key}%')
+            value_match = db_models.Parascriptural.metaData.op('->>')(key).ilike(f'%{meta[key]}%')
+            query = query.filter(key_match | value_match)
     if search_word:
         search_pattern = " & ".join(re.findall(r'\w+', search_word))
         search_pattern += ":*"
-        query = query.filter(text("to_tsvector('simple', title || ' ' ||"+\
-            " content || ' ' || description || ' '  || reference || ' ')"+\
+        query = query.filter(text("to_tsvector('simple', category || ' ' ||"+\
+            " title || ' ' || "+\
+            " content || ' ' || "+\
+            " description || ' ' || "+\
+            " link || ' ' || "+\
+            " reference || ' ' || "+\
+            "jsonb_to_tsvector('simple', metadata, '[\"string\", \"numeric\"]') || ' ')"+\
             " @@ to_tsquery('simple', :pattern)").bindparams(pattern=search_pattern))
+
+    query = query.filter(model_cls.active == active)
     source_db_content = db_.query(db_models.Source).filter(
         db_models.Source.sourceName == source_name).first()
     response = {
@@ -359,6 +407,15 @@ def get_parascripturals(db_:Session, source_name, paratype=None, title=None,**kw
         'source_content':source_db_content
         }
     return response
+
+def create_parascript_ref_id(db_:Session, book_code, chapter, verse):
+    '''Generate parascript ref start and end id'''
+    book_content = db_.query(db_models.BibleBook).filter(
+        db_models.BibleBook.bookCode == book_code.lower()).first()
+    book_id = book_content.bookId
+    if book_id is not None:
+        ref_id = (book_id * 100000) + (chapter * 1000) + verse
+    return ref_id
 
 def upload_parascripturals(db_: Session, source_name, parascriptural, user_id=None):
     '''Adds rows to the parascripturals table specified by source_name'''
@@ -371,14 +428,30 @@ def upload_parascripturals(db_: Session, source_name, parascriptural, user_id=No
     model_cls = db_models.dynamicTables[source_name]
     db_content = []
     for item in parascriptural:
+        if item.reference:
+            ref = jsonpickle.encode(item.reference)
+            ref = json.loads(ref)
+            ref = ref["py/state"]["__dict__"]
+            ref_start = create_parascript_ref_id(
+                db_,ref['bookStart'],ref['chapterStart'],ref['verseStart'])
+            ref_end   = create_parascript_ref_id(
+                db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
+        else:
+            ref = None
+            ref_end = None
+            ref_start = None
+
         row = model_cls(
-            paratype = item.paratype,
+            category = item.category,
             title = utils.normalize_unicode(item.title.strip()),
             description = item.description,
             content = item.content,
-            reference = item.reference,
+            reference = ref,
+            refStart=ref_start,
+            refEnd=ref_end,
             link = item.link,
-            metadata = item.metaData)
+            metaData = item.metaData,
+            active = item.active)
         db_content.append(row)
     db_.add_all(db_content)
     db_.expire_all()
@@ -402,10 +475,10 @@ def update_parascripturals(db_: Session, source_name, parascripturals, user_id=N
     db_content = []
     for item in parascripturals:
         row = db_.query(model_cls).filter(
-            model_cls.paratype == item.paratype,
+            model_cls.category == item.category,
             model_cls.title == utils.normalize_unicode(item.title.strip())).first()
         if not row:
-            raise NotAvailableException(f"Parascripturals row with type:{item.paratype}, "+\
+            raise NotAvailableException(f"Parascripturals row with type:{item.category}, "+\
                 f"title:{item.title}, "+\
                 f"not found for {source_name}")
         if item.description:
@@ -414,6 +487,21 @@ def update_parascripturals(db_: Session, source_name, parascripturals, user_id=N
             row.content = item.content
         if item.link:
             row.link = item.link
+        if item.reference:
+            ref = jsonpickle.encode(item.reference)
+            ref = json.loads(ref)
+            ref = ref["py/state"]["__dict__"]
+            ref_start = \
+                create_parascript_ref_id(db_,ref['bookStart'],ref['chapterStart'],ref['verseStart'])
+            ref_end  = \
+                create_parascript_ref_id(db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
+            row.reference = ref
+            row.refStart=ref_start
+            row.refEnd=ref_end
+        if item.metaData:
+            row.metaData = item.metaData
+        if item.active is not None:
+            row.active = item.active
         db_.flush()
         db_content.append(row)
     source_db_content.updatedUser = user_id

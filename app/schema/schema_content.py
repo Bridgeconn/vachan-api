@@ -114,6 +114,49 @@ class Reference(BaseModel):
                 "verseNumberEnd": 17
             }
         }
+class ParascriptReference(BaseModel):
+    '''Response object of parascript reference'''
+    bookStart: BookCodePattern = None
+    chapterStart: int = None
+    verseStart: int = None
+    bookEnd: BookCodePattern = None
+    chapterEnd: int = None
+    verseEnd: int = None
+
+    @validator('chapterStart', 'chapterEnd')
+    def check_chapter(cls, val): # pylint:  disable=E0213
+        '''chapter fields should be greater than or equal to -1'''
+        if val is not None and val < -1:
+            raise ValueError('chapter field should be greater than or equal to -1')
+        return val
+
+    @validator('verseStart', 'verseEnd')
+    def check_verses(cls, val, values): # pylint:  disable=E0213
+        '''verse fields should be greater than or equal to -1'''
+        if 'chapterStart' in values and values['chapterStart'] in [-1, 0]:
+            if val not in [-1, 0, None]:
+                raise ValueError('verse fields should be 0 for book introductions and epilogues')
+            val = 0
+        if val is None:
+            raise ValueError('verse field must have a value,except for book intro & epilogue')
+        if val < -1:
+            raise ValueError('verse fields should be greater than or equal to -1')
+        return val
+    class Config:
+        ''' telling Pydantic that "it's OK if I pass a non-dict value'''
+        orm_mode = True
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                # "bible": "hi_IRV_5_bible",
+                "bookStart": "mat",
+                "chapterStart": 1,
+                "verseStart": 12,
+                "bookEnd": "luk",
+                "chapterEnd": 10,
+                "verseEnd": 20
+            }
+        }
 
 class BibleBookContent(BaseModel):
     '''Response object of Bible book contents'''
@@ -484,35 +527,17 @@ class DictionaryUpdateResponse(BaseModel):
     message: str = Field(..., example="Dictionary words updated successfully")
     data: List[DictionaryWordResponse] = None
 
-class ParascriptEdit(BaseModel):
-    '''Input object of parascriptuals update'''
-    paratype: str
-    title: str
-    description: str = None
-    content: str = None
-    link: AnyUrl = None
-    class Config:
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "paratype": "Bible project video",
-                "title": "Bible Video of Genesis",
-                "description": "updated description",
-                "content": "updated content",
-                "reference": { "book":20, "chapter":5, "verseStart":1, "verseEnd":7},
-                "link": "http://someplace.com/newresoucesid"
-            }
-        }
 class ParascriptResponse(BaseModel):
     '''Response object of parascripturals'''
     parascriptId : int
-    paratype: str
+    category: str
     title: str
     description: str = None
     content: str = None
-    reference: dict = None
+    reference: ParascriptReference = None
     link: AnyUrl = None
     metaData: dict = None
+    active: bool = None
     class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
@@ -520,48 +545,78 @@ class ParascriptResponse(BaseModel):
         schema_extra = {
             "example": {
                 "parascriptId": 100000,
-                "paratype": "Bible project video",
+                "category": "Bible project video",
                 "title": "Bible Video of Genesis",
                 "description": "Day's theme or some sub title if available",
                 "content": "some detailed content",
-                "reference": { "book":10, "chapter":5, "verseStart":1, "verseEnd":7},
+                "reference": {"bookStart":"MAT", "chapterStart":2, "verseStart":3,
+                               "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
                 "link": "http://someplace.com/resoucesid",
-                "metaData": {"key": "value"}
+                "metaData": {"key": "value"},
+                "active": True
             }
         }
+class ParascriptEdit(BaseModel):
+    '''Input object of parascriptuals update'''
+    category: str
+    title: str
+    description: str = None
+    content: str = None
+    reference: ParascriptReference = None
+    link: AnyUrl = None
+    active: bool = None
+    metaData: dict = None
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "category": "Bible project video",
+                "title": "Bible Video of Genesis",
+                "description": "updated description",
+                "content": "updated content",
+                "reference": {"bookStart":"MRK", "chapterStart":11, "verseStart":12,
+                               "bookEnd":"LUK", "chapterEnd":14, "verseEnd":15 },
+                "link": "http://someplace.com/newresoucesid",
+                "metaData": {"newkey": "newvalue"},
+                "active": True
+            }
+        }
+class ParascriptUpdateResponse(BaseModel):
+    '''Response object of parascripturals update'''
+    message: str = Field(..., example="Parascripturals updated successfully")
+    data: List[ParascriptResponse] = None
 
 class ParascriptCreateResponse(BaseModel):
     '''Response object of parascripturals update'''
     message: str = Field(..., example="Parascripturals added successfully")
     data: List[ParascriptResponse] = None
 
-class ParascriptUpdateResponse(BaseModel):
-    '''Response object of parascripturals update'''
-    message: str = Field(..., example="Parascripturals updated successfully")
-    data: List[ParascriptResponse] = None
-
 class ParascripturalCreate(BaseModel):
     '''Input object for parascripturals'''
-    paratype: str
+    category: str
     title: str
     description: str = None
     content: str = None
-    reference: dict = None
+    reference: ParascriptReference = None
     link: AnyUrl = None
     metaData: dict = None
+    active: bool = True
     class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "paratype": "Bible project video",
+                "category": "Bible project video",
                 "title": "Bible Video of Genesis",
                 "description": "Day's theme or some sub title if available",
                 "content": "some detailed content",
-                "reference": { "book":10, "chapter":5, "verseStart":1, "verseEnd":7},
+                "reference": {"bookStart":"MAT", "chapterStart":2, "verseStart":3,
+                               "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
                 "link": "http://someplace.com/resoucesid",
-                "metadata": {"key": "value"}
+                "metaData": {"key": "value"},
+                "active": True
             }
         }
+
 class UploadedUsfm(BaseModel):
     '''Input object to upload a usfm string'''
     USFM :str

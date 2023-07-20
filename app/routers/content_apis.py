@@ -1,9 +1,10 @@
 '''API endpoints related to content management''' #pylint: disable=too-many-lines
 import json
-from typing import List
+from typing import List, Dict
 import jsonpickle
 from fastapi import APIRouter, Query, Body, Depends, Path , Request,BackgroundTasks
 from sqlalchemy.orm import Session
+from pydantic import AnyUrl
 import db_models
 from schema import schemas,schemas_nlp, schema_auth, schema_content
 from dependencies import get_db, log, AddHiddenInput
@@ -74,7 +75,6 @@ async def delete_contents(request: Request,content_id: int ,
     if len(structurals_crud.get_content_types(db_, content_id= content_id)) == 0:
         raise NotAvailableException(f"Content id {content_id} not found")
     content_obj = content_id
-    print("####" ,content_obj)
     deleted_content = structurals_crud.delete_content(db_=db_, content=content_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content=  deleted_content,
             table_name = dbtable_name,deleting_user=user_details['user_id'])
@@ -1000,12 +1000,20 @@ async def delete_dictionaries(request: Request,delete_id: int,
     422: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
     415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Parascripturals"])
 @get_auth_access_check_decorator
-async def get_parascriptural(request: Request,
+async def get_parascriptural(request: Request, #pylint: disable=too-many-locals
     source_name:schemas.TableNamePattern=
     Path(...,example="en_KJV_1_parascriptural"),
-    paratype:str=Query(None, example="Bible project video"),
+    category:str=Query(None, example="Bible project video"),
     title:str=Query(None,example="Bible Video of Genesis"),
+    description:str=Query(None, example="Origin Chronicles"),
+    content:str=Query(None, example="A Visual Journey Through the Bible's Beginning"),
+    reference: str = Query(None,
+    example='{"bookStart": 1, "chapterStart": 1, "verseStart": 6}'),
+    link:AnyUrl=Query(None,example="http://someplace.com/resoucesid"),
     search_word:str=Query(None,example="subtitle"),
+    metadata: schemas.MetaDataPattern=Query(None,
+        example='{"otherName": "BPV, Videos of Bible chapters"}'),
+    active: bool=Query(True),
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
     '''Fetches the parascripturals. Can use, parascriptural name,type and/or title
@@ -1015,10 +1023,14 @@ async def get_parascriptural(request: Request,
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
     log.info('In get_parascriptural')
-    log.debug('source_name: %s, type: %s,title: %s, skip: %s, limit: %s, search_word: %s',
-        source_name, paratype, title, skip, limit,search_word)
-    return contents_crud.get_parascripturals(db_, source_name, paratype, title,
-        search_word = search_word, skip = skip, limit = limit)
+    log.debug('source_name: %s,type: %s,title: %s, skip: %s,limit: %s,search_word: %s,reference:%s,\
+        ,metadata:%s',source_name,category,title,skip,limit,search_word,reference,metadata)
+    reference_dict: Dict[str, int] = None
+    if reference:
+        reference_dict = json.loads(reference)
+    return contents_crud.get_parascripturals(db_, source_name, category, title,
+        description = description, content = content, reference = reference_dict, link = link,
+        search_word = search_word, metadata = metadata, active = active, skip = skip, limit = limit)
 
 @router.post('/v2/sources/parascripturals/{source_name}',
     response_model=schema_content.ParascriptCreateResponse,
@@ -1034,7 +1046,7 @@ async def add_parascripturals(request: Request,
     parascriptural: List[schema_content.ParascripturalCreate] = Body(...),
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
-    '''Uploads a list of parascripturals. paratype field is mandatory'''
+    '''Uploads a list of parascripturals. category field is mandatory'''
     log.info('In add_parascripturals')
     log.debug('source_name: %s, parascripturals: %s',source_name, parascriptural)
     return {'message': "Parascripturals added successfully",
@@ -1080,7 +1092,6 @@ async def delete_parascripturals(request: Request,delete_id:int,
     dbtable_name = tb_name.__name__
     get_parascriptural_response = contents_crud.get_parascripturals(db_, source_name=source_name, \
         parascript_id= delete_id)
-    print("get_parascriptural_response['db_content']:",get_parascriptural_response['db_content'])
     if len(get_parascriptural_response['db_content']) == 0:
         raise NotAvailableException(f"Parascriptural with id {parascript_id} not found")
     deleted_content = contents_crud.delete_parascriptural(db_=db_,delitem=delete_id,\

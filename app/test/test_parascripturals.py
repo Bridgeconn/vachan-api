@@ -18,8 +18,9 @@ def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
     assert "parascriptId" in item
     assert isinstance(item['parascriptId'], int)
-    assert "paratype" in item
+    assert "category" in item
     assert "title" in item
+    assert "active" in item
 
 def check_post(data: list):
     '''prior steps and post attempt, without checking the response'''
@@ -53,12 +54,14 @@ def check_post(data: list):
 def test_post_default():
     '''Positive test to upload parascriptural'''
     data = [
-    	{'paratype':'Bible project video', 'title':"creation", "link":"http://somewhere.com/something"},
-        {'paratype':'Bible project video', 'title':"abraham's family",
+    	{'category':'Bible project video','title':"creation", "link":"http://somewhere.com/something"},
+        {'category':'Bible project video', 'title':"abraham's family",
         "link":"http://somewhere.com/something"},
-        {'paratype':'Bible Stories', 'title':"Isarel's travel routes",
+        {'category':'Bible Stories', 'title':"Isarel's travel routes",
         "link":"http://somewhere.com/something"},
-        {'paratype':'Bible Stories', 'title':"the Gods reveals himself in new testament",
+        {'category':'Bible Stories', 'title':"the Gods reveals himself in new testament",
+        "reference": {"bookStart":"MAT", "chapterStart":2, "verseStart":3, \
+            "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
         "link":"http://somewhere.com/something"},
     ]
     response,source_name = check_post(data)
@@ -72,14 +75,13 @@ def test_post_default():
 def test_post_duplicate():
     '''Negative test to add two parascripturals Links with same type and title'''
     data = [
-        {'paratype':'Bible Stories', 'title':"the Gods reveals himself in new testament",
+        {'category':'Bible Stories', 'title':"the Gods reveals himself in new testament",
         "link":"http://somewhere.com/new"}
     ]
     resp, source_name = check_post(data)
     assert resp.status_code == 201
     assert resp.json()['message'] == "Parascripturals added successfully"
 
-    headers = {"contentType": "application/json", "accept": "application/json"}
     data[0]['link'] = 'http://anotherplace/item'
     response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
     assert response.status_code == 409
@@ -87,17 +89,15 @@ def test_post_duplicate():
 
 def test_post_incorrect_data():
     ''' tests to check input validation in post API'''
-
     # single data object instead of list
-    data = {'paratype':'Bible Stories', 'title':"the Geneology of Jesus Christ",
+    data = {'category':'Bible Stories', 'title':"the Geneology of Jesus Christ",
         "link":"http://somewhere.com/something"}
     resp, source_name = check_post(data)
     assert_input_validation_error(resp)
 
     # data object with missing mandatory fields
-    headers = {"contentType": "application/json", "accept": "application/json"}
     data = [
-        {'paratype':'Bible Stories',
+        {'category':'Bible Stories',
         "link":"http://somewhere.com/something"}
     ]
     response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
@@ -112,7 +112,7 @@ def test_post_incorrect_data():
 
     # incorrect data values in fields
     data = [
-        {'paratype':'mat', 'title':"the Geneology of Jesus Christ",
+        {'category':'mat', 'title':"the Geneology of Jesus Christ",
         "link":"not a url"}
     ]
     response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
@@ -120,7 +120,7 @@ def test_post_incorrect_data():
 
 
     data = [
-        {'paratype':'Bible Stories', 'title':"the Geneology of Jesus Christ",
+        {'category':'Bible Stories', 'title':"the Geneology of Jesus Christ",
         "link":"noProtocol.com/something"}
     ]
     response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
@@ -135,60 +135,320 @@ def test_post_incorrect_data():
     response = client.post(UNIT_URL+source_name2, headers=headers_auth, json=[])
     assert response.status_code == 404
 
-def test_get_after_data_upload():
-    '''Add some parascripturals data into the table and do all get tests'''
+    # data object with missing mandatory fields
     data = [
-        {'paratype':'Bible Stories', 'title':"creation",
+        {'category':'Bible Stories',
+        "link":"http://somewhere.com/something"}
+    ]
+
+    #passing bookStart and bookEnd as integer - negative test
+    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    data = [
+        {'category':"Bible Stories", 'title':"creation", 'description': "theme for test",
+        'content':"some content for test",
+        "reference": {"bookStart":1, "chapterStart":2, "verseStart":3,"bookEnd":20, 
+                    "chapterEnd":5, "verseEnd":6 }
+        }
+    ]
+    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    assert_input_validation_error(response)
+
+    #passing bookStart and bookEnd not in bookCodePattern expression - negative test
+    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    data = [
+        {'category':"Bible Stories", 'title':"creation", 'description': "theme for test",
+        'content':"some content for test",
+        "reference": {"bookStart":"MATHEW", "chapterStart":2, "verseStart":3,
+                    "bookEnd":"JOHN", "chapterEnd":5, "verseEnd":6 }
+        }
+    ]
+    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    assert_input_validation_error(response)
+
+    #passing non integer value for chapter and verse - negative test
+    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    data = [
+        {'category':"Bible Stories", 'title':"creation", 'description': "theme for test",
+        'content':"some content for test",
+        "reference": {"bookStart":"MAT", "chapterStart":"firstchapter","verseStart":"firstverse",
+                    "bookEnd":"JHN", "chapterEnd":"lastchapter", "verseEnd":"lastverse"}
+        }
+    ]
+    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    assert_input_validation_error(response)
+
+def test_get_after_data_upload():
+    '''Add some parascripturals data into the table and do all get tests'''  
+    data = [
+        {'category':"Bible Stories", 'title':"creation", 'description': "theme for test",
+        'content':"some content for test",
+        "link":"http://somewhere.com/something",
+        'reference': {"bookStart":"MAT", "chapterStart":2, "verseStart":3,
+                    "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
+        'metaData':{'otherName': 'BPV, Bible Project Video'}},
+        {'category':'Bible Stories', 'title':"Noah's Ark",
         "link":"http://somewhere.com/something"},
-        {'paratype':'Bible Stories', 'title':"Noah's Ark",
+        {'category':'Bible Stories', 'title':"abraham's family",
         "link":"http://somewhere.com/something"},
-        {'paratype':'Bible Stories', 'title':"abraham's family",
+        {'category':'Bible project video', 'title':"Isarel's travel routes",
         "link":"http://somewhere.com/something"},
-        {'paratype':'Bible project video', 'title':"Isarel's travel routes",
+        {'category':'Bible project video', 'title':"Paul's travel routes",
         "link":"http://somewhere.com/something"},
-        {'paratype':'Bible project video', 'title':"Paul's travel routes",
-        "link":"http://somewhere.com/something"},
-        {'paratype':'Bible project video', 'title':"the Gods reveals himself in new testament",
+        {'category':'Bible project video', 'title':"the Gods reveals himself in new testament",
+        'reference': {"bookStart":"MRK", "chapterStart":2, "verseStart":10,
+                    "bookEnd":"LUK", "chapterEnd":15, "verseEnd":10 },
         "link":"http://somewhere.com/something"}
     ]
     res, source_name = check_post(data)
     assert res.status_code == 201
-    # headers = {"contentType": "application/json", "accept": "application/json"}
     check_default_get(UNIT_URL+source_name, headers_auth,assert_positive_get)
 
     #filter by parascript type
     #without auth
-    response = client.get(UNIT_URL+source_name+'?paratype=Bible%20Stories')
+    response = client.get(UNIT_URL+source_name+'?category=Bible%20Stories')
     assert response.status_code == 401
     assert response.json()["error"] == "Authentication Error"
     #with auth
-    response = client.get(UNIT_URL+source_name+'?paratype=Bible%20Stories',headers=headers_auth)
+    response = client.get(UNIT_URL+source_name+'?category=Bible%20Stories',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 3
 
-    # filter with title 
+    # filter with title
     response = client.get(UNIT_URL+source_name+'?title=creation',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
     # both title and book
-    response = client.get(UNIT_URL+source_name+"?paratype=Bible%20Stories&title=Noah's%20Ark",headers=headers_auth)
+    response = client.get(UNIT_URL+source_name+
+        "?category=Bible%20Stories&title=Noah's%20Ark",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
-    # not available
-    response = client.get(UNIT_URL+source_name+'?paratype=Animations',headers=headers_auth)
+    # filter with description
+    response = client.get(UNIT_URL+source_name+"?description=theme for test",headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+    # filter with description - fuzzy match
+    response = client.get(UNIT_URL+source_name+"?description=for test",headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+    # filter with content - exact match
+    response = client.get(UNIT_URL+source_name+
+        "?content=some content for test",headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+    # filter with content - fuzzy match match
+    response = client.get(UNIT_URL+source_name+"?content=content for",headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+    # filter with link
+    response = client.get(UNIT_URL+source_name+"?link=http://somewhere.com/something",
+        headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 6
+
+    # filter with metadata - exact match
+    response = client.get(UNIT_URL+source_name+
+        '?metadata={"otherName": "BPV, Bible Project Video"}',
+        headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+    # filter with metadata - fuzzy match
+    response = client.get(UNIT_URL+source_name+'?metadata={"otherName": "Project Video"}' ,
+        headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+    # filtering with single reference
+    response = client.get(UNIT_URL+source_name+
+        '?reference={"bookStart":"MRK", "chapterStart":10, "verseStart":12}',
+        headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+    for item in response.json():
+        assert_positive_get(item)
+
+    # filtering with cross-chapter reference
+    response = client.get(UNIT_URL+source_name+
+    '?reference= {"bookStart":"MRK", "chapterStart":1, \
+                "verseStart":10,"bookEnd":"LUK", "chapterEnd":10, "verseEnd":1 }',
+        headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    for item in response.json():
+        assert_positive_get(item)
+
+    # not available sources
+    response = client.get(UNIT_URL+source_name+'?category=Animations',headers=headers_auth)
     assert_not_available_content(response)
 
-    response = client.get(UNIT_URL+source_name+'?paratype=Bible%20Stories&title=vision',headers=headers_auth)
+    response = client.get(UNIT_URL+source_name+
+        '?category=Bible%20Stories&title=vision',headers=headers_auth)
     assert_not_available_content(response)
+
+def test_searching():
+    '''Being able to query parascripturals with category,title,
+    content,description,reference and metadata'''
+    data = [
+        {
+            'category':"Bible Stories",
+            'title':"Creation of World",
+            'description': "theme for test",
+            'content':"some content for test",
+            'reference': {"bookStart":"MAT", "chapterStart":2, "verseStart":3,
+                "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
+            'link':"http://somewhere.com/something",
+            'metaData': {'otherName': 'BPV, Videos of Bible chapters'}
+        }
+    ]
+
+    res, source_name = check_post(data)
+    assert res.status_code == 201
+    check_default_get(UNIT_URL+source_name, headers_auth,assert_positive_get)
+
+    # searching with category - positive test
+    response = client.get(UNIT_URL+source_name+'?search_word=Stories',headers = headers_auth)
+    assert len(response.json()) > 0
+    found = False
+    for item in response.json():
+        assert_positive_get(item)
+        if item['title'] == "Creation of World":
+            found = True
+    assert found
+
+    # searching with title - positive test
+    response = client.get(UNIT_URL+source_name+'?search_word=of',headers = headers_auth)
+    assert len(response.json()) > 0
+    found = False
+    for item in response.json():
+        assert_positive_get(item)
+        if item['title'] == "Creation of World":
+            found = True
+    assert found
+
+    # searching with description:exact match - positive test
+    url_with_query_string = UNIT_URL+source_name+"?search_word=theme for test"
+    response = client.get(url_with_query_string, headers=headers_auth)
+    assert len(response.json()) > 0
+    found = False
+    for item in response.json():
+        assert_positive_get(item)
+        if item['title'] == "Creation of World":
+            found = True
+    assert found
+
+    # searching with description:fuzzy match - positive test
+    query_string = "for"
+    url_with_query_string = UNIT_URL+source_name+"?search_word=" + query_string
+    response = client.get(url_with_query_string, headers=headers_auth)
+    assert len(response.json()) > 0
+    found = False
+    for item in response.json():
+        assert_positive_get(item)
+        if item['title'] == "Creation of World":
+            found = True
+    assert found
+
+    # searching with content:exact match - positive test
+    url_with_query_string = UNIT_URL+source_name+"?search_word=some content for test"
+    response = client.get(url_with_query_string, headers=headers_auth)
+    assert len(response.json()) > 0
+    found = False
+    for item in response.json():
+        assert_positive_get(item)
+        if item['title'] == "Creation of World":
+            found = True
+    assert found
+
+    # searching with content:fuzzy match - positive test
+    query_string = "content for"
+    url_with_query_string = UNIT_URL+source_name+"?search_word=" + query_string
+    response = client.get(url_with_query_string, headers=headers_auth)
+    assert len(response.json()) > 0
+    found = False
+    for item in response.json():
+        assert_positive_get(item)
+        if item['title'] == "Creation of World":
+            found = True
+    assert found
+
+     # searching with link - positive test
+    url_with_query_string = UNIT_URL+source_name+"?link=http://somewhere.com/something"
+    response = client.get(url_with_query_string, headers=headers_auth)
+    assert len(response.json()) > 0
+    found = False
+    for item in response.json():
+        assert_positive_get(item)
+        if item['title'] == "Creation of World":
+            found = True
+    assert found
+    # searching with reference:exact match - positive test
+    response = client.get(UNIT_URL+source_name+"?search_word={'bookStart':'MAT', 'chapterStart':2, \
+        'verseStart':3,'bookEnd':'JHN', 'chapterEnd':5, 'verseEnd':6 }",headers = headers_auth)
+    assert len(response.json()) > 0
+    found = False
+    for item in response.json():
+        assert_positive_get(item)
+        if item['title'] == "Creation of World":
+            found = True
+    assert found
+
+    # searching with reference:partial match - positive test
+    response = client.get(UNIT_URL+source_name+"?search_word=chapterStart:2",headers = headers_auth)
+    assert len(response.json()) > 0
+    found = False
+    for item in response.json():
+        assert_positive_get(item)
+        if item['title'] == "Creation of World":
+            found = True
+    assert found
+
+    # searching with not available reference keyword- negative test
+    response = client.get(UNIT_URL+source_name+"?search_word=chapterStart:999",
+        headers = headers_auth)
+    assert len(response.json()) ==  0
+    assert_not_available_content(response)
+
+    # searching with metadata with special characters:exact match - positive test
+    response = client.get(UNIT_URL+source_name+"?search_word=BPV, Videos of Bible chapters",
+        headers = headers_auth)
+    assert len(response.json()) > 0
+    found = False
+    for item in response.json():
+        assert_positive_get(item)
+        if item['title'] == "Creation of World":
+            found = True
+    assert found
+
+    # searching with partial metadata:fuzzy match - positive test
+    response = client.get(UNIT_URL+source_name+"?search_word=of chapters",headers = headers_auth)
+    assert len(response.json()) > 0
+    found = False
+    for item in response.json():
+        assert_positive_get(item)
+        if item['title'] == "Creation of World":
+            found = True
+    assert found
+
+    # searching with invalid search word - negative test
+    response = client.get(UNIT_URL+source_name+"?search_word=Bibles",headers = headers_auth)
+    assert len(response.json()) ==  0
+    found = False
+    for item in response.json():
+        if item['title'] == "Creation of World":
+            found = True
+    assert not found
 
 def test_get_incorrect_data():
     '''Check for input validations in get'''
     source_name = 'ur_TTT'
     response = client.get(UNIT_URL+source_name,headers=headers_auth)
     assert_input_validation_error(response)
-
     resp, source_name = check_post([])
     assert resp.status_code == 201
     source_name = source_name.replace('parascriptural', 'graphics')
@@ -198,9 +458,13 @@ def test_get_incorrect_data():
 def test_put_after_upload():
     '''Positive tests for put'''
     data = [
-        {'paratype':'Bible Stories', 'title':"12 apostles",
+        {'category':'Bible Stories', 'title':"12 apostles",
+        "reference": {"bookStart":"MAT", "chapterStart":2, "verseStart":3, \
+            "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
         "link":"http://somewhere.com/something"},
-        {'paratype':'Bible Project Video', 'title':"miracles",
+        {'category':'Bible Project Video', 'title':"miracles",
+        "reference": {"bookStart":"MRK", "chapterStart":2, "verseStart":3, \
+            "bookEnd":"LUK", "chapterEnd":5, "verseEnd":6 },
         "link":"http://somewhere.com/something"}
     ]
     response, source_name = check_post(data)
@@ -208,12 +472,17 @@ def test_put_after_upload():
 
     # positive PUT
     new_data = [
-        {'paratype':'Bible Stories', 'title':"12 apostles",
-        "link":"http://anotherplace.com/something"},
-        {'paratype':'Bible Project Video', 'title':"miracles",
-        "link":"http://somewhereelse.com/something"}
+        {'category':'Bible Stories', 'title':"12 apostles",
+        "reference": {"bookStart":"MRK", "chapterStart":10, "verseStart":11, \
+            "bookEnd":"LUK", "chapterEnd":12, "verseEnd":13 },
+        "link":"http://anotherplace.com/something",
+        "metaData":{"newkey1":"newvalue1"}},
+        {'category':'Bible Project Video', 'title':"miracles",
+        "reference": {"bookStart":"MAT", "chapterStart":10, "verseStart":11, \
+            "bookEnd":"JHN", "chapterEnd":12, "verseEnd":13 },
+        "link":"http://somewhereelse.com/something",
+        "metaData":{"newkey2":"newvalue2"}}
     ]
-    # headers = {"contentType": "application/json", "accept": "application/json"}
     #without auth
     response = client.put(UNIT_URL+source_name,headers=headers, json=new_data)
     assert response.status_code == 401
@@ -224,12 +493,13 @@ def test_put_after_upload():
     assert response.json()['message'] == 'Parascripturals updated successfully'
     for i,item in enumerate(response.json()['data']):
         assert_positive_get(item)
-        assert response.json()['data'][i]['link'] == new_data[i]['link']
-        assert response.json()['data'][i]['paratype'] == data[i]['paratype']
-        assert response.json()['data'][i]['title'] == data[i]['title']
+        assert response.json()['data'][i]['category'] == new_data[i]['category']
+        assert response.json()['data'][i]['title'] == new_data[i]['title']
+        assert response.json()['data'][i]['reference'] == new_data[i]['reference']
+        assert response.json()['data'][i]['metaData'] == new_data[i]['metaData']
 
     # not available PUT
-    new_data[0]['paratype'] = 'Bible Stories New'
+    new_data[0]['category'] = 'Bible Stories New'
     response = client.put(UNIT_URL+source_name, headers=headers_auth, json=new_data)
     assert response.status_code == 404
 
@@ -241,17 +511,16 @@ def test_put_incorrect_data():
     ''' tests to check input validation in put API'''
 
     post_data = [
-        {'paratype':'Bible Stories', 'title':"miracles",
+        {'category':'Bible Stories', 'title':"miracles",
         "link":"http://somewhere.com/something"},
-        {'paratype':'Bible project video', 'title':"12 apostles",
+        {'category':'Bible project video', 'title':"12 apostles",
         "link":"http://somewhere.com/something"}
     ]
     resp, source_name = check_post(post_data)
     assert resp.status_code == 201
 
     # single data object instead of list
-    headers = {"contentType": "application/json", "accept": "application/json"}
-    data =  {'paratype':'Bible Stories', 'title':"12 apostles",
+    data =  {'category':'Bible Stories', 'title':"12 apostles",
         "link":"http://anotherplace.com/something"}
     response = client.put(UNIT_URL+source_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
@@ -265,19 +534,30 @@ def test_put_incorrect_data():
     assert_input_validation_error(response)
 
     data = [
-        {'paratype':'Bible Stories',
+        {'category':'Bible Stories',
         "link":"http://somewhere.com/something"}    ]
     response = client.put(UNIT_URL+source_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     # incorrect data values in fields
-
+    #updating with reference in incorrect syntax of bookCode
     data = [
-        {'paratype':'Bible Stories', 'title':"12 apostles",
+        {'category':'Bible Stories', 'title':"12 apostles",
+        "reference": {"bookStart":"MATHEW", "chapterStart":2, "verseStart":3,
+                    "bookEnd":"JOHN", "chapterEnd":5, "verseEnd":6 }
+        }
+                ]
+    response = client.put(UNIT_URL+source_name, headers=headers_auth, json=data)
+    assert_input_validation_error(response)
+
+    #updating with link in incorrect syntax
+    data = [
+        {'category':'Bible Stories', 'title':"12 apostles",
         "link":"filename.txt"}    ]
     response = client.put(UNIT_URL+source_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
+    #updating with incorrect source name
     source_name1 = source_name.replace('parascriptural', 'graphics')
     response = client.put(UNIT_URL+source_name1, headers=headers_auth, json=[])
     assert response.status_code == 404
@@ -314,12 +594,12 @@ def test_created_user_can_only_edit():
     assert response.status_code == 201
     assert response.json()['message'] == "Source created successfully"
     source_name = response.json()['data']['sourceName']
-    
+
     #create parascripturals
     data = [
-        {'paratype':'Bible Stories', 'title':"12 apostles",
+        {'category':'Bible Stories', 'title':"12 apostles",
         "link":"http://somewhere.com/something"},
-        {'paratype':'Bible project video', 'title':"miracles",
+        {'category':'Bible project video', 'title':"miracles",
         "link":"http://somewhere.com/something"}
     ]
     response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
@@ -327,9 +607,9 @@ def test_created_user_can_only_edit():
 
     #update parascripturals with created SA user
     new_data = [
-        {'paratype':'Bible Stories', 'title':"12 apostles",
+        {'category':'Bible Stories', 'title':"12 apostles",
         "link":"http://anotherplace.com/something"},
-        {'paratype':'Bible project video', 'title':"miracles",
+        {'category':'Bible project video', 'title':"miracles",
         "link":"http://somewhereelse.com/something"}]
     response = client.put(UNIT_URL+source_name,headers=headers_auth, json=new_data)
     assert response.status_code == 201
@@ -339,25 +619,59 @@ def test_created_user_can_only_edit():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     response = client.put(UNIT_URL+source_name,headers=headers_auth, json=new_data)
     assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'  
+    assert response.json()['error'] == 'Permission Denied'
 
 def test_get_access_with_user_roles_and_apps():
     """Test get filter from apps and with users having different permissions"""
     data = [
-    	{'paratype':'Bible Stories', 'title':"12 apostles",
+    	{'category':'Bible Stories', 'title':"12 apostles",
         "link":"http://somewhere.com/something"}
     ]
     contetapi_get_accessrule_checks_app_userroles("parascriptural",UNIT_URL,data)
+
+def test_soft_delete():
+    '''check soft delete in parascripturals'''
+    data = [
+        {'category':'Bible Stories', 'title':"the Gods reveals himself in new testament",
+        "reference": {"bookStart":"MAT", "chapterStart":2, "verseStart":3,\
+            "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
+        "link":"http://somewhere.com/something"
+        }
+            ]
+
+    delete_data = [
+        {'category':'Bible Stories', 'title':'the Gods reveals himself in new testament'}
+    ]
+
+    response, source_name = check_post(data)
+    assert response.json()
+
+    get_response1 = client.get(UNIT_URL+source_name,headers=headers_auth)
+    assert len(get_response1.json()) == len(data)
+    delete_data[0]['active'] = False
+
+    response = client.put(UNIT_URL+source_name,headers=headers_auth, json=delete_data)
+    assert response.status_code == 201
+    assert response.json()
+    assert response.json()["message"] == "Parascripturals updated successfully"
+    # for i,item in enumerate(response.json()['data']['output']['data']): #pylint: disable=unused-variable
+    #     assert not item['active']
+
+    get_response2 = client.get(UNIT_URL+source_name, headers=headers_auth)
+    assert len(get_response2.json()) == len(data) - len(delete_data)
+
+    get_response3 = client.get(UNIT_URL+source_name+'?active=false',headers=headers_auth)
+    assert len(get_response3.json()) == len(delete_data)
 
 def test_delete_default():
     ''' positive test case, checking for correct return of deleted parascriptural ID'''
     #create new data
     response,source_name = test_post_default()
-    print("source:",source_name)
     headers_auth = {"contentType": "application/json",#pylint: disable=redefined-outer-name
                 "accept": "application/json"}
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    post_response = client.get(UNIT_URL+source_name+"?book_code=Bible%20project%20video&title=creation",\
+    post_response = client.get(UNIT_URL+source_name+ \
+        "?book_code=Bible%20project%20video&title=creation",\
         headers=headers_auth)
     assert post_response.status_code == 200
     assert len(post_response.json()) == 1
@@ -365,11 +679,11 @@ def test_delete_default():
         assert_positive_get(item)
     parascript_response = client.get(UNIT_URL+source_name,headers=headers_auth)
     parascript_id = parascript_response.json()[0]['parascriptId']
-    print("parasciptid:",parascript_id)
 
     #Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}#pylint: disable=redefined-outer-name
-    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(parascript_id), headers=headers)
+    response = client.delete(UNIT_URL+source_name + \
+        "?delete_id=" + str(parascript_id), headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
@@ -379,7 +693,8 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
-        response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(parascript_id), headers=headers_au)
+        response = client.delete(UNIT_URL+source_name + \
+            "?delete_id=" + str(parascript_id), headers=headers_au)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
@@ -388,12 +703,13 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
-    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(parascript_id), headers=headers_va)
+    response = client.delete(UNIT_URL+source_name + \
+        "?delete_id=" + str(parascript_id), headers=headers_va)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Parascriptural id {parascript_id} deleted successfully"
 
-   
+
 def test_delete_default_superadmin():
     ''' positive test case, checking for correct return of deleted parascriptural ID'''
     #Created User or Super Admin can only delete parascriptural
@@ -416,15 +732,16 @@ def test_delete_default_superadmin():
     parascript_response = client.get(UNIT_URL+source_name,headers=headers_sa)
     parascript_id = parascript_response.json()[0]['parascriptId']
 
-
      #Delete parascriptural with Super Admin
-    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(parascript_id), headers=headers_sa)
+    response = client.delete(UNIT_URL+source_name + "?delete_id=" +\
+         str(parascript_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Parascriptural id {parascript_id} deleted successfully"
     #Check parascriptural is deleted from table
     parascript_response = client.get(UNIT_URL+source_name,headers=headers_sa)
-    post_response = client.get(UNIT_URL+source_name+"?book_code=Bible%20project%20video&title=creation",\
+    post_response = client.get(UNIT_URL+source_name+ \
+        "?book_code=Bible%20project%20video&title=creation",\
         headers=headers_sa)
     assert_not_available_content(post_response)
     logout_user(test_user_token)
@@ -452,7 +769,8 @@ def test_delete_parascript_id_string():
     parascript_id = str(parascript_id)
 
     #Delete parascriptural with Super Admin
-    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(parascript_id), headers=headers_sa)
+    response = client.delete(UNIT_URL+source_name + \
+        "?delete_id=" + str(parascript_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Parascriptural id {parascript_id} deleted successfully"
@@ -499,7 +817,7 @@ def test_delete_missingvalue_source_name():
             }
     parascript_response = client.get(UNIT_URL+source_name,headers=headers_sa)
     parascript_id = parascript_response.json()[0]['parascriptId']
-    
+
     response = client.delete(UNIT_URL+ "?delete_id=" + str(parascript_id), headers=headers_sa)
     assert response.status_code == 404
     logout_user(test_user_token)
@@ -522,8 +840,8 @@ def test_delete_notavailable_content():
             }
     parascript_id=20000
      #Delete parascriptural with Super Admin
-    response = client.delete(UNIT_URL+source_name + "?delete_id=" + str(parascript_id), headers=headers_sa)
-    print("del resp:",response.json())
+    response = client.delete(UNIT_URL+source_name + \
+        "?delete_id=" + str(parascript_id), headers=headers_sa)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
     logout_user(test_user_token)
@@ -570,8 +888,9 @@ def test_restore_default():
     assert response.status_code == 201
     assert response.json()['message'] == \
     f"Deleted Item with identity {deleteditem_id} restored successfully"
-    #Check Infpgraphic exists after restore
-    restore_response =  client.get(UNIT_URL+source_name+"?paratype=Bible project video&title=creation",\
+    #Check parascriptural exists after restore
+    restore_response =  client.get(UNIT_URL+source_name+ \
+        "?category=Bible project video&title=creation",\
         headers=headers_auth)
     assert restore_response.status_code == 200
     assert len(restore_response.json()) == 1
@@ -591,7 +910,7 @@ def test_restore_item_id_string():
     deleteditem_id = str(deleteditem_id)
     data = {"itemId": deleteditem_id}
 
-#Login as Super Admin
+    #Login as Super Admin
     data_admin   = {
     "user_email": SUPER_USER,
     "password": SUPER_PASSWORD

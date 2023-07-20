@@ -166,17 +166,21 @@ class Parascriptural():# pylint: disable=too-few-public-methods
     '''Corresponds to the dynamically created parascripturals tables in vachan Db(postgres)'''
     parascriptId = Column('parascript_id', Integer,
         Sequence('parascriptural_id_seq', start=100001, increment=1), primary_key=True)
-    paratype = Column('paratype',String)
+    category = Column('category',String)
     title = Column('title', String)
     description = Column('description', String)
     content = Column('content', String)
     reference = Column('reference', JSONB)
+    refStart = Column('ref_start', Integer)
+    refEnd = Column('ref_end', Integer)
     link = Column('link', String)
     metaData = Column('metadata', JSONB)
+    active = Column('active', Boolean)
     __table_args__ = (
-        UniqueConstraint('paratype', 'title'),
+        UniqueConstraint('category', 'title'),
         {'extend_existing': True}
                      )
+
 class BibleAudio(): # pylint: disable=too-few-public-methods
     '''Corresponds to the dynamically created bible_audio tables in vachan Db(postgres)'''
     audioId  = Column('bible_audio_id', Integer,
