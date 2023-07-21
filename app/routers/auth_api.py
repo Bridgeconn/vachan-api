@@ -35,7 +35,8 @@ from crud.auth_crud import (
     create_endpoint,
     update_endpoint,
     get_endpoints,
-    update_permission_map
+    update_permission_map,
+    get_api_permission_map
 )
 
 router = APIRouter()
@@ -585,6 +586,48 @@ db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     data = update_permission_map(db_, details, user_id = user_details['user_id'])
     return {'message': "Permission Map updated successfully",
             "data": data}
+
+@router.get('/v2/access/permission-maps',response_model=List[schema_auth.PermissionMapOut],
+responses={401: {"model": schemas.ErrorResponse}}
+,tags=["Access-Control"])
+@get_auth_access_check_decorator
+async def get_auth_api_permisisonmap(request: Request,user_details =Depends(get_user_or_none),#pylint: disable=unused-argument
+    app_key: types.SecretStr = Query(None),#pylint: disable=unused-argument,
+    permission_map_id: int = Query(None, example=100001),
+    endpoint: str = Query(None, example='v2/access/permission-map'),
+    method: schema_auth.Methods = Query(None, example=schema_auth.Methods.GET),
+    app_name: str = Query(None, example='Vachan'),
+    entitlement: str = Query(None, example='content'),
+    permission_name: str = Query(None, example='create-data'),
+    filter_results: bool= None,
+    active: bool = True,
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
+    db_: Session = Depends(get_db)):
+    '''Fetch api permission map
+    * all permission map : without giving any query params.
+    * permission_map_id : if permissionMapId id is provided , priority will be for permissionMapId.
+    * skip=n: skips the first n objects in return list
+    * endpoints : return data related to the ednpoint name
+    * method : return data filtered with method type
+    * app_name : return data related to the app_name
+    * entitlement : return data filtered with entitlement type
+    * permission_name : return data filtered with permission
+    * filter_results : return data filtered based on permission map\
+        is filtred type or not
+    * limit=n: limits the no. of items to be returned to n
+    * returns [] if no content match'''
+    log.info('In get endpoint')
+    log.debug('permissionMapId: %s, endpoint: %s, method: %s,\
+            app_name: %s, entitlement: %s, permission_name: %s,\
+            filter_results: %s, active: %s,\
+            skip: %s, limit:%s', permission_map_id,
+            endpoint, method, app_name, entitlement, permission_name,
+            filter_results, active, skip, limit)
+    data = get_api_permission_map(db_, permission_map_id, endpoint, method,
+        app_name=app_name,entitlement=entitlement,permission_name=permission_name,
+        filter_results=filter_results, active=active,
+        skip=skip, limit=limit)
+    return data
 
 
 #--------- Dynamic route cause error for other static endpoints -----------------------------------

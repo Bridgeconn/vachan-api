@@ -1,12 +1,12 @@
 ''' Place to define all Database CRUD operations for table Roles'''
 import re
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, and_
 from sqlalchemy.sql import text
 import db_models
 from custom_exceptions import NotAvailableException
 from auth.auth_globals import generate_roles, APPS, generate_access_rules_dict,\
-    APIPERMISSIONTABLE, generate_permission_map_table
+    generate_permission_map_table
 from schema import schema_auth
 from auth.authentication import get_all_or_one_kratos_users #pylint: disable=ungrouped-imports
 
@@ -217,14 +217,17 @@ def create_permission_map(db_: Session, details: schema_auth.PermissionMapCreate
     user_id= None):
     '''Add a row to permission map table'''
 
-    validate_endpoint = False
-    # identity the api endpoint is valid and map is not duplicate
-    for row in APIPERMISSIONTABLE:
-        if details.apiEndpoint.lower().strip() == row[0].lower():
-            validate_endpoint = True
-    if not validate_endpoint:
-        raise NotAvailableException(f"apiEndpoint, {details.apiEndpoint.strip()},"+\
-            " is not a valid one")
+    endpoint_row = db_.query(db_models.ApiEndpoints).filter(and_(
+        (func.lower(db_models.ApiEndpoints.endpoint) ==\
+        func.lower(details.apiEndpoint)),
+        (func.lower(db_models.ApiEndpoints.method) ==\
+         details.method.lower())
+        )).first()
+
+    if not endpoint_row:
+        raise NotAvailableException(f"endpoint- method combination of ,\
+            {details.apiEndpoint.strip()}"+\
+            f"-{details.method}, is not found in Database")
 
     app_row = db_.query(db_models.Apps).filter(
         func.lower(db_models.Apps.appName) ==\
@@ -248,8 +251,7 @@ def create_permission_map(db_: Session, details: schema_auth.PermissionMapCreate
             " not found in Database")
 
     db_content = db_models.ApiPermissionsMap(
-        apiEndpoint = details.apiEndpoint.lower().strip(),
-        method= details.method.strip(),
+        endpointId=endpoint_row.endpointId,
         requestAppId=app_row.appId,
         resourceTypeId=resource.resourceTypeId,
         permissionId=permission.permissionId,
@@ -314,18 +316,21 @@ def update_permission_map(db_: Session, details: schema_auth.PermissionMapUpdate
         raise NotAvailableException(f"Api Permission Map of Id {details.permissionMapId},"+\
         " not found in Database")
 
-    if details.apiEndpoint:
-        validate_endpoint = False
-        for row in APIPERMISSIONTABLE:
-            if details.apiEndpoint.lower().strip() == row[0].lower():
-                validate_endpoint = True
-        if not validate_endpoint:
-            raise NotAvailableException(f"apiEndpoint, {details.apiEndpoint.strip()},"+\
-                " is not a valid one")
-        db_content.apiEndpoint = details.apiEndpoint.lower().strip()
+    if details.apiEndpoint and details.method:
+        endpoint_row = db_.query(db_models.ApiEndpoints).filter(and_(
+        (func.lower(db_models.ApiEndpoints.endpoint) ==\
+        func.lower(details.apiEndpoint)),
+        (func.lower(db_models.ApiEndpoints.method) ==\
+         details.method.lower())
+        )).first()
 
-    if details.method:
-        db_content.method = details.method.strip()
+        if not endpoint_row:
+            raise NotAvailableException(f"endpoint- method combination of ,\
+                {details.apiEndpoint.strip()}"+\
+                f"-{details.method}, is not found in Database")
+        db_content.endpointId = endpoint_row.endpointId
+    else:
+        raise NotAvailableException("please provide endpoint-method combo")
 
     if details.requestApp:
         app_row = db_.query(db_models.Apps).filter(
@@ -365,3 +370,43 @@ def update_permission_map(db_: Session, details: schema_auth.PermissionMapUpdate
         'refresh_auth_func':generate_permission_map_table
     }
     return response
+
+def get_api_permission_map(db_: Session, permission_map_id, endpoint, method, **kwargs):
+    '''get rows from api permission map table'''
+    app_name = kwargs.get("app_name",None)
+    entitlement = kwargs.get("entitlement",None)
+    permission_name = kwargs.get("permission_name",None)
+    filter_results = kwargs.get("filter_results",None)
+    active = kwargs.get("active",True)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
+
+    query = db_.query(db_models.ApiPermissionsMap)
+
+    if permission_map_id:
+        query = query.filter(db_models.ApiPermissionsMap.permissionMapId == permission_map_id)
+    else:
+        if endpoint:
+            query = query.filter(db_models.ApiPermissionsMap.endpoint.has
+            (endpoint = endpoint.strip()))
+        if method:
+            query = query.filter(db_models.ApiPermissionsMap.endpoint.has
+            (method = method.strip().upper()))
+        if app_name:
+            query = query.filter(db_models.ApiPermissionsMap.requestApp.has
+            (appName = app_name.strip()))
+        if entitlement:
+            query = query.filter(db_models.ApiPermissionsMap.resourceType.has
+            (resourceTypeName = entitlement.strip()))
+        if permission_name:
+            query = query.filter(db_models.ApiPermissionsMap.permission.has
+            (permissionName = permission_name.strip()))
+        if filter_results:
+            query = query.filter(db_models.ApiPermissionsMap.filterResults == filter_results)
+        if active:
+            query = query.filter(db_models.ApiPermissionsMap.active)
+        else:
+            query = query.filter(db_models.AccessRules.active == False) #pylint: disable=singleton-comparison
+
+
+    return query.offset(skip).limit(limit).all()
