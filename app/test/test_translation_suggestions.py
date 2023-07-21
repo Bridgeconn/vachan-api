@@ -251,7 +251,7 @@ def test_learn_n_suggest():
     response = client.put(UNIT_URL+'/suggestions?source_language=en&target_language=ml',
         headers=headers_auth, json={"sentence_list":sentence_list})
 
-    # ensures that resource is tokenized in draftmeta, even when there is no suggestion
+    # ensures that source is tokenized in draftmeta, even when there is no suggestion
     assert len(response.json()[0]["draftMeta"]) > 7 
     assert len([meta for meta in response.json()[0]["draftMeta"] if meta[2]=="untranslated"]) > 4
     
@@ -561,7 +561,7 @@ def test_delete_glossary():
     assert isinstance(get_response.json(), dict)
     assert len(get_response.json()['translations']) == 0
 
-    #Delete with not available resource language
+    #Delete with not available source language
     response = client.delete(NLP_UNIT_URL+
         '/gloss?source_lang=x-ttt&target_lang=ml&token=test&translation=ടെസ്റ്റ്',
         headers=headers_auth)

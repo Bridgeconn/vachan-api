@@ -5,14 +5,14 @@ import json
 import requests
 from . import client
 from .test_versions import check_post
-from .test_resources import check_post as resource_post
+from .test_resources import check_post as source_post
 from .conftest import initial_test_users
 
 BASE_URL = "v2/"
 headers = {"contentType": "application/json", "accept": "application/json"}
 
-# have a bible resource to be used
-resource_name = "hi_XYZ_1_bible" # pylint: disable=C0103
+# have a bible source to be used
+source_name = "hi_XYZ_1_bible" # pylint: disable=C0103
 project_id = None # pylint: disable=C0103
 
 ver_data = {
@@ -206,7 +206,7 @@ bible_books = {
 project_update_data = {
 	"projectId":project_id,
     "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']],
-    "selectedBooks":{"bible": resource_name,
+    "selectedBooks":{"bible": source_name,
     				 "books": ['luk', 'jhn']}
 
 }
@@ -374,17 +374,17 @@ def test_end_to_end_translation():
     assert resp.json()['message'] == "Version created successfully"
 
 
-    # resp = client.post(BASE_URL+"resources", headers=headers, json=src_data)
-    resp = resource_post(src_data)
+    # resp = client.post(BASE_URL+"sources", headers=headers, json=src_data)
+    resp = source_post(src_data)
     assert resp.json()['message'] == "Resource created successfully"
-    resource_name = resp.json()['data']['resourceName']
+    source_name = resp.json()['data']['resourceName']
 
     headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
                 "app":"Autographa"
             }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    resp = client.post(BASE_URL+"bibles/"+resource_name+"/books", headers=headers_auth,
+    resp = client.post(BASE_URL+"bibles/"+source_name+"/books", headers=headers_auth,
     json=gospel_books_data)
     assert resp.json()['message'] == "Bible books uploaded and processed successfully"
 
@@ -426,7 +426,7 @@ def test_end_to_end_translation():
 
     resp = client.post(BASE_URL+"nlp/learn/alignment?source_language="+ALIGNMENT_SRC+
     	"&target_language="+ALIGNMENT_TRG, headers=headers_auth, json=alignment_data)
-    print("**",resp)
+    # print("**",resp)
     assert resp.status_code == 201
     # print(resp)
     

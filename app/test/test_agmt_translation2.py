@@ -20,7 +20,7 @@ project_data = {
     "targetLanguageCode": "ml"
 }
 
-resource_sentences = [
+source_sentences = [
     {"sentenceId": 100,
      "sentence": "In a jungle far away there lived a fox"},
     {"sentenceId": 101,
@@ -45,7 +45,7 @@ def test_draft_update_positive():
 
     put_data = {
         "projectId": project_id,
-        "sentenceList":resource_sentences
+        "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
     resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
@@ -156,13 +156,13 @@ def test_draft_update_negative():
         headers=headers_auth, json=put_data)
     assert resp.json()['error'] == "Requested Content Not Available"
 
-    # upload resource and repeat last action
-    put_data_resource = {
+    # upload source and repeat last action
+    put_data_source = {
         "projectId": project_id,
-        "sentenceList":resource_sentences
+        "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data_resource)
+    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data_source)
     assert resp.json()['message'] == "Project updated successfully"
 
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
@@ -242,7 +242,7 @@ def test_empty_draft_initalization():
 
     put_data = {
         "projectId": project_id,
-        "sentenceList":resource_sentences
+        "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
     resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
@@ -298,7 +298,7 @@ def test_draft_meta_validation():
 
     put_data = {
         "projectId": project_id,
-        "sentenceList":resource_sentences
+        "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
     resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
@@ -335,7 +335,7 @@ def test_space_in_suggested_draft():
 
     put_data = {
         "projectId": project_id,
-        "sentenceList":resource_sentences
+        "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
     resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
@@ -379,7 +379,7 @@ def test_delete_sentence():
 
     put_data = {
         "projectId": project_id,
-        "sentenceList":resource_sentences
+        "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
     resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
@@ -461,7 +461,7 @@ def test_restore_sentence():
 
     put_data = {
         "projectId": project_id,
-        "sentenceList":resource_sentences
+        "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
@@ -623,7 +623,7 @@ def test_glossupdate_upon_draft_update():
 
     put_data = {
         "projectId": project_id,
-        "sentenceList":resource_sentences
+        "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
     resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
@@ -665,7 +665,7 @@ def test_draftmeta_validation():
 
     put_data = {
         "projectId": project_id,
-        "sentenceList":resource_sentences
+        "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
     resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
