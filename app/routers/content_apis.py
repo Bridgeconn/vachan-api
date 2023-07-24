@@ -1013,7 +1013,7 @@ async def get_parascriptural(request: Request, #pylint: disable=too-many-locals
     description:str=Query(None, example="Origin Chronicles"),
     content:str=Query(None, example="A Visual Journey Through the Bible's Beginning"),
     reference: str = Query(None,
-    example='{"bookStart": 1, "chapterStart": 1, "verseStart": 6}'),
+    example='{"book": "mat", "chapter": 1, "verseNumber": 6}'),
     link:AnyUrl=Query(None,example="http://someplace.com/resoucesid"),
     search_word:str=Query(None,example="subtitle"),
     metadata: schemas.MetaDataPattern=Query(None,
@@ -1026,7 +1026,10 @@ async def get_parascriptural(request: Request, #pylint: disable=too-many-locals
     * optional query parameters can be used to filter the result set
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n
-    * returns [] for not available content'''
+    * returns [] for not available content
+    * Filter with single reference -> eg :{"book": "mat", "chapter": 1, "verseNumber": 6}
+    * Filter with cross chapter references -> eg:reference": {"book":"MRK", "chapter":11,
+        "verseNumber":12,"bookEnd":"LUK", "chapterEnd":14, "verseEnd":15 }'''
     log.info('In get_parascriptural')
     log.debug('resource_name: %s,type: %s,title: %s, skip: %s,limit: %s,search_word: %s,\
         reference:%s,metadata:%s',resource_name,category,title,skip,limit,search_word,\

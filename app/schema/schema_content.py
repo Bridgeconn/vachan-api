@@ -95,46 +95,26 @@ class AudioBibleEdit(BaseModel):
         }
 
 class Reference(BaseModel):
-    '''Response object of bible refernce'''
+    '''Response object of parascript reference'''
     bible : TableNamePattern = None
     book: BookCodePattern = None
-    chapter: int
-    verseNumber: int
-    verseNumberEnd: int = None
-    class Config:
-        ''' telling Pydantic that "it's OK if I pass a non-dict value'''
-        orm_mode = True
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "bible": "hi_IRV_5_bible",
-                "book": "mat",
-                "chapter": 1,
-                "verseNumber": 12,
-                "verseNumberEnd": 17
-            }
-        }
-
-class ParascriptReference(BaseModel):
-    '''Response object of parascript reference'''
-    bookStart: BookCodePattern = None
-    chapterStart: int = None
-    verseStart: int = None
+    chapter: int = None
+    verseNumber: int = None
     bookEnd: BookCodePattern = None
     chapterEnd: int = None
     verseEnd: int = None
 
-    @validator('chapterStart', 'chapterEnd')
+    @validator('chapter', 'chapterEnd')
     def check_chapter(cls, val): # pylint:  disable=E0213
         '''chapter fields should be greater than or equal to -1'''
         if val is not None and val < -1:
             raise ValueError('chapter field should be greater than or equal to -1')
         return val
 
-    @validator('verseStart', 'verseEnd')
+    @validator('verseNumber', 'verseEnd')
     def check_verses(cls, val, values): # pylint:  disable=E0213
         '''verse fields should be greater than or equal to -1'''
-        if 'chapterStart' in values and values['chapterStart'] in [-1, 0]:
+        if 'chapter' in values and values['chapter'] in [-1, 0]:
             if val not in [-1, 0, None]:
                 raise ValueError('verse fields should be 0 for book introductions and epilogues')
             val = 0
@@ -149,10 +129,9 @@ class ParascriptReference(BaseModel):
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                # "bible": "hi_IRV_5_bible",
-                "bookStart": "mat",
-                "chapterStart": 1,
-                "verseStart": 12,
+                "book": "mat",
+                "chapter": 1,
+                "verseNumber": 12,
                 "bookEnd": "luk",
                 "chapterEnd": 10,
                 "verseEnd": 20
@@ -534,7 +513,7 @@ class ParascriptResponse(BaseModel):
     title: str
     description: str = None
     content: str = None
-    reference: ParascriptReference = None
+    reference: Reference = None
     link: AnyUrl = None
     metaData: dict = None
     active: bool = None
@@ -549,7 +528,7 @@ class ParascriptResponse(BaseModel):
                 "title": "Bible Video of Genesis",
                 "description": "Day's theme or some sub title if available",
                 "content": "some detailed content",
-                "reference": {"bookStart":"MAT", "chapterStart":2, "verseStart":3,
+                "reference": {"book":"MAT", "chapter":2, "verseNumber":3,
                                "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
                 "link": "http://someplace.com/resoucesid",
                 "metaData": {"key": "value"},
@@ -562,7 +541,7 @@ class ParascriptEdit(BaseModel):
     title: str
     description: str = None
     content: str = None
-    reference: ParascriptReference = None
+    reference: Reference = None
     link: AnyUrl = None
     active: bool = None
     metaData: dict = None
@@ -574,7 +553,7 @@ class ParascriptEdit(BaseModel):
                 "title": "Bible Video of Genesis",
                 "description": "updated description",
                 "content": "updated content",
-                "reference": {"bookStart":"MRK", "chapterStart":11, "verseStart":12,
+                "reference": {"book":"MRK", "chapter":11, "verseNumber":12,
                                "bookEnd":"LUK", "chapterEnd":14, "verseEnd":15 },
                 "link": "http://someplace.com/newresoucesid",
                 "metaData": {"newkey": "newvalue"},
@@ -597,7 +576,7 @@ class ParascripturalCreate(BaseModel):
     title: str
     description: str = None
     content: str = None
-    reference: ParascriptReference = None
+    reference: Reference = None
     link: AnyUrl = None
     metaData: dict = None
     active: bool = True
@@ -609,7 +588,7 @@ class ParascripturalCreate(BaseModel):
                 "title": "Bible Video of Genesis",
                 "description": "Day's theme or some sub title if available",
                 "content": "some detailed content",
-                "reference": {"bookStart":"MAT", "chapterStart":2, "verseStart":3,
+                "reference": {"book":"MAT", "chapter":2, "verseNumber":3,
                                "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
                 "link": "http://someplace.com/resoucesid",
                 "metaData": {"key": "value"},

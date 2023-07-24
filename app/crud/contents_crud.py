@@ -5,7 +5,6 @@ import json
 import re
 from datetime import datetime
 import sqlalchemy
-import jsonpickle
 from sqlalchemy.orm import Session, defer, joinedload
 from sqlalchemy.sql import text
 import db_models #pylint: disable=import-error
@@ -337,15 +336,15 @@ def filter_by_reference(db_:Session,query, model_cls, reference):
     reference_end = ['bookEnd', 'chapterEnd', 'verseEnd']
     if any(item in reference for item in reference_end):
         # search for cross-chapter references and mutliple verses within chapter
-        ref_start_id = create_parascript_ref_id(
-            db_,reference['bookStart'], reference['chapterStart'], reference['verseStart'])
-        ref_end_id   = create_parascript_ref_id(
+        ref_start_id = utils.create_parascript_ref_id(
+            db_,reference['book'], reference['chapter'], reference['verseNumber'])
+        ref_end_id   = utils.create_parascript_ref_id(
             db_,reference['bookEnd'], reference['chapterEnd'], reference['verseEnd'])
         query = query.filter(model_cls.refStart <= ref_start_id, model_cls.refEnd >= ref_end_id)
     else:
         # search for a single verse
-        ref_id = create_parascript_ref_id(
-            db_,reference['bookStart'], reference['chapterStart'], reference['verseStart'])
+        ref_id = utils.create_parascript_ref_id(
+            db_,reference['book'], reference['chapter'], reference['verseNumber'])
         query = query.filter(model_cls.refStart <= ref_id, model_cls.refEnd >= ref_id)
     return query
 
@@ -409,15 +408,6 @@ def get_parascripturals(db_:Session, resource_name, category=None, title=None,**
         }
     return response
 
-def create_parascript_ref_id(db_:Session, book_code, chapter, verse):
-    '''Generate parascript ref start and end id'''
-    book_content = db_.query(db_models.BibleBook).filter(
-        db_models.BibleBook.bookCode == book_code.lower()).first()
-    book_id = book_content.bookId
-    if book_id is not None:
-        ref_id = (book_id * 100000) + (chapter * 1000) + verse
-    return ref_id
-
 def upload_parascripturals(db_: Session, resource_name, parascriptural, user_id=None):
     '''Adds rows to the parascripturals table specified by resource_name'''
     resource_db_content = db_.query(db_models.Resource).filter(
@@ -431,23 +421,22 @@ def upload_parascripturals(db_: Session, resource_name, parascriptural, user_id=
     db_content = []
     for item in parascriptural:
         if item.reference:
-            ref = jsonpickle.encode(item.reference)
-            ref = json.loads(ref)
-            ref = ref["py/state"]["__dict__"]
-            ref_start = create_parascript_ref_id(
-                db_,ref['bookStart'],ref['chapterStart'],ref['verseStart'])
-            ref_end   = create_parascript_ref_id(
+            ref = item.reference.__dict__
+            ref_start = utils.create_parascript_ref_id(
+                db_,ref['book'],ref['chapter'],ref['verseNumber'])
+            ref_end   = utils.create_parascript_ref_id(
                 db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
         else:
             ref = None
             ref_end = None
             ref_start = None
-
+        if item.content:
+            item.content = utils.normalize_unicode(item.content.strip())
         row = model_cls(
             category = item.category,
             title = utils.normalize_unicode(item.title.strip()),
             description = item.description,
-            content = item.content,
+            content =item.content,
             reference = ref,
             refStart=ref_start,
             refEnd=ref_end,
@@ -487,17 +476,15 @@ def update_parascripturals(db_: Session, resource_name, parascripturals, user_id
         if item.description:
             row.description = item.description
         if item.content:
-            row.content = item.content
+            row.content = utils.normalize_unicode(item.content.strip())
         if item.link:
             row.link = item.link
         if item.reference:
-            ref = jsonpickle.encode(item.reference)
-            ref = json.loads(ref)
-            ref = ref["py/state"]["__dict__"]
+            ref = item.reference.__dict__
             ref_start = \
-                create_parascript_ref_id(db_,ref['bookStart'],ref['chapterStart'],ref['verseStart'])
+                utils.create_parascript_ref_id(db_,ref['book'],ref['chapter'],ref['verseNumber'])
             ref_end  = \
-                create_parascript_ref_id(db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
+                utils.create_parascript_ref_id(db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
             row.reference = ref
             row.refStart=ref_start
             row.refEnd=ref_end

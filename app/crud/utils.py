@@ -2,11 +2,11 @@
 import subprocess
 import json
 import itertools
-
 import unicodedata
 from unidecode import unidecode
 import requests
-
+from sqlalchemy.orm import Session
+import db_models
 from custom_exceptions import TypeException, UnprocessableException
 #pylint: disable=R1732
 def normalize_unicode(text, form="NFKC"):
@@ -234,3 +234,12 @@ def validate_draft_meta(sentence, draft, draft_meta):
         raise UnprocessableException("Incorrect metadata:"+str(exe)) from exe
     except Exception as exe:
         raise UnprocessableException("Incorrect metadata.") from exe
+
+def create_parascript_ref_id(db_:Session, bookcode, chapter, verse):
+    '''Generate parascript ref start and end id'''
+    book_content = db_.query(db_models.BibleBook).filter(
+        db_models.BibleBook.bookCode == bookcode.lower()).first()
+    book_id = book_content.bookId
+    if book_id is not None:
+        ref_id = (book_id * 100000) + (chapter * 1000) + verse
+    return ref_id

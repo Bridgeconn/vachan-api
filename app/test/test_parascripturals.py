@@ -60,7 +60,7 @@ def test_post_default():
         {'category':'Bible Stories', 'title':"Isarel's travel routes",
         "link":"http://somewhere.com/something"},
         {'category':'Bible Stories', 'title':"the Gods reveals himself in new testament",
-        "reference": {"bookStart":"MAT", "chapterStart":2, "verseStart":3, \
+        "reference": {"book":"MAT", "chapter":2, "verseNumber":3, \
             "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
         "link":"http://somewhere.com/something"},
     ]
@@ -141,24 +141,24 @@ def test_post_incorrect_data():
         "link":"http://somewhere.com/something"}
     ]
 
-    #passing bookStart and bookEnd as integer - negative test
+    #passing book and bookEnd as integer - negative test
     response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     data = [
         {'category':"Bible Stories", 'title':"creation", 'description': "theme for test",
         'content':"some content for test",
-        "reference": {"bookStart":1, "chapterStart":2, "verseStart":3,"bookEnd":20, 
+        "reference": {"book":1, "chapter":2, "verseNumber":3,"bookEnd":20, 
                     "chapterEnd":5, "verseEnd":6 }
         }
     ]
     response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
-    #passing bookStart and bookEnd not in bookCodePattern expression - negative test
+    #passing book and bookEnd not in bookCodePattern expression - negative test
     response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     data = [
         {'category':"Bible Stories", 'title':"creation", 'description': "theme for test",
         'content':"some content for test",
-        "reference": {"bookStart":"MATHEW", "chapterStart":2, "verseStart":3,
+        "reference": {"book":"MATHEW", "chapter":2, "verseNumber":3,
                     "bookEnd":"JOHN", "chapterEnd":5, "verseEnd":6 }
         }
     ]
@@ -170,7 +170,7 @@ def test_post_incorrect_data():
     data = [
         {'category':"Bible Stories", 'title':"creation", 'description': "theme for test",
         'content':"some content for test",
-        "reference": {"bookStart":"MAT", "chapterStart":"firstchapter","verseStart":"firstverse",
+        "reference": {"book":"MAT", "chapter":"firstchapter","verseNumber":"firstverse",
                     "bookEnd":"JHN", "chapterEnd":"lastchapter", "verseEnd":"lastverse"}
         }
     ]
@@ -183,7 +183,7 @@ def test_get_after_data_upload():
         {'category':"Bible Stories", 'title':"creation", 'description': "theme for test",
         'content':"some content for test",
         "link":"http://somewhere.com/something",
-        'reference': {"bookStart":"MAT", "chapterStart":2, "verseStart":3,
+        'reference': {"book":"MAT", "chapter":2, "verseNumber":3,
                     "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
         'metaData':{'otherName': 'BPV, Bible Project Video'}},
         {'category':'Bible Stories', 'title':"Noah's Ark",
@@ -195,7 +195,7 @@ def test_get_after_data_upload():
         {'category':'Bible project video', 'title':"Paul's travel routes",
         "link":"http://somewhere.com/something"},
         {'category':'Bible project video', 'title':"the Gods reveals himself in new testament",
-        'reference': {"bookStart":"MRK", "chapterStart":2, "verseStart":10,
+        'reference': {"book":"MRK", "chapter":2, "verseNumber":10,
                     "bookEnd":"LUK", "chapterEnd":15, "verseEnd":10 },
         "link":"http://somewhere.com/something"}
     ]
@@ -266,7 +266,7 @@ def test_get_after_data_upload():
 
     # filtering with single reference
     response = client.get(UNIT_URL+resource_name+
-        '?reference={"bookStart":"MRK", "chapterStart":10, "verseStart":12}',
+        '?reference={"book":"MRK", "chapter":10, "verseNumber":12}',
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -275,8 +275,8 @@ def test_get_after_data_upload():
 
     # filtering with cross-chapter reference
     response = client.get(UNIT_URL+resource_name+
-    '?reference= {"bookStart":"MRK", "chapterStart":1, \
-                "verseStart":10,"bookEnd":"LUK", "chapterEnd":10, "verseEnd":1 }',
+    '?reference= {"book":"MRK", "chapter":1, \
+                "verseNumber":10,"bookEnd":"LUK", "chapterEnd":10, "verseEnd":1 }',
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
@@ -300,7 +300,7 @@ def test_searching():
             'title':"Creation of World",
             'description': "theme for test",
             'content':"some content for test",
-            'reference': {"bookStart":"MAT", "chapterStart":2, "verseStart":3,
+            'reference': {"book":"MAT", "chapter":2, "verseNumber":3,
                 "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
             'link':"http://somewhere.com/something",
             'metaData': {'otherName': 'BPV, Videos of Bible chapters'}
@@ -388,8 +388,8 @@ def test_searching():
             found = True
     assert found
     # searching with reference:exact match - positive test
-    response = client.get(UNIT_URL+resource_name+"?search_word={'bookStart':'MAT', 'chapterStart':2, \
-        'verseStart':3,'bookEnd':'JHN', 'chapterEnd':5, 'verseEnd':6 }",headers = headers_auth)
+    response = client.get(UNIT_URL+resource_name+"?search_word={'book':'MAT', 'chapter':2, \
+        'verseNumber':3,'bookEnd':'JHN', 'chapterEnd':5, 'verseEnd':6 }",headers = headers_auth)
     assert len(response.json()) > 0
     found = False
     for item in response.json():
@@ -399,7 +399,7 @@ def test_searching():
     assert found
 
     # searching with reference:partial match - positive test
-    response = client.get(UNIT_URL+resource_name+"?search_word=chapterStart:2",headers = headers_auth)
+    response = client.get(UNIT_URL+resource_name+"?search_word=chapter:2",headers = headers_auth)
     assert len(response.json()) > 0
     found = False
     for item in response.json():
@@ -409,7 +409,7 @@ def test_searching():
     assert found
 
     # searching with not available reference keyword- negative test
-    response = client.get(UNIT_URL+resource_name+"?search_word=chapterStart:999",
+    response = client.get(UNIT_URL+resource_name+"?search_word=chapter:999",
         headers = headers_auth)
     assert len(response.json()) ==  0
     assert_not_available_content(response)
@@ -459,11 +459,11 @@ def test_put_after_upload():
     '''Positive tests for put'''
     data = [
         {'category':'Bible Stories', 'title':"12 apostles",
-        "reference": {"bookStart":"MAT", "chapterStart":2, "verseStart":3, \
+        "reference": {"book":"MAT", "chapter":2, "verseNumber":3, \
             "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
         "link":"http://somewhere.com/something"},
         {'category':'Bible Project Video', 'title':"miracles",
-        "reference": {"bookStart":"MRK", "chapterStart":2, "verseStart":3, \
+        "reference": {"book":"MRK", "chapter":2, "verseNumber":3, \
             "bookEnd":"LUK", "chapterEnd":5, "verseEnd":6 },
         "link":"http://somewhere.com/something"}
     ]
@@ -473,12 +473,12 @@ def test_put_after_upload():
     # positive PUT
     new_data = [
         {'category':'Bible Stories', 'title':"12 apostles",
-        "reference": {"bookStart":"MRK", "chapterStart":10, "verseStart":11, \
+        "reference": {"book":"MRK", "chapter":10, "verseNumber":11, \
             "bookEnd":"LUK", "chapterEnd":12, "verseEnd":13 },
         "link":"http://anotherplace.com/something",
         "metaData":{"newkey1":"newvalue1"}},
         {'category':'Bible Project Video', 'title':"miracles",
-        "reference": {"bookStart":"MAT", "chapterStart":10, "verseStart":11, \
+        "reference": {"book":"MAT", "chapter":10, "verseNumber":11, \
             "bookEnd":"JHN", "chapterEnd":12, "verseEnd":13 },
         "link":"http://somewhereelse.com/something",
         "metaData":{"newkey2":"newvalue2"}}
@@ -490,12 +490,20 @@ def test_put_after_upload():
     #with auth
     response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=new_data)
     assert response.status_code == 201
+    print("***********:",response.json())
     assert response.json()['message'] == 'Parascripturals updated successfully'
     for i,item in enumerate(response.json()['data']):
         assert_positive_get(item)
+        print("item:",item)
+        # assert response.json()['data'][i]['bible'] is None
         assert response.json()['data'][i]['category'] == new_data[i]['category']
         assert response.json()['data'][i]['title'] == new_data[i]['title']
-        assert response.json()['data'][i]['reference'] == new_data[i]['reference']
+        assert response.json()['data'][i]['reference']['book'] == new_data[i]['reference']['book']
+        assert response.json()['data'][i]['reference']['chapter'] == new_data[i]['reference']['chapter']
+        assert response.json()['data'][i]['reference']['verseNumber'] == new_data[i]['reference']['verseNumber']
+        assert response.json()['data'][i]['reference']['bookEnd'] == new_data[i]['reference']['bookEnd']
+        assert response.json()['data'][i]['reference']['chapterEnd'] == new_data[i]['reference']['chapterEnd']
+        assert response.json()['data'][i]['reference']['verseEnd'] == new_data[i]['reference']['verseEnd']
         assert response.json()['data'][i]['metaData'] == new_data[i]['metaData']
 
     # not available PUT
@@ -543,7 +551,7 @@ def test_put_incorrect_data():
     #updating with reference in incorrect syntax of bookCode
     data = [
         {'category':'Bible Stories', 'title':"12 apostles",
-        "reference": {"bookStart":"MATHEW", "chapterStart":2, "verseStart":3,
+        "reference": {"book":"MATHEW", "chapter":2, "verseNumber":3,
                     "bookEnd":"JOHN", "chapterEnd":5, "verseEnd":6 }
         }
                 ]
@@ -633,7 +641,7 @@ def test_soft_delete():
     '''check soft delete in parascripturals'''
     data = [
         {'category':'Bible Stories', 'title':"the Gods reveals himself in new testament",
-        "reference": {"bookStart":"MAT", "chapterStart":2, "verseStart":3,\
+        "reference": {"book":"MAT", "chapter":2, "verseNumber":3,\
             "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
         "link":"http://somewhere.com/something"
         }
