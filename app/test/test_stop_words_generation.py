@@ -250,9 +250,9 @@ def add_bible_resource():
     return table_name
 
 def add_dict_resource():
-    '''creates dictionary resource'''
+    '''creates vocabulary resource'''
     resource_data = {
-        "contentType": "dictionary",
+        "contentType": "vocabulary",
         "language": "hi",
         "version": "TW",
         "revision": 1,
@@ -278,10 +278,10 @@ def add_bible_books(table_name):
     assert response.json()["message"] == "Bible books uploaded and processed successfully"
 
 def add_tw_dict(table_name):
-    '''uploads tw dictionary'''
+    '''uploads tw vocabulary'''
     data = json.load(open('test/resources/hindi.json'))
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    response = client.post('/v2/dictionaries/'+table_name, headers=headers_auth, json=data)
+    response = client.post('/v2/vocabularies/'+table_name, headers=headers_auth, json=data)
     assert response.status_code == 201
 
 def test_generate_stopwords():

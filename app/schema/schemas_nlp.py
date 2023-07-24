@@ -217,7 +217,7 @@ class Alignment(BaseModel):
         {"sourceTokenIndex": 3, "targetTokenIndex": 2} ])
 
 class GlossInput(BaseModel):
-    '''Import object for glossary(dictionary) data for learning'''
+    '''Import object for glossary(vocabulary) data for learning'''
     token: str = Field(..., example="love")
     translations: List[str] = Field(None, example=['प्यार'])
     metaData: dict =Field(None, example={"word-class":"noun"})

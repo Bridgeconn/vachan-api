@@ -523,7 +523,7 @@ def test_created_user_can_only_edit():
     assert resp.status_code == 201
     assert resp.json()['message'] == 'Bible videos added successfully'
 
-    #update dictionary with created SA user
+    #update vocabulary with created SA user
     new_data = [
         {'title':'Overview: Matthew', 'active': False},
         {'title':'Overview: Acts of Apostles', 'series': 'New testament history'},
