@@ -3,7 +3,7 @@ from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
 from .test_bibles import check_post as add_bible, gospel_books_data
-from .test_sources import check_post as add_source
+from .test_resources import check_post as add_resource
 from .test_versions import check_post as add_version
 from .conftest import initial_test_users
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
@@ -103,14 +103,14 @@ def test_default_post_put_get():
     assert new_project['projectName'] == updated_project['projectName']
     assert updated_project['metaData']['books'] == ['mat', 'mrk']
 
-    #add bible , create source with open-access
+    #add bible , create resource with open-access
 
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version for bibles",
     }
     add_version(version_data)
-    source_data = {
+    resource_data = {
         "contentType": "bible",
         "language": "gu",
         "version": "TTT",
@@ -120,8 +120,8 @@ def test_default_post_put_get():
             "content","open-access"
         ],
     }
-    source = add_source(source_data)
-    table_name = source.json()['data']['sourceName']
+    resource = add_resource(resource_data)
+    table_name = resource.json()['data']['resourceName']
 
     #add books with vachan admin
     headers_auth_content = {"contentType": "application/json",
@@ -130,7 +130,7 @@ def test_default_post_put_get():
     headers_auth_content['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     resp = client.post('/v2/bibles/'+table_name+'/books', headers=headers_auth_content, json=gospel_books_data)
 
-    # resp, source_name = add_bible(gospel_books_data)
+    # resp, resource_name = add_bible(gospel_books_data)
     assert resp.status_code == 201
 
     put_data = {

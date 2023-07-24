@@ -2,13 +2,13 @@
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
-#from .test_sources import check_post as add_source
+#from .test_resources import check_post as add_resource
 from .test_auth_basic import login,SUPER_USER,SUPER_PASSWORD,logout_user
 from .conftest import initial_test_users
 
 UNIT_URL = '/v2/versions'
 RESTORE_URL = '/v2/restore'
-SOURCE_URL = '/v2/sources'
+RESOURCE_URL = '/v2/resources'
 
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
@@ -467,10 +467,10 @@ def test_delete_notavailable_version():
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
 
-def test_version_used_by_source():
+def test_version_used_by_resource():
     '''  Negativetest case, trying to delete that version which is used to create a source'''
 
-    #Create Version with associated with source
+    #Create Version with associated with resource
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version for versions",
@@ -478,7 +478,7 @@ def test_version_used_by_source():
     check_post(version_data)
 
     #Create Source with license
-    source_data = {
+    resource_data = {
         "contentType": "commentary",
         "language": "en",
         "version": "TTT",
@@ -487,7 +487,7 @@ def test_version_used_by_source():
         "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
-    # add_source()
+    # add_resource()
     data_admin   = {
     "user_email": SUPER_USER,
     "password": SUPER_PASSWORD
@@ -499,9 +499,9 @@ def test_version_used_by_source():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+token_admin
                      }
-    response = client.post(SOURCE_URL, headers=headers_admin, json=source_data)
+    response = client.post(RESOURCE_URL, headers=headers_admin, json=resource_data)
     assert response.status_code == 201
-    assert response.json()['message'] == "Source created successfully"
+    assert response.json()['message'] == "Resource created successfully"
 
     #Delete version
     version_response = client.get(UNIT_URL+'?version_abbreviation=TTT')

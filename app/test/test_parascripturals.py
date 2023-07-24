@@ -3,12 +3,12 @@ from . import client , contetapi_get_accessrule_checks_app_userroles
 from . import check_default_get
 from . import assert_input_validation_error, assert_not_available_content
 from .test_versions import check_post as add_version
-from .test_sources import check_post as add_source
+from .test_resources import check_post as add_resource
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 from .conftest import initial_test_users
 
-UNIT_URL = '/v2/sources/parascripturals/'
-SOURCE_URL = '/v2/sources'
+UNIT_URL = '/v2/resources/parascripturals/'
+RESOURCE_URL = '/v2/resources'
 RESTORE_URL = '/v2/restore'
 headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json",
@@ -29,7 +29,7 @@ def check_post(data: list):
         "versionName": "test version for parascriptural",
     }
     add_version(version_data)
-    source_data = {
+    resource_data = {
         "contentType": "parascriptural",
         "language": "ur",
         "version": "TTT",
@@ -37,19 +37,19 @@ def check_post(data: list):
         "versionTag": 1
     }
     # headers = {"contentType": "application/json", "accept": "application/json"}
-    source = add_source(source_data)
-    source_name = source.json()['data']['sourceName']
+    resource = add_resource(resource_data)
+    resource_name = resource.json()['data']['resourceName']
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     #without auth
-    response = client.post(UNIT_URL+source_name, headers=headers, json=data)
+    response = client.post(UNIT_URL+resource_name, headers=headers, json=data)
     if response.status_code == 422:
         assert response.json()['error'] == 'Input Validation Error'
     else:
         assert response.status_code == 401
         assert response.json()['error'] == 'Authentication Error'
     #with auth
-    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
-    return response, source_name
+    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
+    return response, resource_name
 
 def test_post_default():
     '''Positive test to upload parascriptural'''
@@ -64,13 +64,13 @@ def test_post_default():
             "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
         "link":"http://somewhere.com/something"},
     ]
-    response,source_name = check_post(data)
+    response,resource_name = check_post(data)
     assert response.status_code == 201
     assert response.json()['message'] == "Parascripturals added successfully"
     for item in response.json()['data']:
         assert_positive_get(item)
     assert len(data) == len(response.json()['data'])
-    return response,source_name
+    return response,resource_name
 
 def test_post_duplicate():
     '''Negative test to add two parascripturals Links with same type and title'''
@@ -78,12 +78,12 @@ def test_post_duplicate():
         {'category':'Bible Stories', 'title':"the Gods reveals himself in new testament",
         "link":"http://somewhere.com/new"}
     ]
-    resp, source_name = check_post(data)
+    resp, resource_name = check_post(data)
     assert resp.status_code == 201
     assert resp.json()['message'] == "Parascripturals added successfully"
 
     data[0]['link'] = 'http://anotherplace/item'
-    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert response.status_code == 409
     assert response.json()['error'] == "Already Exists"
 
@@ -92,7 +92,7 @@ def test_post_incorrect_data():
     # single data object instead of list
     data = {'category':'Bible Stories', 'title':"the Geneology of Jesus Christ",
         "link":"http://somewhere.com/something"}
-    resp, source_name = check_post(data)
+    resp, resource_name = check_post(data)
     assert_input_validation_error(resp)
 
     # data object with missing mandatory fields
@@ -100,14 +100,14 @@ def test_post_incorrect_data():
         {'category':'Bible Stories',
         "link":"http://somewhere.com/something"}
     ]
-    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     data = [
         {'title':"the Geneology of Jesus Christ",
         "link":"http://somewhere.com/something"}
     ]
-    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     # incorrect data values in fields
@@ -115,7 +115,7 @@ def test_post_incorrect_data():
         {'category':'mat', 'title':"the Geneology of Jesus Christ",
         "link":"not a url"}
     ]
-    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
 
@@ -123,16 +123,16 @@ def test_post_incorrect_data():
         {'category':'Bible Stories', 'title':"the Geneology of Jesus Christ",
         "link":"noProtocol.com/something"}
     ]
-    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
-    source_name1 = source_name.replace('parascriptural', 'para')
+    resource_name1 = resource_name.replace('parascriptural', 'para')
     data = []
-    response = client.post(UNIT_URL+source_name1, headers=headers_auth, json=data)
+    response = client.post(UNIT_URL+resource_name1, headers=headers_auth, json=data)
     assert response.status_code == 404
 
-    source_name2 = source_name.replace('1', '11')
-    response = client.post(UNIT_URL+source_name2, headers=headers_auth, json=[])
+    resource_name2 = resource_name.replace('1', '11')
+    response = client.post(UNIT_URL+resource_name2, headers=headers_auth, json=[])
     assert response.status_code == 404
 
     # data object with missing mandatory fields
@@ -142,7 +142,7 @@ def test_post_incorrect_data():
     ]
 
     #passing bookStart and bookEnd as integer - negative test
-    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     data = [
         {'category':"Bible Stories", 'title':"creation", 'description': "theme for test",
         'content':"some content for test",
@@ -150,11 +150,11 @@ def test_post_incorrect_data():
                     "chapterEnd":5, "verseEnd":6 }
         }
     ]
-    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     #passing bookStart and bookEnd not in bookCodePattern expression - negative test
-    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     data = [
         {'category':"Bible Stories", 'title':"creation", 'description': "theme for test",
         'content':"some content for test",
@@ -162,11 +162,11 @@ def test_post_incorrect_data():
                     "bookEnd":"JOHN", "chapterEnd":5, "verseEnd":6 }
         }
     ]
-    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     #passing non integer value for chapter and verse - negative test
-    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     data = [
         {'category':"Bible Stories", 'title':"creation", 'description': "theme for test",
         'content':"some content for test",
@@ -174,7 +174,7 @@ def test_post_incorrect_data():
                     "bookEnd":"JHN", "chapterEnd":"lastchapter", "verseEnd":"lastverse"}
         }
     ]
-    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
 def test_get_after_data_upload():
@@ -199,73 +199,73 @@ def test_get_after_data_upload():
                     "bookEnd":"LUK", "chapterEnd":15, "verseEnd":10 },
         "link":"http://somewhere.com/something"}
     ]
-    res, source_name = check_post(data)
+    res, resource_name = check_post(data)
     assert res.status_code == 201
-    check_default_get(UNIT_URL+source_name, headers_auth,assert_positive_get)
+    check_default_get(UNIT_URL+resource_name, headers_auth,assert_positive_get)
 
     #filter by parascript type
     #without auth
-    response = client.get(UNIT_URL+source_name+'?category=Bible%20Stories')
+    response = client.get(UNIT_URL+resource_name+'?category=Bible%20Stories')
     assert response.status_code == 401
     assert response.json()["error"] == "Authentication Error"
     #with auth
-    response = client.get(UNIT_URL+source_name+'?category=Bible%20Stories',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?category=Bible%20Stories',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 3
 
     # filter with title
-    response = client.get(UNIT_URL+source_name+'?title=creation',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?title=creation',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
     # both title and book
-    response = client.get(UNIT_URL+source_name+
+    response = client.get(UNIT_URL+resource_name+
         "?category=Bible%20Stories&title=Noah's%20Ark",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
     # filter with description
-    response = client.get(UNIT_URL+source_name+"?description=theme for test",headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+"?description=theme for test",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
     # filter with description - fuzzy match
-    response = client.get(UNIT_URL+source_name+"?description=for test",headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+"?description=for test",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
     # filter with content - exact match
-    response = client.get(UNIT_URL+source_name+
+    response = client.get(UNIT_URL+resource_name+
         "?content=some content for test",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
     # filter with content - fuzzy match match
-    response = client.get(UNIT_URL+source_name+"?content=content for",headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+"?content=content for",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
     # filter with link
-    response = client.get(UNIT_URL+source_name+"?link=http://somewhere.com/something",
+    response = client.get(UNIT_URL+resource_name+"?link=http://somewhere.com/something",
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 6
 
     # filter with metadata - exact match
-    response = client.get(UNIT_URL+source_name+
+    response = client.get(UNIT_URL+resource_name+
         '?metadata={"otherName": "BPV, Bible Project Video"}',
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
     # filter with metadata - fuzzy match
-    response = client.get(UNIT_URL+source_name+'?metadata={"otherName": "Project Video"}' ,
+    response = client.get(UNIT_URL+resource_name+'?metadata={"otherName": "Project Video"}' ,
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
     # filtering with single reference
-    response = client.get(UNIT_URL+source_name+
+    response = client.get(UNIT_URL+resource_name+
         '?reference={"bookStart":"MRK", "chapterStart":10, "verseStart":12}',
         headers=headers_auth)
     assert response.status_code == 200
@@ -274,7 +274,7 @@ def test_get_after_data_upload():
         assert_positive_get(item)
 
     # filtering with cross-chapter reference
-    response = client.get(UNIT_URL+source_name+
+    response = client.get(UNIT_URL+resource_name+
     '?reference= {"bookStart":"MRK", "chapterStart":1, \
                 "verseStart":10,"bookEnd":"LUK", "chapterEnd":10, "verseEnd":1 }',
         headers=headers_auth)
@@ -283,11 +283,11 @@ def test_get_after_data_upload():
     for item in response.json():
         assert_positive_get(item)
 
-    # not available sources
-    response = client.get(UNIT_URL+source_name+'?category=Animations',headers=headers_auth)
+    # not available resources
+    response = client.get(UNIT_URL+resource_name+'?category=Animations',headers=headers_auth)
     assert_not_available_content(response)
 
-    response = client.get(UNIT_URL+source_name+
+    response = client.get(UNIT_URL+resource_name+
         '?category=Bible%20Stories&title=vision',headers=headers_auth)
     assert_not_available_content(response)
 
@@ -307,12 +307,12 @@ def test_searching():
         }
     ]
 
-    res, source_name = check_post(data)
+    res, resource_name = check_post(data)
     assert res.status_code == 201
-    check_default_get(UNIT_URL+source_name, headers_auth,assert_positive_get)
+    check_default_get(UNIT_URL+resource_name, headers_auth,assert_positive_get)
 
     # searching with category - positive test
-    response = client.get(UNIT_URL+source_name+'?search_word=Stories',headers = headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?search_word=Stories',headers = headers_auth)
     assert len(response.json()) > 0
     found = False
     for item in response.json():
@@ -322,7 +322,7 @@ def test_searching():
     assert found
 
     # searching with title - positive test
-    response = client.get(UNIT_URL+source_name+'?search_word=of',headers = headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?search_word=of',headers = headers_auth)
     assert len(response.json()) > 0
     found = False
     for item in response.json():
@@ -332,7 +332,7 @@ def test_searching():
     assert found
 
     # searching with description:exact match - positive test
-    url_with_query_string = UNIT_URL+source_name+"?search_word=theme for test"
+    url_with_query_string = UNIT_URL+resource_name+"?search_word=theme for test"
     response = client.get(url_with_query_string, headers=headers_auth)
     assert len(response.json()) > 0
     found = False
@@ -344,7 +344,7 @@ def test_searching():
 
     # searching with description:fuzzy match - positive test
     query_string = "for"
-    url_with_query_string = UNIT_URL+source_name+"?search_word=" + query_string
+    url_with_query_string = UNIT_URL+resource_name+"?search_word=" + query_string
     response = client.get(url_with_query_string, headers=headers_auth)
     assert len(response.json()) > 0
     found = False
@@ -355,7 +355,7 @@ def test_searching():
     assert found
 
     # searching with content:exact match - positive test
-    url_with_query_string = UNIT_URL+source_name+"?search_word=some content for test"
+    url_with_query_string = UNIT_URL+resource_name+"?search_word=some content for test"
     response = client.get(url_with_query_string, headers=headers_auth)
     assert len(response.json()) > 0
     found = False
@@ -367,7 +367,7 @@ def test_searching():
 
     # searching with content:fuzzy match - positive test
     query_string = "content for"
-    url_with_query_string = UNIT_URL+source_name+"?search_word=" + query_string
+    url_with_query_string = UNIT_URL+resource_name+"?search_word=" + query_string
     response = client.get(url_with_query_string, headers=headers_auth)
     assert len(response.json()) > 0
     found = False
@@ -378,7 +378,7 @@ def test_searching():
     assert found
 
      # searching with link - positive test
-    url_with_query_string = UNIT_URL+source_name+"?link=http://somewhere.com/something"
+    url_with_query_string = UNIT_URL+resource_name+"?link=http://somewhere.com/something"
     response = client.get(url_with_query_string, headers=headers_auth)
     assert len(response.json()) > 0
     found = False
@@ -388,7 +388,7 @@ def test_searching():
             found = True
     assert found
     # searching with reference:exact match - positive test
-    response = client.get(UNIT_URL+source_name+"?search_word={'bookStart':'MAT', 'chapterStart':2, \
+    response = client.get(UNIT_URL+resource_name+"?search_word={'bookStart':'MAT', 'chapterStart':2, \
         'verseStart':3,'bookEnd':'JHN', 'chapterEnd':5, 'verseEnd':6 }",headers = headers_auth)
     assert len(response.json()) > 0
     found = False
@@ -399,7 +399,7 @@ def test_searching():
     assert found
 
     # searching with reference:partial match - positive test
-    response = client.get(UNIT_URL+source_name+"?search_word=chapterStart:2",headers = headers_auth)
+    response = client.get(UNIT_URL+resource_name+"?search_word=chapterStart:2",headers = headers_auth)
     assert len(response.json()) > 0
     found = False
     for item in response.json():
@@ -409,13 +409,13 @@ def test_searching():
     assert found
 
     # searching with not available reference keyword- negative test
-    response = client.get(UNIT_URL+source_name+"?search_word=chapterStart:999",
+    response = client.get(UNIT_URL+resource_name+"?search_word=chapterStart:999",
         headers = headers_auth)
     assert len(response.json()) ==  0
     assert_not_available_content(response)
 
     # searching with metadata with special characters:exact match - positive test
-    response = client.get(UNIT_URL+source_name+"?search_word=BPV, Videos of Bible chapters",
+    response = client.get(UNIT_URL+resource_name+"?search_word=BPV, Videos of Bible chapters",
         headers = headers_auth)
     assert len(response.json()) > 0
     found = False
@@ -426,7 +426,7 @@ def test_searching():
     assert found
 
     # searching with partial metadata:fuzzy match - positive test
-    response = client.get(UNIT_URL+source_name+"?search_word=of chapters",headers = headers_auth)
+    response = client.get(UNIT_URL+resource_name+"?search_word=of chapters",headers = headers_auth)
     assert len(response.json()) > 0
     found = False
     for item in response.json():
@@ -436,7 +436,7 @@ def test_searching():
     assert found
 
     # searching with invalid search word - negative test
-    response = client.get(UNIT_URL+source_name+"?search_word=Bibles",headers = headers_auth)
+    response = client.get(UNIT_URL+resource_name+"?search_word=Bibles",headers = headers_auth)
     assert len(response.json()) ==  0
     found = False
     for item in response.json():
@@ -446,13 +446,13 @@ def test_searching():
 
 def test_get_incorrect_data():
     '''Check for input validations in get'''
-    source_name = 'ur_TTT'
-    response = client.get(UNIT_URL+source_name,headers=headers_auth)
+    resource_name = 'ur_TTT'
+    response = client.get(UNIT_URL+resource_name,headers=headers_auth)
     assert_input_validation_error(response)
-    resp, source_name = check_post([])
+    resp, resource_name = check_post([])
     assert resp.status_code == 201
-    source_name = source_name.replace('parascriptural', 'graphics')
-    response = client.get(UNIT_URL+source_name, headers=headers_auth)
+    resource_name = resource_name.replace('parascriptural', 'graphics')
+    response = client.get(UNIT_URL+resource_name, headers=headers_auth)
     assert response.status_code == 404
 
 def test_put_after_upload():
@@ -467,7 +467,7 @@ def test_put_after_upload():
             "bookEnd":"LUK", "chapterEnd":5, "verseEnd":6 },
         "link":"http://somewhere.com/something"}
     ]
-    response, source_name = check_post(data)
+    response, resource_name = check_post(data)
     assert response.status_code == 201
 
     # positive PUT
@@ -484,11 +484,11 @@ def test_put_after_upload():
         "metaData":{"newkey2":"newvalue2"}}
     ]
     #without auth
-    response = client.put(UNIT_URL+source_name,headers=headers, json=new_data)
+    response = client.put(UNIT_URL+resource_name,headers=headers, json=new_data)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
     #with auth
-    response = client.put(UNIT_URL+source_name,headers=headers_auth, json=new_data)
+    response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=new_data)
     assert response.status_code == 201
     assert response.json()['message'] == 'Parascripturals updated successfully'
     for i,item in enumerate(response.json()['data']):
@@ -500,11 +500,11 @@ def test_put_after_upload():
 
     # not available PUT
     new_data[0]['category'] = 'Bible Stories New'
-    response = client.put(UNIT_URL+source_name, headers=headers_auth, json=new_data)
+    response = client.put(UNIT_URL+resource_name, headers=headers_auth, json=new_data)
     assert response.status_code == 404
 
-    source_name = source_name.replace('1', '10')
-    response = client.put(UNIT_URL+source_name, headers=headers_auth, json=[])
+    resource_name = resource_name.replace('1', '10')
+    response = client.put(UNIT_URL+resource_name, headers=headers_auth, json=[])
     assert response.status_code == 404
 
 def test_put_incorrect_data():
@@ -516,13 +516,13 @@ def test_put_incorrect_data():
         {'category':'Bible project video', 'title':"12 apostles",
         "link":"http://somewhere.com/something"}
     ]
-    resp, source_name = check_post(post_data)
+    resp, resource_name = check_post(post_data)
     assert resp.status_code == 201
 
     # single data object instead of list
     data =  {'category':'Bible Stories', 'title':"12 apostles",
         "link":"http://anotherplace.com/something"}
-    response = client.put(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.put(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     # data object with missing mandatory fields
@@ -530,13 +530,13 @@ def test_put_incorrect_data():
         {'title':"12 apostles",
         "link":"http://anotherplace.com/something"}
             ]
-    response = client.put(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.put(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     data = [
         {'category':'Bible Stories',
         "link":"http://somewhere.com/something"}    ]
-    response = client.put(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.put(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     # incorrect data values in fields
@@ -547,23 +547,23 @@ def test_put_incorrect_data():
                     "bookEnd":"JOHN", "chapterEnd":5, "verseEnd":6 }
         }
                 ]
-    response = client.put(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.put(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     #updating with link in incorrect syntax
     data = [
         {'category':'Bible Stories', 'title':"12 apostles",
         "link":"filename.txt"}    ]
-    response = client.put(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.put(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
-    #updating with incorrect source name
-    source_name1 = source_name.replace('parascriptural', 'graphics')
-    response = client.put(UNIT_URL+source_name1, headers=headers_auth, json=[])
+    #updating with incorrect resource name
+    resource_name1 = resource_name.replace('parascriptural', 'graphics')
+    response = client.put(UNIT_URL+resource_name1, headers=headers_auth, json=[])
     assert response.status_code == 404
 
-    source_name2 = source_name.replace('1', '10')
-    response = client.put(UNIT_URL+source_name2, headers=headers_auth, json=[])
+    resource_name2 = resource_name.replace('1', '10')
+    response = client.put(UNIT_URL+resource_name2, headers=headers_auth, json=[])
     assert response.status_code == 404
 
 def test_created_user_can_only_edit():
@@ -589,11 +589,11 @@ def test_created_user_can_only_edit():
         "version": "TTT",
         "year": 2020
     }
-    #create source
-    response = client.post('/v2/sources', headers=headers_auth, json=data)
+    #create resource
+    response = client.post('/v2/resources', headers=headers_auth, json=data)
     assert response.status_code == 201
-    assert response.json()['message'] == "Source created successfully"
-    source_name = response.json()['data']['sourceName']
+    assert response.json()['message'] == "Resource created successfully"
+    resource_name = response.json()['data']['resourceName']
 
     #create parascripturals
     data = [
@@ -602,7 +602,7 @@ def test_created_user_can_only_edit():
         {'category':'Bible project video', 'title':"miracles",
         "link":"http://somewhere.com/something"}
     ]
-    response = client.post(UNIT_URL+source_name, headers=headers_auth, json=data)
+    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert response.status_code == 201
 
     #update parascripturals with created SA user
@@ -611,13 +611,13 @@ def test_created_user_can_only_edit():
         "link":"http://anotherplace.com/something"},
         {'category':'Bible project video', 'title':"miracles",
         "link":"http://somewhereelse.com/something"}]
-    response = client.put(UNIT_URL+source_name,headers=headers_auth, json=new_data)
+    response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=new_data)
     assert response.status_code == 201
     assert response.json()['message'] == 'Parascripturals updated successfully'
 
     #update with VA not created user
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    response = client.put(UNIT_URL+source_name,headers=headers_auth, json=new_data)
+    response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=new_data)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
 
@@ -643,46 +643,46 @@ def test_soft_delete():
         {'category':'Bible Stories', 'title':'the Gods reveals himself in new testament'}
     ]
 
-    response, source_name = check_post(data)
+    response, resource_name = check_post(data)
     assert response.json()
 
-    get_response1 = client.get(UNIT_URL+source_name,headers=headers_auth)
+    get_response1 = client.get(UNIT_URL+resource_name,headers=headers_auth)
     assert len(get_response1.json()) == len(data)
     delete_data[0]['active'] = False
 
-    response = client.put(UNIT_URL+source_name,headers=headers_auth, json=delete_data)
+    response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=delete_data)
     assert response.status_code == 201
     assert response.json()
     assert response.json()["message"] == "Parascripturals updated successfully"
     # for i,item in enumerate(response.json()['data']['output']['data']): #pylint: disable=unused-variable
     #     assert not item['active']
 
-    get_response2 = client.get(UNIT_URL+source_name, headers=headers_auth)
+    get_response2 = client.get(UNIT_URL+resource_name, headers=headers_auth)
     assert len(get_response2.json()) == len(data) - len(delete_data)
 
-    get_response3 = client.get(UNIT_URL+source_name+'?active=false',headers=headers_auth)
+    get_response3 = client.get(UNIT_URL+resource_name+'?active=false',headers=headers_auth)
     assert len(get_response3.json()) == len(delete_data)
 
 def test_delete_default():
     ''' positive test case, checking for correct return of deleted parascriptural ID'''
     #create new data
-    response,source_name = test_post_default()
+    response,resource_name = test_post_default()
     headers_auth = {"contentType": "application/json",#pylint: disable=redefined-outer-name
                 "accept": "application/json"}
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    post_response = client.get(UNIT_URL+source_name+ \
+    post_response = client.get(UNIT_URL+resource_name+ \
         "?book_code=Bible%20project%20video&title=creation",\
         headers=headers_auth)
     assert post_response.status_code == 200
     assert len(post_response.json()) == 1
     for item in post_response.json():
         assert_positive_get(item)
-    parascript_response = client.get(UNIT_URL+source_name,headers=headers_auth)
+    parascript_response = client.get(UNIT_URL+resource_name,headers=headers_auth)
     parascript_id = parascript_response.json()[0]['parascriptId']
 
     #Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}#pylint: disable=redefined-outer-name
-    response = client.delete(UNIT_URL+source_name + \
+    response = client.delete(UNIT_URL+resource_name + \
         "?delete_id=" + str(parascript_id), headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
@@ -693,7 +693,7 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
-        response = client.delete(UNIT_URL+source_name + \
+        response = client.delete(UNIT_URL+resource_name + \
             "?delete_id=" + str(parascript_id), headers=headers_au)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
@@ -703,7 +703,7 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
-    response = client.delete(UNIT_URL+source_name + \
+    response = client.delete(UNIT_URL+resource_name + \
         "?delete_id=" + str(parascript_id), headers=headers_va)
     assert response.status_code == 200
     assert response.json()['message'] ==\
@@ -714,7 +714,7 @@ def test_delete_default_superadmin():
     ''' positive test case, checking for correct return of deleted parascriptural ID'''
     #Created User or Super Admin can only delete parascriptural
     #creating data
-    response,source_name = test_post_default()
+    response,resource_name = test_post_default()
 
     #Login as Super Admin
     as_data = {
@@ -729,27 +729,27 @@ def test_delete_default_superadmin():
                     'Authorization': "Bearer"+" "+test_user_token
             }
 
-    parascript_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    parascript_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
     parascript_id = parascript_response.json()[0]['parascriptId']
 
      #Delete parascriptural with Super Admin
-    response = client.delete(UNIT_URL+source_name + "?delete_id=" +\
+    response = client.delete(UNIT_URL+resource_name + "?delete_id=" +\
          str(parascript_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Parascriptural id {parascript_id} deleted successfully"
     #Check parascriptural is deleted from table
-    parascript_response = client.get(UNIT_URL+source_name,headers=headers_sa)
-    post_response = client.get(UNIT_URL+source_name+ \
+    parascript_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
+    post_response = client.get(UNIT_URL+resource_name+ \
         "?book_code=Bible%20project%20video&title=creation",\
         headers=headers_sa)
     assert_not_available_content(post_response)
     logout_user(test_user_token)
-    return response,source_name
+    return response,resource_name
 
 def test_delete_parascript_id_string():
     '''positive test case, parascriptural id as string'''
-    response,source_name = test_post_default()
+    response,resource_name = test_post_default()
 
     #Login as Super Admin
     as_data = {
@@ -764,24 +764,24 @@ def test_delete_parascript_id_string():
                     'Authorization': "Bearer"+" "+test_user_token
             }
 
-    parascript_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    parascript_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
     parascript_id = parascript_response.json()[0]['parascriptId']
     parascript_id = str(parascript_id)
 
     #Delete parascriptural with Super Admin
-    response = client.delete(UNIT_URL+source_name + \
+    response = client.delete(UNIT_URL+resource_name + \
         "?delete_id=" + str(parascript_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Parascriptural id {parascript_id} deleted successfully"
     #Check parascriptural parascriptural is deleted from table
-    parascript_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    parascript_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
     logout_user(test_user_token)
 
 
 def test_delete_missingvalue_parascript_id():
     '''Negative Testcase. Passing input data without parascriptId'''
-    response,source_name = test_post_default()
+    response,resource_name = test_post_default()
 
     #Login as Super Admin
     as_data = {
@@ -795,13 +795,13 @@ def test_delete_missingvalue_parascript_id():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
-    response = client.delete(UNIT_URL+source_name + "?delete_id=", headers=headers_sa)
+    response = client.delete(UNIT_URL+resource_name + "?delete_id=", headers=headers_sa)
     assert_input_validation_error(response)
     logout_user(test_user_token)
 
-def test_delete_missingvalue_source_name():
-    '''Negative Testcase. Passing input data without sourceName'''
-    response,source_name = test_post_default()
+def test_delete_missingvalue_resource_name():
+    '''Negative Testcase. Passing input data without resourceName'''
+    response,resource_name = test_post_default()
 
     #Login as Super Admin
     as_data = {
@@ -815,7 +815,7 @@ def test_delete_missingvalue_source_name():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
-    parascript_response = client.get(UNIT_URL+source_name,headers=headers_sa)
+    parascript_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
     parascript_id = parascript_response.json()[0]['parascriptId']
 
     response = client.delete(UNIT_URL+ "?delete_id=" + str(parascript_id), headers=headers_sa)
@@ -824,7 +824,7 @@ def test_delete_missingvalue_source_name():
 
 def test_delete_notavailable_content():
     ''' request a non existing parascriptural ID, Ensure there is no partial matching'''
-    response,source_name = test_post_default()
+    response,resource_name = test_post_default()
 
     #Login as Super Admin
     as_data = {
@@ -840,7 +840,7 @@ def test_delete_notavailable_content():
             }
     parascript_id=20000
      #Delete parascriptural with Super Admin
-    response = client.delete(UNIT_URL+source_name + \
+    response = client.delete(UNIT_URL+resource_name + \
         "?delete_id=" + str(parascript_id), headers=headers_sa)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
@@ -850,7 +850,7 @@ def test_restore_default():
     '''positive test case, checking for correct return object'''
     #only Super Admin can restore deleted data
     #Creating and Deleting data
-    response,source_name = test_delete_default_superadmin()
+    response,resource_name = test_delete_default_superadmin()
     deleteditem_id = response.json()['data']['itemId']
     data = {"itemId": deleteditem_id}
     #Restoring data
@@ -889,7 +889,7 @@ def test_restore_default():
     assert response.json()['message'] == \
     f"Deleted Item with identity {deleteditem_id} restored successfully"
     #Check parascriptural exists after restore
-    restore_response =  client.get(UNIT_URL+source_name+ \
+    restore_response =  client.get(UNIT_URL+resource_name+ \
         "?category=Bible project video&title=creation",\
         headers=headers_auth)
     assert restore_response.status_code == 200
@@ -992,11 +992,11 @@ def test_restore_notavailable_item():
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
 
-def test_restoreitem_with_notavailable_source():
-    ''' Negative test case.request to restore an item whoose source is not available'''
+def test_restoreitem_with_notavailable_resource():
+    ''' Negative test case.request to restore an item whoose resource is not available'''
     #only Super Admin can restore deleted data
     #Creating and Deleting data
-    response,source_name = test_delete_default_superadmin()
+    response,resource_name = test_delete_default_superadmin()
     deleteditem_id = response.json()['data']['itemId']
     data = {"itemId": deleteditem_id}
     #Login as Super Admin
@@ -1011,13 +1011,13 @@ def test_restoreitem_with_notavailable_source():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
-    #Delete Associated Source
-    get_source_response = client.get(SOURCE_URL + "?source_name="+source_name, headers=headers_auth)
-    source_id = get_source_response.json()[0]["sourceId"]
-    response = client.delete(SOURCE_URL + "?delete_id=" + str(source_id), headers=headers_auth)
+    #Delete Associated Resource
+    get_resource_response = client.get(RESOURCE_URL + "?resource_name="+resource_name, headers=headers_auth)
+    resource_id = get_resource_response.json()[0]["resourceId"]
+    response = client.delete(RESOURCE_URL + "?delete_id=" + str(resource_id), headers=headers_auth)
     assert response.status_code == 200
     #Restoring data
-    #Restore content with Super Admin after deleting source
+    #Restore content with Super Admin after deleting resource
     restore_response = client.put(RESTORE_URL, headers=headers_auth, json=data)
     restore_response.status_code = 404
     logout_user(test_user_token)

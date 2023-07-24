@@ -6,7 +6,7 @@ from fastapi import APIRouter, Query, Request, Depends
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from schema import schemas,schema_auth
-from routers.content_apis import get_source
+from routers.content_apis import get_resource
 from crud import media_crud
 from custom_exceptions import NotAvailableException, UnprocessableException
 from dependencies import log, get_db
@@ -17,7 +17,7 @@ from redis_db.utils import  get_routes_from_cache, set_routes_to_cache
 router = APIRouter()
 
 async def get_and_accesscheck_for_repo(repo, file_path, tag, permanent_link, db_,*args):
-    """find repo and check access for source"""
+    """find repo and check access for resource"""
     request = args[0]
     user_details = args[1]
     if not permanent_link:
@@ -32,15 +32,15 @@ async def get_and_accesscheck_for_repo(repo, file_path, tag, permanent_link, db_
         file_path = re.findall(r'(/-/[^/]+/[^/]+/)(.+)',permanent_link)[0][-1]
 
         permanent_link =  re.sub(r'/-/[^/]+',"/-/raw",permanent_link)
-    # find source
-    db_source = media_crud.find_media_source(repo, db_)
-    # print("permanent link ======", db_source)
-    if db_source is None:
-        raise NotAvailableException(f"No source is available for {repo}")
-    source_name = db_source.sourceName
+    # find resource
+    db_resource = media_crud.find_media_resource(repo, db_)
+    # print("permanent link ======", db_resource)
+    if db_resource is None:
+        raise NotAvailableException(f"No resource is available for {repo}")
+    resource_name = db_resource.resourceName
 
     try:
-        tables = await get_source(request=request,source_name=source_name,
+        tables = await get_resource(request=request,resource_name=resource_name,
         content_type=None, version_abbreviation=None,
         version_tag=None,language_code=None,license_code=None,
         metadata=None,access_tag = None, active= True, latest_revision= True,
@@ -48,15 +48,15 @@ async def get_and_accesscheck_for_repo(repo, file_path, tag, permanent_link, db_
         filtering_required=True, labels=[],
         operates_on=schema_auth.ResourceType.CONTENT.value)
     except Exception:
-        log.error("Error in getting sources list")
+        log.error("Error in getting resources list")
         raise
 
     if len(tables) == 0:
-        raise NotAvailableException("No sources available for the requested repo, \
+        raise NotAvailableException("No resources available for the requested repo, \
 accessible to the user")
     if tag is None:
         if not "defaultBranch" in tables[0].metaData:
-            raise NotAvailableException("Default Branch is Not in source metadata")
+            raise NotAvailableException("Default Branch is Not in resource metadata")
         tag = tables[0].metaData["defaultBranch"]
 
     return repo, tag, permanent_link, file_path

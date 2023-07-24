@@ -5,7 +5,7 @@ import json
 import requests
 from . import client
 from .test_versions import check_post
-from .test_sources import check_post as source_post
+from .test_resources import check_post as source_post
 from .conftest import initial_test_users
 
 BASE_URL = "v2/"
@@ -376,8 +376,8 @@ def test_end_to_end_translation():
 
     # resp = client.post(BASE_URL+"sources", headers=headers, json=src_data)
     resp = source_post(src_data)
-    assert resp.json()['message'] == "Source created successfully"
-    source_name = resp.json()['data']['sourceName']
+    assert resp.json()['message'] == "Resource created successfully"
+    source_name = resp.json()['data']['resourceName']
 
     headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
@@ -416,7 +416,7 @@ def test_end_to_end_translation():
     user_data['project_id'] = project_id
     user_data['userId'] = NEW_USER_ID
     resp = client.put(BASE_URL+"translation/project/user", headers=headers_auth, json=user_data)
-    print(resp.json())
+    # print(resp.json())
     assert resp.json()['message'] == "User updated in project successfully"
 
     resp = client.get(BASE_URL+"translation/projects?user_id="+str(NEW_USER_ID),headers=headers_auth)
@@ -426,9 +426,10 @@ def test_end_to_end_translation():
 
     resp = client.post(BASE_URL+"nlp/learn/alignment?source_language="+ALIGNMENT_SRC+
     	"&target_language="+ALIGNMENT_TRG, headers=headers_auth, json=alignment_data)
+    # print("**",resp)
     assert resp.status_code == 201
     # print(resp)
-    # print(resp.json())
+    
 
     # tokenize after adding token "परमेश्वर" via alignment
     resp = client.put(BASE_URL+"translation/project/suggestions?project_id="+str(project_id)+

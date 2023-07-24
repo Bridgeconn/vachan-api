@@ -74,10 +74,10 @@ CREATE TABLE public.versions (
 
 ALTER SEQUENCE public.versions_version_id_seq RESTART WITH 100000;
 
-CREATE TABLE public.sources (
-    source_id SERIAL PRIMARY KEY,
+CREATE TABLE public.resources (
+    resource_id SERIAL PRIMARY KEY,
     version text UNIQUE,
-    source_table text UNIQUE,
+    resource_table text UNIQUE,
     year integer NOT NULL,
     labels text[],
     license_id int REFERENCES licenses(license_id),
@@ -92,7 +92,7 @@ CREATE TABLE public.sources (
     metadata jsonb NULL
 );
 
-ALTER SEQUENCE public.sources_source_id_seq RESTART WITH 100000;
+ALTER SEQUENCE public.resources_resource_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.bible_books_look_up (
     book_id int PRIMARY KEY,

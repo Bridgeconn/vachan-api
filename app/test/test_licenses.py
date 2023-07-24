@@ -1,9 +1,9 @@
 '''Test cases for licenses related APIs'''
-from schema.schemas import SourcePermissions
+from schema.schemas import ResourcePermissions
 from . import client, check_default_get
 from . import assert_input_validation_error, assert_not_available_content
 from .test_versions import check_post as add_version
-from .test_sources import check_post as add_source
+from .test_resources import check_post as add_resource
 from .test_auth_basic import logout_user,login,SUPER_PASSWORD,SUPER_USER
 from .conftest import initial_test_users
 
@@ -75,7 +75,7 @@ def test_get():
     assert_not_available_content(response)
 
     # '''filter with permissions'''
-    response = client.get(UNIT_URL+'?permission='+SourcePermissions.OPENACCESS.value)
+    response = client.get(UNIT_URL+'?permission='+ResourcePermissions.OPENACCESS.value)
     assert response.status_code == 200
     assert len(response.json()) == 2
 
@@ -97,7 +97,7 @@ def post_data():
       "license": "A very very long license text",
       "name": "Test License version 1",
       "code": "LIC-1",
-      "permissions": [SourcePermissions.OPENACCESS.value]
+      "permissions": [ResourcePermissions.OPENACCESS.value]
     }
     headers_au = {"contentType": "application/json",
                 "accept": "application/json",
@@ -118,7 +118,7 @@ def test_post():
       "license": "A very very long license text",
       "name": "Test License version 1",
       "code": "LIC-1",
-      "permissions": [SourcePermissions.OPENACCESS.value]
+      "permissions": [ResourcePermissions.OPENACCESS.value]
     }
     response = client.post(UNIT_URL, headers=headers, json=data)
     #without Auth
@@ -160,7 +160,7 @@ def test_post():
     assert response.status_code == 201
     assert response.json()['message'] == "License uploaded successfully"
     assert_positive_get(response.json()['data'])
-    assert response.json()["data"]["permissions"] == [SourcePermissions.OPENACCESS.value]
+    assert response.json()["data"]["permissions"] == [ResourcePermissions.OPENACCESS.value]
 
     # '''without mandatory fields'''
     #with auth
@@ -218,7 +218,7 @@ def test_put(): # pylint: disable=too-many-statements
       "license": "A very very long license text",
       "code": "LIC-1",
       "name": "Test License version 1",
-      "permissions": [SourcePermissions.OPENACCESS.value]
+      "permissions": [ResourcePermissions.OPENACCESS.value]
     }
     #without Auth
     response = client.post(UNIT_URL, headers=headers, json=data)
@@ -231,7 +231,7 @@ def test_put(): # pylint: disable=too-many-statements
     assert response.json()['message'] == "License uploaded successfully"
 
     update_data = {"code":"LIC-1", "permissions":
-      [SourcePermissions.OPENACCESS.value, SourcePermissions.PUBLISHABLE.value]}
+      [ResourcePermissions.OPENACCESS.value, ResourcePermissions.PUBLISHABLE.value]}
     #without auth update
     response = client.put(UNIT_URL, json=update_data, headers=headers)
     assert response.status_code == 401
@@ -242,7 +242,7 @@ def test_put(): # pylint: disable=too-many-statements
     assert response.status_code == 201
     assert response.json()['message'] == "License edited successfully"
     assert response.json()['data']['permissions'] ==\
-      [SourcePermissions.OPENACCESS.value, SourcePermissions.PUBLISHABLE.value]
+      [ResourcePermissions.OPENACCESS.value, ResourcePermissions.PUBLISHABLE.value]
 
     update_data = {"code":"LIC-1", "name":"New name for test license"}
     response = client.put(UNIT_URL, json=update_data, headers=headers_auth)
@@ -277,7 +277,7 @@ def test_put(): # pylint: disable=too-many-statements
       "license": "license edited by admin",
       "code": "LIC-1",
       "name": "Test License version 1",
-      "permissions": [SourcePermissions.OPENACCESS.value]
+      "permissions": [ResourcePermissions.OPENACCESS.value]
     }
     headers_admin = {"contentType": "application/json",
                     "accept": "application/json",
@@ -425,10 +425,10 @@ def test_delete_notavailable_license():
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
 
-def test_license_used_by_source():
-    '''  Negativetest case, trying to delete that license which is used to create a source'''
+def test_license_used_by_resource():
+    '''  Negativetest case, trying to delete that license which is used to create a resource'''
 
-    #Create Version with associated with source
+    #Create Version with associated with resource
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version or licenses",
@@ -436,7 +436,7 @@ def test_license_used_by_source():
     add_version(version_data)
 
     #Create Source with license
-    source_data = {
+    resource_data = {
         "contentType": "commentary",
         "language": "en",
         "version": "TTT",
@@ -445,7 +445,7 @@ def test_license_used_by_source():
         "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
-    add_source(source_data)
+    add_resource(resource_data)
 
     #Delete license
     licence_response = client.get(UNIT_URL+"?license_code=ISC")

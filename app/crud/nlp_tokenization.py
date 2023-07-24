@@ -12,7 +12,8 @@ from dependencies import log
 
 
 def build_memory_trie(translation_memory):
-    '''form a trie from a list of known tokens in a source language, to be used for tokenization'''
+    '''form a trie from a list of known tokens in a source language,
+     to be used for tokenization'''
     memory_trie = pygtrie.StringTrie()
     space_pattern = re.compile(r'\s+')
     for token in translation_memory:

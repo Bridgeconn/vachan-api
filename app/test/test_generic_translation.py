@@ -128,7 +128,7 @@ def test_tokenize_with_diff_flags():
         headers=headers_auth, json=post_obj)
     assert response.status_code == 200
     all_words = [item['token'] for item in response.json()]
-    for word in sample_sent.split(): # covers all words in source
+    for word in sample_sent.split(): # covers all words in resource
         assert word in all_words
     assert len(all_words) == len(set(all_words)) #unique
     for word in all_words: # no phrases

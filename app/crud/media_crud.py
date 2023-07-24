@@ -8,7 +8,7 @@ from fastapi.responses import StreamingResponse
 from bs4 import BeautifulSoup
 import db_models
 from dependencies import log
-from custom_exceptions import GitlabException
+from custom_exceptions import  GitlabException
 
 access_token = os.environ.get("VACHAN_GITLAB_TOKEN")
 BYTES_PER_RESPONSE = 100000
@@ -114,8 +114,8 @@ def get_gitlab_download(repo, tag, permanent_link, file_path):
     return stream
 
 
-def find_media_source(repo, db_):
-    """find source of requested gitlab media"""
-    query = db_.query(db_models.Source)
-    query = query.filter(db_models.Source.metaData.contains({"repo":repo})).first()
+def find_media_resource(repo, db_):
+    """find resource of requested gitlab media"""
+    query = db_.query(db_models.Resource)
+    query = query.filter(db_models.Resource.metaData.contains({"repo":repo})).first()
     return query

@@ -1,5 +1,5 @@
 '''Defines all input and output classes for Content related API endpoints
-like Bible,Audio etc.'''
+like Bible,Audio,Video etc.'''
 
 from typing import List
 from enum import Enum
@@ -114,6 +114,7 @@ class Reference(BaseModel):
                 "verseNumberEnd": 17
             }
         }
+
 class ParascriptReference(BaseModel):
     '''Response object of parascript reference'''
     bookStart: BookCodePattern = None
@@ -157,7 +158,6 @@ class ParascriptReference(BaseModel):
                 "verseEnd": 20
             }
         }
-
 class BibleBookContent(BaseModel):
     '''Response object of Bible book contents'''
     bookContentId : int = None
