@@ -178,11 +178,11 @@ def find_knee(sentences):
 
 async def filter_translation_words(db_, request, resource_name, stopwords, user_details=None):
     '''Filter the translation words from generated stopwords using tws of gl'''
-    # tw_lookup = {'hi': 'hi_TW_1_dictionary', 'ml': 'ml_TW_1_dictionary', 'te':
-    #     'te_TW_1_dictionary', 'kan': 'kan_TW_1_dictionary', 'ta': 'ta_TW_1_dictionary',
-    #     'mr': 'mr_TW_1_dictionary', 'pa': 'pa_TW_1_dictionary', 'as': 'as_TW_1_dictionary',
-    #     'gu': 'gu_TW_1_dictionary', 'ur': 'ur_TW_1_dictionary', 'or': 'or_TW_1_dictionary',
-    #     'bn': 'bn_TW_1_dictionary'}
+    # tw_lookup = {'hi': 'hi_TW_1_vocabulary', 'ml': 'ml_TW_1_vocabulary', 'te':
+    #     'te_TW_1_vocabulary', 'kan': 'kan_TW_1_vocabulary', 'ta': 'ta_TW_1_vocabulary',
+    #     'mr': 'mr_TW_1_vocabulary', 'pa': 'pa_TW_1_vocabulary', 'as': 'as_TW_1_vocabulary',
+    #     'gu': 'gu_TW_1_vocabulary', 'ur': 'ur_TW_1_vocabulary', 'or': 'or_TW_1_vocabulary',
+    #     'bn': 'bn_TW_1_vocabulary'}
     # query = db_.query(db_models.Language.languageId)
     # gl_id = query.filter(func.lower(db_models.Language.code) == gl_lang_code.lower()).first()
     # if not gl_id:
@@ -191,7 +191,7 @@ async def filter_translation_words(db_, request, resource_name, stopwords, user_
     # gl_id = gl_id[0]
     # resource_name = tw_lookup[gl_lang_code]
     try:
-        response = await content_apis.get_dictionary_word(
+        response = await content_apis.get_vocabulary_word(
             request=request, #pylint: disable=W0613
             resource_name=resource_name,
             search_word =None,
@@ -319,13 +319,13 @@ async def generate_stopwords(db_: Session, request: Request, *args, user_details
                 }
             update_job(db_, job_id, user_id, update_args)
             raise NotAvailableException(f'{resource_name} not found in database.')
-        if not resource_name.endswith(db_models.ContentTypeName.DICTIONARY.value):
+        if not resource_name.endswith(db_models.ContentTypeName.VOCABULARY.value):
             update_args["output"]= {
-                "message": 'The operation is supported only on dictionaries',
+                "message": 'The operation is supported only on vocabularies',
                 "resource_name": resource_name,"data": None
                 }
             update_job(db_, job_id, user_id, update_args)
-            raise TypeException('The operation is supported only on dictionaries')
+            raise TypeException('The operation is supported only on vocabularies')
     if not language_id:
         update_args = {
                     "status" : schemas_nlp.JobStatus.ERROR.value,

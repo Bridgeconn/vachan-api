@@ -856,16 +856,16 @@ async def delete_commentary(request: Request,delete_id:int,
         deleting_user = user_details['user_id'])
     return {'message': f"Commentary id {commentary_id} deleted successfully",
             "data": delcont}
-# # ########### Dictionary ###################
-@router.get('/v2/dictionaries/{resource_name}',
+# # ########### Vocabulary ###################
+@router.get('/v2/vocabularies/{resource_name}',
     response_model_exclude_unset=True,
-    response_model=List[schema_content.DictionaryWordResponse],
+    response_model=List[schema_content.VocabularyWordResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
-    404:{"model": schemas.ErrorResponse},}, status_code=200, tags=["Dictionaries"])
+    404:{"model": schemas.ErrorResponse},}, status_code=200, tags=["Vocabularies"])
 @get_auth_access_check_decorator
-async def get_dictionary_word(request: Request,
-    resource_name: schemas.TableNamePattern=Path(...,example="en_TW_1_dictionary"),
+async def get_vocabulary_word(request: Request,
+    resource_name: schemas.TableNamePattern=Path(...,example="en_TW_1_vocabulary"),
     search_word: str=Query(None, example="Adam"),
     exact_match: bool=False, word_list_only: bool=False,
     details: schemas.MetaDataPattern=Query(None, example='{"type":"person"}'), active: bool=None,
@@ -873,7 +873,7 @@ async def get_dictionary_word(request: Request,
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.CONTENT.value))):
     #operates_on=schema_auth.ResourceType.CONTENT.value
-    '''fetches list of dictionary words and all available details about them.
+    '''fetches list of vocabulary words and all available details about them.
     Using the searchIndex appropriately, it is possible to get
     * All words starting with a letter
     * All words starting with a substring
@@ -884,32 +884,32 @@ async def get_dictionary_word(request: Request,
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
-    log.info('In get_dictionary_word')
+    log.info('In get_vocabulary_word')
     log.debug('resource_name: %s, search_word: %s, exact_match: %s, word_list_only:%s, details:%s\
         skip: %s, limit: %s', resource_name, search_word, exact_match, word_list_only, details,
         skip, limit)
-    return contents_crud.get_dictionary_words(db_, resource_name=resource_name,
+    return contents_crud.get_vocabulary_words(db_, resource_name=resource_name,
         search_word=search_word,
         exact_match=exact_match,
         word_list_only=word_list_only, details=details, active=active, skip=skip, limit=limit)
 
-@router.get('/v2/dictionaries/{resource_name}/count',
+@router.get('/v2/vocabularies/{resource_name}/count',
     response_model=int,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
-    404:{"model": schemas.ErrorResponse},}, status_code=200, tags=["Dictionaries"])
+    404:{"model": schemas.ErrorResponse},}, status_code=200, tags=["Vocabularies"])
 @get_auth_access_check_decorator
-async def get_dictionary_word_count(request: Request,
-    resource_name: schemas.TableNamePattern=Path(...,example="en_TW_1_dictionary"),
+async def get_vocabulary_word_count(request: Request,
+    resource_name: schemas.TableNamePattern=Path(...,example="en_TW_1_vocabulary"),
     search_word: str=Query(None, example="Adam"),
     exact_match: bool=False,
     details: schemas.MetaDataPattern=Query(None, example='{"type":"person"}'),
     active: bool= Query(None),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.CONTENT.value))):
-    '''Counts dictionary words that match the query criteria.
+    '''Counts vocabulary words that match the query criteria.
     Using the search_word appropriately, it is possible to count:
-    * All word in the dictionary, if not specified
+    * All word in the vocabulary, if not specified
     * All words starting with a letter
     * All words starting with a substring
     * An exact word search, giving the whole word and setting exactMatch to True
@@ -917,84 +917,84 @@ async def get_dictionary_word_count(request: Request,
     * Both active and deactivated words, by not specifiying a value for active, which is default.
         Recommended that it is set to true for regular use-cases
     '''
-    log.info('In get_dictionary_word_count')
+    log.info('In get_vocabulary_word_count')
     log.debug('resource_name: %s, search_word: %s, exact_match: %s,  details:%s',
         resource_name, search_word, exact_match, details)
-    response = contents_crud.get_dictionary_words(db_, resource_name=resource_name,
+    response = contents_crud.get_vocabulary_words(db_, resource_name=resource_name,
         search_word=search_word, exact_match=exact_match,
         word_list_only=True, details=details, active=active, skip=None, limit=None)
     response['db_content'] = len(response['db_content'])
     return response
 
-@router.post('/v2/dictionaries/{resource_name}',
-    response_model=schema_content.DictionaryCreateResponse,
+@router.post('/v2/vocabularies/{resource_name}',
+    response_model=schema_content.VocabularyCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
     401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
     415:{"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Dictionaries"])
+    status_code=201, tags=["Vocabularies"])
 @get_auth_access_check_decorator
-async def add_dictionary_word(request: Request,
-    resource_name : schemas.TableNamePattern=Path(..., example="en_TW_1_dictionary"),
-    dictionary_words: List[schema_content.DictionaryWordCreate] = Body(...),
+async def add_vocabulary_word(request: Request,
+    resource_name : schemas.TableNamePattern=Path(..., example="en_TW_1_vocabulary"),
+    vocabulary_words: List[schema_content.VocabularyWordCreate] = Body(...),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     ''' uploads dictionay words and their details. 'Details' should be of JSON datatype and  have
     all the additional info we have for each word, as key-value pairs.
     The word will serve as the unique identifier'''
-    log.info('In add_dictionary_word')
-    log.debug('resource_name: %s, dictionary_words: %s',resource_name, dictionary_words)
-    return {'message': "Dictionary words added successfully",
-        "data": contents_crud.upload_dictionary_words(db_=db_, resource_name=resource_name,
-        dictionary_words=dictionary_words, user_id=user_details['user_id'])}
+    log.info('In add_vocabulary_word')
+    log.debug('resource_name: %s, vocabulary_words: %s',resource_name, vocabulary_words)
+    return {'message': "Vocabulary words added successfully",
+        "data": contents_crud.upload_vocabulary_words(db_=db_, resource_name=resource_name,
+        vocabulary_words=vocabulary_words, user_id=user_details['user_id'])}
 
-@router.put('/v2/dictionaries/{resource_name}',
-    response_model=schema_content.DictionaryUpdateResponse,
+@router.put('/v2/vocabularies/{resource_name}',
+    response_model=schema_content.VocabularyUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
     401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Dictionaries"])
+    status_code=201, tags=["Vocabularies"])
 @get_auth_access_check_decorator
-async def edit_dictionary_word(request: Request,
-    resource_name: schemas.TableNamePattern=Path(..., example="en_TW_1_dictionary"),
-    dictionary_words: List[schema_content.DictionaryWordEdit] = Body(...),
+async def edit_vocabulary_word(request: Request,
+    resource_name: schemas.TableNamePattern=Path(..., example="en_TW_1_vocabulary"),
+    vocabulary_words: List[schema_content.VocabularyWordEdit] = Body(...),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
-    ''' Updates a dictionary word. Item identifier is word, which cannot be altered.
+    ''' Updates a vocabulary word. Item identifier is word, which cannot be altered.
     * Updates all the details, of the specifed word, if details is provided.
     * Active field can be used to activate or deactivate a word.
     Deactivated words are not included in normal fetch results if not specified otherwise'''
-    log.info('In edit_dictionary_word')
-    log.debug('resource_name: %s, dictionary_words: %s',resource_name, dictionary_words)
-    return {'message': "Dictionary words updated successfully",
-        "data": contents_crud.update_dictionary_words(db_=db_, resource_name=resource_name,
-        dictionary_words=dictionary_words, user_id=user_details['user_id'])}
+    log.info('In edit_vocabulary_word')
+    log.debug('resource_name: %s, vocabulary_words: %s',resource_name, vocabulary_words)
+    return {'message': "Vocabulary words updated successfully",
+        "data": contents_crud.update_vocabulary_words(db_=db_, resource_name=resource_name,
+        vocabulary_words=vocabulary_words, user_id=user_details['user_id'])}
 
-@router.delete('/v2/dictionaries/{resource_name}',response_model=schemas.DeleteResponse,
+@router.delete('/v2/vocabularies/{resource_name}',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
     502: {"model": schemas.ErrorResponse}},
-    status_code=200,tags=["Dictionaries"])
+    status_code=200,tags=["Vocabularies"])
 @get_auth_access_check_decorator
-async def delete_dictionaries(request: Request,delete_id: int,
-    resource_name: str = Path(...,example="en_KJV_1_dictionary"),
+async def delete_vocabularies(request: Request,delete_id: int,
+    resource_name: str = Path(...,example="en_KJV_1_vocabulary"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
-    '''Delete Dictionary
-    * unique Dictionary Id with resource name can be used to delete an exisiting identity'''
-    log.info('In delete_dictionaries')
-    log.debug('dictionary-delete:%s',delete_id)
+    '''Delete Vocabulary
+    * unique Vocabulary Id with resource name can be used to delete an exisiting identity'''
+    log.info('In delete_vocabularies')
+    log.debug('vocabulary-delete:%s',delete_id)
     word_id= delete_id
     tb_name = db_models.dynamicTables[resource_name]
     dbtable_name = tb_name.__name__
-    get_dictionary_response = contents_crud.get_dictionary_words(db_, resource_name=resource_name,
+    get_vocabulary_response = contents_crud.get_vocabulary_words(db_, resource_name=resource_name,
                  word_id= delete_id)
-    if len(get_dictionary_response['db_content']) == 0:
-        raise NotAvailableException(f"Dictionary with id {word_id} not found")
-    deleted_content = contents_crud.delete_dictionary(db_=db_,
+    if len(get_vocabulary_response['db_content']) == 0:
+        raise NotAvailableException(f"Vocabulary with id {word_id} not found")
+    deleted_content = contents_crud.delete_vocabulary(db_=db_,
         delitem=delete_id,
         table_name=tb_name,resource_name=resource_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
         table_name = dbtable_name, resource = deleted_content['resource_content'],
         deleting_user = user_details['user_id'])
-    return {'message': f"Dictionary id {word_id} deleted successfully",
+    return {'message': f"Vocabulary id {word_id} deleted successfully",
             "data": delcont}
 
 # # ########### Infographic ###################

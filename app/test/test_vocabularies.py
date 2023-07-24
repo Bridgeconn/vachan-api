@@ -1,4 +1,4 @@
-'''Test cases for dictionary related APIs'''
+'''Test cases for vocabulary related APIs'''
 from . import client , contetapi_get_accessrule_checks_app_userroles
 from . import assert_input_validation_error, assert_not_available_content
 
@@ -8,7 +8,7 @@ from .test_resources import check_post as add_resource
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 from .conftest import initial_test_users
 
-UNIT_URL = '/v2/dictionaries/'
+UNIT_URL = '/v2/vocabularies/'
 RESOURCE_URL = '/v2/resources'
 RESTORE_URL = '/v2/restore'
 headers = {"contentType": "application/json", "accept": "application/json"}
@@ -26,11 +26,11 @@ def check_post(data: list):
     '''prior steps and post attempt, without checking the response'''
     version_data = {
         "versionAbbreviation": "TTT",
-        "versionName": "test version for dictionaries",
+        "versionName": "test version for vocabularies",
     }
     add_version(version_data)
     resource_data = {
-        "contentType": "dictionary",
+        "contentType": "vocabulary",
         "language": "en",
         "version": "TTT",
         "revision": 1,
@@ -52,7 +52,7 @@ def check_post(data: list):
     return response, resource_name
 
 def test_post_default():
-    '''Positive test to upload dictionary words'''
+    '''Positive test to upload vocabulary words'''
     data = [
     	{"word": "one", "details":{"digit": 1, "type":"odd"}},
     	{"word": "two", "details":{"digit": 2, "type":"even"}},
@@ -62,7 +62,7 @@ def test_post_default():
     ]
     response,resource_name = check_post(data)
     assert response.status_code == 201
-    assert response.json()['message'] == "Dictionary words added successfully"
+    assert response.json()['message'] == "Vocabulary words added successfully"
     assert len(data) == len(response.json()['data'])
     for item in response.json()['data']:
         assert_positive_get(item)
@@ -76,7 +76,7 @@ def test_post_duplicate():
     ]
     resp, resource_name = check_post(data)
     assert resp.status_code == 201
-    assert resp.json()['message'] == "Dictionary words added successfully"
+    assert resp.json()['message'] == "Vocabulary words added successfully"
 
     # headers = {"contentType": "application/json", "accept": "application/json"}
     data[0]['details'] = {"digit": 1, "type":"natural number"}
@@ -109,7 +109,7 @@ def test_post_incorrect_data():
     assert_input_validation_error(response)
 
  	# wrong resource name
-    resource_name1 = resource_name.replace('dictionary', 'bible')
+    resource_name1 = resource_name.replace('vocabulary', 'bible')
     response = client.post(UNIT_URL+resource_name1, headers=headers_auth, json=[])
     assert response.status_code == 404
 
@@ -120,13 +120,13 @@ def test_post_incorrect_data():
 def test_get_after_data_upload():
     '''Add some data into the table and do all get tests'''
     data = [
-    	{"word": "one", "details":{"digit": 1, "type":"odd", "link":UNIT_URL+'dictionary?word=one'}},
-    	{"word": "two", "details":{"digit": 2, "type":"even", "link":UNIT_URL+'dictionary?word=two'}},
+    	{"word": "one", "details":{"digit": 1, "type":"odd", "link":UNIT_URL+'vocabulary?word=one'}},
+    	{"word": "two", "details":{"digit": 2, "type":"even", "link":UNIT_URL+'vocabulary?word=two'}},
     	{"word": "three", "details":{"digit": 3, "type":"odd",
-    	"link":UNIT_URL+'dictionary?word=three'}},
+    	"link":UNIT_URL+'vocabulary?word=three'}},
     	{"word": "four", "details":{"digit": 4, "type":"even",
-    	"link":UNIT_URL+'dictionary?word=four'}},
-    	{"word": "five", "details":{"digit": 5, "type":"odd", "link":UNIT_URL+'dictionary?word=five'}},
+    	"link":UNIT_URL+'vocabulary?word=four'}},
+    	{"word": "five", "details":{"digit": 5, "type":"odd", "link":UNIT_URL+'vocabulary?word=five'}},
         {"word": "another", "details":{"empty-field": ""}}
     ]
     resp, resource_name = check_post(data)
@@ -210,7 +210,7 @@ def test_get_incorrect_data():
 
     resp, resource_name = check_post([])
     assert resp.status_code == 201
-    resource_name = resource_name.replace('dictionary', 'bible')
+    resource_name = resource_name.replace('vocabulary', 'bible')
     response = client.get(UNIT_URL+resource_name,headers=headers_auth)
     assert response.status_code in [415, 404]# included 415
     #due to https://github.com/Bridgeconn/vachan-api/issues/302
@@ -238,7 +238,7 @@ def test_put_after_upload():
     #with auth
     response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=new_data)
     assert response.status_code == 201
-    assert response.json()['message'] == 'Dictionary words updated successfully'
+    assert response.json()['message'] == 'Vocabulary words updated successfully'
     for i,item in enumerate(response.json()['data']):
         assert_positive_get(item)
         assert response.json()['data'][i]['details'] == new_data[i]['details']
@@ -283,7 +283,7 @@ def test_put_incorrect_data():
     assert_input_validation_error(response)
 
  	# wrong resource name
-    resource_name1 = resource_name.replace('dictionary', 'bible')
+    resource_name1 = resource_name.replace('vocabulary', 'bible')
     response = client.put(UNIT_URL+resource_name1, headers=headers_auth, json=[])
     assert response.status_code == 404
 
@@ -292,7 +292,7 @@ def test_put_incorrect_data():
     assert response.status_code == 404
 
 def test_soft_delete():
-    '''check soft delete in dictionaries'''
+    '''check soft delete in vocabularies'''
     data = [
         {'word':'Good', 'details':{'meaning':'good', 'form':'Positive'}},
         {'word':'Better', 'details':{'meaning':'good', 'form':'Comparative'}},
@@ -322,11 +322,11 @@ def test_created_user_can_only_edit():
 
     version_data = {
         "versionAbbreviation": "TTT",
-        "versionName": "test version for dictionaries",
+        "versionName": "test version for vocabularies",
     }
     add_version(version_data)
     resource_data = {
-        "contentType": "dictionary",
+        "contentType": "vocabulary",
         "language": "en",
         "version": "TTT",
         "versionTag": 1,
@@ -338,23 +338,23 @@ def test_created_user_can_only_edit():
     assert response.json()['message'] == "Resource created successfully"
     resource_name = response.json()['data']['resourceName']
 
-    #create dictionary
+    #create vocabulary
     data = [
     	{"word": "Adam", "details": {"description": "Frist man"}},
     	{"word": "Eve", "details": {"description": "Wife of Adam"}}
     ]
     response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert response.status_code == 201
-    assert response.json()['message'] == 'Dictionary words added successfully'
+    assert response.json()['message'] == 'Vocabulary words added successfully'
 
-    #update dictionary with created SA user
+    #update vocabulary with created SA user
     new_data = [
     	{"word": "Adam", "details": {"description": "Frist man God created"}},
     	{"word": "Eve", "details": {"description": "Wife of Adam, and Mother of mankind"}}
     ]
     response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=new_data)
     assert response.status_code == 201
-    assert response.json()['message'] == 'Dictionary words updated successfully'
+    assert response.json()['message'] == 'Vocabulary words updated successfully'
 
     #update with VA not created user
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
@@ -365,20 +365,20 @@ def test_created_user_can_only_edit():
 def test_get_access_with_user_roles_and_apps():
     """Test get filter from apps and with users having different permissions"""
     data = [
-    	{"word": "one", "details":{"digit": 1, "type":"odd", "link":UNIT_URL+'dictionary?word=one'}}
+    	{"word": "one", "details":{"digit": 1, "type":"odd", "link":UNIT_URL+'vocabulary?word=one'}}
     ]
-    contetapi_get_accessrule_checks_app_userroles("dictionary",UNIT_URL,data)
+    contetapi_get_accessrule_checks_app_userroles("vocabulary",UNIT_URL,data)
 
 def test_get_count_after_data_upload():
     '''Add some data into the table and do all tests on get count API'''
     data = [
-        {"word": "one", "details":{"digit": 1, "type":"odd", "link":UNIT_URL+'dictionary?word=one'}},
-        {"word": "two", "details":{"digit": 2, "type":"even", "link":UNIT_URL+'dictionary?word=two'}},
+        {"word": "one", "details":{"digit": 1, "type":"odd", "link":UNIT_URL+'vocabulary?word=one'}},
+        {"word": "two", "details":{"digit": 2, "type":"even", "link":UNIT_URL+'vocabulary?word=two'}},
         {"word": "three", "details":{"digit": 3, "type":"odd",
-        "link":UNIT_URL+'dictionary?word=three'}},
+        "link":UNIT_URL+'vocabulary?word=three'}},
         {"word": "four", "details":{"digit": 4, "type":"even",
-        "link":UNIT_URL+'dictionary?word=four'}},
-        {"word": "five", "details":{"digit": 5, "type":"odd", "link":UNIT_URL+'dictionary?word=five'}},
+        "link":UNIT_URL+'vocabulary?word=four'}},
+        {"word": "five", "details":{"digit": 5, "type":"odd", "link":UNIT_URL+'vocabulary?word=five'}},
         {"word": "another", "details":{"empty-field": ""}},
         {"word": "inactive", "active": "false"}
     ]
@@ -443,13 +443,13 @@ def test_get_active_and_inactive():
     https://github.com/Bridgeconn/vachan-api/issues/508'''
 
     data = [
-        {"word": "one", "details":{"digit": 1, "type":"odd", "link":UNIT_URL+'dictionary?word=one'}},
-        {"word": "two", "details":{"digit": 2, "type":"even", "link":UNIT_URL+'dictionary?word=two'}},
+        {"word": "one", "details":{"digit": 1, "type":"odd", "link":UNIT_URL+'vocabulary?word=one'}},
+        {"word": "two", "details":{"digit": 2, "type":"even", "link":UNIT_URL+'vocabulary?word=two'}},
         {"word": "three", "details":{"digit": 3, "type":"odd",
-        "link":UNIT_URL+'dictionary?word=three'}},
+        "link":UNIT_URL+'vocabulary?word=three'}},
         {"word": "four", "details":{"digit": 4, "type":"even",
-        "link":UNIT_URL+'dictionary?word=four'}},
-        {"word": "five", "details":{"digit": 5, "type":"odd", "link":UNIT_URL+'dictionary?word=five'}},
+        "link":UNIT_URL+'vocabulary?word=four'}},
+        {"word": "five", "details":{"digit": 5, "type":"odd", "link":UNIT_URL+'vocabulary?word=five'}},
         {"word": "another", "details":{"empty-field": ""}},
         {"word": "inactive", "active": "false"}
     ]
@@ -478,8 +478,8 @@ def test_delete_default():
     assert len(post_response.json()) == 1
     for item in post_response.json():
         assert_positive_get(item)   
-    dictionary_response = client.get(UNIT_URL+resource_name ,headers=headers_auth)
-    word_id = dictionary_response.json()[0]['wordId'] 
+    vocabulary_response = client.get(UNIT_URL+resource_name ,headers=headers_auth)
+    word_id = vocabulary_response.json()[0]['wordId'] 
     
     #Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}#pylint: disable=redefined-outer-name
@@ -505,10 +505,10 @@ def test_delete_default():
     response = client.delete(UNIT_URL+resource_name  + "?delete_id=" + str(word_id), headers=headers_va)
     assert response.status_code == 200
     assert response.json()['message'] ==\
-         f"Dictionary id {word_id} deleted successfully"
-    #Check dictionary is deleted from table
-    dictionary_response = client.get(UNIT_URL+resource_name,headers=headers_auth)
-    assert dictionary_response.status_code == 200
+         f"Vocabulary id {word_id} deleted successfully"
+    #Check vocabulary is deleted from table
+    vocabulary_response = client.get(UNIT_URL+resource_name,headers=headers_auth)
+    assert vocabulary_response.status_code == 200
     delete_response = client.get(UNIT_URL+resource_name+'?search_word=one',\
         headers=headers_auth)
     assert_not_available_content(delete_response)
@@ -519,12 +519,12 @@ def test_delete_with_editable_permission():
     # Create Version
     version_data = {
         "versionAbbreviation": "TTT",
-        "versionName": "test version for dictionaries",
+        "versionName": "test version for vocabularies",
     }
     add_version(version_data)
     # Create Resource with access permission "editable by VachanAdmin"
     resource_data = {
-        "contentType": "dictionary",
+        "contentType": "vocabulary",
         "language": "en",
         "version": "TTT",
         "revision": 1,
@@ -545,8 +545,8 @@ def test_delete_with_editable_permission():
     ]
     response = client.post(UNIT_URL+resource_name, headers=headers_va, json=data)
     #get item ids
-    dictionary_response = client.get(UNIT_URL+resource_name,headers=headers_va)
-    item_ids = [item['wordId'] for item in dictionary_response.json()]
+    vocabulary_response = client.get(UNIT_URL+resource_name,headers=headers_va)
+    item_ids = [item['wordId'] for item in vocabulary_response.json()]
 
 
     #Delete item with API user,VachanUser,BcsDev - Negative Test
@@ -573,11 +573,11 @@ def test_delete_with_editable_permission():
 
         response = client.delete(UNIT_URL+resource_name  + "?delete_id=" + str(item_id), headers=headers_users)
         assert response.status_code == 200
-        assert response.json()['message'] == f"Dictionary id {item_id} deleted successfully"
+        assert response.json()['message'] == f"Vocabulary id {item_id} deleted successfully"
 
     #Confirm deleted items does not exist in table
-    dictionary_response = client.get(UNIT_URL+resource_name,headers=headers_va)
-    assert_not_available_content(dictionary_response)
+    vocabulary_response = client.get(UNIT_URL+resource_name,headers=headers_va)
+    assert_not_available_content(vocabulary_response)
 
 def test_delete_default_superadmin():
     ''' positive test case, checking for correct return of deleted word ID'''
@@ -598,20 +598,20 @@ def test_delete_default_superadmin():
                     'Authorization': "Bearer"+" "+test_user_token
             }
 
-    dictionary_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
-    word_id = dictionary_response.json()[0]['wordId']
+    vocabulary_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
+    word_id = vocabulary_response.json()[0]['wordId']
      #Delete word with Super Admin
     response = client.delete(UNIT_URL+resource_name  + "?delete_id=" + str(word_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] ==\
-         f"Dictionary id {word_id} deleted successfully"
+         f"Vocabulary id {word_id} deleted successfully"
     #Check word is deleted from table
-    dictionary_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
+    vocabulary_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
     logout_user(test_user_token)
     return response,resource_name
 
 def test_delete_word_id_string():
-    '''positive test case, dictionary id as string'''
+    '''positive test case, vocabulary id as string'''
     response,resource_name = test_post_default()
 
     #Login as Super Admin
@@ -627,16 +627,16 @@ def test_delete_word_id_string():
                     'Authorization': "Bearer"+" "+test_user_token
             }
 
-    dictionary_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
-    word_id = dictionary_response.json()[0]['wordId']
+    vocabulary_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
+    word_id = vocabulary_response.json()[0]['wordId']
     word_id = str(word_id)
-    #Delete dictionary with Super Admin
+    #Delete vocabulary with Super Admin
     response = client.delete(UNIT_URL+resource_name  + "?delete_id=" + str(word_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] ==\
-         f"Dictionary id {word_id} deleted successfully"
-    #Check dictionary word is deleted from table
-    dictionary_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
+         f"Vocabulary id {word_id} deleted successfully"
+    #Check vocabulary word is deleted from table
+    vocabulary_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
     logout_user(test_user_token)
 
 def test_delete_incorrectdatatype():
@@ -656,11 +656,11 @@ def test_delete_incorrectdatatype():
                     'Authorization': "Bearer"+" "+test_user_token
             }
 
-    dictionary_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
+    vocabulary_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
     word_id = {}
     
 
-    #Delete dictionary with Super Admin
+    #Delete vocabulary with Super Admin
     response = client.delete(UNIT_URL+resource_name  + "?delete_id=" + str(word_id), headers=headers_sa)
     assert_input_validation_error(response)
     logout_user(test_user_token)
@@ -703,8 +703,8 @@ def test_delete_missingvalue_resource_name():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
-    dictionary_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
-    word_id = dictionary_response.json()[0]['wordId']
+    vocabulary_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
+    word_id = vocabulary_response.json()[0]['wordId']
     response = client.delete(UNIT_URL + "?delete_id=" + str(word_id), headers=headers_sa)
     assert response.status_code == 404
     logout_user(test_user_token)
@@ -728,7 +728,7 @@ def test_delete_notavailable_content():
 
     word_id = 9999
 
-     #Delete dictionary with Super Admin
+     #Delete vocabulary with Super Admin
     response = client.delete(UNIT_URL+resource_name  + "?delete_id=" + str(word_id), headers=headers_sa)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
