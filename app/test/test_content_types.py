@@ -4,7 +4,7 @@ from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
 from .test_versions import check_post as add_version
-from .test_sources import check_post as add_source
+from .test_resources import check_post as add_resource
 from .test_auth_basic import SUPER_USER,SUPER_PASSWORD, login, logout_user
 from .conftest import initial_test_users
 
@@ -232,21 +232,21 @@ def test_delete_notavailable_content():
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
 
-def test_content_used_by_source():
-    '''  Negativetest case, trying to delete that content which is used to create a source'''
+def test_content_used_by_resource():
+    '''  Negativetest case, trying to delete that content which is used to create a resource'''
 
     #get id of an already existing content
     response = client.get(UNIT_URL+"?content_type=commentary")
     content_id = response.json()[0]["contentId"]
-    #Create Version with associated with source
+    #Create Version with associated with resource
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version or content types",
     }
     add_version(version_data)
 
-    #Create Source with language
-    source_data = {
+    #Create Resource with language
+    resource_data = {
         "contentType": "commentary",
         "language": "en",
         "version": "TTT",
@@ -255,7 +255,7 @@ def test_content_used_by_source():
         "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
-    add_source(source_data)
+    add_resource(resource_data)
 
     #Delete content
     

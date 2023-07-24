@@ -120,15 +120,15 @@ def get_gitlab_download(repo, tag, permanent_link, file_path):
     return stream
 
 
-def find_media_source(repo, db_):
-    """find source of requested gitlab media"""
-    query = db_.query(db_models.Source)
-    query = query.filter(db_models.Source.metaData.contains({"repo":repo})).first()
+def find_media_resource(repo, db_):
+    """find resource of requested gitlab media"""
+    query = db_.query(db_models.Resource)
+    query = query.filter(db_models.Resource.metaData.contains({"repo":repo})).first()
     return query
 
 # bible Video
-def get_bible_videos(db_:Session,source_name, book_code=None, title=None,series=None,**kwargs):#pylint: disable=too-many-locals disable=too-many-statements
-    '''fetches rows of bible videos as per provided source_name and filters'''
+def get_bible_videos(db_:Session,resource_name, book_code=None, title=None,series=None,**kwargs):#pylint: disable=too-many-locals disable=too-many-statements
+    '''fetches rows of bible videos as per provided resource_name and filters'''
     biblevideo_id = kwargs.get("biblevideo_id",None)
     search_word = kwargs.get("search_word",None)
     chapter = kwargs.get("chapter",None)
@@ -136,11 +136,11 @@ def get_bible_videos(db_:Session,source_name, book_code=None, title=None,series=
     verse = kwargs.get("verse",None)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
-    if source_name not in db_models.dynamicTables:
-        raise NotAvailableException(f'{source_name} not found in database.')
-    if not source_name.endswith(db_models.ContentTypeName.BIBLEVIDEO.value):
+    if resource_name not in db_models.dynamicTables:
+        raise NotAvailableException(f'{resource_name} not found in database.')
+    if not resource_name.endswith(db_models.ContentTypeName.BIBLEVIDEO.value):
         raise TypeException('The operation is supported only on biblevideo')
-    model_cls = db_models.dynamicTables[source_name]
+    model_cls = db_models.dynamicTables[resource_name]
     query = db_.query(model_cls)
     if title:
         query = query.filter(model_cls.title == utils.normalize_unicode(title.strip()))
@@ -184,8 +184,8 @@ def get_bible_videos(db_:Session,source_name, book_code=None, title=None,series=
             query = query.filter(model_cls.bibleVideoId.in_(id_list))
     query = query.filter(model_cls.active == active)
     db_content = query.offset(skip).limit(limit).all()
-    source_db_content = db_.query(db_models.Source).filter(
-        db_models.Source.sourceName == source_name).first()
+    resource_db_content = db_.query(db_models.Resource).filter(
+        db_models.Resource.resourceName == resource_name).first()
     db_content_dict = [item.__dict__ for item in db_content]
     for content in db_content_dict:
         content['references'] = []
@@ -193,7 +193,7 @@ def get_bible_videos(db_:Session,source_name, book_code=None, title=None,series=
             content['references'].append(bcv_to_ref(ref,db_))
     response = {
         'db_content':db_content_dict,
-        'source_content':source_db_content
+        'resource_content':resource_db_content
         }
     return response
 
@@ -219,15 +219,15 @@ def bible_video_db_content_generate(item,db_):
                 ref_id_list.add(int(bcvcode))
     return list(ref_id_list)
 
-def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
-    '''Adds rows to the bible videos table specified by source_name'''
-    source_db_content = db_.query(db_models.Source).filter(
-        db_models.Source.sourceName == source_name).first()
-    if not source_db_content:
-        raise NotAvailableException(f'Source {source_name}, not found in database')
-    if source_db_content.contentType.contentType != db_models.ContentTypeName.BIBLEVIDEO.value:
+def upload_bible_videos(db_: Session, resource_name, videos, user_id=None):
+    '''Adds rows to the bible videos table specified by resource_name'''
+    resource_db_content = db_.query(db_models.Resource).filter(
+        db_models.Resource.resourceName == resource_name).first()
+    if not resource_db_content:
+        raise NotAvailableException(f'Resource {resource_name}, not found in database')
+    if resource_db_content.contentType.contentType != db_models.ContentTypeName.BIBLEVIDEO.value:
         raise TypeException('The operation is supported only on biblevideo')
-    model_cls = db_models.dynamicTables[source_name]
+    model_cls = db_models.dynamicTables[resource_name]
     db_content = []
     for item in videos:
         ref_id_list = bible_video_db_content_generate(item,db_)
@@ -246,30 +246,30 @@ def upload_bible_videos(db_: Session, source_name, videos, user_id=None):
             content['references'].append(bcv_to_ref(ref,db_))
     db_.add_all(db_content)
     db_.expire_all()
-    source_db_content.updatedUser = user_id
+    resource_db_content.updatedUser = user_id
     response = {
         'db_content':db_content_dict,
-        'source_content':source_db_content
+        'resource_content':resource_db_content
         }
     return response
 
-def update_bible_videos(db_: Session, source_name, videos, user_id=None):
+def update_bible_videos(db_: Session, resource_name, videos, user_id=None):
     '''Update rows, that matches title in the bible videos table
-    specified by source_name'''
-    source_db_content = db_.query(db_models.Source).filter(
-        db_models.Source.sourceName == source_name).first()
-    if not source_db_content:
-        raise NotAvailableException(f'Source {source_name}, not found in database')
-    if source_db_content.contentType.contentType != db_models.ContentTypeName.BIBLEVIDEO.value:
+    specified by resource_name'''
+    resource_db_content = db_.query(db_models.Resource).filter(
+        db_models.Resource.resourceName == resource_name).first()
+    if not resource_db_content:
+        raise NotAvailableException(f'Resource {resource_name}, not found in database')
+    if resource_db_content.contentType.contentType != db_models.ContentTypeName.BIBLEVIDEO.value:
         raise TypeException('The operation is supported only on biblevideo')
-    model_cls = db_models.dynamicTables[source_name]
+    model_cls = db_models.dynamicTables[resource_name]
     db_content = []
     for item in videos:
         row = db_.query(model_cls).filter(
             model_cls.title == utils.normalize_unicode(item.title.strip())).first()
         if not row:
             raise NotAvailableException(f"Bible Video row with title:{item.title}, "+\
-                "not found for {source_name}")
+                "not found for {resource_name}")
         if item.references:
             row.refIds = bible_video_db_content_generate(item,db_)
         if item.series:
@@ -282,7 +282,7 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
             row.videoLink = item.videoLink
         db_.flush()
         db_content.append(row)
-    source_db_content.updatedUser = user_id
+    resource_db_content.updatedUser = user_id
     db_content_dict = [item.__dict__ for item in db_content]
     for content in db_content_dict:
         content['references'] = []
@@ -290,24 +290,24 @@ def update_bible_videos(db_: Session, source_name, videos, user_id=None):
             content['references'].append(bcv_to_ref(ref,db_))
     response = {
         'db_content':db_content_dict,
-        'source_content':source_db_content
+        'resource_content':resource_db_content
         }
     return response
 # pylint: disable=duplicate-code
 def delete_biblevideo(db_: Session, delitem:int,table_name = None,\
-    source_name=None,user_id=None):
-    '''delete particular item from biblevideo, selected via sourcename and biblevideo id'''
-    source_db_content = db_.query(db_models.Source).filter(
-        db_models.Source.sourceName == source_name).first()
+    resource_name=None,user_id=None):
+    '''delete particular item from biblevideo, selected via resourcename and biblevideo id'''
+    resource_db_content = db_.query(db_models.Resource).filter(
+        db_models.Resource.resourceName == resource_name).first()
     model_cls = table_name
     query = db_.query(model_cls)
     db_content = query.filter(model_cls.bibleVideoId == delitem).first()
     db_.flush()
     db_.delete(db_content)
-    source_db_content.updatedUser = user_id
+    resource_db_content.updatedUser = user_id
     response = {
         'db_content':db_content,
-        'source_content':source_db_content
+        'resource_content':resource_db_content
         }
     return response
 # pylint: enable=duplicate-code

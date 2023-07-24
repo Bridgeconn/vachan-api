@@ -38,79 +38,79 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/versions,POST,None,False,None,create
 /v2/versions,PUT,None,False,None,edit
 /v2/versions,DELETE,None,False,None,delete/deactivate
-/v2/sources,GET,Autographa,True,None,refer-for-translation
-/v2/sources,GET,SanketMAST,True,None,refer-for-translation
-/v2/sources,GET,Vachan-online or vachan-app,True,None,view-on-web
-/v2/sources,GET,VachanAdmin,True,None,read-via-vachanadmin
-/v2/sources,GET,API-user,True,None,read-via-api
-/v2/sources,POST,None,False,None,create
-/v2/sources,PUT,None,False,None,edit
-/v2/sources,DELETE,None,False,None,delete/deactivate
-/v2/sources/get-sentence,GET,Autographa,False,"contents like bibles, commentaries, infographics, dictionary or videos",refer-for-translation
-/v2/sources/get-sentence,GET,SanketMAST,False,"contents like bibles, commentaries, infographics, dictionary or videos",refer-for-translation
-/v2/sources/get-sentence,GET,Vachan-online or vachan-app,False,"contents like bibles, commentaries, infographics, dictionary or videos",view-on-web
-/v2/sources/get-sentence,GET,VachanAdmin,False,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-vachanadmin
-/v2/sources/get-sentence,GET,API-user,False,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-api
-/v2/sources/get-sentence,GET,None,False,Research-Material,read-via-api
+/v2/resources,GET,Autographa,True,None,refer-for-translation
+/v2/resources,GET,SanketMAST,True,None,refer-for-translation
+/v2/resources,GET,Vachan-online or vachan-app,True,None,view-on-web
+/v2/resources,GET,VachanAdmin,True,None,read-via-vachanadmin
+/v2/resources,GET,API-user,True,None,read-via-api
+/v2/resources,POST,None,False,None,create
+/v2/resources,PUT,None,False,None,edit
+/v2/resources,DELETE,None,False,None,delete/deactivate
+/v2/resources/get-sentence,GET,Autographa,False,"contents like bibles, commentaries, infographics, dictionary or videos",refer-for-translation
+/v2/resources/get-sentence,GET,SanketMAST,False,"contents like bibles, commentaries, infographics, dictionary or videos",refer-for-translation
+/v2/resources/get-sentence,GET,Vachan-online or vachan-app,False,"contents like bibles, commentaries, infographics, dictionary or videos",view-on-web
+/v2/resources/get-sentence,GET,VachanAdmin,False,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-vachanadmin
+/v2/resources/get-sentence,GET,API-user,False,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-api
+/v2/resources/get-sentence,GET,None,False,Research-Material,read-via-api
 /v2/lookup/bible/books,GET,None,False,None,read
-/v2/bibles/{source_name}/books,GET,Autographa,False,None,refer-for-translation
-/v2/bibles/{source_name}/books,GET,SanketMAST,False,None,refer-for-translation
-/v2/bibles/{source_name}/books,GET,Vachan-online or vachan-app,False,None,view-on-web
-/v2/bibles/{source_name}/books,GET,VachanAdmin,False,None,read-via-vachanadmin
-/v2/bibles/{source_name}/books,GET,API-user,False,None,read-via-api
-/v2/bibles/{source_name}/books,POST,None,False,None,create
-/v2/bibles/{source_name}/books,PUT,None,False,None,edit
-/v2/bibles/{source_name}/books,DELETE,None,False,None,delete/deactivate
-/v2/bibles/{source_name}/versification,GET,Autographa,False,None,refer-for-translation
-/v2/bibles/{source_name}/versification,GET,SanketMAST,False,None,refer-for-translation
-/v2/bibles/{source_name}/versification,GET,Vachan-online or vachan-app,False,None,view-on-web
-/v2/bibles/{source_name}/versification,GET,VachanAdmin,False,None,read-via-vachanadmin
-/v2/bibles/{source_name}/versification,GET,API-user,False,None,read-via-api
-/v2/bibles/{source_name}/verses,GET,Autographa,False,None,refer-for-translation
-/v2/bibles/{source_name}/verses,GET,SanketMAST,False,None,refer-for-translation
-/v2/bibles/{source_name}/verses,GET,Vachan-online or vachan-app,False,None,view-on-web
-/v2/bibles/{source_name}/verses,GET,VachanAdmin,False,None,read-via-vachanadmin
-/v2/bibles/{source_name}/verses,GET,API-user,False,None,read-via-api
-/v2/bibles/{source_name}/audios,POST,None,False,None,create
-/v2/bibles/{source_name}/audios,PUT,None,False,None,edit
-/v2/bibles/{source_name}/audios,DELETE,None,False,None,delete/deactivate
-/v2/commentaries/{source_name},GET,Autographa,False,None,refer-for-translation
-/v2/commentaries/{source_name},GET,SanketMAST,False,None,refer-for-translation
-/v2/commentaries/{source_name},GET,Vachan-online or vachan-app,False,None,view-on-web
-/v2/commentaries/{source_name},GET,VachanAdmin,False,None,read-via-vachanadmin
-/v2/commentaries/{source_name},GET,API-user,False,None,read-via-api
-/v2/commentaries/{source_name},POST,None,False,None,create
-/v2/commentaries/{source_name},PUT,None,False,None,edit
-/v2/commentaries/{source_name},DELETE,None,False,None,delete/deactivate
-/v2/dictionaries/{source_name},GET,Autographa,False,None,refer-for-translation
-/v2/dictionaries/{source_name},GET,SanketMAST,False,None,refer-for-translation
-/v2/dictionaries/{source_name},GET,Vachan-online or vachan-app,False,None,view-on-web
-/v2/dictionaries/{source_name},GET,VachanAdmin,False,None,read-via-vachanadmin
-/v2/dictionaries/{source_name},GET,API-user,False,None,read-via-api
-/v2/dictionaries/{source_name}/count,GET,Autographa,False,None,refer-for-translation
-/v2/dictionaries/{source_name}/count,GET,SanketMAST,False,None,refer-for-translation
-/v2/dictionaries/{source_name}/count,GET,Vachan-online or vachan-app,False,None,view-on-web
-/v2/dictionaries/{source_name}/count,GET,VachanAdmin,False,None,read-via-vachanadmin
-/v2/dictionaries/{source_name}/count,GET,API-user,False,None,read-via-api
-/v2/dictionaries/{source_name},POST,None,False,None,create
-/v2/dictionaries/{source_name},PUT,None,False,None,edit
-/v2/dictionaries/{source_name},DELETE,None,False,None,delete/deactivate
-/v2/infographics/{source_name},GET,Autographa,False,None,refer-for-translation
-/v2/infographics/{source_name},GET,SanketMAST,False,None,refer-for-translation
-/v2/infographics/{source_name},GET,Vachan-online or vachan-app,False,None,view-on-web
-/v2/infographics/{source_name},GET,VachanAdmin,False,None,read-via-vachanadmin
-/v2/infographics/{source_name},GET,API-user,False,None,read-via-api
-/v2/infographics/{source_name},POST,None,False,None,create
-/v2/infographics/{source_name},PUT,None,False,None,edit
-/v2/infographics/{source_name},DELETE,None,False,None,delete/deactivate
-/v2/biblevideos/{source_name},GET,Autographa,False,None,refer-for-translation
-/v2/biblevideos/{source_name},GET,SanketMAST,False,None,refer-for-translation
-/v2/biblevideos/{source_name},GET,Vachan-online or vachan-app,False,None,view-on-web
-/v2/biblevideos/{source_name},GET,VachanAdmin,False,None,read-via-vachanadmin
-/v2/biblevideos/{source_name},GET,API-user,False,None,read-via-api
-/v2/biblevideos/{source_name},POST,None,False,None,create
-/v2/biblevideos/{source_name},PUT,None,False,None,edit
-/v2/biblevideos/{source_name},DELETE,None,False,None,delete/deactivate
+/v2/bibles/{resource_name}/books,GET,Autographa,False,None,refer-for-translation
+/v2/bibles/{resource_name}/books,GET,SanketMAST,False,None,refer-for-translation
+/v2/bibles/{resource_name}/books,GET,Vachan-online or vachan-app,False,None,view-on-web
+/v2/bibles/{resource_name}/books,GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/bibles/{resource_name}/books,GET,API-user,False,None,read-via-api
+/v2/bibles/{resource_name}/books,POST,None,False,None,create
+/v2/bibles/{resource_name}/books,PUT,None,False,None,edit
+/v2/bibles/{resource_name}/books,DELETE,None,False,None,delete/deactivate
+/v2/bibles/{resource_name}/versification,GET,Autographa,False,None,refer-for-translation
+/v2/bibles/{resource_name}/versification,GET,SanketMAST,False,None,refer-for-translation
+/v2/bibles/{resource_name}/versification,GET,Vachan-online or vachan-app,False,None,view-on-web
+/v2/bibles/{resource_name}/versification,GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/bibles/{resource_name}/versification,GET,API-user,False,None,read-via-api
+/v2/bibles/{resource_name}/verses,GET,Autographa,False,None,refer-for-translation
+/v2/bibles/{resource_name}/verses,GET,SanketMAST,False,None,refer-for-translation
+/v2/bibles/{resource_name}/verses,GET,Vachan-online or vachan-app,False,None,view-on-web
+/v2/bibles/{resource_name}/verses,GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/bibles/{resource_name}/verses,GET,API-user,False,None,read-via-api
+/v2/bibles/{resource_name}/audios,POST,None,False,None,create
+/v2/bibles/{resource_name}/audios,PUT,None,False,None,edit
+/v2/bibles/{resource_name}/audios,DELETE,None,False,None,delete/deactivate
+/v2/commentaries/{resource_name},GET,Autographa,False,None,refer-for-translation
+/v2/commentaries/{resource_name},GET,SanketMAST,False,None,refer-for-translation
+/v2/commentaries/{resource_name},GET,Vachan-online or vachan-app,False,None,view-on-web
+/v2/commentaries/{resource_name},GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/commentaries/{resource_name},GET,API-user,False,None,read-via-api
+/v2/commentaries/{resource_name},POST,None,False,None,create
+/v2/commentaries/{resource_name},PUT,None,False,None,edit
+/v2/commentaries/{resource_name},DELETE,None,False,None,delete/deactivate
+/v2/dictionaries/{resource_name},GET,Autographa,False,None,refer-for-translation
+/v2/dictionaries/{resource_name},GET,SanketMAST,False,None,refer-for-translation
+/v2/dictionaries/{resource_name},GET,Vachan-online or vachan-app,False,None,view-on-web
+/v2/dictionaries/{resource_name},GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/dictionaries/{resource_name},GET,API-user,False,None,read-via-api
+/v2/dictionaries/{resource_name}/count,GET,Autographa,False,None,refer-for-translation
+/v2/dictionaries/{resource_name}/count,GET,SanketMAST,False,None,refer-for-translation
+/v2/dictionaries/{resource_name}/count,GET,Vachan-online or vachan-app,False,None,view-on-web
+/v2/dictionaries/{resource_name}/count,GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/dictionaries/{resource_name}/count,GET,API-user,False,None,read-via-api
+/v2/dictionaries/{resource_name},POST,None,False,None,create
+/v2/dictionaries/{resource_name},PUT,None,False,None,edit
+/v2/dictionaries/{resource_name},DELETE,None,False,None,delete/deactivate
+/v2/infographics/{resource_name},GET,Autographa,False,None,refer-for-translation
+/v2/infographics/{resource_name},GET,SanketMAST,False,None,refer-for-translation
+/v2/infographics/{resource_name},GET,Vachan-online or vachan-app,False,None,view-on-web
+/v2/infographics/{resource_name},GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/infographics/{resource_name},GET,API-user,False,None,read-via-api
+/v2/infographics/{resource_name},POST,None,False,None,create
+/v2/infographics/{resource_name},PUT,None,False,None,edit
+/v2/infographics/{resource_name},DELETE,None,False,None,delete/deactivate
+/v2/biblevideos/{resource_name},GET,Autographa,False,None,refer-for-translation
+/v2/biblevideos/{resource_name},GET,SanketMAST,False,None,refer-for-translation
+/v2/biblevideos/{resource_name},GET,Vachan-online or vachan-app,False,None,view-on-web
+/v2/biblevideos/{resource_name},GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/biblevideos/{resource_name},GET,API-user,False,None,read-via-api
+/v2/biblevideos/{resource_name},POST,None,False,None,create
+/v2/biblevideos/{resource_name},PUT,None,False,None,edit
+/v2/biblevideos/{resource_name},DELETE,None,False,None,delete/deactivate
 /v2/translation/projects,GET,Autographa,True,None,view-project
 /v2/translation/projects,GET,SanketMAST,True,None,view-project
 /v2/translation/projects,POST,Autographa,False,None,create
@@ -171,11 +171,11 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/media/gitlab/stream,GET,None,False,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-api
 /v2/media/gitlab/download,GET,None,False,Media contents,download
 /v2/media/gitlab/download,GET,None,False,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-api
-/v2/bibles/{source_name}/books/{book_code}/format/{output_format},GET,Autographa,False,None,refer-for-translation
-/v2/bibles/{source_name}/books/{book_code}/format/{output_format},GET,SanketMAST,False,None,refer-for-translation
-/v2/bibles/{source_name}/books/{book_code}/format/{output_format},GET,Vachan-online or vachan-app,False,None,view-on-web
-/v2/bibles/{source_name}/books/{book_code}/format/{output_format},GET,VachanAdmin,False,None,read-via-vachanadmin
-/v2/bibles/{source_name}/books/{book_code}/format/{output_format},GET,API-user,False,None,read-via-api
+/v2/bibles/{resource_name}/books/{book_code}/format/{output_format},GET,Autographa,False,None,refer-for-translation
+/v2/bibles/{resource_name}/books/{book_code}/format/{output_format},GET,SanketMAST,False,None,refer-for-translation
+/v2/bibles/{resource_name}/books/{book_code}/format/{output_format},GET,Vachan-online or vachan-app,False,None,view-on-web
+/v2/bibles/{resource_name}/books/{book_code}/format/{output_format},GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/bibles/{resource_name}/books/{book_code}/format/{output_format},GET,API-user,False,None,read-via-api
 /v2/files/usfm/to/{output_format},PUT,None,False,File Manipulation Ops,access-via-api
 /v2/restore,PUT,None,False,None,data-restore
 /v2/deleted-items,DELETE,None,False,None,delete/deactivate

@@ -14,7 +14,7 @@ def normalize_unicode(text, form="NFKC"):
     return unicodedata.normalize(form, text)
 
 def punctuations():
-    '''list of punctuations commonly seen in our source files'''
+    '''list of punctuations commonly seen in our resource files'''
     return [',', '"', '!', '.', ':', ';', '\n', '\\','“','”',
         '“','*','।','?',';',"'","’","(",")","‘","—"]
 

@@ -1,5 +1,5 @@
 ''' Place to define all Database CRUD operations for tables
-Content_types, Languages, Licenses, versions, sources and bible_book_loopup'''
+Content_types, Languages, Licenses, versions, resources and bible_book_loopup'''
 
 import json
 import re
@@ -111,7 +111,7 @@ def update_language(db_: Session, lang: schemas.LanguageEdit, user_id=None):
     return db_content
 
 def add_deleted_data(db_: Session, del_content, table_name : str = None,\
-    source = None,deleting_user=None):
+    resource = None,deleting_user=None):
     '''backup deleted items from any table'''
     if hasattr(del_content, 'createTime') and del_content.createTime is not None:
         del_content.createTime = del_content.createTime.isoformat()
@@ -127,15 +127,15 @@ def add_deleted_data(db_: Session, del_content, table_name : str = None,\
         deletedFrom = table_name)
     db_.add(db_content)
 
-    if source is not None:
+    if resource is not None:
         response =  {
             'db_content':db_content,
-            'source_content': source
+            'resource_content': resource
                 }
     else:
         response =  {
         'db_content':db_content,
-        'source_content':del_content
+        'resource_content':del_content
             }
     return response
 
@@ -159,7 +159,7 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
         "licenses":db_models.License,
         "versions":db_models.Version,
         "content_types": db_models.ContentType,
-        "sources":db_models.Source,
+        "resources":db_models.Resource,
         "translation_projects":db_models.TranslationProject,
         "translation_project_users": db_models.TranslationProjectUser,
         "translation_sentences": db_models.TranslationDraft,
@@ -170,24 +170,24 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
     else:
         if db_restore.deletedFrom.endswith("audio"):
             renamed_table = db_restore.deletedFrom.replace("_audio", "")
-            if not  get_sources(db_, table_name = renamed_table):
-                raise NotAvailableException('Source not found in database')
+            if not  get_resources(db_, table_name = renamed_table):
+                raise NotAvailableException('Resource not found in database')
         elif db_restore.deletedFrom.endswith("cleaned"):
             renamed_table = db_restore.deletedFrom.replace("_cleaned", "")
-            if not  get_sources(db_, table_name = renamed_table):
-                raise NotAvailableException('Source not found in database')
+            if not  get_resources(db_, table_name = renamed_table):
+                raise NotAvailableException('Resource not found in database')
         if db_restore.deletedFrom.endswith(("audio","cleaned")) is False:
-            if not  get_sources(db_, table_name=db_restore.deletedFrom):
-                raise NotAvailableException('Source not found in database')
-            source = get_sources(db_, table_name=db_restore.deletedFrom)[0]
-            source_name = source.sourceName
-            if source_name.endswith("bible") is False:
-                model_cls = db_models.dynamicTables[source.sourceName]
+            if not  get_resources(db_, table_name=db_restore.deletedFrom):
+                raise NotAvailableException('Resource not found in database')
+            resource = get_resources(db_, table_name=db_restore.deletedFrom)[0]
+            resource_name = resource.resourceName
+            if resource_name.endswith("bible") is False:
+                model_cls = db_models.dynamicTables[resource.resourceName]
             else:
-                model_cls = db_models.dynamicTables[source.sourceName]
-                source_table = db_restore.deletedFrom.replace("_cleaned", "")
-                source = get_sources(db_, table_name=source_table)[0]
-                model_cls2 = db_models.dynamicTables[source.sourceName+'_cleaned']
+                model_cls = db_models.dynamicTables[resource.resourceName]
+                resource_table = db_restore.deletedFrom.replace("_cleaned", "")
+                resource = get_resources(db_, table_name=resource_table)[0]
+                model_cls2 = db_models.dynamicTables[resource.resourceName+'_cleaned']
                 # cleanedtable_itemid = db_content.itemId + 1
                 db_restore2 = db_.query(db_models.DeletedItem).get(db_content.itemId + 1)
                 db_content2=db_restore2
@@ -196,9 +196,9 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
                 db_.add(db_content2)
                 db_.delete(db_restore2)
         else:
-            source_table = db_restore.deletedFrom.replace("_audio", "")
-            source = get_sources(db_, table_name=source_table)[0]
-            model_cls = db_models.dynamicTables[source.sourceName+'_audio']
+            resource_table = db_restore.deletedFrom.replace("_audio", "")
+            resource = get_resources(db_, table_name=resource_table)[0]
+            model_cls = db_models.dynamicTables[resource.resourceName+'_audio']
     db_content = utils.convert_dict_to_sqlalchemy(json_string, model_cls)
     db_.add(db_content)
     db_.delete(db_restore)
@@ -300,7 +300,7 @@ def version_tag_to_array(tag_str):
     return split_tag
 
 def version_array_to_tag(tag_array):
-    '''converts [2022, 1, 11, 0] to "2022.1.11". Used for naming source and response'''
+    '''converts [2022, 1, 11, 0] to "2022.1.11". Used for naming resource and response'''
     tag_str = ""
     tag_str = ".".join(tag_array)
     return tag_str
@@ -346,54 +346,54 @@ def delete_version(db_: Session, ver: int):
     #db_.commit()
     return db_content
 
-def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks, too-many-statements,too-many-arguments
+def get_resources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks, too-many-statements,too-many-arguments
     content_type=None, version_abbreviation=None, version_tag=None, language_code=None,
-    source_id=None, **kwargs):
-    '''Fetches the rows of sources table'''
+    resource_id=None, **kwargs):
+    '''Fetches the rows of resources table'''
     license_abbreviation = kwargs.get("license_abbreviation",None)
     metadata = kwargs.get("metadata",None)
     access_tags = kwargs.get("access_tag",None)
     latest_revision = kwargs.get("latest_revision",True)
     labels = kwargs.get("labels", [])
     active = kwargs.get("active",True)
-    source_name = kwargs.get("source_name",None)
+    resource_name = kwargs.get("resource_name",None)
     table_name = kwargs.get("table_name",None)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
-    query = db_.query(db_models.Source)
-    if source_id:
-        query = query.filter(db_models.Source.sourceId == source_id)
+    query = db_.query(db_models.Resource)
+    if resource_id:
+        query = query.filter(db_models.Resource.resourceId == resource_id)
     if content_type:
-        query = query.filter(db_models.Source.contentType.has
+        query = query.filter(db_models.Resource.contentType.has
         (contentType = content_type.strip()))
     if version_abbreviation:
         query = query.filter(
-            db_models.Source.version.has(versionAbbreviation = version_abbreviation.strip()))
+            db_models.Resource.version.has(versionAbbreviation = version_abbreviation.strip()))
     if version_tag:
         version_array = version_tag_to_array(version_tag)
         query = query.filter(
-            db_models.Source.version.has(versionTag = version_array))
+            db_models.Resource.version.has(versionTag = version_array))
     if license_abbreviation:
-        query = query.filter(db_models.Source.license.has(code = license_abbreviation.strip()))
+        query = query.filter(db_models.Resource.license.has(code = license_abbreviation.strip()))
     if language_code:
-        query = query.filter(db_models.Source.language.has(code = language_code.strip()))
+        query = query.filter(db_models.Resource.language.has(code = language_code.strip()))
     if metadata:
         meta = json.loads(metadata)
         for key in meta:
-            query = query.filter(db_models.Source.metaData.op('->>')(key) == meta[key])
+            query = query.filter(db_models.Resource.metaData.op('->>')(key) == meta[key])
     if labels:
         for label in labels:
-            query = query.filter(db_models.Source.labels.contains(label.value()))
+            query = query.filter(db_models.Resource.labels.contains(label.value()))
     if active:
-        query = query.filter(db_models.Source.active)
+        query = query.filter(db_models.Resource.active)
     else:
-        query = query.filter(db_models.Source.active == False) #pylint: disable=singleton-comparison
-    if source_name:
-        query = query.filter(db_models.Source.sourceName == source_name)
+        query = query.filter(db_models.Resource.active == False) #pylint: disable=singleton-comparison
+    if resource_name:
+        query = query.filter(db_models.Resource.resourceName == resource_name)
     if table_name:
-        query = query.filter(db_models.Source.tableName == table_name)
+        query = query.filter(db_models.Resource.tableName == table_name)
     if access_tags:
-        query = query.filter(db_models.Source.metaData.contains(
+        query = query.filter(db_models.Resource.metaData.contains(
             {"accessPermissions":[tag.value for tag in access_tags]}))
     res = query.all()
     def digits_to_int(string):
@@ -423,7 +423,7 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
             item.contentType.contentType])
         if key_name not in latest_res:
             latest_res[key_name] = item
-        elif item.labels and schemas.SourceLabel.LATEST in item.labels:
+        elif item.labels and schemas.ResourceLabel.LATEST in item.labels:
             latest_res[key_name] = item
     filtered_res = list(latest_res.values())
     filtered_res = filtered_res[skip:]
@@ -432,41 +432,41 @@ def get_sources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,
 
     return filtered_res
 
-def create_source(db_: Session, source: schemas.SourceCreate, user_id):
-    '''Adds a row to sources table'''
-    version_array = version_tag_to_array(source.versionTag)
-    source_name = "_".join([source.language, source.version,
-        version_array_to_tag(version_array), source.contentType])
-    if len(get_sources(db_, source_name = source_name)) > 0:
-        raise AlreadyExistsException(f"{source_name} already present")
+def create_resource(db_: Session, resource: schemas.ResourceCreate, user_id):
+    '''Adds a row to resources table'''
+    version_array = version_tag_to_array(resource.versionTag)
+    resource_name = "_".join([resource.language, resource.version,
+        version_array_to_tag(version_array), resource.contentType])
+    if len(get_resources(db_, resource_name = resource_name)) > 0:
+        raise AlreadyExistsException(f"{resource_name} already present")
     content_type = db_.query(db_models.ContentType).filter(
-        db_models.ContentType.contentType == source.contentType.strip()).first()
+        db_models.ContentType.contentType == resource.contentType.strip()).first()
     if not content_type:
-        raise NotAvailableException(f"ContentType, {source.contentType.strip()},"+\
+        raise NotAvailableException(f"ContentType, {resource.contentType.strip()},"+\
             " not found in Database")
     version = db_.query(db_models.Version).filter(
-        db_models.Version.versionAbbreviation == source.version,
+        db_models.Version.versionAbbreviation == resource.version,
         db_models.Version.versionTag == version_array).first()
     if not version:
-        raise NotAvailableException(f"Version, {source.version} {source.versionTag},"+\
+        raise NotAvailableException(f"Version, {resource.version} {resource.versionTag},"+\
             " not found in Database")
     language = db_.query(db_models.Language).filter(
-        db_models.Language.code == source.language).first()
+        db_models.Language.code == resource.language).first()
     if not language:
-        raise NotAvailableException(f"Language code, {source.language}, not found in Database")
+        raise NotAvailableException(f"Language code, {resource.language}, not found in Database")
     license_obj = db_.query(db_models.License).filter(
-        db_models.License.code == source.license).first()
+        db_models.License.code == resource.license).first()
     if not license_obj:
-        raise NotAvailableException(f"License code, {source.license}, not found in Database")
-    if source.labels and schemas.SourceLabel.LATEST in source.labels:
-        query = db_.query(db_models.Source).join(db_models.Version).filter(
-            db_models.Source.version.has(versionAbbreviation = source.version),
-            db_models.Source.contentId == content_type.contentId,
-            db_models.Source.labels.op('&&')(array(schemas.SourceLabel.LATEST.value)))
+        raise NotAvailableException(f"License code, {resource.license}, not found in Database")
+    if resource.labels and schemas.ResourceLabel.LATEST in resource.labels:
+        query = db_.query(db_models.Resource).join(db_models.Version).filter(
+            db_models.Resource.version.has(versionAbbreviation = resource.version),
+            db_models.Resource.contentId == content_type.contentId,
+            db_models.Resource.labels.op('&&')(array(schemas.ResourceLabel.LATEST.value)))
         another_latest = query.all()
         if another_latest:
             raise AlreadyExistsException(
-                f"Another source with latest tag exists: {another_latest[0].sourceName}")
+                f"Another resource with latest tag exists: {another_latest[0].resourceName}")
     table_name_count = 0
     dynamic_tablename_pattern = re.compile(r"table_\d+$")
     for table_name in engine.table_names():
@@ -475,45 +475,45 @@ def create_source(db_: Session, source: schemas.SourceCreate, user_id):
             table_name_count = int(table_name.split("_")[-1])
     table_name = "table_"+str(table_name_count+1)
     if content_type.contentType == db_models.ContentTypeName.GITLABREPO.value:
-        table_name = source.metaData["repo"]
-    db_content = db_models.Source(
-        year = source.year,
-        labels = source.labels,
-        sourceName = source_name,
+        table_name = resource.metaData["repo"]
+    db_content = db_models.Resource(
+        year = resource.year,
+        labels = resource.labels,
+        resourceName = resource_name,
         tableName = table_name,
         contentId = content_type.contentId,
         versionId = version.versionId,
         languageId = language.languageId,
         licenseId = license_obj.licenseId,
-        metaData = source.metaData,
+        metaData = resource.metaData,
         active = True,
         )
     db_content.createdUser = user_id
     db_.add(db_content)
     if not content_type.contentType == db_models.ContentTypeName.GITLABREPO.value:
-        db_models.create_dynamic_table(source_name, table_name, content_type.contentType)
-        db_models.dynamicTables[db_content.sourceName].\
+        db_models.create_dynamic_table(resource_name, table_name, content_type.contentType)
+        db_models.dynamicTables[db_content.resourceName].\
             __table__.create(bind=engine, checkfirst=True)
     if content_type.contentType == db_models.ContentTypeName.BIBLE.value:
-        db_models.dynamicTables[db_content.sourceName+'_cleaned'].__table__.create(
+        db_models.dynamicTables[db_content.resourceName+'_cleaned'].__table__.create(
             bind=engine, checkfirst=True)
-        log.warning("User %s, creates a new table %s", user_id, db_content.sourceName+'_cleaned')
-        db_models.dynamicTables[db_content.sourceName+'_audio'].__table__.create(
+        log.warning("User %s, creates a new table %s", user_id, db_content.resourceName+'_cleaned')
+        db_models.dynamicTables[db_content.resourceName+'_audio'].__table__.create(
             bind=engine, checkfirst=True)
-        log.warning("User %s, creates a new table %s", user_id, db_content.sourceName+'_audio')
-    log.warning("User %s, creates a new table %s", user_id, db_content.sourceName)
+        log.warning("User %s, creates a new table %s", user_id, db_content.resourceName+'_audio')
+    log.warning("User %s, creates a new table %s", user_id, db_content.resourceName)
     # db_.commit()
     # db_.refresh(db_content)
     return db_content
 
-def update_source_sourcename(db_, source, db_content):
-    """update sourcename of source table"""
-    if source.version:
-        ver = source.version
+def update_resource_resourcename(db_, resource, db_content):
+    """update sourcename of resource table"""
+    if resource.version:
+        ver = resource.version
     else:
         ver = db_content.version.versionAbbreviation
-    if source.versionTag:
-        version_array = version_tag_to_array(source.versionTag)
+    if resource.versionTag:
+        version_array = version_tag_to_array(resource.versionTag)
     else:
         version_array = db_content.version.versionTag
     rev = version_array_to_tag(version_array)
@@ -523,65 +523,67 @@ def update_source_sourcename(db_, source, db_content):
     if not version:
         raise NotAvailableException(f"Version, {ver} {rev}, not found in Database")
     db_content.versionId = version.versionId
-    table_name_parts = db_content.sourceName.split("_")
-    db_content.sourceName = "_".join([table_name_parts[0],ver, rev, table_name_parts[-1]])
+    table_name_parts = db_content.resourceName.split("_")
+    db_content.resourceName = "_".join([table_name_parts[0],ver, rev, table_name_parts[-1]])
     return db_content
 
-def update_source(db_: Session, source: schemas.SourceEdit, user_id = None): #pylint: disable=too-many-branches
-    '''changes one or more fields of sources, selected via sourceName or table_name'''
-    db_content = db_.query(db_models.Source).filter(
-        db_models.Source.sourceName == source.sourceName).first()
-    if source.version or source.versionTag:
-        db_content =  update_source_sourcename(db_, source, db_content)
+def update_resource(db_: Session, resource: schemas.ResourceEdit, user_id = None): #pylint: disable=too-many-branches
+    '''changes one or more fields of sources, selected via resourceName or table_name'''
+    db_content = db_.query(db_models.Resource).filter(
+        db_models.Resource.resourceName == resource.resourceName).first()
+    if resource.version or resource.versionTag:
+        db_content =  update_resource_resourcename(db_, resource, db_content)
 
-    if source.language:
+    if resource.language:
         language = db_.query(db_models.Language).filter(
-            db_models.Language.code == source.language).first()
+            db_models.Language.code == resource.language).first()
         if not language:
-            raise NotAvailableException(f"Language code, {source.language}, not found in Database")
+            raise NotAvailableException(
+    f"Language code, {resource.language}, not found in Database")
         db_content.languageId = language.languageId
-        source_name_parts = db_content.sourceName.split("_")
-        db_content.sourceName = "_".join([source.language]+source_name_parts[1:])
-    if source.license:
+        resource_name_parts = db_content.resourceName.split("_")
+        db_content.resourceName = "_".join([resource.language]+resource_name_parts[1:])
+    if resource.license:
         license_obj = db_.query(db_models.License).filter(
-            db_models.License.code == source.license).first()
+            db_models.License.code == resource.license).first()
         if not license_obj:
-            raise NotAvailableException(f"License code, {source.license}, not found in Database")
+            raise NotAvailableException(f"License code, {resource.license}, not found in Database")
         db_content.licenseId = license_obj.licenseId
-    if source.labels is not None:
-        if schemas.SourceLabel.LATEST in source.labels:
-            query = db_.query(db_models.Source).join(db_models.Version).filter(
-                db_models.Source.version.has(
+    if resource.labels is not None:
+        if schemas.ResourceLabel.LATEST in resource.labels:
+            query = db_.query(db_models.Resource).join(db_models.Version).filter(
+                db_models.Resource.version.has(
                     versionAbbreviation = db_content.version.versionAbbreviation),
-                db_models.Source.contentId == db_content.contentId,
-                db_models.Source.labels.op('&&')(array(schemas.SourceLabel.LATEST.value)),
-                db_models.Source.sourceId != db_content.sourceId)
+                db_models.Resource.contentId == db_content.contentId,
+                db_models.Resource.labels.op('&&')(array(schemas.ResourceLabel.LATEST.value)),
+                db_models.Resource.resourceId != db_content.resourceId)
             another_latest = query.all()
             if another_latest:
                 raise AlreadyExistsException(
-                    f"Another source with latest tag exists: {another_latest[0].sourceName}")
-        db_content.labels = source.labels
-    if source.year:
-        db_content.year = source.year
-    if source.metaData:
-        db_content.metaData = source.metaData
-    if source.active is not None:
-        db_content.active = source.active
+                    f"Another resource with latest tag exists: {another_latest[0].resourceName}")
+        db_content.labels = resource.labels
+    if resource.year:
+        db_content.year = resource.year
+    if resource.metaData:
+        db_content.metaData = resource.metaData
+    if resource.active is not None:
+        db_content.active = resource.active
     db_content.updatedUser = user_id
     # db_.commit()
     # db_.refresh(db_content)
-    if not source.sourceName.split("_")[-1] == db_models.ContentTypeName.GITLABREPO.value:
-        db_models.dynamicTables[db_content.sourceName] = db_models.dynamicTables[source.sourceName]
-        if source.sourceName.split("_")[-1] == 'bible':
-            db_models.dynamicTables[db_content.sourceName+'_cleaned'] = \
-                db_models.dynamicTables[source.sourceName+'_cleaned']
-            db_models.dynamicTables[db_content.sourceName+'_audio'] = \
-                db_models.dynamicTables[source.sourceName+'_audio']
+    if not resource.resourceName.split("_")[-1] == db_models.ContentTypeName.GITLABREPO.value:
+        db_models.dynamicTables[db_content.resourceName] = \
+        db_models.dynamicTables[resource.resourceName]
+        if resource.resourceName.split("_")[-1] == 'bible':
+            db_models.dynamicTables[db_content.resourceName+'_cleaned'] = \
+                db_models.dynamicTables[resource.resourceName+'_cleaned']
+            db_models.dynamicTables[db_content.resourceName+'_audio'] = \
+                db_models.dynamicTables[resource.resourceName+'_audio']
     return db_content
 
-def delete_source(db_: Session, delitem: int):
-    '''delete particular source, selected via source id'''
-    db_content = db_.query(db_models.Source).get(delitem)
+def delete_resource(db_: Session, delitem: int):
+    '''delete particular resource, selected via resource id'''
+    db_content = db_.query(db_models.Resource).get(delitem)
     db_.delete(db_content)
     return db_content
 
@@ -611,7 +613,7 @@ def cleanup_database(db_: Session):
                 tb_name = table_name.replace("_cleaned", "")
             else:
                 tb_name = table_name
-            if not  get_sources(db_, table_name = tb_name):
+            if not  get_resources(db_, table_name = tb_name):
                 with engine.connect() as conn:
                     conn.execute(f"DROP TABLE IF EXISTS {table_name} CASCADE;")
     deleteditem_count = db_.query(db_models.DeletedItem).delete()

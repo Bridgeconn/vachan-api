@@ -313,6 +313,7 @@ def find_pharses_from_alignments(src_tok_list, trg_tok_list, align_pairs):
     phrases = check_eliminate_phrase_alignemnts(phrases, src_tok_list, trg_tok_list)
     return phrases
 
+
 def alignment_prepare_trainingdata(alignment_list, window_size):
     """prepare data for translation memory/gloss"""
     dict_data = {}
@@ -486,6 +487,7 @@ def rebuild_trie(db_, src, trg):
             for key in json_data:
                 new_trie[key] = json_data[key]
     return new_trie
+
 
 def add_translation_memory_gloss_dataprocess(db_, gloss_list, source_lang, #pylint: disable=R0912
     target_lang, default_val):
@@ -661,7 +663,7 @@ def get_gloss(db_:Session, *args, **kwargs):#pylint: disable=too-many-locals,too
     no_trie_match = True
     if len(to_right)+len(to_left) > 0:#pylint: disable=too-many-nested-blocks
         keys = form_trie_keys(word, to_left, to_right, [word], False)
-        if source_lang+"-"+target_lang in suggestion_trie_in_mem: # check if aleady loaded in memory
+        if source_lang+"-"+target_lang in suggestion_trie_in_mem: #check if loaded in memory
             tree = suggestion_trie_in_mem[source_lang+"-"+target_lang]
         else:  # build trie loading data from disk and DB
             tree = rebuild_trie(db_, source_lang, target_lang)
@@ -695,6 +697,7 @@ def get_gloss(db_:Session, *args, **kwargs):#pylint: disable=too-many-locals,too
     if mdt:
         result['metaData'] = mdt[0]
     return result
+
 
 def glossary(db_:Session, source_language, target_language, token, **kwargs):
     '''finds possible translation suggestion for a token'''

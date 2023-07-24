@@ -73,10 +73,11 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
             books_param_list += f"&books={buk}"#pylint: disable=R1713
 
         # request.scope['method'] = 'GET'
-        # request._url = URL('/v2/sources')#pylint: disable=protected-access
+        # request._url = URL('/v2/resources')#pylint: disable=protected-access
         response = await content_apis.extract_text_contents(
             request=request,
-            source_name=project_obj.selectedBooks.bible,
+            resource_name=project_obj.selectedBooks.bible,
+            #typeerror
             books=project_obj.selectedBooks.books,
             language_code=None,
             content_type='bible',
@@ -388,7 +389,8 @@ async def suggest_auto_translation(request: Request,project_id:int=Query(...,exa
     404: {"model": schemas.ErrorResponse}},
     tags=['Generic Translation'])
 @get_auth_access_check_decorator
-async def tokenize(request: Request,source_language:schemas.LangCodePattern=Query(...,example="hi"),
+async def tokenize(request: Request,
+                   source_language:schemas.LangCodePattern=Query(...,example="hi"),
     sentence_list:List[schemas_nlp.SentenceInput]=Body(...),
     target_language:schemas.LangCodePattern=Query(None,example="ml"),
     use_translation_memory:bool=True, include_phrases:bool=True, include_stopwords:bool=False,
@@ -426,7 +428,8 @@ async def token_replace(request: Request,sentence_list:List[schemas_nlp.DraftInp
     log.info('In token_replace')
     log.debug('sentence_list:%s, token_translations:%s,\
         source_lanuage:%s, target_language:%s, use_data_for_learning:%s',
-        sentence_list, token_translations, source_language, target_language, use_data_for_learning)
+        sentence_list, token_translations, source_language,
+        target_language, use_data_for_learning)
     result = nlp_crud.replace_bulk_tokens(db_, sentence_list, token_translations, source_language,
         target_language, use_data_for_learning=use_data_for_learning)
     return {"message": "Tokens replaced with translations", "data": result}

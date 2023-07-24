@@ -312,7 +312,6 @@ def obtain_project_draft(db_:Session, project_id, books, sentence_id_list, sente
         }
     return response
 
-
 def update_project_draft(db_:Session, project_id, sentence_list, user_id):
     '''Directly write to the draft and draftMeta fields of project sentences'''
     sentence_id_list = [sent.sentenceId for sent in sentence_list]

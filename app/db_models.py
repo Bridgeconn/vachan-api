@@ -87,13 +87,13 @@ class Version(Base): # pylint: disable=too-few-public-methods
     updatedUser = Column('last_updated_user', String)
     updateTime = Column('last_updated_at', DateTime, onupdate=ist_time)
 
-class Source(Base): # pylint: disable=too-few-public-methods
-    '''Corresponds to table sources in vachan DB(postgres)'''
-    __tablename__ = 'sources'
+class Resource(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table resources in vachan DB(postgres)'''
+    __tablename__ = 'resources'
 
-    sourceId = Column('source_id', Integer, primary_key=True)
-    sourceName = Column('version', String, unique=True)
-    tableName = Column('source_table', String, unique=True)
+    resourceId = Column('resource_id', Integer, primary_key=True)
+    resourceName = Column('version', String, unique=True)
+    tableName = Column('resource_table', String, unique=True)
     year = Column('year', Integer)
     labels = Column('labels', ARRAY(String))
     licenseId = Column('license_id', Integer, ForeignKey('licenses.license_id'))
@@ -271,23 +271,23 @@ class BibleContentCleaned(): # pylint: disable=too-few-public-methods
         {'extend_existing': True}
                      )
 
-def create_dynamic_table(source_name, table_name, content_type):
+def create_dynamic_table(resource_name, table_name, content_type):
     '''To map or create one dynamic table based on the content Type'''
     if content_type == ContentTypeName.BIBLE.value:
-        dynamicTables[source_name+'_audio'] = type(
+        dynamicTables[resource_name+'_audio'] = type(
             table_name+'_audio',(BibleAudio, Base,),
             {"__tablename__": table_name+'_audio'})
-        dynamicTables[source_name] = type(
+        dynamicTables[resource_name] = type(
             table_name,(BibleContent, Base,),
             {"__tablename__": table_name})
-        dynamicTables[source_name+'_cleaned'] = type(
+        dynamicTables[resource_name+'_cleaned'] = type(
             table_name+'_cleaned',(BibleContentCleaned, Base,),
             {"__tablename__": table_name+'_cleaned'})
     elif content_type == ContentTypeName.COMMENTARY.value:
-        dynamicTables[source_name] = type(
+        dynamicTables[resource_name] = type(
             table_name,(Commentary, Base,),{"__tablename__": table_name})
     elif content_type == ContentTypeName.DICTIONARY.value:
-        dynamicTables[source_name] = type(
+        dynamicTables[resource_name] = type(
             table_name,(Dictionary, Base,),{"__tablename__": table_name})
         new_index = Index(table_name+'_word_details_ix',  # pylint: disable=W0612
             text("to_tsvector('simple', word || ' ' ||"+\
@@ -295,10 +295,10 @@ def create_dynamic_table(source_name, table_name, content_type):
             postgresql_using="gin",
             )
     elif content_type == ContentTypeName.INFOGRAPHIC.value:
-        dynamicTables[source_name] = type(
+        dynamicTables[resource_name] = type(
             table_name,(Infographic, Base,),{"__tablename__": table_name})
     elif content_type == ContentTypeName.BIBLEVIDEO.value:
-        dynamicTables[source_name] = type(
+        dynamicTables[resource_name] = type(
             table_name,(BibleVideo, Base,),{"__tablename__": table_name})
     elif content_type == ContentTypeName.GITLABREPO.value:
         pass
@@ -307,12 +307,12 @@ def create_dynamic_table(source_name, table_name, content_type):
 
 
 def map_all_dynamic_tables(db_: Session):
-    '''Fetches list of dynamic tables from sources table
+    '''Fetches list of dynamic tables from resources table
     and maps them according to their content types'''
 
-    all_src = db_.query(Source).all()
+    all_src = db_.query(Resource).all()
     for src in all_src:
-        create_dynamic_table(src.sourceName, src.tableName, src.contentType.contentType)
+        create_dynamic_table(src.resourceName, src.tableName, src.contentType.contentType)
 
 ############ Translation Tables ##########
 
