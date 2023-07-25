@@ -1,5 +1,5 @@
 ''' Place to define all Database CRUD operations for content tables
-bible, commentary, parascriptural, dictionary etc'''
+bible, commentary, parascriptural, vocabulary etc'''
 #pylint: disable=too-many-lines
 import json
 import re
@@ -211,8 +211,8 @@ def delete_commentary(db_: Session, delitem:int,table_name=None,
     return response
 # pylint: enable=duplicate-code
 
-def get_dictionary_words(db_:Session,**kwargs):#pylint: disable=too-many-locals
-    '''Fetches rows of dictionary from the table specified by resource_name'''
+def get_vocabulary_words(db_:Session,**kwargs):#pylint: disable=too-many-locals
+    '''Fetches rows of vocabulary from the table specified by resource_name'''
     resource_name=kwargs.get("resource_name")
     search_word=kwargs.get("search_word",None)
     word_id=kwargs.get("word_id",None)
@@ -224,8 +224,8 @@ def get_dictionary_words(db_:Session,**kwargs):#pylint: disable=too-many-locals
     limit = kwargs.get("limit",100)
     if resource_name not in db_models.dynamicTables:
         raise NotAvailableException(f'{resource_name} not found in database.')
-    if not resource_name.endswith(db_models.ContentTypeName.DICTIONARY.value):
-        raise TypeException('The operation is supported only on dictionaries')
+    if not resource_name.endswith(db_models.ContentTypeName.VOCABULARY.value):
+        raise TypeException('The operation is supported only on vocabularies')
     model_cls = db_models.dynamicTables[resource_name]
     if word_list_only:
         query = db_.query(model_cls.word)
@@ -260,17 +260,17 @@ def get_dictionary_words(db_:Session,**kwargs):#pylint: disable=too-many-locals
         'resource_content':resource_db_content }
     return response
 
-def upload_dictionary_words(db_: Session, resource_name, dictionary_words, user_id=None):
-    '''Adds rows to the dictionary table specified by resource_name'''
+def upload_vocabulary_words(db_: Session, resource_name, vocabulary_words, user_id=None):
+    '''Adds rows to the vocabulary table specified by resource_name'''
     resource_db_content = db_.query(db_models.Resource).filter(
         db_models.Resource.resourceName == resource_name).first()
     if not resource_db_content:
         raise NotAvailableException(f'Resource {resource_name}, not found in database')
-    if resource_db_content.contentType.contentType != db_models.ContentTypeName.DICTIONARY.value:
-        raise TypeException('The operation is supported only on dictionaries')
+    if resource_db_content.contentType.contentType != db_models.ContentTypeName.VOCABULARY.value:
+        raise TypeException('The operation is supported only on vocabularies')
     model_cls = db_models.dynamicTables[resource_name]
     db_content = []
-    for item in dictionary_words:
+    for item in vocabulary_words:
         row = model_cls(
             word = utils.normalize_unicode(item.word),
             details = item.details,
@@ -285,21 +285,21 @@ def upload_dictionary_words(db_: Session, resource_name, dictionary_words, user_
         }
     return response
 
-def update_dictionary_words(db_: Session, resource_name, dictionary_words, user_id=None):
-    '''Update rows, that matches the word field in the dictionary table specified by
+def update_vocabulary_words(db_: Session, resource_name, vocabulary_words, user_id=None):
+    '''Update rows, that matches the word field in the vocabulary table specified by
       resource_name'''
     resource_db_content = db_.query(db_models.Resource).filter(
         db_models.Resource.resourceName == resource_name).first()
     if not resource_db_content:
         raise NotAvailableException(f'Resource {resource_name}, not found in database')
-    if resource_db_content.contentType.contentType != db_models.ContentTypeName.DICTIONARY.value:
-        raise TypeException('The operation is supported only on dictionaries')
+    if resource_db_content.contentType.contentType != db_models.ContentTypeName.VOCABULARY.value:
+        raise TypeException('The operation is supported only on vocabularies')
     model_cls = db_models.dynamicTables[resource_name]
     db_content = []
-    for item in dictionary_words:
+    for item in vocabulary_words:
         row = db_.query(model_cls).filter(model_cls.word == item.word).first()
         if not row:
-            raise NotAvailableException(f"Dictionary row with word:{item.word},"+\
+            raise NotAvailableException(f"Vocabulary row with word:{item.word},"+\
                 f"not found for {resource_name}")
         if item.details:
             row.details = item.details
@@ -314,9 +314,9 @@ def update_dictionary_words(db_: Session, resource_name, dictionary_words, user_
         }
     return response
 
-def delete_dictionary(db_: Session, delitem : int,table_name = None,
+def delete_vocabulary(db_: Session, delitem : int,table_name = None,
     resource_name=None,user_id=None):
-    '''delete particular word from dictionary, selected via resourcename and word id'''
+    '''delete particular word from vocabulary, selected via resourcename and word id'''
     resource_db_content = db_.query(db_models.Resource).filter(
         db_models.Resource.resourceName == resource_name).first()
     model_cls = table_name

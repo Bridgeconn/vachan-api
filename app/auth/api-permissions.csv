@@ -46,11 +46,11 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/resources,POST,None,False,None,create
 /v2/resources,PUT,None,False,None,edit
 /v2/resources,DELETE,None,False,None,delete/deactivate
-/v2/resources/get-sentence,GET,Autographa,False,"contents like bibles, commentaries, parascripturals or videos",refer-for-translation
-/v2/resources/get-sentence,GET,SanketMAST,False,"contents like bibles, commentaries, parascripturals or videos",refer-for-translation
-/v2/resources/get-sentence,GET,Vachan-online or vachan-app,False,"contents like bibles, commentaries, parascripturals or videos",view-on-web
-/v2/resources/get-sentence,GET,VachanAdmin,False,"contents like bibles, commentaries, parascripturals or videos",read-via-vachanadmin
-/v2/resources/get-sentence,GET,API-user,False,"contents like bibles, commentaries, parascripturals or videos",read-via-api
+/v2/resources/get-sentence,GET,Autographa,False,"contents like bibles, commentaries, parascripturals or vocabularies",refer-for-translation
+/v2/resources/get-sentence,GET,SanketMAST,False,"contents like bibles, commentaries, parascripturals or vocabularies",refer-for-translation
+/v2/resources/get-sentence,GET,Vachan-online or vachan-app,False,"contents like bibles, commentaries, parascripturals or vocabularies",view-on-web
+/v2/resources/get-sentence,GET,VachanAdmin,False,"contents like bibles, commentaries, parascripturals or vocabularies",read-via-vachanadmin
+/v2/resources/get-sentence,GET,API-user,False,"contents like bibles, commentaries, parascripturals or vocabularies",read-via-api
 /v2/resources/get-sentence,GET,None,False,Research-Material,read-via-api
 /v2/lookup/bible/books,GET,None,False,None,read
 /v2/bibles/{resource_name}/books,GET,Autographa,False,None,refer-for-translation
@@ -82,19 +82,19 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/commentaries/{resource_name},POST,None,False,None,create
 /v2/commentaries/{resource_name},PUT,None,False,None,edit
 /v2/commentaries/{resource_name},DELETE,None,False,None,delete/deactivate
-/v2/dictionaries/{resource_name},GET,Autographa,False,None,refer-for-translation
-/v2/dictionaries/{resource_name},GET,SanketMAST,False,None,refer-for-translation
-/v2/dictionaries/{resource_name},GET,Vachan-online or vachan-app,False,None,view-on-web
-/v2/dictionaries/{resource_name},GET,VachanAdmin,False,None,read-via-vachanadmin
-/v2/dictionaries/{resource_name},GET,API-user,False,None,read-via-api
-/v2/dictionaries/{resource_name}/count,GET,Autographa,False,None,refer-for-translation
-/v2/dictionaries/{resource_name}/count,GET,SanketMAST,False,None,refer-for-translation
-/v2/dictionaries/{resource_name}/count,GET,Vachan-online or vachan-app,False,None,view-on-web
-/v2/dictionaries/{resource_name}/count,GET,VachanAdmin,False,None,read-via-vachanadmin
-/v2/dictionaries/{resource_name}/count,GET,API-user,False,None,read-via-api
-/v2/dictionaries/{resource_name},POST,None,False,None,create
-/v2/dictionaries/{resource_name},PUT,None,False,None,edit
-/v2/dictionaries/{resource_name},DELETE,None,False,None,delete/deactivate
+/v2/vocabularies/{resource_name},GET,Autographa,False,None,refer-for-translation
+/v2/vocabularies/{resource_name},GET,SanketMAST,False,None,refer-for-translation
+/v2/vocabularies/{resource_name},GET,Vachan-online or vachan-app,False,None,view-on-web
+/v2/vocabularies/{resource_name},GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/vocabularies/{resource_name},GET,API-user,False,None,read-via-api
+/v2/vocabularies/{resource_name}/count,GET,Autographa,False,None,refer-for-translation
+/v2/vocabularies/{resource_name}/count,GET,SanketMAST,False,None,refer-for-translation
+/v2/vocabularies/{resource_name}/count,GET,Vachan-online or vachan-app,False,None,view-on-web
+/v2/vocabularies/{resource_name}/count,GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/vocabularies/{resource_name}/count,GET,API-user,False,None,read-via-api
+/v2/vocabularies/{resource_name},POST,None,False,None,create
+/v2/vocabularies/{resource_name},PUT,None,False,None,edit
+/v2/vocabularies/{resource_name},DELETE,None,False,None,delete/deactivate
 /v2/resources/parascripturals/{resource_name},GET,Autographa,False,None,refer-for-translation
 /v2/resources/parascripturals/{resource_name},GET,SanketMAST,False,None,refer-for-translation
 /v2/resources/parascripturals/{resource_name},GET,Vachan-online or vachan-app,False,None,view-on-web
@@ -107,8 +107,8 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/translation/projects,GET,SanketMAST,True,None,view-project
 /v2/translation/projects,POST,Autographa,False,None,create
 /v2/translation/projects,POST,SanketMAST,False,None,create
-/v2/translation/projects,PUT,Autographa,False,"contents like bibles, commentaries, parascripturals or videos",translate
-/v2/translation/projects,PUT,SanketMAST,False,"contents like bibles, commentaries, parascripturals or videos",translate
+/v2/translation/projects,PUT,Autographa,False,"contents like bibles, commentaries, parascripturals or vocabularies",translate
+/v2/translation/projects,PUT,SanketMAST,False,"contents like bibles, commentaries, parascripturals or vocabularies",translate
 /v2/translation/projects,PUT,Autographa,False,Ag or translation project,edit-Settings
 /v2/translation/projects,PUT,SanketMAST,False,Ag or translation project,edit-Settings
 /v2/translation/projects,DELETE,Autographa,False,None,delete
@@ -153,16 +153,16 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/nlp/gloss,DELETE,None,False,None,delete
 /v2/nlp/learn/alignment,POST,None,False,None,create
 /v2/nlp/stopwords/generate,POST,None,False,Lookup contents,create
-/v2/nlp/stopwords/generate,POST,None,False,"contents like bibles, commentaries, parascripturals or videos",read-via-api
+/v2/nlp/stopwords/generate,POST,None,False,"contents like bibles, commentaries, parascripturals or vocabularies",read-via-api
 /v2/lookup/stopwords/{language_code},GET,None,False,None,read
 /v2/lookup/stopwords/{language_code},PUT,None,False,None,edit
 /v2/lookup/stopwords/{language_code},POST,None,False,None,create
 /v2/lookup/stopwords/{language_code},DELETE,None,False,None,delete
 /v2/jobs,GET,None,False,None,read
 /v2/media/gitlab/stream,GET,None,False,Media contents,stream
-/v2/media/gitlab/stream,GET,None,False,"contents like bibles, commentaries, parascripturals or videos",read-via-api
+/v2/media/gitlab/stream,GET,None,False,"contents like bibles, commentaries, parascripturals or vocabularies",read-via-api
 /v2/media/gitlab/download,GET,None,False,Media contents,download
-/v2/media/gitlab/download,GET,None,False,"contents like bibles, commentaries, parascripturals or videos",read-via-api
+/v2/media/gitlab/download,GET,None,False,"contents like bibles, commentaries, parascripturals or vocabularies",read-via-api
 /v2/bibles/{resource_name}/books/{book_code}/format/{output_format},GET,Autographa,False,None,refer-for-translation
 /v2/bibles/{resource_name}/books/{book_code}/format/{output_format},GET,SanketMAST,False,None,refer-for-translation
 /v2/bibles/{resource_name}/books/{book_code}/format/{output_format},GET,Vachan-online or vachan-app,False,None,view-on-web

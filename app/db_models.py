@@ -25,7 +25,7 @@ class ContentTypeName(Enum):
     BIBLE = "bible"
     COMMENTARY = "commentary"
     PARASCRIPTURAL = "parascriptural"
-    DICTIONARY = "dictionary"
+    VOCABULARY = "vocabulary"
     GITLABREPO = "gitlabrepo"
 
 class TranslationDocumentType(Enum):
@@ -149,8 +149,8 @@ class Commentary(): # pylint: disable=too-few-public-methods
         {'extend_existing': True}
                      )
 
-class Dictionary(): # pylint: disable=too-few-public-methods
-    '''Corresponds to the dynamically created dictionary tables in vachan Db(postgres)'''
+class Vocabulary(): # pylint: disable=too-few-public-methods
+    '''Corresponds to the dynamically created vocabulary tables in vachan Db(postgres)'''
     wordId = Column('word_id', Integer,
         Sequence('word_id_seq', start=100001, increment=1), primary_key=True)
     word = Column('word', String, unique=True)
@@ -271,9 +271,9 @@ def create_dynamic_table(resource_name, table_name, content_type):
     elif content_type == ContentTypeName.COMMENTARY.value:
         dynamicTables[resource_name] = type(
             table_name,(Commentary, Base,),{"__tablename__": table_name})
-    elif content_type == ContentTypeName.DICTIONARY.value:
+    elif content_type == ContentTypeName.VOCABULARY.value:
         dynamicTables[resource_name] = type(
-            table_name,(Dictionary, Base,),{"__tablename__": table_name})
+            table_name,(Vocabulary, Base,),{"__tablename__": table_name})
         new_index = Index(table_name+'_word_details_ix',  # pylint: disable=W0612
             text("to_tsvector('simple', word || ' ' ||"+\
             "jsonb_to_tsvector('simple', details, '[\"string\", \"numeric\"]') || ' ')"),

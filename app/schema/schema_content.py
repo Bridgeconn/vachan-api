@@ -442,8 +442,8 @@ class CommentaryUpdateResponse(BaseModel):
     data: Job
 
 LetterPattern = constr(regex=r'^\w$')
-class DictionaryWordCreate(BaseModel):
-    '''Upload object of dictionary word'''
+class VocabularyWordCreate(BaseModel):
+    '''Upload object of vocabulary word'''
     word: str
     details: dict = None
     active: bool = True
@@ -458,8 +458,8 @@ class DictionaryWordCreate(BaseModel):
             }
         }
 
-class DictionaryWordEdit(BaseModel):
-    '''Upload object of dictionary word'''
+class VocabularyWordEdit(BaseModel):
+    '''Upload object of vocabulary word'''
     word: str
     details: dict = None
     active: bool = None
@@ -476,8 +476,8 @@ class DictionaryWordEdit(BaseModel):
             }
         }
 
-class DictionaryWordResponse(BaseModel):
-    '''Response object of dictionary word'''
+class VocabularyWordResponse(BaseModel):
+    '''Response object of vocabulary word'''
     wordId: int = None
     word: str
     details: dict = None
@@ -496,15 +496,15 @@ class DictionaryWordResponse(BaseModel):
             }
         }
 
-class DictionaryCreateResponse(BaseModel):
-    '''Response object of dictionary word update'''
-    message: str = Field(..., example="Dictionary words added successfully")
-    data: List[DictionaryWordResponse] = None
+class VocabularyCreateResponse(BaseModel):
+    '''Response object of vocabulary word update'''
+    message: str = Field(..., example="Vocabulary words added successfully")
+    data: List[VocabularyWordResponse] = None
 
-class DictionaryUpdateResponse(BaseModel):
-    '''Response object of dictionary word update'''
-    message: str = Field(..., example="Dictionary words updated successfully")
-    data: List[DictionaryWordResponse] = None
+class VocabularyUpdateResponse(BaseModel):
+    '''Response object of vocabulary word update'''
+    message: str = Field(..., example="Vocabulary words updated successfully")
+    data: List[VocabularyWordResponse] = None
 
 class ParascriptResponse(BaseModel):
     '''Response object of parascripturals'''

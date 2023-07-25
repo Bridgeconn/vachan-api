@@ -11,7 +11,7 @@ ALTER SEQUENCE public.content_types_content_type_id_seq RESTART WITH 100000;
 
 INSERT INTO content_types(content_type) VALUES('bible');
 INSERT INTO content_types(content_type) VALUES('commentary');
-INSERT INTO content_types(content_type) VALUES('dictionary');
+INSERT INTO content_types(content_type) VALUES('vocabulary');
 INSERT INTO content_types(content_type) VALUES('parascriptural');
 INSERT INTO content_types(content_type) VALUES('gitlabrepo'); 
 

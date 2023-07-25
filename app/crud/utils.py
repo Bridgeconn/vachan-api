@@ -182,7 +182,7 @@ def convert_dict_obj_to_pydantic(input_obj, target_class):
     return new_obj
 
 def convert_dict_to_sqlalchemy(input_obj, target_class):
-    '''convert a dictionary object into specified db_model object,
+    '''convert a vocabulary object into specified db_model object,
     if all key names are identical'''
     kwargs = {}
     for key in input_obj:

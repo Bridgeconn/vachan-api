@@ -701,7 +701,7 @@ async def remove_stopword(request: Request,
 async def generate_stopwords(request: Request, background_tasks: BackgroundTasks,
     language_code:schemas.LangCodePattern=Query(...,example="bi"),
     use_server_data:bool=True,
-    source_name: schemas.TableNamePattern=Query(None,example="en_TW_1_dictionary"),
+    source_name: schemas.TableNamePattern=Query(None,example="en_TW_1_vocabulary"),
     user_details =Depends(get_user_or_none),
     sentence_list:List[schemas_nlp.SentenceInput]=Body(None), db_:Session=Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.LOOKUP.value))):#pylint: disable=unused-argument

@@ -63,7 +63,7 @@ def assert_positive_get_suggetion(item):
 def test_learn_n_suggest():
     '''Positive tests for adding knowledge and getting suggestions'''
 
-    # add dictionary
+    # add vocabulary
     #without auth
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
     response = client.post(NLP_UNIT_URL+'/learn/gloss?source_language=en&target_language=ml',
