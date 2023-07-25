@@ -15,7 +15,8 @@ from auth.authentication import get_user_or_none,get_auth_access_check_decorator
 router = APIRouter()
 #pylint: disable=too-many-arguments,unused-argument
 ############## Translation Projects ##########################
-@router.get('/v2/text/translate/token-based/projects', response_model=List[schemas_nlp.TranslationProject],
+@router.get('/v2/text/translate/token-based/projects',
+    response_model=List[schemas_nlp.TranslationProject],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}},
@@ -195,7 +196,8 @@ async def get_tokens(request: Request, project_id:int=Query(...,example="1022004
         use_translation_memory=use_translation_memory,
         include_phrases = include_phrases, include_stopwords=include_stopwords)
 
-@router.put('/v2/text/translate/token-based/project/tokens', response_model=schemas_nlp.TranslateResponse,
+@router.put('/v2/text/translate/token-based/project/tokens',
+    response_model=schemas_nlp.TranslateResponse,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     500: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
@@ -410,7 +412,8 @@ async def tokenize(request: Request,
         use_translation_memory = use_translation_memory, include_phrases = include_phrases,
         include_stopwords = include_stopwords)
 
-@router.put('/v2/text/translate/token-based/token-translate', response_model=schemas_nlp.TranslateResponse,
+@router.put('/v2/text/translate/token-based/token-translate',
+    response_model=schemas_nlp.TranslateResponse,
     status_code=200,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
