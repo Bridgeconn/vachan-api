@@ -9,7 +9,7 @@ from .conftest import initial_test_users
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER
 
 
-UNIT_URL = '/v2/translation/project'
+UNIT_URL = '/v2/mt/token-based/project'
 headers = {"contentType": "application/json", "accept": "application/json","app":"SanketMAST"}
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
@@ -60,7 +60,7 @@ def test_get_tokens():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/mt/token-based/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # after adding books
@@ -201,7 +201,7 @@ def test_save_translation():
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
 
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/mt/token-based/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
@@ -273,7 +273,7 @@ def test_save_translation_invalid():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/mt/token-based/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
@@ -354,7 +354,7 @@ def test_drafts():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/mt/token-based/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
@@ -412,17 +412,17 @@ def test_get_token_sentences():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/mt/token-based/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
-    resp = client.get("/v2/translation/project/tokens?project_id="+str(project_id)
+    resp = client.get("/v2/mt/token-based/project/tokens?project_id="+str(project_id)
         ,headers=headers_auth)
     tokens = resp.json()
     our_token = tokens[0]['token']
     occurrences = tokens[0]['occurrences']
 
     #before translating
-    response = client.put('/v2/translation/project/token-sentences?project_id='+
+    response = client.put('/v2/mt/token-based/project/token-sentences?project_id='+
         str(project_id)+'&token='+our_token,
         json=occurrences, headers=headers_auth)
     assert response.status_code == 200
@@ -448,7 +448,7 @@ def test_get_token_sentences():
     assert response.json()['message'] == 'Token translations saved'
 
     # after translation
-    response2 = client.put('/v2/translation/project/token-sentences?project_id='+
+    response2 = client.put('/v2/mt/token-based/project/token-sentences?project_id='+
         str(project_id)+'&token='+our_token, headers=headers_auth,
         json=occurrences)
     assert response2.status_code == 200
@@ -462,7 +462,7 @@ def test_get_token_sentences():
         assert found_slice
 
     #Without auth
-    response2 = client.put('/v2/translation/project/token-sentences?project_id='+
+    response2 = client.put('/v2/mt/token-based/project/token-sentences?project_id='+
         str(project_id)+'&token='+our_token, json=occurrences)
     assert response2.json()['error'] == 'Permission Denied'
 
@@ -481,7 +481,7 @@ def test_get_sentence():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/mt/token-based/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # before translation
@@ -561,7 +561,7 @@ def test_progress_n_suggestion():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/mt/token-based/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # before translation
@@ -638,7 +638,7 @@ def test_get_versification():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/mt/token-based/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     response = client.get(UNIT_URL+"/versification?project_id="+str(project_id)
@@ -674,20 +674,20 @@ def test_agmt_translation_access_rule_app():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/mt/token-based/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     #get tokens
     #without auth not from SanketMAST
-    resp = client.get("/v2/translation/project/tokens?project_id="+str(project_id))
+    resp = client.get("/v2/mt/token-based/project/tokens?project_id="+str(project_id))
     assert resp.json()['error'] == "Permission Denied"
     #without auth and from SanketMAST
-    resp = client.get("/v2/translation/project/tokens?project_id="+str(project_id)
+    resp = client.get("/v2/mt/token-based/project/tokens?project_id="+str(project_id)
         ,headers=headers)
     assert resp.status_code == 401
     assert resp.json()['error'] == 'Authentication Error'
     #With Auth and From SanketMAST
-    resp = client.get("/v2/translation/project/tokens?project_id="+str(project_id)
+    resp = client.get("/v2/mt/token-based/project/tokens?project_id="+str(project_id)
         ,headers=headers_auth)
     assert resp.status_code == 200
     assert isinstance(resp.json(), list)
@@ -749,18 +749,18 @@ def test_agmt_translation_access_rule_app():
     assert response.json()['error'] == "Permission Denied"
 
     #Get Token Sentences PUT
-    response = client.put('/v2/translation/project/token-sentences?project_id='+
+    response = client.put('/v2/mt/token-based/project/token-sentences?project_id='+
         str(project_id)+'&token='+our_token,
         json=occurrences, headers=headers_auth)
     assert response.status_code == 200
     #Without Auth and from SanketMAST
-    response = client.put('/v2/translation/project/token-sentences?project_id='+
+    response = client.put('/v2/mt/token-based/project/token-sentences?project_id='+
         str(project_id)+'&token='+our_token,
         json=occurrences, headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == "Authentication Error"
     #Without Auth and not from SanketMAST
-    response = client.put('/v2/translation/project/token-sentences?project_id='+
+    response = client.put('/v2/mt/token-based/project/token-sentences?project_id='+
         str(project_id)+'&token='+our_token,
         json=occurrences)
     assert response.status_code == 403
@@ -841,11 +841,11 @@ def test_data_updated_time():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat']]
     }
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/mt/token-based/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # Get tokens
-    resp = client.get("/v2/translation/project/tokens?project_id="+str(project_id)
+    resp = client.get("/v2/mt/token-based/project/tokens?project_id="+str(project_id)
          ,headers=headers_auth)
 
     # Case 1:PUT Tokens
@@ -862,7 +862,7 @@ def test_data_updated_time():
         headers=headers_auth, json=post_obj_list)
 
     # Get project details
-    project_url = f"/v2/translation/projects?project_name={project_name}"
+    project_url = f"/v2/mt/token-based/projects?project_name={project_name}"
     project_resp = client.get(project_url, headers=headers_auth)
     project_update_time = project_resp.json()[0]['updateTime']
     assert not project_create_time == project_update_time
@@ -880,7 +880,7 @@ def test_data_updated_time():
                 ]
             }
     ]
-    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/mt/token-based/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data)
     # Get project details
     project_resp = client.get(project_url, headers=headers_auth)
@@ -888,7 +888,7 @@ def test_data_updated_time():
     assert not project_create_time == project_update_time
  
     #Case 3: Update suggestions
-    resp = client.put(f"/v2/translation/project/suggestions?project_id={project_id}&sentenceIdList={sentence_id}",
+    resp = client.put(f"/v2/mt/token-based/project/suggestions?project_id={project_id}&sentenceIdList={sentence_id}",
         headers=headers_auth)
     assert resp.status_code == 201
      # Get project details
@@ -920,10 +920,10 @@ def test_agmt_translation_access_permissions():
         "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/mt/token-based/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
-    resp = client.get("/v2/translation/project/tokens?project_id="+str(project_id)
+    resp = client.get("/v2/mt/token-based/project/tokens?project_id="+str(project_id)
         ,headers=headers_auth)
     assert resp.status_code == 200
     assert isinstance(resp.json(), list)
@@ -974,7 +974,7 @@ def test_agmt_translation_access_permissions():
     assert response.status_code == 403
     assert response.json()['error'] == "Permission Denied"
 
-    response = client.put('/v2/translation/project/token-sentences?project_id='+
+    response = client.put('/v2/mt/token-based/project/token-sentences?project_id='+
         str(project_id)+'&token='+our_token,
         json=occurrences, headers=headers_auth)
     assert response.status_code == 403
@@ -982,7 +982,7 @@ def test_agmt_translation_access_permissions():
 
     #Add SanketMASTUser as memeber to projects
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
-    response = client.post('/v2/translation/project/user'+'?project_id='+str(project_id)+
+    response = client.post('/v2/mt/token-based/project/user'+'?project_id='+str(project_id)+
         '&user_id='+str(initial_test_users['SanketMASTUser2']["test_user_id"]),headers=headers_auth)
     assert response.status_code == 201
     assert response.json()['message'] == "User added to project successfully"
@@ -994,7 +994,7 @@ def test_agmt_translation_access_permissions():
     assert response.status_code == 201
     print("resp after put token:",resp.json())
 
-    response = client.put('/v2/translation/project/token-sentences?project_id='+
+    response = client.put('/v2/mt/token-based/project/token-sentences?project_id='+
         str(project_id)+'&token='+our_token,
         json=occurrences, headers=headers_auth)
     assert response.status_code == 200
@@ -1010,7 +1010,7 @@ def test_agmt_translation_access_permissions():
 
     for user_token in token_list:
         headers_auth['Authorization'] = "Bearer"+" "+user_token
-        resp = client.get("/v2/translation/project/tokens?project_id="+str(project_id)
+        resp = client.get("/v2/mt/token-based/project/tokens?project_id="+str(project_id)
             ,headers=headers_auth)
         assert resp.status_code == 200
         assert isinstance(resp.json(), list)
@@ -1060,7 +1060,7 @@ def test_agmt_translation_access_permissions():
 
     for user_token in token_list:
         headers_auth['Authorization'] = "Bearer"+" "+user_token
-        resp = client.get("/v2/translation/project/tokens?project_id="+str(project_id)
+        resp = client.get("/v2/mt/token-based/project/tokens?project_id="+str(project_id)
             ,headers=headers_auth)    
         assert resp.status_code == 403
         assert resp.json()['error'] == "Permission Denied"
