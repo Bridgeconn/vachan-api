@@ -201,7 +201,7 @@ def test_post_wrong_content():
 
     # '''Negative test with not a valid license from license table'''
     data = {
-        "contentType": "infographic",
+        "contentType": "vocabulary",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -615,7 +615,7 @@ def test_get_after_adding_data(): #pylint: disable=too-many-statements
     }
     add_version(version_data)
     data = {
-        "contentType": "infographic",
+        "contentType": "vocabulary",
         "version": "TTT",
         "year": 2020
     }
@@ -728,7 +728,7 @@ def test_get_resource_filter_access_tag():
     }
     add_version(version_data)
     data = {
-        "contentType": "infographic",
+        "contentType": "vocabulary",
         "version": "TTT",
         "year": 2020,
         "accessPermissions": [

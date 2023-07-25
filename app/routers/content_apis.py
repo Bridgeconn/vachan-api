@@ -1,13 +1,14 @@
 '''API endpoints related to content management''' #pylint: disable=too-many-lines
 import json
-from typing import List
+from typing import List,Dict
 import jsonpickle
 from fastapi import APIRouter, Query, Body, Depends, Path , Request,BackgroundTasks
 from sqlalchemy.orm import Session
+from pydantic import AnyUrl
 import db_models
 from schema import schemas,schemas_nlp, schema_auth, schema_content
 from dependencies import get_db, log, AddHiddenInput
-from crud import structurals_crud, contents_crud, nlp_sw_crud, media_crud
+from crud import structurals_crud, contents_crud, nlp_sw_crud
 from custom_exceptions import NotAvailableException, AlreadyExistsException,\
     UnprocessableException
 from auth.authentication import get_auth_access_check_decorator ,\
@@ -997,201 +998,118 @@ async def delete_vocabularies(request: Request,delete_id: int,
     return {'message': f"Vocabulary id {word_id} deleted successfully",
             "data": delcont}
 
-# # ########### Infographic ###################
-@router.get('/v2/infographics/{resource_name}',
-    response_model=List[schema_content.InfographicResponse],
+# # ########### Parascriptural ###################
+@router.get('/v2/resources/parascripturals/{resource_name}',
+    response_model=List[schema_content.ParascriptResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
-    415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Infographics"])
+    415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Parascripturals"])
 @get_auth_access_check_decorator
-async def get_infographic(request: Request,
-    resource_name:schemas.TableNamePattern=Path(...,example="hi_IRV_1_infographic"),
-    book_code: schemas.BookCodePattern=Query(None, example="exo"),
-    title: str=Query(None, example="Ark of Covenant"), active: bool=True,
+async def get_parascriptural(request: Request, #pylint: disable=too-many-locals
+    resource_name:schemas.TableNamePattern=
+    Path(...,example="en_KJV_1_parascriptural"),
+    category:str=Query(None, example="Bible project video"),
+    title:str=Query(None,example="Bible Video of Genesis"),
+    description:str=Query(None, example="Origin Chronicles"),
+    content:str=Query(None, example="A Visual Journey Through the Bible's Beginning"),
+    reference: str = Query(None,
+    example='{"book": "mat", "chapter": 1, "verseNumber": 6}'),
+    link:AnyUrl=Query(None,example="http://someplace.com/resoucesid"),
+    search_word:str=Query(None,example="subtitle"),
+    metadata: schemas.MetaDataPattern=Query(None,
+        example='{"otherName": "BPV, Videos of Bible chapters"}'),
+    active: bool=Query(True),
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
-    '''Fetches the infographics. Can use, bookCode and/or title to filter the results
+    '''Fetches the parascripturals. Can use, parascriptural name,type and/or title
+       to filter the results
     * optional query parameters can be used to filter the result set
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n
-    * returns [] for not available content'''
-    log.info('In get_infographic')
-    log.debug('resource_name: %s, book_code: %s skip: %s, limit: %s',
-        resource_name, book_code, skip, limit)
-    return contents_crud.get_infographics(db_, resource_name, book_code, title,
-        active=active, skip = skip, limit = limit)
+    * returns [] for not available content
+    * Filter with single reference -> eg :{"book": "mat", "chapter": 1, "verseNumber": 6}
+    * Filter with cross chapter references -> eg:reference": {"book":"MRK", "chapter":11,
+        "verseNumber":12,"bookEnd":"LUK", "chapterEnd":14, "verseEnd":15 }'''
+    log.info('In get_parascriptural')
+    log.debug('resource_name: %s,type: %s,title: %s, skip: %s,limit: %s,search_word: %s,\
+        reference:%s,metadata:%s',resource_name,category,title,skip,limit,search_word,\
+        reference,metadata)
+    reference_dict: Dict[str, int] = None
+    if reference:
+        reference_dict = json.loads(reference)
+    return contents_crud.get_parascripturals(db_, resource_name, category, title,
+        description = description, content = content, reference = reference_dict, link = link,
+        search_word = search_word, metadata = metadata, active = active, skip = skip, limit = limit)
 
-@router.post('/v2/infographics/{resource_name}',
-    response_model=schema_content.InfographicCreateResponse,
+@router.post('/v2/resources/parascripturals/{resource_name}',
+    response_model=schema_content.ParascriptCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
     401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
     415:{"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Infographics"])
+    status_code=201, tags=["Parascripturals"])
 @get_auth_access_check_decorator
-async def add_infographics(request: Request,
+async def add_parascripturals(request: Request,
     resource_name : schemas.TableNamePattern=Path(...,
-    example="hi_IRV_1_infographic"),
-    infographics: List[schema_content.InfographicCreate] = Body(...),
+    example="en_KJV_1_parascriptural"),
+    parascriptural: List[schema_content.ParascripturalCreate] = Body(...),
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
-    '''Uploads a list of infograhics. BookCode and title provided, serves as the unique idetifier
-    Only the  link to infographic is stored, not the actual file'''
-    log.info('In add_infographics')
-    log.debug('resource_name: %s, infographics: %s',resource_name, infographics)
-    return {'message': "Infographics added successfully",
-        "data": contents_crud.upload_infographics(db_=db_, resource_name=resource_name,
-        infographics=infographics, user_id=user_details['user_id'])}
+    '''Uploads a list of parascripturals. category field is mandatory'''
+    log.info('In add_parascripturals')
+    log.debug('resource_name: %s, parascripturals: %s',resource_name, parascriptural)
+    return {'message': "Parascripturals added successfully",
+        "data": contents_crud.upload_parascripturals(db_=db_, resource_name=resource_name,
+        parascriptural=parascriptural, user_id=user_details['user_id'])}
 
-@router.put('/v2/infographics/{resource_name}',
-    response_model=schema_content.InfographicUpdateResponse,
+@router.put('/v2/resources/parascripturals/{resource_name}',
+    response_model=schema_content.ParascriptUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
     401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Infographics"])
+    status_code=201, tags=["Parascripturals"])
 @get_auth_access_check_decorator
-async def edit_infographics(request: Request,
+async def edit_parascripturals(request: Request,
     resource_name: schemas.TableNamePattern=Path(...,
-    example="hi_IRV_1_infographic"),
-    infographics: List[schema_content.InfographicEdit] = Body(...),
+    example="en_KJV_1_parascriptural"),
+    parascripturals: List[schema_content.ParascriptEdit] = Body(...),
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
-    ''' Changes either the infographic link or active status.
-    Item identifier is book code and title, which cannot be altered.
-    Active field can be used to activate or deactivate a content.
-    Deactivated items are not included in normal fetch results if not specified otherwise'''
-    log.info('In edit_infographics')
-    log.debug('resource_name: %s, infographics: %s',resource_name, infographics)
-    return {'message': "Infographics updated successfully",
-        "data": contents_crud.update_infographics(db_=db_, resource_name=resource_name,
-        infographics=infographics, user_id=user_details['user_id'])}
+    ''' Changes description,content or link.
+    Item identifier is parascript type and title, which cannot be altered.'''
+    log.info('In edit_parascripturals')
+    log.debug('resource_name: %s, parascripturals: %s',resource_name, parascripturals)
+    return {'message': "Parascripturals updated successfully",
+        "data": contents_crud.update_parascripturals(db_=db_, resource_name=resource_name,
+        parascripturals=parascripturals, user_id=user_details['user_id'])}
 
-@router.delete('/v2/infographics/{resource_name}',response_model=schemas.DeleteResponse,
+@router.delete('/v2/resources/parascripturals/{resource_name}',
+    response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
     502: {"model": schemas.ErrorResponse}},
-    status_code=200,tags=["Infographics"])
+    status_code=200,tags=["Parascripturals"])
 @get_auth_access_check_decorator
-async def delete_infographics(request: Request,delete_id:int,
-    resource_name: str = Path(...,example="en_KJV_1_infographic"),
+async def delete_parascripturals(request: Request,delete_id:int,
+    resource_name: str = Path(...,example="en_KJV_1_parascriptural"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
-    '''Delete Infographic
-    * unique Infographic Id with resource name can be used to delete an exisiting identity'''
-    log.info('In delete_infographics')
-    log.debug('infographics-delete:%s',delete_id)
-    infographic_id= delete_id
+    '''Delete Parascriptural
+    * unique parascript Id with source name can be used to delete an exisiting identity'''
+    log.info('In delete_parascripturals')
+    log.debug('parascripturals-delete:%s',delete_id)
+    parascript_id= delete_id
     tb_name = db_models.dynamicTables[resource_name]
     dbtable_name = tb_name.__name__
-    get_infographic_response = contents_crud.get_infographics(db_, resource_name=resource_name, \
-        infographic_id= delete_id)
-    if len(get_infographic_response['db_content']) == 0:
-        raise NotAvailableException(f"Infographic with id {infographic_id} not found")
-    deleted_content = contents_crud.delete_infographic(db_=db_,delitem=delete_id,\
+    get_parascriptural_response = contents_crud.get_parascripturals(
+        db_, resource_name=resource_name, parascript_id= delete_id)
+    if len(get_parascriptural_response['db_content']) == 0:
+        raise NotAvailableException(f"Parascriptural with id {parascript_id} not found")
+    deleted_content = contents_crud.delete_parascriptural(db_=db_,delitem=delete_id,\
         table_name=tb_name,resource_name=resource_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
         table_name = dbtable_name, resource = deleted_content['resource_content'],
         deleting_user = user_details['user_id'])
-    return {'message': f"Infographic id {infographic_id} deleted successfully",
-            "data": delcont}
-
-# # ########### bible videos ###################
-@router.get('/v2/biblevideos/{resource_name}',
-    response_model=List[schema_content.BibleVideo],response_model_exclude_none=True,
-    responses={502: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
-    422: {"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
-    status_code=200, tags=["Bible Videos"])
-@get_auth_access_check_decorator
-async def get_biblevideo(request: Request,
-    resource_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
-    title: str=Query(None, example="Overview: song of songs"),
-    series: str=Query(None, example="Old Testament"),
-    search_word: str = Query(None, example="faith"),
-    book_code: schemas.BookCodePattern=Query(None, example="sng"),
-    chapter: int=Query(None, example="1"),
-    verse: int=Query(None, example="1"), active: bool=True,
-    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
-    user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
-    '''Fetches the Bible video details and URL.
-    * optional query parameters can be used to filter the result set
-    * Filter by reference in the format book, book and chapter, book-chapter-verse
-    * skip=n: skips the first n objects in return list
-    * limit=n: limits the no. of items to be returned to n
-    * returns [] for not available content'''
-    log.info('In get_biblevideo')
-    log.debug('resource_name: %s, book_code: %s, title: %s, theme: %s, skip: %s, limit: %s',
-        resource_name, book_code, title, series, skip, limit)
-    return media_crud.get_bible_videos(db_, resource_name, book_code, title, series,
-    search_word=search_word,chapter=chapter,verse=verse,
-    active=active, skip=skip, limit=limit)
-
-@router.post('/v2/biblevideos/{resource_name}',
-    response_model=schema_content.BibleVideoCreateResponse,
-    responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
-    401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
-    415:{"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Bible Videos"])
-@get_auth_access_check_decorator
-async def add_biblevideo(request: Request,
-    resource_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
-    videos: List[schema_content.BibleVideoUpload] = Body(...),
-    user_details =Depends(get_user_or_none),
-    db_: Session = Depends(get_db)):
-    '''Uploads a list of bible video links and details.
-    Provided title will serve as the unique identifier'''
-    log.info('In add_biblevideo')
-    log.debug('resource_name: %s, videos: %s',resource_name, videos)
-    return {'message': "Bible videos added successfully",
-        "data": media_crud.upload_bible_videos(db_=db_, resource_name=resource_name,
-        videos=videos, user_id=user_details['user_id'])}
-
-@router.put('/v2/biblevideos/{resource_name}',
-    response_model=schema_content.BibleVideoUpdateResponse,
-    responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
-    401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Bible Videos"])
-@get_auth_access_check_decorator
-async def edit_biblevideo(request: Request,
-    resource_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
-    videos: List[schema_content.BibleVideoEdit] = Body(...),user_details =Depends(get_user_or_none),
-    db_: Session = Depends(get_db)):
-    ''' Changes the selected rows of bible videos table.
-    Item identified by title, which cannot be altered.
-    Active field can be used to activate or deactivate a content.
-    Deactivated items are not included in normal fetch results if not specified otherwise'''
-    log.info('In edit_biblevideo')
-    log.debug('resource_name: %s, videos: %s',resource_name, videos)
-    return {'message': "Bible videos updated successfully",
-        "data": media_crud.update_bible_videos(db_=db_, resource_name=resource_name,
-        videos=videos, user_id=user_details['user_id'])}
-
-@router.delete('/v2/biblevideos/{resource_name}',response_model=schemas.DeleteResponse,
-    responses={404: {"model": schemas.ErrorResponse},
-    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
-    502: {"model": schemas.ErrorResponse}},
-    status_code=200,tags=["Bible Videos"])
-@get_auth_access_check_decorator
-async def delete_biblevideos(request: Request,delete_id: int,
-    resource_name: str = Path(...,example="en_KJV_1_biblevideo"),
-    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
-    '''Delete Bible Video
-    * unique bibleVideoId with resource name can be used to delete an exisiting identity'''
-    log.info('In delete_biblevideos')
-    log.debug('biblevideos-delete:%s',delete_id)
-    biblevideo_id= delete_id
-    tb_name = db_models.dynamicTables[resource_name]
-    dbtable_name = tb_name.__name__
-    get_biblevideo_response = media_crud.get_bible_videos(db_, resource_name=resource_name, \
-        biblevideo_id= delete_id)
-    if len(get_biblevideo_response['db_content']) == 0:
-        raise NotAvailableException(f"Bible Video with id {biblevideo_id} not found")
-    deleted_content = media_crud.delete_biblevideo(db_=db_,delitem=delete_id,\
-        table_name=tb_name,resource_name=resource_name,user_id=user_details['user_id'])
-    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
-        table_name = dbtable_name, resource = deleted_content['resource_content'],
-        deleting_user = user_details['user_id'])
-    return {'message': f"Bible Video id {biblevideo_id} deleted successfully",
+    return {'message': f"Parascriptural id {parascript_id} deleted successfully",
             "data": delcont}
 
 @router.get('/v2/resources/get-sentence', response_model=List[schemas_nlp.SentenceInput],

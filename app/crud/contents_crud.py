@@ -1,5 +1,6 @@
 ''' Place to define all Database CRUD operations for content tables
-bible, commentary, infographic, biblevideo, vocabulary etc'''
+bible, commentary, parascriptural, vocabulary etc'''
+#pylint: disable=too-many-lines
 import json
 import re
 from datetime import datetime
@@ -329,24 +330,75 @@ def delete_vocabulary(db_: Session, delitem : int,table_name = None,
     db_.delete(db_content)
     return response
 
-def get_infographics(db_:Session, resource_name, book_code=None, title=None,**kwargs):
-    '''Fetches rows of infographics from the table specified by resource_name'''
+def filter_by_reference(db_:Session,query, model_cls, reference):
+    '''check reference is present in the given ranges of refStart and refEnd'''
+
+    reference_end = ['bookEnd', 'chapterEnd', 'verseEnd']
+    if any(item in reference for item in reference_end):
+        # search for cross-chapter references and mutliple verses within chapter
+        ref_start_id = utils.create_parascript_ref_id(
+            db_,reference['book'], reference['chapter'], reference['verseNumber'])
+        ref_end_id   = utils.create_parascript_ref_id(
+            db_,reference['bookEnd'], reference['chapterEnd'], reference['verseEnd'])
+        query = query.filter(model_cls.refStart <= ref_start_id, model_cls.refEnd >= ref_end_id)
+    else:
+        # search for a single verse
+        ref_id = utils.create_parascript_ref_id(
+            db_,reference['book'], reference['chapter'], reference['verseNumber'])
+        query = query.filter(model_cls.refStart <= ref_id, model_cls.refEnd >= ref_id)
+    return query
+
+def get_parascripturals(db_:Session, resource_name, category=None, title=None,**kwargs): #pylint: disable=too-many-locals
+    '''Fetches rows of parascripturals from the table specified by resource_name'''
+    description = kwargs.get("description",None)
+    content = kwargs.get("content",None)
+    search_word = kwargs.get("search_word",None)
+    reference = kwargs.get("reference",None)
+    link = kwargs.get("link",None)
+    metadata = kwargs.get("metadata",None)
     active = kwargs.get("active",True)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
-    infographic_id=kwargs.get("infographic_id",None)
+    parascript_id=kwargs.get("parascript_id",None)
     if resource_name not in db_models.dynamicTables:
         raise NotAvailableException(f'{resource_name} not found in database.')
-    if not resource_name.endswith(db_models.ContentTypeName.INFOGRAPHIC.value):
-        raise TypeException('The operation is supported only on infographics')
+    if not resource_name.endswith(db_models.ContentTypeName.PARASCRIPTURAL.value):
+        raise TypeException('The operation is supported only on parascripturals')
     model_cls = db_models.dynamicTables[resource_name]
     query = db_.query(model_cls)
-    if book_code:
-        query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
+    if category:
+        query = query.filter(model_cls.category == category)
     if title:
         query = query.filter(model_cls.title == utils.normalize_unicode(title.strip()))
-    if infographic_id:
-        query = query.filter(model_cls.infographicId == infographic_id)
+    if  description:
+        query = query.filter(model_cls.description.contains(
+            utils.normalize_unicode(description.strip())))
+    if content:
+        query = query.filter(model_cls.content.contains(utils.normalize_unicode(content.strip())))
+    if link:
+        query = query.filter(model_cls.link == link)
+    if parascript_id:
+        query = query.filter(model_cls.parascriptId == parascript_id)
+    if reference:
+        query = filter_by_reference(db_,query, model_cls, reference)
+    if metadata:
+        meta = json.loads(metadata)
+        for key in meta:
+            key_match = db_models.Parascriptural.metaData.op('->>')(key).ilike(f'%{key}%')
+            value_match = db_models.Parascriptural.metaData.op('->>')(key).ilike(f'%{meta[key]}%')
+            query = query.filter(key_match | value_match)
+    if search_word:
+        search_pattern = " & ".join(re.findall(r'\w+', search_word))
+        search_pattern += ":*"
+        query = query.filter(text("to_tsvector('simple', category || ' ' ||"+\
+            " title || ' ' || "+\
+            " content || ' ' || "+\
+            " description || ' ' || "+\
+            " link || ' ' || "+\
+            " reference || ' ' || "+\
+            "jsonb_to_tsvector('simple', metadata, '[\"string\", \"numeric\"]') || ' ')"+\
+            " @@ to_tsquery('simple', :pattern)").bindparams(pattern=search_pattern))
+
     query = query.filter(model_cls.active == active)
     resource_db_content = db_.query(db_models.Resource).filter(
         db_models.Resource.resourceName == resource_name).first()
@@ -356,30 +408,41 @@ def get_infographics(db_:Session, resource_name, book_code=None, title=None,**kw
         }
     return response
 
-def upload_infographics(db_: Session, resource_name, infographics, user_id=None):
-    '''Adds rows to the infographics table specified by resource_name'''
+def upload_parascripturals(db_: Session, resource_name, parascriptural, user_id=None):
+    '''Adds rows to the parascripturals table specified by resource_name'''
     resource_db_content = db_.query(db_models.Resource).filter(
         db_models.Resource.resourceName == resource_name).first()
     if not resource_db_content:
         raise NotAvailableException(f'Resource {resource_name}, not found in database')
-    if resource_db_content.contentType.contentType != db_models.ContentTypeName.INFOGRAPHIC.value:
-        raise TypeException('The operation is supported only on infographics')
+    if resource_db_content.contentType.contentType != \
+        db_models.ContentTypeName.PARASCRIPTURAL.value:
+        raise TypeException('The operation is supported only on parascripturals')
     model_cls = db_models.dynamicTables[resource_name]
     db_content = []
-    prev_book_code = None
-    for item in infographics:
-        if item.bookCode != prev_book_code:
-            book = db_.query(db_models.BibleBook).filter(
-                db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
-            prev_book_code = item.bookCode
-            if not book:
-                raise NotAvailableException(f'Bible Book code, {item.bookCode}, '+\
-                    'not found in database')
+    for item in parascriptural:
+        if item.reference:
+            ref = item.reference.__dict__
+            ref_start = utils.create_parascript_ref_id(
+                db_,ref['book'],ref['chapter'],ref['verseNumber'])
+            ref_end   = utils.create_parascript_ref_id(
+                db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
+        else:
+            ref = None
+            ref_end = None
+            ref_start = None
+        if item.content:
+            item.content = utils.normalize_unicode(item.content.strip())
         row = model_cls(
-            book_id = book.bookId,
+            category = item.category,
             title = utils.normalize_unicode(item.title.strip()),
-            infographicLink = item.infographicLink,
-            active=item.active)
+            description = item.description,
+            content =item.content,
+            reference = ref,
+            refStart=ref_start,
+            refEnd=ref_end,
+            link = item.link,
+            metaData = item.metaData,
+            active = item.active)
         db_content.append(row)
     db_.add_all(db_content)
     db_.expire_all()
@@ -390,35 +453,43 @@ def upload_infographics(db_: Session, resource_name, infographics, user_id=None)
         }
     return response
 
-def update_infographics(db_: Session, resource_name, infographics, user_id=None):
-    '''Update rows, that matches book, and title in the infographic table
+def update_parascripturals(db_: Session, resource_name, parascripturals, user_id=None):
+    '''Update rows, that matches type, and title in the parascriptural table
     specified by resource_name'''
     resource_db_content = db_.query(db_models.Resource).filter(
         db_models.Resource.resourceName == resource_name).first()
     if not resource_db_content:
         raise NotAvailableException(f'Resource {resource_name}, not found in database')
-    if resource_db_content.contentType.contentType != db_models.ContentTypeName.INFOGRAPHIC.value:
-        raise TypeException('The operation is supported only on infographics')
+    if resource_db_content.contentType.contentType != \
+        db_models.ContentTypeName.PARASCRIPTURAL.value:
+        raise TypeException('The operation is supported only on parascripturals')
     model_cls = db_models.dynamicTables[resource_name]
     db_content = []
-    prev_book_code = None
-    for item in infographics:
-        if item.bookCode != prev_book_code:
-            book = db_.query(db_models.BibleBook).filter(
-                db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
-            prev_book_code = item.bookCode
-            if not book:
-                raise NotAvailableException(f'Bible Book code, {item.bookCode}, '+\
-                    'not found in database')
+    for item in parascripturals:
         row = db_.query(model_cls).filter(
-            model_cls.book_id == book.bookId,
+            model_cls.category == item.category,
             model_cls.title == utils.normalize_unicode(item.title.strip())).first()
         if not row:
-            raise NotAvailableException(f"Infographics row with bookCode:{item.bookCode}, "+\
+            raise NotAvailableException(f"Parascripturals row with type:{item.category}, "+\
                 f"title:{item.title}, "+\
                 f"not found for {resource_name}")
-        if item.infographicLink:
-            row.infographicLink = item.infographicLink
+        if item.description:
+            row.description = item.description
+        if item.content:
+            row.content = utils.normalize_unicode(item.content.strip())
+        if item.link:
+            row.link = item.link
+        if item.reference:
+            ref = item.reference.__dict__
+            ref_start = \
+                utils.create_parascript_ref_id(db_,ref['book'],ref['chapter'],ref['verseNumber'])
+            ref_end  = \
+                utils.create_parascript_ref_id(db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
+            row.reference = ref
+            row.refStart=ref_start
+            row.refEnd=ref_end
+        if item.metaData:
+            row.metaData = item.metaData
         if item.active is not None:
             row.active = item.active
         db_.flush()
@@ -430,14 +501,14 @@ def update_infographics(db_: Session, resource_name, infographics, user_id=None)
         }
     return response
 
-def delete_infographic(db_: Session, delitem: int,table_name = None,\
+def delete_parascriptural(db_: Session, delitem: int,table_name = None,\
     resource_name=None,user_id=None):
-    '''delete particular item from infographic, selected via resourcename and infographic id'''
+    '''delete particular item from parascriptural, selected via resourceName and parascript id'''
     resource_db_content = db_.query(db_models.Resource).filter(
         db_models.Resource.resourceName == resource_name).first()
     model_cls = table_name
     query = db_.query(model_cls)
-    db_content = query.filter(model_cls.infographicId == delitem).first()
+    db_content = query.filter(model_cls.parascriptId == delitem).first()
     db_.flush()
     db_.delete(db_content)
     #db_.commit()
