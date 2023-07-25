@@ -103,48 +103,48 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/resources/parascripturals/{resource_name},POST,None,False,None,create
 /v2/resources/parascripturals/{resource_name},PUT,None,False,None,edit
 /v2/resources/parascripturals/{resource_name},DELETE,None,False,None,delete/deactivate
-/v2/translation/projects,GET,Autographa,True,None,view-project
-/v2/translation/projects,GET,SanketMAST,True,None,view-project
-/v2/translation/projects,POST,Autographa,False,None,create
-/v2/translation/projects,POST,SanketMAST,False,None,create
-/v2/translation/projects,PUT,Autographa,False,"contents like bibles, commentaries, parascripturals or vocabularies",translate
-/v2/translation/projects,PUT,SanketMAST,False,"contents like bibles, commentaries, parascripturals or vocabularies",translate
-/v2/translation/projects,PUT,Autographa,False,Ag or translation project,edit-Settings
-/v2/translation/projects,PUT,SanketMAST,False,Ag or translation project,edit-Settings
-/v2/translation/projects,DELETE,Autographa,False,None,delete
-/v2/translation/projects,DELETE,SanketMAST,False,None,delete
-/v2/translation/project/user,POST,Autographa,False,None,create-user
-/v2/translation/project/user,POST,SanketMAST,False,None,create-user
-/v2/translation/project/user,PUT,Autographa,False,None,edit-Settings
-/v2/translation/project/user,PUT,SanketMAST,False,None,edit-Settings
-/v2/translation/project/user,DELETE,Autographa,False,None,delete-user
-/v2/translation/project/user,DELETE,SanketMAST,False,None,delete-user
-/v2/translation/project/tokens,GET,Autographa,False,None,read-draft
-/v2/translation/project/tokens,GET,SanketMAST,False,None,read-draft
-/v2/translation/project/tokens,PUT,Autographa,False,None,edit-draft
-/v2/translation/project/tokens,PUT,SanketMAST,False,None,edit-draft
-/v2/translation/project/token-translations,GET,Autographa,False,None,read-draft
-/v2/translation/project/token-translations,GET,SanketMAST,False,None,read-draft
-/v2/translation/project/token-sentences,PUT,Autographa,False,None,edit-draft
-/v2/translation/project/token-sentences,PUT,SanketMAST,False,None,edit-draft
-/v2/translation/project/draft,GET,Autographa,False,None,read-draft
-/v2/translation/project/draft,GET,SanketMAST,False,None,read-draft
-/v2/translation/project/draft,PUT,Autographa,False,None,edit-draft
-/v2/translation/project/draft,PUT,SanketMAST,False,None,edit-draft
-/v2/translation/project/sentences,GET,Autographa,False,None,view-project
-/v2/translation/project/sentences,GET,SanketMAST,False,None,view-project
-/v2/translation/project/progress,GET,Autographa,False,None,view-project
-/v2/translation/project/progress,GET,SanketMAST,False,None,view-project
-/v2/translation/project/versification,GET,Autographa,False,None,view-project
-/v2/translation/project/versification,GET,SanketMAST,False,None,view-project
-/v2/translation/project/sentences,DELETE,Autographa,False,None,delete-sentence
-/v2/translation/project/sentences,DELETE,SanketMAST,False,None,delete-sentence
-/v2/translation/project/suggestions,PUT,Autographa,False,None,edit-draft
-/v2/translation/project/suggestions,PUT,SanketMAST,False,None,edit-draft
-/v2/translation/suggestions,PUT,None,False,None,process
-/v2/translation/tokens,PUT,None,False,None,process
-/v2/translation/token-translate,PUT,None,False,None,process
-/v2/translation/draft,PUT,None,False,None,process
+/v2/text/translate/token-based/projects,GET,Autographa,True,None,view-project
+/v2/text/translate/token-based/projects,GET,SanketMAST,True,None,view-project
+/v2/text/translate/token-based/projects,POST,Autographa,False,None,create
+/v2/text/translate/token-based/projects,POST,SanketMAST,False,None,create
+/v2/text/translate/token-based/projects,PUT,Autographa,False,"contents like bibles, commentaries, parascripturals or vocabularies",translate
+/v2/text/translate/token-based/projects,PUT,SanketMAST,False,"contents like bibles, commentaries, parascripturals or vocabularies",translate
+/v2/text/translate/token-based/projects,PUT,Autographa,False,Ag or translation project,edit-Settings
+/v2/text/translate/token-based/projects,PUT,SanketMAST,False,Ag or translation project,edit-Settings
+/v2/text/translate/token-based/projects,DELETE,Autographa,False,None,delete
+/v2/text/translate/token-based/projects,DELETE,SanketMAST,False,None,delete
+/v2/text/translate/token-based/project/user,POST,Autographa,False,None,create-user
+/v2/text/translate/token-based/project/user,POST,SanketMAST,False,None,create-user
+/v2/text/translate/token-based/project/user,PUT,Autographa,False,None,edit-Settings
+/v2/text/translate/token-based/project/user,PUT,SanketMAST,False,None,edit-Settings
+/v2/text/translate/token-based/project/user,DELETE,Autographa,False,None,delete-user
+/v2/text/translate/token-based/project/user,DELETE,SanketMAST,False,None,delete-user
+/v2/text/translate/token-based/project/tokens,GET,Autographa,False,None,read-draft
+/v2/text/translate/token-based/project/tokens,GET,SanketMAST,False,None,read-draft
+/v2/text/translate/token-based/project/tokens,PUT,Autographa,False,None,edit-draft
+/v2/text/translate/token-based/project/tokens,PUT,SanketMAST,False,None,edit-draft
+/v2/text/translate/token-based/project/token-translations,GET,Autographa,False,None,read-draft
+/v2/text/translate/token-based/project/token-translations,GET,SanketMAST,False,None,read-draft
+/v2/text/translate/token-based/project/token-sentences,PUT,Autographa,False,None,edit-draft
+/v2/text/translate/token-based/project/token-sentences,PUT,SanketMAST,False,None,edit-draft
+/v2/text/translate/token-based/project/draft,GET,Autographa,False,None,read-draft
+/v2/text/translate/token-based/project/draft,GET,SanketMAST,False,None,read-draft
+/v2/text/translate/token-based/project/draft,PUT,Autographa,False,None,edit-draft
+/v2/text/translate/token-based/project/draft,PUT,SanketMAST,False,None,edit-draft
+/v2/text/translate/token-based/project/sentences,GET,Autographa,False,None,view-project
+/v2/text/translate/token-based/project/sentences,GET,SanketMAST,False,None,view-project
+/v2/text/translate/token-based/project/progress,GET,Autographa,False,None,view-project
+/v2/text/translate/token-based/project/progress,GET,SanketMAST,False,None,view-project
+/v2/text/translate/token-based/project/versification,GET,Autographa,False,None,view-project
+/v2/text/translate/token-based/project/versification,GET,SanketMAST,False,None,view-project
+/v2/text/translate/token-based/project/sentences,DELETE,Autographa,False,None,delete-sentence
+/v2/text/translate/token-based/project/sentences,DELETE,SanketMAST,False,None,delete-sentence
+/v2/text/translate/token-based/project/suggestions,PUT,Autographa,False,None,edit-draft
+/v2/text/translate/token-based/project/suggestions,PUT,SanketMAST,False,None,edit-draft
+/v2/text/translate/token-based/suggestions,PUT,None,False,None,process
+/v2/text/translate/token-based/tokens,PUT,None,False,None,process
+/v2/text/translate/token-based/token-translate,PUT,None,False,None,process
+/v2/text/translate/token-based/draft,PUT,None,False,None,process
 /v2/nlp/gloss,GET,None,False,None,read
 /v2/nlp/gloss-entries,GET,None,False,None,read
 /v2/nlp/gloss-entries/count,GET,None,False,None,read

@@ -15,7 +15,8 @@ from auth.authentication import get_user_or_none,get_auth_access_check_decorator
 router = APIRouter()
 #pylint: disable=too-many-arguments,unused-argument
 ############## Translation Projects ##########################
-@router.get('/v2/translation/projects', response_model=List[schemas_nlp.TranslationProject],
+@router.get('/v2/text/translate/token-based/projects',
+    response_model=List[schemas_nlp.TranslationProject],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}},
@@ -36,7 +37,7 @@ async def get_projects(request: Request,
     return projects_crud.get_translation_projects(db_, project_name, source_language,
         target_language, active=active, user_id=user_id, skip=skip, limit=limit)
 
-@router.post('/v2/translation/projects', status_code=201,
+@router.post('/v2/text/translate/token-based/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse}},
@@ -52,7 +53,7 @@ async def create_project(request: Request,
         "data": projects_crud.create_translation_project(db_=db_, project=project_obj,
             user_id=user_details['user_id'])}
 
-@router.put('/v2/translation/projects', status_code=201,
+@router.put('/v2/text/translate/token-based/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -98,7 +99,7 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
         "data": projects_crud.update_translation_project(db_, project_obj,
             user_id=user_details['user_id'])}
 
-@router.delete('/v2/translation/projects', status_code=201,
+@router.delete('/v2/text/translate/token-based/projects', status_code=201,
     response_model=schemas.DeleteResponse,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -116,7 +117,7 @@ async def remove_project(request: Request,project_id:int,
     return {'message': f"Project with identity {project_id} deleted successfully",
             "data": delcont}
 
-@router.post('/v2/translation/project/user', status_code=201,
+@router.post('/v2/text/translate/token-based/project/user', status_code=201,
     response_model=schemas_nlp.UserUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -132,7 +133,7 @@ async def add_user(request: Request,project_id:int, user_id:str,
         "data": projects_crud.add_project_user(db_, project_id, user_id,
             current_user=user_details['user_id'])}
 
-@router.put('/v2/translation/project/user', status_code=201,
+@router.put('/v2/text/translate/token-based/project/user', status_code=201,
     response_model=schemas_nlp.UserUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -147,7 +148,7 @@ async def update_user(request: Request,user_obj:schemas_nlp.ProjectUser,
         "data": projects_crud.update_project_user(db_, user_obj,
             current_user=user_details['user_id'])}
 
-@router.delete('/v2/translation/project/user', status_code=201,
+@router.delete('/v2/text/translate/token-based/project/user', status_code=201,
     response_model=schemas.DeleteResponse,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -167,7 +168,7 @@ async def remove_user(request: Request,project_id:int, user_id:str,
             "data": delcont}
 
 ############## Translation APIs ##########################
-@router.get('/v2/translation/project/tokens', response_model=List[schemas_nlp.Token],
+@router.get('/v2/text/translate/token-based/project/tokens', response_model=List[schemas_nlp.Token],
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -195,7 +196,8 @@ async def get_tokens(request: Request, project_id:int=Query(...,example="1022004
         use_translation_memory=use_translation_memory,
         include_phrases = include_phrases, include_stopwords=include_stopwords)
 
-@router.put('/v2/translation/project/tokens', response_model=schemas_nlp.TranslateResponse,
+@router.put('/v2/text/translate/token-based/project/tokens',
+    response_model=schemas_nlp.TranslateResponse,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     500: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
@@ -211,7 +213,7 @@ async def apply_token_translations(request: Request,project_id:int=Query(...,exa
         user_id=user_details['user_id'])
     return {"message": "Token translations saved", "data":drafts}
 
-@router.get('/v2/translation/project/token-translations', status_code=200,
+@router.get('/v2/text/translate/token-based/project/token-translations', status_code=200,
     response_model= schemas_nlp.Translation,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -229,7 +231,7 @@ async def get_token_translation(request: Request,project_id:int=Query(...,exampl
     log.debug('project_id: %s, token:%s, occurrences:%s',project_id, token, occurrences)
     return projects_crud.obtain_project_token_translation(db_, project_id, token, occurrences)
 
-@router.put('/v2/translation/project/token-sentences', status_code=200,
+@router.put('/v2/text/translate/token-based/project/token-sentences', status_code=200,
     response_model = List[schemas_nlp.Sentence],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -247,7 +249,7 @@ async def get_token_sentences(request: Request,project_id:int=Query(...,example=
     log.debug('project_id: %s, token:%s, occurrences:%s',project_id, token, occurrences)
     return projects_crud.get_project_source_per_token(db_, project_id, token, occurrences)
 
-@router.get('/v2/translation/project/draft', status_code=200,
+@router.get('/v2/text/translate/token-based/project/draft', status_code=200,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     415: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
@@ -268,7 +270,7 @@ async def get_draft(request: Request,project_id:int=Query(...,example="1022004")
     return projects_crud.obtain_project_draft(db_, project_id, books,
         sentence_id_list, sentence_id_range, output_format=output_format)
 
-@router.put('/v2/translation/project/draft', status_code=201,
+@router.put('/v2/text/translate/token-based/project/draft', status_code=201,
     response_model = List[schemas_nlp.Sentence],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -286,7 +288,7 @@ async def update_draft(request: Request,project_id:int=Query(...,example="102200
     return projects_crud.update_project_draft(db_, project_id, sentence_list,
         user_details['user_id'])
 
-@router.get('/v2/translation/project/sentences', status_code=200,
+@router.get('/v2/text/translate/token-based/project/sentences', status_code=200,
     response_model_exclude_unset=True, response_model=List[schemas_nlp.Sentence],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -307,7 +309,7 @@ async def get_project_source(request: Request,project_id:int=Query(...,example="
     return projects_crud.obtain_project_source(db_, project_id, books, sentence_id_range,
         sentence_id_list, with_draft=with_draft, only_ids=only_ids)
 
-@router.delete('/v2/translation/project/sentences', status_code=201,
+@router.delete('/v2/text/translate/token-based/project/sentences', status_code=201,
     response_model=schemas.DeleteResponse,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -327,7 +329,7 @@ async def remove_sentence(request: Request,project_id:int=Query(...,example="102
     return {'message': f"Sentence with identity {sentence_id} deleted successfully",
             "data": delcont}
 
-@router.get('/v2/translation/project/progress', status_code=200,
+@router.get('/v2/text/translate/token-based/project/progress', status_code=200,
     response_model= schemas_nlp.Progress,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -346,7 +348,7 @@ async def get_progress(request: Request,project_id:int=Query(...,example="102200
     return projects_crud.obtain_project_progress(db_, project_id, books,
         sentence_id_list, sentence_id_range)
 
-@router.get('/v2/translation/project/versification', status_code=200,
+@router.get('/v2/text/translate/token-based/project/versification', status_code=200,
     response_model= schema_content.Versification,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -360,7 +362,7 @@ async def get_project_versification(request: Request,project_id:int=Query(...,ex
     log.debug('project_id: %s', project_id)
     return projects_crud.get_project_source_versification(db_, project_id)
 
-@router.put('/v2/translation/project/suggestions', status_code=201,
+@router.put('/v2/text/translate/token-based/project/suggestions', status_code=201,
     response_model=List[schemas_nlp.Sentence],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -382,7 +384,7 @@ async def suggest_auto_translation(request: Request,project_id:int=Query(...,exa
         sentence_id_range = sentence_id_range,confirm_all = confirm_all)
 
 ########### Generic Translation ##################
-@router.put('/v2/translation/tokens', response_model=List[schemas_nlp.Token],
+@router.put('/v2/text/translate/token-based/tokens', response_model=List[schemas_nlp.Token],
     response_model_exclude_unset=True, status_code=200,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -410,7 +412,8 @@ async def tokenize(request: Request,
         use_translation_memory = use_translation_memory, include_phrases = include_phrases,
         include_stopwords = include_stopwords)
 
-@router.put('/v2/translation/token-translate', response_model=schemas_nlp.TranslateResponse,
+@router.put('/v2/text/translate/token-based/token-translate',
+    response_model=schemas_nlp.TranslateResponse,
     status_code=200,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -434,7 +437,7 @@ async def token_replace(request: Request,sentence_list:List[schemas_nlp.DraftInp
         target_language, use_data_for_learning=use_data_for_learning)
     return {"message": "Tokens replaced with translations", "data": result}
 
-@router.put('/v2/translation/draft', status_code=200,
+@router.put('/v2/text/translate/token-based/draft', status_code=200,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     415: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
@@ -452,7 +455,7 @@ async def generate_draft(request: Request,sentence_list:List[schemas_nlp.DraftIn
             utils.validate_draft_meta(sent.sentence, sent.draft, sent.draftMeta)
     return nlp_crud.obtain_draft(sentence_list, doc_type)
 
-@router.put('/v2/translation/suggestions', response_model=List[schemas_nlp.Sentence],
+@router.put('/v2/text/translate/token-based/suggestions', response_model=List[schemas_nlp.Sentence],
     status_code=200,responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse}},
     tags=["Translation Suggestion"])

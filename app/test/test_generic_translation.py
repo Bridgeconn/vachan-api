@@ -7,7 +7,7 @@ from . import assert_input_validation_error, assert_not_available_content
 from .test_agmt_translation import assert_positive_get_tokens, assert_positive_get_sentence
 from .conftest import initial_test_users
 
-UNIT_URL = '/v2/translation'
+UNIT_URL = '/v2/text/translate/token-based'
 headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json"
