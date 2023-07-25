@@ -8,9 +8,9 @@ from .test_versions import check_post as add_version
 from .conftest import initial_test_users
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 
-UNIT_URL = '/v2/mt/token-based/projects' 
-USER_URL = '/v2/mt/token-based/project/user'
-SENTENCE_URL = '/v2/mt/token-based/project/sentences'
+UNIT_URL = '/v2/text/translate/token-based/projects' 
+USER_URL = '/v2/text/translate/token-based/project/user'
+SENTENCE_URL = '/v2/text/translate/token-based/project/sentences'
 RESTORE_URL = '/v2/restore'
 headers = {"contentType": "application/json", "accept": "application/json", "app":"SanketMAST"}
 headers_auth = {"contentType": "application/json",

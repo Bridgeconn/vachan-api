@@ -92,11 +92,11 @@ def api_resourcetype_map(endpoint, path_params=None):
     '''Default correlation between API endpoints and resource they act upon'''
     if endpoint.split('/')[2] in ["contents", "languages", "licenses", 'versions']:
         resource_type = schema_auth.ResourceType.METACONTENT.value
-    elif endpoint.startswith('/v2/mt/token-based/project'):
+    elif endpoint.startswith('/v2/text/translate/token-based/project'):
         resource_type = schema_auth.ResourceType.PROJECT.value
     elif endpoint.startswith('/v2/user'):
         resource_type = schema_auth.ResourceType.USER.value
-    elif endpoint.startswith("/v2/translation") or endpoint.startswith("/v2/nlp"):
+    elif endpoint.startswith("/v2/text/translate/token-based") or endpoint.startswith("/v2/nlp"):
         resource_type = schema_auth.ResourceType.TRANSLATION.value
     elif endpoint.startswith("/v2/lookup"):
         resource_type = schema_auth.ResourceType.LOOKUP.value

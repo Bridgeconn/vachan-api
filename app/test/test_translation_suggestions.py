@@ -6,7 +6,7 @@ from .test_generic_translation import sentence_list, sample_sent
 from .conftest import initial_test_users
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 
-UNIT_URL = '/v2/translation'
+UNIT_URL = '/v2/text/translate/token-based'
 NLP_UNIT_URL = '/v2/nlp'
 RESTORE_URL = '/v2/restore'
 headers = {"contentType": "application/json", "accept": "application/json"}
