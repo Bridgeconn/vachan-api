@@ -46,7 +46,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/sources,GET,SanketMAST,True,None,refer-for-translation
 /v2/sources,GET,Vachan-online or vachan-app,True,None,view-on-web
 /v2/sources,GET,VachanAdmin,True,None,read-via-vachanadmin
-/v2/sources,GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
+/v2/sources,GET,VachanContentDashboard,True,None,read-via-vachancontentdashboard
 /v2/sources,GET,API-user,True,None,read-via-api
 /v2/sources,POST,None,False,None,create
 /v2/sources,PUT,None,False,None,edit
