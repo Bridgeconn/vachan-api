@@ -424,7 +424,7 @@ def test_end_to_end_translation():
 
     # # Suggestions
 
-    resp = client.post(BASE_URL+"nlp/learn/alignment?source_language="+ALIGNMENT_SRC+
+    resp = client.post(BASE_URL+"nlp/alignment?source_language="+ALIGNMENT_SRC+
     	"&target_language="+ALIGNMENT_TRG, headers=headers_auth, json=alignment_data)
     # print("**",resp)
     assert resp.status_code == 201

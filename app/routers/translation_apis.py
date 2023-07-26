@@ -544,7 +544,7 @@ async def get_gloss_count(request: Request,
     response['tokenCount'] = len(response['token_count'])
     return response
 
-@router.post('/v2/nlp/learn/gloss', response_model=schemas_nlp.GlossUpdateResponse,
+@router.post('/v2/nlp/gloss', response_model=schemas_nlp.GlossUpdateResponse,
     status_code=201,responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}},
@@ -599,7 +599,7 @@ async def remove_glossary(request: Request,
     return {'message': f"Token-Translation pair {token} -> {translation} deleted successfully",
             "data": delcont}
 
-@router.post('/v2/nlp/learn/alignment', response_model=schemas_nlp.GlossUpdateResponse,
+@router.post('/v2/nlp/alignment', response_model=schemas_nlp.GlossUpdateResponse,
     status_code=201,responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     415: {"model": schemas.ErrorResponse}},tags=["Nlp"])
