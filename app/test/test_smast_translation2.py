@@ -261,7 +261,7 @@ def test_empty_draft_initalization():
     tokens_trans = [
         {"token":"jungle", "translations":["കാട്"]}
     ]
-    response = client.post('/v2/nlp/learn/gloss?source_language=en&target_language=ml',
+    response = client.post('/v2/nlp/gloss?source_language=en&target_language=ml',
         headers=headers_auth, json=tokens_trans)
     assert response.status_code == 201
     assert response.json()['message'] == "Added to glossary"
@@ -343,7 +343,7 @@ def test_space_in_suggested_draft():
         {"token":"far", "translations":["ദൂരെ"]},
         {"token":"fox", "translations":["കുറുക്കന്‍"]}
     ]
-    response = client.post('/v2/nlp/learn/gloss?source_language=en&target_language=ml',
+    response = client.post('/v2/nlp/gloss?source_language=en&target_language=ml',
         headers=headers_auth, json=tokens_trans)
     assert response.status_code == 201
     assert response.json()['message'] == "Added to glossary"

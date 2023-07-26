@@ -8,7 +8,7 @@ from .conftest import initial_test_users
 src_lang = "en"
 trg_lang = "aa"
 
-POST_URL = '/v2/nlp/learn/gloss'
+POST_URL = '/v2/nlp/gloss'
 GET_LIST_URL = "/v2/nlp/gloss-entries"
 GET_COUNT_URL = '/v2/nlp/gloss-entries/count'
 
