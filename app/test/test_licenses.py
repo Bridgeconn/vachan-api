@@ -7,7 +7,7 @@ from .test_resources import check_post as add_resource
 from .test_auth_basic import logout_user,login,SUPER_PASSWORD,SUPER_USER
 from .conftest import initial_test_users
 
-UNIT_URL = '/v2/licenses'
+UNIT_URL = '/v2/resources/licenses'
 RESTORE_URL = '/v2/restore'
 headers = {"contentType": "application/json", "accept": "application/json"}
 
