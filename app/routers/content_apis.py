@@ -163,7 +163,7 @@ async def delete_languages(request: Request, lang_id: int,
             "data": delcont}
 
 ########### Licenses ######################
-@router.get('/v2/licenses',
+@router.get('/v2/resources/licenses',
     response_model=List[schemas.LicenseResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Licenses"])
@@ -185,7 +185,7 @@ async def get_license(request: Request,
     return structurals_crud.get_licenses(db_, license_code, license_name, permission,
         active, skip = skip, limit = limit)
 
-@router.post('/v2/licenses', response_model=schemas.LicenseCreateResponse,
+@router.post('/v2/resources/licenses', response_model=schemas.LicenseCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
@@ -199,7 +199,7 @@ async def add_license(request: Request, license_obj : schemas.LicenseCreate = Bo
     return {'message': "License uploaded successfully",
         "data": structurals_crud.create_license(db_, license_obj, user_id=user_details['user_id'])}
 
-@router.put('/v2/licenses', response_model=schemas.LicenseUpdateResponse,
+@router.put('/v2/resources/licenses', response_model=schemas.LicenseUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
@@ -217,7 +217,7 @@ async def edit_license(request: Request, license_obj: schemas.LicenseEdit = Body
         "data": structurals_crud.update_license(db_=db_, license_obj=license_obj,
         user_id=user_details['user_id'])}
 
-@router.delete('/v2/licenses',response_model=schemas.DeleteResponse,
+@router.delete('/v2/resources/licenses',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
     502: {"model": schemas.ErrorResponse}},
