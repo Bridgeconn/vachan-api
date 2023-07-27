@@ -228,7 +228,7 @@ def add_version():
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     headers_auth['app'] = schema_auth.AdminRoles.VACHANADMIN.value
-    result = client.post('/v2/versions', headers=headers_auth, json=version_data)
+    result = client.post('/v2/resources/versions', headers=headers_auth, json=version_data)
     assert result.status_code == 201
 
 def add_bible_resource():

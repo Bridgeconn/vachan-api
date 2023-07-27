@@ -6,7 +6,7 @@ from . import check_default_get
 from .test_auth_basic import login,SUPER_USER,SUPER_PASSWORD,logout_user
 from .conftest import initial_test_users
 
-UNIT_URL = '/v2/versions'
+UNIT_URL = '/v2/resources/versions'
 RESTORE_URL = '/v2/restore'
 RESOURCE_URL = '/v2/resources'
 

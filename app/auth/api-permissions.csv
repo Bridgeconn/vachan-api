@@ -30,14 +30,14 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/resources/licenses,POST,None,False,None,create
 /v2/resources/licenses,PUT,None,False,None,edit
 /v2/resources/licenses,DELETE,None,False,None,delete/deactivate
-/v2/versions,GET,Autographa,False,None,refer-for-translation
-/v2/versions,GET,SanketMAST,False,None,refer-for-translation
-/v2/versions,GET,Vachan-online or vachan-app,False,None,view-on-web
-/v2/versions,GET,VachanAdmin,False,None,read-via-vachanadmin
-/v2/versions,GET,API-user,False,None,read-via-api
-/v2/versions,POST,None,False,None,create
-/v2/versions,PUT,None,False,None,edit
-/v2/versions,DELETE,None,False,None,delete/deactivate
+/v2/resources/versions,GET,Autographa,False,None,refer-for-translation
+/v2/resources/versions,GET,SanketMAST,False,None,refer-for-translation
+/v2/resources/versions,GET,Vachan-online or vachan-app,False,None,view-on-web
+/v2/resources/versions,GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/resources/versions,GET,API-user,False,None,read-via-api
+/v2/resources/versions,POST,None,False,None,create
+/v2/resources/versions,PUT,None,False,None,edit
+/v2/resources/versions,DELETE,None,False,None,delete/deactivate
 /v2/resources,GET,Autographa,True,None,refer-for-translation
 /v2/resources,GET,SanketMAST,True,None,refer-for-translation
 /v2/resources,GET,Vachan-online or vachan-app,True,None,view-on-web

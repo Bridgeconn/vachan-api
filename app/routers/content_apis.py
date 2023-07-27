@@ -240,7 +240,7 @@ async def delete_licenses(request: Request, delete_id:int,
             "data": delcont}
 
 ##### Version #####
-@router.get('/v2/versions',
+@router.get('/v2/resources/versions',
     response_model=List[schemas.VersionResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Versions"])
@@ -263,7 +263,7 @@ async def get_version(request: Request,
     return structurals_crud.get_versions(db_, version_abbreviation,
         version_name, version_tag, metadata, skip = skip, limit = limit)
 
-@router.post('/v2/versions', response_model=schemas.VersionCreateResponse,
+@router.post('/v2/resources/versions', response_model=schemas.VersionCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
@@ -284,7 +284,7 @@ async def add_version(request: Request, version_obj : schemas.VersionCreate = Bo
         "data": structurals_crud.create_version(db_=db_, version=version_obj,
         user_id=user_details['user_id'])}
 
-@router.put('/v2/versions', response_model=schemas.VersionUpdateResponse,
+@router.put('/v2/resources/versions', response_model=schemas.VersionUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
@@ -306,7 +306,7 @@ async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...
         "data": structurals_crud.update_version(db_=db_, version=ver_obj,
         user_id=user_details['user_id'])}
 
-@router.delete('/v2/versions',response_model=schemas.DeleteResponse,
+@router.delete('/v2/resources/versions',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
     502: {"model": schemas.ErrorResponse}},
