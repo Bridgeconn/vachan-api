@@ -83,7 +83,7 @@ async def delete_contents(request: Request,content_id: int ,
             "data": delcont}
 
 ##### languages #####
-@router.get('/v2/languages',
+@router.get('/v2/resources/languages',
     response_model=List[schemas.LanguageResponse],
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
@@ -107,7 +107,7 @@ async def get_language(request: Request,
     return structurals_crud.get_languages(db_, language_code, language_name, search_word,
         localscript_name = localscript_name, skip = skip, limit = limit)
 
-@router.post('/v2/languages', response_model=schemas.LanguageCreateResponse,
+@router.post('/v2/resources/languages', response_model=schemas.LanguageCreateResponse,
     responses={502: {"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
@@ -125,7 +125,7 @@ async def add_language(request: Request, lang_obj : schemas.LanguageCreate = Bod
     return {'message': "Language created successfully",
             "data": data}
 
-@router.put('/v2/languages', response_model=schemas.LanguageUpdateResponse,
+@router.put('/v2/resources/languages', response_model=schemas.LanguageUpdateResponse,
     responses={502:{"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
@@ -142,7 +142,7 @@ async def edit_language(request: Request, lang_obj: schemas.LanguageEdit = Body(
             "data": structurals_crud.update_language(db_=db_, lang=lang_obj,
             user_id=user_details['user_id'])}
 
-@router.delete('/v2/languages',response_model=schemas.DeleteResponse,
+@router.delete('/v2/resources/languages',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Languages"])

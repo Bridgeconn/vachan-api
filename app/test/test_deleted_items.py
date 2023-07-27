@@ -11,7 +11,7 @@
 # from .conftest import initial_test_users
 
 # UNIT_URL = '/v2/deleted-items'
-# LANG_URL = '/v2/languages'
+# LANG_URL = '/v2/resources/languages'
 # headers = {"contentType": "application/json", "accept": "application/json"}
 # headers_auth = {"contentType": "application/json",
 #                 "accept": "application/json"}
