@@ -7,7 +7,7 @@ from .test_resources import check_post as add_resource
 from .test_auth_basic import SUPER_USER,SUPER_PASSWORD, login, logout_user
 from .conftest import initial_test_users
 
-UNIT_URL = '/v2/languages'
+UNIT_URL = '/v2/resources/languages'
 RESTORE_URL = '/v2/restore'
 
 def assert_positive_get(item):

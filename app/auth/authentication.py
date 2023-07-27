@@ -90,7 +90,7 @@ with open('auth/api-permissions.csv','r', encoding='utf-8') as file:
 
 def api_resourcetype_map(endpoint, path_params=None):
     '''Default correlation between API endpoints and resource they act upon'''
-    if endpoint.split('/')[2] in ["contents", "languages", "licenses", 'versions']:
+    if endpoint.endswith(("contents", "languages", "licenses", "versions")):
         resource_type = schema_auth.ResourceType.METACONTENT.value
     elif endpoint.startswith('/v2/text/translate/token-based/project'):
         resource_type = schema_auth.ResourceType.PROJECT.value
