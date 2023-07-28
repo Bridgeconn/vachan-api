@@ -1,9 +1,10 @@
 ''' Place to define all Database CRUD operations for content tables
-bible, commentary, parascriptural, vocabulary etc'''
+bible, commentary, parascriptural, vocabulary ,sign bible video etc'''
 #pylint: disable=too-many-lines
 import json
 import re
 from datetime import datetime
+from pytz import timezone
 import sqlalchemy
 from sqlalchemy.orm import Session, defer, joinedload
 from sqlalchemy.sql import text
@@ -12,6 +13,8 @@ from crud import utils  #pylint: disable=import-error
 from crud.nlp_sw_crud import update_job #pylint: disable=import-error
 from schema import schemas_nlp #pylint: disable=import-error
 from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException  #pylint: disable=import-error
+
+ist_timezone = timezone("Asia/Kolkata")
 
 def get_commentaries(db_: Session,**kwargs):
     '''Fetches rows of commentries from the table specified by resource_name'''
@@ -336,14 +339,14 @@ def filter_by_reference(db_:Session,query, model_cls, reference):
     reference_end = ['bookEnd', 'chapterEnd', 'verseEnd']
     if any(item in reference for item in reference_end):
         # search for cross-chapter references and mutliple verses within chapter
-        ref_start_id = utils.create_parascript_ref_id(
+        ref_start_id = utils.create_decimal_ref_id(
             db_,reference['book'], reference['chapter'], reference['verseNumber'])
-        ref_end_id   = utils.create_parascript_ref_id(
+        ref_end_id   = utils.create_decimal_ref_id(
             db_,reference['bookEnd'], reference['chapterEnd'], reference['verseEnd'])
         query = query.filter(model_cls.refStart <= ref_start_id, model_cls.refEnd >= ref_end_id)
     else:
         # search for a single verse
-        ref_id = utils.create_parascript_ref_id(
+        ref_id = utils.create_decimal_ref_id(
             db_,reference['book'], reference['chapter'], reference['verseNumber'])
         query = query.filter(model_cls.refStart <= ref_id, model_cls.refEnd >= ref_id)
     return query
@@ -422,10 +425,20 @@ def upload_parascripturals(db_: Session, resource_name, parascriptural, user_id=
     for item in parascriptural:
         if item.reference:
             ref = item.reference.__dict__
-            ref_start = utils.create_parascript_ref_id(
-                db_,ref['book'],ref['chapter'],ref['verseNumber'])
-            ref_end   = utils.create_parascript_ref_id(
-                db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
+            if ref['verseNumber'] is not None:
+                ref_start = utils.create_decimal_ref_id(
+                    db_,ref['book'],ref['chapter'],ref['verseNumber'])
+            else:
+                #setting verseNumber to 000 if its not present
+                ref_start = utils.create_decimal_ref_id(db_,ref['book'],ref['chapter'],0)
+                ref['verseNumber'] = 0
+            if ref['verseEnd'] is not None:
+                ref_end   = utils.create_decimal_ref_id(
+                    db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
+            else:
+                #setting verseEnd to 999 if its not present
+                ref_end   = utils.create_decimal_ref_id(db_,ref['bookEnd'],ref['chapterEnd'],999)
+                ref['verseEnd'] = 999
         else:
             ref = None
             ref_end = None
@@ -442,7 +455,8 @@ def upload_parascripturals(db_: Session, resource_name, parascriptural, user_id=
             refEnd=ref_end,
             link = item.link,
             metaData = item.metaData,
-            active = item.active)
+            active = item.active,
+            createdUser =  user_id)
         db_content.append(row)
     db_.add_all(db_content)
     db_.expire_all()
@@ -453,7 +467,7 @@ def upload_parascripturals(db_: Session, resource_name, parascriptural, user_id=
         }
     return response
 
-def update_parascripturals(db_: Session, resource_name, parascripturals, user_id=None):
+def update_parascripturals(db_: Session, resource_name, parascripturals, user_id=None):#pylint: disable=too-many-branches
     '''Update rows, that matches type, and title in the parascriptural table
     specified by resource_name'''
     resource_db_content = db_.query(db_models.Resource).filter(
@@ -481,10 +495,16 @@ def update_parascripturals(db_: Session, resource_name, parascripturals, user_id
             row.link = item.link
         if item.reference:
             ref = item.reference.__dict__
-            ref_start = \
-                utils.create_parascript_ref_id(db_,ref['book'],ref['chapter'],ref['verseNumber'])
-            ref_end  = \
-                utils.create_parascript_ref_id(db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
+            if ref['verseNumber'] is not None:
+                ref_start = utils.create_decimal_ref_id(
+                    db_,ref['book'],ref['chapter'],ref['verseNumber'])
+            else:
+                ref_start = utils.create_decimal_ref_id(db_,ref['book'],ref['chapter'],0)
+            if ref['verseEnd'] is not None:
+                ref_end   = utils.create_decimal_ref_id(
+                    db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
+            else:
+                ref_end   = utils.create_decimal_ref_id(db_,ref['bookEnd'],ref['chapterEnd'],999)
             row.reference = ref
             row.refStart=ref_start
             row.refEnd=ref_end
@@ -495,6 +515,7 @@ def update_parascripturals(db_: Session, resource_name, parascripturals, user_id
         db_.flush()
         db_content.append(row)
     resource_db_content.updatedUser = user_id
+    resource_db_content.updateTime = datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
     response = {
         'db_content':db_content,
         'resource_content':resource_db_content
@@ -518,6 +539,184 @@ def delete_parascriptural(db_: Session, delitem: int,table_name = None,\
         'resource_content':resource_db_content
         }
     return response
+
+def get_sign_bible_videos(db_:Session, resource_name, title=None,**kwargs): #pylint: disable=too-many-locals
+    '''Fetches rows of sign bible videos from the table specified by resource_name'''
+    description = kwargs.get("description",None)
+    search_word = kwargs.get("search_word",None)
+    reference = kwargs.get("reference",None)
+    link = kwargs.get("link",None)
+    metadata = kwargs.get("metadata",None)
+    active = kwargs.get("active",True)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
+    signvideo_id=kwargs.get("signvideo_id",None)
+    if resource_name not in db_models.dynamicTables:
+        raise NotAvailableException(f'{resource_name} not found in database.')
+    if not resource_name.endswith(db_models.ContentTypeName.SIGNBIBLEVIDEO.value):
+        raise TypeException('The operation is supported only on sign bible videos')
+    model_cls = db_models.dynamicTables[resource_name]
+    query = db_.query(model_cls)
+    if title:
+        query = query.filter(model_cls.title == utils.normalize_unicode(title.strip()))
+    if  description:
+        query = query.filter(model_cls.description.contains(
+            utils.normalize_unicode(description.strip())))
+    if link:
+        query = query.filter(model_cls.link == link)
+    if signvideo_id:
+        query = query.filter(model_cls.signVideoId == signvideo_id)
+    if reference:
+        query = filter_by_reference(db_,query, model_cls, reference)
+    if metadata:
+        meta = json.loads(metadata)
+        for key in meta:
+            key_match = db_models.SignBibleVideo.metaData.op('->>')(key).ilike(f'%{key}%')
+            value_match = db_models.SignBibleVideo.metaData.op('->>')(key).ilike(f'%{meta[key]}%')
+            query = query.filter(key_match | value_match)
+    if search_word:
+        search_pattern = " & ".join(re.findall(r'\w+', search_word))
+        search_pattern += ":*"
+        query = query.filter(text("to_tsvector('simple', title || ' ' ||"+\
+            " signvideo_id || ' ' || "+\
+            " description || ' ' || "+\
+            " link || ' ' || "+\
+            " reference || ' ' || "+\
+            "jsonb_to_tsvector('simple', metadata, '[\"string\", \"numeric\"]') || ' ')"+\
+            " @@ to_tsquery('simple', :pattern)").bindparams(pattern=search_pattern))
+
+    query = query.filter(model_cls.active == active)
+    resource_db_content = db_.query(db_models.Resource).filter(
+        db_models.Resource.resourceName == resource_name).first()
+    response = {
+        'db_content':query.offset(skip).limit(limit).all(),
+        'resource_content':resource_db_content
+        }
+    return response
+
+def upload_sign_bible_videos(db_: Session, resource_name, signvideos, user_id=None):
+    '''Adds rows to the sign bible videos table specified by resource_name'''
+    resource_db_content = db_.query(db_models.Resource).filter(
+        db_models.Resource.resourceName == resource_name).first()
+    if not resource_db_content:
+        raise NotAvailableException(f'Resource {resource_name}, not found in database')
+    if resource_db_content.contentType.contentType != \
+        db_models.ContentTypeName.SIGNBIBLEVIDEO.value:
+        raise TypeException('The operation is supported only on sign bible videos')
+    model_cls = db_models.dynamicTables[resource_name]
+    db_content = []
+    for item in signvideos:
+        if item.reference:
+            ref = item.reference.__dict__
+            if ref['verseNumber'] is not None:
+                ref_start = utils.create_decimal_ref_id(
+                    db_,ref['book'],ref['chapter'],ref['verseNumber'])
+            else:
+                #setting verseNumber to 000 if its not present
+                ref_start = utils.create_decimal_ref_id(db_,ref['book'],ref['chapter'],0)
+                ref['verseNumber'] = 0
+            if ref['verseEnd'] is not None:
+                ref_end   = utils.create_decimal_ref_id(
+                    db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
+            else:
+                #setting verseEnd to 999 if its not present
+                ref_end   = utils.create_decimal_ref_id(db_,ref['bookEnd'],ref['chapterEnd'],999)
+                ref['verseEnd'] = 999
+        else:
+            ref = None
+            ref_end = None
+            ref_start = None
+        row = model_cls(
+            title = utils.normalize_unicode(item.title.strip()),
+            description = item.description,
+            reference = ref,
+            refStart=ref_start,
+            refEnd=ref_end,
+            link = item.link,
+            metaData = item.metaData,
+            active = item.active,
+            createdUser =  user_id)
+        db_content.append(row)
+    db_.add_all(db_content)
+    db_.expire_all()
+    resource_db_content.updatedUser = user_id
+    response = {
+        'db_content':db_content,
+        'resource_content':resource_db_content
+        }
+    return response
+
+def update_sign_bible_videos(db_: Session, resource_name, signvideos, user_id=None): #pylint: disable=too-many-branches
+    '''Update rows, that matches signvideoId in the sign bible videos table
+    specified by resource_name'''
+    resource_db_content = db_.query(db_models.Resource).filter(
+        db_models.Resource.resourceName == resource_name).first()
+    if not resource_db_content:
+        raise NotAvailableException(f'Resource {resource_name}, not found in database')
+    if resource_db_content.contentType.contentType != \
+        db_models.ContentTypeName.SIGNBIBLEVIDEO.value:
+        raise TypeException('The operation is supported only on sign bible videos')
+    model_cls = db_models.dynamicTables[resource_name]
+    db_content = []
+    for item in signvideos:
+        row = db_.query(model_cls).filter(
+            model_cls.signVideoId == item.signVideoId).first()
+        if not row:
+            raise NotAvailableException(f"Sign Bible Video row with id:{item.signVideoId}, "+\
+                f"not found for {resource_name}")
+        if item.title:
+            row.title = item.title
+        if item.description:
+            row.description = item.description
+        if item.link:
+            row.link = item.link
+        if item.reference:
+            ref = item.reference.__dict__
+            if ref['verseNumber'] is not None:
+                ref_start = utils.create_decimal_ref_id(
+                    db_,ref['book'],ref['chapter'],ref['verseNumber'])
+            else:
+                ref_start = utils.create_decimal_ref_id(db_,ref['book'],ref['chapter'],0)
+            if ref['verseEnd'] is not None:
+                ref_end   = utils.create_decimal_ref_id(
+                    db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
+            else:
+                ref_end   = utils.create_decimal_ref_id(db_,ref['bookEnd'],ref['chapterEnd'],999)
+            row.reference = ref
+            row.refStart=ref_start
+            row.refEnd=ref_end
+        if item.metaData:
+            row.metaData = item.metaData
+        if item.active is not None:
+            row.active = item.active
+        db_.flush()
+        db_content.append(row)
+    resource_db_content.updatedUser = user_id
+    resource_db_content.updateTime = datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
+    response = {
+        'db_content':db_content,
+        'resource_content':resource_db_content
+        }
+    return response
+
+def delete_sign_bible_videos(db_: Session, delitem: int,table_name = None,\
+    resource_name=None,user_id=None):
+    '''delete particular item from sign bible video, selected via resourceName and signvideo id'''
+    resource_db_content = db_.query(db_models.Resource).filter(
+        db_models.Resource.resourceName == resource_name).first()
+    model_cls = table_name
+    query = db_.query(model_cls)
+    db_content = query.filter(model_cls.signVideoId == delitem).first()
+    db_.flush()
+    db_.delete(db_content)
+    #db_.commit()
+    resource_db_content.updatedUser = user_id
+    response = {
+        'db_content':db_content,
+        'resource_content':resource_db_content
+        }
+    return response
+
 
 def ref_to_bcv(book,chapter,verse):
     '''convert reference to BCV format'''

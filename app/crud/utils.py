@@ -235,11 +235,12 @@ def validate_draft_meta(sentence, draft, draft_meta):
     except Exception as exe:
         raise UnprocessableException("Incorrect metadata.") from exe
 
-def create_parascript_ref_id(db_:Session, bookcode, chapter, verse):
+def create_decimal_ref_id(db_:Session, bookcode, chapter, verse):
     '''Generate parascript ref start and end id'''
     book_content = db_.query(db_models.BibleBook).filter(
         db_models.BibleBook.bookCode == bookcode.lower()).first()
     book_id = book_content.bookId
-    if book_id is not None:
+    if book_id is not None and chapter is not None and verse is not None:
         ref_id = (book_id * 100000) + (chapter * 1000) + verse
-    return ref_id
+        return ref_id
+    raise ValueError("book_id, chapter, and verse must not be None.")

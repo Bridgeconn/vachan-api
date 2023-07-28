@@ -75,7 +75,6 @@ async def delete_contents(request: Request,content_id: int ,
     if len(structurals_crud.get_content_types(db_, content_id= content_id)) == 0:
         raise NotAvailableException(f"Content id {content_id} not found")
     content_obj = content_id
-    print("####" ,content_obj)
     deleted_content = structurals_crud.delete_content(db_=db_, content=content_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content=  deleted_content,
             table_name = dbtable_name,deleting_user=user_details['user_id'])
@@ -1110,6 +1109,118 @@ async def delete_parascripturals(request: Request,delete_id:int,
         table_name = dbtable_name, resource = deleted_content['resource_content'],
         deleting_user = user_details['user_id'])
     return {'message': f"Parascriptural id {parascript_id} deleted successfully",
+            "data": delcont}
+
+# # ########### Sign Bible Video ###################
+@router.get('/v2/resources/bible/videos/{resource_name}',
+    response_model=List[schema_content.SignVideoResponse],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
+    415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Sign Bible Videos"])
+@get_auth_access_check_decorator
+async def get_sign_bible_videos(request: Request, #pylint: disable=too-many-locals
+    resource_name:schemas.TableNamePattern=
+    Path(...,example="ins_KJV_1_signbiblevideo"),
+    title:str=Query(None,example="Sign Bible Video of Genesis"),
+    description:str=Query(None, example="Origin Chronicles"),
+    reference: str = Query(None,
+    example='{"book": "gen", "chapter": 1, "verseNumber": 6}'),
+    link:AnyUrl=Query(None,example="http://someplace.com/resoucesid"),
+    search_word:str=Query(None,example="subtitle"),
+    metadata: schemas.MetaDataPattern=Query(None,
+        example='{"otherName": "ISL, Indian Sign Language Videos"}'),
+    active: bool=Query(True),
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
+    user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
+    '''Fetches the sign bible videos. Can use, sign bible video title,description
+       reference,link,meatdata or search word to filter the results.
+    * optional query parameters can be used to filter the result set
+    * skip=n: skips the first n objects in return list
+    * limit=n: limits the no. of items to be returned to n
+    * returns [] for not available content
+    * Filter with single reference -> eg :{"book": "gen", "chapter": 1, "verseNumber": 6}
+    * Filter with cross chapter references -> eg:reference": {"book":"gen", "chapter":11,
+        "verseNumber":12,"bookEnd":"luk", "chapterEnd":14, "verseEnd":15 }'''
+    log.info('In get_sign_bible_video')
+    log.debug('resource_name: %s,title: %s, skip: %s,limit: %s,search_word: %s,\
+        reference:%s,metadata:%s',resource_name,title,skip,limit,search_word,\
+        reference,metadata)
+    reference_dict: Dict[str, int] = None
+    if reference:
+        reference_dict = json.loads(reference)
+    return contents_crud.get_sign_bible_videos(db_, resource_name, title,
+        description = description, reference = reference_dict, link = link,
+        search_word = search_word, metadata = metadata, active = active, skip = skip, limit = limit)
+
+@router.post('/v2/resources/bible/videos/{resource_name}',
+    response_model=schema_content.SignVideoCreateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
+    401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
+    415:{"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Sign Bible Videos"])
+@get_auth_access_check_decorator
+async def add_sign_bible_videos(request: Request,
+    resource_name : schemas.TableNamePattern=Path(...,
+    example="ins_KJV_1_signbiblevideo"),
+    signvideos: List[schema_content.SignVideoCreate] = Body(...),
+    user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
+    '''Uploads a list of sign bible videos. category field is mandatory'''
+    log.info('In add_sign_bible_video')
+    log.debug('resource_name: %s, signvideos: %s',resource_name, signvideos)
+    return {'message': "Sign Bible Videos added successfully",
+        "data": contents_crud.upload_sign_bible_videos(db_=db_, resource_name=resource_name,
+        signvideos=signvideos, user_id=user_details['user_id'])}
+
+@router.put('/v2/resources/bible/videos/{resource_name}',
+    response_model=schema_content.SignVideoUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
+    401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Sign Bible Videos"])
+@get_auth_access_check_decorator
+async def edit_sign_bible_videos(request: Request,
+    resource_name: schemas.TableNamePattern=Path(...,
+    example="ins_KJV_1_signbiblevideo"),
+    signvideos: List[schema_content.SignVideoEdit] = Body(...),
+    user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
+    ''' Changes description,reference or link.
+    Item identifier is signvideoId, which cannot be altered.'''
+    log.info('In edit_sign_bible_videos')
+    log.debug('resource_name: %s, signvideo: %s',resource_name, signvideos)
+    return {'message': "Sign Bible Videos updated successfully",
+        "data": contents_crud.update_sign_bible_videos(db_=db_, resource_name=resource_name,
+        signvideos = signvideos, user_id=user_details['user_id'])}
+
+@router.delete('/v2/resources/bible/videos/{resource_name}',
+    response_model=schemas.DeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Sign Bible Videos"])
+@get_auth_access_check_decorator
+async def delete_sign_bible_videos(request: Request,delete_id:int,
+    resource_name: str = Path(...,example="ins_KJV_1_signbiblevideo"),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Delete Sign Bible Video
+    * unique signvideoId with source name can be used to delete an exisiting identity'''
+    log.info('In delete_sign_bible_videos')
+    log.debug('sign_bible_videos-delete:%s',delete_id)
+    signvideo_id= delete_id
+    tb_name = db_models.dynamicTables[resource_name]
+    dbtable_name = tb_name.__name__
+    get_signvideo_response = contents_crud.get_sign_bible_videos(
+        db_, resource_name=resource_name, signvideo_id= delete_id)
+    if len( get_signvideo_response['db_content']) == 0:
+        raise NotAvailableException(f"Sign Bible Video with id {signvideo_id} not found")
+    deleted_content = contents_crud.delete_sign_bible_videos(db_=db_,delitem=delete_id,\
+        table_name=tb_name,resource_name=resource_name,user_id=user_details['user_id'])
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
+        table_name = dbtable_name, resource = deleted_content['resource_content'],
+        deleting_user = user_details['user_id'])
+    return {'message': f"Sign Bible Video id {signvideo_id} deleted successfully",
             "data": delcont}
 
 @router.get('/v2/resources/get-sentence', response_model=List[schemas_nlp.SentenceInput],

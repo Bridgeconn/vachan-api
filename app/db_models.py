@@ -27,6 +27,7 @@ class ContentTypeName(Enum):
     PARASCRIPTURAL = "parascriptural"
     VOCABULARY = "vocabulary"
     GITLABREPO = "gitlabrepo"
+    SIGNBIBLEVIDEO = "signbiblevideo"
 
 class TranslationDocumentType(Enum):
     '''Currently supports bible USFM only. Can be extended to
@@ -176,8 +177,31 @@ class Parascriptural():# pylint: disable=too-few-public-methods
     link = Column('link', String)
     metaData = Column('metadata', JSONB)
     active = Column('active', Boolean)
+    createdUser = Column('created_user', String)
+    updatedUser = Column('last_updated_user', String)
+    createTime = Column('created_at', DateTime, default=ist_time)
+    updateTime = Column('last_updated_at', DateTime, onupdate= ist_time,default=ist_time)
     __table_args__ = (
         UniqueConstraint('category', 'title'),
+        {'extend_existing': True}
+                     )
+class SignBibleVideo():# pylint: disable=too-few-public-methods
+    '''Corresponds to the dynamically created sign bible videos tables in vachan Db(postgres)'''
+    signVideoId = Column('signvideo_id', Integer,
+        Sequence('signvideo_id_seq', start=100001, increment=1), primary_key=True)
+    title = Column('title', String)
+    description = Column('description', String)
+    reference = Column('reference', JSONB)
+    refStart = Column('ref_start', Integer)
+    refEnd = Column('ref_end', Integer)
+    link = Column('link', String)
+    metaData = Column('metadata', JSONB)
+    active = Column('active', Boolean)
+    createdUser = Column('created_user', String)
+    updatedUser = Column('last_updated_user', String)
+    createTime = Column('created_at', DateTime, default=ist_time)
+    updateTime = Column('last_updated_at', DateTime, onupdate= ist_time,default=ist_time)
+    __table_args__ = (
         {'extend_existing': True}
                      )
 class BibleAudio(): # pylint: disable=too-few-public-methods
@@ -282,6 +306,9 @@ def create_dynamic_table(resource_name, table_name, content_type):
     elif content_type == ContentTypeName.PARASCRIPTURAL.value:
         dynamicTables[resource_name] = type(
             table_name,(Parascriptural, Base,),{"__tablename__": table_name})
+    elif content_type == ContentTypeName.SIGNBIBLEVIDEO.value:
+        dynamicTables[resource_name] = type(
+            table_name,(SignBibleVideo, Base,),{"__tablename__": table_name})
     elif content_type == ContentTypeName.GITLABREPO.value:
         pass
     else:
