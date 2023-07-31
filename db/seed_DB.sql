@@ -13,6 +13,7 @@ INSERT INTO content_types(content_type) VALUES('bible');
 INSERT INTO content_types(content_type) VALUES('commentary');
 INSERT INTO content_types(content_type) VALUES('vocabulary');
 INSERT INTO content_types(content_type) VALUES('parascriptural');
+INSERT INTO content_types(content_type) VALUES('signbiblevideo'); 
 INSERT INTO content_types(content_type) VALUES('gitlabrepo'); 
 
 CREATE TABLE public.languages (

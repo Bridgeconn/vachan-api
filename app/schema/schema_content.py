@@ -118,10 +118,19 @@ class Reference(BaseModel):
             if val not in [-1, 0, None]:
                 raise ValueError('verse fields should be 0 for book introductions and epilogues')
             val = 0
-        if val is None:
-            raise ValueError('verse field must have a value,except for book intro & epilogue')
-        if val < -1:
+        if val is not None and  val < -1:
             raise ValueError('verse fields should be greater than or equal to -1')
+        return val
+    @validator('chapterEnd')
+    def check_chapter_range(cls, val, values): # pylint:  disable=E0213
+        '''chapter start should be less than or equal to chapter end'''
+        if 'chapter' in values and val < values['chapter']:
+            raise ValueError('chapter start should be less than or equal to chapter end')
+        return val
+    def check_verse_range(cls, val, values): # pylint:  disable=E0213
+        '''verse start should be less than or equal to verse end'''
+        if 'verseNumber' in values and val < values['verseNumber']:
+            raise ValueError('verse start should be less than or equal to verse end')
         return val
     class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
@@ -590,6 +599,86 @@ class ParascripturalCreate(BaseModel):
                 "content": "some detailed content",
                 "reference": {"book":"MAT", "chapter":2, "verseNumber":3,
                                "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
+                "link": "http://someplace.com/resoucesid",
+                "metaData": {"key": "value"},
+                "active": True
+            }
+        }
+
+class SignVideoResponse(BaseModel):
+    '''Response object of sign bible videos'''
+    signVideoId : int
+    title: str = None
+    description: str = None
+    reference: Reference = None
+    link: AnyUrl = None
+    metaData: dict = None
+    active: bool = None
+    class Config:
+        ''' telling Pydantic that "it's OK if I pass a non-dict value'''
+        orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "signVideoId": 100000,
+                "title": "Sign Bible Video of Genesis",
+                "description": "Day's theme or some sub title if available",
+                "reference": {"book":"GEN", "chapter":1, "verseNumber":1,
+                               "bookEnd":"GEN", "chapterEnd":10, "verseEnd":10 },
+                "link": "http://someplace.com/resoucesid",
+                "metaData": {"key": "value"},
+                "active": True
+            }
+        }
+class SignVideoEdit(BaseModel):
+    '''Input object of sign bible videos update'''
+    signVideoId: int
+    title: str = None
+    description: str = None
+    reference: Reference = None
+    link: AnyUrl = None
+    active: bool = None
+    metaData: dict = None
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "signVideoId":100000,
+                "title": "Sign Bible Video of Mathewss",
+                "description": "updated description",
+                "reference": {"book":"MAT", "chapter":2, "verseNumber":10,
+                               "bookEnd":"MAT", "chapterEnd":12, "verseEnd":15 },
+                "link": "http://someplace.com/newresoucesid",
+                "metaData": {"newkey": "newvalue"},
+                "active": True
+            }
+        }
+class SignVideoUpdateResponse(BaseModel):
+    '''Response object of sign bible videos update'''
+    message: str = Field(..., example="Sign Bible Video updated successfully")
+    data: List[SignVideoResponse] = None
+
+class SignVideoCreateResponse(BaseModel):
+    '''Response object of sign bible videos update'''
+    message: str = Field(..., example="Sign Bible Video added successfully")
+    data: List[SignVideoResponse] = None
+
+class SignVideoCreate(BaseModel):
+    '''Input object for sign bible video'''
+    title: str
+    description: str = None
+    reference: Reference = None
+    link: AnyUrl = None
+    metaData: dict = None
+    active: bool = True
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "title": "Sign Bible Video of Genesis",
+                "description": "Day's theme or some sub title if available",
+                "reference": {"book":"GEN", "chapter":1, "verseNumber":1,
+                               "bookEnd":"GEN", "chapterEnd":10, "verseEnd":10 },
                 "link": "http://someplace.com/resoucesid",
                 "metaData": {"key": "value"},
                 "active": True
