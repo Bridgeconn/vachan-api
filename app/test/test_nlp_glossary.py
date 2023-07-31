@@ -48,7 +48,7 @@ def test_get_gloss_entries():
     check_default_get(GET_URL, headers_auth, assert_positive_get)
 
     # with all registered users
-    for user in ['APIUser', 'APIUser2', "BcsDev", "AgAdmin", "AgUser", "VachanUser", "VachanAdmin",'VachanContentAdmin','VachanContentViewer']:
+    for user in ['APIUser', 'APIUser2', "BcsDev", "AgAdmin", "AgUser", "VachanUser", "VachanAdmin"]:
         headers_auth = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
@@ -89,7 +89,7 @@ def test_get_gloss_count():
     assert resp.json()['error'] == 'Authentication Error'
 
     # With all registered users - Positive Test
-    for user in ['APIUser', 'APIUser2', "BcsDev", "AgAdmin", "AgUser", "VachanUser", "VachanAdmin",'VachanContentAdmin','VachanContentViewer']:
+    for user in ['APIUser', 'APIUser2', "BcsDev", "AgAdmin", "AgUser", "VachanUser", "VachanAdmin"]:
         headers_auth = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']

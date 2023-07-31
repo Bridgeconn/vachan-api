@@ -815,8 +815,8 @@ def test_restore_default():
     assert response.json()['error'] == 'Authentication Error'
 
     #Restore commentary with other API user,VachanAdmin,AgAdmin, \
-    # AgUser,VachanUser,BcsDev and resoursecreatedUser,'VachanContentAdmin','VachanContentViewer'
-    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2','VachanContentAdmin','VachanContentViewer']:
+    # AgUser,VachanUser,BcsDev and resoursecreatedUser
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2']:
         headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']

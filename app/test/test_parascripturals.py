@@ -388,8 +388,7 @@ def test_searching():
             found = True
     assert found
     # searching with reference:exact match - positive test
-    response = client.get(UNIT_URL+resource_name+"?search_word={'book':'MAT', 'chapter':2, \
-        'verseNumber':3,'bookEnd':'JHN', 'chapterEnd':5, 'verseEnd':6 }",headers = headers_auth)
+    response = client.get(UNIT_URL+resource_name+"?search_word=JHN",headers = headers_auth)
     assert len(response.json()) > 0
     found = False
     for item in response.json():
@@ -399,7 +398,7 @@ def test_searching():
     assert found
 
     # searching with reference:partial match - positive test
-    response = client.get(UNIT_URL+resource_name+"?search_word=chapter:2",headers = headers_auth)
+    response = client.get(UNIT_URL+resource_name+"?search_word=JH",headers = headers_auth)
     assert len(response.json()) > 0
     found = False
     for item in response.json():

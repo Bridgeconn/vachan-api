@@ -398,7 +398,7 @@ def get_parascripturals(db_:Session, resource_name, category=None, title=None,**
             " content || ' ' || "+\
             " description || ' ' || "+\
             " link || ' ' || "+\
-            " reference || ' ' || "+\
+            "jsonb_to_tsvector('simple', reference, '[\"string\", \"numeric\"]') || ' ' || " +
             "jsonb_to_tsvector('simple', metadata, '[\"string\", \"numeric\"]') || ' ')"+\
             " @@ to_tsquery('simple', :pattern)").bindparams(pattern=search_pattern))
 
@@ -445,6 +445,8 @@ def upload_parascripturals(db_: Session, resource_name, parascriptural, user_id=
             ref_start = None
         if item.content:
             item.content = utils.normalize_unicode(item.content.strip())
+        if item.description:
+            item.description = utils.normalize_unicode(item.description.strip())
         row = model_cls(
             category = item.category,
             title = utils.normalize_unicode(item.title.strip()),
@@ -488,6 +490,7 @@ def update_parascripturals(db_: Session, resource_name, parascripturals, user_id
                 f"title:{item.title}, "+\
                 f"not found for {resource_name}")
         if item.description:
+            item.description = utils.normalize_unicode(item.description.strip())
             row.description = item.description
         if item.content:
             row.content = utils.normalize_unicode(item.content.strip())
@@ -577,13 +580,13 @@ def get_sign_bible_videos(db_:Session, resource_name, title=None,**kwargs): #pyl
     if search_word:
         search_pattern = " & ".join(re.findall(r'\w+', search_word))
         search_pattern += ":*"
-        query = query.filter(text("to_tsvector('simple', title || ' ' ||"+\
-            " signvideo_id || ' ' || "+\
-            " description || ' ' || "+\
-            " link || ' ' || "+\
-            " reference || ' ' || "+\
-            "jsonb_to_tsvector('simple', metadata, '[\"string\", \"numeric\"]') || ' ')"+\
-            " @@ to_tsquery('simple', :pattern)").bindparams(pattern=search_pattern))
+        query = query.filter(text(
+            "to_tsvector('simple', title || ' ' || signvideo_id || " +
+            "' ' || description || ' ' || link || ' ' || " +
+            "jsonb_to_tsvector('simple', reference, '[\"string\", \"numeric\"]') || ' ' || " +
+            "jsonb_to_tsvector('simple', metadata, '[\"string\", \"numeric\"]') " +
+            ") @@ to_tsquery('simple', :pattern)"
+        ).bindparams(pattern=search_pattern))
 
     query = query.filter(model_cls.active == active)
     resource_db_content = db_.query(db_models.Resource).filter(
@@ -626,9 +629,13 @@ def upload_sign_bible_videos(db_: Session, resource_name, signvideos, user_id=No
             ref = None
             ref_end = None
             ref_start = None
+        if item.title:
+            item.title = utils.normalize_unicode(item.title.strip())
+        if item.description:
+            item.description = utils.normalize_unicode(item.description.strip())
         row = model_cls(
-            title = utils.normalize_unicode(item.title.strip()),
-            description = item.description,
+            title = item.title,
+            description =item.description,
             reference = ref,
             refStart=ref_start,
             refEnd=ref_end,
@@ -665,8 +672,10 @@ def update_sign_bible_videos(db_: Session, resource_name, signvideos, user_id=No
             raise NotAvailableException(f"Sign Bible Video row with id:{item.signVideoId}, "+\
                 f"not found for {resource_name}")
         if item.title:
+            item.title = utils.normalize_unicode(item.title.strip())
             row.title = item.title
         if item.description:
+            item.description = utils.normalize_unicode(item.description.strip())
             row.description = item.description
         if item.link:
             row.link = item.link

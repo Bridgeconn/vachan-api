@@ -615,14 +615,6 @@ def test_agmt_projects_access_rule():
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanContentAdmin']['token']
-    response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanContentViewer']['token']
-    response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
 
     #Super Admin
     SA_user_data = {
@@ -797,10 +789,6 @@ def test_get_project_access_rules():
     response = client.get(UNIT_URL,headers=headers_auth)
     assert response.status_code == 403
     assert response.json()['error'] == 'Permission Denied'
-    headers_auth["app"] = "VachanContentDashboard"
-    response = client.get(UNIT_URL,headers=headers_auth)
-    assert response.status_code == 403
-    assert response.json()['error'] == 'Permission Denied'
 
     #get project from Autographa with not allowed users get empty result
     headers_auth["app"] = "Autographa"
@@ -811,12 +799,6 @@ def test_get_project_access_rules():
     response = client.get(UNIT_URL,headers=headers_auth)
     assert len(response.json()) == 0
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
-    response = client.get(UNIT_URL,headers=headers_auth)
-    assert len(response.json()) == 0
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanContentAdmin']['token']
-    response = client.get(UNIT_URL,headers=headers_auth)
-    assert len(response.json()) == 0
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanContentViewer']['token']
     response = client.get(UNIT_URL,headers=headers_auth)
     assert len(response.json()) == 0
 
@@ -964,7 +946,7 @@ def test_delete_project():
     assert resp.json()['details'] == f"Project with id {invalid_project_id} not found"
 
     # Delete as unauthorized users
-    for user in ['APIUser','VachanAdmin','VachanUser','BcsDev','VachanContentAdmin','VachanContentViewer']:
+    for user in ['APIUser','VachanAdmin','VachanUser','BcsDev']:
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
         response = client.delete(UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
         assert response.status_code == 403
@@ -1070,7 +1052,7 @@ def test_restore_project():
     assert response.json()['error'] == 'Authentication Error'
 
     #Restore project with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev and APIUSer2 - Negative Test
-    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2','VachanContentAdmin','VachanContentViewer']:
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2']:
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
         response = client.put(RESTORE_URL, headers=headers_auth, json=data)
         assert response.status_code == 403
@@ -1249,7 +1231,7 @@ def test_restore_user():
     assert response.json()['error'] == 'Authentication Error'
 
     #Restore project user with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev and APIUSer2 - Negative Test
-    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2','VachanContentAdmin','VachanContentViewer']:
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2']:
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
         response = client.put(RESTORE_URL, headers=headers_auth, json=data)
         assert response.status_code == 403

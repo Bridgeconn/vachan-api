@@ -112,24 +112,6 @@ initial_test_users = {
                 "test_user_id": "",
                 "app" : schema_auth.App.VACHAN.value
             },
-            "VachanContentAdmin":{
-                "user_email": "vachancontentadmintest@mail.test",
-                "password": "passwordtest@1",
-                "firstname": "VachanContent",
-                "lastname": "Admin",
-                "token":"",
-                "test_user_id": "",
-                "app" : schema_auth.App.VACHANCONTENTDASHBOARD.value
-            },
-            "VachanContentViewer":{
-                "user_email": "vachancontentviewer@mail.test",
-                "password": "passwordtest@1",
-                "firstname": "VachanContent",
-                "lastname": "Vieer",
-                "token":"",
-                "test_user_id": "",
-                "app" : schema_auth.App.VACHANCONTENTDASHBOARD.value
-            },
             "APIUser2":{
                 "user_email": "abctest@mail.test",
                 "password": "passwordtest@1",
@@ -203,13 +185,6 @@ def create_user_session_run_at_start():
         assert response.status_code == 201
         assert response.json()["role_list"] == \
             [schema_auth.AdminRoles.VACHANUSER.value, schema_auth.AdminRoles.VACHANADMIN.value]
-        #VachanContentAdmin
-        role_user_id = initial_test_users["VachanContentAdmin"]["test_user_id"]
-        role_list = [schema_auth.AdminRoles.VACHANCONTENTADMIN.value]
-        response = assign_roles(super_data,role_user_id,role_list)
-        assert response.status_code == 201
-        assert response.json()["role_list"] == \
-            [schema_auth.AdminRoles.VACHANCONTENTVIEWER.value, schema_auth.AdminRoles.VACHANCONTENTADMIN.value]
         #BcsDeveloper
         role_user_id = initial_test_users["BcsDev"]["test_user_id"]
         role_list = [schema_auth.AdminRoles.BCSDEV.value]

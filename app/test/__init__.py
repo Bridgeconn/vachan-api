@@ -264,8 +264,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
     SMAST = schema_auth.App.SMAST.value
     VACHAN = schema_auth.App.VACHAN.value
     VACHANADMIN = schema_auth.AdminRoles.VACHANADMIN.value
-    VACHANCONTENTDASHBOARD = schema_auth.App.VACHANCONTENTDASHBOARD.value
-    Apps = [ API,AG,VACHAN,VACHANADMIN, SMAST,VACHANCONTENTDASHBOARD]
+    Apps = [ API,AG,VACHAN,VACHANADMIN, SMAST]
 
     #Get without Login headers=headers_auth
     #permision -------------------------> content , downloadable , derivable
@@ -336,26 +335,6 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response.json()["error"] == "Permission Denied"
         print(f"Test passed -----> SanketMASTUser")
 
-        #Get with VachanContentViewer
-        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanContentViewer']['token']
-        for num in range(4):
-            headers_auth['app'] = Apps[num]
-            if bible:
-                response = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()["error"] == "Permission Denied"
-                response = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()["error"] == "Permission Denied"
-                response = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
-                assert response.status_code == 403
-                assert response.json()["error"] == "Permission Denied"
-            else:
-                response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
-                print("******resp:",response.json(),response.status_code)
-                assert response.status_code == 403
-        print(f"Test passed -----> VACHAN CONTENT VIEWER")
-
         #Get with VachanUser
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
         for num in range(4):
@@ -403,34 +382,6 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                     assert response.status_code == 403
                     assert response.json()["error"] == "Permission Denied"
         print(f"Test passed -----> VACHAN ADMIN")
-
-         #Get with VachanContentAdmin
-        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanContentAdmin']['token']
-        for num in range(4):
-            headers_auth['app'] = Apps[num]
-            if bible:
-                response1 = client.get(UNIT_URL+test_permissions_list[i]+'/books',headers=headers_auth)
-                response2 = client.get(UNIT_URL+test_permissions_list[i]+'/versification',headers=headers_auth)
-                response3 = client.get(UNIT_URL+test_permissions_list[i]+'/verses',headers=headers_auth)
-                if headers_auth['app'] == API or headers_auth['app'] == VACHANCONTENTDASHBOARD:
-                    assert response1.status_code == 200
-                    assert response2.status_code == 200
-                    assert response3.status_code == 200
-                else:
-                    assert response1.status_code == 403
-                    assert response1.json()["error"] == "Permission Denied"
-                    assert response2.status_code == 403
-                    assert response2.json()["error"] == "Permission Denied"
-                    assert response3.status_code == 403
-                    assert response3.json()["error"] == "Permission Denied"
-            else:
-                response = client.get(UNIT_URL+test_permissions_list[i],headers=headers_auth)
-                if headers_auth['app'] == API or headers_auth['app'] == VACHANCONTENTDASHBOARD:
-                    assert response.status_code == 200
-                else:
-                    assert response.status_code == 403
-                    assert response.json()["error"] == "Permission Denied"
-        print(f"Test passed -----> VACHAN CONTENT ADMIN")
 
         #Get with API User
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
@@ -640,36 +591,6 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response.json()["error"] == "Permission Denied"
     print(f"Test passed -----> SanketMASTUser")
 
-    #Get with VachanContentViewer
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanContentViewer']['token']
-    for num in range(4):
-        headers_auth['app'] = Apps[num]
-        if bible:
-            response1 = client.get(UNIT_URL+resourcename_list[1]+'/books',headers=headers_auth)
-            response2 = client.get(UNIT_URL+resourcename_list[1]+'/versification',headers=headers_auth)
-            response3 = client.get(UNIT_URL+resourcename_list[1]+'/verses',headers=headers_auth)
-            if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
-                or headers_auth['app'] == VACHANCONTENTDASHBOARD:
-                assert response1.status_code == 200
-                assert response2.status_code == 200
-                assert response3.status_code == 200
-            else:
-                assert response1.status_code == 403
-                assert response1.json()["error"] == "Permission Denied"
-                assert response2.status_code == 403
-                assert response2.json()["error"] == "Permission Denied"
-                assert response3.status_code == 403
-                assert response3.json()["error"] == "Permission Denied"
-        else:
-            response = client.get(UNIT_URL+resourcename_list[1],headers=headers_auth)
-            if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
-                or headers_auth['app'] == VACHANCONTENTDASHBOARD:
-                assert response.status_code == 200
-            else:    
-                assert response.status_code == 403
-                assert response.json()["error"] == "Permission Denied"
-    print(f"Test passed -----> VACHAN CONTENT VIEWER")
-
     #Get with VachanUser
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
     for num in range(4):
@@ -727,36 +648,6 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response.status_code == 403
                 assert response.json()["error"] == "Permission Denied"
     print(f"Test passed -----> VACHAN ADMIN")
-
-      #Get with VachanContentAdmin
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanContentAdmin']['token']
-    for num in range(4):
-        headers_auth['app'] = Apps[num]
-        if bible:
-            response1 = client.get(UNIT_URL+resourcename_list[1]+'/books',headers=headers_auth)
-            response2 = client.get(UNIT_URL+resourcename_list[1]+'/versification',headers=headers_auth)
-            response3 = client.get(UNIT_URL+resourcename_list[1]+'/verses',headers=headers_auth)
-            if headers_auth['app'] == API or headers_auth['app'] == VACHANCONTENTDASHBOARD\
-                or headers_auth['app'] == VACHAN:
-                assert response1.status_code == 200
-                assert response2.status_code == 200
-                assert response3.status_code == 200
-            else:
-                assert response1.status_code == 403
-                assert response1.json()["error"] == "Permission Denied"
-                assert response2.status_code == 403
-                assert response2.json()["error"] == "Permission Denied"
-                assert response3.status_code == 403
-                assert response3.json()["error"] == "Permission Denied"
-        else:
-            response = client.get(UNIT_URL+resourcename_list[1],headers=headers_auth)
-            if headers_auth['app'] == API or headers_auth['app'] == VACHANCONTENTDASHBOARD\
-                or headers_auth['app'] == VACHAN:
-                assert response.status_code == 200
-            else:
-                assert response.status_code == 403
-                assert response.json()["error"] == "Permission Denied"
-    print(f"Test passed -----> VACHAN CONTENT ADMIN")
 
     #Get with API User
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
@@ -982,36 +873,6 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response.json()["error"] == "Permission Denied"
     print(f"Test passed -----> SanketMASTUser")
 
-    #Get with VachanContentViewer
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanContentViewer']['token']
-    for num in range(4):
-        headers_auth['app'] = Apps[num]
-        if bible:
-            response1 = client.get(UNIT_URL+resourcename_list[2]+'/books',headers=headers_auth)
-            response2 = client.get(UNIT_URL+resourcename_list[2]+'/versification',headers=headers_auth)
-            response3 = client.get(UNIT_URL+resourcename_list[2]+'/verses',headers=headers_auth)
-            if headers_auth['app'] == VACHAN or headers_auth['app'] == API\
-                or headers_auth['app'] == VACHANCONTENTDASHBOARD:
-                assert response1.status_code == 200
-                assert response2.status_code == 200
-                assert response3.status_code == 200
-            else:
-                assert response1.status_code == 403
-                assert response1.json()["error"] == "Permission Denied"
-                assert response2.status_code == 403
-                assert response2.json()["error"] == "Permission Denied"
-                assert response3.status_code == 403
-                assert response3.json()["error"] == "Permission Denied"
-        else:
-            response = client.get(UNIT_URL+resourcename_list[2],headers=headers_auth)
-            if headers_auth['app'] == VACHAN or headers_auth['app'] == API\
-                or headers_auth['app'] == VACHANCONTENTDASHBOARD:
-                assert response.status_code == 200
-            else:    
-                assert response.status_code == 403
-                assert response.json()["error"] == "Permission Denied"
-    print(f"Test passed -----> VACHAN CONTENT VIEWER")
-
     #Get with VachanUser
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
     for num in range(4):
@@ -1069,37 +930,6 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
                 assert response.status_code == 403
                 assert response.json()["error"] == "Permission Denied"
     print(f"Test passed -----> VACHAN ADMIN")
-
-    #Get with VachanContentAdmin
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanContentAdmin']['token']
-    for num in range(4):
-        headers_auth['app'] = Apps[num]
-        if bible:
-            response1 = client.get(UNIT_URL+resourcename_list[2]+'/books',headers=headers_auth)
-            response2 = client.get(UNIT_URL+resourcename_list[2]+'/versification',headers=headers_auth)
-            response3 = client.get(UNIT_URL+resourcename_list[2]+'/verses',headers=headers_auth)
-            if headers_auth['app'] == API or headers_auth['app'] == VACHANCONTENTDASHBOARD\
-                or headers_auth['app'] == VACHAN:
-                assert response1.status_code == 200
-                assert response2.status_code == 200
-                assert response3.status_code == 200
-            else:
-                assert response1.status_code == 403
-                assert response1.json()["error"] == "Permission Denied"
-                assert response2.status_code == 403
-                assert response2.json()["error"] == "Permission Denied"
-                assert response3.status_code == 403
-                assert response3.json()["error"] == "Permission Denied"
-        else:
-            response = client.get(UNIT_URL+resourcename_list[2],headers=headers_auth)
-            if headers_auth['app'] == API or headers_auth['app'] == VACHANCONTENTDASHBOARD\
-                or headers_auth['app'] == VACHAN:
-                assert response.status_code == 200
-            else:
-                assert response.status_code == 403
-                assert response.json()["error"] == "Permission Denied"
-    print(f"Test passed -----> VACHAN CONTENT ADMIN")
-
 
     #Get with API User
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
@@ -1298,8 +1128,7 @@ def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, 
     SMAST = types.App.SMAST.value
     VACHAN = types.App.VACHAN.value
     VACHANADMIN = types.App.VACHANADMIN.value
-    VACHANCONTENTDASHBOARD = types.App.VACHANCONTENTDASHBOARD.value
-    Apps = [ API,AG,VACHAN,VACHANADMIN,SMAST,VACHANCONTENTDASHBOARD]
+    Apps = [ API,AG,VACHAN,VACHANADMIN,SMAST]
 
     #Get without Login headers=headers_auth
     #permision -------------------------> content , downloadable , derivable
@@ -1368,25 +1197,6 @@ def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, 
                 assert "errors" in response
         print(f"Test passed -----> SanketMASTUser")
 
-        #Get with VachanContentViewer
-        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanContentViewer']['token']
-        for num in range(4):
-            headers_auth['app'] = Apps[num]
-            if bible:
-                response = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
-                    headers=headers_auth)
-                assert "errors" in response
-                response = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
-                    headers=headers_auth)
-                assert "errors" in response
-                response = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
-                    headers=headers_auth)
-                assert "errors" in response
-            else:
-                response = gql_request(query=test_data["get_query"],variables=test_data["get_var"],headers=headers_auth)
-                assert "errors" in response
-        print(f"Test passed -----> VACHAN CONTENT VIEWER")
-
         #Get with VachanUser
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
         for num in range(4):
@@ -1435,36 +1245,6 @@ def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, 
                 else:
                     assert "errors" in response
         print(f"Test passed -----> VACHAN ADMIN")
-
-        #Get with VachanContentAdmin
-        headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanContentAdmin']['token']
-        for num in range(4):
-            headers_auth['app'] = Apps[num]
-            test_data["get_var"]["source"] = test_permissions_list[i]
-            if bible:
-                response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
-                    headers=headers_auth)
-                response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
-                    headers=headers_auth)
-                response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
-                    headers=headers_auth)
-                if headers_auth['app'] == API or headers_auth['app'] == VACHANCONTENTDASHBOARD:
-                    assert not  "errors" in response1
-                    assert not "errors" in response2
-                    assert not "errors" in response3
-                else:
-                    assert "errors" in response1
-                    assert "errors" in response2
-                    assert "errors" in response3
-            else:
-                response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
-                    headers=headers_auth)
-                if headers_auth['app'] == API or headers_auth['app'] == VACHANCONTENTDASHBOARD:
-                    assert not "errors" in response
-                    assert len(response["data"]) > 0
-                else:
-                    assert "errors" in response
-        print(f"Test passed -----> VACHAN CONTENT ADMIN")
 
         #Get with API User
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
@@ -1685,37 +1465,6 @@ def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, 
                 assert "errors" in response      
     print(f"Test passed -----> SanketMASTUser")
 
-    #Get with VachanContentViewer
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanContentViewer']['token']
-    for num in range(4):
-        headers_auth['app'] = Apps[num]
-        if bible:
-            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
-                    headers=headers_auth)
-            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
-                    headers=headers_auth)
-            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
-                    headers=headers_auth)
-            if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
-                or headers_auth['app'] == VACHANCONTENTDASHBOARD:
-                assert not  "errors" in response1
-                assert not "errors" in response2
-                assert not "errors" in response3
-            else:
-                assert "errors" in response1
-                assert "errors" in response2
-                assert "errors" in response3
-        else:
-            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
-                    headers=headers_auth)
-            if headers_auth['app'] == API or headers_auth['app'] == VACHAN\
-                or headers_auth['app'] == VACHANCONTENTDASHBOARD:
-                assert not "errors" in response
-                assert len(response["data"]) > 0
-            else:
-                assert "errors" in response          
-    print(f"Test passed -----> VACHAN CONTENT VIEWER")
-
     #Get with VachanUser
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
     for num in range(4):
@@ -1775,37 +1524,6 @@ def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, 
             else:
                 assert "errors" in response          
     print(f"Test passed -----> VACHAN ADMIN")
-
-    #Get with VachanContentAdmin
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanContentAdmin']['token']
-    for num in range(4):
-        headers_auth['app'] = Apps[num]
-        if bible:
-            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
-                    headers=headers_auth)
-            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
-                    headers=headers_auth)
-            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
-                    headers=headers_auth)
-            if headers_auth['app'] == API or headers_auth['app'] == VACHANCONTENTDASHBOARD\
-                or headers_auth['app'] == VACHAN:
-                assert not  "errors" in response1
-                assert not "errors" in response2
-                assert not "errors" in response3
-            else:
-                assert "errors" in response1
-                assert "errors" in response2
-                assert "errors" in response3
-        else:
-            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
-                    headers=headers_auth)
-            if headers_auth['app'] == API or headers_auth['app'] == VACHANCONTENTDASHBOARD\
-                or headers_auth['app'] == VACHAN:
-                assert not "errors" in response
-                assert len(response["data"]) > 0
-            else:
-                assert "errors" in response          
-    print(f"Test passed -----> VACHAN CONTENT ADMIN")
 
     #Get with API User
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
@@ -2043,37 +1761,6 @@ def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, 
                 assert "errors" in response              
     print(f"Test passed -----> SanketMASTUser")
 
-    #Get with VachanContentViewer
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanContentViewer']['token']
-    for num in range(4):
-        headers_auth['app'] = Apps[num]
-        if bible:
-            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
-                    headers=headers_auth)
-            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
-                    headers=headers_auth)
-            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
-                    headers=headers_auth)
-            if headers_auth['app'] == VACHAN or headers_auth['app'] == API\
-                or headers_auth['app'] == VACHANCONTENTDASHBOARD:
-                assert not  "errors" in response1
-                assert not "errors" in response2
-                assert not "errors" in response3
-            else:
-                assert "errors" in response1
-                assert "errors" in response2
-                assert "errors" in response3
-        else:
-            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
-                    headers=headers_auth)
-            if headers_auth['app'] == VACHAN or headers_auth['app'] == API\
-                or headers_auth['app'] == VACHANCONTENTDASHBOARD:
-                assert not "errors" in response
-                assert len(response["data"]) > 0
-            else:
-                assert "errors" in response        
-    print(f"Test passed -----> VACHAN CONTENT VIEWER")
-
     #Get with VachanUser
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
     for num in range(4):
@@ -2134,36 +1821,6 @@ def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, 
                 assert "errors" in response     
     print(f"Test passed -----> VACHAN ADMIN")
 
-    #Get with VachanContentAdmin
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanContentAdmin']['token']
-    for num in range(4):
-        headers_auth['app'] = Apps[num]
-        if bible:
-            response1 = gql_request(query=test_data["books"]["get_query"],variables=test_data["get_var"],
-                    headers=headers_auth)
-            response2 = gql_request(query=test_data["versification"]["get_query"],variables=test_data["get_var"],
-                    headers=headers_auth)
-            response3 = gql_request(query=test_data["verses"]["get_query"],variables=test_data["get_var"],
-                    headers=headers_auth)
-            if headers_auth['app'] == API or headers_auth['app'] == VACHANCONTENTDASHBOARD\
-                or headers_auth['app'] == VACHAN:
-                assert not  "errors" in response1
-                assert not "errors" in response2
-                assert not "errors" in response3
-            else:
-                assert "errors" in response1
-                assert "errors" in response2
-                assert "errors" in response3
-        else:
-            response = gql_request(query= test_data["get_query"], variables=test_data["get_var"],
-                    headers=headers_auth)
-            if headers_auth['app'] == API or headers_auth['app'] == VACHANCONTENTDASHBOARD\
-                or headers_auth['app'] == VACHAN:
-                assert not "errors" in response
-                assert len(response["data"]) > 0
-            else:
-                assert "errors" in response     
-    print(f"Test passed -----> VACHAN CONTENT ADMIN")
     #Get with API User
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['APIUser']['token']
     for num in range(4):

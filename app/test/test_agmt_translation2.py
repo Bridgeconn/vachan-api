@@ -404,7 +404,7 @@ def test_delete_sentence():
     assert resp.json()['details'] == "Access token not provided or user not recognized."
 
     #Deleting Sentence with unauthorized users - Negative Test
-    for user in ['APIUser','VachanAdmin','VachanUser','BcsDev','AgUser','VachanContentAdmin','VachanContentViewer']:
+    for user in ['APIUser','VachanAdmin','VachanUser','BcsDev','AgUser']:
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
         response =client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id={sentence_id1}",
                 headers=headers_auth)
@@ -486,8 +486,8 @@ def test_restore_sentence():
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
-    #Restore project user with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev,,'VachanContentAdmin','VachanContentViewer' - Negative Test
-    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','VachanContentAdmin','VachanContentViewer']:
+    #Restore project user with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev - Negative Test
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev']:
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
         response = client.put(RESTORE_URL, headers=headers_auth, json=data)
         assert response.status_code == 403

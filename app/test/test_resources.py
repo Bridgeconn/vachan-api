@@ -797,7 +797,6 @@ def test_diffrernt_resources_with_app_and_roles(): #pylint: disable=too-many-sta
     AG = schema_auth.App.AG.value #pylint: disable=invalid-name
     VACHAN = schema_auth.App.VACHAN.value #pylint: disable=invalid-name
     VACHANADMIN = schema_auth.AdminRoles.VACHANADMIN.value #pylint: disable=invalid-name
-    VACHANCONTENTDASHBOARD = schema_auth.App.VACHANCONTENTDASHBOARD.value #pylint: disable=invalid-name
 
     #create resources for test with different access permissions
     #content is default
@@ -897,10 +896,6 @@ def test_diffrernt_resources_with_app_and_roles(): #pylint: disable=too-many-sta
     headers_auth['app'] = VACHANADMIN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert_not_available_content(response)
-    #APP : Vachan Content Dashboard
-    headers_auth['app'] = VACHANCONTENTDASHBOARD
-    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert_not_available_content(response)
 
     #Get with AgUser
     #default : API
@@ -935,10 +930,6 @@ def test_diffrernt_resources_with_app_and_roles(): #pylint: disable=too-many-sta
     headers_auth['app'] = VACHANADMIN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert_not_available_content(response)
-    #APP : Vachan Content Dashboard
-    headers_auth['app'] = VACHANCONTENTDASHBOARD
-    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert_not_available_content(response)
 
     #Get with VachanUser
     #default : API
@@ -966,10 +957,6 @@ def test_diffrernt_resources_with_app_and_roles(): #pylint: disable=too-many-sta
     check_resp_permission(response, check_list)
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
-    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert_not_available_content(response)
-    #APP : Vachan Content Dashboard
-    headers_auth['app'] = VACHANCONTENTDASHBOARD
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert_not_available_content(response)
 
@@ -1011,10 +998,6 @@ def test_diffrernt_resources_with_app_and_roles(): #pylint: disable=too-many-sta
     # assert 'derivable' in response.json()[4]['metaData']['accessPermissions']
     check_list = ['open-access','publishable','downloadable','derivable','content']
     check_resp_permission(response, check_list)
-     #APP : Vachan Content Dashboard
-    headers_auth['app'] = VACHANCONTENTDASHBOARD
-    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert_not_available_content(response)
 
     #Get with API-User
     #default : API
@@ -1042,10 +1025,6 @@ def test_diffrernt_resources_with_app_and_roles(): #pylint: disable=too-many-sta
     check_resp_permission(response, check_list)
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
-    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert_not_available_content(response)
-    #APP : Vachan Content Dashboard
-    headers_auth['app'] = VACHANCONTENTDASHBOARD
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert_not_available_content(response)
 
@@ -1082,50 +1061,6 @@ def test_diffrernt_resources_with_app_and_roles(): #pylint: disable=too-many-sta
     headers_auth['app'] = VACHANADMIN
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert_not_available_content(response)
-     #APP : Vachan Content Dashboard
-    headers_auth['app'] = VACHANCONTENTDASHBOARD
-    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert_not_available_content(response)
-
-    #Get with VachanContentAdmin
-    #default : API
-    headers_auth = {"contentType": "application/json","accept": "application/json"}
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanContentAdmin']['token']
-    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert response.status_code == 200
-    assert len(response.json()) == 5
-    # assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
-    # assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
-    check_list = ['open-access','publishable']
-    check_resp_permission(response, check_list)
-    #APP : Autographa
-    headers_auth['app'] = AG
-    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert_not_available_content(response)
-    # assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
-    # assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
-    # check_list = ['open-access','publishable']
-    # check_resp_permission(response, check_list)
-    #APP : Vachan Online
-    headers_auth['app'] = VACHAN
-    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert response.status_code == 200
-    assert len(response.json()) == 2
-    # assert 'open-access' in response.json()[0]['metaData']['accessPermissions']
-    # assert 'publishable' in response.json()[1]['metaData']['accessPermissions']
-    check_list = ['open-access','publishable']
-    check_resp_permission(response, check_list)
-    #APP : Vachan Admin
-    headers_auth['app'] = VACHANADMIN
-    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert_not_available_content(response)
-     #APP : Vachan Content Dashboard
-    headers_auth['app'] = VACHANCONTENTDASHBOARD
-    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert response.status_code == 200
-    assert len(response.json()) == 5
-    check_list = ['open-access','publishable']
-    check_resp_permission(response, check_list)
 
     #Get with BcsDeveloper
     #default : API
@@ -1156,10 +1091,6 @@ def test_diffrernt_resources_with_app_and_roles(): #pylint: disable=too-many-sta
     check_resp_permission(response, check_list)
     #APP : Vachan Admin
     headers_auth['app'] = VACHANADMIN
-    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert_not_available_content(response)
-    #APP : Vachan Content Dashboard
-    headers_auth['app'] = VACHANCONTENTDASHBOARD
     response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
     assert_not_available_content(response)
 
@@ -1214,13 +1145,6 @@ def test_diffrernt_resources_with_app_and_roles(): #pylint: disable=too-many-sta
     # assert 'publishable' in response.json()[2]['metaData']['accessPermissions']
     # assert 'downloadable' in response.json()[3]['metaData']['accessPermissions']
     # assert 'derivable' in response.json()[4]['metaData']['accessPermissions']
-    check_list = ['open-access','publishable','downloadable','derivable','content']
-    check_resp_permission(response, check_list)
-    #APP : Vachan Content Dashboard
-    headers_auth['app'] = VACHANCONTENTDASHBOARD
-    response = client.get(UNIT_URL+ '?version_abbreviation=TTT', headers=headers_auth)
-    assert response.status_code == 200
-    assert len(response.json()) == 5
     check_list = ['open-access','publishable','downloadable','derivable','content']
     check_resp_permission(response, check_list)
 
@@ -1526,8 +1450,8 @@ def test_restore_default():
     assert response.json()['error'] == 'Authentication Error'
 
     #Restore resource with other API user,VachanAdmin,AgAdmin, \
-    # AgUser,VachanUser,BcsDev,'VachanContentAdmin','VachanContentViewer'
-    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','VachanContentAdmin','VachanContentViewer']:
+    # AgUser,VachanUser,BcsDev
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev']:
         headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']

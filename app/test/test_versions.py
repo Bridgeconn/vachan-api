@@ -367,8 +367,8 @@ def test_delete_default():
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
-    #Delete version with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev,'VachanContentAdmin','VachanContentViewer'
-    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','VachanContentAdmin','VachanContentViewer']:
+    #Delete version with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev']:
         user_headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
@@ -527,8 +527,8 @@ def test_restore_default():
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
-    #Restore version with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev and APIUSer2,'VachanContentAdmin','VachanContentViewer'
-    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2','VachanContentAdmin','VachanContentViewer']:
+    #Restore version with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev and APIUSer2
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2']:
         user_headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']

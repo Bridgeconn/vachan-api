@@ -456,8 +456,8 @@ def test_restore_stopword():
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
-    #Restore stopword with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev,'VachanContentAdmin','VachanContentViewer'-Negative Test
-    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','VachanContentAdmin','VachanContentViewer']:
+    #Restore stopword with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev-Negative Test
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev']:
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
         response = client.put(RESTORE_URL, headers=headers_auth, json=data)
         assert response.status_code == 403

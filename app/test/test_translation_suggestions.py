@@ -465,8 +465,8 @@ def test_delete_glossary():
     assert resp.status_code == 401
     assert resp.json()['details'] == "Access token not provided or user not recognized."
 
-    #Delete content with other API user,AgAdmin,AgUser,VachanUser,BcsDev,VachanContentViewer
-    for user in ['APIUser','AgUser','VachanUser','SanketMASTUser','BcsDev','VachanContentViewer']:
+    #Delete content with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev
+    for user in ['APIUser','AgUser','VachanUser','SanketMASTUser','BcsDev']:
         headers_au = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
@@ -605,8 +605,8 @@ def test_restore_glossary():
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
-    #Restore glossary with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev,'VachanContentAdmin','VachanContentViewer'-Negative Test
-    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','VachanContentAdmin','VachanContentViewer']:
+    #Restore glossary with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev-Negative Test
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev']:
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
         response = client.put(RESTORE_URL, headers=headers_auth, json=data)
         assert response.status_code == 403
