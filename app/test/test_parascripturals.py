@@ -694,8 +694,8 @@ def test_delete_default():
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
-     #Delete parascriptural with other API user,AgAdmin,AgUser,VachanUser,BcsDev
-    for user in ['APIUser','AgAdmin','AgUser','VachanUser','BcsDev']:
+     #Delete parascriptural with other API user,AgAdmin,AgUser,VachanUser,BcsDev,'VachanContentAdmin','VachanContentViewer'
+    for user in ['APIUser','AgAdmin','AgUser','VachanUser','BcsDev','VachanContentAdmin','VachanContentViewer']:
         headers_au = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
@@ -868,8 +868,8 @@ def test_restore_default():
     assert response.json()['error'] == 'Authentication Error'
 
 
-    #Restore content with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev
-    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev']:
+    #Restore content with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev,'VachanContentAdmin','VachanContentViewer'
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','VachanContentAdmin','VachanContentViewer']:
         headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
