@@ -116,6 +116,15 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/resources/parascripturals/{resource_name},POST,None,False,None,create
 /v2/resources/parascripturals/{resource_name},PUT,None,False,None,edit
 /v2/resources/parascripturals/{resource_name},DELETE,None,False,None,delete/deactivate
+/v2/resources/bible/audios/{resource_name},GET,Autographa,False,None,refer-for-translation
+/v2/resources/bible/audios/{resource_name},GET,SanketMAST,False,None,refer-for-translation
+/v2/resources/bible/audios/{resource_name},GET,Vachan-online or vachan-app,False,None,view-on-web
+/v2/resources/bible/audios/{resource_name},GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/resources/bible/audios/{resource_name},GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
+/v2/resources/bible/audios/{resource_name},GET,API-user,False,None,read-via-api
+/v2/resources/bible/audios/{resource_name},POST,None,False,None,create
+/v2/resources/bible/audios/{resource_name},PUT,None,False,None,edit
+/v2/resources/bible/audios/{resource_name},DELETE,None,False,None,delete/deactivate
 /v2/resources/bible/videos/{resource_name},GET,Autographa,False,None,refer-for-translation
 /v2/resources/bible/videos/{resource_name},GET,SanketMAST,False,None,refer-for-translation
 /v2/resources/bible/videos/{resource_name},GET,Vachan-online or vachan-app,False,None,view-on-web

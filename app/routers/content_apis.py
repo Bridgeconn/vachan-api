@@ -648,78 +648,6 @@ async def get_bible_verse(request: Request,
     last_verse = last_verse, search_phrase=search_phrase, active=active,
     skip = skip, limit = limit)
 
-# # ########### Audio bible ###################
-@router.post('/v2/bibles/{resource_name}/audios',
-    response_model=schema_content.AudioBibleCreateResponse,
-    responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
-    401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
-    415:{"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Bibles"])
-@get_auth_access_check_decorator
-async def add_audio_bible(request: Request,
-    resource_name : schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
-    audios: List[schema_content.AudioBibleUpload] = Body(...),
-    user_details =Depends(get_user_or_none),
-    db_: Session = Depends(get_db)):
-    '''uploads audio(links and related info, not files) for a bible'''
-    log.info('In add_audio_bible')
-    log.debug('resource_name: %s, audios: %s',resource_name, audios)
-    return {'message': "Bible audios details uploaded successfully",
-        "data": contents_crud.upload_bible_audios(db_=db_, resource_name=resource_name,
-        audios=audios, user_id=user_details['user_id'])}
-
-@router.put('/v2/bibles/{resource_name}/audios',
-    response_model=schema_content.AudioBibleUpdateResponse,
-    responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
-    401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Bibles"])
-@get_auth_access_check_decorator
-async def edit_audio_bible(request: Request,
-    resource_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
-    audios: List[schema_content.AudioBibleEdit] = Body(...),
-    user_details =Depends(get_user_or_none),
-    db_: Session = Depends(get_db)):
-    ''' Changes the mentioned fields of audio bible row.
-    book codes are used to identify items and at least one is mandatory.
-    Active field can be used to activate or deactivate a content.
-    Deactivated items are not included in normal fetch results if not specified otherwise'''
-    log.info('In edit_audio_bible')
-    log.debug('resource_name: %s, audios: %s',resource_name, audios)
-    return {'message': "Bible audios details updated successfully",
-        "data": contents_crud.update_bible_audios(db_=db_, resource_name=resource_name,
-        audios=audios, user_id=user_details['user_id'])}
-
-@router.delete('/v2/bibles/{resource_name}/audios',response_model=schemas.DeleteResponse,
-    responses={404: {"model": schemas.ErrorResponse},
-    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
-    502: {"model": schemas.ErrorResponse}},
-    status_code=200,tags=["Bibles"])
-@get_auth_access_check_decorator
-async def delete_bible_audios(request: Request,delete_id: int,
-    resource_name: str = Path(...,example="en_KJV_1_bible"),
-    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
-    '''Delete Bible Audio
-    * unique Bible Audio Id  with resource name can be used to delete an exisiting identity'''
-    log.info('In delete_bibleaudios')
-    log.debug('bibleaudio-delete:%s',delete_id)
-    bibleaudio_id= delete_id
-    tb_name = db_models.dynamicTables[resource_name]
-    dbtable_name = tb_name.__name__
-    audio_tablename = dbtable_name+'_audio'
-    get_bible_response = contents_crud.get_available_bible_books(db_, resource_name=resource_name, \
-        bibleaudio_id= delete_id)
-    if len(get_bible_response['db_content']) == 0:
-        raise NotAvailableException(f"Bible Audio with id {bibleaudio_id} not found")
-    deleted_content = contents_crud.delete_bible_audio(db_=db_,delitem=delete_id,\
-        resource_name=resource_name,user_id=user_details['user_id'])
-    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
-        table_name = audio_tablename, resource = deleted_content['resource_content'],
-        deleting_user = user_details['user_id'])
-    return {'message': f"Bible Audio with id {bibleaudio_id} deleted successfully",
-            "data": delcont}
-
 # # ##### Commentary #####
 @router.get('/v2/commentaries/{resource_name}',
     response_model=List[schema_content.CommentaryResponse],
@@ -856,6 +784,7 @@ async def delete_commentary(request: Request,delete_id:int,
         deleting_user = user_details['user_id'])
     return {'message': f"Commentary id {commentary_id} deleted successfully",
             "data": delcont}
+
 # # ########### Vocabulary ###################
 @router.get('/v2/vocabularies/{resource_name}',
     response_model_exclude_unset=True,
@@ -1109,6 +1038,118 @@ async def delete_parascripturals(request: Request,delete_id:int,
         table_name = dbtable_name, resource = deleted_content['resource_content'],
         deleting_user = user_details['user_id'])
     return {'message': f"Parascriptural id {parascript_id} deleted successfully",
+            "data": delcont}
+
+################ Audio Bibles ###################
+@router.get('/v2/resources/bible/audios/{resource_name}',
+    response_model=List[schema_content.AudioBibleResponse],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
+    415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Audio Bibles"])
+@get_auth_access_check_decorator
+async def get_audio_bibles(request: Request, #pylint: disable=too-many-locals
+    resource_name:schemas.TableNamePattern=
+    Path(...,example="en_KJV_1_audiobible"),
+    name:str=Query(None,example="Audio Bible of Genesis"),
+    audio_format:str=Query(None, example="mp3"),
+    reference: str = Query(None,
+    example='{"book": "gen", "chapter": 1, "verseNumber": 6}'),
+    link:AnyUrl=Query(None,example="http://someplace.com/resoucesid"),
+    search_word:str=Query(None,example="subtitle"),
+    metadata: schemas.MetaDataPattern=Query(None,
+        example='{"otherName": "Creation"}'),
+    active: bool=Query(True),
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
+    user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
+    '''Fetches the Audio Bibles. Can use, Audio Bible name, audio_format
+       reference,link,meatdata or search word to filter the results.
+    * optional query parameters can be used to filter the result set
+    * skip=n: skips the first n objects in return list
+    * limit=n: limits the no. of items to be returned to n
+    * returns [] for not available content
+    * Filter with single reference -> eg :{"book": "gen", "chapter": 1, "verseNumber": 6}
+    * Filter with cross chapter references -> eg:reference": {"book":"gen", "chapter":11,
+        "verseNumber":12,"bookEnd":"luk", "chapterEnd":14, "verseEnd":15 }'''
+    log.info('In get_audio_bibles')
+    log.debug('resource_name: %s,name: %s, skip: %s,limit: %s,search_word: %s,\
+        reference:%s,metadata:%s',resource_name,name,skip,limit,search_word,\
+        reference,metadata)
+    reference_dict: Dict[str, int] = None
+    if reference:
+        reference_dict = json.loads(reference)
+    return contents_crud.get_audio_bible(db_, resource_name, name,
+        audio_format = audio_format, reference = reference_dict, link = link,
+        search_word = search_word, metadata = metadata, active = active, skip = skip, limit = limit)
+
+@router.post('/v2/resources/bible/audios/{resource_name}',
+    response_model=schema_content.AudioBibleCreateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
+    401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
+    415:{"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Audio Bibles"])
+@get_auth_access_check_decorator
+async def add_audio_bibles(request: Request,
+    resource_name : schemas.TableNamePattern=Path(...,
+    example="en_KJV_1_audiobible"),
+    audiobibles: List[schema_content.AudioBibleCreate] = Body(...),
+    user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
+    '''Uploads a list of audio_bibles. category field is mandatory'''
+    log.info('In add_audio_bibles')
+    log.debug('resource_name: %s, audiobibles: %s',resource_name, audiobibles)
+    return {'message': "Audio Bibles added successfully",
+        "data": contents_crud.upload_audio_bible(db_=db_, resource_name=resource_name,
+        audiobibles=audiobibles, user_id=user_details['user_id'])}
+
+@router.put('/v2/resources/bible/audios/{resource_name}',
+    response_model=schema_content.AudioBibleUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
+    401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Audio Bibles"])
+@get_auth_access_check_decorator
+async def edit_audio_bibles(request: Request,
+    resource_name: schemas.TableNamePattern=Path(...,
+    example="en_KJV_1_audiobible"),
+    audiobibles: List[schema_content.AudioBibleEdit] = Body(...),
+    user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
+    ''' Changes description,reference or link.
+    Item identifier is audioId, which cannot be altered.'''
+    log.info('In edit_audio_bibles')
+    log.debug('resource_name: %s, audiobible: %s',resource_name, audiobibles)
+    return {'message': "Audio Bibles updated successfully",
+        "data": contents_crud.update_audio_bible(db_=db_, resource_name=resource_name,
+        audiobibles=audiobibles, user_id=user_details['user_id'])}
+
+@router.delete('/v2/resources/bible/audios/{resource_name}',
+    response_model=schemas.DeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Audio Bibles"])
+@get_auth_access_check_decorator
+async def delete_audio_bibles(request: Request,delete_id:int,
+    resource_name: str = Path(...,example="en_KJV_1_audiobible"),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Delete Audio Bible
+    * unique audioId with source name can be used to delete an exisiting identity'''
+    log.info('In delete_audio_bibles')
+    log.debug('audio_bibles-delete:%s',delete_id)
+    audio_id= delete_id
+    tb_name = db_models.dynamicTables[resource_name]
+    dbtable_name = tb_name.__name__
+    get_audio_response = contents_crud.get_audio_bible(
+        db_, resource_name=resource_name, audio_id= delete_id)
+    if len( get_audio_response['db_content']) == 0:
+        raise NotAvailableException(f"Audio Bible with id {audio_id} not found")
+    deleted_content = contents_crud.delete_audio_bible(db_=db_,delitem=delete_id,\
+        table_name=tb_name,resource_name=resource_name,user_id=user_details['user_id'])
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
+        table_name = dbtable_name, resource = deleted_content['resource_content'],
+        deleting_user = user_details['user_id'])
+    return {'message': f"Audio Bible id {audio_id} deleted successfully",
             "data": delcont}
 
 # # ########### Sign Bible Video ###################
