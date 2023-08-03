@@ -604,7 +604,7 @@ def upload_audio_bible(db_: Session, resource_name, audiobibles, user_id=None):
         raise NotAvailableException(f'Resource {resource_name}, not found in database')
     if resource_db_content.contentType.contentType != \
         db_models.ContentTypeName.AUDIOBIBLE.value:
-        raise TypeException('The operation is supported only on sign bible videos')
+        raise TypeException('The operation is supported only on audio bibles')
     model_cls = db_models.dynamicTables[resource_name]
     db_content = []
     for item in audiobibles:
@@ -661,7 +661,7 @@ def update_audio_bible(db_: Session, resource_name, audiobibles, user_id=None): 
         raise NotAvailableException(f'Resource {resource_name}, not found in database')
     if resource_db_content.contentType.contentType != \
         db_models.ContentTypeName.AUDIOBIBLE.value:
-        raise TypeException('The operation is supported only on sign bible videos')
+        raise TypeException('The operation is supported only on audio bibles')
     model_cls = db_models.dynamicTables[resource_name]
     db_content = []
     for item in audiobibles:
