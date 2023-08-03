@@ -38,11 +38,11 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
     else:
         url = permanent_link
 
-    content_type = mimetypes.guess_type(url.split("/")[-1], strict=True)
-    if content_type is None:
+    resource_type = mimetypes.guess_type(url.split("/")[-1], strict=True)
+    if resource_type is None:
         raise Exception("Unsupported media format!")#pylint: disable=W0719
 
-    if "video" not in content_type[0] and "audio" not in content_type[0]:
+    if "video" not in resource_type[0] and "audio" not in resource_type[0]:
         raise HTTPException(status_code=406,
             detail="Currently api supports only video and audio streams")
 
@@ -82,7 +82,7 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
         headers={
             "Accept-Ranges": "bytes",
             "Content-Range": f"bytes {start_byte_requested}-{end_byte_planned}/{total_size}",
-            "Content-Type": content_type[0]
+            "Resource-Type": resource_type[0]
         },
         status_code=206)
 

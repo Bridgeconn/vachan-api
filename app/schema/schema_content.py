@@ -281,8 +281,8 @@ class BibleVerse(BaseModel):
             }
         }
 
-class BookContentType(str, Enum):
-    '''choices for bible content types'''
+class BookResourceType(str, Enum):
+    '''choices for bible resource types'''
     USFM = 'usfm'
     JSON = 'json'
     AUDIO = 'audio'

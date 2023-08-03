@@ -20,30 +20,31 @@ from dependencies import log
 from crud import utils
 
 ist_timezone = timezone("Asia/Kolkata")
-def get_content_types(db_: Session, content_type: str =None, content_id: int = None,
+def get_resource_types(db_: Session, resource_type: str =None, resourcetype_id: int = None,
     skip: int = 0, limit: int = 100):
-    '''Fetches all content types, with pagination'''
-    query = db_.query(db_models.ContentType)
-    if content_type:
-        query = query.filter(db_models.ContentType.contentType == content_type)
-    if content_id is not None:
-        query = query.filter(db_models.ContentType.contentId == content_id)
+    '''Fetches all resource types, with pagination'''
+    query = db_.query(db_models.ResourceType)
+    if resource_type:
+        query = query.filter(db_models.ResourceType.resourceType == resource_type)
+    if resourcetype_id is not None:
+        query = query.filter(db_models.ResourceType.resourcetypeId == resourcetype_id)
     return query.offset(skip).limit(limit).all()
 
-def create_content_type(db_: Session, content: schemas.ContentTypeCreate,user_id=None):
-    '''Adds a row to content_types table'''
-    db_content = db_models.ContentType(contentType = content.contentType,createdUser= user_id)
-    db_.add(db_content)
+def create_resource_types(db_: Session, resourcetype: schemas.ResourceTypeCreate,user_id=None):
+    '''Adds a row to resource_types table'''
+    db_resourcetype = db_models.ResourceType(resourceType = resourcetype.resourceType,
+                                             createdUser= user_id)
+    db_.add(db_resourcetype)
     # db_.commit()
     # db_.refresh(db_content)
-    return db_content
+    return db_resourcetype
 
-def delete_content(db_: Session, content:int):
-    '''delete particular content, selected via content id'''
-    db_content = db_.query(db_models.ContentType).get(content)
-    db_.delete(db_content)
+def delete_resource_types(db_: Session, resourcetype:int):
+    '''delete particular resource_types, selected via resource_type id'''
+    db_resourcetype = db_.query(db_models.ResourceType).get(resourcetype)
+    db_.delete(db_resourcetype)
     #db_.commit()
-    return db_content
+    return db_resourcetype
 
 def get_languages(db_: Session, language_code = None, language_name = None, search_word=None,
     language_id = None, **kwargs):
@@ -158,7 +159,7 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
         "languages":db_models.Language,
         "licenses":db_models.License,
         "versions":db_models.Version,
-        "content_types": db_models.ContentType,
+        "resource_types": db_models.ResourceType,
         "resources":db_models.Resource,
         "translation_projects":db_models.TranslationProject,
         "translation_project_users": db_models.TranslationProjectUser,
@@ -347,7 +348,7 @@ def delete_version(db_: Session, ver: int):
     return db_content
 
 def get_resources(db_: Session,#pylint: disable=too-many-locals,too-many-branches,too-many-nested-blocks, too-many-statements,too-many-arguments
-    content_type=None, version_abbreviation=None, version_tag=None, language_code=None,
+    resource_type=None, version_abbreviation=None, version_tag=None, language_code=None,
     resource_id=None, **kwargs):
     '''Fetches the rows of resources table'''
     license_abbreviation = kwargs.get("license_abbreviation",None)
@@ -363,9 +364,9 @@ def get_resources(db_: Session,#pylint: disable=too-many-locals,too-many-branche
     query = db_.query(db_models.Resource)
     if resource_id:
         query = query.filter(db_models.Resource.resourceId == resource_id)
-    if content_type:
-        query = query.filter(db_models.Resource.contentType.has
-        (contentType = content_type.strip()))
+    if resource_type:
+        query = query.filter(db_models.Resource.resourceType.has
+        (resourceType = resource_type.strip()))
     if version_abbreviation:
         query = query.filter(
             db_models.Resource.version.has(versionAbbreviation = version_abbreviation.strip()))
@@ -404,7 +405,7 @@ def get_resources(db_: Session,#pylint: disable=too-many-locals,too-many-branche
     version_tags = []
     for res_item in res:
         converted_tag = [digits_to_int(part) for part in res_item.version.versionTag]
-        version_tags.append((res_item.contentType.contentType, res_item.language.language,
+        version_tags.append((res_item.resourceType.resourceType, res_item.language.language,
          res_item.version.versionAbbreviation,
          converted_tag, res_item))
     sorted_res =[res_tuple[4] for res_tuple in sorted(version_tags, reverse=True)]
@@ -420,7 +421,7 @@ def get_resources(db_: Session,#pylint: disable=too-many-locals,too-many-branche
     for item in sorted_res:
         key_name = "_".join([item.language.code,
             item.version.versionAbbreviation,
-            item.contentType.contentType])
+            item.resourceType.resourceType])
         if key_name not in latest_res:
             latest_res[key_name] = item
         elif item.labels and schemas.ResourceLabel.LATEST in item.labels:
@@ -436,13 +437,13 @@ def create_resource(db_: Session, resource: schemas.ResourceCreate, user_id):
     '''Adds a row to resources table'''
     version_array = version_tag_to_array(resource.versionTag)
     resource_name = "_".join([resource.language, resource.version,
-        version_array_to_tag(version_array), resource.contentType])
+        version_array_to_tag(version_array), resource.resourceType])
     if len(get_resources(db_, resource_name = resource_name)) > 0:
         raise AlreadyExistsException(f"{resource_name} already present")
-    content_type = db_.query(db_models.ContentType).filter(
-        db_models.ContentType.contentType == resource.contentType.strip()).first()
-    if not content_type:
-        raise NotAvailableException(f"ContentType, {resource.contentType.strip()},"+\
+    resource_type = db_.query(db_models.ResourceType).filter(
+        db_models.ResourceType.resourceType == resource.resourceType.strip()).first()
+    if not resource_type:
+        raise NotAvailableException(f"ResourceType, {resource.resourceType.strip()},"+\
             " not found in Database")
     version = db_.query(db_models.Version).filter(
         db_models.Version.versionAbbreviation == resource.version,
@@ -461,7 +462,7 @@ def create_resource(db_: Session, resource: schemas.ResourceCreate, user_id):
     if resource.labels and schemas.ResourceLabel.LATEST in resource.labels:
         query = db_.query(db_models.Resource).join(db_models.Version).filter(
             db_models.Resource.version.has(versionAbbreviation = resource.version),
-            db_models.Resource.contentId == content_type.contentId,
+            db_models.Resource.resourcetypeId == resource_type.resourcetypeId,
             db_models.Resource.labels.op('&&')(array(schemas.ResourceLabel.LATEST.value)))
         another_latest = query.all()
         if another_latest:
@@ -474,14 +475,14 @@ def create_resource(db_: Session, resource: schemas.ResourceCreate, user_id):
             int(table_name.split("_")[-1]) > table_name_count):
             table_name_count = int(table_name.split("_")[-1])
     table_name = "table_"+str(table_name_count+1)
-    if content_type.contentType == db_models.ContentTypeName.GITLABREPO.value:
+    if resource_type.resourceType == db_models.ResourceTypeName.GITLABREPO.value:
         table_name = resource.metaData["repo"]
     db_content = db_models.Resource(
         year = resource.year,
         labels = resource.labels,
         resourceName = resource_name,
         tableName = table_name,
-        contentId = content_type.contentId,
+        resourcetypeId = resource_type.resourcetypeId,
         versionId = version.versionId,
         languageId = language.languageId,
         licenseId = license_obj.licenseId,
@@ -490,11 +491,11 @@ def create_resource(db_: Session, resource: schemas.ResourceCreate, user_id):
         )
     db_content.createdUser = user_id
     db_.add(db_content)
-    if not content_type.contentType == db_models.ContentTypeName.GITLABREPO.value:
-        db_models.create_dynamic_table(resource_name, table_name, content_type.contentType)
+    if not resource_type.resourceType == db_models.ResourceTypeName.GITLABREPO.value:
+        db_models.create_dynamic_table(resource_name, table_name, resource_type.resourceType)
         db_models.dynamicTables[db_content.resourceName].\
             __table__.create(bind=engine, checkfirst=True)
-    if content_type.contentType == db_models.ContentTypeName.BIBLE.value:
+    if resource_type.resourceType == db_models.ResourceTypeName.BIBLE.value:
         db_models.dynamicTables[db_content.resourceName+'_cleaned'].__table__.create(
             bind=engine, checkfirst=True)
         log.warning("User %s, creates a new table %s", user_id, db_content.resourceName+'_cleaned')
@@ -554,7 +555,7 @@ def update_resource(db_: Session, resource: schemas.ResourceEdit, user_id = None
             query = db_.query(db_models.Resource).join(db_models.Version).filter(
                 db_models.Resource.version.has(
                     versionAbbreviation = db_content.version.versionAbbreviation),
-                db_models.Resource.contentId == db_content.contentId,
+                db_models.Resource.resourcetypeId == db_content.resourcetypeId,
                 db_models.Resource.labels.op('&&')(array(schemas.ResourceLabel.LATEST.value)),
                 db_models.Resource.resourceId != db_content.resourceId)
             another_latest = query.all()
@@ -571,7 +572,7 @@ def update_resource(db_: Session, resource: schemas.ResourceEdit, user_id = None
     db_content.updatedUser = user_id
     # db_.commit()
     # db_.refresh(db_content)
-    if not resource.resourceName.split("_")[-1] == db_models.ContentTypeName.GITLABREPO.value:
+    if not resource.resourceName.split("_")[-1] == db_models.ResourceTypeName.GITLABREPO.value:
         db_models.dynamicTables[db_content.resourceName] = \
         db_models.dynamicTables[resource.resourceName]
         if resource.resourceName.split("_")[-1] == 'bible':

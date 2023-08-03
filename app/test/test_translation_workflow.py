@@ -23,7 +23,7 @@ ver_data = {
 }
 
 src_data = {
-    "contentType": "bible",
+    "resourceType": "bible",
     "language": "hi",
     "version": "XYZ",
     "revision": 1,

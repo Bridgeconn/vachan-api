@@ -1,7 +1,7 @@
 '''Test cases for bible videos related APIs'''
 import re
 # from urllib import response
-from . import client , contetapi_get_accessrule_checks_app_userroles
+from . import client , resourcetypeapi_get_accessrule_checks_app_userroles
 from . import check_default_get
 from . import assert_input_validation_error, assert_not_available_content
 from .test_resources import check_post as add_resource
@@ -97,7 +97,7 @@ def check_post(data: list, datatype='books'):
     }
     add_version(version_data)
     resource_data = {
-        "contentType": "bible",
+        "resourceType": "bible",
         "language": "gu",
         "version": "TTT",
         "year": 3030,
@@ -573,7 +573,7 @@ def test_get_books_contenttype():
     # headers = {"contentType": "application/json", "accept": "application/json"}
     check_default_get(UNIT_URL+resource_name+"/books", headers_auth,assert_positive_get_for_books)
 
-    # content_type
+    # resource_type
     #without auth   
     response = client.get(UNIT_URL+resource_name+'/books',headers=headers)
     assert response.status_code == 401
@@ -590,12 +590,12 @@ def test_get_books_contenttype():
         assert "audio" not in res
 
     #without auth
-    response = client.get(UNIT_URL+resource_name+'/books?content_type=usfm')
+    response = client.get(UNIT_URL+resource_name+'/books?resource_type=usfm')
     assert response.status_code == 401
     assert response.json()["error"] == "Authentication Error"
 
     #with auth
-    response = client.get(UNIT_URL+resource_name+'/books?content_type=usfm',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'/books?resource_type=usfm',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == len(gospel_books_data)
     for res in response.json():
@@ -604,7 +604,7 @@ def test_get_books_contenttype():
         assert "JSON" not in res
         assert "audio" not in res
 
-    response = client.get(UNIT_URL+resource_name+'/books?content_type=json',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'/books?resource_type=json',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == len(gospel_books_data)
     for res in response.json():
@@ -613,7 +613,7 @@ def test_get_books_contenttype():
         assert "JSON" in res
         assert "audio" not in res
 
-    response = client.get(UNIT_URL+resource_name+'/books?content_type=all',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'/books?resource_type=all',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == len(gospel_books_data)
     for res in response.json():
@@ -622,7 +622,7 @@ def test_get_books_contenttype():
         assert "JSON" in res
         assert "audio" in res
 
-    response = client.get(UNIT_URL+resource_name+'/books?book_code=mat&content_type=audio',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'/books?book_code=mat&resource_type=audio',headers=headers_auth)
     assert_not_available_content(response)
 
     # add audio
@@ -631,12 +631,12 @@ def test_get_books_contenttype():
     assert resp.json()['message'] == "Bible audios details uploaded successfully"
 
     #without auth
-    response = client.get(UNIT_URL+resource_name+'/books?content_type=audio')
+    response = client.get(UNIT_URL+resource_name+'/books?resource_type=audio')
     assert response.status_code == 401
     assert response.json()["error"] == "Authentication Error"
 
     #with auth
-    response = client.get(UNIT_URL+resource_name+'/books?content_type=audio',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'/books?resource_type=audio',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 6
     for res in response.json():
@@ -782,7 +782,7 @@ def test_audio_delete():
     assert res1.status_code == 200
     assert len(res1.json()) == 6
 
-    res2 = client.get(UNIT_URL+resource_name+'/books?content_type=audio',headers=headers_auth)
+    res2 = client.get(UNIT_URL+resource_name+'/books?resource_type=audio',headers=headers_auth)
     assert res2.status_code == 200
     assert len(res2.json()) == 6
 
@@ -797,9 +797,9 @@ def test_audio_delete():
     assert res3.status_code == 201
     assert not res3.json()['data'][0]['active']
 
-    res4 = client.get(UNIT_URL+resource_name+'/books?content_type=audio',headers=headers_auth)
+    res4 = client.get(UNIT_URL+resource_name+'/books?resource_type=audio',headers=headers_auth)
     res5 = client.get(UNIT_URL+resource_name+'/books',headers=headers_auth)
-    res6 = client.get(UNIT_URL+resource_name+'/books?content_type=audio&active=False',headers=headers_auth)
+    res6 = client.get(UNIT_URL+resource_name+'/books?resource_type=audio&active=False',headers=headers_auth)
     assert res4.status_code == 200
     assert len(res4.json()) == 5
     assert res5.status_code == 200
@@ -812,9 +812,9 @@ def test_audio_delete():
     assert resp.status_code == 201
     assert resp.json()['message'] == "Bible books uploaded and processed successfully"
 
-    res4 = client.get(UNIT_URL+resource_name+'/books?content_type=audio',headers=headers_auth)
+    res4 = client.get(UNIT_URL+resource_name+'/books?resource_type=audio',headers=headers_auth)
     res5 = client.get(UNIT_URL+resource_name+'/books',headers=headers_auth)
-    res6 = client.get(UNIT_URL+resource_name+'/books?content_type=audio&active=False',headers=headers_auth)
+    res6 = client.get(UNIT_URL+resource_name+'/books?resource_type=audio&active=False',headers=headers_auth)
     assert res4.status_code == 200
     assert len(res4.json()) == 5
     assert res5.status_code == 200
@@ -831,8 +831,8 @@ def test_audio_delete():
     update_data = [{"books":["jhn"], "active":False}]
     res3 = client.put(UNIT_URL+resource_name+'/audios', json=update_data, headers=headers_auth)
     assert res3.status_code == 201
-    res4 = client.get(UNIT_URL+resource_name+'/books?book_code=jhn&content_type=audio',headers=headers_auth)
-    res5 = client.get(UNIT_URL+resource_name+'/books?book_code=jhn&content_type=usfm',headers=headers_auth)
+    res4 = client.get(UNIT_URL+resource_name+'/books?book_code=jhn&resource_type=audio',headers=headers_auth)
+    res5 = client.get(UNIT_URL+resource_name+'/books?book_code=jhn&resource_type=usfm',headers=headers_auth)
     assert_not_available_content(res4)
     assert res5.status_code == 200
     assert len(res5.json()) == 1
@@ -882,8 +882,8 @@ def test_book_delete():
     assert resp.status_code == 201
     assert resp.json()['message'] == "Bible audios details uploaded successfully"
 
-    res1 = client.get(UNIT_URL+resource+'/books?content_type=audio',headers=headers_auth)
-    res2 = client.get(UNIT_URL+resource+'/books?content_type=all',headers=headers_auth)
+    res1 = client.get(UNIT_URL+resource+'/books?resource_type=audio',headers=headers_auth)
+    res2 = client.get(UNIT_URL+resource+'/books?resource_type=all',headers=headers_auth)
     assert res1.status_code == 200
     assert len(res1.json()) == 6
     assert res2.status_code == 200
@@ -908,7 +908,7 @@ def test_created_user_can_only_edit():
     }
     add_version(version_data)
     resource_data = {
-        "contentType": "bible",
+        "resourceType": "bible",
         "language": "gu",
         "version": "TTT",
         "year": 3030,
@@ -943,7 +943,7 @@ def test_get_access_with_user_roles_and_apps():
     data = [
     	    {"USFM":"\\id mat\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"}
     ]
-    contetapi_get_accessrule_checks_app_userroles("bible",UNIT_URL,data, bible=True)
+    resourcetypeapi_get_accessrule_checks_app_userroles("bible",UNIT_URL,data, bible=True)
 
 def test_delete_default():
     ''' positive test case, checking for correct return of deleted biblebook ID'''
@@ -1356,7 +1356,7 @@ def test_delete_audio_default():
                 "accept": "application/json"}
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     #Check bible audio exist in dynamic table after post
-    post_response = client.get(UNIT_URL+resource_name+"/books?book_code=mat&content_type=audio",headers=headers_auth)
+    post_response = client.get(UNIT_URL+resource_name+"/books?book_code=mat&resource_type=audio",headers=headers_auth)
     assert post_response.status_code == 200
     assert len(post_response.json()) == 1
 
@@ -1386,7 +1386,7 @@ def test_delete_audio_default():
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Bible Audio with id {audio_id} deleted successfully"
-    delete_response = client.get(UNIT_URL+resource_name+"/books?book_code=mat&content_type=audio",headers=headers_auth)
+    delete_response = client.get(UNIT_URL+resource_name+"/books?book_code=mat&resource_type=audio",headers=headers_auth)
     assert delete_response.status_code == 200
     assert len(delete_response.json()) == 0
 
@@ -1582,7 +1582,7 @@ def test_restore_audio_default():
     assert response.json()['message'] == \
     f"Deleted Item with identity {deleteditem_id} restored successfully"
     #Check bible audio exists in dynamic table after restore
-    restore_response = client.get(UNIT_URL+resource_name+"/books?book_code=mat&content_type=audio",headers=headers_auth)
+    restore_response = client.get(UNIT_URL+resource_name+"/books?book_code=mat&resource_type=audio",headers=headers_auth)
     assert restore_response.status_code == 200
     assert len(restore_response.json()) == 1
     assert restore_response.json()[0]['audio']['audioId'] == audio_id

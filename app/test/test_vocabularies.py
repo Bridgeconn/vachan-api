@@ -1,5 +1,5 @@
 '''Test cases for vocabulary related APIs'''
-from . import client , contetapi_get_accessrule_checks_app_userroles
+from . import client , resourcetypeapi_get_accessrule_checks_app_userroles
 from . import assert_input_validation_error, assert_not_available_content
 
 from . import check_default_get, check_soft_delete
@@ -30,7 +30,7 @@ def check_post(data: list):
     }
     add_version(version_data)
     resource_data = {
-        "contentType": "vocabulary",
+        "resourceType": "vocabulary",
         "language": "en",
         "version": "TTT",
         "revision": 1,
@@ -326,7 +326,7 @@ def test_created_user_can_only_edit():
     }
     add_version(version_data)
     resource_data = {
-        "contentType": "vocabulary",
+        "resourceType": "vocabulary",
         "language": "en",
         "version": "TTT",
         "versionTag": 1,
@@ -367,7 +367,7 @@ def test_get_access_with_user_roles_and_apps():
     data = [
     	{"word": "one", "details":{"digit": 1, "type":"odd", "link":UNIT_URL+'vocabulary?word=one'}}
     ]
-    contetapi_get_accessrule_checks_app_userroles("vocabulary",UNIT_URL,data)
+    resourcetypeapi_get_accessrule_checks_app_userroles("vocabulary",UNIT_URL,data)
 
 def test_get_count_after_data_upload():
     '''Add some data into the table and do all tests on get count API'''
@@ -524,7 +524,7 @@ def test_delete_with_editable_permission():
     add_version(version_data)
     # Create Resource with access permission "editable by VachanAdmin"
     resource_data = {
-        "contentType": "vocabulary",
+        "resourceType": "vocabulary",
         "language": "en",
         "version": "TTT",
         "revision": 1,

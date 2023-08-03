@@ -81,7 +81,7 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
             #typeerror
             books=project_obj.selectedBooks.books,
             language_code=None,
-            content_type='bible',
+            resource_type='bible',
             skip=0, limit=100000,
             user_details = user_details,
             db_=db_,

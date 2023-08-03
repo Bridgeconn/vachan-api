@@ -234,7 +234,7 @@ def add_version():
 def add_bible_resource():
     '''creates bible resource'''
     src_data = {
-    "contentType": "bible",
+    "resourceType": "bible",
     "language": "hi",
     "version": "TW",
     "revision": 1,
@@ -252,7 +252,7 @@ def add_bible_resource():
 def add_dict_resource():
     '''creates vocabulary resource'''
     resource_data = {
-        "contentType": "vocabulary",
+        "resourceType": "vocabulary",
         "language": "hi",
         "version": "TW",
         "revision": 1,

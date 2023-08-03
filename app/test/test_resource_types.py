@@ -1,4 +1,4 @@
-'''Test cases for contentType related APIs'''
+'''Test cases for resourceType related APIs'''
 import urllib.parse
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
@@ -8,23 +8,23 @@ from .test_resources import check_post as add_resource
 from .test_auth_basic import SUPER_USER,SUPER_PASSWORD, login, logout_user
 from .conftest import initial_test_users
 
-UNIT_URL = '/v2/contents'
+UNIT_URL = '/v2/resources/types'
 RESTORE_URL = '/v2/restore'
 
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
-    assert "contentId" in item
-    assert isinstance(item['contentId'], int)
-    assert "contentType" in item
+    assert "resourcetypeId" in item
+    assert isinstance(item['resourcetypeId'], int)
+    assert "resourceType" in item
 
 def test_get_default():
     '''positive test case, without optional params'''
     headers = {"contentType": "application/json", "accept": "application/json"}
     check_default_get(UNIT_URL, headers ,assert_positive_get)
 
-def test_get_notavailable_content_type():
+def test_get_notavailable_resource_type():
     ''' request a not available content, Ensure there is not partial matching'''
-    response = client.get(UNIT_URL+"?content_type=bib")
+    response = client.get(UNIT_URL+"?resource_type=bib")
     assert_not_available_content(response)
 
     #test get not avaialble content with auth header
@@ -32,12 +32,12 @@ def test_get_notavailable_content_type():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.get(UNIT_URL+"?content_type=bib",headers=headers_auth)
+    response = client.get(UNIT_URL+"?resource_type=bib",headers=headers_auth)
     assert_not_available_content(response)
 
 def test_post_default():
     '''positive test case, checking for correct return object'''
-    data = {"contentType":"altbible"}
+    data = {"resourceType":"altbible"}
     #Registered user can only add content type
     #Add test without login
     headers = {"contentType": "application/json", "accept": "application/json"}
@@ -53,7 +53,7 @@ def test_post_default():
     
     response = client.post(UNIT_URL, headers=headers, json=data)
     assert response.status_code == 201
-    assert response.json()['message'] == "Content type created successfully"
+    assert response.json()['message'] == "Resource type created successfully"
     assert_positive_get(response.json()['data'])
     return response
 
@@ -85,7 +85,7 @@ def test_post_missingvalue_contenttype():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.delete(UNIT_URL + "?content_id=", headers=headers)
+    response = client.delete(UNIT_URL + "?resourcetype_id=", headers=headers)
     assert_input_validation_error(response)
 
 def test_post_incorrectvalue_contenttype():
@@ -105,12 +105,12 @@ def test_delete_default():
     ''' positive test case, checking for correct return of deleted content ID'''
     # create new data
     response = test_post_default()
-    content_id = response.json()["data"]["contentId"]
+    resourcetype_id = response.json()["data"]["resourcetypeId"]
 
 
     # Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}
-    response = client.delete(UNIT_URL + "?content_id=" + str(content_id), headers=headers)
+    response = client.delete(UNIT_URL + "?resourcetype_id=" + str(resourcetype_id), headers=headers)
     
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
@@ -122,7 +122,7 @@ def test_delete_default():
             "accept": "application/json",
             'Authorization': "Bearer " + initial_test_users[user]['token']
         }
-        response = client.delete(UNIT_URL + "?content_id=" + str(content_id), headers=headers)
+        response = client.delete(UNIT_URL + "?resourcetype_id=" + str(resourcetype_id), headers=headers)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
@@ -133,13 +133,13 @@ def test_delete_default():
         'Authorization': "Bearer " + initial_test_users['APIUser2']['token']
     }
 
-    response = client.delete(UNIT_URL + "?content_id=" + str(content_id), headers=headers)
+    response = client.delete(UNIT_URL + "?resourcetype_id=" + str(resourcetype_id), headers=headers)
     assert response.status_code == 200
-    assert response.json()['message'] == f"Content with identity {content_id} deleted successfully"
+    assert response.json()['message'] == f"ResourceType with identity {resourcetype_id} deleted successfully"
     
-    # Check content is deleted from content_types table
-    check_content_type = client.get(UNIT_URL + "?content_type=altbible")
-    assert_not_available_content(check_content_type)
+    # Check content is deleted from resource_types table
+    check_resource_type = client.get(UNIT_URL + "?resource_type=altbible")
+    assert_not_available_content(check_resource_type)
 
 
 
@@ -148,7 +148,7 @@ def test_delete_default_superadmin():
     #Created User or Super Admin can only delete content
     #creating data
     response = test_post_default()
-    content_id = response.json()['data']['contentId']
+    resourcetype_id = response.json()['data']['resourcetypeId']
     
 
     #Delete content with Super Admin
@@ -165,19 +165,19 @@ def test_delete_default_superadmin():
                     'Authorization': "Bearer"+" "+test_user_token
             }
     #Delete content
-    response = client.delete(UNIT_URL + "?content_id=" + str(content_id), headers=headers_auth)
+    response = client.delete(UNIT_URL + "?resourcetype_id=" + str(resourcetype_id), headers=headers_auth)
     assert response.status_code == 200
     assert response.json()['message'] == \
-    f"Content with identity {content_id} deleted successfully"
+    f"ResourceType with identity {resourcetype_id} deleted successfully"
     logout_user(test_user_token)
     return response
 
-def test_delete_content_id_string():
+def test_delete_resourcetype_id_string():
     '''positive test case, content id as string'''
     response = test_post_default()
     #Deleting created data
-    content_id = response.json()['data']['contentId']
-    content_id = str(content_id)
+    resourcetype_id = response.json()['data']['resourcetypeId']
+    resourcetype_id = str(resourcetype_id)
     
     as_data = {
             "user_email": SUPER_USER,
@@ -190,34 +190,34 @@ def test_delete_content_id_string():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
-    response = client.delete(UNIT_URL + "?content_id=" + str(content_id), headers=headers_auth)
+    response = client.delete(UNIT_URL + "?resourcetype_id=" + str(resourcetype_id), headers=headers_auth)
     assert response.status_code == 200
     assert response.json()['message'] == \
-        f"Content with identity {content_id} deleted successfully"
+        f"ResourceType with identity {resourcetype_id} deleted successfully"
     logout_user(test_user_token)
 
 def test_delete_incorrectdatatype():
     '''negative testcase. Passing input data not in json format'''
     response = test_post_default()
     #Deleting created data
-    content_id = {}
+    resourcetype_id = {}
    
     headers = {"contentType": "application/json",
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.delete(UNIT_URL + "?content_id=" + str(content_id), headers=headers)
+    response = client.delete(UNIT_URL + "?resourcetype_id=" + str(resourcetype_id), headers=headers)
     assert_input_validation_error(response)
 
-def test_delete_missingvalue_content_id():
-    '''Negative Testcase. Passing input data without contentId'''
+def test_delete_missingvalue_resourcetype_id():
+    '''Negative Testcase. Passing input data without resourcetypeId'''
     
     headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    content_id =" "
-    response = client.delete(UNIT_URL + "?content_id=" , headers=headers)
+    resourcetype_id =" "
+    response = client.delete(UNIT_URL + "?resourcetype_id=" , headers=headers)
     assert_input_validation_error(response)
 
 def test_delete_notavailable_content():
@@ -227,8 +227,8 @@ def test_delete_notavailable_content():
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    content_id=9999
-    response=client.delete(UNIT_URL + "?content_id=" + str(content_id), headers=headers)
+    resourcetype_id=9999
+    response=client.delete(UNIT_URL + "?resourcetype_id=" + str(resourcetype_id), headers=headers)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
 
@@ -236,8 +236,8 @@ def test_content_used_by_resource():
     '''  Negativetest case, trying to delete that content which is used to create a resource'''
 
     #get id of an already existing content
-    response = client.get(UNIT_URL+"?content_type=commentary")
-    content_id = response.json()[0]["contentId"]
+    response = client.get(UNIT_URL+"?resource_type=commentary")
+    resourcetype_id = response.json()[0]["resourcetypeId"]
     #Create Version with associated with resource
     version_data = {
         "versionAbbreviation": "TTT",
@@ -247,7 +247,7 @@ def test_content_used_by_resource():
 
     #Create Resource with language
     resource_data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "en",
         "version": "TTT",
         "revision": 1,
@@ -270,7 +270,7 @@ def test_content_used_by_resource():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+token_admin
                      }
-    response=client.delete(UNIT_URL + "?content_id=" + str(content_id), headers=headers_admin)
+    response=client.delete(UNIT_URL + "?resourcetype_id=" + str(resourcetype_id), headers=headers_admin)
     assert response.status_code == 409
     assert response.json()['error'] == 'Conflict'
     logout_user(token_admin)
@@ -321,9 +321,9 @@ def test_restore_default():
     f"Deleted Item with identity {deleteditem_id} restored successfully"
     assert_positive_get(response.json()['data'])
     logout_user(test_user_token)
-    #Check content is available in content_types table after restore
-    check_content_type = client.get(UNIT_URL+"?content_type=altbibile")
-    assert check_content_type.status_code == 200
+    #Check content is available in resource_types table after restore
+    check_resource_type = client.get(UNIT_URL+"?resource_type=altbibile")
+    assert check_resource_type.status_code == 200
 
 def test_restore_item_id_string():
     '''positive test case, passing deleted item id as string'''

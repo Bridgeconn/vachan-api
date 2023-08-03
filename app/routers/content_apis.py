@@ -18,68 +18,69 @@ router = APIRouter()
 
 #pylint: disable=too-many-arguments,unused-argument
 ##### Content types #####
-@router.get('/v2/contents', response_model=List[schemas.ContentType],
+@router.get('/v2/resources/types', response_model=List[schemas.ResourceType],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}},  status_code=200,
-    tags=["Contents Types"])
+    tags=["Resources Types"])
 @get_auth_access_check_decorator
-async def get_contents(request: Request,content_type: str = Query(None, example="bible"),
+async def get_resources_types(request: Request,resource_type: str = Query(None, example="bible"),
      skip: int = Query(0, ge=0),limit: int = Query(100, ge=0),
      user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
-    '''fetches all the contents types supported and their details
+    '''fetches all the resources types supported and their details
     * the optional query parameter can be used to filter the result set
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n'''
-    log.info('In get_contents')
-    log.debug('contentType:%s, skip: %s, limit: %s',content_type, skip, limit)
-    return structurals_crud.get_content_types(db_, content_type=content_type,
+    log.info('In get_resources_types')
+    log.debug('resourceType:%s, skip: %s, limit: %s',resource_type, skip, limit)
+    return structurals_crud.get_resource_types(db_, resource_type=resource_type,
         skip=skip, limit=limit)
 
-@router.post('/v2/contents', response_model=schemas.ContentTypeUpdateResponse,
+@router.post('/v2/resources/types', response_model=schemas.ResourceTypeUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse},401:{"model": schemas.ErrorResponse},
     409: {"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Contents Types"])
+    status_code=201, tags=["Resources Types"])
 @get_auth_access_check_decorator
-async def add_contents(request: Request, content: schemas.ContentTypeCreate,
+async def add_resources_types(request: Request, resourcetype: schemas.ResourceTypeCreate,
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
-    ''' Creates a new content type.
+    ''' Creates a new resource type.
     Naming conventions to be followed
     - Use only english alphabets in lower case
     Additional operations required:
         1. Add corresponding table creation functions and mappings.
-        2. Define input, output resources and all required APIs to handle this content'''
-    log.info('In add_contents')
-    log.debug('content: %s',content)
-    if len(structurals_crud.get_content_types(db_, content_type=content.contentType)) > 0:
-        raise AlreadyExistsException(f"{content.contentType} already present")
-    data = structurals_crud.create_content_type(db_=db_, \
-        content=content,user_id=user_details['user_id'])
-    return {'message': "Content type created successfully",
+        2. Define input, output resources and all required APIs to handle this resource'''
+    log.info('In add_resources_types')
+    log.debug('resourcetype: %s',resourcetype)
+    if len(structurals_crud.get_resource_types(db_, resource_type=resourcetype.resourceType)) > 0:
+        raise AlreadyExistsException(f"{resourcetype.resourceType} already present")
+    data = structurals_crud.create_resource_types(db_=db_, \
+        resourcetype=resourcetype,user_id=user_details['user_id'])
+    return {'message': "Resource type created successfully",
             "data": data}
 
-@router.delete('/v2/contents',response_model=schemas.DeleteResponse,
+@router.delete('/v2/resources/types',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
     502: {"model": schemas.ErrorResponse}},
-    status_code=200,tags=["Contents Types"])
+    status_code=200,tags=["Resources Types"])
 @get_auth_access_check_decorator
-async def delete_contents(request: Request,content_id: int ,
+async def delete_resources_types(request: Request,resourcetype_id: int ,
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
-    '''Delete Content
-    * unique Content Id can be used to delete an exisiting identity'''
-    log.info('In delete_contents')
-    log.debug('content-delete:%s',content_id)
-    dbtable_name = "content_types"
-    if len(structurals_crud.get_content_types(db_, content_id= content_id)) == 0:
-        raise NotAvailableException(f"Content id {content_id} not found")
-    content_obj = content_id
-    print("####" ,content_obj)
-    deleted_content = structurals_crud.delete_content(db_=db_, content=content_obj)
-    delcont = structurals_crud.add_deleted_data(db_=db_,del_content=  deleted_content,
+    '''Delete Resourcetype
+    * unique ResourceType Id can be used to delete an exisiting identity'''
+    log.info('In delete_resources_types')
+    log.debug('resourcetype-delete:%s',resourcetype_id)
+    dbtable_name = "resource_types"
+    if len(structurals_crud.get_resource_types(db_, resourcetype_id= resourcetype_id)) == 0:
+        raise NotAvailableException(f"ResourceType id {resourcetype_id} not found")
+    resourcetype_obj = resourcetype_id
+    # print("####" ,resourcetype_obj)
+    deleted_resourcetype = structurals_crud.delete_resource_types(db_=db_,
+                                                                  resourcetype=resourcetype_obj)
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content=  deleted_resourcetype,
             table_name = dbtable_name,deleting_user=user_details['user_id'])
-    return {'message': f"Content with identity {content_id} deleted successfully",
+    return {'message': f"ResourceType with identity {resourcetype_id} deleted successfully",
             "data": delcont}
 
 ##### languages #####
@@ -338,7 +339,7 @@ async def delete_versions(request: Request, delete_id: int,
 @get_auth_access_check_decorator
 async def get_resource(request: Request, #pylint: disable=too-many-locals
     resource_name : schemas.TableNamePattern=Query(None, example="hi_IRV_1_bible"),
-    content_type: str=Query(None, example="commentary"),
+    resource_type: str=Query(None, example="commentary"),
     version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
     version_tag: schemas.VersionTagPattern=Query(None, example="1611.12.31"),
     language_code: schemas.LangCodePattern=Query(None,example="en"),
@@ -362,12 +363,12 @@ async def get_resource(request: Request, #pylint: disable=too-many-locals
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
     log.info('In get_resource')
-    log.debug('resourceName:%s,contentType:%s, versionAbbreviation: %s, versionTag: %s, \
+    log.debug('resourceName:%s,resourceType:%s, versionAbbreviation: %s, versionTag: %s, \
     languageCode: %s,license_code:%s, metadata: %s, access_tag: %s, latest_revision:\
          %s, labels:%s, active: %s, skip: %s, limit: %s',resource_name,
-        content_type, version_abbreviation, version_tag, language_code, license_code, metadata,
+        resource_type, version_abbreviation, version_tag, language_code, license_code, metadata,
         access_tag, latest_revision, labels, active, skip, limit)
-    return structurals_crud.get_resources(db_, content_type, version_abbreviation,
+    return structurals_crud.get_resources(db_, resource_type, version_abbreviation,
         version_tag=version_tag,language_code=language_code, license_code=license_code,
         metadata=metadata,access_tag=access_tag,
         latest_revision=latest_revision, labels=labels,active=active,
@@ -389,7 +390,7 @@ async def add_resource(request: Request, resource_obj : schemas.ResourceCreate =
     * Latest, can be included in labels for only one item per version.
     * AccessPermissions is list of permissions ["content", "open-access", "publishable",
         "downloadable","derivable"]. Default will be ["content"]
-    * repo and defaultBranch should given in the metaData if contentType is gitlabrepo,
+    * repo and defaultBranch should given in the metaData if resourceType is gitlabrepo,
         defaultBranch will be "main" if not mentioned in the metadata.
     '''
     log.info('In add_resource')
@@ -397,10 +398,10 @@ async def add_resource(request: Request, resource_obj : schemas.ResourceCreate =
     if 'content' not in resource_obj.accessPermissions:
         resource_obj.accessPermissions.append(schemas.ResourcePermissions.CONTENT)
     resource_obj.metaData['accessPermissions'] = resource_obj.accessPermissions
-    if resource_obj.contentType == db_models.ContentTypeName.GITLABREPO.value:
+    if resource_obj.resourceType == db_models.ResourceTypeName.GITLABREPO.value:
         if "repo" not in resource_obj.metaData:
             raise UnprocessableException("repo link in metadata is mandatory to create"+
-                " resource with contentType gitlabrepo")
+                " resource with resourceType gitlabrepo")
         if len(structurals_crud.get_resources(db_, metadata =
                 json.dumps({"repo":resource_obj.metaData["repo"]}))) > 0:
             raise AlreadyExistsException("already present Resource with same repo link")
@@ -432,10 +433,10 @@ async def edit_resource(request: Request,resource_obj: schemas.ResourceEdit = Bo
         resource_obj.accessPermissions.append(schemas.ResourcePermissions.CONTENT)
     resource_obj.metaData['accessPermissions'] = resource_obj.accessPermissions
     if resource_obj.resourceName.split("_")[-1] == \
-        db_models.ContentTypeName.GITLABREPO.value:
+        db_models.ResourceTypeName.GITLABREPO.value:
         if "repo" not in resource_obj.metaData:
             raise UnprocessableException("repo link in metadata is mandatory to update"+
-                " resource with contentType gitlabrepo")
+                " resource with resourceType gitlabrepo")
         current_resource = structurals_crud.get_resources(db_, metadata =
                 json.dumps({"repo":resource_obj.metaData["repo"]}))
         if len(current_resource)>0 and not current_resource[0].resourceName ==\
@@ -552,20 +553,20 @@ async def edit_bible_book(request: Request,
 async def get_available_bible_book(request: Request,
     resource_name: schemas.TableNamePattern=Path(...,example="hi_IRV_1_bible"),
     book_code: schemas.BookCodePattern=Query(None, example="mat"),
-    content_type: schema_content.BookContentType=Query(None), active: bool=True,
+    resource_type: schema_content.BookResourceType=Query(None), active: bool=True,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
     '''Fetches all the books available(has been uploaded) in the specified bible
     * by default returns list of available(uploaded) books, without their contents
     * optional query parameters can be used to filter the result set
-    * returns the JSON, USFM and/or Audio contents also: if contentType is given
+    * returns the JSON, USFM and/or Audio contents also: if resourceType is given
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
     log.info('In get_available_bible_book')
-    log.debug('resource_name: %s, book_code: %s, contentType: %s, active:%s, skip: %s, limit: %s',
-        resource_name, book_code, content_type, active, skip, limit)
-    return contents_crud.get_available_bible_books(db_, resource_name, book_code, content_type,
+    log.debug('resource_name: %s, book_code: %s, resourceType: %s, active:%s, skip: %s, limit: %s',
+        resource_name, book_code, resource_type, active, skip, limit)
+    return contents_crud.get_available_bible_books(db_, resource_name, book_code, resource_type,
         active=active, skip = skip, limit = limit)
 
 @router.delete('/v2/bibles/{resource_name}/books',response_model=schemas.DeleteResponse,
@@ -1122,19 +1123,19 @@ async def extract_text_contents(request:Request, #pylint: disable=W0613
     resource_name:schemas.TableNamePattern=Query(None,example="en_TBP_1_bible"),
     books:List[schemas.BookCodePattern]=Query(None,example='GEN'),
     language_code:schemas.LangCodePattern=Query(None, example="hi"),
-    content_type:str=Query(None, example="commentary"),
+    resource_type:str=Query(None, example="commentary"),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details = Depends(get_user_or_none), db_: Session = Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.RESEARCH.value))):
     '''A generic API for all content type tables to get just the text contents of that table
     that could be used for translation, as corpus for NLP operations like SW identification.
-    If resource_name is provided, only that filter will be considered over content_type & 
+    If resource_name is provided, only that filter will be considered over resource_type & 
     language.'''
     log.info('In extract_text_contents')
     log.debug('resource_name: %s, language_code: %s',resource_name, language_code)
     try:
         tables = await get_resource(request=request, resource_name=resource_name,
-            content_type=content_type, version_abbreviation=None,
+            resource_type=resource_type, version_abbreviation=None,
             version_tag=None, language_code=language_code,
             license_code=None, metadata=None,
             access_tag = None, labels=None, active= True, latest_revision= True,

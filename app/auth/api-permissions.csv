@@ -7,13 +7,13 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/user/logout,GET,None,False,None,logout
 /v2/user/role,PUT,None,False,None,edit-role
 /v2/user/delete-identity,DELETE,None,False,None,delete/deactivate
-/v2/contents,GET,Autographa,False,None,refer-for-translation
-/v2/contents,GET,SanketMAST,False,None,refer-for-translation
-/v2/contents,GET,Vachan-online or vachan-app,False,None,view-on-web
-/v2/contents,GET,VachanAdmin,False,None,read-via-vachanadmin
-/v2/contents,GET,API-user,False,None,read-via-api
-/v2/contents,POST,None,False,None,create
-/v2/contents,DELETE,None,False,None,delete/deactivate
+/v2/resources/types,GET,Autographa,False,None,refer-for-translation
+/v2/resources/types,GET,SanketMAST,False,None,refer-for-translation
+/v2/resources/types,GET,Vachan-online or vachan-app,False,None,view-on-web
+/v2/resources/types,GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/resources/types,GET,API-user,False,None,read-via-api
+/v2/resources/types,POST,None,False,None,create
+/v2/resources/types,DELETE,None,False,None,delete/deactivate
 /v2/resources/languages,GET,Autographa,False,None,refer-for-translation
 /v2/resources/languages,GET,SanketMAST,False,None,refer-for-translation
 /v2/resources/languages,GET,Vachan-online or vachan-app,False,None,view-on-web
@@ -46,11 +46,11 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/resources,POST,None,False,None,create
 /v2/resources,PUT,None,False,None,edit
 /v2/resources,DELETE,None,False,None,delete/deactivate
-/v2/resources/get-sentence,GET,Autographa,False,"contents like bibles, commentaries, parascripturals or vocabularies",refer-for-translation
-/v2/resources/get-sentence,GET,SanketMAST,False,"contents like bibles, commentaries, parascripturals or vocabularies",refer-for-translation
-/v2/resources/get-sentence,GET,Vachan-online or vachan-app,False,"contents like bibles, commentaries, parascripturals or vocabularies",view-on-web
-/v2/resources/get-sentence,GET,VachanAdmin,False,"contents like bibles, commentaries, parascripturals or vocabularies",read-via-vachanadmin
-/v2/resources/get-sentence,GET,API-user,False,"contents like bibles, commentaries, parascripturals or vocabularies",read-via-api
+/v2/resources/get-sentence,GET,Autographa,False,"resource_types like bibles, commentaries, parascripturals or vocabularies",refer-for-translation
+/v2/resources/get-sentence,GET,SanketMAST,False,"resource_types like bibles, commentaries, parascripturals or vocabularies",refer-for-translation
+/v2/resources/get-sentence,GET,Vachan-online or vachan-app,False,"resource_types like bibles, commentaries, parascripturals or vocabularies",view-on-web
+/v2/resources/get-sentence,GET,VachanAdmin,False,"resource_types like bibles, commentaries, parascripturals or vocabularies",read-via-vachanadmin
+/v2/resources/get-sentence,GET,API-user,False,"resource_types like bibles, commentaries, parascripturals or vocabularies",read-via-api
 /v2/resources/get-sentence,GET,None,False,Research-Material,read-via-api
 /v2/lookup/bible/books,GET,None,False,None,read
 /v2/bibles/{resource_name}/books,GET,Autographa,False,None,refer-for-translation
@@ -107,8 +107,8 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/text/translate/token-based/projects,GET,SanketMAST,True,None,view-project
 /v2/text/translate/token-based/projects,POST,Autographa,False,None,create
 /v2/text/translate/token-based/projects,POST,SanketMAST,False,None,create
-/v2/text/translate/token-based/projects,PUT,Autographa,False,"contents like bibles, commentaries, parascripturals or vocabularies",translate
-/v2/text/translate/token-based/projects,PUT,SanketMAST,False,"contents like bibles, commentaries, parascripturals or vocabularies",translate
+/v2/text/translate/token-based/projects,PUT,Autographa,False,"resource_types like bibles, commentaries, parascripturals or vocabularies",translate
+/v2/text/translate/token-based/projects,PUT,SanketMAST,False,"resource_types like bibles, commentaries, parascripturals or vocabularies",translate
 /v2/text/translate/token-based/projects,PUT,Autographa,False,Ag or translation project,edit-Settings
 /v2/text/translate/token-based/projects,PUT,SanketMAST,False,Ag or translation project,edit-Settings
 /v2/text/translate/token-based/projects,DELETE,Autographa,False,None,delete
@@ -153,16 +153,16 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/nlp/gloss,DELETE,None,False,None,delete
 /v2/nlp/alignment,POST,None,False,None,create
 /v2/nlp/stopwords/generate,POST,None,False,Lookup contents,create
-/v2/nlp/stopwords/generate,POST,None,False,"contents like bibles, commentaries, parascripturals or vocabularies",read-via-api
+/v2/nlp/stopwords/generate,POST,None,False,"resource_types like bibles, commentaries, parascripturals or vocabularies",read-via-api
 /v2/lookup/stopwords/{language_code},GET,None,False,None,read
 /v2/lookup/stopwords/{language_code},PUT,None,False,None,edit
 /v2/lookup/stopwords/{language_code},POST,None,False,None,create
 /v2/lookup/stopwords/{language_code},DELETE,None,False,None,delete
 /v2/jobs,GET,None,False,None,read
 /v2/media/gitlab/stream,GET,None,False,Media contents,stream
-/v2/media/gitlab/stream,GET,None,False,"contents like bibles, commentaries, parascripturals or vocabularies",read-via-api
+/v2/media/gitlab/stream,GET,None,False,"resource_types like bibles, commentaries, parascripturals or vocabularies",read-via-api
 /v2/media/gitlab/download,GET,None,False,Media contents,download
-/v2/media/gitlab/download,GET,None,False,"contents like bibles, commentaries, parascripturals or vocabularies",read-via-api
+/v2/media/gitlab/download,GET,None,False,"resource_types like bibles, commentaries, parascripturals or vocabularies",read-via-api
 /v2/bibles/{resource_name}/books/{book_code}/format/{output_format},GET,Autographa,False,None,refer-for-translation
 /v2/bibles/{resource_name}/books/{book_code}/format/{output_format},GET,SanketMAST,False,None,refer-for-translation
 /v2/bibles/{resource_name}/books/{book_code}/format/{output_format},GET,Vachan-online or vachan-app,False,None,view-on-web

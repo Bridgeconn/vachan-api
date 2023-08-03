@@ -1,19 +1,19 @@
 -- Script to create the basic table strcutures and 
 -- add minimal seed data for vachan-api
 
-CREATE TABLE public.content_types (
-    content_type_id SERIAL PRIMARY KEY ,
-    content_type text UNIQUE NOT NULL,
+CREATE TABLE public.resource_types (
+    resource_type_id SERIAL PRIMARY KEY ,
+    resource_type text UNIQUE NOT NULL,
     created_user text NULL
 );
 
-ALTER SEQUENCE public.content_types_content_type_id_seq RESTART WITH 100000;
+ALTER SEQUENCE public.resource_types_resource_type_id_seq RESTART WITH 100000;
 
-INSERT INTO content_types(content_type) VALUES('bible');
-INSERT INTO content_types(content_type) VALUES('commentary');
-INSERT INTO content_types(content_type) VALUES('vocabulary');
-INSERT INTO content_types(content_type) VALUES('parascriptural');
-INSERT INTO content_types(content_type) VALUES('gitlabrepo'); 
+INSERT INTO resource_types(resource_type) VALUES('bible');
+INSERT INTO resource_types(resource_type) VALUES('commentary');
+INSERT INTO resource_types(resource_type) VALUES('vocabulary');
+INSERT INTO resource_types(resource_type) VALUES('parascriptural');
+INSERT INTO resource_types(resource_type) VALUES('gitlabrepo'); 
 
 CREATE TABLE public.languages (
     language_id SERIAL PRIMARY KEY,
@@ -81,7 +81,7 @@ CREATE TABLE public.resources (
     year integer NOT NULL,
     labels text[],
     license_id int REFERENCES licenses(license_id),
-    content_id int NOT NULL REFERENCES content_types(content_type_id),
+    resourcetype_id int NOT NULL REFERENCES resource_types(resource_type_id),
     language_id int NOT NULL REFERENCES languages(language_id),
     version_id int NOT NULL REFERENCES versions(version_id),
     created_at timestamp with time zone DEFAULT NOW(),
