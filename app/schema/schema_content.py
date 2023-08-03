@@ -25,75 +25,6 @@ class BibleBook(BaseModel):
             }
         }
 
-class AudioBible(BaseModel):
-    '''Response object of Audio Bible'''
-    audioId: int
-    name: str = None
-    url: AnyUrl = None
-    # book:  BibleBook
-    format: str = None
-    active: bool = None
-    class Config:
-        ''' telling Pydantic that "it's OK if I pass a non-dict value'''
-        orm_mode = True
-        # '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "name": "XXX audio bible: Gospel series",
-                "url": "http://someplace.come/resoucesid",
-                "format": "mp3",
-                "active": True
-            }
-        }
-
-class AudioBibleCreateResponse(BaseModel):
-    '''Response object of auido bible update'''
-    message: str = Field(..., example="Bible audios details uploaded successfully")
-    data: List[AudioBible] = None
-
-class AudioBibleUpdateResponse(BaseModel):
-    '''Response object of auido bible update'''
-    message: str = Field(..., example="Bible audios details updated successfully")
-    data: List[AudioBible] = None
-
-class AudioBibleUpload(BaseModel):
-    '''Input object of Audio Bible'''
-    name: str
-    url: AnyUrl
-    books:  List[BookCodePattern]
-    format: str
-    active: bool = True
-    class Config:
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "name": "XXX audio bible: Gospel series",
-                "books": ["mat"],
-                "url": "http://someplace.come/resoucesid",
-                "format": "mp3",
-                "active": True
-            }
-        }
-
-class AudioBibleEdit(BaseModel):
-    ''' Input object of Auido Bible'''
-    name: str = None
-    url: AnyUrl = None
-    books: List[BookCodePattern]
-    format: str = None
-    active: bool = None
-    class Config:
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "books": ["mat", "mrk", "luk", "jhn"],
-                "name": "XXX audio bible: Gospel series",
-                "url": "http://someplace.come/resoucesid",
-                "format": "mp3",
-                "active": True
-            }
-        }
-
 class Reference(BaseModel):
     '''Response object of parascript reference'''
     bible : TableNamePattern = None
@@ -154,7 +85,6 @@ class BibleBookContent(BaseModel):
     bookName: str = None
     USFM: str = None
     JSON: dict = None
-    audio: AudioBible = None
     active: bool
     class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
@@ -174,12 +104,6 @@ class BibleBookContent(BaseModel):
                  "verseText": "इब्राहीम की सन्‍तान, दाऊद की ..."}]}
                         ]
                     },
-                "AudioBible": {
-                    "name": "XXX audio bible: Gospel series",
-                    "url": "http://someplace.come/resoucesid",
-                    "format": "mp3",
-                    "active": True
-                },
                 "active": True
             }
         }
@@ -605,6 +529,85 @@ class ParascripturalCreate(BaseModel):
             }
         }
 
+class AudioBibleResponse(BaseModel):
+    '''Response object of audio bibles'''
+    audioId : int
+    name: str = None
+    audioFormat: str = None
+    reference: Reference = None
+    link: AnyUrl = None
+    metaData: dict = None
+    active: bool = None
+    class Config:
+        ''' telling Pydantic that "it's OK if I pass a non-dict value'''
+        orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "audioId": 100001,
+                "name": "audio bible: Gospel series",
+                "audioFormat": "mp3",
+                "reference": {"book":"GEN", "chapter":1, "verseNumber":1,
+                               "bookEnd":"GEN", "chapterEnd":10, "verseEnd":10 },
+                "link": "http://someplace.com/resoucesid",
+                "metaData": {"othername": "Word of God"},
+                "active": True
+            }
+        }
+class AudioBibleEdit(BaseModel):
+    '''Input object of audio bibles update'''
+    audioId: int
+    name: str = None
+    audioFormat: str = None
+    reference: Reference = None
+    link: AnyUrl = None
+    active: bool = None
+    metaData: dict = None
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "audioId":100001,
+                "name": "audio bible: Origin",
+                "audioFormat": "mp3",
+                "reference": {"book":"MAT", "chapter":2, "verseNumber":10,
+                               "bookEnd":"MAT", "chapterEnd":12, "verseEnd":15 },
+                "link": "http://someplace.com/newresoucesid",
+                "metaData": {"othername": "origin of world"},
+                "active": True
+            }
+        }
+class AudioBibleUpdateResponse(BaseModel):
+    '''Response object of audio bibles update'''
+    message: str = Field(..., example="Audio Bible updated successfully")
+    data: List[AudioBibleResponse] = None
+
+class AudioBibleCreateResponse(BaseModel):
+    '''Response object of audio bibles update'''
+    message: str = Field(..., example="Audio Bible added successfully")
+    data: List[AudioBibleResponse] = None
+
+class AudioBibleCreate(BaseModel):
+    '''Input object for sign bible video'''
+    name: str
+    audioFormat: str = None
+    reference: Reference = None
+    link: AnyUrl = None
+    metaData: dict = None
+    active: bool = True
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "name": "audio bible: Gospel series",
+                "audioFormat": "mp3",
+                "reference": {"book":"GEN", "chapter":1, "verseNumber":1,
+                               "bookEnd":"GEN", "chapterEnd":10, "verseEnd":10 },
+                "link": "http://someplace.com/resoucesid",
+                "metaData": {"othername": "Word of God"},
+                "active": True
+            }
+        }
 class SignVideoResponse(BaseModel):
     '''Response object of sign bible videos'''
     signVideoId : int

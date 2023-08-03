@@ -299,7 +299,7 @@ def test_searching():
     assert found
 
     # searching with reference:partial match - positive test
-    response = client.get(UNIT_URL+resource_name+"?search_word=MA",headers = headers_auth)
+    response = client.get(UNIT_URL+resource_name+"?search_word=MAT 2",headers = headers_auth)
     assert len(response.json()) > 0
     found = False
     for item in response.json():
