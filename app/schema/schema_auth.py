@@ -8,7 +8,8 @@ from pydantic import types
 class ResourceType(str, Enum):
     '''Classify DB resources for defineing access rights on them'''
     METACONTENT = "meta contents like licences, languages, versions or content types"
-    CONTENT = "resource_types like bibles, commentaries, parascripturals or vocabularies"
+    CONTENT = \
+        "resource_types like bibles, commentaries, parascripturals , vocabularies or sign bible videos"
     PROJECT = "Ag or translation project"
     USER = "all users in our system (Kratos)"
     TRANSLATION = "generic translation apis"
@@ -26,6 +27,7 @@ class App(str, Enum):
     API = "API-user"
     VACHANADMIN = "VachanAdmin"
     SMAST = "SanketMAST"
+    VACHANCONTENTDASHBOARD = "VachanContentDashboard"
 
 class AppInput(str, Enum):
     '''Input fields for App in Registration'''
@@ -33,6 +35,7 @@ class AppInput(str, Enum):
     VACHAN = "Vachan-online or vachan-app"
     API = "API-user"
     SMAST = "SanketMAST"
+    VACHANCONTENTDASHBOARD = "VachanContentDashboard"
 
 class Registration(BaseModel):
     """kratos registration input"""
@@ -57,6 +60,8 @@ class AdminRoles(str, Enum):
     BCSDEV = 'BcsDeveloper'
     SMASTADMIN = 'SanketMASTAdmin'
     SMASTUSER = 'SanketMASTUser'
+    VACHANCONTENTADMIN = 'VachanContentAdmin'
+    VACHANCONTENTVIEWER = 'VachanContentViewer'
 
 class FilterRoles(str, Enum):
     '''Filter roles for get users'''
@@ -65,6 +70,7 @@ class FilterRoles(str, Enum):
     VACHAN = "Vachan-online or vachan-app"
     API = "API-user"
     SMAST = "SanketMAST"
+    VACHANCONTENTDASHBOARD = "VachanContentDashboard"
 
 class UserRole(BaseModel):
     """kratos user role input"""
