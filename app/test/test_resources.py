@@ -1374,7 +1374,7 @@ def test_delete_default():
     data = {"itemId":resource_id}
     # Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}
-    response = client.delete(UNIT_URL + "?delete_id=" + str(resource_id), headers=headers)
+    response = client.delete(UNIT_URL + "?resource_id=" + str(resource_id), headers=headers)
     
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
@@ -1384,12 +1384,12 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
-        response = client.delete(UNIT_URL + "?delete_id=" + str(resource_id), headers=headers_au)
+        response = client.delete(UNIT_URL + "?resource_id=" + str(resource_id), headers=headers_au)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
     #Delete resource with createdUser(VachanAdmin)
-    response = client.delete(UNIT_URL + "?delete_id=" + str(resource_id),headers=headers_va)
+    response = client.delete(UNIT_URL + "?resource_id=" + str(resource_id),headers=headers_va)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Resource with identity {resource_id} deleted successfully"
@@ -1427,7 +1427,7 @@ def test_delete_default_superadmin():
     data = {"itemId":resource_id}
 
     #Delete resource
-    response =response = client.delete(UNIT_URL + "?delete_id=" + str(resource_id), headers=headers_sa)
+    response =response = client.delete(UNIT_URL + "?resource_id=" + str(resource_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] == \
     f"Resource with identity {resource_id} deleted successfully"
@@ -1455,7 +1455,7 @@ def test_delete_resource_id_string():
     resource_id = response.json()[0]["resourceId"]
     resource_id = str(resource_id)
     data = {"itemId":resource_id}
-    response = client.delete(UNIT_URL + "?delete_id=" + str(resource_id), headers=headers_sa)
+    response = client.delete(UNIT_URL + "?resource_id=" + str(resource_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] == \
          f"Resource with identity {resource_id} deleted successfully"
@@ -1483,7 +1483,7 @@ def test_delete_incorrectdatatype():
     response = client.get(UNIT_URL + "?resource_name="+resource_name, headers=headers_sa)
     resource_id = response.json()[0]["resourceId"]
     resource_id = {}
-    response = client.delete(UNIT_URL + "?delete_id=" + str(resource_id), headers=headers_sa)
+    response = client.delete(UNIT_URL + "?resource_id=" + str(resource_id), headers=headers_sa)
     assert_input_validation_error(response)
 
 def test_delete_missingvalue_resource_id():
@@ -1494,7 +1494,7 @@ def test_delete_missingvalue_resource_id():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
-    response = client.delete(UNIT_URL + "?delete_id=" + str(resource_id), headers=headers)
+    response = client.delete(UNIT_URL + "?resource_id=" + str(resource_id), headers=headers)
     assert_input_validation_error(response)
 
 def test_delete_notavailable_resource():
@@ -1505,7 +1505,7 @@ def test_delete_notavailable_resource():
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
-    response = client.delete(UNIT_URL + "?delete_id=" + str(resource_id),headers=headers)
+    response = client.delete(UNIT_URL + "?resource_id=" + str(resource_id),headers=headers)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
 

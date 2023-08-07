@@ -480,10 +480,10 @@ def test_delete_default():
         assert_positive_get(item)   
     vocabulary_response = client.get(UNIT_URL+resource_name ,headers=headers_auth)
     word_id = vocabulary_response.json()[0]['wordId'] 
-    
+
     #Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}#pylint: disable=redefined-outer-name
-    response = client.delete(UNIT_URL+resource_name  + "?delete_id=" + str(word_id), headers=headers)
+    response = client.delete(UNIT_URL+resource_name  + "?word_id=" + str(word_id), headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
@@ -493,7 +493,7 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
-        response = client.delete(UNIT_URL+resource_name  + "?delete_id=" + str(word_id), headers=headers_au)
+        response = client.delete(UNIT_URL+resource_name  + "?word_id=" + str(word_id), headers=headers_au)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
@@ -502,7 +502,7 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
-    response = client.delete(UNIT_URL+resource_name  + "?delete_id=" + str(word_id), headers=headers_va)
+    response = client.delete(UNIT_URL+resource_name  + "?word_id=" + str(word_id), headers=headers_va)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Vocabulary id {word_id} deleted successfully"
@@ -555,7 +555,7 @@ def test_delete_with_editable_permission():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
-        response = client.delete(UNIT_URL+resource_name  + "?delete_id=" + str(item_ids[0]), headers=headers_noauth)
+        response = client.delete(UNIT_URL+resource_name  + "?word_id=" + str(item_ids[0]), headers=headers_noauth)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
@@ -571,7 +571,7 @@ def test_delete_with_editable_permission():
             'Authorization': "Bearer " + initial_test_users[user]['token']
         }
 
-        response = client.delete(UNIT_URL+resource_name  + "?delete_id=" + str(item_id), headers=headers_users)
+        response = client.delete(UNIT_URL+resource_name  + "?word_id=" + str(item_id), headers=headers_users)
         assert response.status_code == 200
         assert response.json()['message'] == f"Vocabulary id {item_id} deleted successfully"
 
@@ -601,7 +601,7 @@ def test_delete_default_superadmin():
     vocabulary_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
     word_id = vocabulary_response.json()[0]['wordId']
      #Delete word with Super Admin
-    response = client.delete(UNIT_URL+resource_name  + "?delete_id=" + str(word_id), headers=headers_sa)
+    response = client.delete(UNIT_URL+resource_name  + "?word_id=" + str(word_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Vocabulary id {word_id} deleted successfully"
@@ -631,7 +631,7 @@ def test_delete_word_id_string():
     word_id = vocabulary_response.json()[0]['wordId']
     word_id = str(word_id)
     #Delete vocabulary with Super Admin
-    response = client.delete(UNIT_URL+resource_name  + "?delete_id=" + str(word_id), headers=headers_sa)
+    response = client.delete(UNIT_URL+resource_name  + "?word_id=" + str(word_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Vocabulary id {word_id} deleted successfully"
@@ -661,7 +661,7 @@ def test_delete_incorrectdatatype():
     
 
     #Delete vocabulary with Super Admin
-    response = client.delete(UNIT_URL+resource_name  + "?delete_id=" + str(word_id), headers=headers_sa)
+    response = client.delete(UNIT_URL+resource_name  + "?word_id=" + str(word_id), headers=headers_sa)
     assert_input_validation_error(response)
     logout_user(test_user_token)
 
@@ -683,7 +683,7 @@ def test_delete_missingvalue_word_id():
             }
 
     word_id =" "
-    response = client.delete(UNIT_URL+resource_name  + "?delete_id=" + str(word_id), headers=headers_sa)
+    response = client.delete(UNIT_URL+resource_name  + "?word_id=" + str(word_id), headers=headers_sa)
     assert_input_validation_error(response)
     logout_user(test_user_token)
 
@@ -705,7 +705,7 @@ def test_delete_missingvalue_resource_name():
             }
     vocabulary_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
     word_id = vocabulary_response.json()[0]['wordId']
-    response = client.delete(UNIT_URL + "?delete_id=" + str(word_id), headers=headers_sa)
+    response = client.delete(UNIT_URL + "?word_id=" + str(word_id), headers=headers_sa)
     assert response.status_code == 404
     logout_user(test_user_token)
 
@@ -729,7 +729,7 @@ def test_delete_notavailable_content():
     word_id = 9999
 
      #Delete vocabulary with Super Admin
-    response = client.delete(UNIT_URL+resource_name  + "?delete_id=" + str(word_id), headers=headers_sa)
+    response = client.delete(UNIT_URL+resource_name  + "?word_id=" + str(word_id), headers=headers_sa)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
     logout_user(test_user_token)
@@ -900,7 +900,7 @@ def test_restoreitem_with_notavailable_resource():
     #Delete Associated Resource
     get_resource_response = client.get(RESOURCE_URL + "?resource_name="+resource_name, headers=headers_auth)
     resource_id = get_resource_response.json()[0]["resourceId"]
-    response = client.delete(RESOURCE_URL +"?delete_id=" + str(resource_id), headers=headers_auth)
+    response = client.delete(RESOURCE_URL +"?resource_id=" + str(resource_id), headers=headers_auth)
     assert response.status_code == 200
     #Restoring data
     #Restore content with Super Admin after deleting resource

@@ -702,7 +702,7 @@ def test_delete_default():
     #Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}#pylint: disable=redefined-outer-name
     response = client.delete(UNIT_URL+resource_name + \
-        "?delete_id=" + str(audio_id), headers=headers)
+        "?audio_id=" + str(audio_id), headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
@@ -713,7 +713,7 @@ def test_delete_default():
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
         response = client.delete(UNIT_URL+resource_name + \
-            "?delete_id=" + str(audio_id), headers=headers_au)
+            "?audio_id=" + str(audio_id), headers=headers_au)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
@@ -723,7 +723,7 @@ def test_delete_default():
                     'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
     response = client.delete(UNIT_URL+resource_name + \
-        "?delete_id=" + str(audio_id), headers=headers_va)
+        "?audio_id=" + str(audio_id), headers=headers_va)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Audio Bible id {audio_id} deleted successfully"
@@ -752,7 +752,7 @@ def test_delete_default_superadmin():
     audio_id = audio_response.json()[0]['audioId']
 
      #Delete audiobible with Super Admin
-    response = client.delete(UNIT_URL+resource_name + "?delete_id=" +\
+    response = client.delete(UNIT_URL+resource_name + "?audio_id=" +\
          str(audio_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] ==\
@@ -789,7 +789,7 @@ def test_delete_audio_id_string():
 
     #Delete audiobible with Super Admin
     response = client.delete(UNIT_URL+resource_name + \
-        "?delete_id=" + str(audio_id), headers=headers_sa)
+        "?audio_id=" + str(audio_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Audio Bible id {audio_id} deleted successfully"
@@ -814,7 +814,7 @@ def test_delete_missingvalue_audio_id():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
-    response = client.delete(UNIT_URL+resource_name + "?delete_id=", headers=headers_sa)
+    response = client.delete(UNIT_URL+resource_name + "?audio_id=", headers=headers_sa)
     assert_input_validation_error(response)
     logout_user(test_user_token)
 
@@ -837,7 +837,7 @@ def test_delete_missingvalue_resource_name():
     audio_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
     audio_id = audio_response.json()[0]['audioId']
 
-    response = client.delete(UNIT_URL+ "?delete_id=" + str(audio_id), headers=headers_sa)
+    response = client.delete(UNIT_URL+ "?audio_id=" + str(audio_id), headers=headers_sa)
     assert response.status_code == 404
     logout_user(test_user_token)
 
@@ -860,7 +860,7 @@ def test_delete_notavailable_content():
     audio_id=20000
      #Delete audiobible with Super Admin
     response = client.delete(UNIT_URL+resource_name + \
-        "?delete_id=" + str(audio_id), headers=headers_sa)
+        "?audio_id=" + str(audio_id), headers=headers_sa)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
     logout_user(test_user_token)
@@ -1033,7 +1033,7 @@ def test_restoreitem_with_notavailable_resource():
     #Delete Associated Resource
     get_resource_response = client.get(RESOURCE_URL + "?resource_name="+resource_name, headers=headers_auth)
     resource_id = get_resource_response.json()[0]["resourceId"]
-    response = client.delete(RESOURCE_URL + "?delete_id=" + str(resource_id), headers=headers_auth)
+    response = client.delete(RESOURCE_URL + "?resource_id=" + str(resource_id), headers=headers_auth)
     assert response.status_code == 200
     #Restoring data
     #Restore content with Super Admin after deleting resource
