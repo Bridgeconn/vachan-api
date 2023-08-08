@@ -1,4 +1,4 @@
-'''Test cases for sign bible videos related APIs'''
+'''Test cases for bible audios related APIs'''
 from . import client , resourcetypeapi_get_accessrule_checks_app_userroles
 from . import check_default_get
 from . import assert_input_validation_error, assert_not_available_content
@@ -7,7 +7,7 @@ from .test_resources import check_post as add_resource
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 from .conftest import initial_test_users
 
-UNIT_URL = '/v2/resources/bible/videos/'
+UNIT_URL = '/v2/resources/bible/audios/'
 RESOURCE_URL = '/v2/resources'
 RESTORE_URL = '/v2/restore'
 headers = {"contentType": "application/json", "accept": "application/json"}
@@ -16,19 +16,19 @@ headers_auth = {"contentType": "application/json",
 
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
-    assert "signVideoId" in item
-    assert isinstance(item['signVideoId'], int)
+    assert "audioId" in item
+    assert isinstance(item['audioId'], int)
     assert "active" in item
 
 def check_post(data: list):
     '''prior steps and post attempt, without checking the response'''
     version_data = {
         "versionAbbreviation": "TTT",
-        "versionName": "test version for signbiblevideo",
+        "versionName": "test version for audiobible",
     }
     add_version(version_data)
     resource_data = {
-        "resourceType": "signbiblevideo",
+        "resourceType": "audiobible",
         "language": "ins",
         "version": "TTT",
         "year": 2020,
@@ -50,21 +50,22 @@ def check_post(data: list):
     return response, resource_name
 
 def test_post_default():
-    '''Positive test to upload signbiblevideo'''
+    '''Positive test to upload audiobible'''
     data = [
-    	{'title':"creation", "link":"http://somewhere.com/something"},
-        {'title':"abraham's family",
+    	{'name':"creation", "audioFormat":"mp3","link":"http://somewhere.com/something"},
+        {'name':"abraham's family","audioFormat":"mar",
         "link":"http://somewhere.com/something"},
-        {'title':"Isarel's travel routes",
+        {'name':"Isarel's travel routes","audioFormat":"ape",
         "link":"http://somewhere.com/something"},
-        {'title':"the Gods reveals himself in new testament",
+        {'name':"the Gods reveals himself in new testament",
+        "audioFormat":"mp3",
         "reference": {"book":"MAT", "chapter":2, "verseNumber":3, \
             "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
         "link":"http://somewhere.com/something"},
     ]
     response,resource_name = check_post(data)
     assert response.status_code == 201
-    assert response.json()['message'] == "Sign Bible Videos added successfully"
+    assert response.json()['message'] == "Audio Bibles added successfully"
     for item in response.json()['data']:
         assert_positive_get(item)
     assert len(data) == len(response.json()['data'])
@@ -73,27 +74,29 @@ def test_post_default():
 def test_post_incorrect_data():
     ''' tests to check input validation in post API'''
     # single data object instead of list
-    data = {'title':"the Geneology of Jesus Christ",
+    data = {'name':"the Geneology of Jesus Christ",
+        "audioFormat":"mp3",
         "link":"http://somewhere.com/something"}
     resp, resource_name = check_post(data)
     assert_input_validation_error(resp)
 
     # incorrect data values in fields
     data = [
-        {'title':"the Geneology of Jesus Christ",
+        {'name':"the Geneology of Jesus Christ",
+        "audioFormat":"mp3",
         "link":"not a url"}
     ]
     response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     data = [
-        {'title':"the Geneology of Jesus Christ",
+        {'name':"the Geneology of Jesus Christ",
         "link":"noProtocol.com/something"}
     ]
     response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
-    resource_name1 = resource_name.replace('signbiblevideo', 'sign')
+    resource_name1 = resource_name.replace('audiobible', 'audio')
     data = []
     response = client.post(UNIT_URL+resource_name1, headers=headers_auth, json=data)
     assert response.status_code == 404
@@ -105,7 +108,7 @@ def test_post_incorrect_data():
     #passing book and bookEnd as integer - negative test
     response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     data = [
-        {'title':"creation", 'description': "theme for test",
+        {'name':"creation", "audioFormat":"mp3",
         "reference": {"book":1, "chapter":2, "verseNumber":3,"bookEnd":20,
                     "chapterEnd":5, "verseEnd":6 }
         }
@@ -116,7 +119,7 @@ def test_post_incorrect_data():
     #passing book and bookEnd not in bookCodePattern expression - negative test
     response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     data = [
-        {'title':"creation", 'description': "theme for test",
+        {'name':"creation", "audioFormat":"mp3",
         "reference": {"book":"MATHEW", "chapter":2, "verseNumber":3,
                     "bookEnd":"JOHN", "chapterEnd":5, "verseEnd":6 }
         }
@@ -127,7 +130,18 @@ def test_post_incorrect_data():
     #passing non integer value for chapter and verse - negative test
     response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     data = [
-        {'title':"creation", 'description': "theme for test",
+        {'name':"creation", "audioFormat":"mp3",
+        "reference": {"book":"MAT", "chapter":"firstchapter","verseNumber":"firstverse",
+                    "bookEnd":"JHN", "chapterEnd":"lastchapter", "verseEnd":"lastverse"}
+        }
+    ]
+    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
+    assert_input_validation_error(response)
+
+    #passing integer value to audio format - negative test
+    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
+    data = [
+        {'name':"creation", "audioFormat":"mp3",
         "reference": {"book":"MAT", "chapter":"firstchapter","verseNumber":"firstverse",
                     "bookEnd":"JHN", "chapterEnd":"lastchapter", "verseEnd":"lastverse"}
         }
@@ -136,22 +150,23 @@ def test_post_incorrect_data():
     assert_input_validation_error(response)
 
 def test_get_after_data_upload():
-    '''Add some signbiblevideos data into the table and do all get tests'''  
+    '''Add some audiobibles data into the table and do all get tests'''  
     data = [
-        {'title':"creation", 'description': "theme for test",
+        {'name':"creation", "audioFormat":"mp3",
         "link":"http://somewhere.com/something",
         'reference': {"book":"MAT", "chapter":2, "verseNumber":3,
                     "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
-        'metaData':{'otherName': 'BPV, Bible Project Video'}},
-        {'title':"Noah's Ark",
+        'metaData':{'otherName': 'ABP, Audio Bible Project'}},
+        {'name':"Noah's Ark",
         "link":"http://somewhere.com/something"},
-        {'title':"abraham's family",
+        {'name':"abraham's family",
         "link":"http://somewhere.com/something"},
-        {'title':"Isarel's travel routes",
+        {'name':"Isarel's travel routes",
         "link":"http://somewhere.com/something"},
-        {'title':"Paul's travel routes",
+        {'name':"Paul's travel routes",
         "link":"http://somewhere.com/something"},
-        {'title':"the Gods reveals himself in new testament",
+        {'name':"the Gods reveals himself in new testament",
+        "audioFormat":"mp3",
         'reference': {"book":"MRK", "chapter":2, "verseNumber":10,
                     "bookEnd":"LUK", "chapterEnd":15, "verseEnd":10 },
         "link":"http://somewhere.com/something"}
@@ -160,26 +175,21 @@ def test_get_after_data_upload():
     assert res.status_code == 201
     check_default_get(UNIT_URL+resource_name, headers_auth,assert_positive_get)
 
-    # filter with title
+    # filter with name
     #without auth
-    response = client.get(UNIT_URL+resource_name+'?title=creation')
+    response = client.get(UNIT_URL+resource_name+'?name=creation')
     assert response.status_code == 401
     assert response.json()["error"] == "Authentication Error"
 
     #with auth
-    response = client.get(UNIT_URL+resource_name+'?title=creation',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?name=creation',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
-    # filter with description
-    response = client.get(UNIT_URL+resource_name+"?description=theme for test",headers=headers_auth)
+    # filter with audio format
+    response = client.get(UNIT_URL+resource_name+"?audio_format=mp3",headers=headers_auth)
     assert response.status_code == 200
-    assert len(response.json()) == 1
-
-    # filter with description - fuzzy match
-    response = client.get(UNIT_URL+resource_name+"?description=for test",headers=headers_auth)
-    assert response.status_code == 200
-    assert len(response.json()) == 1
+    assert len(response.json()) == 2
 
     # filter with link
     response = client.get(UNIT_URL+resource_name+"?link=http://somewhere.com/something",
@@ -189,13 +199,13 @@ def test_get_after_data_upload():
 
     # filter with metadata - exact match
     response = client.get(UNIT_URL+resource_name+
-        '?metadata={"otherName": "BPV, Bible Project Video"}',
+        '?metadata={"otherName": "ABP, Audio Bible Project"}',
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
     # filter with metadata - fuzzy match
-    response = client.get(UNIT_URL+resource_name+'?metadata={"otherName": "Project Video"}' ,
+    response = client.get(UNIT_URL+resource_name+'?metadata={"otherName": "Bible Project"}' ,
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
@@ -212,6 +222,16 @@ def test_get_after_data_upload():
     # filtering with cross-chapter reference
     response = client.get(UNIT_URL+resource_name+
     '?reference= {"book":"MRK", "chapter":1, \
+                "verseNumber":10,"bookEnd":"MRK", "chapterEnd":10, "verseEnd":15 }',
+        headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    for item in response.json():
+        assert_positive_get(item)
+
+    # filtering with cross-book reference
+    response = client.get(UNIT_URL+resource_name+
+    '?reference= {"book":"MRK", "chapter":1, \
                 "verseNumber":10,"bookEnd":"LUK", "chapterEnd":10, "verseEnd":1 }',
         headers=headers_auth)
     assert response.status_code == 200
@@ -220,23 +240,23 @@ def test_get_after_data_upload():
         assert_positive_get(item)
 
     # not available resources
-    response = client.get(UNIT_URL+resource_name+'?title=Animations',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?name=Music',headers=headers_auth)
     assert_not_available_content(response)
 
     response = client.get(UNIT_URL+resource_name+
-        '?title=vision',headers=headers_auth)
+        '?name=vision',headers=headers_auth)
     assert_not_available_content(response)
 
 def test_searching():
-    '''Being able to query signbiblevideos with title,description,reference and metadata'''
+    '''Being able to query audiobibles with name,audio format,reference and metadata'''
     data = [
         {
-            'title':"Creation of World",
-            'description': "theme for test",
+            'name':"Creation of World",
+            "audioFormat":"mp3",
             'reference': {"book":"MAT", "chapter":2, "verseNumber":3,
                 "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
             'link':"http://somewhere.com/something",
-            'metaData': {'otherName': 'BPV, Videos of Bible chapters'}
+            'metaData': {'otherName': 'ABP, Audio Bible Project'}
         }
     ]
 
@@ -244,36 +264,25 @@ def test_searching():
     assert res.status_code == 201
     check_default_get(UNIT_URL+resource_name, headers_auth,assert_positive_get)
 
-    # searching with title - positive test
+    # searching with name - positive test
     response = client.get(UNIT_URL+resource_name+'?search_word=of',headers = headers_auth)
+    print("*****res:",response.json())
     assert len(response.json()) > 0
     found = False
     for item in response.json():
         assert_positive_get(item)
-        if item['title'] == "Creation of World":
+        if item['name'] == "Creation of World":
             found = True
     assert found
 
-    # searching with description:exact match - positive test
-    url_with_query_string = UNIT_URL+resource_name+"?search_word=theme for test"
+    # searching with audioformat:- positive test
+    url_with_query_string = UNIT_URL+resource_name+"?audio_format=mp3"
     response = client.get(url_with_query_string, headers=headers_auth)
     assert len(response.json()) > 0
     found = False
     for item in response.json():
         assert_positive_get(item)
-        if item['title'] == "Creation of World":
-            found = True
-    assert found
-
-    # searching with description:fuzzy match - positive test
-    query_string = "for"
-    url_with_query_string = UNIT_URL+resource_name+"?search_word=" + query_string
-    response = client.get(url_with_query_string, headers=headers_auth)
-    assert len(response.json()) > 0
-    found = False
-    for item in response.json():
-        assert_positive_get(item)
-        if item['title'] == "Creation of World":
+        if item['name'] == "Creation of World":
             found = True
     assert found
 
@@ -284,7 +293,7 @@ def test_searching():
     found = False
     for item in response.json():
         assert_positive_get(item)
-        if item['title'] == "Creation of World":
+        if item['name'] == "Creation of World":
             found = True
     assert found
 
@@ -294,7 +303,7 @@ def test_searching():
     found = False
     for item in response.json():
         assert_positive_get(item)
-        if item['title'] == "Creation of World":
+        if item['name'] == "Creation of World":
             found = True
     assert found
 
@@ -304,7 +313,7 @@ def test_searching():
     found = False
     for item in response.json():
         assert_positive_get(item)
-        if item['title'] == "Creation of World":
+        if item['name'] == "Creation of World":
             found = True
     assert found
 
@@ -315,23 +324,24 @@ def test_searching():
     assert_not_available_content(response)
 
     # searching with metadata with special characters:exact match - positive test
-    response = client.get(UNIT_URL+resource_name+"?search_word=BPV, Videos of Bible chapters",
+    response = client.get(UNIT_URL+resource_name+"?search_word=ABP, Audio Bible Project",
         headers = headers_auth)
     assert len(response.json()) > 0
     found = False
     for item in response.json():
         assert_positive_get(item)
-        if item['title'] == "Creation of World":
+        if item['name'] == "Creation of World":
             found = True
     assert found
 
     # searching with partial metadata:fuzzy match - positive test
-    response = client.get(UNIT_URL+resource_name+"?search_word=of chapters",headers = headers_auth)
+    response = client.get(UNIT_URL+resource_name+"?search_word=Bible Project",headers = headers_auth)
+    print("?????resp:",response.json())
     assert len(response.json()) > 0
     found = False
     for item in response.json():
         assert_positive_get(item)
-        if item['title'] == "Creation of World":
+        if item['name'] == "Creation of World":
             found = True
     assert found
 
@@ -340,7 +350,7 @@ def test_searching():
     assert len(response.json()) ==  0
     found = False
     for item in response.json():
-        if item['title'] == "Creation of World":
+        if item['name'] == "Creation of World":
             found = True
     assert not found
 
@@ -351,22 +361,22 @@ def test_get_incorrect_data():
     assert_input_validation_error(response)
     resp, resource_name = check_post([])
     assert resp.status_code == 201
-    resource_name = resource_name.replace('signbiblevideo', 'video')
+    resource_name = resource_name.replace('audiobible', 'audio')
     response = client.get(UNIT_URL+resource_name, headers=headers_auth)
     assert response.status_code == 404
 
 def test_references():
     '''Tests for handling verses in reference'''
     data = [
-        {'title':"12 apostles",
+        {'name':"12 apostles",
         "reference": {"book":"MAT", "chapter":2, "verseNumber":3, \
             "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
         "link":"http://somewhere.com/something"},
-        {'title':"miracles",
+        {'name':"miracles",
         "reference": {"book":"MRK", "chapter":2, \
             "bookEnd":"LUK", "chapterEnd":5, "verseEnd":6 },
         "link":"http://somewhere.com/something"},
-        {'title':"origin of world",
+        {'name':"origin of world",
         "reference": {"book":"GEN", "chapter":1, "verseNumber":1, \
             "bookEnd":"GEN", "chapterEnd":2},
         "link":"http://somewhere.com/something"}
@@ -377,23 +387,23 @@ def test_references():
     get_response = client.get(UNIT_URL+resource_name,headers=headers_auth)
 
     # Case 1 : passing both starting and ending verses - positive test
-    assert get_response.json()[0]['title'] == "12 apostles"
+    assert get_response.json()[0]['name'] == "12 apostles"
     assert get_response.json()[0]['reference']['verseNumber'] == 3
     assert get_response.json()[0]['reference']['verseEnd'] == 6
 
     # Case 2: passing only ending and  verse- positive test
-    assert get_response.json()[1]['title'] == "miracles"
+    assert get_response.json()[1]['name'] == "miracles"
     assert get_response.json()[1]['reference']['verseNumber'] == 0
     assert get_response.json()[1]['reference']['verseEnd'] == 6
 
     # Case 3 : passing only starting verse- positive test
-    assert get_response.json()[2]['title'] == "origin of world"
+    assert get_response.json()[2]['name'] == "origin of world"
     assert get_response.json()[2]['reference']['verseNumber'] == 1
     assert get_response.json()[2]['reference']['verseEnd'] == 999
    
     # case 4: verse start > verse end - negative test
     data = [
-        {'title':"resurrection",
+        {'name':"resurrection",
         "reference": {"book":"MAT", "chapter":2, "verseNumber":30, \
             "bookEnd":"JHN", "chapterEnd":10, "verseEnd":6 },
         "link":"http://somewhere.com/something"}
@@ -405,7 +415,7 @@ def test_references():
     # Handling chapters
     # case 1 : assigning invalid values to chapter - negative test
     data = [
-        {'title':"resurrection",
+        {'name':"resurrection",
         "reference": {"book":"MAT", "chapter":0, "verseNumber":3, \
             "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
         "link":"http://somewhere.com/something"}
@@ -416,7 +426,7 @@ def test_references():
 
     # case 2 - chapter = -1 - negative test
     data = [
-        {'title':"resurrection",
+        {'name':"resurrection",
         "reference": {"book":"MAT", "chapter":-1 ,"verseNumber":3, \
             "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
         "link":"http://somewhere.com/something"}
@@ -427,7 +437,7 @@ def test_references():
 
     # case 3: chapter start > chapter end - negative test
     data = [
-        {'title':"resurrection",
+        {'name':"resurrection",
         "reference": {"book":"MAT", "chapter":20, "verseNumber":3, \
             "bookEnd":"JHN", "chapterEnd":2, "verseEnd":6 },
         "link":"http://somewhere.com/something"}
@@ -438,7 +448,7 @@ def test_references():
 
      # case 4: not passing chapter field - negative test
     data = [
-        {'title':"resurrection",
+        {'name':"resurrection",
         "reference": {"book":"MAT", "verseNumber":3, \
             "bookEnd":"JHN", "verseEnd":6 },
         "link":"http://somewhere.com/something"}
@@ -450,11 +460,11 @@ def test_references():
 def test_put_after_upload():
     '''Positive tests for put'''
     data = [
-        {'title':"12 apostles",
+        {'name':"12 apostles",
         "reference": {"book":"MAT", "chapter":2, "verseNumber":3, \
             "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
         "link":"http://somewhere.com/something"},
-        {'title':"miracles",
+        {'name':"miracles",
         "reference": {"book":"MRK", "chapter":2, "verseNumber":3, \
             "bookEnd":"LUK", "chapterEnd":5, "verseEnd":6 },
         "link":"http://somewhere.com/something"}
@@ -463,19 +473,19 @@ def test_put_after_upload():
     assert response.status_code == 201
 
     get_response = client.get(UNIT_URL+resource_name,headers=headers_auth)
-    signvideo_id_1 = get_response.json()[0]['signVideoId']
-    signvideo_id_2 = get_response.json()[1]['signVideoId']
+    audio_id_1 = get_response.json()[0]['audioId']
+    audio_id_2 = get_response.json()[1]['audioId']
 
     # positive PUT
     new_data = [
-        {'signVideoId':signvideo_id_1,
-        'title':"12 apostles",
+        {'audioId':audio_id_1,
+        'name':"12 apostles",
         "reference": {"book":"MRK", "chapter":10, "verseNumber":11, \
             "bookEnd":"LUK", "chapterEnd":12, "verseEnd":13 },
         "link":"http://anotherplace.com/something",
         "metaData":{"newkey1":"newvalue1"}},
-        {'signVideoId':signvideo_id_2,
-        'title':"miracles",
+        {'audioId':audio_id_2,
+        'name':"miracles",
         "reference": {"book":"MAT", "chapter":10, "verseNumber":11, \
             "bookEnd":"JHN", "chapterEnd":12, "verseEnd":13 },
         "link":"http://somewhereelse.com/something",
@@ -489,10 +499,10 @@ def test_put_after_upload():
     response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=new_data)
     assert response.status_code == 201
     
-    assert response.json()['message'] == 'Sign Bible Videos updated successfully'
+    assert response.json()['message'] == 'Audio Bibles updated successfully'
     for i,item in enumerate(response.json()['data']):
         assert_positive_get(item)
-        assert response.json()['data'][i]['title'] == new_data[i]['title']
+        assert response.json()['data'][i]['name'] == new_data[i]['name']
         assert response.json()['data'][i]['reference']['book'] == new_data[i]['reference']['book']
         assert response.json()['data'][i]['reference']['chapter'] == new_data[i]['reference']['chapter']
         assert response.json()['data'][i]['reference']['verseNumber'] == new_data[i]['reference']['verseNumber']
@@ -509,27 +519,27 @@ def test_put_incorrect_data():
     ''' tests to check input validation in put API'''
 
     post_data = [
-        {'title':"miracles",
+        {'name':"miracles",
         "link":"http://somewhere.com/something"},
-        {'title':"12 apostles",
+        {'name':"12 apostles",
         "link":"http://somewhere.com/something"}
     ]
     resp, resource_name = check_post(post_data)
     assert resp.status_code == 201
 
     get_response = client.get(UNIT_URL+resource_name,headers=headers_auth)
-    signvideo_id_1 = get_response.json()[0]['signVideoId']
-    signvideo_id_2 = get_response.json()[1]['signVideoId']
+    audio_id_1 = get_response.json()[0]['audioId']
+    audio_id_2 = get_response.json()[1]['audioId']
     # single data object instead of list
-    data =  {'signVideoId': signvideo_id_1,
-            'title':"apostles",
+    data =  {'audioId': audio_id_1,
+            'name':"apostles",
             "link":"http://anotherplace.com/something"}
     response = client.put(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     # data object with missing mandatory fields
     data = [
-        {'title':"12 apostles",
+        {'name':"12 apostles",
         "link":"http://anotherplace.com/something"}
             ]
     response = client.put(UNIT_URL+resource_name, headers=headers_auth, json=data)
@@ -543,8 +553,8 @@ def test_put_incorrect_data():
     # incorrect data values in fields
     #updating with reference in incorrect syntax of bookCode
     data = [
-        {'signVideoId': signvideo_id_2,
-        'title':"12 apostles",
+        {'audioId': audio_id_2,
+        'name':"12 apostles",
         "reference": {"book":"MATHEW", "chapter":2, "verseNumber":3,
                     "bookEnd":"JOHN", "chapterEnd":5, "verseEnd":6 }
         }
@@ -554,14 +564,14 @@ def test_put_incorrect_data():
 
     #updating with link in incorrect syntax
     data = [
-        {'signVideoId': signvideo_id_2,
-        'title':"12 apostles",
+        {'audioId': audio_id_2,
+        'name':"12 apostles",
         "link":"filename.txt"}    ]
     response = client.put(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     #updating with incorrect resource name
-    resource_name1 = resource_name.replace('signbiblevideo', 'video')
+    resource_name1 = resource_name.replace('audiobible', 'audio')
     response = client.put(UNIT_URL+resource_name1, headers=headers_auth, json=[])
     assert response.status_code == 404
 
@@ -587,7 +597,7 @@ def test_created_user_can_only_edit():
     }
     add_version(version_data)
     data = {
-        "resourceType": "signbiblevideo",
+        "resourceType": "audiobible",
         'language': 'ml',
         "version": "TTT",
         "year": 2020
@@ -598,31 +608,31 @@ def test_created_user_can_only_edit():
     assert response.json()['message'] == "Resource created successfully"
     resource_name = response.json()['data']['resourceName']
 
-    #create signbiblevideos
+    #create audiobibles
     data = [
-        {'title':"12 apostles",
+        {'name':"12 apostles",
         "link":"http://somewhere.com/something"},
-        {'title':"miracles",
+        {'name':"miracles",
         "link":"http://somewhere.com/something"}
     ]
     response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert response.status_code == 201
 
     get_response = client.get(UNIT_URL+resource_name,headers=headers_auth)
-    signvideo_id_1 = get_response.json()[0]['signVideoId']
-    signvideo_id_2 = get_response.json()[1]['signVideoId']
+    audio_id_1 = get_response.json()[0]['audioId']
+    audio_id_2 = get_response.json()[1]['audioId']
 
-    #update signbiblevideos with created SA user
+    #update audiobibles with created SA user
     new_data = [
-        {'signVideoId': signvideo_id_1,
-        'title':"12 apostles",
+        {'audioId': audio_id_1,
+        'name':"12 apostles",
         "link":"http://anotherplace.com/something"},
-        {'signVideoId': signvideo_id_1,
-        'title':"miracles",
+        {'audioId': audio_id_1,
+        'name':"miracles",
         "link":"http://somewhereelse.com/something"}]
     response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=new_data)
     assert response.status_code == 201
-    assert response.json()['message'] == 'Sign Bible Videos updated successfully'
+    assert response.json()['message'] == 'Audio Bibles updated successfully'
 
     #update with VA not created user
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
@@ -633,15 +643,15 @@ def test_created_user_can_only_edit():
 def test_get_access_with_user_roles_and_apps():
     """Test get filter from apps and with users having different permissions"""
     data = [
-    	{'title':"12 apostles",
+    	{'name':"12 apostles",
         "link":"http://somewhere.com/something"}
     ]
-    resourcetypeapi_get_accessrule_checks_app_userroles("signbiblevideo",UNIT_URL,data)
+    resourcetypeapi_get_accessrule_checks_app_userroles("audiobible",UNIT_URL,data)
 
 def test_soft_delete():
-    '''check soft delete in signbiblevideos'''
+    '''check soft delete in audiobibles'''
     data = [
-        {'title':"the Gods reveals himself in new testament",
+        {'name':"the Gods reveals himself in new testament",
         "reference": {"book":"MAT", "chapter":2, "verseNumber":3,\
             "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
         "link":"http://somewhere.com/something"
@@ -651,11 +661,11 @@ def test_soft_delete():
     assert response.json()
 
     get_response1 = client.get(UNIT_URL+resource_name,headers=headers_auth)
-    signvideo_id = get_response1.json()[0]['signVideoId']
+    audio_id = get_response1.json()[0]['audioId']
     delete_data = [
         {
-            'signVideoId':signvideo_id,
-            'title' :"the Gods reveals himself in new testament"
+            'audioId':audio_id,
+            'name' :"the Gods reveals himself in new testament"
         }
     ]
     assert len(get_response1.json()) == len(data)
@@ -664,7 +674,7 @@ def test_soft_delete():
     response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=delete_data)
     assert response.status_code == 201
     assert response.json()
-    assert response.json()["message"] == "Sign Bible Videos updated successfully"
+    assert response.json()["message"] == "Audio Bibles updated successfully"
 
     get_response2 = client.get(UNIT_URL+resource_name, headers=headers_auth)
     assert len(get_response2.json()) == len(data) - len(delete_data)
@@ -673,55 +683,55 @@ def test_soft_delete():
     assert len(get_response3.json()) == len(delete_data)
 
 def test_delete_default():
-    ''' positive test case, checking for correct return of deleted signbiblevideo ID'''
+    ''' positive test case, checking for correct return of deleted audiobible ID'''
     #create new data
     response,resource_name = test_post_default()
     headers_auth = {"contentType": "application/json",#pylint: disable=redefined-outer-name
                 "accept": "application/json"}
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     post_response = client.get(UNIT_URL+resource_name+ \
-        "?book_code=Bible%20project%20video&title=creation",\
+        "?book_code=Bible%20project%20audio&name=creation",\
         headers=headers_auth)
     assert post_response.status_code == 200
     assert len(post_response.json()) == 1
     for item in post_response.json():
         assert_positive_get(item)
-    signvideo_response = client.get(UNIT_URL+resource_name,headers=headers_auth)
-    signvideo_id = signvideo_response.json()[0]['signVideoId']
+    audio_response = client.get(UNIT_URL+resource_name,headers=headers_auth)
+    audio_id = audio_response.json()[0]['audioId']
 
     #Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}#pylint: disable=redefined-outer-name
     response = client.delete(UNIT_URL+resource_name + \
-        "?signvideo_id=" + str(signvideo_id), headers=headers)
+        "?audio_id=" + str(audio_id), headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
-     #Delete signbiblevideo with other API user,AgAdmin,AgUser,VachanUser,BcsDev,'VachanContentAdmin','VachanContentViewer'
+     #Delete audiobible with other API user,AgAdmin,AgUser,VachanUser,BcsDev,'VachanContentAdmin','VachanContentViewer'
     for user in ['APIUser','AgAdmin','AgUser','VachanUser','BcsDev','VachanContentAdmin','VachanContentViewer']:
         headers_au = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
         response = client.delete(UNIT_URL+resource_name + \
-            "?signvideo_id=" + str(signvideo_id), headers=headers_au)
+            "?audio_id=" + str(audio_id), headers=headers_au)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
-    #Delete signbiblevideo with Vachan Admin
+    #Delete audiobible with Vachan Admin
     headers_va = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
     response = client.delete(UNIT_URL+resource_name + \
-        "?signvideo_id=" + str(signvideo_id), headers=headers_va)
+        "?audio_id=" + str(audio_id), headers=headers_va)
     assert response.status_code == 200
     assert response.json()['message'] ==\
-         f"Sign Bible Video id {signvideo_id} deleted successfully"
+         f"Audio Bible id {audio_id} deleted successfully"
 
 
 def test_delete_default_superadmin():
-    ''' positive test case, checking for correct return of deleted signbiblevideo ID'''
-    #Created User or Super Admin can only delete signbiblevideo
+    ''' positive test case, checking for correct return of deleted audiobible ID'''
+    #Created User or Super Admin can only delete audiobible
     #creating data
     response,resource_name = test_post_default()
 
@@ -738,26 +748,26 @@ def test_delete_default_superadmin():
                     'Authorization': "Bearer"+" "+test_user_token
             }
 
-    signvideo_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
-    signvideo_id = signvideo_response.json()[0]['signVideoId']
+    audio_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
+    audio_id = audio_response.json()[0]['audioId']
 
-     #Delete signbiblevideo with Super Admin
-    response = client.delete(UNIT_URL+resource_name + "?signvideo_id=" +\
-         str(signvideo_id), headers=headers_sa)
+     #Delete audiobible with Super Admin
+    response = client.delete(UNIT_URL+resource_name + "?audio_id=" +\
+         str(audio_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] ==\
-         f"Sign Bible Video id {signvideo_id} deleted successfully"
-    #Check signbiblevideo is deleted from table
-    signvideo_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
+         f"Audio Bible id {audio_id} deleted successfully"
+    #Check audiobible is deleted from table
+    audio_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
     post_response = client.get(UNIT_URL+resource_name+ \
-        "?book_code=Bible%20project%20video&title=creation",\
+        "?book_code=Bible%20project%20audio&name=creation",\
         headers=headers_sa)
     assert_not_available_content(post_response)
     logout_user(test_user_token)
     return response,resource_name
 
-def test_delete_signvideo_id_string():
-    '''positive test case, signbiblevideo id as string'''
+def test_delete_audio_id_string():
+    '''positive test case, audiobible id as string'''
     response,resource_name = test_post_default()
 
     #Login as Super Admin
@@ -773,23 +783,23 @@ def test_delete_signvideo_id_string():
                     'Authorization': "Bearer"+" "+test_user_token
             }
 
-    signvideo_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
-    signvideo_id = signvideo_response.json()[0]['signVideoId']
-    signvideo_id = str(signvideo_id)
+    audio_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
+    audio_id = audio_response.json()[0]['audioId']
+    audio_id = str(audio_id)
 
-    #Delete signbiblevideo with Super Admin
+    #Delete audiobible with Super Admin
     response = client.delete(UNIT_URL+resource_name + \
-        "?signvideo_id=" + str(signvideo_id), headers=headers_sa)
+        "?audio_id=" + str(audio_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] ==\
-         f"Sign Bible Video id {signvideo_id} deleted successfully"
-    #Check signbiblevideo signbiblevideo is deleted from table
-    signvideo_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
+         f"Audio Bible id {audio_id} deleted successfully"
+    #Check audiobible audiobible is deleted from table
+    audio_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
     logout_user(test_user_token)
 
 
-def test_delete_missingvalue_signvideo_id():
-    '''Negative Testcase. Passing input data without signVideoId'''
+def test_delete_missingvalue_audio_id():
+    '''Negative Testcase. Passing input data without audioId'''
     response,resource_name = test_post_default()
 
     #Login as Super Admin
@@ -804,7 +814,7 @@ def test_delete_missingvalue_signvideo_id():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
-    response = client.delete(UNIT_URL+resource_name + "?signvideo_id=", headers=headers_sa)
+    response = client.delete(UNIT_URL+resource_name + "?audio_id=", headers=headers_sa)
     assert_input_validation_error(response)
     logout_user(test_user_token)
 
@@ -824,15 +834,15 @@ def test_delete_missingvalue_resource_name():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
-    signvideo_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
-    signvideo_id = signvideo_response.json()[0]['signVideoId']
+    audio_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
+    audio_id = audio_response.json()[0]['audioId']
 
-    response = client.delete(UNIT_URL+ "?signvideo_id=" + str(signvideo_id), headers=headers_sa)
+    response = client.delete(UNIT_URL+ "?audio_id=" + str(audio_id), headers=headers_sa)
     assert response.status_code == 404
     logout_user(test_user_token)
 
 def test_delete_notavailable_content():
-    ''' request a non existing signbiblevideo ID, Ensure there is no partial matching'''
+    ''' request a non existing audiobible ID, Ensure there is no partial matching'''
     response,resource_name = test_post_default()
 
     #Login as Super Admin
@@ -847,10 +857,10 @@ def test_delete_notavailable_content():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
-    signvideo_id=20000
-     #Delete signbiblevideo with Super Admin
+    audio_id=20000
+     #Delete audiobible with Super Admin
     response = client.delete(UNIT_URL+resource_name + \
-        "?signvideo_id=" + str(signvideo_id), headers=headers_sa)
+        "?audio_id=" + str(audio_id), headers=headers_sa)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
     logout_user(test_user_token)
@@ -897,9 +907,9 @@ def test_restore_default():
     assert response.status_code == 201
     assert response.json()['message'] == \
     f"Deleted Item with identity {deleteditem_id} restored successfully"
-    #Check signbiblevideo exists after restore
+    #Check audiobible exists after restore
     restore_response =  client.get(UNIT_URL+resource_name+ \
-        "?title=creation",\
+        "?name=creation",\
         headers=headers_auth)
     assert restore_response.status_code == 200
     assert len(restore_response.json()) == 1

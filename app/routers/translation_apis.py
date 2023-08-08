@@ -106,7 +106,8 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
     404: {"model": schemas.ErrorResponse}, 403:{"model": schemas.ErrorResponse}},
     tags=['Translation-Project management'])
 @get_auth_access_check_decorator
-async def remove_project(request: Request,project_id:int,
+async def remove_project(request: Request,
+    project_id:int = Query(..., example=100001),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Removes a project.'''
     log.info('In remove_project')

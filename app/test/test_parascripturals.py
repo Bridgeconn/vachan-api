@@ -398,7 +398,7 @@ def test_searching():
     assert found
 
     # searching with reference:partial match - positive test
-    response = client.get(UNIT_URL+resource_name+"?search_word=JH",headers = headers_auth)
+    response = client.get(UNIT_URL+resource_name+"?search_word=JHN 2",headers = headers_auth)
     assert len(response.json()) > 0
     found = False
     for item in response.json():
@@ -690,7 +690,7 @@ def test_delete_default():
     #Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}#pylint: disable=redefined-outer-name
     response = client.delete(UNIT_URL+resource_name + \
-        "?delete_id=" + str(parascript_id), headers=headers)
+        "?parascript_id=" + str(parascript_id), headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
@@ -701,7 +701,7 @@ def test_delete_default():
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
         response = client.delete(UNIT_URL+resource_name + \
-            "?delete_id=" + str(parascript_id), headers=headers_au)
+            "?parascript_id=" + str(parascript_id), headers=headers_au)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
@@ -711,7 +711,7 @@ def test_delete_default():
                     'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
     response = client.delete(UNIT_URL+resource_name + \
-        "?delete_id=" + str(parascript_id), headers=headers_va)
+        "?parascript_id=" + str(parascript_id), headers=headers_va)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Parascriptural id {parascript_id} deleted successfully"
@@ -740,7 +740,7 @@ def test_delete_default_superadmin():
     parascript_id = parascript_response.json()[0]['parascriptId']
 
      #Delete parascriptural with Super Admin
-    response = client.delete(UNIT_URL+resource_name + "?delete_id=" +\
+    response = client.delete(UNIT_URL+resource_name + "?parascript_id=" +\
          str(parascript_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] ==\
@@ -777,7 +777,7 @@ def test_delete_parascript_id_string():
 
     #Delete parascriptural with Super Admin
     response = client.delete(UNIT_URL+resource_name + \
-        "?delete_id=" + str(parascript_id), headers=headers_sa)
+        "?parascript_id=" + str(parascript_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] ==\
          f"Parascriptural id {parascript_id} deleted successfully"
@@ -802,7 +802,7 @@ def test_delete_missingvalue_parascript_id():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
-    response = client.delete(UNIT_URL+resource_name + "?delete_id=", headers=headers_sa)
+    response = client.delete(UNIT_URL+resource_name + "?parascript_id=", headers=headers_sa)
     assert_input_validation_error(response)
     logout_user(test_user_token)
 
@@ -825,7 +825,7 @@ def test_delete_missingvalue_resource_name():
     parascript_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
     parascript_id = parascript_response.json()[0]['parascriptId']
 
-    response = client.delete(UNIT_URL+ "?delete_id=" + str(parascript_id), headers=headers_sa)
+    response = client.delete(UNIT_URL+ "?parascript_id=" + str(parascript_id), headers=headers_sa)
     assert response.status_code == 404
     logout_user(test_user_token)
 
@@ -848,7 +848,7 @@ def test_delete_notavailable_content():
     parascript_id=20000
      #Delete parascriptural with Super Admin
     response = client.delete(UNIT_URL+resource_name + \
-        "?delete_id=" + str(parascript_id), headers=headers_sa)
+        "?parascript_id=" + str(parascript_id), headers=headers_sa)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
     logout_user(test_user_token)
@@ -1021,7 +1021,7 @@ def test_restoreitem_with_notavailable_resource():
     #Delete Associated Resource
     get_resource_response = client.get(RESOURCE_URL + "?resource_name="+resource_name, headers=headers_auth)
     resource_id = get_resource_response.json()[0]["resourceId"]
-    response = client.delete(RESOURCE_URL + "?delete_id=" + str(resource_id), headers=headers_auth)
+    response = client.delete(RESOURCE_URL + "?resource_id=" + str(resource_id), headers=headers_auth)
     assert response.status_code == 200
     #Restoring data
     #Restore content with Super Admin after deleting resource

@@ -13,6 +13,7 @@ INSERT INTO resource_types(resource_type) VALUES('bible');
 INSERT INTO resource_types(resource_type) VALUES('commentary');
 INSERT INTO resource_types(resource_type) VALUES('vocabulary');
 INSERT INTO resource_types(resource_type) VALUES('parascriptural');
+INSERT INTO resource_types(resource_type) VALUES('audiobible');
 INSERT INTO resource_types(resource_type) VALUES('signbiblevideo'); 
 INSERT INTO resource_types(resource_type) VALUES('gitlabrepo'); 
 

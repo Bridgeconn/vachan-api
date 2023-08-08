@@ -320,7 +320,7 @@ def test_delete_default():
     response = post_data()
     license_id = response.json()["data"]["licenseId"]
     #Delete without authentication
-    response = client.delete(UNIT_URL + "?delete_id=" + str(license_id), headers=headers)
+    response = client.delete(UNIT_URL + "?license_id=" + str(license_id), headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
@@ -330,7 +330,7 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
-        response = client.delete(UNIT_URL + "?delete_id=" + str(license_id), headers=user_headers)
+        response = client.delete(UNIT_URL + "?license_id=" + str(license_id), headers=user_headers)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
@@ -339,7 +339,7 @@ def test_delete_default():
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.delete(UNIT_URL + "?delete_id=" + str(license_id), headers=headers_au)
+    response = client.delete(UNIT_URL + "?license_id=" + str(license_id), headers=headers_au)
     assert response.status_code == 200
     assert response.json()['message'] ==  \
         f"License with identity {license_id} deleted successfully"
@@ -370,7 +370,7 @@ def test_delete_default_superadmin():
             }
 
     #Delete license
-    response = client.delete(UNIT_URL + "?delete_id=" + str(license_id), headers=headers_sa)
+    response = client.delete(UNIT_URL + "?license_id=" + str(license_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] == \
     f"License with identity {license_id} deleted successfully"
@@ -395,7 +395,7 @@ def test_delete_license_id_string():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
-    response = client.delete(UNIT_URL + "?delete_id=" + str(license_id), headers=headers_sa)
+    response = client.delete(UNIT_URL + "?license_id=" + str(license_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] == \
         f"License with identity {license_id} deleted successfully"
@@ -407,21 +407,21 @@ def test_delete_incorrectdatatype():
     #Deleting created data
     license_id = response.json()['data']['licenseId']
     license_id ={}
-    response = client.delete(UNIT_URL + "?delete_id=" + str(license_id), headers=headers_auth)
+    response = client.delete(UNIT_URL + "?license_id=" + str(license_id), headers=headers_auth)
     assert_input_validation_error(response)
 
 def test_delete_missingvalue_license_id():
     '''Negative Testcase. Passing input data without licenseId'''
     data = {}
     license_id=" "
-    response = client.delete(UNIT_URL + "?delete_id=" + str(license_id), headers=headers_auth)
+    response = client.delete(UNIT_URL + "?license_id=" + str(license_id), headers=headers_auth)
     assert_input_validation_error(response)
 
 def test_delete_notavailable_license():
     ''' request a non existing license ID, Ensure there is no partial matching'''
     
     license_id =9999
-    response = client.delete(UNIT_URL + "?delete_id=" + str(license_id), headers=headers_auth)
+    response = client.delete(UNIT_URL + "?license_id=" + str(license_id), headers=headers_auth)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
 
@@ -462,7 +462,7 @@ def test_license_used_by_resource():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+token_admin
                      }
-    response = client.delete(UNIT_URL + "?delete_id=" + str(license_id), headers=headers_admin)
+    response = client.delete(UNIT_URL + "?license_id=" + str(license_id), headers=headers_admin)
     assert response.status_code == 409
     assert response.json()['error'] == 'Conflict'
     logout_user(token_admin)

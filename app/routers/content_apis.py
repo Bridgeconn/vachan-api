@@ -65,7 +65,8 @@ async def add_resources_types(request: Request, resourcetype: schemas.ResourceTy
     502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Resources Types"])
 @get_auth_access_check_decorator
-async def delete_resources_types(request: Request,resourcetype_id: int ,
+async def delete_resources_types(request: Request,
+    resourcetype_id: int = Query(..., example=100001),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Resourcetype
     * unique ResourceType Id can be used to delete an exisiting identity'''
@@ -148,19 +149,20 @@ async def edit_language(request: Request, lang_obj: schemas.LanguageEdit = Body(
     401: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Languages"])
 @get_auth_access_check_decorator
-async def delete_languages(request: Request, lang_id: int,
+async def delete_languages(request: Request,
+    language_id: int = Query(..., example=100001),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Language
     * unique Language Code can be used to delete an exisiting identity'''
     log.info('In delete_languages')
-    log.debug('language-delete:%s',lang_id)
+    log.debug('language-delete:%s',language_id)
     dbtable_name = "languages"
-    if len(structurals_crud.get_languages(db_, language_id = lang_id)) == 0:
-        raise NotAvailableException(f"Language id {lang_id} not found")
-    deleted_content = structurals_crud.delete_language(db_=db_, lang=lang_id)
+    if len(structurals_crud.get_languages(db_, language_id = language_id)) == 0:
+        raise NotAvailableException(f"Language id {language_id} not found")
+    deleted_content = structurals_crud.delete_language(db_=db_, lang=language_id)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
         table_name = dbtable_name,deleting_user=user_details['user_id'])
-    return {'message': f"Language with identity {lang_id} deleted successfully",
+    return {'message': f"Language with identity {language_id} deleted successfully",
             "data": delcont}
 
 ########### Licenses ######################
@@ -224,17 +226,17 @@ async def edit_license(request: Request, license_obj: schemas.LicenseEdit = Body
     502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Licenses"])
 @get_auth_access_check_decorator
-async def delete_licenses(request: Request, delete_id:int,
+async def delete_licenses(request: Request,
+    license_id:int = Query(..., example=100001),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete License
     * unique License Id can be used to delete an exisiting identity'''
     log.info('In delete_licenses')
-    log.debug('license-delete:%s',delete_id)
-    license_id= delete_id
+    log.debug('license-delete:%s',license_id)
     dbtable_name = "licenses"
-    if len(structurals_crud.get_licenses(db_, license_id= delete_id)) == 0:
+    if len(structurals_crud.get_licenses(db_, license_id= license_id)) == 0:
         raise NotAvailableException(f"License id {license_id} not found")
-    deleted_content = structurals_crud.delete_license(db_=db_, content=delete_id)
+    deleted_content = structurals_crud.delete_license(db_=db_, content=license_id)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
             table_name = dbtable_name,deleting_user=user_details['user_id'])
     return {'message': f"License with identity {license_id} deleted successfully",
@@ -313,17 +315,17 @@ async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...
     502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Versions"])
 @get_auth_access_check_decorator
-async def delete_versions(request: Request, delete_id: int,
+async def delete_versions(request: Request,
+    version_id: int = Query(..., example=100001),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Version
     * unique Version Id can be used to delete an exisiting identity'''
     log.info('In delete_versions')
-    log.debug('version-delete:%s',delete_id)
-    version_id= delete_id
+    log.debug('version-delete:%s',version_id)
     dbtable_name = "versions"
-    if len(structurals_crud.get_versions(db_, version_id = delete_id)) == 0:
-        raise NotAvailableException(f"Version id {delete_id} not found")
-    deleted_content = structurals_crud.delete_version(db_=db_, ver=delete_id)
+    if len(structurals_crud.get_versions(db_, version_id = version_id)) == 0:
+        raise NotAvailableException(f"Version id {version_id} not found")
+    deleted_content = structurals_crud.delete_version(db_=db_, ver=version_id)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
             table_name = dbtable_name,deleting_user=user_details['user_id'])
     return {'message': f"Version with identity {version_id} deleted successfully",
@@ -455,18 +457,18 @@ async def edit_resource(request: Request,resource_obj: schemas.ResourceEdit = Bo
     502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Resources"])
 @get_auth_access_check_decorator
-async def delete_resources(request: Request, delete_id:int, \
+async def delete_resources(request: Request,
+    resource_id:int = Query(..., example=100001),
     user_details =Depends(get_user_or_none),  \
     db_: Session = Depends(get_db)):
     '''Delete Resource
     * unique Resource Id can be used to delete an exisiting identity'''
     log.info('In delete_resources')
-    log.debug('resource-delete:%s',delete_id)
-    resource_id= delete_id
+    log.debug('resource-delete:%s',resource_id)
     dbtable_name = "resources"
-    if len(structurals_crud.get_resources(db_, resource_id= delete_id)) == 0:
+    if len(structurals_crud.get_resources(db_, resource_id= resource_id)) == 0:
         raise NotAvailableException(f"Resource id {resource_id} not found")
-    deleted_content = structurals_crud.delete_resource(db_=db_, delitem=delete_id)
+    deleted_content = structurals_crud.delete_resource(db_=db_, delitem=resource_id)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
             table_name = dbtable_name,deleting_user=user_details['user_id'])
     return {'message': f"Resource with identity {resource_id} deleted successfully",
@@ -575,22 +577,22 @@ async def get_available_bible_book(request: Request,
     502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Bibles"])
 @get_auth_access_check_decorator
-async def delete_bible_book(request: Request,delete_id:int,
+async def delete_bible_book(request: Request,
+    biblebook_id:int = Query(..., example=100001),
     resource_name: str = Path(...,example="en_KJV_1_bible"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Bible Book
-    * unique bible content Id with resource name can be used to delete an exisiting identity'''
+    * unique bible book id with resource name can be used to delete an exisiting identity'''
     log.info('In delete_biblebook')
-    log.debug('biblebook-delete:%s',delete_id)
-    biblecontent_id= delete_id
+    log.debug('biblebook-delete:%s',biblebook_id)
     tb_name = db_models.dynamicTables[resource_name]
     dbtable_name = tb_name.__name__
     cleaned_tablename = dbtable_name+'_cleaned'
     get_bible_response = contents_crud.get_available_bible_books(db_, resource_name=resource_name, \
-        biblecontent_id= delete_id)
+        biblecontent_id= biblebook_id)
     if len(get_bible_response['db_content']) == 0:
-        raise NotAvailableException(f"Bible Book with id {biblecontent_id} not found")
-    deleted_content = contents_crud.delete_bible_book(db_=db_,delitem=delete_id,\
+        raise NotAvailableException(f"Bible Book with id {biblebook_id} not found")
+    deleted_content = contents_crud.delete_bible_book(db_=db_,delitem=biblebook_id,\
         resource_name=resource_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_= db_,del_content= deleted_content['db_content'],
         table_name = dbtable_name, resource = deleted_content['resource_content'],
@@ -598,7 +600,7 @@ async def delete_bible_book(request: Request,delete_id:int,
     del_clean=structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content2'],#pylint: disable=unused-variable
         table_name=cleaned_tablename,resource=deleted_content['resource_content'],
         deleting_user=user_details['user_id'])
-    return {'message': f"Bible Book with id {biblecontent_id} deleted successfully",
+    return {'message': f"Bible Book with id {biblebook_id} deleted successfully",
             "data": delcont}
 
 @router.get('/v2/bibles/{resource_name}/versification',
@@ -650,77 +652,6 @@ async def get_bible_verse(request: Request,
     last_verse = last_verse, search_phrase=search_phrase, active=active,
     skip = skip, limit = limit)
 
-# # ########### Audio bible ###################
-@router.post('/v2/bibles/{resource_name}/audios',
-    response_model=schema_content.AudioBibleCreateResponse,
-    responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
-    401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
-    415:{"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Bibles"])
-@get_auth_access_check_decorator
-async def add_audio_bible(request: Request,
-    resource_name : schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
-    audios: List[schema_content.AudioBibleUpload] = Body(...),
-    user_details =Depends(get_user_or_none),
-    db_: Session = Depends(get_db)):
-    '''uploads audio(links and related info, not files) for a bible'''
-    log.info('In add_audio_bible')
-    log.debug('resource_name: %s, audios: %s',resource_name, audios)
-    return {'message': "Bible audios details uploaded successfully",
-        "data": contents_crud.upload_bible_audios(db_=db_, resource_name=resource_name,
-        audios=audios, user_id=user_details['user_id'])}
-
-@router.put('/v2/bibles/{resource_name}/audios',
-    response_model=schema_content.AudioBibleUpdateResponse,
-    responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
-    401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Bibles"])
-@get_auth_access_check_decorator
-async def edit_audio_bible(request: Request,
-    resource_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
-    audios: List[schema_content.AudioBibleEdit] = Body(...),
-    user_details =Depends(get_user_or_none),
-    db_: Session = Depends(get_db)):
-    ''' Changes the mentioned fields of audio bible row.
-    book codes are used to identify items and at least one is mandatory.
-    Active field can be used to activate or deactivate a content.
-    Deactivated items are not included in normal fetch results if not specified otherwise'''
-    log.info('In edit_audio_bible')
-    log.debug('resource_name: %s, audios: %s',resource_name, audios)
-    return {'message': "Bible audios details updated successfully",
-        "data": contents_crud.update_bible_audios(db_=db_, resource_name=resource_name,
-        audios=audios, user_id=user_details['user_id'])}
-
-@router.delete('/v2/bibles/{resource_name}/audios',response_model=schemas.DeleteResponse,
-    responses={404: {"model": schemas.ErrorResponse},
-    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
-    502: {"model": schemas.ErrorResponse}},
-    status_code=200,tags=["Bibles"])
-@get_auth_access_check_decorator
-async def delete_bible_audios(request: Request,delete_id: int,
-    resource_name: str = Path(...,example="en_KJV_1_bible"),
-    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
-    '''Delete Bible Audio
-    * unique Bible Audio Id  with resource name can be used to delete an exisiting identity'''
-    log.info('In delete_bibleaudios')
-    log.debug('bibleaudio-delete:%s',delete_id)
-    bibleaudio_id= delete_id
-    tb_name = db_models.dynamicTables[resource_name]
-    dbtable_name = tb_name.__name__
-    audio_tablename = dbtable_name+'_audio'
-    get_bible_response = contents_crud.get_available_bible_books(db_, resource_name=resource_name, \
-        bibleaudio_id= delete_id)
-    if len(get_bible_response['db_content']) == 0:
-        raise NotAvailableException(f"Bible Audio with id {bibleaudio_id} not found")
-    deleted_content = contents_crud.delete_bible_audio(db_=db_,delitem=delete_id,\
-        resource_name=resource_name,user_id=user_details['user_id'])
-    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
-        table_name = audio_tablename, resource = deleted_content['resource_content'],
-        deleting_user = user_details['user_id'])
-    return {'message': f"Bible Audio with id {bibleaudio_id} deleted successfully",
-            "data": delcont}
 
 # # ##### Commentary #####
 @router.get('/v2/commentaries/{resource_name}',
@@ -837,21 +768,21 @@ async def edit_commentary(request: Request,background_tasks: BackgroundTasks,
     502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Commentaries"])
 @get_auth_access_check_decorator
-async def delete_commentary(request: Request,delete_id:int,
+async def delete_commentary(request: Request,
+    commentary_id:int = Query(..., example=100001),
     resource_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Commentary
-    * unique Commentary Id can be used to delete an exisiting identity'''
+    * unique Commentary Id with resource name can be used to delete an exisiting identity'''
     log.info('In delete_commentaries')
-    log.debug('commentary-delete:%s',delete_id)
-    commentary_id= delete_id
+    log.debug('commentary-delete:%s',commentary_id)
     tb_name = db_models.dynamicTables[resource_name]
     dbtable_name = tb_name.__name__
     get_commentary_response = contents_crud.get_commentaries(db_, \
-        resource_name=resource_name, commentary_id= delete_id)
+        resource_name=resource_name, commentary_id= commentary_id)
     if len(get_commentary_response['db_content']) == 0:
         raise NotAvailableException(f"Commentary with id {commentary_id} not found")
-    deleted_content = contents_crud.delete_commentary(db_=db_,delitem=delete_id,\
+    deleted_content = contents_crud.delete_commentary(db_=db_,delitem=commentary_id,\
         table_name=tb_name,resource_name=resource_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
         table_name= dbtable_name, resource=deleted_content['resource_content'],
@@ -976,22 +907,22 @@ async def edit_vocabulary_word(request: Request,
     502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Vocabularies"])
 @get_auth_access_check_decorator
-async def delete_vocabularies(request: Request,delete_id: int,
+async def delete_vocabularies(request: Request,
+    word_id: int = Query(..., example=100001),
     resource_name: str = Path(...,example="en_KJV_1_vocabulary"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Vocabulary
-    * unique Vocabulary Id with resource name can be used to delete an exisiting identity'''
+    * unique word Id with resource name can be used to delete an exisiting identity'''
     log.info('In delete_vocabularies')
-    log.debug('vocabulary-delete:%s',delete_id)
-    word_id= delete_id
+    log.debug('vocabulary-delete:%s',word_id)
     tb_name = db_models.dynamicTables[resource_name]
     dbtable_name = tb_name.__name__
     get_vocabulary_response = contents_crud.get_vocabulary_words(db_, resource_name=resource_name,
-                 word_id= delete_id)
+                 word_id= word_id)
     if len(get_vocabulary_response['db_content']) == 0:
         raise NotAvailableException(f"Vocabulary with id {word_id} not found")
     deleted_content = contents_crud.delete_vocabulary(db_=db_,
-        delitem=delete_id,
+        delitem=word_id,
         table_name=tb_name,resource_name=resource_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
         table_name = dbtable_name, resource = deleted_content['resource_content'],
@@ -1091,26 +1022,138 @@ async def edit_parascripturals(request: Request,
     502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Parascripturals"])
 @get_auth_access_check_decorator
-async def delete_parascripturals(request: Request,delete_id:int,
+async def delete_parascripturals(request: Request,
+    parascript_id:int = Query(..., example=100001),
     resource_name: str = Path(...,example="en_KJV_1_parascriptural"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Parascriptural
     * unique parascript Id with source name can be used to delete an exisiting identity'''
     log.info('In delete_parascripturals')
-    log.debug('parascripturals-delete:%s',delete_id)
-    parascript_id= delete_id
+    log.debug('parascripturals-delete:%s',parascript_id)
     tb_name = db_models.dynamicTables[resource_name]
     dbtable_name = tb_name.__name__
     get_parascriptural_response = contents_crud.get_parascripturals(
-        db_, resource_name=resource_name, parascript_id= delete_id)
+        db_, resource_name=resource_name, parascript_id= parascript_id)
     if len(get_parascriptural_response['db_content']) == 0:
         raise NotAvailableException(f"Parascriptural with id {parascript_id} not found")
-    deleted_content = contents_crud.delete_parascriptural(db_=db_,delitem=delete_id,\
+    deleted_content = contents_crud.delete_parascriptural(db_=db_,delitem=parascript_id,\
         table_name=tb_name,resource_name=resource_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
         table_name = dbtable_name, resource = deleted_content['resource_content'],
         deleting_user = user_details['user_id'])
     return {'message': f"Parascriptural id {parascript_id} deleted successfully",
+            "data": delcont}
+
+################ Audio Bibles ###################
+@router.get('/v2/resources/bible/audios/{resource_name}',
+    response_model=List[schema_content.AudioBibleResponse],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
+    415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Audio Bibles"])
+@get_auth_access_check_decorator
+async def get_audio_bibles(request: Request, #pylint: disable=too-many-locals
+    resource_name:schemas.TableNamePattern=
+    Path(...,example="en_KJV_1_audiobible"),
+    name:str=Query(None,example="Audio Bible of Genesis"),
+    audio_format:str=Query(None, example="mp3"),
+    reference: str = Query(None,
+    example='{"book": "gen", "chapter": 1, "verseNumber": 6}'),
+    link:AnyUrl=Query(None,example="http://someplace.com/resoucesid"),
+    search_word:str=Query(None,example="subtitle"),
+    metadata: schemas.MetaDataPattern=Query(None,
+        example='{"otherName": "Creation"}'),
+    active: bool=Query(True),
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
+    user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
+    '''Fetches the Audio Bibles. Can use, Audio Bible name, audio_format
+       reference,link,meatdata or search word to filter the results.
+    * optional query parameters can be used to filter the result set
+    * skip=n: skips the first n objects in return list
+    * limit=n: limits the no. of items to be returned to n
+    * returns [] for not available content
+    * Filter with single reference -> eg :{"book": "gen", "chapter": 1, "verseNumber": 6}
+    * Filter with cross chapter references -> eg:reference": {"book":"gen", "chapter":11,
+        "verseNumber":12,"bookEnd":"luk", "chapterEnd":14, "verseEnd":15 }'''
+    log.info('In get_audio_bibles')
+    log.debug('resource_name: %s,name: %s, skip: %s,limit: %s,search_word: %s,\
+        reference:%s,metadata:%s',resource_name,name,skip,limit,search_word,\
+        reference,metadata)
+    reference_dict: Dict[str, int] = None
+    if reference:
+        reference_dict = json.loads(reference)
+    return contents_crud.get_audio_bible(db_, resource_name, name,
+        audio_format = audio_format, reference = reference_dict, link = link,
+        search_word = search_word, metadata = metadata, active = active, skip = skip, limit = limit)
+
+@router.post('/v2/resources/bible/audios/{resource_name}',
+    response_model=schema_content.AudioBibleCreateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
+    401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
+    415:{"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Audio Bibles"])
+@get_auth_access_check_decorator
+async def add_audio_bibles(request: Request,
+    resource_name : schemas.TableNamePattern=Path(...,
+    example="en_KJV_1_audiobible"),
+    audiobibles: List[schema_content.AudioBibleCreate] = Body(...),
+    user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
+    '''Uploads a list of audio_bibles. category field is mandatory'''
+    log.info('In add_audio_bibles')
+    log.debug('resource_name: %s, audiobibles: %s',resource_name, audiobibles)
+    return {'message': "Audio Bibles added successfully",
+        "data": contents_crud.upload_audio_bible(db_=db_, resource_name=resource_name,
+        audiobibles=audiobibles, user_id=user_details['user_id'])}
+
+@router.put('/v2/resources/bible/audios/{resource_name}',
+    response_model=schema_content.AudioBibleUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
+    401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Audio Bibles"])
+@get_auth_access_check_decorator
+async def edit_audio_bibles(request: Request,
+    resource_name: schemas.TableNamePattern=Path(...,
+    example="en_KJV_1_audiobible"),
+    audiobibles: List[schema_content.AudioBibleEdit] = Body(...),
+    user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
+    ''' Changes description,reference or link.
+    Item identifier is audioId, which cannot be altered.'''
+    log.info('In edit_audio_bibles')
+    log.debug('resource_name: %s, audiobible: %s',resource_name, audiobibles)
+    return {'message': "Audio Bibles updated successfully",
+        "data": contents_crud.update_audio_bible(db_=db_, resource_name=resource_name,
+        audiobibles=audiobibles, user_id=user_details['user_id'])}
+
+@router.delete('/v2/resources/bible/audios/{resource_name}',
+    response_model=schemas.DeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Audio Bibles"])
+@get_auth_access_check_decorator
+async def delete_audio_bibles(request: Request,
+    audio_id:int = Query(..., example=100001),
+    resource_name: str = Path(...,example="en_KJV_1_audiobible"),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Delete Audio Bible
+    * unique audioId with source name can be used to delete an exisiting identity'''
+    log.info('In delete_audio_bibles')
+    log.debug('audio_bibles-delete:%s',audio_id)
+    tb_name = db_models.dynamicTables[resource_name]
+    dbtable_name = tb_name.__name__
+    get_audio_response = contents_crud.get_audio_bible(
+        db_, resource_name=resource_name, audio_id= audio_id)
+    if len( get_audio_response['db_content']) == 0:
+        raise NotAvailableException(f"Audio Bible with id {audio_id} not found")
+    deleted_content = contents_crud.delete_audio_bible(db_=db_,delitem=audio_id,\
+        table_name=tb_name,resource_name=resource_name,user_id=user_details['user_id'])
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
+        table_name = dbtable_name, resource = deleted_content['resource_content'],
+        deleting_user = user_details['user_id'])
+    return {'message': f"Audio Bible id {audio_id} deleted successfully",
             "data": delcont}
 
 # # ########### Sign Bible Video ###################
@@ -1203,21 +1246,21 @@ async def edit_sign_bible_videos(request: Request,
     502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Sign Bible Videos"])
 @get_auth_access_check_decorator
-async def delete_sign_bible_videos(request: Request,delete_id:int,
+async def delete_sign_bible_videos(request: Request,
+    signvideo_id:int = Query(..., example=100001),
     resource_name: str = Path(...,example="ins_KJV_1_signbiblevideo"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Sign Bible Video
     * unique signvideoId with source name can be used to delete an exisiting identity'''
     log.info('In delete_sign_bible_videos')
-    log.debug('sign_bible_videos-delete:%s',delete_id)
-    signvideo_id= delete_id
+    log.debug('sign_bible_videos-delete:%s',signvideo_id)
     tb_name = db_models.dynamicTables[resource_name]
     dbtable_name = tb_name.__name__
     get_signvideo_response = contents_crud.get_sign_bible_videos(
-        db_, resource_name=resource_name, signvideo_id= delete_id)
+        db_, resource_name=resource_name, signvideo_id= signvideo_id)
     if len( get_signvideo_response['db_content']) == 0:
         raise NotAvailableException(f"Sign Bible Video with id {signvideo_id} not found")
-    deleted_content = contents_crud.delete_sign_bible_videos(db_=db_,delitem=delete_id,\
+    deleted_content = contents_crud.delete_sign_bible_videos(db_=db_,delitem=signvideo_id,\
         table_name=tb_name,resource_name=resource_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
         table_name = dbtable_name, resource = deleted_content['resource_content'],

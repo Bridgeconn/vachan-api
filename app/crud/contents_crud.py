@@ -5,7 +5,6 @@ import json
 import re
 from datetime import datetime
 from pytz import timezone
-import sqlalchemy
 from sqlalchemy.orm import Session, defer, joinedload
 from sqlalchemy.sql import text
 import db_models #pylint: disable=import-error
@@ -543,6 +542,189 @@ def delete_parascriptural(db_: Session, delitem: int,table_name = None,\
         }
     return response
 
+def get_audio_bible(db_:Session, resource_name, name=None,**kwargs): #pylint: disable=too-many-locals
+    '''Fetches rows of audio bibles from the table specified by resource_name'''
+    audio_format = kwargs.get("audio_format",None)
+    search_word = kwargs.get("search_word",None)
+    reference = kwargs.get("reference",None)
+    link = kwargs.get("link",None)
+    metadata = kwargs.get("metadata",None)
+    active = kwargs.get("active",True)
+    skip = kwargs.get("skip",0)
+    limit = kwargs.get("limit",100)
+    audio_id=kwargs.get("audio_id",None)
+    if resource_name not in db_models.dynamicTables:
+        raise NotAvailableException(f'{resource_name} not found in database.')
+    if not resource_name.endswith(db_models.ResourceTypeName.AUDIOBIBLE.value):
+        raise TypeException('The operation is supported only on audio bibles')
+    model_cls = db_models.dynamicTables[resource_name]
+    query = db_.query(model_cls)
+    if name:
+        query = query.filter(model_cls.name == utils.normalize_unicode(name.strip()))
+    if  audio_format:
+        query = query.filter(model_cls.audioFormat.contains(
+            utils.normalize_unicode(audio_format.strip())))
+    if link:
+        query = query.filter(model_cls.link == link)
+    if audio_id:
+        query = query.filter(model_cls.audioId == audio_id)
+    if reference:
+        query = filter_by_reference(db_,query, model_cls, reference)
+    if metadata:
+        meta = json.loads(metadata)
+        for key in meta:
+            key_match = db_models.AudioBible.metaData.op('->>')(key).ilike(f'%{key}%')
+            value_match = db_models.AudioBible.metaData.op('->>')(key).ilike(f'%{meta[key]}%')
+            query = query.filter(key_match | value_match)
+    if search_word:
+        search_pattern = " & ".join(re.findall(r'\w+', search_word))
+        search_pattern += ":*"
+        query = query.filter(text(
+            "to_tsvector('simple', name || ' ' || audio_id || " +
+            "' ' || audio_format || ' ' || link || ' ' || " +
+            "jsonb_to_tsvector('simple', reference, '[\"string\", \"numeric\"]') || ' ' || " +
+            "jsonb_to_tsvector('simple', metadata, '[\"string\", \"numeric\"]') " +
+            ") @@ to_tsquery('simple', :pattern)"
+        ).bindparams(pattern=search_pattern))
+
+    query = query.filter(model_cls.active == active)
+    resource_db_content = db_.query(db_models.Resource).filter(
+        db_models.Resource.resourceName == resource_name).first()
+    response = {
+        'db_content':query.offset(skip).limit(limit).all(),
+        'resource_content':resource_db_content
+        }
+    return response
+
+def upload_audio_bible(db_: Session, resource_name, audiobibles, user_id=None):
+    '''Adds rows to the audio bibles table specified by resource_name'''
+    resource_db_content = db_.query(db_models.Resource).filter(
+        db_models.Resource.resourceName == resource_name).first()
+    if not resource_db_content:
+        raise NotAvailableException(f'Resource {resource_name}, not found in database')
+    if resource_db_content.resourceType.resourceType != \
+        db_models.ResourceTypeName.AUDIOBIBLE.value:
+        raise TypeException('The operation is supported only on audio bibles')
+    model_cls = db_models.dynamicTables[resource_name]
+    db_content = []
+    for item in audiobibles:
+        if item.reference:
+            ref = item.reference.__dict__
+            if ref['verseNumber'] is not None:
+                ref_start = utils.create_decimal_ref_id(
+                    db_,ref['book'],ref['chapter'],ref['verseNumber'])
+            else:
+                #setting verseNumber to 000 if its not present
+                ref_start = utils.create_decimal_ref_id(db_,ref['book'],ref['chapter'],0)
+                ref['verseNumber'] = 0
+            if ref['verseEnd'] is not None:
+                ref_end   = utils.create_decimal_ref_id(
+                    db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
+            else:
+                #setting verseEnd to 999 if its not present
+                ref_end   = utils.create_decimal_ref_id(db_,ref['bookEnd'],ref['chapterEnd'],999)
+                ref['verseEnd'] = 999
+        else:
+            ref = None
+            ref_end = None
+            ref_start = None
+        if item.name:
+            item.name = utils.normalize_unicode(item.name.strip())
+        if item.audioFormat:
+            item.audioFormat = utils.normalize_unicode(item.audioFormat.strip())
+        row = model_cls(
+            name = item.name,
+            audioFormat =item.audioFormat,
+            reference = ref,
+            refStart=ref_start,
+            refEnd=ref_end,
+            link = item.link,
+            metaData = item.metaData,
+            active = item.active,
+            createdUser =  user_id)
+        db_content.append(row)
+    db_.add_all(db_content)
+    db_.expire_all()
+    resource_db_content.updatedUser = user_id
+    response = {
+        'db_content':db_content,
+        'resource_content':resource_db_content
+        }
+    return response
+
+def update_audio_bible(db_: Session, resource_name, audiobibles, user_id=None): #pylint: disable=too-many-branches
+    '''Update rows, that matches audioId in the audio bibles table
+    specified by resource_name'''
+    resource_db_content = db_.query(db_models.Resource).filter(
+        db_models.Resource.resourceName == resource_name).first()
+    if not resource_db_content:
+        raise NotAvailableException(f'Resource {resource_name}, not found in database')
+    if resource_db_content.resourceType.resourceType != \
+        db_models.ResourceTypeName.AUDIOBIBLE.value:
+        raise TypeException('The operation is supported only on audio bibles')
+    model_cls = db_models.dynamicTables[resource_name]
+    db_content = []
+    for item in audiobibles:
+        row = db_.query(model_cls).filter(
+            model_cls.audioId == item.audioId).first()
+        if not row:
+            raise NotAvailableException(f"AUdio Bible row with id:{item.audioId}, "+\
+                f"not found for {resource_name}")
+        if item.name:
+            item.name = utils.normalize_unicode(item.name.strip())
+            row.name = item.name
+        if item.audioFormat:
+            item.audioFormat = utils.normalize_unicode(item.audioFormat.strip())
+            row.audioFormat = item.audioFormat
+        if item.link:
+            row.link = item.link
+        if item.reference:
+            ref = item.reference.__dict__
+            if ref['verseNumber'] is not None:
+                ref_start = utils.create_decimal_ref_id(
+                    db_,ref['book'],ref['chapter'],ref['verseNumber'])
+            else:
+                ref_start = utils.create_decimal_ref_id(db_,ref['book'],ref['chapter'],0)
+            if ref['verseEnd'] is not None:
+                ref_end   = utils.create_decimal_ref_id(
+                    db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
+            else:
+                ref_end   = utils.create_decimal_ref_id(db_,ref['bookEnd'],ref['chapterEnd'],999)
+            row.reference = ref
+            row.refStart=ref_start
+            row.refEnd=ref_end
+        if item.metaData:
+            row.metaData = item.metaData
+        if item.active is not None:
+            row.active = item.active
+        db_.flush()
+        db_content.append(row)
+    resource_db_content.updatedUser = user_id
+    resource_db_content.updateTime = datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
+    response = {
+        'db_content':db_content,
+        'resource_content':resource_db_content
+        }
+    return response
+
+def delete_audio_bible(db_: Session, delitem: int,table_name = None,\
+    resource_name=None,user_id=None):
+    '''delete particular item from audio bibles, selected via resourceName and audio id'''
+    resource_db_content = db_.query(db_models.Resource).filter(
+        db_models.Resource.resourceName == resource_name).first()
+    model_cls = table_name
+    query = db_.query(model_cls)
+    db_content = query.filter(model_cls.audioId == delitem).first()
+    db_.flush()
+    db_.delete(db_content)
+    #db_.commit()
+    resource_db_content.updatedUser = user_id
+    response = {
+        'db_content':db_content,
+        'resource_content':resource_db_content
+        }
+    return response
+
 def get_sign_bible_videos(db_:Session, resource_name, title=None,**kwargs): #pylint: disable=too-many-locals
     '''Fetches rows of sign bible videos from the table specified by resource_name'''
     description = kwargs.get("description",None)
@@ -998,104 +1180,6 @@ def update_bible_books_cleaned(db_,resource_name,books,resource_db_content,user_
     return resource_db_content
     # db_.commit()
 
-def upload_bible_audios(db_:Session, resource_name, audios, user_id=None):
-    '''Add audio bible related contents to _bible_audio table'''
-    resource_db_content = db_.query(db_models.Resource).filter(
-        db_models.Resource.resourceName == resource_name).first()
-    if not resource_db_content:
-        raise NotAvailableException(f'Resource {resource_name}, not found in database')
-    if resource_db_content.resourceType.resourceType != 'bible':
-        raise TypeException('The operation is supported only on bible')
-    model_cls_audio = db_models.dynamicTables[resource_name+'_audio']
-    model_cls_bible = db_models.dynamicTables[resource_name]
-    db_content = []
-    db_content2 = []
-    for item in audios:
-        for buk in item.books:
-            book = db_.query(db_models.BibleBook).filter(
-                db_models.BibleBook.bookCode == buk.strip().lower()).first()
-            if not book:
-                raise NotAvailableException(f'Bible Book code, {buk}, not found in database')
-            bible_table_row = db_.query(model_cls_bible).filter(
-                model_cls_bible.book_id == book.bookId).first()
-            if not bible_table_row:
-                bible_table_row = model_cls_bible(
-                    book_id=book.bookId
-                    )
-                db_content2.append(bible_table_row)
-            row = model_cls_audio(
-                name=utils.normalize_unicode(item.name.strip()),
-                url=item.url.strip(),
-                book_id=book.bookId,
-                format=item.format.strip(),
-                active=item.active)
-            db_content.append(row)
-    db_.add_all(db_content)
-    db_.add_all(db_content2)
-    resource_db_content.updatedUser = user_id
-    # db_.commit()
-    response = {
-        'db_content':db_content,
-        'resource_content':resource_db_content
-    }
-    # return db_content
-    return response
-
-def update_bible_audios(db_: Session, resource_name, audios, user_id=None):
-    '''Update any details of a bible Auido row.
-    Use name as row-identifier, which cannot be changed'''
-    resource_db_content = db_.query(db_models.Resource).filter(
-        db_models.Resource.resourceName == resource_name).first()
-    if not resource_db_content:
-        raise NotAvailableException(f'Resource {resource_name}, not found in database')
-    if resource_db_content.resourceType.resourceType != 'bible':
-        raise TypeException('The operation is supported only on bible')
-    model_cls = db_models.dynamicTables[resource_name+'_audio']
-    db_content = []
-    for item in audios:
-        for buk in item.books:
-            book = db_.query(db_models.BibleBook).filter(
-                db_models.BibleBook.bookCode == buk.strip().lower()).first()
-            if not book:
-                raise NotAvailableException(f'Bible Book code, {buk}, not found in database')
-            row = db_.query(model_cls).filter(model_cls.book_id == book.bookId).first()
-            if not row:
-                raise NotAvailableException(f"Bible audio for, {item.name}, not found in database")
-            if item.name:
-                row.name = utils.normalize_unicode(item.name.strip())
-            if item.url:
-                row.url = item.url.strip()
-            if item.format:
-                row.format = item.format.strip()
-            if item.active is not None:
-                row.active = item.active
-            db_content.append(row)
-    resource_db_content.updatedUser = user_id
-    # db_.commit()
-    # return db_content
-    response = {
-        'db_content':db_content,
-        'resource_content':resource_db_content
-        }
-    return response
-
-def delete_bible_audio(db_: Session, delitem: int,\
-    resource_name=None,user_id=None):
-    '''delete particular item from bible audio, selected via resourcename and bible audio id'''
-    resource_db_content = db_.query(db_models.Resource).filter(
-        db_models.Resource.resourceName == resource_name).first()
-    model_cls =  db_models.dynamicTables[resource_name+'_audio']
-    query = db_.query(model_cls)
-    db_content = query.filter(model_cls.audioId == delitem).first()
-    db_.flush()
-    db_.delete(db_content)
-    #db_.commit()
-    resource_db_content.updatedUser = user_id
-    response = {
-        'db_content'    :db_content,
-        'resource_content':resource_db_content
-        }
-    return response
 
 def get_bible_versification(db_, resource_name):
     '''select the reference list from bible_cleaned table'''
@@ -1142,20 +1226,15 @@ def get_available_bible_books(db_, resource_name,book_code=None, resource_type=N
     active = kwargs.get("active",True)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
-    bibleaudio_id = kwargs.get("bibleaudio_id",None)
     if resource_name not in db_models.dynamicTables:
         raise NotAvailableException(f'{resource_name} not found in database.')
     if not resource_name.endswith('_bible'):
         raise TypeException('The operation is supported only on bible')
     model_cls = db_models.dynamicTables[resource_name]
-    model_cls_audio = db_models.dynamicTables[resource_name+"_audio"]
-    query = db_.query(model_cls).outerjoin(model_cls_audio, model_cls_audio.book_id ==
-        model_cls.book_id).options(joinedload(model_cls.book))
+    query = db_.query(model_cls).options(joinedload(model_cls.book))
     fetched = None
     if biblecontent_id:
         query = query.filter(model_cls.bookContentId  == biblecontent_id)
-    if bibleaudio_id:
-        query = query.filter(model_cls_audio.audioId  == bibleaudio_id)
     if book_code:
         query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
     if resource_type == "usfm":
@@ -1163,13 +1242,7 @@ def get_available_bible_books(db_, resource_name,book_code=None, resource_type=N
     elif resource_type == "json":
         query = query.options(defer(model_cls.USFM))
     elif resource_type == "all":
-        query = query.options(joinedload(model_cls.audio)).filter(
-            sqlalchemy.or_(model_cls.active == active, model_cls.audio.has(active=active)))
-        fetched = query.offset(skip).limit(limit).all()
-    elif resource_type == "audio":
-        query = query.options(joinedload(model_cls.audio),
-            defer(model_cls.JSON), defer(model_cls.USFM)).filter(
-            model_cls.audio.has(active=active))
+        query = query.filter(model_cls.active == active)
         fetched = query.offset(skip).limit(limit).all()
     elif resource_type is None:
         query = query.options(defer(model_cls.JSON), defer(model_cls.USFM))

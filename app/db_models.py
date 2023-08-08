@@ -27,6 +27,7 @@ class ResourceTypeName(Enum):
     PARASCRIPTURAL = "parascriptural"
     VOCABULARY = "vocabulary"
     GITLABREPO = "gitlabrepo"
+    AUDIOBIBLE = "audiobible"
     SIGNBIBLEVIDEO = "signbiblevideo"
 
 class TranslationDocumentType(Enum):
@@ -205,19 +206,22 @@ class SignBibleVideo():# pylint: disable=too-few-public-methods
     __table_args__ = (
         {'extend_existing': True}
                      )
-class BibleAudio(): # pylint: disable=too-few-public-methods
+class AudioBible(): # pylint: disable=too-few-public-methods
     '''Corresponds to the dynamically created bible_audio tables in vachan Db(postgres)'''
-    audioId  = Column('bible_audio_id', Integer,
-        Sequence('bible_audio_id_seq', start=100001, increment=1), primary_key=True)
+    audioId  = Column('audio_id', Integer,
+        Sequence('audio_id_seq', start=100001, increment=1), primary_key=True)
     name = Column('name', String)
-    @declared_attr
-    def book_id(self):
-        '''FK column referncing bible contents'''
-        table_name = self.__tablename__.replace("_audio", "") #pylint: disable=E1101
-        return Column('book_id', Integer, ForeignKey(table_name+'.book_id'), unique=True)
-    url = Column('audio_link', String)
-    format = Column('audio_format', String)
-    active = Column('active', Boolean, default=True)
+    reference = Column('reference', JSONB)
+    refStart = Column('ref_start', Integer)
+    refEnd = Column('ref_end', Integer)
+    link = Column('link', String)
+    audioFormat = Column('audio_format', String)
+    metaData = Column('metadata', JSONB)
+    active = Column('active', Boolean)
+    createdUser = Column('created_user', String)
+    updatedUser = Column('last_updated_user', String)
+    createTime = Column('created_at', DateTime, default=ist_time)
+    updateTime = Column('last_updated_at', DateTime, onupdate= ist_time,default=ist_time)
     __table_args__ = {'extend_existing': True}
 
 class BibleContent(): # pylint: disable=too-few-public-methods
@@ -233,12 +237,6 @@ class BibleContent(): # pylint: disable=too-few-public-methods
         return relationship(BibleBook, uselist=False)
     USFM = Column('usfm', String)
     JSON = Column('json_object', JSON)
-    @declared_attr
-    def audio(self): # pylint: disable=E0213
-        '''For modelling the audio field in bible content classes'''
-        refering_table = self.__tablename__+"_audio" #pylint: disable=E1101
-        # return relationship(dynamicTables[refering_table], uselist=False)
-        return relationship(refering_table, uselist=False)
     active = Column('active', Boolean, default=True)
     __table_args__ = {'extend_existing': True}
 
@@ -284,9 +282,6 @@ class BibleContentCleaned(): # pylint: disable=too-few-public-methods
 def create_dynamic_table(resource_name, table_name, resource_type):
     '''To map or create one dynamic table based on the content Type'''
     if resource_type == ResourceTypeName.BIBLE.value:
-        dynamicTables[resource_name+'_audio'] = type(
-            table_name+'_audio',(BibleAudio, Base,),
-            {"__tablename__": table_name+'_audio'})
         dynamicTables[resource_name] = type(
             table_name,(BibleContent, Base,),
             {"__tablename__": table_name})
@@ -307,6 +302,9 @@ def create_dynamic_table(resource_name, table_name, resource_type):
     elif resource_type == ResourceTypeName.PARASCRIPTURAL.value:
         dynamicTables[resource_name] = type(
             table_name,(Parascriptural, Base,),{"__tablename__": table_name})
+    elif resource_type == ResourceTypeName.AUDIOBIBLE.value:
+        dynamicTables[resource_name] = type(
+            table_name,(AudioBible, Base,),{"__tablename__": table_name})
     elif resource_type == ResourceTypeName.SIGNBIBLEVIDEO.value:
         dynamicTables[resource_name] = type(
             table_name,(SignBibleVideo, Base,),{"__tablename__": table_name})

@@ -363,7 +363,7 @@ def test_delete_default():
 
     #Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}
-    response = client.delete(UNIT_URL + "?delete_id=" + str(version_id), headers=headers)
+    response = client.delete(UNIT_URL + "?version_id=" + str(version_id), headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
@@ -373,7 +373,7 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
-        response = client.delete(UNIT_URL + "?delete_id=" + str(version_id), headers=user_headers)
+        response = client.delete(UNIT_URL + "?version_id=" + str(version_id), headers=user_headers)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
@@ -382,7 +382,7 @@ def test_delete_default():
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.delete(UNIT_URL + "?delete_id=" + str(version_id), headers=headers_au)
+    response = client.delete(UNIT_URL + "?version_id=" + str(version_id), headers=headers_au)
     assert response.status_code == 200
     assert response.json()['message'] ==  \
         f"Version with identity {version_id} deleted successfully"
@@ -413,7 +413,7 @@ def test_delete_default_superadmin():
             }
 
     #Delete verison
-    response = client.delete(UNIT_URL + "?delete_id=" + str(version_id), headers=headers_sa)
+    response = client.delete(UNIT_URL + "?version_id=" + str(version_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] == \
     f"Version with identity {version_id} deleted successfully"
@@ -438,7 +438,7 @@ def test_delete_version_id_string():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
-    response = client.delete(UNIT_URL + "?delete_id=" + str(version_id), headers=headers_sa)
+    response = client.delete(UNIT_URL + "?version_id=" + str(version_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] == \
         f"Version with identity {version_id} deleted successfully"
@@ -451,19 +451,19 @@ def test_delete_incorrectdatatype():
     #Deleting created data
     version_id = response.json()['data']['versionId']
     version_id={ }
-    response = client.delete(UNIT_URL + "?delete_id=" + str(version_id), headers=headers_auth)
+    response = client.delete(UNIT_URL + "?version_id=" + str(version_id), headers=headers_auth)
     assert_input_validation_error(response)
 
 def test_delete_missingvalue_version_id():
     '''Negative Testcase. Passing input data without version Id'''
     version_id= " "
-    response = client.delete(UNIT_URL + "?delete_id=" + str(version_id), headers=headers_auth)
+    response = client.delete(UNIT_URL + "?version_id=" + str(version_id), headers=headers_auth)
     assert_input_validation_error(response)
 
 def test_delete_notavailable_version():
     ''' request a non existing version ID, Ensure there is no partial matching'''
     version_id=9999
-    response = client.delete(UNIT_URL + "?delete_id=" + str(version_id), headers=headers_auth)
+    response = client.delete(UNIT_URL + "?version_id=" + str(version_id), headers=headers_auth)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
 
@@ -507,7 +507,7 @@ def test_version_used_by_resource():
     version_response = client.get(UNIT_URL+'?version_abbreviation=TTT')
     version_id = version_response.json()[0]['versionId']
     data = {"itemId":version_id}
-    response = client.delete(UNIT_URL + "?delete_id=" + str(version_id), headers=headers_admin)
+    response = client.delete(UNIT_URL + "?version_id=" + str(version_id), headers=headers_admin)
     assert response.status_code == 409
     assert response.json()['error'] == 'Conflict'
     logout_user(token_admin)

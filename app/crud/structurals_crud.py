@@ -169,20 +169,18 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
     if db_restore.deletedFrom in content_class_map:
         model_cls = content_class_map[db_restore.deletedFrom]
     else:
-        if db_restore.deletedFrom.endswith("audio"):
-            renamed_table = db_restore.deletedFrom.replace("_audio", "")
-            if not  get_resources(db_, table_name = renamed_table):
-                raise NotAvailableException('Resource not found in database')
-        elif db_restore.deletedFrom.endswith("cleaned"):
+        if db_restore.deletedFrom.endswith("cleaned"):
             renamed_table = db_restore.deletedFrom.replace("_cleaned", "")
             if not  get_resources(db_, table_name = renamed_table):
                 raise NotAvailableException('Resource not found in database')
-        if db_restore.deletedFrom.endswith(("audio","cleaned")) is False:
+        if db_restore.deletedFrom.endswith(("cleaned")) is False:
             if not  get_resources(db_, table_name=db_restore.deletedFrom):
                 raise NotAvailableException('Resource not found in database')
             resource = get_resources(db_, table_name=db_restore.deletedFrom)[0]
             resource_name = resource.resourceName
-            if resource_name.endswith("bible") is False:
+            if resource_name.endswith("audiobible") is True:
+                model_cls = db_models.dynamicTables[resource.resourceName]
+            elif resource_name.endswith("bible") is False:
                 model_cls = db_models.dynamicTables[resource.resourceName]
             else:
                 model_cls = db_models.dynamicTables[resource.resourceName]
@@ -196,10 +194,6 @@ def restore_data(db_: Session, restored_item :schemas.RestoreIdentity):
                 db_content2 = utils.convert_dict_to_sqlalchemy(json_string2, model_cls2)
                 db_.add(db_content2)
                 db_.delete(db_restore2)
-        else:
-            resource_table = db_restore.deletedFrom.replace("_audio", "")
-            resource = get_resources(db_, table_name=resource_table)[0]
-            model_cls = db_models.dynamicTables[resource.resourceName+'_audio']
     db_content = utils.convert_dict_to_sqlalchemy(json_string, model_cls)
     db_.add(db_content)
     db_.delete(db_restore)
@@ -499,9 +493,6 @@ def create_resource(db_: Session, resource: schemas.ResourceCreate, user_id):
         db_models.dynamicTables[db_content.resourceName+'_cleaned'].__table__.create(
             bind=engine, checkfirst=True)
         log.warning("User %s, creates a new table %s", user_id, db_content.resourceName+'_cleaned')
-        db_models.dynamicTables[db_content.resourceName+'_audio'].__table__.create(
-            bind=engine, checkfirst=True)
-        log.warning("User %s, creates a new table %s", user_id, db_content.resourceName+'_audio')
     log.warning("User %s, creates a new table %s", user_id, db_content.resourceName)
     # db_.commit()
     # db_.refresh(db_content)
@@ -578,8 +569,6 @@ def update_resource(db_: Session, resource: schemas.ResourceEdit, user_id = None
         if resource.resourceName.split("_")[-1] == 'bible':
             db_models.dynamicTables[db_content.resourceName+'_cleaned'] = \
                 db_models.dynamicTables[resource.resourceName+'_cleaned']
-            db_models.dynamicTables[db_content.resourceName+'_audio'] = \
-                db_models.dynamicTables[resource.resourceName+'_audio']
     return db_content
 
 def delete_resource(db_: Session, delitem: int):
