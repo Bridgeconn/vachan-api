@@ -198,5 +198,5 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/bibles/{resource_name}/books/{book_code}/format/{output_format},GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
 /v2/bibles/{resource_name}/books/{book_code}/format/{output_format},GET,API-user,False,None,read-via-api
 /v2/files/usfm/to/{output_format},PUT,None,False,File Manipulation Ops,access-via-api
-/v2/restore,PUT,None,False,None,data-restore
-/v2/deleted-items,DELETE,None,False,None,delete/deactivate
+/v2/admin/restore,PUT,None,False,None,data-restore
+/v2/admin/cleanup,DELETE,None,False,None,delete/deactivate

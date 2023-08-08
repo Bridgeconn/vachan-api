@@ -16,7 +16,7 @@ RESOURCE_URL = '/v2/resources'
 headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json"}
-RESTORE_URL = '/v2/restore'
+RESTORE_URL = '/v2/admin/restore'
 
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''

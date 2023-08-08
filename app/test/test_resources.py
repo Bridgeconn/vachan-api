@@ -9,7 +9,7 @@ from .test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 from .conftest import initial_test_users
 
 UNIT_URL = '/v2/resources'
-RESTORE_URL = '/v2/restore'
+RESTORE_URL = '/v2/admin/restore'
 COMMENTARY_URL = '/v2/commentaries/'
 
 headers_auth = {"contentType": "application/json",

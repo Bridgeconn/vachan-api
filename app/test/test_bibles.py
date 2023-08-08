@@ -11,7 +11,7 @@ from .conftest import initial_test_users
 
 RESOURCE_URL = '/v2/resources'
 UNIT_URL = '/v2/bibles/'
-RESTORE_URL = '/v2/restore'
+RESTORE_URL = '/v2/admin/restore'
 headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json"}
