@@ -82,7 +82,7 @@ def get_gitlab_stream(request, repo, tag, file_path,permanent_link,**kwargs):#py
         headers={
             "Accept-Ranges": "bytes",
             "Content-Range": f"bytes {start_byte_requested}-{end_byte_planned}/{total_size}",
-            "Resource-Type": content_type[0]
+            "Content-Type": content_type[0]
         },
         status_code=206)
 
