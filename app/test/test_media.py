@@ -16,7 +16,6 @@ def media_common(endpoint,permanent_link, repo, file_path):
     '''test for media download endpoint'''
     # test without resource of repo in metadata
     response = client.get(UNIT_URL+endpoint+"?permanent_link="+permanent_link, headers=headers)
-    print("####", response.json())
     assert response.status_code == 404
     assert response.json()["error"] == "Requested Content Not Available"
 

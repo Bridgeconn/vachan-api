@@ -1220,7 +1220,7 @@ def get_bible_versification(db_, resource_name):
         }
     return response
 
-def get_available_bible_books(db_, resource_name,book_code=None, resource_type=None,#pylint: disable=too-many-locals
+def get_available_bible_books(db_, resource_name,book_code=None, content_type=None,#pylint: disable=too-many-locals
     biblecontent_id=None, **kwargs):
     '''fetches the contents of .._bible table based of provided resource_name and other options'''
     active = kwargs.get("active",True)
@@ -1237,14 +1237,14 @@ def get_available_bible_books(db_, resource_name,book_code=None, resource_type=N
         query = query.filter(model_cls.bookContentId  == biblecontent_id)
     if book_code:
         query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
-    if resource_type == "usfm":
+    if content_type == "usfm":
         query = query.options(defer(model_cls.JSON))
-    elif resource_type == "json":
+    elif content_type == "json":
         query = query.options(defer(model_cls.USFM))
-    elif resource_type == "all":
+    elif content_type == "all":
         query = query.filter(model_cls.active == active)
         fetched = query.offset(skip).limit(limit).all()
-    elif resource_type is None:
+    elif content_type is None:
         query = query.options(defer(model_cls.JSON), defer(model_cls.USFM))
     if not fetched:
         fetched = query.filter(model_cls.active == active).offset(skip).limit(limit).all()

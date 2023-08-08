@@ -462,12 +462,12 @@ def test_get_books_contenttype():
         assert "JSON" not in res
 
     #without auth
-    response = client.get(UNIT_URL+resource_name+'/books?resource_type=usfm')
+    response = client.get(UNIT_URL+resource_name+'/books?content_type=usfm')
     assert response.status_code == 401
     assert response.json()["error"] == "Authentication Error"
 
     #with auth
-    response = client.get(UNIT_URL+resource_name+'/books?resource_type=usfm',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'/books?content_type=usfm',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == len(gospel_books_data)
     for res in response.json():
@@ -475,7 +475,7 @@ def test_get_books_contenttype():
         assert "USFM" in res
         assert "JSON" not in res
 
-    response = client.get(UNIT_URL+resource_name+'/books?resource_type=json',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'/books?content_type=json',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == len(gospel_books_data)
     for res in response.json():
@@ -483,7 +483,7 @@ def test_get_books_contenttype():
         assert "USFM" not in res
         assert "JSON" in res
 
-    response = client.get(UNIT_URL+resource_name+'/books?resource_type=all',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'/books?content_type=all',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == len(gospel_books_data)
     for res in response.json():
@@ -523,7 +523,7 @@ def test_get_books_filter():
     assert_not_available_content(res3)
 
 def test_get_books_versification():
-    '''add some usfm and test get api based on book_code and active filters '''
+    '''add some usfm data and test get api based on book_code and active filters '''
     res, resource_name = check_post(gospel_books_data)
     assert res.status_code == 201
 

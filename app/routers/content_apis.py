@@ -555,20 +555,20 @@ async def edit_bible_book(request: Request,
 async def get_available_bible_book(request: Request,
     resource_name: schemas.TableNamePattern=Path(...,example="hi_IRV_1_bible"),
     book_code: schemas.BookCodePattern=Query(None, example="mat"),
-    resource_type: schema_content.BookResourceType=Query(None), active: bool=True,
+    content_type: schema_content.BookContentType=Query(None), active: bool=True,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
     '''Fetches all the books available(has been uploaded) in the specified bible
     * by default returns list of available(uploaded) books, without their contents
     * optional query parameters can be used to filter the result set
-    * returns the JSON, USFM and/or Audio contents also: if resourceType is given
+    * returns the JSON, USFM and/or Audio contents also: if contentType is given
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
     log.info('In get_available_bible_book')
     log.debug('resource_name: %s, book_code: %s, resourceType: %s, active:%s, skip: %s, limit: %s',
-        resource_name, book_code, resource_type, active, skip, limit)
-    return contents_crud.get_available_bible_books(db_, resource_name, book_code, resource_type,
+        resource_name, book_code, content_type, active, skip, limit)
+    return contents_crud.get_available_bible_books(db_, resource_name, book_code, content_type,
         active=active, skip = skip, limit = limit)
 
 @router.delete('/v2/bibles/{resource_name}/books',response_model=schemas.DeleteResponse,
