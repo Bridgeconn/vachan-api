@@ -524,7 +524,7 @@ def test_language_used_by_resource():
 
     #Create Source with language
     resource_data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": language_code,
         "version": "TTT",
         "revision": 1,

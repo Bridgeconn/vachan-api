@@ -151,7 +151,7 @@ async def get_data(db_, request, language_code, sentence_list, **kwargs):
             resource_name=None,
             books=None,
             language_code=language_code,
-            content_type=None,
+            resource_type=None,
             skip=0, limit=100000,
             user_details=kwargs.get('user_details'),
             db_=db_, operates_on=schema_auth.ResourceType.CONTENT.value)
@@ -319,7 +319,7 @@ async def generate_stopwords(db_: Session, request: Request, *args, user_details
                 }
             update_job(db_, job_id, user_id, update_args)
             raise NotAvailableException(f'{resource_name} not found in database.')
-        if not resource_name.endswith(db_models.ContentTypeName.VOCABULARY.value):
+        if not resource_name.endswith(db_models.ResourceTypeName.VOCABULARY.value):
             update_args["output"]= {
                 "message": 'The operation is supported only on vocabularies',
                 "resource_name": resource_name,"data": None

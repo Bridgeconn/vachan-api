@@ -111,7 +111,7 @@ def test_default_post_put_get():
     }
     add_version(version_data)
     resource_data = {
-        "contentType": "bible",
+        "resourceType": "bible",
         "language": "gu",
         "version": "TTT",
         "year": 3030,

@@ -26,7 +26,7 @@ def media_common(endpoint,permanent_link, repo, file_path):
     }
     add_version(version_data)
     resource_data = {
-        "contentType": "gitlabrepo",
+        "resourceType": "gitlabrepo",
         "language": "en",
         "version": "TTT",
         "versionTag": 1,

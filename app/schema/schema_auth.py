@@ -9,7 +9,7 @@ class ResourceType(str, Enum):
     '''Classify DB resources for defineing access rights on them'''
     METACONTENT = "meta contents like licences, languages, versions or content types"
     CONTENT = \
-        "contents like bibles, commentaries, parascripturals , vocabularies or sign bible videos"
+        "resource_types like bibles, commentaries, parascripturals , vocabularies or sign bible videos"
     PROJECT = "Ag or translation project"
     USER = "all users in our system (Kratos)"
     TRANSLATION = "generic translation apis"

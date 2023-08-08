@@ -23,14 +23,14 @@ class ErrorResponse(BaseModel):
             }
         }
 
-class ContentTypeCreate(BaseModel):
-    '''Input object to ceate a new content type'''
-    contentType : constr(regex=r"^[a-z]+$") = Field(...,example="commentary")
+class ResourceTypeCreate(BaseModel):
+    '''Input object to ceate a new resource type'''
+    resourceType : constr(regex=r"^[a-z]+$") = Field(...,example="commentary")
 
-class ContentType(BaseModel):
-    '''output object for content types'''
-    contentId : int
-    contentType : str
+class ResourceType(BaseModel):
+    '''output object for resource types'''
+    resourcetypeId : int
+    resourceType : str
     createdUser : str = None
     class Config:
         '''For SQL Alchemy'''
@@ -38,16 +38,16 @@ class ContentType(BaseModel):
         # '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "contentId": 1,
-                "contentType": "commentary",
+                "resourcetypeId": 1,
+                "resourceType": "commentary",
                 "createdUser": "token"
             }
         }
 
-class ContentTypeUpdateResponse(BaseModel):
-    '''Object usedtTo update content type'''
-    message: str = Field(...,example="Content type created successfully")
-    data: ContentType = None
+class ResourceTypeUpdateResponse(BaseModel):
+    '''Object usedtTo update resource type'''
+    message: str = Field(...,example="Resource_type created successfully")
+    data: ResourceType = None
 
 LangCodePattern =constr(regex=r"^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
 class Direction(str, Enum):
@@ -174,7 +174,7 @@ class DeletedItemResponse(BaseModel):
         }
 
 class DeleteResponse(BaseModel):
-    """Content delete response"""
+    """ResourceType delete response"""
     message:str
     data: DeletedItemResponse = None
 
@@ -395,7 +395,7 @@ class ResourceLabel(str, Enum):
 
 class ResourceCreate(BaseModel):
     '''Input object of resources'''
-    contentType : str
+    resourceType : str
     language : LangCodePattern
     version : VersionPattern
     versionTag: VersionTagPattern = "1"
@@ -408,7 +408,7 @@ class ResourceCreate(BaseModel):
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "contentType": "commentary",
+                "resourceType": "commentary",
                 "language": "en",
                 "version": "KJV",
                 "versionTag": "1611.12.31",
@@ -424,7 +424,7 @@ class ResourceResponse(BaseModel):
     '''Output object of resources'''
     resourceId : int
     resourceName : TableNamePattern
-    contentType : ContentType = None
+    resourceType : ResourceType = None
     language : LanguageResponse = None
     version : VersionResponse = None
     # revision: str = "1"
@@ -442,7 +442,7 @@ class ResourceResponse(BaseModel):
             "example": {
                 "resourceId" : 100090,
                 "resourceName": "en_KJV_1_commentary",
-                "contentType": {},
+                "resourceType": {},
                 "language": {},
                 "version": {},
                 "latest":True,

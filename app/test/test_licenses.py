@@ -437,7 +437,7 @@ def test_license_used_by_resource():
 
     #Create Source with license
     resource_data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "en",
         "version": "TTT",
         "revision": 1,

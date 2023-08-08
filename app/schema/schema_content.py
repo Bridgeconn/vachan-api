@@ -215,7 +215,7 @@ class BibleVerse(BaseModel):
         }
 
 class BookContentType(str, Enum):
-    '''choices for bible content types'''
+    '''choices for bible resource types'''
     USFM = 'usfm'
     JSON = 'json'
     AUDIO = 'audio'
@@ -528,7 +528,6 @@ class ParascripturalCreate(BaseModel):
                 "active": True
             }
         }
-
 class AudioBibleResponse(BaseModel):
     '''Response object of audio bibles'''
     audioId : int
@@ -608,6 +607,7 @@ class AudioBibleCreate(BaseModel):
                 "active": True
             }
         }
+
 class SignVideoResponse(BaseModel):
     '''Response object of sign bible videos'''
     signVideoId : int

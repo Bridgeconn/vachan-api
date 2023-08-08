@@ -1,7 +1,7 @@
 '''Test cases for commentaries related APIs'''
 import time
 from app.main import log
-from . import client, contetapi_get_accessrule_checks_app_userroles
+from . import client, resourcetypeapi_get_accessrule_checks_app_userroles
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
 from .test_versions import check_post as add_version
@@ -37,7 +37,7 @@ def check_post(data: list):
     }
     add_version(version_data)
     resource_data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -536,7 +536,7 @@ def test_created_user_can_only_edit():
     }
     add_version(version_data)
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         'language': 'ml',
         "version": "TTT",
         "year": 2020
@@ -586,7 +586,7 @@ def test_get_access_with_user_roles_and_apps():
     data = [
     	{'bookCode':'gen', 'chapter':0, 'commentary':'book intro to Genesis'}
     ]
-    contetapi_get_accessrule_checks_app_userroles("commentary",UNIT_URL,data)
+    resourcetypeapi_get_accessrule_checks_app_userroles("commentary",UNIT_URL,data)
 
 def test_delete_default():
     ''' positive test case, checking for correct return of deleted commentary ID'''

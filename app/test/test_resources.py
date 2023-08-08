@@ -19,9 +19,9 @@ headers_auth = {"contentType": "application/json",
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
     assert "resourceName" in item
-    assert "contentType" in item
-    assert "contentId" in item['contentType']
-    assert "contentType" in item['contentType']
+    assert "resourceType" in item
+    assert "resourcetypeId" in item['resourceType']
+    assert "resourceType" in item['resourceType']
     assert "language" in item
     assert "code" in item["language"]
     assert "language" in item['language']
@@ -55,7 +55,7 @@ def assert_positive_get(item):
         else:
             tag = item['version']['versionTag']
     parts = [item['language']['code'], item['version']['versionAbbreviation'],
-        tag, item['contentType']['contentType']]
+        tag, item['resourceType']['resourceType']]
     table_name = "_".join(parts)
     assert item["resourceName"] == table_name
 
@@ -93,7 +93,7 @@ def test_post_default():
     }
     add_version(version_data)
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -114,7 +114,7 @@ def test_post_wrong_version():
     }
     add_version(version_data)
     data1 = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTD",
         "versionTag": 1,
@@ -130,7 +130,7 @@ def test_post_wrong_version():
     assert response.json()['details'] == "Version, TTD 1, not found in Database"
 
     data2 = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "versionTag": 2,
@@ -144,7 +144,7 @@ def test_post_wrong_version():
     assert response.json()['details'] == "Version, TTT 2, not found in Database"
 
     data3 = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -162,7 +162,7 @@ def test_post_wrong_lang():
     }
     add_version(version_data)
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "aaj",
         "version": "TTT",
         "versionTag": 1,
@@ -178,14 +178,14 @@ def test_post_wrong_lang():
     assert response.json()['details'] == "Language code, aaj, not found in Database"
 
 def test_post_wrong_content():
-    '''Negative test with not available content type'''
+    '''Negative test with not available resource type'''
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version",
     }
     add_version(version_data)
     data = {
-        "contentType": "bibl",
+        "resourceType": "bibl",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -197,11 +197,11 @@ def test_post_wrong_content():
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
-    assert response.json()['details'] == "ContentType, bibl, not found in Database"
+    assert response.json()['details'] == "ResourceType, bibl, not found in Database"
 
     # '''Negative test with not a valid license from license table'''
     data = {
-        "contentType": "vocabulary",
+        "resourceType": "vocabulary",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -222,7 +222,7 @@ def test_post_wrong_label():
     }
     add_version(version_data)
     data = {
-        "contentType": "bible",
+        "resourceType": "bible",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -242,7 +242,7 @@ def test_post_multiple_labels():
     }
     add_version(version_data)
     data = {
-        "contentType": "bible",
+        "resourceType": "bible",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -268,7 +268,7 @@ def test_post_wrong_label_format():
     }
     add_version(version_data)
     data = {
-        "contentType": "bible",
+        "resourceType": "bible",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -284,7 +284,7 @@ def test_post_wrong_label_format():
 def test_post_wrong_year():
     '''Negative test with text in year field'''
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -300,7 +300,7 @@ def test_post_wrong_year():
 def test_post_wrong_metadata():
     '''Negative test with incorrect format for metadata'''
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -327,7 +327,7 @@ def test_post_missing_mandatory_info():
 
     # no language
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "version": "TTT",
         "versionTag": 1,
         "year": 2020
@@ -337,7 +337,7 @@ def test_post_missing_mandatory_info():
 
     # no version
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "versionTag": 1,
         "year": 2020
@@ -347,7 +347,7 @@ def test_post_missing_mandatory_info():
 
     # no year
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT"
     }
@@ -363,7 +363,7 @@ def test_post_missing_some_info():
     }
     add_version(version_data)
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "year": 2020
@@ -378,7 +378,7 @@ def test_post_duplicate():
     }
     add_version(version_data)
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "year": 2020
@@ -399,7 +399,7 @@ def test_put_default():
     version_data['versionTag'] = 2
     add_version(version_data)
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         'language': 'ml',
         "version": "TTT",
         "year": 2020
@@ -449,14 +449,14 @@ def test_put_default():
     assert response.json()['data']['labels'] == ["test"]
 
 def test_post_put_gitlab_resource():
-    '''Positive test for gitlab content type'''
+    '''Positive test for gitlab resource type'''
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version",
     }
     add_version(version_data)
     data = {
-        "contentType": "gitlabrepo",
+        "resourceType": "gitlabrepo",
         "language": "hi",
         "version": "TTT",
         "year": 2020
@@ -523,7 +523,7 @@ def test_created_user_can_only_edit():
     version_data['versionTag'] = 2
     add_version(version_data)
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         'language': 'ml',
         "version": "TTT",
         "year": 2020
@@ -566,7 +566,7 @@ def test_soft_delete():
     }
     add_version(version_data)
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         'language': 'ml',
         "version": "TTT",
         "year": 2020
@@ -615,7 +615,7 @@ def test_get_after_adding_data(): #pylint: disable=too-many-statements
     }
     add_version(version_data)
     data = {
-        "contentType": "vocabulary",
+        "resourceType": "vocabulary",
         "version": "TTT",
         "year": 2020
     }
@@ -630,7 +630,7 @@ def test_get_after_adding_data(): #pylint: disable=too-many-statements
         data['language'] = lang
         check_post(data)
 
-    data['contentType'] = 'commentary'
+    data['resourceType'] = 'commentary'
     data['versionTag'] = 1
     data['metaData'] = {'owner': 'myself'}
     data['license'] = "ISC"
@@ -643,11 +643,11 @@ def test_get_after_adding_data(): #pylint: disable=too-many-statements
     headers = {"contentType": "application/json", "accept": "application/json"}
     # filter with contentType
     #without auth
-    response = client.get(UNIT_URL + "?content_type=commentary&version_abbreviation=TTT"+
+    response = client.get(UNIT_URL + "?resource_type=commentary&version_abbreviation=TTT"+
         "&latest_revision=false",headers=headers)
     assert_not_available_content(response)
     #with auth
-    response = client.get(UNIT_URL + "?content_type=commentary&version_abbreviation=TTT"+
+    response = client.get(UNIT_URL + "?resource_type=commentary&version_abbreviation=TTT"+
         "&latest_revision=false",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) >= 3
@@ -728,7 +728,7 @@ def test_get_resource_filter_access_tag():
     }
     add_version(version_data)
     data = {
-        "contentType": "vocabulary",
+        "resourceType": "vocabulary",
         "version": "TTT",
         "year": 2020,
         "accessPermissions": [
@@ -807,7 +807,7 @@ def test_diffrernt_resources_with_app_and_roles(): #pylint: disable=too-many-sta
     }
     add_version(version_data)
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -1247,7 +1247,7 @@ def test_version_tag():
     add_version(data)
 
     resource_data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "XYZ",
         "versionTag": 1,
@@ -1288,7 +1288,7 @@ def test_version_tag_sorting_numeric():
         add_version(data)
 
     resource_data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "year": 2020,
@@ -1322,7 +1322,7 @@ def test_version_tag_sorting_dates():
         add_version(data)
 
     resource_data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "year": 2020,

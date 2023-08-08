@@ -28,7 +28,7 @@ def get_commentaries(db_: Session,**kwargs):
     limit = kwargs.get("limit",100)
     if resource_name not in db_models.dynamicTables:
         raise NotAvailableException(f'{resource_name} not found in database.')
-    if not resource_name.endswith(db_models.ContentTypeName.COMMENTARY.value):
+    if not resource_name.endswith(db_models.ResourceTypeName.COMMENTARY.value):
         raise TypeException('The operation is supported only on commentaries')
     model_cls = db_models.dynamicTables[resource_name]
     query = db_.query(model_cls)
@@ -64,7 +64,7 @@ def upload_commentaries(db_: Session, resource_name, commentaries, job_id, user_
 
     resource_db_content = db_.query(db_models.Resource).filter(
         db_models.Resource.resourceName == resource_name).first()
-    if resource_db_content.contentType.contentType != db_models.ContentTypeName.COMMENTARY.value:
+    if resource_db_content.resourceType.resourceType != db_models.ResourceTypeName.COMMENTARY.value:
         update_args["output"]= {
                 "message": 'The operation is supported only on commentaries',
                 "resource_name": resource_name,"data": None}
@@ -139,7 +139,7 @@ def update_commentaries(db_: Session, resource_name, commentaries,job_id, user_i
     update_job(db_, job_id, user_id, update_args)
     update_args = {"status" : schemas_nlp.JobStatus.ERROR.value,
                     "endTime": datetime.now(),"output": {}}
-    if resource_db_content.contentType.contentType != db_models.ContentTypeName.COMMENTARY.value:
+    if resource_db_content.resourceType.resourceType != db_models.ResourceTypeName.COMMENTARY.value:
         update_args["output"]= {"message": 'The operation is supported only on commentaries',
                 "resource_name": resource_name,"data": None}
         update_job(db_, job_id, user_id, update_args)
@@ -226,7 +226,7 @@ def get_vocabulary_words(db_:Session,**kwargs):#pylint: disable=too-many-locals
     limit = kwargs.get("limit",100)
     if resource_name not in db_models.dynamicTables:
         raise NotAvailableException(f'{resource_name} not found in database.')
-    if not resource_name.endswith(db_models.ContentTypeName.VOCABULARY.value):
+    if not resource_name.endswith(db_models.ResourceTypeName.VOCABULARY.value):
         raise TypeException('The operation is supported only on vocabularies')
     model_cls = db_models.dynamicTables[resource_name]
     if word_list_only:
@@ -268,7 +268,7 @@ def upload_vocabulary_words(db_: Session, resource_name, vocabulary_words, user_
         db_models.Resource.resourceName == resource_name).first()
     if not resource_db_content:
         raise NotAvailableException(f'Resource {resource_name}, not found in database')
-    if resource_db_content.contentType.contentType != db_models.ContentTypeName.VOCABULARY.value:
+    if resource_db_content.resourceType.resourceType != db_models.ResourceTypeName.VOCABULARY.value:
         raise TypeException('The operation is supported only on vocabularies')
     model_cls = db_models.dynamicTables[resource_name]
     db_content = []
@@ -294,7 +294,7 @@ def update_vocabulary_words(db_: Session, resource_name, vocabulary_words, user_
         db_models.Resource.resourceName == resource_name).first()
     if not resource_db_content:
         raise NotAvailableException(f'Resource {resource_name}, not found in database')
-    if resource_db_content.contentType.contentType != db_models.ContentTypeName.VOCABULARY.value:
+    if resource_db_content.resourceType.resourceType != db_models.ResourceTypeName.VOCABULARY.value:
         raise TypeException('The operation is supported only on vocabularies')
     model_cls = db_models.dynamicTables[resource_name]
     db_content = []
@@ -364,7 +364,7 @@ def get_parascripturals(db_:Session, resource_name, category=None, title=None,**
     parascript_id=kwargs.get("parascript_id",None)
     if resource_name not in db_models.dynamicTables:
         raise NotAvailableException(f'{resource_name} not found in database.')
-    if not resource_name.endswith(db_models.ContentTypeName.PARASCRIPTURAL.value):
+    if not resource_name.endswith(db_models.ResourceTypeName.PARASCRIPTURAL.value):
         raise TypeException('The operation is supported only on parascripturals')
     model_cls = db_models.dynamicTables[resource_name]
     query = db_.query(model_cls)
@@ -416,8 +416,8 @@ def upload_parascripturals(db_: Session, resource_name, parascriptural, user_id=
         db_models.Resource.resourceName == resource_name).first()
     if not resource_db_content:
         raise NotAvailableException(f'Resource {resource_name}, not found in database')
-    if resource_db_content.contentType.contentType != \
-        db_models.ContentTypeName.PARASCRIPTURAL.value:
+    if resource_db_content.resourceType.resourceType != \
+        db_models.ResourceTypeName.PARASCRIPTURAL.value:
         raise TypeException('The operation is supported only on parascripturals')
     model_cls = db_models.dynamicTables[resource_name]
     db_content = []
@@ -475,8 +475,8 @@ def update_parascripturals(db_: Session, resource_name, parascripturals, user_id
         db_models.Resource.resourceName == resource_name).first()
     if not resource_db_content:
         raise NotAvailableException(f'Resource {resource_name}, not found in database')
-    if resource_db_content.contentType.contentType != \
-        db_models.ContentTypeName.PARASCRIPTURAL.value:
+    if resource_db_content.resourceType.resourceType != \
+        db_models.ResourceTypeName.PARASCRIPTURAL.value:
         raise TypeException('The operation is supported only on parascripturals')
     model_cls = db_models.dynamicTables[resource_name]
     db_content = []
@@ -555,7 +555,7 @@ def get_audio_bible(db_:Session, resource_name, name=None,**kwargs): #pylint: di
     audio_id=kwargs.get("audio_id",None)
     if resource_name not in db_models.dynamicTables:
         raise NotAvailableException(f'{resource_name} not found in database.')
-    if not resource_name.endswith(db_models.ContentTypeName.AUDIOBIBLE.value):
+    if not resource_name.endswith(db_models.ResourceTypeName.AUDIOBIBLE.value):
         raise TypeException('The operation is supported only on audio bibles')
     model_cls = db_models.dynamicTables[resource_name]
     query = db_.query(model_cls)
@@ -602,8 +602,8 @@ def upload_audio_bible(db_: Session, resource_name, audiobibles, user_id=None):
         db_models.Resource.resourceName == resource_name).first()
     if not resource_db_content:
         raise NotAvailableException(f'Resource {resource_name}, not found in database')
-    if resource_db_content.contentType.contentType != \
-        db_models.ContentTypeName.AUDIOBIBLE.value:
+    if resource_db_content.resourceType.resourceType != \
+        db_models.ResourceTypeName.AUDIOBIBLE.value:
         raise TypeException('The operation is supported only on audio bibles')
     model_cls = db_models.dynamicTables[resource_name]
     db_content = []
@@ -659,8 +659,8 @@ def update_audio_bible(db_: Session, resource_name, audiobibles, user_id=None): 
         db_models.Resource.resourceName == resource_name).first()
     if not resource_db_content:
         raise NotAvailableException(f'Resource {resource_name}, not found in database')
-    if resource_db_content.contentType.contentType != \
-        db_models.ContentTypeName.AUDIOBIBLE.value:
+    if resource_db_content.resourceType.resourceType != \
+        db_models.ResourceTypeName.AUDIOBIBLE.value:
         raise TypeException('The operation is supported only on audio bibles')
     model_cls = db_models.dynamicTables[resource_name]
     db_content = []
@@ -738,7 +738,7 @@ def get_sign_bible_videos(db_:Session, resource_name, title=None,**kwargs): #pyl
     signvideo_id=kwargs.get("signvideo_id",None)
     if resource_name not in db_models.dynamicTables:
         raise NotAvailableException(f'{resource_name} not found in database.')
-    if not resource_name.endswith(db_models.ContentTypeName.SIGNBIBLEVIDEO.value):
+    if not resource_name.endswith(db_models.ResourceTypeName.SIGNBIBLEVIDEO.value):
         raise TypeException('The operation is supported only on sign bible videos')
     model_cls = db_models.dynamicTables[resource_name]
     query = db_.query(model_cls)
@@ -785,8 +785,8 @@ def upload_sign_bible_videos(db_: Session, resource_name, signvideos, user_id=No
         db_models.Resource.resourceName == resource_name).first()
     if not resource_db_content:
         raise NotAvailableException(f'Resource {resource_name}, not found in database')
-    if resource_db_content.contentType.contentType != \
-        db_models.ContentTypeName.SIGNBIBLEVIDEO.value:
+    if resource_db_content.resourceType.resourceType != \
+        db_models.ResourceTypeName.SIGNBIBLEVIDEO.value:
         raise TypeException('The operation is supported only on sign bible videos')
     model_cls = db_models.dynamicTables[resource_name]
     db_content = []
@@ -842,8 +842,8 @@ def update_sign_bible_videos(db_: Session, resource_name, signvideos, user_id=No
         db_models.Resource.resourceName == resource_name).first()
     if not resource_db_content:
         raise NotAvailableException(f'Resource {resource_name}, not found in database')
-    if resource_db_content.contentType.contentType != \
-        db_models.ContentTypeName.SIGNBIBLEVIDEO.value:
+    if resource_db_content.resourceType.resourceType != \
+        db_models.ResourceTypeName.SIGNBIBLEVIDEO.value:
         raise TypeException('The operation is supported only on sign bible videos')
     model_cls = db_models.dynamicTables[resource_name]
     db_content = []
@@ -1027,7 +1027,7 @@ def upload_bible_books(db_: Session, resource_name, books, user_id=None):#pylint
         db_models.Resource.resourceName == resource_name).first()
     if not resource_db_content:
         raise NotAvailableException(f'Resource {resource_name}, not found in database')
-    if resource_db_content.contentType.contentType != db_models.ContentTypeName.BIBLE.value:
+    if resource_db_content.resourceType.resourceType != db_models.ResourceTypeName.BIBLE.value:
         raise TypeException('The operation is supported only on bible')
     model_cls_2 = db_models.dynamicTables[resource_name+'_cleaned']
     db_content = []
@@ -1114,7 +1114,7 @@ def update_bible_books(db_: Session, resource_name, books, user_id=None):
         db_models.Resource.resourceName == resource_name).first()
     if not resource_db_content:
         raise NotAvailableException(f'Resource {resource_name}, not found in database')
-    if resource_db_content.contentType.contentType != db_models.ContentTypeName.BIBLE.value:
+    if resource_db_content.resourceType.resourceType != db_models.ResourceTypeName.BIBLE.value:
         raise TypeException('The operation is supported only on bible')
     # update the bible table
     model_cls = db_models.dynamicTables[resource_name]
@@ -1330,12 +1330,12 @@ def extract_text(db_:Session, tables, books, skip=0, limit=100):
     The text column would be determined based on the table type'''
     sentence_list = []
     for table in tables:
-        if table.contentType.contentType == db_models.ContentTypeName.BIBLE.value:
+        if table.resourceType.resourceType == db_models.ResourceTypeName.BIBLE.value:
             model_cls = db_models.dynamicTables[table.resourceName+'_cleaned']
             query = db_.query(model_cls.refId.label('sentenceId'),
                 model_cls.ref_string.label('surrogateId'),
                 model_cls.verseText.label('sentence')).join(model_cls.book)
-        elif table.contentType.contentType == db_models.ContentTypeName.COMMENTARY.value:
+        elif table.resourceType.resourceType == db_models.ResourceTypeName.COMMENTARY.value:
             model_cls = db_models.dynamicTables[table.resourceName]
             query = db_.query(model_cls.commentaryId.label('sentenceId'),
                 model_cls.ref_string.label('surrogateId'),

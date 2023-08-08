@@ -199,8 +199,8 @@ def assert_not_available_content_gql(item):
     assert len(item) == 0
 
 
-def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , bible = False):
-    """checks for content api access based on user roles and apps"""
+def resourcetypeapi_get_accessrule_checks_app_userroles(resourcetype, UNIT_URL, data , bible = False):
+    """checks for resource api access based on user roles and apps"""
     from .test_versions import check_post as add_version
     from .conftest import initial_test_users
     from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER
@@ -217,7 +217,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
     }
     add_version(version_data)
     resource_data = {
-        "contentType": contenttype,
+        "resourceType": resourcetype,
         "language": "",
         "version": "TTT",
         "revision": 1,
@@ -247,7 +247,7 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
         assert response.json()['message'] == "Resource created successfully"
         resp_data = response.json()['data']['metaData']
         assert permission_list[num]  in resp_data['accessPermissions']
-        resource_name = language_list[num] + "_TTT_1_" + contenttype
+        resource_name = language_list[num] + "_TTT_1_" + resourcetype
         resourcename_list.append(resource_name)
 
         if bible :
@@ -271,8 +271,8 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
     #permision -------------------------> content , downloadable , derivable
     print("resource respectivily for -------------------------> \
         content(en) , downloadable(ab) , derivable(af)")
-    test_permissions_list  = ["en_TTT_1_" + contenttype , "ab_TTT_1_" + contenttype ,
-                                "af_TTT_1_" + contenttype]
+    test_permissions_list  = ["en_TTT_1_" + resourcetype , "ab_TTT_1_" + resourcetype ,
+                                "af_TTT_1_" + resourcetype]
     for i in range(len(test_permissions_list)):
         headers_auth = {"contentType": "application/json",
                 "accept": "application/json"}  
@@ -1234,8 +1234,8 @@ def contetapi_get_accessrule_checks_app_userroles(contenttype, UNIT_URL, data , 
     print(f"Test passed -----> BCS DEVELOPER")
 
 ###############################################################################################################
-def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, content_data, test_data, bible = False):
-    """checks for content api access based on user roles and apps"""
+def resourcetypeapi_get_accessrule_checks_app_userroles_gql(resourcetype, content_qry, content_data, test_data, bible = False):
+    """checks for resource api access based on user roles and apps"""
     from .test_gql_resources import SOURCE_GLOBAL_QUERY
     from .conftest import initial_test_users
     from app.graphql_api import types
@@ -1255,7 +1255,7 @@ def contetapi_get_accessrule_checks_app_userroles_gql(contenttype, content_qry, 
 
     resource_data = {
   "object": {
-    "contentType": contenttype,
+    "resourceType": resourcetype,
     "language": "hi",
     "version": "TTT",
     "year": 2020,

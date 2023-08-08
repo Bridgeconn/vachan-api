@@ -1,7 +1,7 @@
 '''Test cases for bible videos related APIs'''
 import re
 # from urllib import response
-from . import client , contetapi_get_accessrule_checks_app_userroles
+from . import client , resourcetypeapi_get_accessrule_checks_app_userroles
 from . import check_default_get
 from . import assert_input_validation_error, assert_not_available_content
 from .test_resources import check_post as add_resource
@@ -47,6 +47,7 @@ def assert_positive_get_for_verse(item):
     assert "chapter" in item['reference']
     assert "verseNumber" in item['reference']
 
+
 def check_post(data: list, datatype='books'):
     '''prior steps and post attempt, without checking the response'''
     version_data = {
@@ -55,7 +56,7 @@ def check_post(data: list, datatype='books'):
     }
     add_version(version_data)
     resource_data = {
-        "contentType": "bible",
+        "resourceType": "bible",
         "language": "gu",
         "version": "TTT",
         "year": 3030,
@@ -333,6 +334,7 @@ def test_post_incorrect_data():
     response = client.post(UNIT_URL+resource_name2+'/books', headers=headers, json=[])
     assert response.status_code == 404
 
+
 def test_put_books():
     '''adds some books and change them using put APIs'''
     resp, src = check_post(gospel_books_data)
@@ -436,6 +438,7 @@ def test_upload_book_after_resource_update():
     assert response.status_code == 201
     assert response.json()['message'] == "Bible books uploaded and processed successfully"
 
+
 def test_get_books_contenttype():
     '''Add some books data into the table and do content type related get tests'''
     res, resource_name = check_post(gospel_books_data)
@@ -443,7 +446,7 @@ def test_get_books_contenttype():
     # headers = {"contentType": "application/json", "accept": "application/json"}
     check_default_get(UNIT_URL+resource_name+"/books", headers_auth,assert_positive_get_for_books)
 
-    # content_type
+    # resource_type
     #without auth   
     response = client.get(UNIT_URL+resource_name+'/books',headers=headers)
     assert response.status_code == 401
@@ -487,7 +490,6 @@ def test_get_books_contenttype():
         assert_positive_get_for_books(res)
         assert "USFM" in res
         assert "JSON" in res
-
     # not available
     response = client.get(UNIT_URL+resource_name+'/books?book_code=jud',headers=headers_auth)
     assert_not_available_content(response)
@@ -582,6 +584,7 @@ def test_get_verses():
     response = client.get(UNIT_URL+resource_name+'/verses?book_code=act&chapter=1&verse=10',headers=headers_auth)
     assert_not_available_content(response)
 
+
 def test_book_delete():
     '''add data, update active field with put and try get apis with active filters'''
 
@@ -620,9 +623,11 @@ def test_book_delete():
     res2 = client.get(UNIT_URL+resource+'/verses?book_code=mat',headers=headers_auth)
     assert_not_available_content(res1)
     assert_not_available_content(res2)
+
     res3 = client.get(UNIT_URL+resource+'/books?content_type=all',headers=headers_auth)
     assert res3.status_code == 200
     assert len(res3.json()) == 3
+
 
 def test_created_user_can_only_edit():
     """only created user and SA can only edit"""
@@ -642,7 +647,7 @@ def test_created_user_can_only_edit():
     }
     add_version(version_data)
     resource_data = {
-        "contentType": "bible",
+        "resourceType": "bible",
         "language": "gu",
         "version": "TTT",
         "year": 3030,
@@ -677,7 +682,7 @@ def test_get_access_with_user_roles_and_apps():
     data = [
     	    {"USFM":"\\id mat\n\\c 1\n\\p\n\\v 1 test verse one\n\\v 2 test verse two"}
     ]
-    contetapi_get_accessrule_checks_app_userroles("bible",UNIT_URL,data, bible=True)
+    resourcetypeapi_get_accessrule_checks_app_userroles("bible",UNIT_URL,data, bible=True)
 
 def test_delete_default():
     ''' positive test case, checking for correct return of deleted biblebook ID'''

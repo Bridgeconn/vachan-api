@@ -1,5 +1,5 @@
 '''Test cases for bible audios related APIs'''
-from . import client , contetapi_get_accessrule_checks_app_userroles
+from . import client , resourcetypeapi_get_accessrule_checks_app_userroles
 from . import check_default_get
 from . import assert_input_validation_error, assert_not_available_content
 from .test_versions import check_post as add_version
@@ -28,7 +28,7 @@ def check_post(data: list):
     }
     add_version(version_data)
     resource_data = {
-        "contentType": "audiobible",
+        "resourceType": "audiobible",
         "language": "ins",
         "version": "TTT",
         "year": 2020,
@@ -597,7 +597,7 @@ def test_created_user_can_only_edit():
     }
     add_version(version_data)
     data = {
-        "contentType": "audiobible",
+        "resourceType": "audiobible",
         'language': 'ml',
         "version": "TTT",
         "year": 2020
@@ -646,7 +646,7 @@ def test_get_access_with_user_roles_and_apps():
     	{'name':"12 apostles",
         "link":"http://somewhere.com/something"}
     ]
-    contetapi_get_accessrule_checks_app_userroles("audiobible",UNIT_URL,data)
+    resourcetypeapi_get_accessrule_checks_app_userroles("audiobible",UNIT_URL,data)
 
 def test_soft_delete():
     '''check soft delete in audiobibles'''

@@ -59,7 +59,7 @@ def create_resources():
     }
     add_version(version_data)
     resource_data = {
-        "contentType": "bible",
+        "resourceType": "bible",
         "language": "hi",
         "version": "TTT",
         "year": 2020,
@@ -72,7 +72,7 @@ def create_resources():
     assert resp.status_code == 201
 
     resource_data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "en",
         "version": "TTT",
         "year": 2020,
@@ -123,7 +123,7 @@ def test_get_poisitive():
 		assert_positive_get(item)
 	assert 0 < len(only_hi) <= len(full_resp)
 
-	resp = client.get(SENT_URL+"?content_type=commentary", headers=headers_auth)
+	resp = client.get(SENT_URL+"?resource_type=commentary", headers=headers_auth)
 	assert resp.status_code == 200
 	only_commentary = resp.json()
 	for item in only_commentary:
@@ -187,7 +187,7 @@ def test_get_negatives():
 	assert resp.status_code == 404
 
 	# wrong content
-	resp = client.get(SENT_URL+'?content_type=usfm&books=mat', headers=headers_auth)
+	resp = client.get(SENT_URL+'?resource_type=usfm&books=mat', headers=headers_auth)
 	assert resp.status_code == 404
 
 	# wrong lang

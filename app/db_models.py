@@ -19,8 +19,8 @@ ist_time = datetime.now(timezone("Asia/Kolkata")).strftime('%Y-%m-%d %H:%M:%S')
 
 dynamicTables = {}
 
-class ContentTypeName(Enum):
-    '''The string literals used as value of ContentType field in ContentType
+class ResourceTypeName(Enum):
+    '''The string literals used as value of ResourceType field in ResourceType
     and also used to as the ending of respective database table names'''
     BIBLE = "bible"
     COMMENTARY = "commentary"
@@ -35,12 +35,12 @@ class TranslationDocumentType(Enum):
     CSV(for commentary or notes), doc(stories, other passages) etc.'''
     USFM = 'Bible USFM'
 
-class ContentType(Base): # pylint: disable=too-few-public-methods
-    '''Corresponds to table content_types in vachan DB(postgres)'''
-    __tablename__ = "content_types"
+class ResourceType(Base): # pylint: disable=too-few-public-methods
+    '''Corresponds to table resource_types in vachan DB(postgres)'''
+    __tablename__ = "resource_types"
 
-    contentId = Column('content_type_id', Integer, primary_key=True)
-    contentType = Column('content_type', String, unique=True)
+    resourcetypeId = Column('resource_type_id', Integer, primary_key=True)
+    resourceType = Column('resource_type', String, unique=True)
     createdUser = Column('created_user', String)
 
 class Language(Base): # pylint: disable=too-few-public-methods
@@ -99,8 +99,9 @@ class Resource(Base): # pylint: disable=too-few-public-methods
     labels = Column('labels', ARRAY(String))
     licenseId = Column('license_id', Integer, ForeignKey('licenses.license_id'))
     license = relationship(License)
-    contentId = Column('content_id', Integer, ForeignKey('content_types.content_type_id'))
-    contentType = relationship('ContentType')
+    resourcetypeId = Column('resourcetype_id',
+                            Integer, ForeignKey('resource_types.resource_type_id'))
+    resourceType = relationship('ResourceType')
     languageId = Column('language_id', Integer, ForeignKey('languages.language_id'))
     language = relationship('Language')
     versionId = Column('version_id', Integer, ForeignKey('versions.version_id'))
@@ -278,19 +279,19 @@ class BibleContentCleaned(): # pylint: disable=too-few-public-methods
         {'extend_existing': True}
                      )
 
-def create_dynamic_table(resource_name, table_name, content_type):
+def create_dynamic_table(resource_name, table_name, resource_type):
     '''To map or create one dynamic table based on the content Type'''
-    if content_type == ContentTypeName.BIBLE.value:
+    if resource_type == ResourceTypeName.BIBLE.value:
         dynamicTables[resource_name] = type(
             table_name,(BibleContent, Base,),
             {"__tablename__": table_name})
         dynamicTables[resource_name+'_cleaned'] = type(
             table_name+'_cleaned',(BibleContentCleaned, Base,),
             {"__tablename__": table_name+'_cleaned'})
-    elif content_type == ContentTypeName.COMMENTARY.value:
+    elif resource_type == ResourceTypeName.COMMENTARY.value:
         dynamicTables[resource_name] = type(
             table_name,(Commentary, Base,),{"__tablename__": table_name})
-    elif content_type == ContentTypeName.VOCABULARY.value:
+    elif resource_type == ResourceTypeName.VOCABULARY.value:
         dynamicTables[resource_name] = type(
             table_name,(Vocabulary, Base,),{"__tablename__": table_name})
         new_index = Index(table_name+'_word_details_ix',  # pylint: disable=W0612
@@ -298,19 +299,19 @@ def create_dynamic_table(resource_name, table_name, content_type):
             "jsonb_to_tsvector('simple', details, '[\"string\", \"numeric\"]') || ' ')"),
             postgresql_using="gin",
             )
-    elif content_type == ContentTypeName.PARASCRIPTURAL.value:
+    elif resource_type == ResourceTypeName.PARASCRIPTURAL.value:
         dynamicTables[resource_name] = type(
             table_name,(Parascriptural, Base,),{"__tablename__": table_name})
-    elif content_type == ContentTypeName.AUDIOBIBLE.value:
+    elif resource_type == ResourceTypeName.AUDIOBIBLE.value:
         dynamicTables[resource_name] = type(
             table_name,(AudioBible, Base,),{"__tablename__": table_name})
-    elif content_type == ContentTypeName.SIGNBIBLEVIDEO.value:
+    elif resource_type == ResourceTypeName.SIGNBIBLEVIDEO.value:
         dynamicTables[resource_name] = type(
             table_name,(SignBibleVideo, Base,),{"__tablename__": table_name})
-    elif content_type == ContentTypeName.GITLABREPO.value:
+    elif resource_type == ResourceTypeName.GITLABREPO.value:
         pass
     else:
-        raise GenericException("Table structure not defined for this content type:{content_type}")
+        raise GenericException("Table structure not defined for this content type:{resource_type}")
 
 
 def map_all_dynamic_tables(db_: Session):
@@ -319,7 +320,7 @@ def map_all_dynamic_tables(db_: Session):
 
     all_src = db_.query(Resource).all()
     for src in all_src:
-        create_dynamic_table(src.resourceName, src.tableName, src.contentType.contentType)
+        create_dynamic_table(src.resourceName, src.tableName, src.resourceType.resourceType)
 
 ############ Translation Tables ##########
 
