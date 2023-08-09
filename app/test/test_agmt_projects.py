@@ -11,7 +11,7 @@ from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 UNIT_URL = '/v2/text/translate/token-based/projects' 
 USER_URL = '/v2/text/translate/token-based/project/user'
 SENTENCE_URL = '/v2/text/translate/token-based/project/sentences'
-RESTORE_URL = '/v2/restore'
+RESTORE_URL = '/v2/admin/restore'
 headers = {"contentType": "application/json", "accept": "application/json", "app":"Autographa"}
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json",

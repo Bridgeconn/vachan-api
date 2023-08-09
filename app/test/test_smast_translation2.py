@@ -7,7 +7,7 @@ from . import assert_input_validation_error, assert_not_available_content
 from . test_agmt_translation import UNIT_URL, assert_positive_get_sentence
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 
-RESTORE_URL = '/v2/restore'
+RESTORE_URL = '/v2/admin/restore'
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
                 "app":"SanketMAST"

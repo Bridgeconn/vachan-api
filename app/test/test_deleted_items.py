@@ -10,7 +10,7 @@
 # from .test_auth_basic import SUPER_PASSWORD,SUPER_USER, login, logout_user
 # from .conftest import initial_test_users
 
-# UNIT_URL = '/v2/deleted-items'
+# UNIT_URL = '/v2/admin/cleanup'
 # LANG_URL = '/v2/resources/languages'
 # headers = {"contentType": "application/json", "accept": "application/json"}
 # headers_auth = {"contentType": "application/json",

@@ -7,7 +7,7 @@ from .test_auth_basic import login,SUPER_USER,SUPER_PASSWORD,logout_user
 from .conftest import initial_test_users
 
 UNIT_URL = '/v2/resources/versions'
-RESTORE_URL = '/v2/restore'
+RESTORE_URL = '/v2/admin/restore'
 RESOURCE_URL = '/v2/resources'
 
 headers_auth = {"contentType": "application/json",

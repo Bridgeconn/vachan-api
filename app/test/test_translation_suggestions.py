@@ -8,7 +8,7 @@ from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 
 UNIT_URL = '/v2/text/translate/token-based'
 NLP_UNIT_URL = '/v2/nlp'
-RESTORE_URL = '/v2/restore'
+RESTORE_URL = '/v2/admin/restore'
 headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json"

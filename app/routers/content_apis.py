@@ -1310,7 +1310,7 @@ async def extract_text_contents(request:Request, #pylint: disable=W0613
     return contents_crud.extract_text(db_, tables, books, skip=skip, limit=limit)
 
 #### Data Manipulation ####
-@router.put('/v2/restore', response_model=schemas.DataRestoreResponse,
+@router.put('/v2/admin/restore', response_model=schemas.DataRestoreResponse,
     responses={502:{"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
@@ -1332,7 +1332,7 @@ async def restore_content(request: Request, content: schemas.RestoreIdentity,
     return {'message': f"Deleted Item with identity {content.itemId} restored successfully",
     "data": data}
 
-@router.delete('/v2/deleted-items',response_model=schemas.CleanupDB,
+@router.delete('/v2/admin/cleanup',response_model=schemas.CleanupDB,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
     502: {"model": schemas.ErrorResponse}},
