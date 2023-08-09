@@ -3,11 +3,10 @@
 from typing import List
 from fastapi import APIRouter, Query, Body, Depends, Request, Path, BackgroundTasks
 from sqlalchemy.orm import Session
-
-
 from dependencies import get_db, log, AddHiddenInput
 from schema import schemas, schemas_nlp, schema_auth, schema_content
 from crud import nlp_crud, projects_crud, nlp_sw_crud, structurals_crud, utils
+from crud.projects_crud import check_app_compatibility_decorator
 from custom_exceptions import GenericException
 from routers import content_apis
 from auth.authentication import get_user_or_none,get_auth_access_check_decorator
@@ -27,6 +26,7 @@ async def get_projects(request: Request,
     source_language:schemas.LangCodePattern=Query(None,example='en'),
     target_language:schemas.LangCodePattern=Query(None,example='ml'),
     active:bool=True, user_id:str=Query(None),
+    compatible_with: schema_auth.App = Query(None,example="SanketMAST"),
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db),
     filtering_required=Depends(AddHiddenInput(value=True))):
@@ -35,7 +35,8 @@ async def get_projects(request: Request,
     log.debug('project_name: %s, source_language:%s, target_language:%s,\
         active:%s, user_id:%s',project_name, source_language, target_language, active, user_id)
     return projects_crud.get_translation_projects(db_, project_name, source_language,
-        target_language, active=active, user_id=user_id, skip=skip, limit=limit)
+        target_language, active=active,compatible_with=compatible_with, user_id=user_id,
+        skip=skip, limit=limit)
 
 @router.post('/v2/text/translate/token-based/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse,
@@ -43,15 +44,17 @@ async def get_projects(request: Request,
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse}},
     tags=['Translation-Project management'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def create_project(request: Request,
     project_obj:schemas_nlp.TranslationProjectCreate,
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Creates a new translation project'''
     log.info('In create_project')
     log.debug('project_obj: %s',project_obj)
+    app = request.headers['app']
     return {'message': "Project created successfully",
         "data": projects_crud.create_translation_project(db_=db_, project=project_obj,
-            user_id=user_details['user_id'])}
+            user_id=user_details['user_id'],app = app)}
 
 @router.put('/v2/text/translate/token-based/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse,
@@ -60,6 +63,7 @@ async def create_project(request: Request,
     500: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
     tags=['Translation-Project management'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectEdit,
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.PROJECT.value))):
@@ -204,6 +208,7 @@ async def get_tokens(request: Request, project_id:int=Query(...,example="1022004
     500: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def apply_token_translations(request: Request,project_id:int=Query(...,example="1022004"),
     token_translations:List[schemas_nlp.TokenUpdate]=Body(...), return_drafts:bool=True,
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
@@ -239,6 +244,7 @@ async def get_token_translation(request: Request,project_id:int=Query(...,exampl
     404: {"model": schemas.ErrorResponse}},
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def get_token_sentences(request: Request,project_id:int=Query(...,example="1022004"),
     token:str=Query(...,example="duck"),
     occurrences:List[schemas_nlp.TokenOccurence]=Body(..., example=[
@@ -278,6 +284,7 @@ async def get_draft(request: Request,project_id:int=Query(...,example="1022004")
     415: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def update_draft(request: Request,project_id:int=Query(...,example="1022004"),
     sentence_list:List[schemas_nlp.ProjectDraftInput]=Body(...),
     user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):

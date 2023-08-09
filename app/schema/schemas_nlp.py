@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, constr, root_validator
 
 from schema.schemas import LangCodePattern, TableNamePattern, LanguageResponse
 from schema.schema_content import BookCodePattern, Job
+from schema.schema_auth import App
 
 #pylint: disable=too-few-public-methods
 class TranslationDocumentType(Enum):
@@ -53,6 +54,7 @@ class TranslationProjectCreate(BaseModel):
         example=[',', '"', '!', '.', ':', ';', '\n', '\\','“','”',
         '“','*','।','?',';',"'","’","(",")","‘","—"])
     active: bool = True
+    compatibleWith: App = Field(None,example='SanketMAST')
 
 class TranslationProject(BaseModel):
     '''Output object for project creation'''
@@ -67,6 +69,7 @@ class TranslationProject(BaseModel):
     metaData: dict = Field(None, example={"books":['mat', 'mrk', 'luk', 'jhn'],
         "useDataForLearning":True})
     active: bool
+    compatibleWith: App = Field(None,example='SanketMAST')
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
@@ -102,6 +105,7 @@ class TranslationProjectEdit(BaseModel):
     useDataForLearning: bool = None
     stopwords: Stopwords = None
     punctuations: List[constr(max_length=1)] = None
+    compatibleWith: App = Field(None,example='SanketMAST')
 
 class TranslationProjectUpdateResponse(BaseModel):
     '''Response for post and put'''

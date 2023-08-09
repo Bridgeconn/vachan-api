@@ -3,11 +3,14 @@ Translation Project Management. The translation or NLP related functions of thes
 projects are included in nlp_crud module'''
 
 import re
+import json
 import datetime
+from functools import wraps
 from pytz import timezone
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
+from fastapi import HTTPException
 import db_models
 from schema import schemas_nlp
 from dependencies import log
@@ -20,7 +23,7 @@ ist_timezone = timezone("Asia/Kolkata")
 
 #pylint: disable=W0143,E1101
 ###################### Translation Project Mangement ######################
-def create_translation_project(db_:Session, project, user_id=None):
+def create_translation_project(db_:Session, project, user_id=None,app=None):
     '''Add a new project entry to the translation projects table'''
     source = db_.query(db_models.Language).filter(
         db_models.Language.code==project.sourceLanguageCode).first()
@@ -33,6 +36,8 @@ def create_translation_project(db_:Session, project, user_id=None):
         meta['stopwords'] = project.stopwords.__dict__
     if project.punctuations:
         meta['punctuations'] = project.punctuations
+    if project.compatibleWith is None:
+        project.compatibleWith = app
     db_content = db_models.TranslationProject(
         projectName=utils.normalize_unicode(project.projectName),
         source_lang_id=source.languageId,
@@ -41,7 +46,8 @@ def create_translation_project(db_:Session, project, user_id=None):
         active=project.active,
         createdUser=user_id,
         updatedUser=user_id,
-        metaData=meta
+        metaData=meta,
+        compatibleWith = project.compatibleWith
         )
     db_.add(db_content)
     db_.flush()
@@ -177,6 +183,8 @@ def update_translation_project(db_:Session, project_obj, user_id=None):
     if project_obj.punctuations:
         project_row.metaData['punctuations'] = project_obj.punctuations
         flag_modified(project_row, "metaData")
+    if project_obj.compatibleWith:
+        project_row.compatibleWith= project_obj.compatibleWith
     project_row.updatedUser = user_id
     project_row.updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
     if len(new_books) > 0:
@@ -187,10 +195,32 @@ def update_translation_project(db_:Session, project_obj, user_id=None):
     # db_.refresh(project_row)
     return project_row
 
+def check_app_compatibility_decorator(func):#pylint:disable=too-many-statements
+    """Decorator function for ato check app compatibility"""
+    @wraps(func)
+    async def wrapper(*args, **kwargs):#pylint: disable=too-many-branches,too-many-statements, too-many-locals
+        request = kwargs.get('request')
+        body = await request.body()
+        json_string = body.decode()
+        parsed_data = json.loads(json_string)
+        if 'compatibleWith' in parsed_data and parsed_data['compatibleWith'] is not None:
+            compatible_with = parsed_data['compatibleWith']
+        else:
+            compatible_with = request.headers['app']
+        if 'app' in request.headers:
+            client_app = request.headers['app']
+            if client_app != compatible_with:
+                raise HTTPException(status_code=403, detail="Incompatible app")
+        else:
+            raise HTTPException(status_code=403, detail="Incompatible app")
+        return await func(*args, **kwargs)
+    return wrapper
+
 def get_translation_projects(db_:Session, project_name=None, source_language=None,
     target_language=None, **kwargs):
     '''Fetch autographa projects as per the query options'''
     active = kwargs.get("active",True)
+    compatible_with = kwargs.get("compatible_with",None)
     user_id = kwargs.get("user_id",None)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
@@ -210,6 +240,8 @@ def get_translation_projects(db_:Session, project_name=None, source_language=Non
         if not target:
             raise NotAvailableException(f"Language, {target_language}, not found")
         query = query.filter(db_models.TranslationProject.target_lang_id == target.languageId)
+    if compatible_with:
+        query = query.filter(db_models.TranslationProject.compatibleWith == compatible_with)
     if user_id:
         query = query.filter(db_models.TranslationProject.users.any(userId=user_id))
     query = query.filter(db_models.TranslationProject.active == active)

@@ -1323,3 +1323,89 @@ def test_bugfix_split_n_merged_verse():
     assert sentences[2]['sentenceId'] == 67001011
     assert sentences[2]['surrogateId'] == 'rev 1:11a-b'
     assert sentences[2]["sentence"] == 'split text rest'
+
+def test_app_compatibility():
+    '''Positive test to check app compatibility
+    * Only SanketMAST app can access translation APIs'''
+    headers_auth = {"contentType": "application/json",
+                "accept": "application/json",
+                "app":"Autographa"
+            }
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+
+    # create with minimum data
+    post_data = {
+    "projectName": "Test project 1",
+    "sourceLanguageCode": "hi",
+    "targetLanguageCode": "ml",
+    "compatibleWith": "Autographa"
+    }
+    # Creating new project with compatible app - Negative Test
+    response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
+    assert response.status_code == 201
+    assert response.json()['message'] == "Project created successfully"
+    new_project = response.json()['data']
+    assert_positive_get(new_project)
+
+    # check if all defaults are coming
+    assert new_project['metaData']["useDataForLearning"]
+    assert isinstance(new_project['metaData']['books'], list)
+    assert len(new_project['metaData']['books']) == 0
+    assert new_project['active']
+
+    # Create new project with incompatible app - Negative Test
+    post_data['compatibleWith'] = 'SanketMAST'
+    response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
+    assert response.status_code == 403
+    assert response.json()['details'] == "Incompatible app"
+
+    # update data with compatible app - positive test
+    put_data = {
+    "projectId":new_project['projectId'],
+    "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']],
+    "compatibleWith": "Autographa"
+    }
+    response2 = client.put(UNIT_URL, headers=headers_auth, json=put_data)
+    assert response2.status_code == 201
+    assert response2.json()['message'] == "Project updated successfully"
+    updated_project = response2.json()['data']
+    assert_positive_get(updated_project)
+
+    assert new_project['projectId'] == updated_project['projectId']
+    assert new_project['projectName'] == updated_project['projectName']
+    assert updated_project['metaData']['books'] == ['mat', 'mrk']
+
+    # update project with incompatible app - Negative Test
+    put_data = {
+    "projectId":new_project['projectId'],
+    "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']],
+    "compatibleWith": "SanketMAST"
+    }
+    response2 = client.put(UNIT_URL, headers=headers_auth, json=put_data)
+    assert response.status_code == 403
+    assert response.json()['details'] == "Incompatible app"
+
+def test_get_filter_with_app_compatibility():
+    '''Test  to filter with app compatibility'''
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    data_1 = {
+    "projectName": "Test project 1",
+    "sourceLanguageCode": "hi",
+    "targetLanguageCode": "ml",
+    "compatibleWith": "Autographa"
+    }
+    data_2 = {
+    "projectName": "Test project 2",
+    "sourceLanguageCode": "hi",
+    "targetLanguageCode": "ml"
+    }
+    # Creating new project with compatible app - Negative Test
+    response1 = client.post(UNIT_URL, headers=headers_auth, json=data_1)
+    response2 = client.post(UNIT_URL, headers=headers_auth, json=data_2)
+    
+    get_resp = client.get(UNIT_URL+'?compatible_with=Autographa',headers=headers_auth)
+    for item in get_resp.json():
+        assert_positive_get(item)
+    assert len(get_resp.json()) == 2
+    assert get_resp.json()[0]['compatibleWith'] == 'Autographa'
+    assert get_resp.json()[1]['compatibleWith'] == 'Autographa'
