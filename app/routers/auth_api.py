@@ -141,7 +141,7 @@ async def edit_user(request: Request,#pylint: disable=unused-argument
     data =  update_kratos_user(rec_user_id=user_id,data=edit_details)
     return {"message":"User details updated successfully","data":data}
 
-@router.delete('/v2/user/delete-identity',response_model=schema_auth.IdentityDeleteResponse,
+@router.delete('/v2/user',response_model=schema_auth.IdentityDeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Authentication"])
