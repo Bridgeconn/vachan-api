@@ -196,7 +196,7 @@ def update_translation_project(db_:Session, project_obj, user_id=None):
     # db_.refresh(project_row)
     return project_row
 
-def check_app_compatibility_decorator(func):#pylint:disable=too-many-statements
+def check_app_compatibility_decorator(func):#pylint:disable=too-many-statements,duplicate-code
     """Decorator function for to check app compatibility"""
     @wraps(func)
     async def wrapper(*args, **kwargs):#pylint: disable=too-many-branches,too-many-statements

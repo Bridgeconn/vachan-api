@@ -231,7 +231,7 @@ def check_right(user_details, required_rights, resp_obj=None, db_=None):
     return False
 
 
-def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
+def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements,duplicate-code
     """Decorator function for auth and access check for all routers"""
     @wraps(func)
     async def wrapper(*args, **kwargs):#pylint: disable=too-many-branches,too-many-statements, too-many-locals
