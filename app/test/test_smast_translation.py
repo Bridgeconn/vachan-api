@@ -4,12 +4,13 @@ import re
 from math import ceil, floor
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
-from .test_agmt_projects import bible_books, check_post as add_project
+from .test_agmt_projects import bible_books
 from .conftest import initial_test_users
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER
 
 
 UNIT_URL = '/v2/text/translate/token-based/project'
+PROJECT_URL = '/v2/text/translate/token-based/projects'
 headers = {"contentType": "application/json", "accept": "application/json","app":"SanketMAST"}
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
@@ -48,7 +49,7 @@ def assert_positive_get_sentence(item):
 def test_get_tokens():
     '''Positive tests for tokenization process'''
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
-    resp = add_project(project_data)
+    resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
 
@@ -147,7 +148,8 @@ def test_get_tokens():
 
 def test_tokenization_invalid():
     '''Negative tests for tokenization'''
-    resp = add_project(project_data)
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
+    resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
 
@@ -192,7 +194,8 @@ def test_tokenization_invalid():
 
 def test_save_translation():
     '''Positive tests for PUT tokens method'''
-    resp = add_project(project_data)
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
+    resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
 
@@ -265,7 +268,8 @@ def test_save_translation():
 
 def test_save_translation_invalid():
     '''Negative tests for PUT tokens method'''
-    resp = add_project(project_data)
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
+    resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
 
@@ -346,7 +350,8 @@ def test_save_translation_invalid():
 
 def test_drafts():
     '''End to end test from tokenization to draft generation'''
-    resp = add_project(project_data)
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
+    resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
 
@@ -404,7 +409,7 @@ def test_drafts():
 def test_get_token_sentences():
     '''Check if draft-meta is properly segemneted according to specifed token occurence'''
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
-    resp = add_project(project_data)
+    resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
 
@@ -468,7 +473,8 @@ def test_get_token_sentences():
 
 def test_get_sentence():
     '''Positive test for agmt sentence/draft fetch API'''
-    resp = add_project(project_data)
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
+    resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
 
@@ -545,7 +551,8 @@ def test_get_sentence():
 
 def test_progress_n_suggestion():
     '''tests for project progress API of SanketMASTMT'''
-    resp = add_project(project_data)
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
+    resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
 
@@ -624,7 +631,8 @@ def test_progress_n_suggestion():
 
 def test_get_versification():
     '''Positive test for agmt sentence/draft fetch API'''
-    resp = add_project(project_data)
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
+    resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
 
@@ -666,7 +674,7 @@ def test_agmt_translation_access_rule_app():
     """project translation related access rule and auth"""
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     #create a project
-    resp = add_project(project_data)
+    resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
 
@@ -830,7 +838,7 @@ def test_data_updated_time():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
 
     #create an empty project
-    create_project_resp = add_project(project_data)
+    create_project_resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     assert create_project_resp.json()['message'] == "Project created successfully"
     project_id = create_project_resp.json()['data']['projectId']
     project_name =create_project_resp.json()['data']['projectName']
@@ -912,7 +920,7 @@ def test_agmt_translation_access_permissions():
     """test for access permission to project translation"""
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     #create a project
-    resp = add_project(project_data)
+    resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
 

@@ -9,6 +9,7 @@ from functools import wraps
 from pytz import timezone
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from sqlalchemy.orm.attributes import flag_modified
 from fastapi import HTTPException
 import db_models
@@ -37,7 +38,7 @@ def create_translation_project(db_:Session, project, user_id=None,app=None):
     if project.punctuations:
         meta['punctuations'] = project.punctuations
     if project.compatibleWith is None:
-        project.compatibleWith = app
+        project.compatibleWith = [app]
     db_content = db_models.TranslationProject(
         projectName=utils.normalize_unicode(project.projectName),
         source_lang_id=source.languageId,
@@ -196,20 +197,67 @@ def update_translation_project(db_:Session, project_obj, user_id=None):
     return project_row
 
 def check_app_compatibility_decorator(func):#pylint:disable=too-many-statements
-    """Decorator function for ato check app compatibility"""
+    """Decorator function for to check app compatibility"""
     @wraps(func)
-    async def wrapper(*args, **kwargs):#pylint: disable=too-many-branches,too-many-statements, too-many-locals
+    async def wrapper(*args, **kwargs):#pylint: disable=too-many-branches,too-many-statements
         request = kwargs.get('request')
-        body = await request.body()
-        json_string = body.decode()
-        parsed_data = json.loads(json_string)
-        if 'compatibleWith' in parsed_data and parsed_data['compatibleWith'] is not None:
-            compatible_with = parsed_data['compatibleWith']
+        db_ = kwargs.get("db_")
+        endpoint = request.url.path
+        method = request.method
+        query_params = request.query_params
+        compatible_with = []
+
+        if method == 'POST' and endpoint == '/v2/text/translate/token-based/projects':
+            #POST method to create project
+            #assign compatibility_with to userinput(if present),else assign to header app
+            body = await request.body()
+            json_string = body.decode()
+            parsed_data = json.loads(json_string)
+            if 'compatibleWith' in parsed_data and parsed_data['compatibleWith'] is not None:
+                compatible_with = parsed_data['compatibleWith']
+            else:
+                compatible_with = request.headers['app']
+        elif method == 'POST':
+            # POST method for other translation endpoints
+            # assign compatibility_with to respective db field value
+            project_obj = db_.query(db_models.TranslationProject).first()
+            project_row = project_obj.compatibleWith
+            if project_row is not None:
+                compatible_with = project_row
+        elif method == 'PUT':
+            #For PUT method: assign compatibility_with to respective db field value
+            body = await request.body()
+            if len(body) != 0:
+                json_string = body.decode()
+                parsed_data = json.loads(json_string)
+                if 'projectId' in parsed_data:
+                    project_id = parsed_data['projectId']
+                elif 'project_id' in parsed_data:
+                    project_id = parsed_data['project_id']
+                else:
+                    project_id = query_params['project_id']
+            else:
+                project_id = query_params['project_id']
+            project_obj = db_.query(db_models.TranslationProject).get(project_id)
+            if project_obj is not None:
+                compatible_with = project_obj.compatibleWith
+        elif method == 'DELETE':
+            # assign compatibility_with to respective db field value
+            project_id = query_params['project_id']
+            project_obj = db_.query(db_models.TranslationProject).get(project_id )
+            if project_obj is not None:
+                compatible_with = project_obj.compatibleWith
         else:
-            compatible_with = request.headers['app']
+            project_obj = db_.query(db_models.TranslationProject).first()
+            project_row = project_obj.compatibleWith
+            if project_row is not None:
+                compatible_with = project_row
         if 'app' in request.headers:
             client_app = request.headers['app']
-            if client_app != compatible_with:
+            if len(compatible_with) ==0:
+                raise HTTPException(status_code=404,detail = \
+                    f"Project with id, {project_id}, not present")
+            if client_app not in compatible_with:
                 raise HTTPException(status_code=403, detail="Incompatible app")
         else:
             raise HTTPException(status_code=403, detail="Incompatible app")
@@ -240,8 +288,10 @@ def get_translation_projects(db_:Session, project_name=None, source_language=Non
         if not target:
             raise NotAvailableException(f"Language, {target_language}, not found")
         query = query.filter(db_models.TranslationProject.target_lang_id == target.languageId)
-    if compatible_with:
-        query = query.filter(db_models.TranslationProject.compatibleWith == compatible_with)
+    if compatible_with is not None:
+        query = query.filter(text(
+            "ARRAY[:compatible_with]::text[] <@ translation_projects.compatible_with").bindparams(
+            compatible_with=compatible_with))
     if user_id:
         query = query.filter(db_models.TranslationProject.users.any(userId=user_id))
     query = query.filter(db_models.TranslationProject.active == active)

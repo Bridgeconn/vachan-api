@@ -2,6 +2,7 @@
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
+from schema import schema_auth
 from .test_bibles import check_post as add_bible, gospel_books_data
 from .test_resources import check_post as add_resource
 from .test_versions import check_post as add_version
@@ -473,7 +474,7 @@ def test_update_user_invlaid():
     }
     response = client.put(USER_URL, headers=headers_auth, json=update_data)
     assert response.status_code == 404
-    assert response.json()['details'] == "User-project pair not found"
+    assert response.json()['details'] == f"Project with id, {update_data['project_id']}, not present"
 
     # invalid status
     update_data = {
@@ -961,7 +962,8 @@ def test_delete_project():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     resp = client.delete(UNIT_URL+'?project_id='+str(invalid_project_id),headers=headers_auth)
     assert resp.status_code == 404
-    assert resp.json()['details'] == f"Project with id {invalid_project_id} not found"
+    assert resp.json()['details'] == f"Project with id, {invalid_project_id}, not present"
+
 
     # Delete as unauthorized users
     for user in ['APIUser','VachanAdmin','VachanUser','BcsDev','VachanContentAdmin','VachanContentViewer']:
@@ -1326,7 +1328,7 @@ def test_bugfix_split_n_merged_verse():
 
 def test_app_compatibility():
     '''Positive test to check app compatibility
-    * Only SanketMAST app can access translation APIs'''
+    * Only Autographa app can access translation APIs'''
     headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
                 "app":"Autographa"
@@ -1338,9 +1340,9 @@ def test_app_compatibility():
     "projectName": "Test project 1",
     "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml",
-    "compatibleWith": "Autographa"
+    "compatibleWith": ["SanketMAST","Autographa"]
     }
-    # Creating new project with compatible app - Negative Test
+    # Creating new project with compatible app - Positive Test
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"
@@ -1354,7 +1356,7 @@ def test_app_compatibility():
     assert new_project['active']
 
     # Create new project with incompatible app - Negative Test
-    post_data['compatibleWith'] = 'SanketMAST'
+    post_data['compatibleWith'] = ['SanketMAST']
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
     assert response.status_code == 403
     assert response.json()['details'] == "Incompatible app"
@@ -1362,8 +1364,8 @@ def test_app_compatibility():
     # update data with compatible app - positive test
     put_data = {
     "projectId":new_project['projectId'],
-    "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']],
-    "compatibleWith": "Autographa"
+    "uploadedUSFMs":[bible_books['mat']],
+    "compatibleWith": ["SanketMAST","VachanAdmin"]
     }
     response2 = client.put(UNIT_URL, headers=headers_auth, json=put_data)
     assert response2.status_code == 201
@@ -1373,17 +1375,56 @@ def test_app_compatibility():
 
     assert new_project['projectId'] == updated_project['projectId']
     assert new_project['projectName'] == updated_project['projectName']
-    assert updated_project['metaData']['books'] == ['mat', 'mrk']
+    assert updated_project['metaData']['books'] == ['mat']
 
     # update project with incompatible app - Negative Test
     put_data = {
     "projectId":new_project['projectId'],
-    "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']],
-    "compatibleWith": "SanketMAST"
+    "uploadedUSFMs":[bible_books['mrk']],
+    "compatibleWith": ["VachanAdmin"]
     }
     response2 = client.put(UNIT_URL, headers=headers_auth, json=put_data)
-    assert response.status_code == 403
-    assert response.json()['details'] == "Incompatible app"
+    assert response2.status_code == 403
+    assert response2.json()['details'] == "Incompatible app"
+
+def test_delete_with_compatible_app():
+    '''Test to delete project based on app compatibiblty'''
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+    data_1 = {
+    "projectName": "Test project 1",
+    "sourceLanguageCode": "hi",
+    "targetLanguageCode": "ml",
+    "compatibleWith": ["Autographa"]
+    }
+    data_2 = {
+    "projectName": "Test project 2",
+    "sourceLanguageCode": "hi",
+    "targetLanguageCode": "ml",
+    "compatibleWith": ["SanketMAST","Autographa"]
+    }
+    # creating two projects
+    response1 = client.post(UNIT_URL, headers=headers_auth, json=data_1)
+    project1 = response1.json()['data']
+    project_id_1 = project1['projectId']
+    response2 = client.post(UNIT_URL, headers=headers_auth, json=data_2)
+    project2 = response2.json()['data']
+    project_id_2 = project2['projectId']
+
+    # delete project1 with compatible app - Positive Test
+    resp = client.delete(UNIT_URL+'?project_id='+str(project_id_1),headers=headers_auth)
+    assert resp.status_code == 201
+    assert resp.json()['message'] == f"Project with identity {project_id_1} deleted successfully"
+    # update compatibility of project 2
+    put_data = {
+    "projectId":project_id_2,
+    "compatibleWith": ["VachanAdmin"]
+    }
+    response2 = client.put(UNIT_URL, headers=headers_auth, json=put_data)
+
+    # delete project with incompatible app - Negative Test
+    resp = client.delete(UNIT_URL+'?project_id='+str(project_id_2),headers=headers_auth)
+    assert resp.status_code == 403
+    assert resp.json()['details'] == "Incompatible app"
 
 def test_get_filter_with_app_compatibility():
     '''Test  to filter with app compatibility'''
@@ -1392,20 +1433,49 @@ def test_get_filter_with_app_compatibility():
     "projectName": "Test project 1",
     "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml",
-    "compatibleWith": "Autographa"
+    "compatibleWith": ["Autographa"]
     }
     data_2 = {
     "projectName": "Test project 2",
     "sourceLanguageCode": "hi",
     "targetLanguageCode": "ml"
     }
-    # Creating new project with compatible app - Negative Test
+    data_3 = {
+    "projectName": "Test project 3",
+    "sourceLanguageCode": "hi",
+    "targetLanguageCode": "ml",
+    "compatibleWith": ["SanketMAST","Autographa"]
+    }
+    # Creating new project with compatible app - Positive Test
     response1 = client.post(UNIT_URL, headers=headers_auth, json=data_1)
+    # Creating new project without mentioning compatible_with field - Positive test
     response2 = client.post(UNIT_URL, headers=headers_auth, json=data_2)
-    
-    get_resp = client.get(UNIT_URL+'?compatible_with=Autographa',headers=headers_auth)
+    # Creating new project with multiple items in compatible_with field - Positive test
+    response3 = client.post(UNIT_URL, headers=headers_auth, json=data_3)
+   
+    # filtering with single app - positive test
+    get_resp = client.get(UNIT_URL + "?compatible_with=Autographa",headers=headers_auth)
     for item in get_resp.json():
         assert_positive_get(item)
-    assert len(get_resp.json()) == 2
-    assert get_resp.json()[0]['compatibleWith'] == 'Autographa'
-    assert get_resp.json()[1]['compatibleWith'] == 'Autographa'
+    assert len(get_resp.json()) == 3
+    assert"Autographa" in  get_resp.json()[0]['compatibleWith']
+    assert"Autographa" in  get_resp.json()[1]['compatibleWith']
+    assert"Autographa" in  get_resp.json()[2]['compatibleWith']
+
+    #filtering with multiple apps - positive test
+    app_list = [schema_auth.App.SMAST.value, schema_auth.App.AG.value]
+    params = []
+    for app in app_list:
+        params.append(("compatible_with", app))
+    get_resp2 = client.get(UNIT_URL, params=params, headers=headers_auth)
+    for item in get_resp2.json():
+        assert_positive_get(item)
+    assert len(get_resp2.json()) == 1
+    for item in get_resp2.json():
+        assert_positive_get(item)
+        assert "SanketMAST" in item['compatibleWith']
+        assert "Autographa" in item['compatibleWith']
+
+    #filtering with app not in the list
+    get_resp = client.get(UNIT_URL + "?compatible_with=VachanAdmin",headers=headers_auth)
+    assert_not_available_content(get_resp)

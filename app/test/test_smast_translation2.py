@@ -1,13 +1,13 @@
 '''tests for the translation workflow within SMAST projects continued'''
 import json
 from . import client
-from .test_agmt_projects import check_post as add_project
 from .conftest import initial_test_users
 from . import assert_input_validation_error, assert_not_available_content
 from . test_agmt_translation import UNIT_URL, assert_positive_get_sentence
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 
 RESTORE_URL = '/v2/admin/restore'
+PROJECT_URL = '/v2/text/translate/token-based/projects'
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
                 "app":"SanketMAST"
@@ -39,7 +39,8 @@ source_sentences = [
 
 def test_draft_update_positive():
     '''Positive test for updating draft and draftMeta(Alignment) in a project'''
-    resp = add_project(project_data, auth_token=initial_test_users['SanketMASTUser']['token'])
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
+    resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
 
@@ -47,7 +48,6 @@ def test_draft_update_positive():
         "projectId": project_id,
         "sentenceList":source_sentences
     }
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
     resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
@@ -128,7 +128,8 @@ def test_draft_update_positive():
 
 def test_draft_update_negative():
     '''Checking effective validations and error messages'''
-    resp = add_project(project_data, auth_token=initial_test_users['SanketMASTUser']['token'])
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
+    resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
 
@@ -144,7 +145,7 @@ def test_draft_update_negative():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
     resp = client.put(f"/v2/text/translate/token-based/project/draft?project_id={project_id+1}",
         headers=headers_auth, json=put_data)
-    assert resp.json()['error'] == "Requested Content Not Available"
+    assert resp.json()['details'] == f"Project with id, {project_id+1}, not present"
 
     # non existing sentence
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
@@ -232,7 +233,8 @@ def test_draft_update_negative():
 
 def test_empty_draft_initalization():
     '''Bugfix test for #452 after the changes in #448'''
-    resp = add_project(project_data, auth_token=initial_test_users['SanketMASTUser']['token'])
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
+    resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
 
@@ -288,7 +290,8 @@ def test_empty_draft_initalization():
 
 def test_draft_meta_validation():
     '''Bugfix test for #479 after the changes in PR #481'''
-    resp = add_project(project_data, auth_token=initial_test_users['SanketMASTUser']['token'])
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
+    resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
 
@@ -325,7 +328,8 @@ def test_draft_meta_validation():
 
 def test_space_in_suggested_draft():
     '''BUgfix text for #485, after changes in PR #486'''
-    resp = add_project(project_data, auth_token=initial_test_users['SanketMASTUser']['token'])
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
+    resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
 
@@ -369,7 +373,8 @@ def test_delete_sentence():
     '''Test the removal of a sentence from project'''
 
     #Adding Project and sentences into it
-    resp = add_project(project_data, auth_token=initial_test_users['SanketMASTUser']['token'])
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
+    resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
 
@@ -452,7 +457,8 @@ def test_restore_sentence():
     #only Super Admin can restore deleted data
     #Creating and Deleting project sentence
     #Adding Project and sentences into it
-    resp = add_project(project_data, auth_token=initial_test_users['SanketMASTAdmin']['token'])
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
+    resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     project_id = resp.json()['data']['projectId']
 
     put_data = {
@@ -527,7 +533,8 @@ def test_restore_sentence():
 
 def test_suggestion_when_token_overlaps_confirmed_segment():
     # Testing bug fix https://github.com/Bridgeconn/vachan-api/issues/542
-    resp = add_project(project_data, auth_token=initial_test_users['SanketMASTAdmin']['token'])
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
+    resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     project_id = resp.json()['data']['projectId']
 
     put_data = {
@@ -612,7 +619,8 @@ def test_suggestion_when_token_overlaps_confirmed_segment():
 def test_draftmeta_validation():
     '''All protions of the draft should have a draftmeta segment
     issue #602'''
-    resp = add_project(project_data, auth_token=initial_test_users['AgUser']['token'])
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
+    resp = client.post(PROJECT_URL, headers=headers_auth, json=project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
 

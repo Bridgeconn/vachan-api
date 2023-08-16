@@ -358,7 +358,7 @@ class TranslationProject(Base): # pylint: disable=too-few-public-methods
     updatedUser = Column('last_updated_user', String)
     createTime = Column('created_at', DateTime, default=ist_time)
     updateTime = Column('last_updated_at', DateTime, onupdate= ist_time,default=ist_time)
-    compatibleWith = Column('compatible_with', String)
+    compatibleWith = Column('compatible_with', ARRAY(String))
 
 class TranslationDraft(Base): # pylint: disable=too-few-public-methods
     '''Corresponds to table translation_drafts in vachan DB used by Autographa MT mode'''

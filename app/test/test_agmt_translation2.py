@@ -148,7 +148,7 @@ def test_draft_update_negative():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
     resp = client.put(f"/v2/text/translate/token-based/project/draft?project_id={project_id+1}",
         headers=headers_auth, json=put_data)
-    assert resp.json()['error'] == "Requested Content Not Available"
+    assert resp.json()['details'] == f"Project with id, {project_id+1}, not present"
 
     # non existing sentence
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
