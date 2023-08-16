@@ -26,7 +26,7 @@ class Stopwords(BaseModel):
 
 class ProjectUser(BaseModel):
     '''Input object for Translation project user update'''
-    project_id: int
+    project_id: int = None
     userId: str
     userRole: str = Field(None, example='projectOwner')
     metaData: dict = Field(None, example={
@@ -96,7 +96,6 @@ class SentenceInput(BaseModel):
 
 class TranslationProjectEdit(BaseModel):
     '''New books to be added or active flag change'''
-    projectId: int
     projectName: str = None
     active: bool = None
     selectedBooks: SelectedBooks = None

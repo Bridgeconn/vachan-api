@@ -45,10 +45,10 @@ def test_draft_update_positive():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "sentenceList":source_sentences
     }
-    resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get(f"{UNIT_URL}/sentences?project_id={project_id}", headers=headers_auth)
@@ -155,11 +155,11 @@ def test_draft_update_negative():
 
     # upload source and repeat last action
     put_data_source = {
-        "projectId": project_id,
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
-    resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data_source)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data_source)
     assert resp.json()['message'] == "Project updated successfully"
 
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
@@ -239,11 +239,11 @@ def test_empty_draft_initalization():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
-    resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # Ensure draft is set to ""
@@ -296,15 +296,15 @@ def test_draft_meta_validation():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
-    resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     #Get suggestions
-    resp = client.put(f"/v2/text/translate/token-based/project/suggestions?project_id={project_id}&sentenceIdList=100", 
+    resp = client.put(f"/v2/text/translate/token-based/project/suggestions?project_id={project_id}&sentenceIdList=100",
         headers=headers_auth)
     assert resp.status_code == 201
     resp_draft_meta = resp.json()[0]['draftMeta']
@@ -334,11 +334,11 @@ def test_space_in_suggested_draft():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
-    resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # Add a gloss to ensure some suggestion in output
@@ -379,11 +379,11 @@ def test_delete_sentence():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
-    resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # Check sentences are added
@@ -462,11 +462,11 @@ def test_restore_sentence():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
-    resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     delete_resp = client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id=100",
             headers=headers_auth)
 
@@ -538,7 +538,6 @@ def test_suggestion_when_token_overlaps_confirmed_segment():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "sentenceList": [
             {
             "sentenceId": 57001002,
@@ -548,7 +547,8 @@ def test_suggestion_when_token_overlaps_confirmed_segment():
         ]
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
-    resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # add a translation for just "not" when it occurs as "doesnot"
@@ -625,11 +625,11 @@ def test_draftmeta_validation():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     ## Spaces not accounted for

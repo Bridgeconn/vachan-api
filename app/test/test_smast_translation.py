@@ -58,10 +58,9 @@ def test_get_tokens():
     assert_not_available_content(get_response1)
 
     put_data = {
-        "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id), headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # after adding books
@@ -156,7 +155,7 @@ def test_tokenization_invalid():
     # non existant project
     response = client.get(UNIT_URL+"/tokens?project_id="+str(project_id+1),headers=headers_auth)
     assert response.status_code == 404
-    assert response.json()['details'] == "Project with id, %s, not found"%(project_id+1)
+    assert response.json()['details'] == "Project with id, %s, not present"%(project_id+1)
 
     #invalid book
     response = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+"&books=mmm"
@@ -200,11 +199,11 @@ def test_save_translation():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
 
-    resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
@@ -274,10 +273,10 @@ def test_save_translation_invalid():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
@@ -356,10 +355,10 @@ def test_drafts():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
@@ -414,10 +413,10 @@ def test_get_token_sentences():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get("/v2/text/translate/token-based/project/tokens?project_id="+str(project_id)
@@ -484,10 +483,10 @@ def test_get_sentence():
     assert_not_available_content(response)
 
     put_data = {
-        "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # before translation
@@ -565,10 +564,10 @@ def test_progress_n_suggestion():
     assert response.json()['suggestion'] == 0
 
     put_data = {
-        "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # before translation
@@ -643,10 +642,10 @@ def test_get_versification():
         assert len(response.json()[key]) == 0
 
     put_data = {
-        "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     response = client.get(UNIT_URL+"/versification?project_id="+str(project_id)
@@ -679,10 +678,10 @@ def test_agmt_translation_access_rule_app():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     #get tokens
@@ -846,10 +845,10 @@ def test_data_updated_time():
 
     # Add book into empty project
     put_data = {
-        "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat']]
     }
-    resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # Get tokens
@@ -925,10 +924,10 @@ def test_agmt_translation_access_permissions():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    resp = client.put("/v2/text/translate/token-based/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get("/v2/text/translate/token-based/project/tokens?project_id="+str(project_id)

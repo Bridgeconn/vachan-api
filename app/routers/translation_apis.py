@@ -36,7 +36,7 @@ async def get_projects(request: Request,
         active:%s, user_id:%s',project_name, source_language, target_language, active, user_id)
     if compatible_with is None:
         app = request.headers['app']
-        compatible_with = app
+        compatible_with = [app]
     return projects_crud.get_translation_projects(db_, project_name, source_language,
         target_language, active=active,compatible_with=compatible_with, user_id=user_id,
         skip=skip, limit=limit)
@@ -68,6 +68,7 @@ async def create_project(request: Request,
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
 async def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectEdit,
+    project_id:int=Query(...,example="1022004"),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.PROJECT.value))):
     # operates_on=schema_auth.ResourceType.PROJECT.value):
@@ -104,7 +105,7 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
             project_obj.sentenceList = sentences
     return {'message': "Project updated successfully",
         "data": projects_crud.update_translation_project(db_, project_obj,
-            user_id=user_details['user_id'])}
+            project_id=project_id, user_id=user_details['user_id'])}
 
 @router.delete('/v2/text/translate/token-based/projects', status_code=201,
     response_model=schemas.DeleteResponse,
@@ -151,12 +152,13 @@ async def add_user(request: Request,project_id:int, user_id:str,
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
 async def update_user(request: Request,user_obj:schemas_nlp.ProjectUser,
+    project_id:int=Query(...,example="1022004"),
     user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):
     '''Changes role, metadata or active status of user of a project.'''
     log.info('In update_user')
     log.debug('user_obj:%s',user_obj)
     return {'message': "User updated in project successfully",
-        "data": projects_crud.update_project_user(db_, user_obj,
+        "data": projects_crud.update_project_user(db_, user_obj,project_id=project_id,
             current_user=user_details['user_id'])}
 
 @router.delete('/v2/text/translate/token-based/project/user', status_code=201,
