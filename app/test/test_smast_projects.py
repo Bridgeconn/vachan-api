@@ -474,7 +474,6 @@ def test_update_user_invlaid():
         "active": False
     }
     response = client.put(USER_URL+'?project_id='+str(new_project['projectId']+1), headers=headers_auth, json=update_data)
-    print("non existant:",response.json())
     assert response.status_code == 404
     assert response.json()['details'] == f"Project with id, {new_project['projectId']+1}, not present"
 
@@ -1344,17 +1343,6 @@ def test_post_put_app_compatibility():
     assert isinstance(new_project['metaData']['books'], list)
     assert len(new_project['metaData']['books']) == 0
     assert new_project['active']
-
-    # Create new project with incompatible app - Negative Test
-    post_data_2= {
-    "projectName": "Test project 3",
-    "sourceLanguageCode": "hi",
-    "targetLanguageCode": "ml",
-    "compatibleWith": ["Autographa"]
-    }
-    response = client.post(UNIT_URL, headers=headers_auth, json=post_data_2)
-    assert response.status_code == 403
-    assert response.json()['details'] == "Incompatible app"
 
     # update data with compatible app not passed as a list - negative test
     put_data = {

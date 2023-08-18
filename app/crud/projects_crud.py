@@ -215,7 +215,7 @@ def check_app_compatibility_decorator(func):#pylint:disable=too-many-statements
                 project_id = parsed_data['projectId']
             elif 'project_id' in parsed_data:
                 project_id = parsed_data['project_id']
-            elif 'project_id' in query_params:
+            if 'project_id' in query_params:
                 project_id = query_params['project_id']
         else:
             project_id = query_params['project_id']
@@ -226,8 +226,6 @@ def check_app_compatibility_decorator(func):#pylint:disable=too-many-statements
         else:
             if 'compatibleWith' in parsed_data and parsed_data['compatibleWith'] is not None:
                 compatible_with = parsed_data['compatibleWith']
-            else:
-                compatible_with = request.headers['app']
         if 'app' in request.headers:
             client_app = request.headers['app']
             if len(compatible_with) ==0:

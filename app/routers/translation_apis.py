@@ -47,7 +47,6 @@ async def get_projects(request: Request,
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse}},
     tags=['Translation-Project management'])
 @get_auth_access_check_decorator
-@check_app_compatibility_decorator
 async def create_project(request: Request,
     project_obj:schemas_nlp.TranslationProjectCreate,
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
