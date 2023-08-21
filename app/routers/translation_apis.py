@@ -3,11 +3,10 @@
 from typing import List
 from fastapi import APIRouter, Query, Body, Depends, Request, Path, BackgroundTasks
 from sqlalchemy.orm import Session
-
-
 from dependencies import get_db, log, AddHiddenInput
 from schema import schemas, schemas_nlp, schema_auth, schema_content
 from crud import nlp_crud, projects_crud, nlp_sw_crud, structurals_crud, utils
+from crud.projects_crud import check_app_compatibility_decorator
 from custom_exceptions import GenericException
 from routers import content_apis
 from auth.authentication import get_user_or_none,get_auth_access_check_decorator
@@ -27,6 +26,7 @@ async def get_projects(request: Request,
     source_language:schemas.LangCodePattern=Query(None,example='en'),
     target_language:schemas.LangCodePattern=Query(None,example='ml'),
     active:bool=True, user_id:str=Query(None),
+    compatible_with: List[schema_auth.App] = Query(None,example=["Autographa","SanketMAST"]),
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db),
     filtering_required=Depends(AddHiddenInput(value=True))):
@@ -34,8 +34,12 @@ async def get_projects(request: Request,
     log.info('In get_projects')
     log.debug('project_name: %s, source_language:%s, target_language:%s,\
         active:%s, user_id:%s',project_name, source_language, target_language, active, user_id)
+    if compatible_with is None:
+        app = request.headers['app']
+        compatible_with = [app]
     return projects_crud.get_translation_projects(db_, project_name, source_language,
-        target_language, active=active, user_id=user_id, skip=skip, limit=limit)
+        target_language, active=active,compatible_with=compatible_with, user_id=user_id,
+        skip=skip, limit=limit)
 
 @router.post('/v2/text/translate/token-based/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse,
@@ -49,9 +53,10 @@ async def create_project(request: Request,
     '''Creates a new translation project'''
     log.info('In create_project')
     log.debug('project_obj: %s',project_obj)
+    app = request.headers['app']
     return {'message': "Project created successfully",
         "data": projects_crud.create_translation_project(db_=db_, project=project_obj,
-            user_id=user_details['user_id'])}
+            user_id=user_details['user_id'],app = app)}
 
 @router.put('/v2/text/translate/token-based/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse,
@@ -60,7 +65,9 @@ async def create_project(request: Request,
     500: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
     tags=['Translation-Project management'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectEdit,
+    project_id:int=Query(...,example="1022004"),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.PROJECT.value))):
     # operates_on=schema_auth.ResourceType.PROJECT.value):
@@ -97,7 +104,7 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
             project_obj.sentenceList = sentences
     return {'message': "Project updated successfully",
         "data": projects_crud.update_translation_project(db_, project_obj,
-            user_id=user_details['user_id'])}
+            project_id=project_id, user_id=user_details['user_id'])}
 
 @router.delete('/v2/text/translate/token-based/projects', status_code=201,
     response_model=schemas.DeleteResponse,
@@ -106,6 +113,7 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
     404: {"model": schemas.ErrorResponse}, 403:{"model": schemas.ErrorResponse}},
     tags=['Translation-Project management'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def remove_project(request: Request,
     project_id:int = Query(..., example=100001),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
@@ -125,6 +133,7 @@ async def remove_project(request: Request,
     404: {"model": schemas.ErrorResponse}},
     tags=['Translation-Project management'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def add_user(request: Request,project_id:int, user_id:str,
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Adds new user to a project.'''
@@ -140,13 +149,15 @@ async def add_user(request: Request,project_id:int, user_id:str,
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}},tags=['Translation-Project management'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def update_user(request: Request,user_obj:schemas_nlp.ProjectUser,
+    project_id:int=Query(...,example="1022004"),
     user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):
     '''Changes role, metadata or active status of user of a project.'''
     log.info('In update_user')
     log.debug('user_obj:%s',user_obj)
     return {'message': "User updated in project successfully",
-        "data": projects_crud.update_project_user(db_, user_obj,
+        "data": projects_crud.update_project_user(db_, user_obj,project_id=project_id,
             current_user=user_details['user_id'])}
 
 @router.delete('/v2/text/translate/token-based/project/user', status_code=201,
@@ -156,6 +167,7 @@ async def update_user(request: Request,user_obj:schemas_nlp.ProjectUser,
     404: {"model": schemas.ErrorResponse}, 403:{"model": schemas.ErrorResponse}},
     tags=['Translation-Project management'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def remove_user(request: Request,project_id:int, user_id:str,
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Removes a user from a project.'''
@@ -176,6 +188,7 @@ async def remove_user(request: Request,project_id:int, user_id:str,
     404: {"model": schemas.ErrorResponse}},
     status_code=200, tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def get_tokens(request: Request, project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=(410010001, 41001999)),
@@ -204,6 +217,7 @@ async def get_tokens(request: Request, project_id:int=Query(...,example="1022004
     500: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def apply_token_translations(request: Request,project_id:int=Query(...,example="1022004"),
     token_translations:List[schemas_nlp.TokenUpdate]=Body(...), return_drafts:bool=True,
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
@@ -221,6 +235,7 @@ async def apply_token_translations(request: Request,project_id:int=Query(...,exa
     404: {"model": schemas.ErrorResponse}},
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def get_token_translation(request: Request,project_id:int=Query(...,example="1022004"),
     token:str=Query(...,example="duck"),
     sentence_id:int=Query(..., example="41001001"),
@@ -239,6 +254,7 @@ async def get_token_translation(request: Request,project_id:int=Query(...,exampl
     404: {"model": schemas.ErrorResponse}},
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def get_token_sentences(request: Request,project_id:int=Query(...,example="1022004"),
     token:str=Query(...,example="duck"),
     occurrences:List[schemas_nlp.TokenOccurence]=Body(..., example=[
@@ -256,6 +272,7 @@ async def get_token_sentences(request: Request,project_id:int=Query(...,example=
     415: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def get_draft(request: Request,project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
@@ -278,6 +295,7 @@ async def get_draft(request: Request,project_id:int=Query(...,example="1022004")
     415: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def update_draft(request: Request,project_id:int=Query(...,example="1022004"),
     sentence_list:List[schemas_nlp.ProjectDraftInput]=Body(...),
     user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):
@@ -296,6 +314,7 @@ async def update_draft(request: Request,project_id:int=Query(...,example="102200
     404: {"model": schemas.ErrorResponse}},
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def get_project_source(request: Request,project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
@@ -317,6 +336,7 @@ async def get_project_source(request: Request,project_id:int=Query(...,example="
     404: {"model": schemas.ErrorResponse}, 403:{"model": schemas.ErrorResponse}},
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def remove_sentence(request: Request,project_id:int=Query(...,example="1022004"),
     sentence_id:int=Query(...,example="41001001"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
@@ -337,6 +357,7 @@ async def remove_sentence(request: Request,project_id:int=Query(...,example="102
     404: {"model": schemas.ErrorResponse}},
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def get_progress(request: Request,project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
@@ -356,6 +377,7 @@ async def get_progress(request: Request,project_id:int=Query(...,example="102200
     404: {"model": schemas.ErrorResponse}},
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def get_project_versification(request: Request,project_id:int=Query(...,example="1022004"),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Obtains versification structure for source sentences or verses'''
@@ -370,6 +392,7 @@ async def get_project_versification(request: Request,project_id:int=Query(...,ex
     404: {"model": schemas.ErrorResponse}},
     tags=["Translation Suggestion"])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def suggest_auto_translation(request: Request,project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
