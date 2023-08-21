@@ -2,6 +2,9 @@ SQLAlchemy==1.4.41
 python-gitlab==3.9.0
 fastapi==0.101.1
 pydantic==1.10.11
+httpx==0.24.1
+python-multipart==0.0.6
+Jinja2==3.1.2
 pygtrie==2.5.0
 nltk==3.7
 numpy==1.23.3

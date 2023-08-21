@@ -26,7 +26,7 @@ async def get_projects(request: Request,
     source_language:schemas.LangCodePattern=Query(None,examples='en'),
     target_language:schemas.LangCodePattern=Query(None,examples='ml'),
     active:bool=True, user_id:str=Query(None),
-    compatible_with: List[schema_auth.App] = Query(None,example=["Autographa","SanketMAST"]),
+    compatible_with: List[schema_auth.App] = Query(None,examples=["Autographa","SanketMAST"]),
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db),
     filtering_required=Depends(AddHiddenInput(value=True))):
@@ -67,7 +67,7 @@ async def create_project(request: Request,
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
 async def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectEdit,
-    project_id:int=Query(...,example="1022004"),
+    project_id:int=Query(...,examples="1022004"),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.PROJECT.value))):
     # operates_on=schema_auth.ResourceType.PROJECT.value):
@@ -151,7 +151,7 @@ async def add_user(request: Request,project_id:int, user_id:str,
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
 async def update_user(request: Request,user_obj:schemas_nlp.ProjectUser,
-    project_id:int=Query(...,example="1022004"),
+    project_id:int=Query(...,examples="1022004"),
     user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):
     '''Changes role, metadata or active status of user of a project.'''
     log.info('In update_user')
