@@ -118,6 +118,7 @@ CREATE TABLE public.translation_projects(
     created_at timestamp with time zone DEFAULT NOW(),
     last_updated_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
+    compatible_with text[],
     UNIQUE(project_name, created_user)
 );
 ALTER SEQUENCE public.translation_projects_project_id_seq RESTART WITH 100000;
