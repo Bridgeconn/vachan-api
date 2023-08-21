@@ -129,7 +129,7 @@ def test_default_post_put_get():
                 "accept": "application/json"
             }
     headers_auth_content['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    resp = client.post('/v2/bibles/'+table_name+'/books', headers=headers_auth_content, json=gospel_books_data)
+    resp = client.post('/v2/resources/bibles/'+table_name+'/books', headers=headers_auth_content, json=gospel_books_data)
 
     # resp, resource_name = add_bible(gospel_books_data)
     assert resp.status_code == 201

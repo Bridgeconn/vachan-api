@@ -384,7 +384,7 @@ def test_end_to_end_translation():
                 "app":"Autographa"
             }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    resp = client.post(BASE_URL+"bibles/"+source_name+"/books", headers=headers_auth,
+    resp = client.post(BASE_URL+"resources/bibles/"+source_name+"/books", headers=headers_auth,
     json=gospel_books_data)
     assert resp.json()['message'] == "Bible books uploaded and processed successfully"
 

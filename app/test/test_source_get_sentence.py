@@ -68,7 +68,7 @@ def create_resources():
     }
     resource = add_resource(resource_data)
     bible_name = resource.json()['data']['resourceName']
-    resp = client.post(f'/v2/bibles/{bible_name}/books', headers=headers_auth, json=gospel_books_data)
+    resp = client.post(f'/v2/resources/bibles/{bible_name}/books', headers=headers_auth, json=gospel_books_data)
     assert resp.status_code == 201
 
     resource_data = {
