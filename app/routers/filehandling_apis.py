@@ -21,12 +21,12 @@ router = APIRouter()
     status_code=200, tags=['File Handling', 'Bibles'])
 @get_auth_access_check_decorator
 async def usfm_parse_resource_bible(request: Request,
-    resource_name: schemas.TableNamePattern = Path(..., example="hi_IRV_1_bible"),
-    book_code: schemas.BookCodePattern=Path(..., example="mat"),
-    output_format: usfm_grammar.Format = Path(..., example="usx"),
+    resource_name: schemas.TableNamePattern = Path(..., examples="hi_IRV_1_bible"),
+    book_code: schemas.BookCodePattern=Path(..., examples="mat"),
+    output_format: usfm_grammar.Format = Path(..., examples="usx"),
     content_filter: usfm_grammar.Filter = Query(usfm_grammar.Filter.SCRIPTURE_PARAGRAPHS),
-    chapter: int=Query(None, example=1),
-    # verse: int=Query(None, example=1), last_verse: int=Query(None, example=15),
+    chapter: int=Query(None, examples=1),
+    # verse: int=Query(None, examples=1), last_verse: int=Query(None, examples=15),
     active: bool=True,
     # skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details = Depends(get_user_or_none),
@@ -58,11 +58,11 @@ async def usfm_parse_resource_bible(request: Request,
     status_code=200, tags=['File Handling'])
 @get_auth_access_check_decorator
 async def parse_uploaded_usfm(request:Request,
-    output_format: usfm_grammar.Format = Path(..., example="usx"),
+    output_format: usfm_grammar.Format = Path(..., examples="usx"),
     content_filter: usfm_grammar.Filter = Query(usfm_grammar.Filter.SCRIPTURE_PARAGRAPHS),
     input_usfm: schema_content.UploadedUsfm = Body(...),
-    chapter: int=Query(None, example=1),
-    # verse: int=Query(None, example=1), last_verse: int=Query(None, example=15),
+    chapter: int=Query(None, examples=1),
+    # verse: int=Query(None, examples=1), last_verse: int=Query(None, examples=15),
     user_details=Depends(get_user_or_none)):
     '''Allows to upload a USFM file to be converted to another format. uses usfm-grammar'''
     log.info("In parse_uploaded_usfm router function")
