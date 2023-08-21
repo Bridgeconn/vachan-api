@@ -1,5 +1,4 @@
 '''Test cases for SanketMAST projects related APIs'''
-from schema import schema_auth
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
@@ -9,7 +8,7 @@ from .test_versions import check_post as add_version
 from .conftest import initial_test_users
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 
-UNIT_URL = '/v2/text/translate/token-based/projects'
+UNIT_URL = '/v2/text/translate/token-based/projects' 
 USER_URL = '/v2/text/translate/token-based/project/user'
 SENTENCE_URL = '/v2/text/translate/token-based/project/sentences'
 RESTORE_URL = '/v2/admin/restore'
@@ -91,10 +90,10 @@ def test_default_post_put_get():
 
     # upload books
     put_data = {
+    "projectId":new_project['projectId'],
     "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
-    response2 = client.put(UNIT_URL+'?project_id='+str(new_project['projectId']),\
-         headers=headers_auth, json=put_data)
+    response2 = client.put(UNIT_URL, headers=headers_auth, json=put_data)
     assert response2.status_code == 201
     assert response2.json()['message'] == "Project updated successfully"
     updated_project = response2.json()['data']
@@ -135,13 +134,13 @@ def test_default_post_put_get():
     assert resp.status_code == 201
 
     put_data = {
+        "projectId":new_project['projectId'],
         "selectedBooks": {
             "bible": table_name,
             "books": ["luk", "jhn"]
           }
     }
-    response2b = client.put(UNIT_URL+'?project_id='+str(new_project['projectId']),\
-         headers=headers_auth, json=put_data)
+    response2b = client.put(UNIT_URL, headers=headers_auth, json=put_data)
     assert response2b.status_code == 201
     assert response2b.json()['message'] == "Project updated successfully"
     updated_project = response2b.json()['data']
@@ -166,9 +165,9 @@ def test_default_post_put_get():
 
     # change name
     put_data = {
+        "projectId":new_project['projectId'],
         "projectName":"New name for old project"}
-    response4 = client.put(UNIT_URL+'?project_id='+str(new_project['projectId']),\
-         headers=headers_auth, json=put_data)
+    response4 = client.put(UNIT_URL, headers=headers_auth, json=put_data)
     assert response4.status_code == 201
     assert response4.json()['message'] == "Project updated successfully"
     updated_project = response4.json()['data']
@@ -290,19 +289,19 @@ def test_put_invalid():
     assert_input_validation_error(resp)
 
     # incorrect values in fields
-    data = {"active": "delete"}
-    resp = client.put(UNIT_URL+'?project_id='+str(new_project['projectId']), \
-        headers=headers_auth, json=data)
+    data = {"projectId": new_project['projectId'],
+    "active": "delete"}
+    resp = client.put(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(resp)
 
-    data = {"uploadedUSFMs": "mat"}
-    resp = client.put(UNIT_URL+'?project_id='+str(new_project['projectId']), \
-        headers=headers_auth, json=data)
+    data = {"projectId": new_project['projectId'],
+    "uploadedUSFMs": "mat"}
+    resp = client.put(UNIT_URL, headers=headers_auth, json=data)
     assert_input_validation_error(resp)
 
-    data = {"uploadedUSFMs": ["The contents of matthew in text"]}
-    resp = client.put(UNIT_URL+'?project_id='+str(new_project['projectId']), \
-        headers=headers_auth, json=data)
+    data = {"projectId": new_project['projectId'],
+    "uploadedUSFMs": ["The contents of matthew in text"]}
+    resp = client.put(UNIT_URL, headers=headers_auth, json=data)
     assert resp.status_code == 415
     assert resp.json()['error'] == "Not the Required Type"
 
@@ -402,7 +401,6 @@ def test_update_user():
     resp = check_post(project_data)
     assert resp.json()['message'] == "Project created successfully"
     new_project = resp.json()['data']
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     new_user_id = initial_test_users['SanketMASTUser']['test_user_id']
 
     resp = client.post(USER_URL+'?project_id='+str(new_project['projectId'])+
@@ -410,16 +408,14 @@ def test_update_user():
     assert resp.json()['message'] == "User added to project successfully"
 
     update_data = {
-        # "project_id": new_project['projectId'],
+        "project_id": new_project['projectId'],
         "userId": new_user_id
     }
 
     # change role
     update1 = update_data
     update1['userRole'] = 'projectOwner'
-    # response1 = client.post(USER_URL+'?project_id='+str(new_project['projectId'])+
-    #     '&user_id='+str(new_user_id),headers=headers_auth)
-    response1 = client.put(USER_URL+'?project_id='+str(new_project['projectId']), headers=headers_auth, json=update1)
+    response1 = client.put(USER_URL, headers=headers_auth, json=update1)
     assert response1.status_code == 201
     assert response1.json()['message'] == "User updated in project successfully"
     check_project_user(project_data['projectName'], new_user_id, role="projectOwner")
@@ -427,7 +423,7 @@ def test_update_user():
     # change status
     update2 = update_data
     update2['active'] = False
-    response2 = client.put(USER_URL+'?project_id='+str(new_project['projectId']), headers=headers_auth, json=update2)
+    response2 = client.put(USER_URL, headers=headers_auth, json=update2)
     assert response2.status_code == 201
     assert response2.json()['message'] == "User updated in project successfully"
     check_project_user(project_data['projectName'], new_user_id, status=False)
@@ -436,7 +432,7 @@ def test_update_user():
     meta = {"last_filter": "mat"}
     update3 = update_data
     update3['metaData'] = meta
-    response3 = client.put(USER_URL+'?project_id='+str(new_project['projectId']), headers=headers_auth, json=update3)
+    response3 = client.put(USER_URL, headers=headers_auth, json=update3)
     assert response3.status_code == 201
     assert response3.json()['message'] == "User updated in project successfully"
     check_project_user(project_data['projectName'], new_user_id, metadata=meta)
@@ -453,7 +449,7 @@ def test_update_user_invlaid():
     assert resp.json()['message'] == "Project created successfully"
     new_project = resp.json()['data']
     new_user_id = initial_test_users['SanketMASTUser']['test_user_id']
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
+
     resp = client.post(USER_URL+'?project_id='+str(new_project['projectId'])+
         '&user_id='+str(new_user_id),headers=headers_auth)
     assert resp.json()['message'] == "User added to project successfully"
@@ -461,38 +457,40 @@ def test_update_user_invlaid():
 
     # not the added user
     update_data = {
+        "project_id": new_project['projectId'],
         "userId": "not-a-valid-user-11233",
         "active": False
     }
-    response = client.put(USER_URL+'?project_id='+str(new_project['projectId']), headers=headers_auth, json=update_data)
+    response = client.put(USER_URL, headers=headers_auth, json=update_data)
     assert response.status_code == 404
     assert response.json()['details'] == "User-project pair not found"
 
     #non existant project
     update_data = {
+        "project_id": new_project['projectId']+1,
         "userId": new_user_id,
         "active": False
     }
-    response = client.put(USER_URL+'?project_id='+str(new_project['projectId']+1), headers=headers_auth, json=update_data)
-    print("non existant:",response.json())
+    response = client.put(USER_URL, headers=headers_auth, json=update_data)
     assert response.status_code == 404
-    assert response.json()['details'] == f"Project with id, {new_project['projectId']+1}, not present"
-
+    assert response.json()['details'] == "User-project pair not found"
 
     # invalid status
     update_data = {
+        "project_id": new_project['projectId']+1,
         "userId": new_user_id,
         "active": "Delete"
     }
-    response = client.put(USER_URL+'?project_id='+str(new_project['projectId']+1), headers=headers_auth, json=update_data)
+    response = client.put(USER_URL, headers=headers_auth, json=update_data)
     assert_input_validation_error(response)
 
     # invalid metadata
     update_data = {
+        "project_id": new_project['projectId']+1,
         "userId": new_user_id,
         "metaData": "A normal string intead of json"
     }
-    response = client.put(USER_URL+'?project_id='+str(new_project['projectId']+1), headers=headers_auth, json=update_data)
+    response = client.put(USER_URL, headers=headers_auth, json=update_data)
     assert_input_validation_error(response)
 
 
@@ -547,7 +545,8 @@ def test_soft_delete():
         project_id = resp.json()[0]['projectId']
 
         put_obj = {"active": False}
-        response = client.put(UNIT_URL+'?project_id='+str(project_id), headers=headers_auth, json=put_obj)
+        put_obj['projectId'] = project_id
+        response = client.put(UNIT_URL, headers=headers_auth, json=put_obj)
         assert response.status_code == 201
         assert response.json()['message'] == 'Project updated successfully'
         assert not response.json()['data']['active']
@@ -642,11 +641,12 @@ def test_agmt_projects_access_rule():
 
     #update Project
     put_data = {
+    "projectId":project6_id,
     "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
     #update with Owner of project
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
-    response2 = client.put(UNIT_URL+'?project_id='+str(project6_id), headers=headers_auth, json=put_data)
+    response2 = client.put(UNIT_URL, headers=headers_auth, json=put_data)
     assert response2.status_code == 201
     assert response2.json()['message'] == "Project updated successfully"
     updated_project = response2.json()['data']
@@ -654,22 +654,24 @@ def test_agmt_projects_access_rule():
 
     #aguser project can be updated by super admin and SanketMAST admin
     put_data = {
+        "projectId":project6_id,
         "projectName":"New name for old project6"}
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
-    response2 = client.put(UNIT_URL+'?project_id='+str(project6_id), headers=headers_auth, json=put_data)
+    response2 = client.put(UNIT_URL, headers=headers_auth, json=put_data)
     assert response2.status_code == 201
     assert response2.json()['message'] == "Project updated successfully"
     assert response2.json()['data']['projectName'] == put_data["projectName"]
     put_data["projectName"] = "New name for project7 by SA"
     headers_auth['Authorization'] = "Bearer"+" "+test_SA_token
-    response2 = client.put(UNIT_URL+'?project_id='+str(project6_id), headers=headers_auth, json=put_data)
+    response2 = client.put(UNIT_URL, headers=headers_auth, json=put_data)
     assert response2.status_code == 201
     assert response2.json()['message'] == "Project updated successfully"
     assert response2.json()['data']['projectName'] == put_data["projectName"]
 
     #update project with not Owner
+    put_data["projectId"] = project7_id
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
-    response2 = client.put(UNIT_URL+'?project_id='+str(project7_id), headers=headers_auth, json=put_data)
+    response2 = client.put(UNIT_URL, headers=headers_auth, json=put_data)
     assert response2.status_code == 403
     assert response2.json()['error'] == 'Permission Denied'
 
@@ -720,18 +722,19 @@ def test_agmt_projects_access_rule():
     #update user with not owner
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
     update_data = {
+        "project_id": project8_id,
         "userId": new_user_id
     }
     # add metadata
     meta = {"last_filter": "luk"}
     update_data['metaData'] = meta
-    response3 = client.put(USER_URL+'?project_id='+str(project8_id), headers=headers_auth, json=update_data)
+    response3 = client.put(USER_URL, headers=headers_auth, json=update_data)
     assert response3.status_code == 403
     assert response3.json()['error'] == 'Permission Denied'
     #update with owner
     post_data['projectName'] = 'Test project 1'
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
-    response3 = client.put(USER_URL+'?project_id='+str(project8_id), headers=headers_auth, json=update_data)
+    response3 = client.put(USER_URL, headers=headers_auth, json=update_data)
     assert response3.status_code == 201
     assert response3.json()['message'] == "User updated in project successfully"
 
@@ -887,9 +890,10 @@ def test_create_n_update_times():
 
     # Make an update to project
     update_data = {
+        "projectId": project_id,
         "metaData": {"last_filter": "luk"}
     }
-    response2 = client.put(UNIT_URL+'?project_id='+str(project_id), headers=headers_auth, json=update_data)
+    response2 = client.put(UNIT_URL, headers=headers_auth, json=update_data)
     assert response2.status_code == 201
     assert response2.json()['message'] == "Project updated successfully"
 
@@ -939,7 +943,7 @@ def test_delete_project():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
     resp = client.delete(UNIT_URL+'?project_id='+str(invalid_project_id),headers=headers_auth)
     assert resp.status_code == 404
-    assert resp.json()['details'] == f"Project with id, {invalid_project_id}, not present"
+    assert resp.json()['details'] == f"Project with id {invalid_project_id} not found"
 
     # Delete as unauthorized users
     for user in ['APIUser','VachanAdmin','VachanUser','BcsDev','VachanContentAdmin','VachanContentViewer']:
@@ -1278,11 +1282,12 @@ def test_bugfix_split_n_merged_verse():
     project_id = response.json()['data']['projectId']
 
     prj_book_data = {
+      "projectId": project_id,
       "uploadedUSFMs": [
           "\\id REV\n\\c 1\n\\p\n\\v 1 some text\n\\v 2-10 merged text\n\\v 11a split text\n\\v 11b rest"
       ]
     }
-    prj_update_resp = client.put(UNIT_URL+'?project_id='+str(project_id), json=prj_book_data, headers=headers_auth)
+    prj_update_resp = client.put(UNIT_URL, json=prj_book_data, headers=headers_auth)
     assert prj_update_resp.status_code == 201
     resp_obj = prj_update_resp.json()
     assert resp_obj['message'] == 'Project updated successfully'
@@ -1300,198 +1305,3 @@ def test_bugfix_split_n_merged_verse():
     assert sentences[2]['sentenceId'] == 67001011
     assert sentences[2]['surrogateId'] == 'rev 1:11a-b'
     assert sentences[2]["sentence"] == 'split text rest'
-
-def test_post_put_app_compatibility():
-    '''Positive test to check app compatibility
-    * Only SanketMAST app can access translation APIs'''
-    headers_auth = {"contentType": "application/json",
-                "accept": "application/json",
-                "app":"SanketMAST"
-            }
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
-
-    # create with minimum data
-    post_data = {
-    "projectName": "Test project 1",
-    "sourceLanguageCode": "hi",
-    "targetLanguageCode": "ml"
-    }
-
-    #Creating new project with out adding compatibleWith field - Positive Test
-    #app value in the header will be auto assigned as compatibleWith field
-    response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
-    assert response.status_code == 201
-    assert response.json()['message'] == "Project created successfully"
-    response.json()['data']['compatibleWith'] = ["SanketMAST"]
-    assert_positive_get( response.json()['data'])
-
-    # Creating new project with compatible app which is not passed as a list - Negative Test
-    post_data['compatibleWith'] = "SanketMAST"
-    response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
-    assert_input_validation_error(response)
-
-    # Creating new project with compatible app passed as a list - Positive Test
-    post_data["projectName"] = "Test Project 2"
-    post_data["compatibleWith"] = ["SanketMAST","Autographa"]
-    response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
-    assert response.status_code == 201
-    assert response.json()['message'] == "Project created successfully"
-    new_project = response.json()['data']
-    assert_positive_get(new_project)
-
-    # check if all defaults are coming
-    assert new_project['metaData']["useDataForLearning"]
-    assert isinstance(new_project['metaData']['books'], list)
-    assert len(new_project['metaData']['books']) == 0
-    assert new_project['active']
-
-    # Create new project with incompatible app - Negative Test
-    post_data_2= {
-    "projectName": "Test project 3",
-    "sourceLanguageCode": "hi",
-    "targetLanguageCode": "ml",
-    "compatibleWith": ["Autographa"]
-    }
-    response = client.post(UNIT_URL, headers=headers_auth, json=post_data_2)
-    assert response.status_code == 403
-    assert response.json()['details'] == "Incompatible app"
-
-    # update data with compatible app not passed as a list - negative test
-    put_data = {
-    "uploadedUSFMs":[bible_books['mat']]
-    }
-    put_data["compatibleWith"] =  "SanketMAST"
-    response2 = client.put(UNIT_URL+'?project_id='+str(new_project['projectId']),\
-         headers=headers_auth, json=put_data)
-    assert_input_validation_error(response2)
-
-    # update data with compatible app passed as a list - positive test
-    put_data = {
-    "uploadedUSFMs":[bible_books['mat']]
-    }
-    put_data["compatibleWith"] =  ["Autographa","VachanAdmin"]
-    response2 = client.put(UNIT_URL+'?project_id='+str(new_project['projectId']), \
-        headers=headers_auth, json=put_data)
-    assert response2.status_code == 201
-    assert response2.json()['message'] == "Project updated successfully"
-    updated_project = response2.json()['data']
-    assert_positive_get(updated_project)
-
-    assert new_project['projectId'] == updated_project['projectId']
-    assert new_project['projectName'] == updated_project['projectName']
-    assert updated_project['metaData']['books'] == ['mat']
-
-    # update project with incompatible app - Negative Test
-    put_data = {
-    "uploadedUSFMs":[bible_books['mrk']],
-    "compatibleWith": ["VachanAdmin"]
-    }
-    response2 = client.put(UNIT_URL+'?project_id='+str(new_project['projectId']), \
-        headers=headers_auth, json=put_data)
-    assert response2.status_code == 403
-    assert response2.json()['details'] == "Incompatible app"
-
-def test_delete_with_compatible_app():
-    '''Test to delete project based on app compatibiblty'''
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
-    data_1 = {
-    "projectName": "Test project 1",
-    "sourceLanguageCode": "hi",
-    "targetLanguageCode": "ml",
-    "compatibleWith": ["SanketMAST"]
-    }
-    data_2 = {
-    "projectName": "Test project 2",
-    "sourceLanguageCode": "hi",
-    "targetLanguageCode": "ml",
-    "compatibleWith": ["SanketMAST","Autographa"]
-    }
-    # creating two projects
-    response1 = client.post(UNIT_URL, headers=headers_auth, json=data_1)
-    project1 = response1.json()['data']
-    project_id_1 = project1['projectId']
-    response2 = client.post(UNIT_URL, headers=headers_auth, json=data_2)
-    project2 = response2.json()['data']
-    project_id_2 = project2['projectId']
-
-    # delete project1 with compatible app - Positive Test
-    resp = client.delete(UNIT_URL+'?project_id='+str(project_id_1),headers=headers_auth)
-    assert resp.status_code == 201
-    assert resp.json()['message'] == f"Project with identity {project_id_1} deleted successfully"
-    # update compatibility of project 2
-    put_data = {
-    "compatibleWith": ["VachanAdmin"]
-    }
-    response2 = client.put(UNIT_URL+'?project_id='+str(project_id_2), \
-        headers=headers_auth, json=put_data)
-
-    # delete project with incompatible app - Negative Test
-    resp = client.delete(UNIT_URL+'?project_id='+str(project_id_2),headers=headers_auth)
-    assert resp.status_code == 403
-    assert resp.json()['details'] == "Incompatible app"
-
-def test_get_filter_with_app_compatibility():
-    '''Test  to filter with app compatibility'''
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTAdmin']['token']
-    data_1 = {
-    "projectName": "Test project 1",
-    "sourceLanguageCode": "hi",
-    "targetLanguageCode": "ml",
-    "compatibleWith": ["SanketMAST"]
-    }
-    data_2 = {
-    "projectName": "Test project 2",
-    "sourceLanguageCode": "hi",
-    "targetLanguageCode": "ml"
-    }
-    data_3 = {
-    "projectName": "Test project 3",
-    "sourceLanguageCode": "hi",
-    "targetLanguageCode": "ml",
-    "compatibleWith": ["SanketMAST","Autographa"]
-    }
-    # Creating new project with compatible app - Positive Test
-    response1 = client.post(UNIT_URL, headers=headers_auth, json=data_1)
-    # Creating new project without mentioning compatible_with field - Positive test
-    response2 = client.post(UNIT_URL, headers=headers_auth, json=data_2)
-    # Creating new project with multiple items in compatible_with field - Positive test
-    response3 = client.post(UNIT_URL, headers=headers_auth, json=data_3)
-    
-    #filtering with single app - passing app not as a list - Negative test
-    app = "SanketMAST"
-    params = []
-    for item in app:
-        params.append(("compatible_with", item))
-    get_resp = client.get(UNIT_URL ,params=params,headers=headers_auth)
-    assert_input_validation_error(get_resp)
-    
-    # filtering with single app - positive test
-    app = ["SanketMAST"]
-    params = []
-    for item in app:
-        params.append(("compatible_with", item))
-    get_resp = client.get(UNIT_URL ,params=params,headers=headers_auth)
-    for item in get_resp.json():
-        assert_positive_get(item)
-    assert len(get_resp.json()) == 3
-    assert"SanketMAST" in  get_resp.json()[0]['compatibleWith']
-    assert"SanketMAST" in  get_resp.json()[1]['compatibleWith']
-    assert"SanketMAST" in  get_resp.json()[2]['compatibleWith']
-
-    #filtering with multiple apps - positive test
-    app_list = [schema_auth.App.SMAST.value, schema_auth.App.AG.value]
-    params = []
-    for app in app_list:
-        params.append(("compatible_with", app))
-    get_resp2 = client.get(UNIT_URL, params=params, headers=headers_auth)
-    for item in get_resp2.json():
-        assert_positive_get(item)
-    assert len(get_resp2.json()) == 1
-    for item in get_resp2.json():
-        assert_positive_get(item)
-        assert "SanketMAST" in item['compatibleWith']
-        assert "Autographa" in item['compatibleWith']
-
-    #filtering with app not in the list
-    get_resp = client.get(UNIT_URL + "?compatible_with=VachanAdmin",headers=headers_auth)
-    assert_not_available_content(get_resp)
