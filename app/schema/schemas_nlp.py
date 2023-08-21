@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field, constr, root_validator
 
 from schema.schemas import LangCodePattern, TableNamePattern, LanguageResponse
 from schema.schema_content import BookCodePattern, Job
-from schema.schema_auth import App
 
 #pylint: disable=too-few-public-methods
 class TranslationDocumentType(Enum):
@@ -26,7 +25,7 @@ class Stopwords(BaseModel):
 
 class ProjectUser(BaseModel):
     '''Input object for Translation project user update'''
-    project_id: int = None
+    project_id: int
     userId: str
     userRole: str = Field(None, example='projectOwner')
     metaData: dict = Field(None, example={
@@ -54,7 +53,6 @@ class TranslationProjectCreate(BaseModel):
         example=[',', '"', '!', '.', ':', ';', '\n', '\\','“','”',
         '“','*','।','?',';',"'","’","(",")","‘","—"])
     active: bool = True
-    compatibleWith: List[App] = Field(None,example=['SanketMAST'])
 
 class TranslationProject(BaseModel):
     '''Output object for project creation'''
@@ -69,7 +67,6 @@ class TranslationProject(BaseModel):
     metaData: dict = Field(None, example={"books":['mat', 'mrk', 'luk', 'jhn'],
         "useDataForLearning":True})
     active: bool
-    compatibleWith: List[App] = Field(None,example=['SanketMAST'])
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
@@ -96,6 +93,7 @@ class SentenceInput(BaseModel):
 
 class TranslationProjectEdit(BaseModel):
     '''New books to be added or active flag change'''
+    projectId: int
     projectName: str = None
     active: bool = None
     selectedBooks: SelectedBooks = None
@@ -104,7 +102,6 @@ class TranslationProjectEdit(BaseModel):
     useDataForLearning: bool = None
     stopwords: Stopwords = None
     punctuations: List[constr(max_length=1)] = None
-    compatibleWith: List[App] = Field(None,example=['SanketMAST'])
 
 class TranslationProjectUpdateResponse(BaseModel):
     '''Response for post and put'''
