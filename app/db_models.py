@@ -463,4 +463,3 @@ class DeletedItem(Base): # pylint: disable=too-few-public-methods
     createdUser = Column('deleted_user', String)
     deletedTime = Column('deleted_time', DateTime, default=ist_time)
     deletedFrom = Column('deleted_from', String)
-    
