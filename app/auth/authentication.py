@@ -11,7 +11,7 @@ import db_models
 # from auth.api_permission_map import api_permission_map
 from auth import utils
 from schema import schema_auth
-from dependencies import log, get_db
+from dependencies import log
 from custom_exceptions import GenericException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
     UnprocessableException, PermissionException, AuthException
