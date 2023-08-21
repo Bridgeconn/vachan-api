@@ -273,7 +273,7 @@ def add_bible_books(table_name):
         book_data = open('test/resources/' + book, 'r',encoding='utf-8').read()
         data.append({"USFM":book_data})
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    response = client.post('/v2/bibles/'+table_name+'/books', headers=headers_auth, json=data)
+    response = client.post('/v2/resources/bibles/'+table_name+'/books', headers=headers_auth, json=data)
     assert response.status_code == 201
     assert response.json()["message"] == "Bible books uploaded and processed successfully"
 

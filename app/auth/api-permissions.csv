@@ -59,27 +59,27 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/resources/get-sentence,GET,API-user,False,"resource_types like bibles, commentaries, parascripturals , vocabularies or sign bible videos",read-via-api
 /v2/resources/get-sentence,GET,None,False,Research-Material,read-via-api
 /v2/lookup/bible/books,GET,None,False,None,read
-/v2/bibles/{resource_name}/books,GET,Autographa,False,None,refer-for-translation
-/v2/bibles/{resource_name}/books,GET,SanketMAST,False,None,refer-for-translation
-/v2/bibles/{resource_name}/books,GET,Vachan-online or vachan-app,False,None,view-on-web
-/v2/bibles/{resource_name}/books,GET,VachanAdmin,False,None,read-via-vachanadmin
-/v2/bibles/{resource_name}/books,GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
-/v2/bibles/{resource_name}/books,GET,API-user,False,None,read-via-api
-/v2/bibles/{resource_name}/books,POST,None,False,None,create
-/v2/bibles/{resource_name}/books,PUT,None,False,None,edit
-/v2/bibles/{resource_name}/books,DELETE,None,False,None,delete/deactivate
-/v2/bibles/{resource_name}/versification,GET,Autographa,False,None,refer-for-translation
-/v2/bibles/{resource_name}/versification,GET,SanketMAST,False,None,refer-for-translation
-/v2/bibles/{resource_name}/versification,GET,Vachan-online or vachan-app,False,None,view-on-web
-/v2/bibles/{resource_name}/versification,GET,VachanAdmin,False,None,read-via-vachanadmin
-/v2/bibles/{resource_name}/versification,GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
-/v2/bibles/{resource_name}/versification,GET,API-user,False,None,read-via-api
-/v2/bibles/{resource_name}/verses,GET,Autographa,False,None,refer-for-translation
-/v2/bibles/{resource_name}/verses,GET,SanketMAST,False,None,refer-for-translation
-/v2/bibles/{resource_name}/verses,GET,Vachan-online or vachan-app,False,None,view-on-web
-/v2/bibles/{resource_name}/verses,GET,VachanAdmin,False,None,read-via-vachanadmin
-/v2/bibles/{resource_name}/verses,GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
-/v2/bibles/{resource_name}/verses,GET,API-user,False,None,read-via-api
+/v2/resources/bibles/{resource_name}/books,GET,Autographa,False,None,refer-for-translation
+/v2/resources/bibles/{resource_name}/books,GET,SanketMAST,False,None,refer-for-translation
+/v2/resources/bibles/{resource_name}/books,GET,Vachan-online or vachan-app,False,None,view-on-web
+/v2/resources/bibles/{resource_name}/books,GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/resources/bibles/{resource_name}/books,GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
+/v2/resources/bibles/{resource_name}/books,GET,API-user,False,None,read-via-api
+/v2/resources/bibles/{resource_name}/books,POST,None,False,None,create
+/v2/resources/bibles/{resource_name}/books,PUT,None,False,None,edit
+/v2/resources/bibles/{resource_name}/books,DELETE,None,False,None,delete/deactivate
+/v2/resources/bibles/{resource_name}/versification,GET,Autographa,False,None,refer-for-translation
+/v2/resources/bibles/{resource_name}/versification,GET,SanketMAST,False,None,refer-for-translation
+/v2/resources/bibles/{resource_name}/versification,GET,Vachan-online or vachan-app,False,None,view-on-web
+/v2/resources/bibles/{resource_name}/versification,GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/resources/bibles/{resource_name}/versification,GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
+/v2/resources/bibles/{resource_name}/versification,GET,API-user,False,None,read-via-api
+/v2/resources/bibles/{resource_name}/verses,GET,Autographa,False,None,refer-for-translation
+/v2/resources/bibles/{resource_name}/verses,GET,SanketMAST,False,None,refer-for-translation
+/v2/resources/bibles/{resource_name}/verses,GET,Vachan-online or vachan-app,False,None,view-on-web
+/v2/resources/bibles/{resource_name}/verses,GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/resources/bibles/{resource_name}/verses,GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
+/v2/resources/bibles/{resource_name}/verses,GET,API-user,False,None,read-via-api
 /v2/commentaries/{resource_name},GET,Autographa,False,None,refer-for-translation
 /v2/commentaries/{resource_name},GET,SanketMAST,False,None,refer-for-translation
 /v2/commentaries/{resource_name},GET,Vachan-online or vachan-app,False,None,view-on-web
@@ -191,12 +191,12 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/media/gitlab/stream,GET,None,False,"resource_types like bibles, commentaries, parascripturals , vocabularies or sign bible videos",read-via-api
 /v2/media/gitlab/download,GET,None,False,Media contents,download
 /v2/media/gitlab/download,GET,None,False,"resource_types like bibles, commentaries, parascripturals , vocabularies or sign bible videos",read-via-api
-/v2/bibles/{resource_name}/books/{book_code}/export/{output_format},GET,Autographa,False,None,refer-for-translation
-/v2/bibles/{resource_name}/books/{book_code}/export/{output_format},GET,SanketMAST,False,None,refer-for-translation
-/v2/bibles/{resource_name}/books/{book_code}/export/{output_format},GET,Vachan-online or vachan-app,False,None,view-on-web
-/v2/bibles/{resource_name}/books/{book_code}/export/{output_format},GET,VachanAdmin,False,None,read-via-vachanadmin
-/v2/bibles/{resource_name}/books/{book_code}/export/{output_format},GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
-/v2/bibles/{resource_name}/books/{book_code}/export/{output_format},GET,API-user,False,None,read-via-api
+/v2/resources/bibles/{resource_name}/books/{book_code}/export/{output_format},GET,Autographa,False,None,refer-for-translation
+/v2/resources/bibles/{resource_name}/books/{book_code}/export/{output_format},GET,SanketMAST,False,None,refer-for-translation
+/v2/resources/bibles/{resource_name}/books/{book_code}/export/{output_format},GET,Vachan-online or vachan-app,False,None,view-on-web
+/v2/resources/bibles/{resource_name}/books/{book_code}/export/{output_format},GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/resources/bibles/{resource_name}/books/{book_code}/export/{output_format},GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
+/v2/resources/bibles/{resource_name}/books/{book_code}/export/{output_format},GET,API-user,False,None,read-via-api
 /v2/files/usfm/to/{output_format},PUT,None,False,File Manipulation Ops,access-via-api
 /v2/admin/restore,PUT,None,False,None,data-restore
 /v2/admin/cleanup,DELETE,None,False,None,delete/deactivate
