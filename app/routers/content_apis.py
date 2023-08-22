@@ -496,7 +496,7 @@ async def get_bible_book(request: Request,book_id: int=Query(None, example=67),
         skip = skip, limit = limit)
 
 # #### Bible #######
-@router.post('/v2/bibles/{resource_name}/books',
+@router.post('/v2/resources/bibles/{resource_name}/books',
     response_model=schema_content.BibleBookCreateResponse,
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -518,7 +518,7 @@ async def add_bible_book(request: Request,
         "data": contents_crud.upload_bible_books(db_=db_, resource_name=resource_name,
         books=books, user_id=user_details['user_id'])}
 
-@router.put('/v2/bibles/{resource_name}/books',
+@router.put('/v2/resources/bibles/{resource_name}/books',
     response_model=schema_content.BibleBookUpdateResponse,
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -536,7 +536,8 @@ async def edit_bible_book(request: Request,
     Deactivated items are not included in normal fetch results if not specified otherwise
     * In the second case, the two fields, usfm and json,  are mandatory as they are interdependant.
     Contents of the respective bible_clean and bible_tokens tables
-    are deleted and new data added, which changes the results of /v2/bibles/{resource_name}/verses
+    are deleted and new data added, which changes the results of
+    /v2/resources/bibles/{resource_name}/verses
     and tokens apis aswell.'''
     log.info('In edit_bible_book')
     log.debug('resource_name: %s, books: %s',resource_name, books)
@@ -544,7 +545,7 @@ async def edit_bible_book(request: Request,
         "data": contents_crud.update_bible_books(db_=db_, resource_name=resource_name,
         books=books, user_id=user_details['user_id'])}
 
-@router.get('/v2/bibles/{resource_name}/books',
+@router.get('/v2/resources/bibles/{resource_name}/books',
     response_model=List[schema_content.BibleBookContent],
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
@@ -571,7 +572,7 @@ async def get_available_bible_book(request: Request,
     return contents_crud.get_available_bible_books(db_, resource_name, book_code, content_type,
         active=active, skip = skip, limit = limit)
 
-@router.delete('/v2/bibles/{resource_name}/books',response_model=schemas.DeleteResponse,
+@router.delete('/v2/resources/bibles/{resource_name}/books',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
     502: {"model": schemas.ErrorResponse}},
@@ -603,7 +604,7 @@ async def delete_bible_book(request: Request,
     return {'message': f"Bible Book with id {biblebook_id} deleted successfully",
             "data": delcont}
 
-@router.get('/v2/bibles/{resource_name}/versification',
+@router.get('/v2/resources/bibles/{resource_name}/versification',
     response_model= schema_content.Versification,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
@@ -617,7 +618,7 @@ async def get_bible_versification(request: Request,
     log.debug('resource_name: %s',resource_name)
     return contents_crud.get_bible_versification(db_, resource_name)
 
-@router.get('/v2/bibles/{resource_name}/verses',
+@router.get('/v2/resources/bibles/{resource_name}/verses',
     response_model=List[schema_content.BibleVerse],
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
@@ -670,7 +671,7 @@ async def get_commentary(request: Request,
     '''Fetches commentries under the specified resource.
     * optional query parameters can be used to filter the result set
     * Using the params bookCode, chapter, and verse the result set can be filtered as per need,
-    like in the /v2/bibles/{resourceName}/verses API
+    like in the /v2/resources/bibles/{resourceName}/verses API
     * Value 0 for verse and last_verse indicate chapter introduction and -1 indicate
     chapter epilogue.
     * Similarly 0 for chapter means book introduction and -1 for chapter means book epilogue

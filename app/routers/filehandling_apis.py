@@ -15,7 +15,7 @@ router = APIRouter()
 
 #################### USFM Grammar ####################
 
-@router.get('/v2/bibles/{resource_name}/books/{book_code}/export/{output_format}',
+@router.get('/v2/resources/bibles/{resource_name}/books/{book_code}/export/{output_format}',
     responses={404: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse},
     500: {"model": schemas.ErrorResponse}},
     status_code=200, tags=['File Handling', 'Bibles'])
