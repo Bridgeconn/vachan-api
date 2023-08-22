@@ -58,7 +58,6 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/resources/get-sentence,GET,VachanContentDashboard,False,"resource_types like bibles, commentaries, parascripturals , vocabularies or sign bible videos",read-via-vachancontentdashboard
 /v2/resources/get-sentence,GET,API-user,False,"resource_types like bibles, commentaries, parascripturals , vocabularies or sign bible videos",read-via-api
 /v2/resources/get-sentence,GET,None,False,Research-Material,read-via-api
-/v2/lookup/bible/books,GET,None,False,None,read
 /v2/bibles/{resource_name}/books,GET,Autographa,False,None,refer-for-translation
 /v2/bibles/{resource_name}/books,GET,SanketMAST,False,None,refer-for-translation
 /v2/bibles/{resource_name}/books,GET,Vachan-online or vachan-app,False,None,view-on-web
@@ -180,12 +179,13 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/nlp/gloss,PUT,None,False,None,process
 /v2/nlp/gloss,DELETE,None,False,None,delete
 /v2/nlp/alignment,POST,None,False,None,create
-/v2/nlp/stopwords/generate,POST,None,False,Lookup contents,create
-/v2/nlp/stopwords/generate,POST,None,False,"resource_types like bibles, commentaries, parascripturals , vocabularies or sign bible videos",read-via-api
-/v2/lookup/stopwords/{language_code},GET,None,False,None,read
-/v2/lookup/stopwords/{language_code},PUT,None,False,None,edit
-/v2/lookup/stopwords/{language_code},POST,None,False,None,create
-/v2/lookup/stopwords/{language_code},DELETE,None,False,None,delete
+/v2/nlp/stopwords-generate,POST,None,False,Lookup contents,create
+/v2/nlp/stopwords-generate,POST,None,False,"resource_types like bibles, commentaries, parascripturals , vocabularies or sign bible videos",read-via-api
+/v2/resources/lookups/bible/books,GET,None,False,None,read
+/v2/nlp/stopwords/{language_code},GET,None,False,None,read
+/v2/nlp/stopwords/{language_code},PUT,None,False,None,edit
+/v2/nlp/stopwords/{language_code},POST,None,False,None,create
+/v2/nlp/stopwords/{language_code},DELETE,None,False,None,delete
 /v2/jobs,GET,None,False,None,read
 /v2/media/gitlab/stream,GET,None,False,Media contents,stream
 /v2/media/gitlab/stream,GET,None,False,"resource_types like bibles, commentaries, parascripturals , vocabularies or sign bible videos",read-via-api

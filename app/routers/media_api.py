@@ -70,10 +70,10 @@ accessible to the user")
 @get_auth_access_check_decorator
 async def stream_media(request: Request, #pylint: disable=unused-argument,too-many-arguments
     access_token: str = Query(None),
-    repo: str = Query(None,examples="kavitha.raju/trial-media-project"),
-    tag: str = Query(None,examples="main"),
-    file_path: str=Query(None,examples="token videos/Apostle.MOV"),
-    permanent_link: str=Query(None,examples=
+    repo: str = Query(None,example="kavitha.raju/trial-media-project"),
+    tag: str = Query(None,example="main"),
+    file_path: str=Query(None,example="token videos/Apostle.MOV"),
+    permanent_link: str=Query(None,example=
         "https://gitlab.bridgeconn.com/kavitha.raju/"+
             "trial-media-project/-/raw/main/token videos/Apostle.MOV"),
     start_time: Optional[datetime] =Query(None),
@@ -110,10 +110,10 @@ async def stream_media(request: Request, #pylint: disable=unused-argument,too-ma
 @get_auth_access_check_decorator
 async def download_media(request: Request, #pylint: disable=too-many-arguments
     access_token: str = Query(None),
-    repo: str = Query(None,examples="kavitha.raju/trial-media-project"),
-    tag: str = Query(None,examples="main"),
-    file_path: str=Query(None,examples="token videos/Apostle.MOV"),
-    permanent_link: str=Query(None,examples=
+    repo: str = Query(None,example="kavitha.raju/trial-media-project"),
+    tag: str = Query(None,example="main"),
+    file_path: str=Query(None,example="token videos/Apostle.MOV"),
+    permanent_link: str=Query(None,example=
         "https://gitlab.bridgeconn.com/kavitha.raju/"+
             "trial-media-project/-/raw/main/token videos/Apostle.MOV"),
     db_: Session = Depends(get_db)):

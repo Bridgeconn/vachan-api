@@ -3,15 +3,11 @@ Translation Project Management. The translation or NLP related functions of thes
 projects are included in nlp_crud module'''
 
 import re
-import json
 import datetime
-from functools import wraps
 from pytz import timezone
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
-from sqlalchemy import text
 from sqlalchemy.orm.attributes import flag_modified
-from fastapi import HTTPException
 import db_models
 from schema import schemas_nlp
 from dependencies import log
@@ -24,7 +20,7 @@ ist_timezone = timezone("Asia/Kolkata")
 
 #pylint: disable=W0143,E1101
 ###################### Translation Project Mangement ######################
-def create_translation_project(db_:Session, project, user_id=None,app=None):
+def create_translation_project(db_:Session, project, user_id=None):
     '''Add a new project entry to the translation projects table'''
     source = db_.query(db_models.Language).filter(
         db_models.Language.code==project.sourceLanguageCode).first()
@@ -37,8 +33,6 @@ def create_translation_project(db_:Session, project, user_id=None,app=None):
         meta['stopwords'] = project.stopwords.__dict__
     if project.punctuations:
         meta['punctuations'] = project.punctuations
-    if project.compatibleWith is None:
-        project.compatibleWith = [app]
     db_content = db_models.TranslationProject(
         projectName=utils.normalize_unicode(project.projectName),
         source_lang_id=source.languageId,
@@ -47,8 +41,7 @@ def create_translation_project(db_:Session, project, user_id=None,app=None):
         active=project.active,
         createdUser=user_id,
         updatedUser=user_id,
-        metaData=meta,
-        compatibleWith = project.compatibleWith
+        metaData=meta
         )
     db_.add(db_content)
     db_.flush()
@@ -62,7 +55,7 @@ def create_translation_project(db_:Session, project, user_id=None,app=None):
     return db_content
 
 book_pattern_in_surrogate_id = re.compile(r'^[\w\d]\w\w')
-def update_translation_project_sentences(db_, project_obj,project_id, new_books, user_id):
+def update_translation_project_sentences(db_, project_obj, new_books, user_id):
     """bulk selected book update in update translation project"""
     for sent in project_obj.sentenceList:
         norm_sent = utils.normalize_unicode(sent.sentence)
@@ -72,7 +65,7 @@ def update_translation_project_sentences(db_, project_obj,project_id, new_books,
             if book_code not in new_books and book_code in utils.BOOK_CODES:
                 new_books.append(book_code)
         draft_row = db_models.TranslationDraft(
-            project_id=project_id,
+            project_id=project_obj.projectId,
             sentenceId=sent.sentenceId,
             surrogateId=sent.surrogateId,
             sentence=norm_sent,
@@ -134,7 +127,7 @@ def get_sentences_from_usfm_json(chapters_json, book_code, book_id):
                     })
     return draft_rows
 
-def update_translation_project_uploaded_book(db_,project_obj,project_id,new_books,user_id):
+def update_translation_project_uploaded_book(db_,project_obj,new_books,user_id):
     """bulk uploaded book update in update translation project"""
     for usfm in project_obj.uploadedUSFMs:
         usfm_json = utils.parse_usfm(usfm)
@@ -147,7 +140,7 @@ def update_translation_project_uploaded_book(db_,project_obj,project_id,new_book
         draft_rows = get_sentences_from_usfm_json(usfm_json['chapters'], book_code, book.bookId)
         for item in draft_rows:
             db_.add(db_models.TranslationDraft(
-                project_id=project_id,
+                project_id=project_obj.projectId,
                 sentenceId=item['sentenceId'],
                 surrogateId=item['surrogateId'],
                 sentence=item['sentence'],
@@ -155,20 +148,20 @@ def update_translation_project_uploaded_book(db_,project_obj,project_id,new_book
                 draftMeta=item['draftMeta'],
                 updatedUser=user_id))
 
-def update_translation_project(db_:Session, project_obj, project_id, user_id=None):
+def update_translation_project(db_:Session, project_obj, user_id=None):
     '''Either activate or deactivate a project or Add more books to a project,
     adding all new verses to the drafts table'''
-    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    project_row = db_.query(db_models.TranslationProject).get(project_obj.projectId)
     if not project_row:
-        raise NotAvailableException(f"Project with id, {project_id}, not found")
+        raise NotAvailableException(f"Project with id, {project_obj.projectId}, not found")
     new_books = []
     if project_obj.selectedBooks:
         new_books += project_obj.selectedBooks.books
     if project_obj.sentenceList:
-        update_translation_project_sentences(db_, project_obj,project_id, new_books, user_id)
+        update_translation_project_sentences(db_, project_obj, new_books, user_id)
     if project_obj.uploadedUSFMs:
         #uploaded usfm book add to project
-        update_translation_project_uploaded_book(db_,project_obj,project_id,new_books,user_id)
+        update_translation_project_uploaded_book(db_,project_obj,new_books,user_id)
     # db_.commit()
     # db_.expire_all()
     if project_obj.projectName:
@@ -184,8 +177,6 @@ def update_translation_project(db_:Session, project_obj, project_id, user_id=Non
     if project_obj.punctuations:
         project_row.metaData['punctuations'] = project_obj.punctuations
         flag_modified(project_row, "metaData")
-    if project_obj.compatibleWith:
-        project_row.compatibleWith= project_obj.compatibleWith
     project_row.updatedUser = user_id
     project_row.updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
     if len(new_books) > 0:
@@ -196,54 +187,10 @@ def update_translation_project(db_:Session, project_obj, project_id, user_id=Non
     # db_.refresh(project_row)
     return project_row
 
-# pylint: disable=duplicate-code
-def check_app_compatibility_decorator(func):#pylint:disable=too-many-statements
-    """Decorator function for to check app compatibility"""
-    @wraps(func)
-    async def wrapper(*args, **kwargs):#pylint: disable=too-many-branches,too-many-statements
-        request = kwargs.get('request')
-        db_ = kwargs.get("db_")
-        query_params = request.query_params
-        body = await request.body()
-        compatible_with = []
-        project_id = None
-
-        if len(body) != 0:
-            json_string = body.decode()
-            parsed_data = json.loads(json_string)
-            if 'projectId' in parsed_data:
-                project_id = parsed_data['projectId']
-            elif 'project_id' in parsed_data:
-                project_id = parsed_data['project_id']
-            if 'project_id' in query_params:
-                project_id = query_params['project_id']
-        else:
-            project_id = query_params['project_id']
-        if project_id is not None:
-            project_obj = db_.query(db_models.TranslationProject).get(project_id)
-            if project_obj is not None:
-                compatible_with = project_obj.compatibleWith
-        else:
-            if 'compatibleWith' in parsed_data and parsed_data['compatibleWith'] is not None:
-                compatible_with = parsed_data['compatibleWith']
-        if 'app' in request.headers:
-            client_app = request.headers['app']
-            if len(compatible_with) ==0:
-                raise HTTPException(status_code=404,detail = \
-                    f"Project with id, {project_id}, not present")
-            if client_app not in compatible_with:
-                raise PermissionException("Incompatible app")
-        else:
-            raise PermissionException("Incompatible app")
-        return await func(*args, **kwargs)
-    return wrapper
-# pylint: enable=duplicate-code
-
 def get_translation_projects(db_:Session, project_name=None, source_language=None,
     target_language=None, **kwargs):
     '''Fetch autographa projects as per the query options'''
     active = kwargs.get("active",True)
-    compatible_with = kwargs.get("compatible_with",None)
     user_id = kwargs.get("user_id",None)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
@@ -263,10 +210,6 @@ def get_translation_projects(db_:Session, project_name=None, source_language=Non
         if not target:
             raise NotAvailableException(f"Language, {target_language}, not found")
         query = query.filter(db_models.TranslationProject.target_lang_id == target.languageId)
-    if compatible_with is not None:
-        query = query.filter(text(
-            "ARRAY[:compatible_with]::text[] <@ translation_projects.compatible_with").bindparams(
-            compatible_with=compatible_with))
     if user_id:
         query = query.filter(db_models.TranslationProject.users.any(userId=user_id))
     query = query.filter(db_models.TranslationProject.active == active)
@@ -300,14 +243,14 @@ def add_project_user(db_:Session, project_id, user_id, current_user=None):
     # db_.commit()
     return response
 
-def update_project_user(db_, user_obj, project_id,current_user=10101):
+def update_project_user(db_, user_obj, current_user=10101):
     '''Change role, active status or metadata of user in a project'''
     user_row = db_.query(db_models.TranslationProjectUser).filter(
-        db_models.TranslationProjectUser.project_id == project_id,
+        db_models.TranslationProjectUser.project_id == user_obj.project_id,
         db_models.TranslationProjectUser.userId == user_obj.userId).first()
     if not user_row:
         raise NotAvailableException("User-project pair not found")
-    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    project_row = db_.query(db_models.TranslationProject).get(user_obj.project_id)
     if user_obj.userRole:
         user_row. userRole = user_obj.userRole
     if user_obj.metaData:

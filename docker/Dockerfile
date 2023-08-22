@@ -1,4 +1,4 @@
-FROM tiangolo/uvicorn-gunicorn:python3.10
+FROM python:3.10
 
 COPY ./app /app/app
 COPY ./requirements.txt requirements.txt

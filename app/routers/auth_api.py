@@ -77,8 +77,8 @@ responses={401: {"model": schemas.ErrorResponse}}
 ,tags=["Authentication"])
 @get_auth_access_check_decorator
 async def get_identities_list(request: Request,#pylint: disable=unused-argument
-    name: str = Query(None, examples="Bridgeconn"),
-    user_id: str = Query(None, examples="ecf57420-9rg0-40t8-b56b-dce1fc52c452"),
+    name: str = Query(None, example="Bridgeconn"),
+    user_id: str = Query(None, example="ecf57420-9rg0-40t8-b56b-dce1fc52c452"),
     roles:List[schema_auth.FilterRoles]=Query([schema_auth.FilterRoles.ALL]),
     skip: int = Query(0, ge=0),limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
@@ -100,7 +100,7 @@ responses={401: {"model": schemas.ErrorResponse}}
 ,tags=["Authentication"])
 @get_auth_access_check_decorator
 async def get_user_profile(request: Request,#pylint: disable=unused-argument
-    user_id:str =Path(...,examples="4bd012fd-7de8-4d66-928f-4925ee9bb"),
+    user_id:str =Path(...,example="4bd012fd-7de8-4d66-928f-4925ee9bb"),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''fetches user profile Data'''
     log.info('In User Profile')
@@ -132,7 +132,7 @@ responses={401: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorRes
 500: {"model": schemas.ErrorResponse}},status_code=201,tags=["Authentication"])
 @get_auth_access_check_decorator
 async def edit_user(request: Request,#pylint: disable=unused-argument
-    user_id:str =Path(...,examples="4bd012fd-7de8-4d66-928f-4925ee9bb"),
+    user_id:str =Path(...,example="4bd012fd-7de8-4d66-928f-4925ee9bb"),
     edit_details:schema_auth.EditUser = Body(...),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):#pylint: disable=unused-argument
     '''update user data'''
