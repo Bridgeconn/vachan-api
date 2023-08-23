@@ -26,7 +26,6 @@ def test_get_book_code():
     '''positive test case, with one optional params, code'''
     #Without Auth
     response = client.get(UNIT_URL+'?book_code=psa')
-    print("####", response.json())
     assert response.status_code == 200
     # assert response.json()["error"] == "Authentication Error"
     #With Auth

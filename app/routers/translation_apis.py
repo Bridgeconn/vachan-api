@@ -736,10 +736,7 @@ async def generate_stopwords(request: Request, background_tasks: BackgroundTasks
     log.info('In generate_stopwords')
     log.debug('language_code:%s, use_server_data:%s, source_name:%s, sentence_list:%s',
         language_code, use_server_data, source_name, sentence_list)
-    print("language_Code,serverdata,sourcename,userdetails",
-          language_code,use_server_data,source_name,user_details)
-    print("sentencelist", sentence_list)
-
+    
     # job_info = create_job(
     #         request=request, #pylint: disable=W0613
     #         db_=db_, user_id=user_details['user_id'])
