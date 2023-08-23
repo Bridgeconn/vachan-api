@@ -67,8 +67,8 @@ async def create_project(request: Request,
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
 async def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectEdit,
-    project_id:int=Query(...,example="1022004"),
-    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db),
+    project_id:int=Query(...,example="1022004"), user_details =Depends(get_user_or_none),
+    db_:Session=Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.PROJECT.value))):
     # operates_on=schema_auth.ResourceType.PROJECT.value):
     '''Adds more books to a Translation project's source. Delete or activate project.'''
@@ -151,7 +151,7 @@ async def add_user(request: Request,project_id:int, user_id:str,
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
 async def update_user(request: Request,user_obj:schemas_nlp.ProjectUser,
-    project_id:int=Query(...,example="1022004"),
+                      project_id:int=Query(...,example="1022004"),
     user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):
     '''Changes role, metadata or active status of user of a project.'''
     log.info('In update_user')
@@ -640,7 +640,7 @@ async def add_alignments(request: Request,
     trg_lang=target_language, alignment_list=alignments, user_id=user_details['user_id'])
     return { "message": "Alignments used for learning", "data":tw_data }
 
-@router.get('/v2/lookup/stopwords/{language_code}', response_model=List[schemas_nlp.StopWords],
+@router.get('/v2/nlp/stopwords/{language_code}', response_model=List[schemas_nlp.StopWords],
     response_model_exclude_none=True, status_code=200,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -663,7 +663,7 @@ async def get_stop_words(request: Request,
         include_auto_generated=include_auto_generated, only_active=only_active, skip=skip,
         limit=limit)
 
-@router.put('/v2/lookup/stopwords/{language_code}',
+@router.put('/v2/nlp/stopwords/{language_code}',
     response_model=schemas_nlp.StopWordUpdateResponse, response_model_exclude_none=True,
     status_code=201,responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -680,7 +680,7 @@ async def update_stop_words(request: Request,
     sw_data = nlp_sw_crud.update_stopword_info(db_, language_code, sw_info,user_details['user_id'])
     return { "message": "Stopword info updated successfully", "data":sw_data }
 
-@router.post('/v2/lookup/stopwords/{language_code}',
+@router.post('/v2/nlp/stopwords/{language_code}',
     response_model=schemas_nlp.StopWordsAddResponse, response_model_exclude_none=True,
     status_code=201,responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -699,7 +699,7 @@ async def add_stopwords(request: Request,
     msg = f"{len(result)} stopwords added successfully"
     return {"message": msg, "data": result}
 
-@router.delete('/v2/lookup/stopwords/{language_code}', status_code=201,
+@router.delete('/v2/nlp/stopwords/{language_code}', status_code=201,
     response_model=schemas.DeleteResponse,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -719,7 +719,7 @@ async def remove_stopword(request: Request,
     return {'message':  "Stopword removed successfully",
             "data": delcont}
 
-@router.post('/v2/nlp/stopwords/generate',
+@router.post('/v2/nlp/stopwords-generate',
     response_model=schemas_nlp.StopWordsGenerateResponse, response_model_exclude_none=True,
     status_code=201,responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse}},

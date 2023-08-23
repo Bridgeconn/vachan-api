@@ -10,8 +10,8 @@ from .conftest import initial_test_users
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 
 
-UNIT_URL = '/v2/lookup/stopwords'
-GER_URL = '/v2/nlp/stopwords'
+UNIT_URL = '/v2/nlp/stopwords'
+GER_URL = '/v2/nlp/stopwords-generate'
 JOBS_URL = '/v2/jobs'
 RESTORE_URL = '/v2/admin/restore'
 
@@ -294,7 +294,7 @@ def test_generate_stopwords():
     add_tw_dict(dict_table_name)
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
 
-    response = client.post(GER_URL+'/generate?language_code=hi',headers=headers_auth)
+    response = client.post(GER_URL+'?language_code=hi',headers=headers_auth)
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert "jobId" in response.json()['data']
@@ -312,7 +312,7 @@ def test_generate_stopwords():
         assert_positive_sw_out(item)
     assert job_response.json()['message'] == "Stopwords identified out of limited resources. Manual verification recommended"
 
-    response = client.post(GER_URL+'/generate?language_code=hi&use_server_data=False',
+    response = client.post(GER_URL+'?language_code=hi&use_server_data=False',
                 headers=headers_auth, json=sentence_list)
     assert response.status_code == 201
     assert_positive_response(response.json())
@@ -330,7 +330,7 @@ def test_generate_stopwords():
     assert job_response.json()['message'] == "Not enough data to generate stopwords"
 
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
-    response = client.post(GER_URL+'/generate?language_code=hi',headers=headers_auth,
+    response = client.post(GER_URL+'?language_code=hi',headers=headers_auth,
              json=sentence_list)
     assert response.status_code == 201
     assert_positive_response(response.json())
@@ -350,7 +350,7 @@ def test_generate_stopwords():
     assert job_response1.json()['message'] == "Stopwords identified out of limited resources. Manual verification recommended"
 
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    response = client.post(GER_URL+'/generate?language_code=hi&source_name='+dict_table_name,
+    response = client.post(GER_URL+'?language_code=hi&source_name='+dict_table_name,
         headers=headers_auth, json=sentence_list)
     assert response.status_code == 201
     assert_positive_response(response.json())

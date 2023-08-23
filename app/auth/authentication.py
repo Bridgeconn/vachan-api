@@ -96,10 +96,15 @@ def api_resourcetype_map(endpoint, path_params=None):
         resource_type = schema_auth.ResourceType.PROJECT.value
     elif endpoint.startswith('/v2/user'):
         resource_type = schema_auth.ResourceType.USER.value
-    elif endpoint.startswith("/v2/text/translate/token-based") or endpoint.startswith("/v2/nlp"):
-        resource_type = schema_auth.ResourceType.TRANSLATION.value
-    elif endpoint.startswith("/v2/lookup"):
+
+    elif endpoint.startswith("/v2/resources/lookups/bible/books") or \
+         endpoint.startswith("/v2/nlp/stopwords"):
         resource_type = schema_auth.ResourceType.LOOKUP.value
+
+    elif endpoint.startswith("/v2/text/translate/token-based") or \
+         endpoint.startswith("/v2/nlp"):
+        resource_type = schema_auth.ResourceType.TRANSLATION.value
+
     elif endpoint.startswith("/v2/jobs"):
         resource_type = schema_auth.ResourceType.JOBS.value
     elif endpoint.startswith("/v2/media"):
