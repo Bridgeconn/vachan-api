@@ -655,7 +655,7 @@ async def get_bible_verse(request: Request,
 
 
 # # ##### Commentary #####
-@router.get('/v2/commentaries/{resource_name}',
+@router.get('/v2/resources/commentaries/{resource_name}',
     response_model=List[schema_content.CommentaryResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
@@ -686,7 +686,7 @@ async def get_commentary(request: Request,
         book_code=book_code,verse=verse, last_verse=last_verse,active=active,\
         skip = skip, limit = limit)
 
-@router.post('/v2/commentaries/{resource_name}',
+@router.post('/v2/resources/commentaries/{resource_name}',
     response_model=schema_content.CommentaryCreateResponse, response_model_exclude_none=True,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
@@ -728,7 +728,7 @@ async def add_commentary(request: Request,background_tasks: BackgroundTasks,
     # "data": contents_crud.upload_commentaries(db_=db_, resource_name=resource_name,
     #     commentaries=commentaries, user_id=user_details['user_id'])}
 
-@router.put('/v2/commentaries/{resource_name}',
+@router.put('/v2/resources/commentaries/{resource_name}',
     response_model=schema_content.CommentaryUpdateResponse,response_model_exclude_none=True,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
@@ -763,7 +763,7 @@ async def edit_commentary(request: Request,background_tasks: BackgroundTasks,
     # "data": contents_crud.update_commentaries(db_=db_, resource_name=resource_name,
     #     commentaries=commentaries, user_id=user_details['user_id'])}
 
-@router.delete('/v2/commentaries/{resource_name}',response_model=schemas.DeleteResponse,
+@router.delete('/v2/resources/commentaries/{resource_name}',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
     502: {"model": schemas.ErrorResponse}},

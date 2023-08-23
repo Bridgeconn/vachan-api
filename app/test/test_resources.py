@@ -10,7 +10,7 @@ from .conftest import initial_test_users
 
 UNIT_URL = '/v2/resources'
 RESTORE_URL = '/v2/admin/restore'
-COMMENTARY_URL = '/v2/commentaries/'
+COMMENTARY_URL = '/v2/resources/commentaries/'
 
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json"

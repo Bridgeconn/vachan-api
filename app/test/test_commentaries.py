@@ -11,7 +11,7 @@ from .conftest import initial_test_users
 from .test_stop_words_generation import get_job_status
 
 
-UNIT_URL = '/v2/commentaries/'
+UNIT_URL = '/v2/resources/commentaries/'
 RESOURCE_URL = '/v2/resources'
 headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json",
