@@ -82,7 +82,7 @@ def create_resources():
     }
     resource = add_resource(resource_data)
     commentary_name = resource.json()['data']['resourceName']
-    resp = client.post(f'/v2/commentaries/{commentary_name}', headers=headers_auth, json=commentary_data)
+    resp = client.post(f'/v2/resources/commentaries/{commentary_name}', headers=headers_auth, json=commentary_data)
     assert resp.status_code == 201
 
     return bible_name, commentary_name
