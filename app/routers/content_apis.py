@@ -791,7 +791,7 @@ async def delete_commentary(request: Request,
     return {'message': f"Commentary id {commentary_id} deleted successfully",
             "data": delcont}
 # # ########### Vocabulary ###################
-@router.get('/v2/vocabularies/{resource_name}',
+@router.get('/v2/resources/vocabularies/{resource_name}',
     response_model_exclude_unset=True,
     response_model=List[schema_content.VocabularyWordResponse],
     responses={502: {"model": schemas.ErrorResponse},
@@ -827,7 +827,7 @@ async def get_vocabulary_word(request: Request,
         exact_match=exact_match,
         word_list_only=word_list_only, details=details, active=active, skip=skip, limit=limit)
 
-@router.get('/v2/vocabularies/{resource_name}/count',
+@router.get('/v2/resources/vocabularies/{resource_name}/count',
     response_model=int,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
@@ -860,7 +860,7 @@ async def get_vocabulary_word_count(request: Request,
     response['db_content'] = len(response['db_content'])
     return response
 
-@router.post('/v2/vocabularies/{resource_name}',
+@router.post('/v2/resources/vocabularies/{resource_name}',
     response_model=schema_content.VocabularyCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
@@ -881,7 +881,7 @@ async def add_vocabulary_word(request: Request,
         "data": contents_crud.upload_vocabulary_words(db_=db_, resource_name=resource_name,
         vocabulary_words=vocabulary_words, user_id=user_details['user_id'])}
 
-@router.put('/v2/vocabularies/{resource_name}',
+@router.put('/v2/resources/vocabularies/{resource_name}',
     response_model=schema_content.VocabularyUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
@@ -902,7 +902,7 @@ async def edit_vocabulary_word(request: Request,
         "data": contents_crud.update_vocabulary_words(db_=db_, resource_name=resource_name,
         vocabulary_words=vocabulary_words, user_id=user_details['user_id'])}
 
-@router.delete('/v2/vocabularies/{resource_name}',response_model=schemas.DeleteResponse,
+@router.delete('/v2/resources/vocabularies/{resource_name}',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
     502: {"model": schemas.ErrorResponse}},

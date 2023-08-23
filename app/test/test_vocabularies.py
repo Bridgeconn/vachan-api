@@ -8,7 +8,7 @@ from .test_resources import check_post as add_resource
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 from .conftest import initial_test_users
 
-UNIT_URL = '/v2/vocabularies/'
+UNIT_URL = '/v2/resources/vocabularies/'
 RESOURCE_URL = '/v2/resources'
 RESTORE_URL = '/v2/admin/restore'
 headers = {"contentType": "application/json", "accept": "application/json"}

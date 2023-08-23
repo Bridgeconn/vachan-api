@@ -281,7 +281,7 @@ def add_tw_dict(table_name):
     '''uploads tw vocabulary'''
     data = json.load(open('test/resources/hindi.json'))
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    response = client.post('/v2/vocabularies/'+table_name, headers=headers_auth, json=data)
+    response = client.post('/v2/resources/vocabularies/'+table_name, headers=headers_auth, json=data)
     assert response.status_code == 201
 
 def test_generate_stopwords():
