@@ -67,8 +67,8 @@ async def create_project(request: Request,
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
 async def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectEdit,
-                         project_id:int=Query(...,example="1022004"),
-    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db),
+    project_id:int=Query(...,example="1022004"), user_details =Depends(get_user_or_none),
+    db_:Session=Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.PROJECT.value))):
     # operates_on=schema_auth.ResourceType.PROJECT.value):
     '''Adds more books to a Translation project's source. Delete or activate project.'''

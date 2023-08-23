@@ -10,7 +10,7 @@ from .conftest import initial_test_users
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 
 
-UNIT_URL = '/v2/nlp/stopwords'  #lookup one
+UNIT_URL = '/v2/nlp/stopwords'
 GER_URL = '/v2/nlp/stopwords-generate'
 JOBS_URL = '/v2/jobs'
 RESTORE_URL = '/v2/admin/restore'
@@ -295,7 +295,6 @@ def test_generate_stopwords():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
 
     response = client.post(GER_URL+'?language_code=hi',headers=headers_auth)
-    print("###gen", response.json())
     assert response.status_code == 201
     assert_positive_response(response.json())
     assert "jobId" in response.json()['data']

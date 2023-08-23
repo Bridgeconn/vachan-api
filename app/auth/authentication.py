@@ -103,15 +103,8 @@ def api_resourcetype_map(endpoint, path_params=None):
 
     elif endpoint.startswith("/v2/text/translate/token-based") or \
          endpoint.startswith("/v2/nlp"):
-        print("Endpoint", endpoint)
         resource_type = schema_auth.ResourceType.TRANSLATION.value
-        #endpoint.split('/')[3] in ["stopwords/generate"]:
-        #endpoint.endswith(("stopwords/generate")):
-        # endpoint.split('/')[2] in ["generate"]:
-    #  or \
-    #      endpoint.endswith(("generate-stopwords"))
-    #  or (
-    #     path_params is not None and "language_Code" in path_params)
+
     elif endpoint.startswith("/v2/jobs"):
         resource_type = schema_auth.ResourceType.JOBS.value
     elif endpoint.startswith("/v2/media"):

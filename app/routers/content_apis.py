@@ -76,7 +76,6 @@ async def delete_resources_types(request: Request,
     if len(structurals_crud.get_resource_types(db_, resourcetype_id= resourcetype_id)) == 0:
         raise NotAvailableException(f"ResourceType id {resourcetype_id} not found")
     resourcetype_obj = resourcetype_id
-    # print("####" ,resourcetype_obj)
     deleted_resourcetype = structurals_crud.delete_resource_types(db_=db_,
                                                                   resourcetype=resourcetype_obj)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content=  deleted_resourcetype,
