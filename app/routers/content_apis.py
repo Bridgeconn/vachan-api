@@ -598,9 +598,10 @@ async def delete_bible_book(request: Request,
     delcont = structurals_crud.add_deleted_data(db_= db_,del_content= deleted_content['db_content'],
         table_name = dbtable_name, resource = deleted_content['resource_content'],
         deleting_user=user_details['user_id'])
-    del_clean=structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content2'],#pylint: disable=unused-variable
-        table_name=cleaned_tablename,resource=deleted_content['resource_content'],
-        deleting_user=user_details['user_id'])
+    for item in  deleted_content['db_content2']:
+        structurals_crud.add_deleted_data(db_=db_,del_content= item,#pylint: disable=unused-variable
+            table_name=cleaned_tablename,resource=deleted_content['resource_content'],
+            deleting_user=user_details['user_id'])
     return {'message': f"Bible Book with id {biblebook_id} deleted successfully",
             "data": delcont}
 
