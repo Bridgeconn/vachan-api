@@ -180,10 +180,12 @@ def get_access_tag(db_, resource_type, path_params=None, kw_args = None, resourc
     if resource_type == schema_auth.ResourceType.CONTENT:
         return ['content']
     return []
-
 def is_project_owner(db_:Session, db_resource, user_id):
     '''checks if the user is the owner of the given project'''
-    project_id = db_resource.projectId
+    if hasattr(db_resource, 'projectId'):
+        project_id = db_resource.projectId
+    elif hasattr(db_resource, 'project_id'):
+        project_id = db_resource.project_id
     project_owners = db_.query(db_models.TranslationProjectUser.userId).filter(
         db_models.TranslationProjectUser.project_id == project_id,#pylint: disable=comparison-with-callable
         db_models.TranslationProjectUser.userRole == "projectOwner").all()
