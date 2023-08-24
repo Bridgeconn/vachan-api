@@ -1,10 +1,8 @@
 '''API endpoints related to content management''' #pylint: disable=too-many-lines
 import json
-import re
 from typing import List
 import jsonpickle
-from fastapi import APIRouter, Query, Body, Depends, Path , Request,\
-    BackgroundTasks
+from fastapi import APIRouter, Query, Body, Depends, Path , Request,BackgroundTasks
 from sqlalchemy.orm import Session
 import db_models
 from schema import schemas,schemas_nlp, schema_auth, schema_content
@@ -14,8 +12,6 @@ from custom_exceptions import NotAvailableException, AlreadyExistsException,\
     UnprocessableException
 from auth.authentication import get_auth_access_check_decorator ,\
     get_user_or_none
-
-
 
 router = APIRouter()
 

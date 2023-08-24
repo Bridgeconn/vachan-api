@@ -24,7 +24,6 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/languages,POST,None,False,None,create
 /v2/languages,PUT,None,False,None,edit
 /v2/languages,DELETE,None,False,None,delete/deactivate
-/v2/restore,PUT,None,False,None,data-restore
 /v2/licenses,GET,Autographa,False,None,refer-for-translation
 /v2/licenses,GET,SanketMAST,False,None,refer-for-translation
 /v2/licenses,GET,Vachan-online or vachan-app,False,None,view-on-web
