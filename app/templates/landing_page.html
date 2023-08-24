@@ -81,8 +81,9 @@
     <div class="container">
       <a class="navbar-brand d-flex align-items-center">
 
-        <img class="" src="{{ url_for('static', path='images/logo.png') }}" alt="images/logo.png" width="86"
-          height="86">
+        
+        <img class="" src="{{ root_url }}/static/images/logo.png" alt="images/logo.png" width="86" height="86">
+
 
 
 
@@ -96,30 +97,30 @@
         <ul class="navbar-nav ms-auto mb-2 mb-xl-0">
 
           <li class="nav-item text-center">
-            <a class="nav-link text-primary px-4" href="http://localhost:8000/#hero">About</a>
+            <a class="nav-link text-primary px-4" href="#hero">About</a>
           </li>
 
           <li class="nav-item text-center">
-            <a class="nav-link text-primary px-4" href="http://localhost:8000/#vachan-engine-apis">Vachan Engine
+            <a class="nav-link text-primary px-4" href="#vachan-engine-apis">Vachan Engine
               APIs</a>
           </li>
 
           <li class="nav-item text-center">
-            <a class="nav-link text-primary px-4" href="http://localhost:8000/#ai-apis">AI APIs</a>
+            <a class="nav-link text-primary px-4" href="#ai-apis">AI APIs</a>
           </li>
 
           <li class="nav-item text-center">
-            <a class="nav-link text-primary px-4" href="http://localhost:8000/#translation-apis">Translation APIs</a>
+            <a class="nav-link text-primary px-4" href="#translation-apis">Translation APIs</a>
           </li>
 
           <li class="nav-item text-center">
-            <a class="nav-link text-primary px-4" href="http://localhost:8000/#content-management">Content
+            <a class="nav-link text-primary px-4" href="#content-management">Content
               Management</a>
           </li>
 
           <li class="nav-item text-center">
             <a class="nav-link text-primary px-4"
-              href="http://localhost:8000/#micro-services">Microservices</a>
+              href="#micro-services">Microservices</a>
           </li>
 
         </ul>
@@ -136,7 +137,7 @@
       <div class="row flex-column flex-xl-row-reverse">
         <div class="col-12 col-xl-6  d-flex flex-column justify-content-center hero-image">
 
-          <img class="img-fluid" src="{{ url_for('static', path='images/hero-image.png') }}" alt="images/hero-image.png"
+          <img class="img-fluid" src="{{ root_url }}/static/images/hero-image.png" alt="images/hero-image.png"
             width="768" height="416">
 
 
@@ -190,7 +191,7 @@
         <div class="col px-3 my-2 text-center">
 
 
-          <img class="" src="{{ url_for('static', path='images/fastapi.png') }}" alt="images/fastapi.png" width="266"
+          <img class="" src="{{ root_url }}/static/images/fastapi.png" alt="images/fastapi.png" width="266"
             height="96">
 
 
@@ -199,7 +200,7 @@
         <div class="col px-3 my-2 text-center">
 
 
-          <img class="" src="{{ url_for('static', path='images/postgres.png') }}" alt="images/postgres.png" width="166"
+          <img class="" src="{{ root_url }}/static/images/postgres.png" alt="images/postgres.png" width="166"
             height="49">
 
 
@@ -207,14 +208,14 @@
 
         <div class="col px-3 my-2 text-center">
 
-          <img class="" src="{{ url_for('static', path='images/docker.jpg') }}" alt="images/docker.jpg" width="166"
+          <img class="" src="{{ root_url }}/static/images/docker.jpg" alt="images/docker.jpg" width="166"
             height="92">
 
         </div>
 
         <div class="col px-3 my-2 text-center">
 
-          <img class="" src="{{ url_for('static', path='images/redis.png') }}" alt="images/redis.png" width="166"
+          <img class="" src="{{ root_url }}/static/images/redis.png" alt="images/redis.png" width="166"
             height="55">
 
 
@@ -222,7 +223,7 @@
 
         <div class="col px-3 my-2 text-center">
 
-          <img class="" src="{{ url_for('static', path='images/graphql_logo.png') }}" alt="images/graphql_logo.png"
+          <img class="" src="{{ root_url }}/static/images/graphql_logo.png" alt="images/graphql_logo.png"
             width="266" height="93">
 
 
@@ -242,7 +243,7 @@
 
 
 
-          <img class="img-fluid" src="{{ url_for('static', path='images/vachan_engine.png') }}"
+          <img class="img-fluid" src="{{ root_url }}/static/images/vachan_engine.png"
             alt="images/vachan_engine.png" width="450" height="255">
 
 
@@ -268,7 +269,7 @@
         <div class="col-12 col-xl-6 d-flex flex-column justify-content-center">
 
 
-          <img class="img-fluid" src="{{ url_for('static', path='images/ai_apis.jpeg') }}" alt="images/ai_apis.jpeg"
+          <img class="img-fluid" src="{{ root_url }}/static/images/ai_apis.jpeg" alt="images/ai_apis.jpeg"
             width="566" height="393">
 
 
@@ -303,7 +304,7 @@
         <div class="col-12 col-xl-6 d-flex flex-column justify-content-center">
 
 
-          <img class="img-fluid" src="{{ url_for('static', path='images/translation_apis.png') }}"
+          <img class="img-fluid" src="{{ root_url }}/static/images/translation_apis.png"
             alt="images/translation_apis.png" width="862" height="633">
 
 
@@ -336,7 +337,7 @@
         <div class="col-12 col-xl-6 d-flex flex-column justify-content-center">
 
 
-          <img class="img-fluid" src="{{ url_for('static', path='images/content_management.png') }}"
+          <img class="img-fluid" src="{{ root_url }}/static/images/content_management.png"
             alt="images/content_management.png" width="610" height="343">
 
 
@@ -371,7 +372,7 @@
         <div class="col-12 col-xl-6 d-flex flex-column justify-content-center">
 
 
-          <img class="img-fluid" src="{{ url_for('static', path='images/microservices.png') }}"
+          <img class="img-fluid" src="{{ root_url }}/static/images/microservices.png"
             alt="images/microservices.png" width="300" height="300">
 
 
@@ -417,7 +418,7 @@
         <div class="col-6 col-xl-6">
           <div class="card bg-blue-16 border-0 border-radius-34 p-4">
 
-            <img class="img-fluid" src="{{ url_for('static', path='images/auth_access_management.png') }}"
+            <img class="img-fluid" src="{{ root_url }}/static/images/auth_access_management.png"
               alt="images/auth_access_management.png" width="655" height="430">
 
 
@@ -453,7 +454,7 @@
         <div class="col-6 col-xl-6">
           <div class="card bg-blue-16 border-0 border-radius-34 p-4">
 
-            <img class="img-fluid" src="{{ url_for('static', path='images/graphql.png') }}" alt="images/graphql.png"
+            <img class="img-fluid" src="{{ root_url }}/static/images/graphql.png" alt="images/graphql.png"
               width="1400" height="900">
 
 
@@ -517,31 +518,31 @@
           <ul class="list-unstyled">
 
             <li class="">
-              <a class="small text-black-61 text-decoration-none" href="http://localhost:8000/#hero">About</a>
+              <a class="small text-black-61 text-decoration-none" href="#hero">About</a>
             </li>
 
             <li class="">
               <a class="small text-black-61 text-decoration-none"
-                href="http://localhost:8000/#vachan-engine-apis">Vachan Engine APIs</a>
+                href="#vachan-engine-apis">Vachan Engine APIs</a>
             </li>
 
             <li class="">
-              <a class="small text-black-61 text-decoration-none" href="http://localhost:8000/#ai-apis">AI APIs</a>
-            </li>
-
-            <li class="">
-              <a class="small text-black-61 text-decoration-none"
-                href="http://localhost:8000/#translation-apis">Translation APIs</a>
+              <a class="small text-black-61 text-decoration-none" href="#ai-apis">AI APIs</a>
             </li>
 
             <li class="">
               <a class="small text-black-61 text-decoration-none"
-                href="http://localhost:8000/#content-management">Content Management</a>
+                href="#translation-apis">Translation APIs</a>
             </li>
 
             <li class="">
               <a class="small text-black-61 text-decoration-none"
-                href="http://localhost:8000/#micro-services">Microservices</a>
+                href="#content-management">Content Management</a>
+            </li>
+
+            <li class="">
+              <a class="small text-black-61 text-decoration-none"
+                href="#micro-services">Microservices</a>
             </li>
 
           </ul>

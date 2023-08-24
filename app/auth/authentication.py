@@ -137,7 +137,6 @@ def search_api_permission_map(endpoint, method, client_app, path_params=None, re
         if table_url == req_url:
             if row[1] == method:
                 if row[2] == "None" or row[2] == client_app:
-                    # print("url, method and app matched")
                     if row[4] == 'None' or row[4] == resource:
                         log.debug("API-Permission map:%s, resource:%s", row[5], resource)
                         return (resource, row[5])
@@ -399,7 +398,9 @@ def get_users_kratos_filter(base_url,name,roles,limit,skip):#pylint: disable=too
                     schema_auth.FilterRoles.AG.value : schema_auth.FilterRoles.AG,
                     schema_auth.FilterRoles.VACHAN.value : schema_auth.FilterRoles.VACHAN,
                     schema_auth.FilterRoles.API.value : schema_auth.FilterRoles.API,
-                    schema_auth.FilterRoles.SMAST.value : schema_auth.FilterRoles.SMAST
+                    schema_auth.FilterRoles.SMAST.value : schema_auth.FilterRoles.SMAST,
+                    schema_auth.FilterRoles.VACHANCONTENTDASHBOARD.value : \
+                        schema_auth.FilterRoles.VACHANCONTENTDASHBOARD
                         }
                 for role in roles:
                     user_role =  switcher.get(role)
@@ -497,6 +498,8 @@ def register_check_success(reg_response):
         schema_auth.AdminRoles.AGUSER.value : schema_auth.App.AG.value,
         schema_auth.AdminRoles.SMASTUSER.value : schema_auth.App.SMAST.value,
         schema_auth.AdminRoles.VACHANUSER.value : schema_auth.App.VACHAN.value,
+        schema_auth.AdminRoles.VACHANCONTENTVIEWER.value : \
+            schema_auth.App.VACHANCONTENTDASHBOARD.value
         # schema_auth.AdminRoles.VACHANADMIN.value : schema_auth.AdminRoles.VACHANADMIN.value
             }
     user_role =  switcher.get(user_permision[0], schema_auth.App.API.value)
@@ -546,6 +549,8 @@ def register_flow_fail(reg_response,email,user_role,reg_req):
                     schema_auth.AdminRoles.AGUSER.value : schema_auth.App.AG.value,
                     schema_auth.AdminRoles.SMASTUSER.value : schema_auth.App.SMAST.value,
                     schema_auth.AdminRoles.VACHANUSER.value : schema_auth.App.VACHAN.value,
+                    schema_auth.AdminRoles.VACHANCONTENTVIEWER.value : \
+                        schema_auth.App.VACHANCONTENTDASHBOARD.value
                     # schema_auth.AdminRoles.VACHANADMIN.value : schema_auth.App.VACHANADMIN.value
                     }
                 role =  switcher.get(perm, schema_auth.App.API.value)
@@ -571,6 +576,7 @@ def user_register_kratos(register_details,app_type):
         schema_auth.App.AG : schema_auth.AdminRoles.AGUSER.value,
         schema_auth.App.SMAST : schema_auth.AdminRoles.SMASTUSER.value,
         schema_auth.App.VACHAN: schema_auth.AdminRoles.VACHANUSER.value,
+        schema_auth.App.VACHANCONTENTDASHBOARD : schema_auth.AdminRoles.VACHANCONTENTVIEWER.value
         # schema_auth.App.VACHANADMIN: schema_auth.AdminRoles.VACHANADMIN.value
             }
     user_role =  switcher.get(app_type, schema_auth.AdminRoles.APIUSER.value)

@@ -49,7 +49,7 @@ services:
       - LOG_LEVEL=trace
       - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS:-smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true}
       - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL:-EMAIL_ADDRESS@bridgeconn.com}
-      - SERVE_PUBLIC_BASE_URL=http://${VACHAN_DOMAIN:-kratos}:4433
+      - SERVE_PUBLIC_BASE_URL=http://kratos:4433
     command: serve -c /etc/config/kratos/kratos.yml  --watch-courier
     volumes:
       - type: bind
@@ -120,6 +120,7 @@ services:
      - VACHAN_REDIS_HOST=redis
      - VACHAN_REDIS_PORT=6379
      - VACHAN_REDIS_PASS=${VACHAN_REDIS_PASS:-vsfrgetd}
+     - VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost:8000}
     command: uvicorn main:app --host 0.0.0.0 --port 8000
     volumes:
      - logs-vol:/app/logs
@@ -159,6 +160,7 @@ services:
    - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD:-Just4Complexity!}
    - VACHAN_TEST_MODE="False"
    - VACHAN_LOGGING_LEVEL=INFO
+   - VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost:8000}
   command: python -m pytest
   volumes:
    - logs-test-vol:/app/logs

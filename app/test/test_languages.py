@@ -395,8 +395,8 @@ def test_delete_default():
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
-     #Delete language with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev
-    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev']:
+     #Delete language with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev,'VachanContentAdmin','VachanContentViewer'
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','VachanContentAdmin','VachanContentViewer']:
         headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
@@ -559,8 +559,8 @@ def test_restore_default():
     assert response.json()['error'] == 'Authentication Error'
 
     #Restore language with other API user,VachanAdmin,AgAdmin, \
-    # AgUser,VachanUser,BcsDev and resoursecreatedUser
-    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2']:
+    # AgUser,VachanUser,BcsDev,'VachanContentAdmin','VachanContentViewer' and resoursecreatedUser
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2','VachanContentAdmin','VachanContentViewer']:
         headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']

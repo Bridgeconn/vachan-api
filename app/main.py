@@ -28,7 +28,7 @@ if os.environ.get("VACHAN_TEST_MODE", "False") != 'True':
 
     create_super_user()
 
-app = FastAPI(title="Vachan-API", version="2.0.0-beta.10",
+app = FastAPI(title="Vachan-API", version="2.0.0-beta.25",
     description="The server application that provides APIs to interact \
 with the underlying Databases and modules in Vachan-Engine.")
 template = Jinja2Templates(directory="templates")
@@ -214,10 +214,14 @@ def test(request: Request,db_: Session = Depends(get_db)):
     '''Tests if app is running and the DB connection is active
     * Also displays API documentation page upon successful connection on root endpoint'''
     db_.query(db_models.Language).first()
+    root_url = os.getenv("VACHAN_DOMAIN")
+    if root_url is not None and not root_url.startswith("http://"):
+        root_url = "http://" + root_url
     return template.TemplateResponse(
         "landing_page.html",
         {
-            "request": request
+            "request": request,
+            "root_url": root_url
         }
     )
 
@@ -239,7 +243,7 @@ beta_endpoints = [
 
 def custom_openapi():
     '''Modify the auto generated openapi schema for API docs'''
-    openapi_schema = get_openapi(title="Vachan-API", version="2.0.0-beta.10",
+    openapi_schema = get_openapi(title="Vachan-API", version="2.0.0-beta.25",
         description="The server application that provides APIs to interact \
         with the underlying Databases and modules in Vachan-Engine.",
         routes=app.routes)

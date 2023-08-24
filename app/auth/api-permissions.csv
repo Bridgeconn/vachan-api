@@ -11,6 +11,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/contents,GET,SanketMAST,False,None,refer-for-translation
 /v2/contents,GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/contents,GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/contents,GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
 /v2/contents,GET,API-user,False,None,read-via-api
 /v2/contents,POST,None,False,None,create
 /v2/contents,DELETE,None,False,None,delete/deactivate
@@ -18,6 +19,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/languages,GET,SanketMAST,False,None,refer-for-translation
 /v2/languages,GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/languages,GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/languages,GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
 /v2/languages,GET,API-user,False,None,read-via-api
 /v2/languages,POST,None,False,None,create
 /v2/languages,PUT,None,False,None,edit
@@ -27,6 +29,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/licenses,GET,SanketMAST,False,None,refer-for-translation
 /v2/licenses,GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/licenses,GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/licenses,GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
 /v2/licenses,GET,API-user,False,None,read-via-api
 /v2/licenses,POST,None,False,None,create
 /v2/licenses,PUT,None,False,None,edit
@@ -35,6 +38,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/versions,GET,SanketMAST,False,None,refer-for-translation
 /v2/versions,GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/versions,GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/versions,GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
 /v2/versions,GET,API-user,False,None,read-via-api
 /v2/versions,POST,None,False,None,create
 /v2/versions,PUT,None,False,None,edit
@@ -43,6 +47,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/sources,GET,SanketMAST,True,None,refer-for-translation
 /v2/sources,GET,Vachan-online or vachan-app,True,None,view-on-web
 /v2/sources,GET,VachanAdmin,True,None,read-via-vachanadmin
+/v2/sources,GET,VachanContentDashboard,True,None,read-via-vachancontentdashboard
 /v2/sources,GET,API-user,True,None,read-via-api
 /v2/sources,POST,None,False,None,create
 /v2/sources,PUT,None,False,None,edit
@@ -51,6 +56,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/sources/get-sentence,GET,SanketMAST,False,"contents like bibles, commentaries, infographics, dictionary or videos",refer-for-translation
 /v2/sources/get-sentence,GET,Vachan-online or vachan-app,False,"contents like bibles, commentaries, infographics, dictionary or videos",view-on-web
 /v2/sources/get-sentence,GET,VachanAdmin,False,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-vachanadmin
+/v2/sources/get-sentence,GET,VachanContentDashboard,False,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-vachancontentdashboard
 /v2/sources/get-sentence,GET,API-user,False,"contents like bibles, commentaries, infographics, dictionary or videos",read-via-api
 /v2/sources/get-sentence,GET,None,False,Research-Material,read-via-api
 /v2/lookup/bible/books,GET,None,False,None,read
@@ -58,6 +64,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/bibles/{source_name}/books,GET,SanketMAST,False,None,refer-for-translation
 /v2/bibles/{source_name}/books,GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/bibles/{source_name}/books,GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/bibles/{source_name}/books,GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
 /v2/bibles/{source_name}/books,GET,API-user,False,None,read-via-api
 /v2/bibles/{source_name}/books,POST,None,False,None,create
 /v2/bibles/{source_name}/books,PUT,None,False,None,edit
@@ -66,11 +73,13 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/bibles/{source_name}/versification,GET,SanketMAST,False,None,refer-for-translation
 /v2/bibles/{source_name}/versification,GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/bibles/{source_name}/versification,GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/bibles/{source_name}/versification,GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
 /v2/bibles/{source_name}/versification,GET,API-user,False,None,read-via-api
 /v2/bibles/{source_name}/verses,GET,Autographa,False,None,refer-for-translation
 /v2/bibles/{source_name}/verses,GET,SanketMAST,False,None,refer-for-translation
 /v2/bibles/{source_name}/verses,GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/bibles/{source_name}/verses,GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/bibles/{source_name}/verses,GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
 /v2/bibles/{source_name}/verses,GET,API-user,False,None,read-via-api
 /v2/bibles/{source_name}/audios,POST,None,False,None,create
 /v2/bibles/{source_name}/audios,PUT,None,False,None,edit
@@ -79,6 +88,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/commentaries/{source_name},GET,SanketMAST,False,None,refer-for-translation
 /v2/commentaries/{source_name},GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/commentaries/{source_name},GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/commentaries/{source_name},GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
 /v2/commentaries/{source_name},GET,API-user,False,None,read-via-api
 /v2/commentaries/{source_name},POST,None,False,None,create
 /v2/commentaries/{source_name},PUT,None,False,None,edit
@@ -87,11 +97,13 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/dictionaries/{source_name},GET,SanketMAST,False,None,refer-for-translation
 /v2/dictionaries/{source_name},GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/dictionaries/{source_name},GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/dictionaries/{source_name},GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
 /v2/dictionaries/{source_name},GET,API-user,False,None,read-via-api
 /v2/dictionaries/{source_name}/count,GET,Autographa,False,None,refer-for-translation
 /v2/dictionaries/{source_name}/count,GET,SanketMAST,False,None,refer-for-translation
 /v2/dictionaries/{source_name}/count,GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/dictionaries/{source_name}/count,GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/dictionaries/{source_name}/count,GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
 /v2/dictionaries/{source_name}/count,GET,API-user,False,None,read-via-api
 /v2/dictionaries/{source_name},POST,None,False,None,create
 /v2/dictionaries/{source_name},PUT,None,False,None,edit
@@ -100,6 +112,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/infographics/{source_name},GET,SanketMAST,False,None,refer-for-translation
 /v2/infographics/{source_name},GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/infographics/{source_name},GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/infographics/{source_name},GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
 /v2/infographics/{source_name},GET,API-user,False,None,read-via-api
 /v2/infographics/{source_name},POST,None,False,None,create
 /v2/infographics/{source_name},PUT,None,False,None,edit
@@ -108,6 +121,8 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/biblevideos/{source_name},GET,SanketMAST,False,None,refer-for-translation
 /v2/biblevideos/{source_name},GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/biblevideos/{source_name},GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/biblevideos/{source_name},GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
+/v2/biblevideos/{source_name},GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
 /v2/biblevideos/{source_name},GET,API-user,False,None,read-via-api
 /v2/biblevideos/{source_name},POST,None,False,None,create
 /v2/biblevideos/{source_name},PUT,None,False,None,edit
@@ -176,6 +191,7 @@ Endpoints,Method,RequestApp,FilterResults,ResourceType,Permission
 /v2/bibles/{source_name}/books/{book_code}/format/{output_format},GET,SanketMAST,False,None,refer-for-translation
 /v2/bibles/{source_name}/books/{book_code}/format/{output_format},GET,Vachan-online or vachan-app,False,None,view-on-web
 /v2/bibles/{source_name}/books/{book_code}/format/{output_format},GET,VachanAdmin,False,None,read-via-vachanadmin
+/v2/bibles/{source_name}/books/{book_code}/format/{output_format},GET,VachanContentDashboard,False,None,read-via-vachancontentdashboard
 /v2/bibles/{source_name}/books/{book_code}/format/{output_format},GET,API-user,False,None,read-via-api
 /v2/files/usfm/to/{output_format},PUT,None,False,File Manipulation Ops,access-via-api
 /v2/restore,PUT,None,False,None,data-restore

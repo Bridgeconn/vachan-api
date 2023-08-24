@@ -308,3 +308,55 @@ def test_draft_generation():
     assert input_text.strip() == response.json().strip()
 
     # to be implemented: alignment-json
+
+def test_space_handling_in_token_replacement():
+    '''In connection with issue #628'''
+    # yesu and mashi together and then separatetly, to check draft meta segment for space too
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanUser']['token']
+
+    trans_obj = post_obj
+    trans_obj['token_translations'] = [
+        { "token": "यीशु मसीह",
+          "occurrences": [
+            { "sentenceId": 1,
+              "offset": [31,40]}
+          ],
+          "translation": "Jesus Christ"}
+      ]
+
+    response = client.put("/v2/translation/token-translate?source_language=hi"+
+        "&target_language=en&use_data_for_learning=true",
+        headers=headers_auth, json=trans_obj)
+    assert response.status_code ==200
+    resp_sent = response.json()['data'][0]
+    assert resp_sent['draft'] == "Jesus Christ", response.json()
+
+    post_obj['sentence_list'][0]['draftMeta'] = resp_sent['draftMeta']
+    post_obj['sentence_list'][0]['draft'] = resp_sent['draft']
+    trans_obj = post_obj
+    trans_obj['token_translations'] = [
+        { "token": "यीशु",
+          "occurrences": [
+            { "sentenceId": 1,
+              "offset": [31,35]}
+          ],
+          "translation": "Jesus"},
+                { "token": "मसीह",
+          "occurrences": [
+            { "sentenceId": 1,
+              "offset": [36,40]}
+          ],
+          "translation": "Christ"}
+      ]
+    response = client.put("/v2/translation/token-translate?source_language=hi"+
+        "&target_language=en&use_data_for_learning=true",
+        headers=headers_auth, json=trans_obj)
+    assert response.status_code == 200
+    resp_sent = response.json()['data'][0]
+    assert resp_sent['draft'] == "Jesus Christ", response.json()
+
+    found_space = False
+    for seg in resp_sent['draftMeta']:
+        if seg[1] == [5, 6]:
+            found_space = True
+    assert found_space, resp_sent['draftMeta']

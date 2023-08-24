@@ -243,31 +243,49 @@ def replace_token_inside(token_offset, translation, tag, **kwargs):
             draft_end = len(updated_draft)
             updated_meta.append([[src_seg_offset[0], src_seg_offset[0]],
                 [draft_end-1,draft_end],"untranslated"])
+            updated_meta = remove_over_lapping_metas(updated_meta,
+                token_offset=updated_meta[-1][0],
+                translation_offset=updated_meta[-1][0])
         translation_offset[0] = len(updated_draft)
         updated_draft += translation
     elif token_offset[0] > src_seg_offset[0]: # begins within this segment
         draft_end = len(updated_draft)
         updated_meta.append([[src_seg_offset[0], token_offset[0]],
             [draft_end, draft_end],"untranslated"])
+        updated_meta = remove_over_lapping_metas(updated_meta,
+                token_offset=updated_meta[-1][0],
+                translation_offset=updated_meta[-1][1])
         if (updated_draft != "") and (not updated_draft.endswith(" "))\
         and (translation != ""):
             # to have a space b/w existing words and new translation
             updated_draft += " "
             updated_meta.append([[token_offset[0], token_offset[0]],
                 [draft_end,draft_end+1],"untranslated"])
+            updated_meta = remove_over_lapping_metas(updated_meta,
+                    token_offset=updated_meta[-1][0],
+                    translation_offset=updated_meta[-1][1])
         translation_offset[0] = len(updated_draft)
         updated_draft += translation
     else: # begins before this segment
         pass
+    translation_offset[1] = len(updated_draft)
     if token_offset[1] == src_seg_offset[1]: # ending is the same
-        translation_offset[1] = len(updated_draft)
         updated_meta.append((token_offset, translation_offset, tag))
+        updated_meta = remove_over_lapping_metas(updated_meta,
+            token_offset=updated_meta[-1][0],
+            translation_offset=updated_meta[-1][1])
+
     elif token_offset[1] < src_seg_offset[1]: # ends within this segment
-        translation_offset[1] = len(updated_draft)
         updated_meta.append((token_offset, translation_offset, tag))
+        updated_meta = remove_over_lapping_metas(updated_meta,
+                token_offset=updated_meta[-1][0],
+                translation_offset=updated_meta[-1][1])
         updated_meta.append(((token_offset[1], src_seg_offset[1]),
             (translation_offset[1],translation_offset[1]),
             "untranslated"))
+        updated_meta = remove_over_lapping_metas(updated_meta,
+                token_offset=updated_meta[-1][0],
+                translation_offset=updated_meta[-1][1])
     else: # ends after this segment
         pass
     return updated_draft, updated_meta, translation_offset
@@ -285,6 +303,9 @@ def replace_token_outside(token_offset, draft, **kwargs):
         draft_end = len(updated_draft)
         updated_draft += draft[draft_seg_offset[0]: draft_seg_offset[1]]
         updated_meta.append(meta)
+        updated_meta = remove_over_lapping_metas(updated_meta,
+                token_offset=updated_meta[-1][0],
+                translation_offset=updated_meta[-1][1])
     else: # our area of interest was before this segment
         draft_end = len(updated_draft)
         offset_diff = draft_end - draft_seg_offset[0]
@@ -295,9 +316,15 @@ def replace_token_outside(token_offset, draft, **kwargs):
             updated_draft += " "+this_draft_seg
             updated_meta.append([[src_seg_offset[0], src_seg_offset[0]],
                 [draft_end, draft_end+1], "untranslated"])
+            updated_meta = remove_over_lapping_metas(updated_meta,
+                    token_offset=updated_meta[-1][0],
+                    translation_offset=updated_meta[-1][1])
             offset_diff += 1
         updated_meta.append([src_seg_offset,
             [draft_seg_offset[0]+offset_diff, draft_seg_offset[1]+offset_diff], status])
+        updated_meta = remove_over_lapping_metas(updated_meta,
+                token_offset=updated_meta[-1][0],
+                translation_offset=updated_meta[-1][1])
     return updated_draft, updated_meta
 
 def replace_token(source, token_offset, translation,draft_meta, tag="confirmed",#pylint: disable=too-many-locals
@@ -349,3 +376,20 @@ def replace_token(source, token_offset, translation,draft_meta, tag="confirmed",
                 )
     utils.validate_draft_meta(source, updated_draft, updated_meta)
     return updated_draft, updated_meta
+
+def remove_over_lapping_metas(unclean_meta, token_offset, translation_offset):
+    '''Remove all segments that overlaps with the newly added segment'''
+    cleaned_meta = []
+    for seg in unclean_meta:
+        intersection1 = set(range(token_offset[0],token_offset[1])).intersection(
+                range(seg[0][0],seg[0][1]))
+        if translation_offset == [None, None]:
+            intersection2 = []
+        else:
+            intersection2 = set(range(translation_offset[0],translation_offset[1])).intersection(
+                range(seg[1][0],seg[1][1]))
+        if len(intersection1)==0 and len(intersection2)==0:
+            cleaned_meta.append(seg)
+        elif list(token_offset)==list(seg[0]) and list(translation_offset)==list(seg[1]):
+            cleaned_meta.append(seg)
+    return cleaned_meta

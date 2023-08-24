@@ -26,6 +26,7 @@ class App(str, Enum):
     API = "API-user"
     VACHANADMIN = "VachanAdmin"
     SMAST = "SanketMAST"
+    VACHANCONTENTDASHBOARD = "VachanContentDashboard"
 
 class AppInput(str, Enum):
     '''Input fields for App in Registration'''
@@ -33,6 +34,7 @@ class AppInput(str, Enum):
     VACHAN = "Vachan-online or vachan-app"
     API = "API-user"
     SMAST = "SanketMAST"
+    VACHANCONTENTDASHBOARD = "VachanContentDashboard"
 
 class Registration(BaseModel):
     """kratos registration input"""
@@ -57,6 +59,8 @@ class AdminRoles(str, Enum):
     BCSDEV = 'BcsDeveloper'
     SMASTADMIN = 'SanketMASTAdmin'
     SMASTUSER = 'SanketMASTUser'
+    VACHANCONTENTADMIN = 'VachanContentAdmin'
+    VACHANCONTENTVIEWER = 'VachanContentViewer'
 
 class FilterRoles(str, Enum):
     '''Filter roles for get users'''
@@ -65,6 +69,7 @@ class FilterRoles(str, Enum):
     VACHAN = "Vachan-online or vachan-app"
     API = "API-user"
     SMAST = "SanketMAST"
+    VACHANCONTENTDASHBOARD = "VachanContentDashboard"
 
 class UserRole(BaseModel):
     """kratos user role input"""

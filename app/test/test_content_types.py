@@ -398,8 +398,8 @@ def test_delete_default():
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
-    # Delete content with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev
-    for user in ['APIUser', 'VachanAdmin', 'AgAdmin', 'AgUser', 'VachanUser', 'BcsDev']:
+    # Delete content with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev,'VachanContentAdmin','VachanContentViewer'
+    for user in ['APIUser', 'VachanAdmin', 'AgAdmin', 'AgUser', 'VachanUser', 'BcsDev','VachanContentAdmin','VachanContentViewer']:
         headers = {
             "contentType": "application/json",
             "accept": "application/json",
@@ -574,8 +574,8 @@ def test_restore_default():
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
-    #Restore content with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev and APIUSer2
-    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2']:
+    #Restore content with other API user,VachanAdmin,AgAdmin,AgUser,VachanUser,BcsDev,'VachanContentAdmin','VachanContentViewer' and APIUSer2
+    for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','APIUser2','VachanContentAdmin','VachanContentViewer']:
         headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']

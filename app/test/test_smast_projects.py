@@ -946,7 +946,7 @@ def test_delete_project():
     assert resp.json()['details'] == f"Project with id {invalid_project_id} not found"
 
     # Delete as unauthorized users
-    for user in ['APIUser','VachanAdmin','VachanUser','BcsDev']:
+    for user in ['APIUser','VachanAdmin','VachanUser','BcsDev','VachanContentAdmin','VachanContentViewer']:
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
         response =client.delete(UNIT_URL+'?project_id='+str(project_id),headers=headers_auth)
         assert response.status_code == 403
@@ -1052,7 +1052,7 @@ def test_restore_project():
     assert response.json()['error'] == 'Authentication Error'
 
     #Restore project with other API user,VachanAdmin,SanketMASTAdmin,SanketMASTUser,VachanUser,BcsDev and APIUSer2 - Negative Test
-    for user in ['APIUser','VachanAdmin','SanketMASTAdmin','SanketMASTUser','VachanUser','BcsDev','APIUser2']:
+    for user in ['APIUser','VachanAdmin','SanketMASTAdmin','SanketMASTUser','VachanUser','BcsDev','APIUser2','VachanContentAdmin','VachanContentViewer']:
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
         response = client.put(RESTORE_URL, headers=headers_auth, json=data)
         assert response.status_code == 403
@@ -1274,7 +1274,7 @@ def test_restore_user():
     assert response.json()['error'] == 'Authentication Error'
 
     #Restore project user with other API user,VachanAdmin,SanketMASTAdmin,SanketMASTUser,VachanUser,BcsDev and APIUSer2 - Negative Test
-    for user in ['APIUser','VachanAdmin','SanketMASTAdmin','SanketMASTUser','VachanUser','BcsDev','APIUser2']:
+    for user in ['APIUser','VachanAdmin','SanketMASTAdmin','SanketMASTUser','VachanUser','BcsDev','APIUser2','VachanContentAdmin','VachanContentViewer']:
         headers_auth['Authorization'] = "Bearer"+" "+initial_test_users[user]['token']
         response = client.put(RESTORE_URL, headers=headers_auth, json=data)
         assert response.status_code == 403

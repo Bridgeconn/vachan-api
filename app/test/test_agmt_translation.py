@@ -1061,6 +1061,8 @@ def test_agmt_translation_access_permissions():
     token_list.append(initial_test_users['AgUser']['token'])
     token_list.append(initial_test_users['APIUser']['token'])
     token_list.append(initial_test_users['VachanAdmin']['token'])
+    token_list.append(initial_test_users['VachanContentAdmin']['token'])
+    token_list.append(initial_test_users['VachanContentViewer']['token'])
 
     for user_token in token_list:
         headers_auth['Authorization'] = "Bearer"+" "+user_token
