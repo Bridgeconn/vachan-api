@@ -1169,6 +1169,91 @@ def test_delete_user():
             assert user['active'] is True
             assert user['metaData'] is None
     assert not found_user
+def test_delete_user_with_projectowner():
+    ''' Bugfix for https://github.com/Bridgeconn/vachan-api/issues/683'''
+    
+    # creating project with SanketMASTUser
+    project_data = {
+        "projectName": "Test project 1",
+        "sourceLanguageCode": "hi",
+        "targetLanguageCode": "ml"
+    }
+    resp = check_post(project_data, auth_token=initial_test_users['SanketMASTUser']['token'])
+    assert resp.json()['message'] == "Project created successfully"
+    new_project = resp.json()['data']
+
+    #Adding a new user SanketMASTUser2 as projectMember
+    new_user_id = initial_test_users['SanketMASTUser2']['test_user_id']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
+    resp = client.post(USER_URL+'?project_id='+str(new_project['projectId'])+
+        '&user_id='+str(new_user_id),headers=headers_auth)
+    assert resp.json()['message'] == "User added to project successfully"
+
+    # fetch this project and check for new user
+    check_project_user(project_data['projectName'], new_user_id, role='projectMember')
+
+    # Deleting SanketMASTUser2 with projectOwner
+    user_id = initial_test_users['SanketMASTUser2']['test_user_id']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
+    resp = client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
+        '&user_id='+str(user_id),headers=headers_auth)
+    assert resp.status_code == 201
+    assert "successfull" in resp.json()['message']
+
+    # Check get project to ensure deleted user is not present
+    get_project_response = client.get(UNIT_URL+'?project_id='+str(new_project['projectId']),headers=headers_auth)
+    found_user = False
+
+    for user in get_project_response.json()[0]['users']:
+        if user['userId'] == user_id:
+            found_user = True
+            assert user['userRole'] is 'projectMember'
+            assert user['active'] is True
+            assert user['metaData'] is None
+    assert not found_user
+
+def test_delete_user_with_projectowner():
+    ''' Bugfix for https://github.com/Bridgeconn/vachan-api/issues/683'''
+    
+    # creating project with SanketMASTUser
+    project_data = {
+        "projectName": "Test project 1",
+        "sourceLanguageCode": "hi",
+        "targetLanguageCode": "ml"
+    }
+    resp = check_post(project_data, auth_token=initial_test_users['SanketMASTUser']['token'])
+    assert resp.json()['message'] == "Project created successfully"
+    new_project = resp.json()['data']
+
+    #Adding a new user SanketMASTUser2 as projectMember
+    new_user_id = initial_test_users['SanketMASTUser2']['test_user_id']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
+    resp = client.post(USER_URL+'?project_id='+str(new_project['projectId'])+
+        '&user_id='+str(new_user_id),headers=headers_auth)
+    assert resp.json()['message'] == "User added to project successfully"
+
+    # fetch this project and check for new user
+    check_project_user(project_data['projectName'], new_user_id, role='projectMember')
+
+    # Deleting SanketMASTUser2 with projectOwner
+    user_id = initial_test_users['SanketMASTUser2']['test_user_id']
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['SanketMASTUser']['token']
+    resp = client.delete(USER_URL+'?project_id='+str(new_project['projectId'])+
+        '&user_id='+str(user_id),headers=headers_auth)
+    assert resp.status_code == 201
+    assert "successfull" in resp.json()['message']
+
+    # Check get project to ensure deleted user is not present
+    get_project_response = client.get(UNIT_URL+'?project_id='+str(new_project['projectId']),headers=headers_auth)
+    found_user = False
+
+    for user in get_project_response.json()[0]['users']:
+        if user['userId'] == user_id:
+            found_user = True
+            assert user['userRole'] is 'projectMember'
+            assert user['active'] is True
+            assert user['metaData'] is None
+    assert not found_user
 
 def test_restore_user():
     '''positive test case, checking for correct return object'''
