@@ -22,11 +22,11 @@ router = APIRouter()
     status_code=200, tags=['Translation-Project management'])
 @get_auth_access_check_decorator
 async def get_projects(request: Request,
-    project_name:str=Query(None,example="Hindi-Bilaspuri Gospels"),
-    source_language:schemas.LangCodePattern=Query(None,example='en'),
-    target_language:schemas.LangCodePattern=Query(None,example='ml'),
+    project_name:str=Query(None,examples="Hindi-Bilaspuri Gospels"),
+    source_language:schemas.LangCodePattern=Query(None,examples='en'),
+    target_language:schemas.LangCodePattern=Query(None,examples='ml'),
     active:bool=True, user_id:str=Query(None),
-    compatible_with: List[schema_auth.App] = Query(None,example=["Autographa","SanketMAST"]),
+    compatible_with: List[schema_auth.App] = Query(None,examples=["Autographa","SanketMAST"]),
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db),
     filtering_required=Depends(AddHiddenInput(value=True))):
@@ -67,7 +67,7 @@ async def create_project(request: Request,
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
 async def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectEdit,
-    project_id:int=Query(...,example="1022004"), user_details =Depends(get_user_or_none),
+    project_id:int=Query(...,examples="1022004"), user_details =Depends(get_user_or_none),
     db_:Session=Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.PROJECT.value))):
     # operates_on=schema_auth.ResourceType.PROJECT.value):
@@ -115,7 +115,7 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
 async def remove_project(request: Request,
-    project_id:int = Query(..., example=100001),
+    project_id:int = Query(..., examples=100001),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Removes a project.'''
     log.info('In remove_project')
@@ -151,7 +151,7 @@ async def add_user(request: Request,project_id:int, user_id:str,
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
 async def update_user(request: Request,user_obj:schemas_nlp.ProjectUser,
-                      project_id:int=Query(...,example="1022004"),
+                      project_id:int=Query(...,examples="1022004"),
     user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):
     '''Changes role, metadata or active status of user of a project.'''
     log.info('In update_user')
@@ -189,10 +189,10 @@ async def remove_user(request: Request,project_id:int, user_id:str,
     status_code=200, tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
-async def get_tokens(request: Request, project_id:int=Query(...,example="1022004"),
-    books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
-    sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=(410010001, 41001999)),
-    sentence_id_list:List[int]=Query(None, example=[41001001,41001002,41001003]),
+async def get_tokens(request: Request, project_id:int=Query(...,examples="1022004"),
+    books:List[schemas.BookCodePattern]=Query(None,examples=["mat", "mrk"]),
+    sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,examples=(410010001, 41001999)),
+    sentence_id_list:List[int]=Query(None, examples=[41001001,41001002,41001003]),
     use_translation_memory:bool=True, include_phrases:bool=True, include_stopwords:bool=False,
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Tokenize the source texts. Optional params books,
@@ -218,7 +218,7 @@ async def get_tokens(request: Request, project_id:int=Query(...,example="1022004
     status_code=201, tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
-async def apply_token_translations(request: Request,project_id:int=Query(...,example="1022004"),
+async def apply_token_translations(request: Request,project_id:int=Query(...,examples="1022004"),
     token_translations:List[schemas_nlp.TokenUpdate]=Body(...), return_drafts:bool=True,
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Updates drafts using the provided token translations and returns updated verses'''
@@ -236,10 +236,10 @@ async def apply_token_translations(request: Request,project_id:int=Query(...,exa
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
-async def get_token_translation(request: Request,project_id:int=Query(...,example="1022004"),
-    token:str=Query(...,example="duck"),
-    sentence_id:int=Query(..., example="41001001"),
-    offset:List[int]=Query(..., max_items=2,min_items=2,example=[0,4]),
+async def get_token_translation(request: Request,project_id:int=Query(...,examples="1022004"),
+    token:str=Query(...,examples="duck"),
+    sentence_id:int=Query(..., examples="41001001"),
+    offset:List[int]=Query(..., max_items=2,min_items=2,examples=[0,4]),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Get the current translation for specific tokens providing their occurence in source'''
     log.info('In get_token_translation')
@@ -255,9 +255,9 @@ async def get_token_translation(request: Request,project_id:int=Query(...,exampl
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
-async def get_token_sentences(request: Request,project_id:int=Query(...,example="1022004"),
-    token:str=Query(...,example="duck"),
-    occurrences:List[schemas_nlp.TokenOccurence]=Body(..., example=[
+async def get_token_sentences(request: Request,project_id:int=Query(...,examples="1022004"),
+    token:str=Query(...,examples="duck"),
+    occurrences:List[schemas_nlp.TokenOccurence]=Body(..., examples=[
         {"sentenceId":41001001, "offset":[0,4]}]),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Pass in the occurence list of a token and get all sentences it is present in with draftMeta
@@ -273,10 +273,10 @@ async def get_token_sentences(request: Request,project_id:int=Query(...,example=
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
-async def get_draft(request: Request,project_id:int=Query(...,example="1022004"),
-    books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
-    sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
-    sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
+async def get_draft(request: Request,project_id:int=Query(...,examples="1022004"),
+    books:List[schemas.BookCodePattern]=Query(None,examples=["mat", "mrk"]),
+    sentence_id_list:List[int]=Query(None,examples=[41001001,41001002,41001003]),
+    sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,examples=[41001001,41001999]),
     output_format:schemas_nlp.DraftFormats=Query(schemas_nlp.DraftFormats.USFM),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Obtains draft, as per current project status, in any of the formats:
@@ -296,7 +296,7 @@ async def get_draft(request: Request,project_id:int=Query(...,example="1022004")
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
-async def update_draft(request: Request,project_id:int=Query(...,example="1022004"),
+async def update_draft(request: Request,project_id:int=Query(...,examples="1022004"),
     sentence_list:List[schemas_nlp.ProjectDraftInput]=Body(...),
     user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):
     '''Obtains draft, as per current project status, in any of the formats:
@@ -315,10 +315,10 @@ async def update_draft(request: Request,project_id:int=Query(...,example="102200
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
-async def get_project_source(request: Request,project_id:int=Query(...,example="1022004"),
-    books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
-    sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
-    sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
+async def get_project_source(request: Request,project_id:int=Query(...,examples="1022004"),
+    books:List[schemas.BookCodePattern]=Query(None,examples=["mat", "mrk"]),
+    sentence_id_list:List[int]=Query(None,examples=[41001001,41001002,41001003]),
+    sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,examples=[41001001,41001999]),
     with_draft:bool=False, only_ids:bool=False, user_details =Depends(get_user_or_none),
     db_:Session=Depends(get_db)):
     '''Obtains source sentences or verses, as per the filters'''
@@ -337,8 +337,8 @@ async def get_project_source(request: Request,project_id:int=Query(...,example="
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
-async def remove_sentence(request: Request,project_id:int=Query(...,example="1022004"),
-    sentence_id:int=Query(...,example="41001001"),
+async def remove_sentence(request: Request,project_id:int=Query(...,examples="1022004"),
+    sentence_id:int=Query(...,examples="41001001"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Remove sentence.'''
     log.info('In remove_sentence')
@@ -358,10 +358,10 @@ async def remove_sentence(request: Request,project_id:int=Query(...,example="102
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
-async def get_progress(request: Request,project_id:int=Query(...,example="1022004"),
-    books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
-    sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
-    sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
+async def get_progress(request: Request,project_id:int=Query(...,examples="1022004"),
+    books:List[schemas.BookCodePattern]=Query(None,examples=["mat", "mrk"]),
+    sentence_id_list:List[int]=Query(None,examples=[41001001,41001002,41001003]),
+    sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,examples=[41001001,41001999]),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Obtains source sentences or verses, as per the filters'''
     log.info('In get_progress')
@@ -378,7 +378,7 @@ async def get_progress(request: Request,project_id:int=Query(...,example="102200
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
-async def get_project_versification(request: Request,project_id:int=Query(...,example="1022004"),
+async def get_project_versification(request: Request,project_id:int=Query(...,examples="1022004"),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Obtains versification structure for source sentences or verses'''
     log.info('In get_project_versification')
@@ -393,10 +393,10 @@ async def get_project_versification(request: Request,project_id:int=Query(...,ex
     tags=["Translation Suggestion"])
 @get_auth_access_check_decorator
 @check_app_compatibility_decorator
-async def suggest_auto_translation(request: Request,project_id:int=Query(...,example="1022004"),
-    books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
-    sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
-    sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=[41001001,41001999]),
+async def suggest_auto_translation(request: Request,project_id:int=Query(...,examples="1022004"),
+    books:List[schemas.BookCodePattern]=Query(None,examples=["mat", "mrk"]),
+    sentence_id_list:List[int]=Query(None,examples=[41001001,41001002,41001003]),
+    sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,examples=[41001001,41001999]),
     confirm_all:bool=False,user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Try to fill draft with suggestions. If confirm_all is set, will only change status of all
     "suggestion" to "confirmed" in the selected sentences and will not fill in new suggestion'''
@@ -416,9 +416,9 @@ async def suggest_auto_translation(request: Request,project_id:int=Query(...,exa
     tags=['Generic Translation'])
 @get_auth_access_check_decorator
 async def tokenize(request: Request,
-                   source_language:schemas.LangCodePattern=Query(...,example="hi"),
+                   source_language:schemas.LangCodePattern=Query(...,examples="hi"),
     sentence_list:List[schemas_nlp.SentenceInput]=Body(...),
-    target_language:schemas.LangCodePattern=Query(None,example="ml"),
+    target_language:schemas.LangCodePattern=Query(None,examples="ml"),
     use_translation_memory:bool=True, include_phrases:bool=True, include_stopwords:bool=False,
     punctuations:List[str]=Body(None), stopwords:schemas_nlp.Stopwords=Body(None),
     user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):
@@ -446,8 +446,8 @@ async def tokenize(request: Request,
 @get_auth_access_check_decorator
 async def token_replace(request: Request,sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     token_translations:List[schemas_nlp.TokenUpdate]=Body(...),
-    source_language:schemas.LangCodePattern=Query(...,example='hi'),
-    target_language:schemas.LangCodePattern=Query(...,example='ml'),
+    source_language:schemas.LangCodePattern=Query(...,examples='hi'),
+    target_language:schemas.LangCodePattern=Query(...,examples='ml'),
     use_data_for_learning:bool=True,
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Perform token replacement on provided sentences and
@@ -485,8 +485,8 @@ async def generate_draft(request: Request,sentence_list:List[schemas_nlp.DraftIn
     tags=["Translation Suggestion"])
 @get_auth_access_check_decorator
 async def suggest_translation(request: Request,
-    source_language:schemas.LangCodePattern=Query(...,example="hi"),
-    target_language:schemas.LangCodePattern=Query(...,example="ml"),
+    source_language:schemas.LangCodePattern=Query(...,examples="hi"),
+    target_language:schemas.LangCodePattern=Query(...,examples="ml"),
     sentence_list:List[schemas_nlp.DraftInput]=Body(...),
     punctuations:List[str]=Body(None), stopwords:schemas_nlp.Stopwords=Body(None),
     user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):
@@ -508,11 +508,11 @@ async def suggest_translation(request: Request,
     tags=["Nlp"])
 @get_auth_access_check_decorator
 async def get_glossary(request: Request,
-    source_language:schemas.LangCodePattern=Query(...,example="en"),
-    target_language:schemas.LangCodePattern=Query(...,example="hi"),
-    token:str=Query(...,example="duck"),
-    context:str=Query(None,example="The duck swam in the lake"),
-    token_offset:List[int]=Query(None,max_items=2,min_items=2,example=(4,8)),
+    source_language:schemas.LangCodePattern=Query(...,examples="en"),
+    target_language:schemas.LangCodePattern=Query(...,examples="hi"),
+    token:str=Query(...,examples="duck"),
+    context:str=Query(None,examples="The duck swam in the lake"),
+    token_offset:List[int]=Query(None,max_items=2,min_items=2,examples=(4,8)),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Finds translation suggestions or gloss for one token in the given context'''
     log.info('In get_glossary')
@@ -528,9 +528,9 @@ async def get_glossary(request: Request,
     tags=["Nlp"])
 @get_auth_access_check_decorator
 async def get_glossary_entries(request: Request,
-    source_language:schemas.LangCodePattern=Query(...,example="en"),
-    target_language:schemas.LangCodePattern=Query(...,example="hi"),
-    token:str=Query(None,example="duck"),
+    source_language:schemas.LangCodePattern=Query(...,examples="en"),
+    target_language:schemas.LangCodePattern=Query(...,examples="hi"),
+    token:str=Query(None,examples="duck"),
     skip: int=Query(None, ge=0), limit: int=Query(None, ge=0),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Searches the translation memory for matching entries. Not context aware'''
@@ -548,9 +548,9 @@ async def get_glossary_entries(request: Request,
     404:{"model": schemas.ErrorResponse},}, status_code=200, tags=["Nlp"])
 @get_auth_access_check_decorator
 async def get_gloss_count(request: Request,
-    source_language:schemas.LangCodePattern=Query(...,example="en"),
-    target_language:schemas.LangCodePattern=Query(...,example="hi"),
-    token:str=Query(None,example="love"),
+    source_language:schemas.LangCodePattern=Query(...,examples="en"),
+    target_language:schemas.LangCodePattern=Query(...,examples="hi"),
+    token:str=Query(None,examples="love"),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Counts all glossary entries in translation memory between two languages.
         * Also counts unique tokens in translation memory
@@ -575,8 +575,8 @@ async def get_gloss_count(request: Request,
     tags=["Nlp"])
 @get_auth_access_check_decorator
 async def add_gloss(request: Request,
-    source_language:schemas.LangCodePattern=Query(...,example='en'),
-    target_language:schemas.LangCodePattern=Query(..., example="hi"),
+    source_language:schemas.LangCodePattern=Query(...,examples='en'),
+    target_language:schemas.LangCodePattern=Query(..., examples="hi"),
     token_translations:List[schemas_nlp.GlossInput]=Body(...),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Load a list of predefined tokens and translations to improve tokenization and suggestion'''
@@ -608,10 +608,10 @@ async def update_glossary(request: Request,
     tags=['Nlp'])
 @get_auth_access_check_decorator
 async def remove_glossary(request: Request,
-    source_lang:schemas.LangCodePattern=Query(...,example="en"),
-    target_lang:schemas.LangCodePattern=Query(...,example="hi"),
-    token:str=Query(...,example="duck"),
-    translation:str=Query(None,example="बत्तख"),
+    source_lang:schemas.LangCodePattern=Query(...,examples="en"),
+    target_lang:schemas.LangCodePattern=Query(...,examples="hi"),
+    token:str=Query(...,examples="duck"),
+    translation:str=Query(None,examples="बत्तख"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Remove glossary.'''
     log.info('In remove_gloss')
@@ -648,7 +648,7 @@ async def add_alignments(request: Request,
     tags=["Lookups"])
 @get_auth_access_check_decorator
 async def get_stop_words(request: Request,
-    language_code:schemas.LangCodePattern=Path(...,example="hi"),
+    language_code:schemas.LangCodePattern=Path(...,examples="hi"),
     include_system_defined:bool=True, include_user_defined:bool=True,
     include_auto_generated :bool=True, only_active:bool=True, skip: int=Query(0, ge=0),
     limit: int=Query(100, ge=0),
@@ -671,7 +671,7 @@ async def get_stop_words(request: Request,
     tags=['Lookups'])
 @get_auth_access_check_decorator
 async def update_stop_words(request: Request,
-    language_code:schemas.LangCodePattern=Path(...,example="hi"),
+    language_code:schemas.LangCodePattern=Path(...,examples="hi"),
     sw_info:schemas_nlp.StopWordUpdate=Body(...),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Api to update fields of a stopword in lookup table'''
@@ -688,8 +688,8 @@ async def update_stop_words(request: Request,
     tags=['Lookups'])
 @get_auth_access_check_decorator
 async def add_stopwords(request: Request,
-    language_code:schemas.LangCodePattern=Path(...,example="hi"),
-    stopwords_list:List[str]=Body(..., example=["और", "के", "उसका"]),
+    language_code:schemas.LangCodePattern=Path(...,examples="hi"),
+    stopwords_list:List[str]=Body(..., examples=["और", "के", "उसका"]),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Insert provided stopwords into db and returns added data'''
     log.info('In add_stopwords')
@@ -707,8 +707,8 @@ async def add_stopwords(request: Request,
     tags=['Lookups'])
 @get_auth_access_check_decorator
 async def remove_stopword(request: Request,
-    lang:schemas.LangCodePattern=Query(...,example="en"),
-    stopword:str=Query(...,example="as"),
+    lang:schemas.LangCodePattern=Query(...,examples="en"),
+    stopword:str=Query(...,examples="as"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Api to remove stopwords from lookup table'''
     log.info('In remove_stopword')
@@ -726,9 +726,9 @@ async def remove_stopword(request: Request,
     tags=['Nlp'])
 @get_auth_access_check_decorator
 async def generate_stopwords(request: Request, background_tasks: BackgroundTasks,
-    language_code:schemas.LangCodePattern=Query(...,example="bi"),
+    language_code:schemas.LangCodePattern=Query(...,examples="bi"),
     use_server_data:bool=True,
-    source_name: schemas.TableNamePattern=Query(None,example="en_TW_1_vocabulary"),
+    source_name: schemas.TableNamePattern=Query(None,examples="en_TW_1_vocabulary"),
     user_details =Depends(get_user_or_none),
     sentence_list:List[schemas_nlp.SentenceInput]=Body(None), db_:Session=Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.LOOKUP.value))):#pylint: disable=unused-argument
@@ -769,7 +769,7 @@ async def generate_stopwords(request: Request, background_tasks: BackgroundTasks
     tags=['Jobs'])
 @get_auth_access_check_decorator
 async def check_job_status(request: Request,
-    job_id:int=Query(...,example="100000"),user_details =Depends(get_user_or_none),
+    job_id:int=Query(...,examples="100000"),user_details =Depends(get_user_or_none),
     db_:Session=Depends(get_db)):
     '''Checking the status of a job'''
     log.info('In check_job_status')
