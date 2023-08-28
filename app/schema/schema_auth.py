@@ -407,11 +407,52 @@ class PermissionMapCreateInput(BaseModel):
                 "filterResults":False
             }}
 
+class PermissionMapUpdateInput(BaseModel):
+    """auth Permission Map update input"""
+    permissionMapId:int
+    apiEndpoint:str =None
+    method:Methods =None
+    requestApp:str =None
+    resourceType:str =None
+    permission:str =None
+    filterResults:bool =False
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "permissionMapId":100000,
+                "apiEndpoint":'v2/access/permission-map',
+                "method": "GET",
+                "requestApp":"vachan",
+                "resourceType":"app",
+                "permission":"create",
+                "filterResults":False
+            }}
+
+class EndpointOut(BaseModel):
+    """auth endpoint output object"""
+    endpointId:int
+    endpoint:str
+    method:Methods
+    active:bool
+    class Config:
+        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
+        just get the data from object attributes'''
+        orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "endpointId": 100057,
+                "endpoint":'v2/access/permission-map',
+                "method": "GET",
+                "active":True
+            }
+        }
+
 class PermissionMapOut(BaseModel):
     """auth permission map output object"""
     permissionMapId:int
-    apiEndpoint:str
-    method:Methods
+    endpoint: EndpointOut = None
     requestApp:AppDetails = None
     resourceType:ResourceOut = None
     permission:PermissionOut = None
@@ -425,8 +466,7 @@ class PermissionMapOut(BaseModel):
         schema_extra = {
             "example": {
                 "permissionMapId": 100057,
-                "apiEndpoint":'v2/access/permission-map',
-                "method": "GET",
+                "endpoint":{},
                 "requestApp":{},
                 "resourceType": {},
                 "permission": {},
@@ -434,7 +474,6 @@ class PermissionMapOut(BaseModel):
                 "active":True
             }
         }
-
 
 class PermissionMapsResponse(BaseModel):
     """Response object of Permission map creation"""
@@ -467,26 +506,6 @@ class EndpointUpdateInput(BaseModel):
                 "method": "GET",
             }}
 
-class EndpointOut(BaseModel):
-    """auth endpoint output object"""
-    endpointId:int
-    endpoint:str
-    method:Methods
-    active:bool
-    class Config:
-        ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
-        just get the data from object attributes'''
-        orm_mode = True
-        # '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "endpointId": 100057,
-                "endpoint":'v2/access/permission-map',
-                "method": "GET",
-                "active":True
-            }
-        }
-
 class EndpointResponse(BaseModel):
     """Response object of Endpoint creation"""
     message:str = Field(..., example="endpoint added successfully")
@@ -496,3 +515,7 @@ class EndpointUpdateResponse(BaseModel):
     """Response object of Endpoint updation"""
     message:str = Field(..., example="endpoint updated successfully")
     data:EndpointOut = None
+class PermissionMapsUpdateResponse(BaseModel):
+    """Response object of Permission map updation"""
+    message:str = Field(..., example="Permission map updated successfully")
+    data: PermissionMapOut
