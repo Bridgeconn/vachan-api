@@ -1,4 +1,5 @@
 '''Test cases for SanketMAST projects related APIs'''
+import time
 from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
@@ -888,6 +889,26 @@ def test_create_n_update_times():
     assert response.json()[0]['updateTime'] is not None
     assert response.json()[0]["createTime"] == response.json()[0]["updateTime"]
 
+    time.sleep(10)
+    # create project 2
+    post_data = {
+    "projectName": "Test project 2",
+    "sourceLanguageCode": "hi",
+    "targetLanguageCode": "en"
+    }
+    response1 = client.post(UNIT_URL, headers=headers_auth, json=post_data)
+    assert response1.status_code == 201
+    assert response1.json()['message'] == "Project created successfully"
+    new_project2 = response1.json()['data']
+    assert_positive_get(new_project2)
+    print("///post resp1:",new_project2)
+    create_time_2 = new_project2['createTime']
+    update_time_2 = new_project2['updateTime']
+    assert create_time_2 == update_time_2
+
+    assert not new_project['createTime'] == create_time_2
+    time.sleep(10)
+
     # Make an update to project
     update_data = {
         "projectId": project_id,
@@ -896,9 +917,12 @@ def test_create_n_update_times():
     response2 = client.put(UNIT_URL, headers=headers_auth, json=update_data)
     assert response2.status_code == 201
     assert response2.json()['message'] == "Project updated successfully"
-
-    response = client.get(f"{UNIT_URL}?project_name={post_data['projectName']}",headers=headers_auth)
-    assert response.json()[0]["createTime"] != response.json()[0]["updateTime"]
+    updated_project = response2.json()['data']
+    print("response.json()[0][updateTime]:",response.json()[0]["updateTime"])
+    print("response2.json()[0][updateTime]:",updated_project["updateTime"])
+    assert response.json()[0]["updateTime"] != updated_project["updateTime"]
+    assert not response.json()[0]["updateTime"] == updated_project['updateTime']
+    assert updated_project['updateTime'] > response.json()[0]["updateTime"]
  
 
 def test_delete_project():
