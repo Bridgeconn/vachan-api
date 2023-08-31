@@ -41,6 +41,8 @@ def create_translation_project(db_:Session, project, user_id=None):
         active=project.active,
         createdUser=user_id,
         updatedUser=user_id,
+        createTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S'),
+        updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S'),
         metaData=meta
         )
     db_.add(db_content)
