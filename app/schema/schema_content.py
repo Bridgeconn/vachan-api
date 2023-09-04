@@ -25,96 +25,58 @@ class BibleBook(BaseModel):
             }
         }
 
-class AudioBible(BaseModel):
-    '''Response object of Audio Bible'''
-    audioId: int
-    name: str = None
-    url: AnyUrl = None
-    # book:  BibleBook
-    format: str = None
-    active: bool = None
-    class Config:
-        ''' telling Pydantic that "it's OK if I pass a non-dict value'''
-        orm_mode = True
-        # '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "name": "XXX audio bible: Gospel series",
-                "url": "http://someplace.come/resoucesid",
-                "format": "mp3",
-                "active": True
-            }
-        }
-
-class AudioBibleCreateResponse(BaseModel):
-    '''Response object of auido bible update'''
-    message: str = Field(..., example="Bible audios details uploaded successfully")
-    data: List[AudioBible] = None
-
-class AudioBibleUpdateResponse(BaseModel):
-    '''Response object of auido bible update'''
-    message: str = Field(..., example="Bible audios details updated successfully")
-    data: List[AudioBible] = None
-
-class AudioBibleUpload(BaseModel):
-    '''Input object of Audio Bible'''
-    name: str
-    url: AnyUrl
-    books:  List[BookCodePattern]
-    format: str
-    active: bool = True
-    class Config:
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "name": "XXX audio bible: Gospel series",
-                "books": ["mat"],
-                "url": "http://someplace.come/resoucesid",
-                "format": "mp3",
-                "active": True
-            }
-        }
-
-class AudioBibleEdit(BaseModel):
-    ''' Input object of Auido Bible'''
-    name: str = None
-    url: AnyUrl = None
-    books: List[BookCodePattern]
-    format: str = None
-    active: bool = None
-    class Config:
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "books": ["mat", "mrk", "luk", "jhn"],
-                "name": "XXX audio bible: Gospel series",
-                "url": "http://someplace.come/resoucesid",
-                "format": "mp3",
-                "active": True
-            }
-        }
-
 class Reference(BaseModel):
-    '''Response object of bible refernce'''
+    '''Response object of parascript reference'''
     bible : TableNamePattern = None
     book: BookCodePattern = None
-    chapter: int
-    verseNumber: int
-    verseNumberEnd: int = None
+    chapter: int = None
+    verseNumber: int = None
+    bookEnd: BookCodePattern = None
+    chapterEnd: int = None
+    verseEnd: int = None
+
+    @validator('chapter', 'chapterEnd')
+    def check_chapter(cls, val): # pylint:  disable=E0213
+        '''chapter fields should be greater than or equal to -1'''
+        if val is not None and val < -1:
+            raise ValueError('chapter field should be greater than or equal to -1')
+        return val
+
+    @validator('verseNumber', 'verseEnd')
+    def check_verses(cls, val, values): # pylint:  disable=E0213
+        '''verse fields should be greater than or equal to -1'''
+        if 'chapter' in values and values['chapter'] in [-1, 0]:
+            if val not in [-1, 0, None]:
+                raise ValueError('verse fields should be 0 for book introductions and epilogues')
+            val = 0
+        if val is not None and  val < -1:
+            raise ValueError('verse fields should be greater than or equal to -1')
+        return val
+    @validator('chapterEnd')
+    def check_chapter_range(cls, val, values): # pylint:  disable=E0213
+        '''chapter start should be less than or equal to chapter end'''
+        if 'chapter' in values and val < values['chapter']:
+            raise ValueError('chapter start should be less than or equal to chapter end')
+        return val
+    def check_verse_range(cls, val, values): # pylint:  disable=E0213
+        '''verse start should be less than or equal to verse end'''
+        if 'verseNumber' in values and val < values['verseNumber']:
+            raise ValueError('verse start should be less than or equal to verse end')
+        return val
     class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "bible": "hi_IRV_5_bible",
                 "book": "mat",
                 "chapter": 1,
                 "verseNumber": 12,
-                "verseNumberEnd": 17
+                "bookEnd": "luk",
+                "chapterEnd": 10,
+                "verseEnd": 20
             }
         }
-
 class BibleBookContent(BaseModel):
     '''Response object of Bible book contents'''
     bookContentId : int = None
@@ -123,7 +85,6 @@ class BibleBookContent(BaseModel):
     bookName: str = None
     USFM: str = None
     JSON: dict = None
-    audio: AudioBible = None
     active: bool
     class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
@@ -143,12 +104,6 @@ class BibleBookContent(BaseModel):
                  "verseText": "इब्राहीम की सन्‍तान, दाऊद की ..."}]}
                         ]
                     },
-                "AudioBible": {
-                    "name": "XXX audio bible: Gospel series",
-                    "url": "http://someplace.come/resoucesid",
-                    "format": "mp3",
-                    "active": True
-                },
                 "active": True
             }
         }
@@ -260,7 +215,7 @@ class BibleVerse(BaseModel):
         }
 
 class BookContentType(str, Enum):
-    '''choices for bible content types'''
+    '''choices for bible resource types'''
     USFM = 'usfm'
     JSON = 'json'
     AUDIO = 'audio'
@@ -420,8 +375,8 @@ class CommentaryUpdateResponse(BaseModel):
     data: Job
 
 LetterPattern = constr(regex=r'^\w$')
-class DictionaryWordCreate(BaseModel):
-    '''Upload object of dictionary word'''
+class VocabularyWordCreate(BaseModel):
+    '''Upload object of vocabulary word'''
     word: str
     details: dict = None
     active: bool = True
@@ -436,8 +391,8 @@ class DictionaryWordCreate(BaseModel):
             }
         }
 
-class DictionaryWordEdit(BaseModel):
-    '''Upload object of dictionary word'''
+class VocabularyWordEdit(BaseModel):
+    '''Upload object of vocabulary word'''
     word: str
     details: dict = None
     active: bool = None
@@ -454,8 +409,8 @@ class DictionaryWordEdit(BaseModel):
             }
         }
 
-class DictionaryWordResponse(BaseModel):
-    '''Response object of dictionary word'''
+class VocabularyWordResponse(BaseModel):
+    '''Response object of vocabulary word'''
     wordId: int = None
     word: str
     details: dict = None
@@ -474,210 +429,261 @@ class DictionaryWordResponse(BaseModel):
             }
         }
 
-class DictionaryCreateResponse(BaseModel):
-    '''Response object of dictionary word update'''
-    message: str = Field(..., example="Dictionary words added successfully")
-    data: List[DictionaryWordResponse] = None
+class VocabularyCreateResponse(BaseModel):
+    '''Response object of vocabulary word update'''
+    message: str = Field(..., example="Vocabulary words added successfully")
+    data: List[VocabularyWordResponse] = None
 
-class DictionaryUpdateResponse(BaseModel):
-    '''Response object of dictionary word update'''
-    message: str = Field(..., example="Dictionary words updated successfully")
-    data: List[DictionaryWordResponse] = None
+class VocabularyUpdateResponse(BaseModel):
+    '''Response object of vocabulary word update'''
+    message: str = Field(..., example="Vocabulary words updated successfully")
+    data: List[VocabularyWordResponse] = None
 
-class InfographicCreate(BaseModel):
-    '''Input object of infographics'''
-    bookCode : BookCodePattern
+class ParascriptResponse(BaseModel):
+    '''Response object of parascripturals'''
+    parascriptId : int
+    category: str
     title: str
-    infographicLink : AnyUrl
-    active: bool = True
-    class Config:
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "bookCode": "exo",
-                "title": "Ark of Covenant",
-                "infographicLink": "http://someplace.com/resoucesid",
-                "active": True
-            }
-        }
-
-class InfographicEdit(BaseModel):
-    '''Input object of infographics Update'''
-    bookCode : BookCodePattern
-    title: str
-    infographicLink : AnyUrl = None
+    description: str = None
+    content: str = None
+    reference: Reference = None
+    link: AnyUrl = None
+    metaData: dict = None
     active: bool = None
-    class Config:
-        '''display example value in API documentation'''
-        schema_extra = {
-            "example": {
-                "bookCode": "exo",
-                "title": "Ark of Covenant",
-                "infographicLink": "http://someOtherPlace.com/resoucesid",
-                "active": False
-            }
-        }
-
-class InfographicResponse(BaseModel):
-    '''Response object of infographics'''
-    infographicId : int
-    book : BibleBook
-    title: str
-    infographicLink : AnyUrl
-    active: bool
     class Config:
         ''' telling Pydantic that "it's OK if I pass a non-dict value'''
         orm_mode = True
         # '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "infographicId": 100000,
-                "book": {"bookId":2, "bookCode":"exo", "bookName":"exodus"},
-                "title": "Ark of Covenant",
-                "infographicLink": "http://someplace.com/resoucesid",
+                "parascriptId": 100000,
+                "category": "Bible project video",
+                "title": "Bible Video of Genesis",
+                "description": "Day's theme or some sub title if available",
+                "content": "some detailed content",
+                "reference": {"book":"MAT", "chapter":2, "verseNumber":3,
+                               "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
+                "link": "http://someplace.com/resoucesid",
+                "metaData": {"key": "value"},
                 "active": True
             }
         }
-
-class InfographicCreateResponse(BaseModel):
-    '''Response object of infographics update'''
-    message: str = Field(..., example="Infographics added successfully")
-    data: List[InfographicResponse] = None
-
-class InfographicUpdateResponse(BaseModel):
-    '''Response object of infographics update'''
-    message: str = Field(..., example="Infographics updated successfully")
-    data: List[InfographicResponse] = None
-
-class BibleVideoRefObj(BaseModel):
-    """Reference Object of BibleVideo"""
-    bookCode : BookCodePattern = None
-    chapter: int
-    verseStart: int = None
-    verseEnd: int = None
-
-    @validator('verseStart', 'verseEnd')
-    def check_verses(cls, val, values): # pylint:  disable=E0213
-        '''verse fields should be greater than or equal to -1'''
-        if 'chapter' in values and values['chapter'] in [-1, 0]:
-            if val not in [-1, 0, None]:
-                raise ValueError('verse fields should be 0, for book introductions and epilogues')
-            val = 0
-        if val is None:
-            raise ValueError('verse fields must have a value, '+
-                'except for book introduction and epilogue')
-        if val < -1:
-            raise ValueError('verse fields should be greater than or equal to -1')
-        return val
-
-    @validator('verseEnd')
-    def check_range(cls, val, values): # pylint:  disable=E0213
-        '''verse start should be less than or equal to verse end'''
-        if 'verseStart' in values and val < values['verseStart']:
-            raise ValueError('verse start should be less than or equal to verse end')
-        return val
-
-    @validator('chapter')
-    def check_chapter(cls, val): # pylint: disable=E0213
-        '''chapter fields should be greater than or equal to -1'''
-        if val < -1:
-            raise ValueError('chapter field should be greater than or equal to -1')
-        return val
-
-class BibleVideo(BaseModel):
-    '''Response object of Bible Videos'''
-    bibleVideoId : int
+class ParascriptEdit(BaseModel):
+    '''Input object of parascriptuals update'''
+    category: str
     title: str
-    references: List[Reference] = []
-    videoLink: AnyUrl
-    description: str
-    series: str
-    active: bool
+    description: str = None
+    content: str = None
+    reference: Reference = None
+    link: AnyUrl = None
+    active: bool = None
+    metaData: dict = None
     class Config:
-        ''' telling Pydantic that "it's OK if I pass a non-dict value'''
-        orm_mode = True
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "bibleVideoId":100000,
-                "title": "Overview: song of songs",
-                "references": [{
-                    "book": "sng",
-                    "chapter": 1,
-                    "verseNumber": 12
-                }],
-                "videoLink": "https://someplace.com/resoucesid",
-                "description": "Watch our overview video on the book of Song of Songs,"+\
-                    "which breaks down the literary design of the book and "+\
-                    "its flow of thought.",
-                "series": "Old Testament, Poetic Book",
+                "category": "Bible project video",
+                "title": "Bible Video of Genesis",
+                "description": "updated description",
+                "content": "updated content",
+                "reference": {"book":"MRK", "chapter":11, "verseNumber":12,
+                               "bookEnd":"LUK", "chapterEnd":14, "verseEnd":15 },
+                "link": "http://someplace.com/newresoucesid",
+                "metaData": {"newkey": "newvalue"},
                 "active": True
             }
         }
+class ParascriptUpdateResponse(BaseModel):
+    '''Response object of parascripturals update'''
+    message: str = Field(..., example="Parascripturals updated successfully")
+    data: List[ParascriptResponse] = None
 
-class BibleVideoCreateResponse(BaseModel):
-    '''Response object of Bible Video update'''
-    message: str = Field(...,example="Bible videos added successfully")
-    data: List[BibleVideo] = None
+class ParascriptCreateResponse(BaseModel):
+    '''Response object of parascripturals update'''
+    message: str = Field(..., example="Parascripturals added successfully")
+    data: List[ParascriptResponse] = None
 
-class BibleVideoUpdateResponse(BaseModel):
-    '''Response object of Bible Video update'''
-    message: str = Field(...,example="Bible videos updated successfully")
-    data: List[BibleVideo] = None
-
-class BibleVideoUpload(BaseModel):
-    '''Input Object of bible Videos'''
+class ParascripturalCreate(BaseModel):
+    '''Input object for parascripturals'''
+    category: str
     title: str
-    references: List[BibleVideoRefObj] = []
-    videoLink: AnyUrl
-    description: str
-    series: str
+    description: str = None
+    content: str = None
+    reference: Reference = None
+    link: AnyUrl = None
+    metaData: dict = None
     active: bool = True
     class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "title": "Overview: song of songs",
-                "references": [{
-                    "bookCode": "sng",
-                    "chapter": 10,
-                    "verseStart": 1,
-                    "verseEnd": 7
-                }],
-                "videoLink": "https://someplace.com/resoucesid",
-                "description": "Watch our overview video on the book of Song of Songs,"+\
-                    "which breaks down the literary design of the book and "+\
-                    "its flow of thought.",
-                "series": "Old Testament",
+                "category": "Bible project video",
+                "title": "Bible Video of Genesis",
+                "description": "Day's theme or some sub title if available",
+                "content": "some detailed content",
+                "reference": {"book":"MAT", "chapter":2, "verseNumber":3,
+                               "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
+                "link": "http://someplace.com/resoucesid",
+                "metaData": {"key": "value"},
                 "active": True
-
             }
         }
-
-class BibleVideoEdit(BaseModel):
-    '''Input object of Bible Video update'''
-    title: str
-    references: List[BibleVideoRefObj]  = None
-    videoLink: AnyUrl  = None
-    description: str  = None
-    series: str  = None
-    active: bool  = None
+class AudioBibleResponse(BaseModel):
+    '''Response object of audio bibles'''
+    audioId : int
+    name: str = None
+    audioFormat: str = None
+    reference: Reference = None
+    link: AnyUrl = None
+    metaData: dict = None
+    active: bool = None
+    class Config:
+        ''' telling Pydantic that "it's OK if I pass a non-dict value'''
+        orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "audioId": 100001,
+                "name": "audio bible: Gospel series",
+                "audioFormat": "mp3",
+                "reference": {"book":"GEN", "chapter":1, "verseNumber":1,
+                               "bookEnd":"GEN", "chapterEnd":10, "verseEnd":10 },
+                "link": "http://someplace.com/resoucesid",
+                "metaData": {"othername": "Word of God"},
+                "active": True
+            }
+        }
+class AudioBibleEdit(BaseModel):
+    '''Input object of audio bibles update'''
+    audioId: int
+    name: str = None
+    audioFormat: str = None
+    reference: Reference = None
+    link: AnyUrl = None
+    active: bool = None
+    metaData: dict = None
     class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "title": "Overview: song of songs",
-                "references": [{
-                    "bookCode": "sng",
-                    "chapter": 10,
-                    "verseStart": 1,
-                    "verseEnd": 7
-                }],
-                "videoLink": "https://anotherplace.com/resoucesid",
-                "description": "Watch our overview video on the book of Song of Songs,"+\
-                    "which breaks down the literary design of the book and "+\
-                    "its flow of thought.",
-                "series": "Old Testament, Poetic Book",
+                "audioId":100001,
+                "name": "audio bible: Origin",
+                "audioFormat": "mp3",
+                "reference": {"book":"MAT", "chapter":2, "verseNumber":10,
+                               "bookEnd":"MAT", "chapterEnd":12, "verseEnd":15 },
+                "link": "http://someplace.com/newresoucesid",
+                "metaData": {"othername": "origin of world"},
+                "active": True
+            }
+        }
+class AudioBibleUpdateResponse(BaseModel):
+    '''Response object of audio bibles update'''
+    message: str = Field(..., example="Audio Bible updated successfully")
+    data: List[AudioBibleResponse] = None
+
+class AudioBibleCreateResponse(BaseModel):
+    '''Response object of audio bibles update'''
+    message: str = Field(..., example="Audio Bible added successfully")
+    data: List[AudioBibleResponse] = None
+
+class AudioBibleCreate(BaseModel):
+    '''Input object for sign bible video'''
+    name: str
+    audioFormat: str = None
+    reference: Reference = None
+    link: AnyUrl = None
+    metaData: dict = None
+    active: bool = True
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "name": "audio bible: Gospel series",
+                "audioFormat": "mp3",
+                "reference": {"book":"GEN", "chapter":1, "verseNumber":1,
+                               "bookEnd":"GEN", "chapterEnd":10, "verseEnd":10 },
+                "link": "http://someplace.com/resoucesid",
+                "metaData": {"othername": "Word of God"},
+                "active": True
+            }
+        }
+
+class SignVideoResponse(BaseModel):
+    '''Response object of sign bible videos'''
+    signVideoId : int
+    title: str = None
+    description: str = None
+    reference: Reference = None
+    link: AnyUrl = None
+    metaData: dict = None
+    active: bool = None
+    class Config:
+        ''' telling Pydantic that "it's OK if I pass a non-dict value'''
+        orm_mode = True
+        # '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "signVideoId": 100000,
+                "title": "Sign Bible Video of Genesis",
+                "description": "Day's theme or some sub title if available",
+                "reference": {"book":"GEN", "chapter":1, "verseNumber":1,
+                               "bookEnd":"GEN", "chapterEnd":10, "verseEnd":10 },
+                "link": "http://someplace.com/resoucesid",
+                "metaData": {"key": "value"},
+                "active": True
+            }
+        }
+class SignVideoEdit(BaseModel):
+    '''Input object of sign bible videos update'''
+    signVideoId: int
+    title: str = None
+    description: str = None
+    reference: Reference = None
+    link: AnyUrl = None
+    active: bool = None
+    metaData: dict = None
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "signVideoId":100000,
+                "title": "Sign Bible Video of Mathewss",
+                "description": "updated description",
+                "reference": {"book":"MAT", "chapter":2, "verseNumber":10,
+                               "bookEnd":"MAT", "chapterEnd":12, "verseEnd":15 },
+                "link": "http://someplace.com/newresoucesid",
+                "metaData": {"newkey": "newvalue"},
+                "active": True
+            }
+        }
+class SignVideoUpdateResponse(BaseModel):
+    '''Response object of sign bible videos update'''
+    message: str = Field(..., example="Sign Bible Video updated successfully")
+    data: List[SignVideoResponse] = None
+
+class SignVideoCreateResponse(BaseModel):
+    '''Response object of sign bible videos update'''
+    message: str = Field(..., example="Sign Bible Video added successfully")
+    data: List[SignVideoResponse] = None
+
+class SignVideoCreate(BaseModel):
+    '''Input object for sign bible video'''
+    title: str
+    description: str = None
+    reference: Reference = None
+    link: AnyUrl = None
+    metaData: dict = None
+    active: bool = True
+    class Config:
+        '''display example value in API documentation'''
+        schema_extra = {
+            "example": {
+                "title": "Sign Bible Video of Genesis",
+                "description": "Day's theme or some sub title if available",
+                "reference": {"book":"GEN", "chapter":1, "verseNumber":1,
+                               "bookEnd":"GEN", "chapterEnd":10, "verseEnd":10 },
+                "link": "http://someplace.com/resoucesid",
+                "metaData": {"key": "value"},
                 "active": True
             }
         }

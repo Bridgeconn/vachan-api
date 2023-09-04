@@ -1,7 +1,7 @@
 '''Test cases for media related APIs'''
 from . import client
 from .test_versions import check_post as add_version
-from .test_sources import check_post as add_source
+from .test_resources import check_post as add_resource
 from .test_auth_basic import login,SUPER_USER,SUPER_PASSWORD,logout_user
 from .conftest import initial_test_users
 
@@ -14,7 +14,7 @@ headers = {"contentType": "application/json", "accept": "application/json"}
 
 def media_common(endpoint,permanent_link, repo, file_path):
     '''test for media download endpoint'''
-    # test without source of repo in metadata
+    # test without resource of repo in metadata
     response = client.get(UNIT_URL+endpoint+"?permanent_link="+permanent_link, headers=headers)
     assert response.status_code == 404
     assert response.json()["error"] == "Requested Content Not Available"
@@ -25,8 +25,8 @@ def media_common(endpoint,permanent_link, repo, file_path):
         "versionName": "test version for Gitlab",
     }
     add_version(version_data)
-    source_data = {
-        "contentType": "gitlabrepo",
+    resource_data = {
+        "resourceType": "gitlabrepo",
         "language": "en",
         "version": "TTT",
         "versionTag": 1,
@@ -34,8 +34,8 @@ def media_common(endpoint,permanent_link, repo, file_path):
         "license": "ISC",
         "metaData": {"repo": permanent_link.split("/-/")[0]}
     }
-    source = add_source(source_data)
-    source_name = source.json()['data']['sourceName']
+    resource = add_resource(resource_data)
+    resource_name = resource.json()['data']['resourceName']
 
     # Source with access permission content , need higher auth level to access
     # Without auth

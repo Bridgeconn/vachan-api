@@ -1,14 +1,14 @@
 '''Test cases for licenses related APIs'''
-from schema.schemas import SourcePermissions
+from schema.schemas import ResourcePermissions
 from . import client, check_default_get
 from . import assert_input_validation_error, assert_not_available_content
 from .test_versions import check_post as add_version
-from .test_sources import check_post as add_source
+from .test_resources import check_post as add_resource
 from .test_auth_basic import logout_user,login,SUPER_PASSWORD,SUPER_USER
 from .conftest import initial_test_users
 
-UNIT_URL = '/v2/licenses'
-RESTORE_URL = '/v2/restore'
+UNIT_URL = '/v2/resources/licenses'
+RESTORE_URL = '/v2/admin/restore'
 headers = {"contentType": "application/json", "accept": "application/json"}
 
 headers_auth = {"contentType": "application/json",
@@ -75,7 +75,7 @@ def test_get():
     assert_not_available_content(response)
 
     # '''filter with permissions'''
-    response = client.get(UNIT_URL+'?permission='+SourcePermissions.OPENACCESS.value)
+    response = client.get(UNIT_URL+'?permission='+ResourcePermissions.OPENACCESS.value)
     assert response.status_code == 200
     assert len(response.json()) == 2
 
@@ -97,7 +97,7 @@ def post_data():
       "license": "A very very long license text",
       "name": "Test License version 1",
       "code": "LIC-1",
-      "permissions": [SourcePermissions.OPENACCESS.value]
+      "permissions": [ResourcePermissions.OPENACCESS.value]
     }
     headers_au = {"contentType": "application/json",
                 "accept": "application/json",
@@ -118,7 +118,7 @@ def test_post():
       "license": "A very very long license text",
       "name": "Test License version 1",
       "code": "LIC-1",
-      "permissions": [SourcePermissions.OPENACCESS.value]
+      "permissions": [ResourcePermissions.OPENACCESS.value]
     }
     response = client.post(UNIT_URL, headers=headers, json=data)
     #without Auth
@@ -160,7 +160,7 @@ def test_post():
     assert response.status_code == 201
     assert response.json()['message'] == "License uploaded successfully"
     assert_positive_get(response.json()['data'])
-    assert response.json()["data"]["permissions"] == [SourcePermissions.OPENACCESS.value]
+    assert response.json()["data"]["permissions"] == [ResourcePermissions.OPENACCESS.value]
 
     # '''without mandatory fields'''
     #with auth
@@ -218,7 +218,7 @@ def test_put(): # pylint: disable=too-many-statements
       "license": "A very very long license text",
       "code": "LIC-1",
       "name": "Test License version 1",
-      "permissions": [SourcePermissions.OPENACCESS.value]
+      "permissions": [ResourcePermissions.OPENACCESS.value]
     }
     #without Auth
     response = client.post(UNIT_URL, headers=headers, json=data)
@@ -231,7 +231,7 @@ def test_put(): # pylint: disable=too-many-statements
     assert response.json()['message'] == "License uploaded successfully"
 
     update_data = {"code":"LIC-1", "permissions":
-      [SourcePermissions.OPENACCESS.value, SourcePermissions.PUBLISHABLE.value]}
+      [ResourcePermissions.OPENACCESS.value, ResourcePermissions.PUBLISHABLE.value]}
     #without auth update
     response = client.put(UNIT_URL, json=update_data, headers=headers)
     assert response.status_code == 401
@@ -242,7 +242,7 @@ def test_put(): # pylint: disable=too-many-statements
     assert response.status_code == 201
     assert response.json()['message'] == "License edited successfully"
     assert response.json()['data']['permissions'] ==\
-      [SourcePermissions.OPENACCESS.value, SourcePermissions.PUBLISHABLE.value]
+      [ResourcePermissions.OPENACCESS.value, ResourcePermissions.PUBLISHABLE.value]
 
     update_data = {"code":"LIC-1", "name":"New name for test license"}
     response = client.put(UNIT_URL, json=update_data, headers=headers_auth)
@@ -277,7 +277,7 @@ def test_put(): # pylint: disable=too-many-statements
       "license": "license edited by admin",
       "code": "LIC-1",
       "name": "Test License version 1",
-      "permissions": [SourcePermissions.OPENACCESS.value]
+      "permissions": [ResourcePermissions.OPENACCESS.value]
     }
     headers_admin = {"contentType": "application/json",
                     "accept": "application/json",
@@ -320,7 +320,7 @@ def test_delete_default():
     response = post_data()
     license_id = response.json()["data"]["licenseId"]
     #Delete without authentication
-    response = client.delete(UNIT_URL + "?delete_id=" + str(license_id), headers=headers)
+    response = client.delete(UNIT_URL + "?license_id=" + str(license_id), headers=headers)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
@@ -330,7 +330,7 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
-        response = client.delete(UNIT_URL + "?delete_id=" + str(license_id), headers=user_headers)
+        response = client.delete(UNIT_URL + "?license_id=" + str(license_id), headers=user_headers)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
@@ -339,7 +339,7 @@ def test_delete_default():
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['APIUser2']['token']
             }
-    response = client.delete(UNIT_URL + "?delete_id=" + str(license_id), headers=headers_au)
+    response = client.delete(UNIT_URL + "?license_id=" + str(license_id), headers=headers_au)
     assert response.status_code == 200
     assert response.json()['message'] ==  \
         f"License with identity {license_id} deleted successfully"
@@ -370,7 +370,7 @@ def test_delete_default_superadmin():
             }
 
     #Delete license
-    response = client.delete(UNIT_URL + "?delete_id=" + str(license_id), headers=headers_sa)
+    response = client.delete(UNIT_URL + "?license_id=" + str(license_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] == \
     f"License with identity {license_id} deleted successfully"
@@ -395,7 +395,7 @@ def test_delete_license_id_string():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
-    response = client.delete(UNIT_URL + "?delete_id=" + str(license_id), headers=headers_sa)
+    response = client.delete(UNIT_URL + "?license_id=" + str(license_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] == \
         f"License with identity {license_id} deleted successfully"
@@ -407,28 +407,28 @@ def test_delete_incorrectdatatype():
     #Deleting created data
     license_id = response.json()['data']['licenseId']
     license_id ={}
-    response = client.delete(UNIT_URL + "?delete_id=" + str(license_id), headers=headers_auth)
+    response = client.delete(UNIT_URL + "?license_id=" + str(license_id), headers=headers_auth)
     assert_input_validation_error(response)
 
 def test_delete_missingvalue_license_id():
     '''Negative Testcase. Passing input data without licenseId'''
     data = {}
     license_id=" "
-    response = client.delete(UNIT_URL + "?delete_id=" + str(license_id), headers=headers_auth)
+    response = client.delete(UNIT_URL + "?license_id=" + str(license_id), headers=headers_auth)
     assert_input_validation_error(response)
 
 def test_delete_notavailable_license():
     ''' request a non existing license ID, Ensure there is no partial matching'''
     
     license_id =9999
-    response = client.delete(UNIT_URL + "?delete_id=" + str(license_id), headers=headers_auth)
+    response = client.delete(UNIT_URL + "?license_id=" + str(license_id), headers=headers_auth)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
 
-def test_license_used_by_source():
-    '''  Negativetest case, trying to delete that license which is used to create a source'''
+def test_license_used_by_resource():
+    '''  Negativetest case, trying to delete that license which is used to create a resource'''
 
-    #Create Version with associated with source
+    #Create Version with associated with resource
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version or licenses",
@@ -436,8 +436,8 @@ def test_license_used_by_source():
     add_version(version_data)
 
     #Create Source with license
-    source_data = {
-        "contentType": "commentary",
+    resource_data = {
+        "resourceType": "commentary",
         "language": "en",
         "version": "TTT",
         "revision": 1,
@@ -445,7 +445,7 @@ def test_license_used_by_source():
         "license": "ISC",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
-    add_source(source_data)
+    add_resource(resource_data)
 
     #Delete license
     licence_response = client.get(UNIT_URL+"?license_code=ISC")
@@ -462,7 +462,7 @@ def test_license_used_by_source():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+token_admin
                      }
-    response = client.delete(UNIT_URL + "?delete_id=" + str(license_id), headers=headers_admin)
+    response = client.delete(UNIT_URL + "?license_id=" + str(license_id), headers=headers_admin)
     assert response.status_code == 409
     assert response.json()['error'] == 'Conflict'
     logout_user(token_admin)

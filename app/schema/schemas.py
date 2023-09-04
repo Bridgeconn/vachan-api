@@ -23,14 +23,14 @@ class ErrorResponse(BaseModel):
             }
         }
 
-class ContentTypeCreate(BaseModel):
-    '''Input object to ceate a new content type'''
-    contentType : constr(regex=r"^[a-z]+$") = Field(...,example="commentary")
+class ResourceTypeCreate(BaseModel):
+    '''Input object to ceate a new resource type'''
+    resourceType : constr(regex=r"^[a-z]+$") = Field(...,example="commentary")
 
-class ContentType(BaseModel):
-    '''output object for content types'''
-    contentId : int
-    contentType : str
+class ResourceType(BaseModel):
+    '''output object for resource types'''
+    resourcetypeId : int
+    resourceType : str
     createdUser : str = None
     class Config:
         '''For SQL Alchemy'''
@@ -38,16 +38,16 @@ class ContentType(BaseModel):
         # '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "contentId": 1,
-                "contentType": "commentary",
+                "resourcetypeId": 1,
+                "resourceType": "commentary",
                 "createdUser": "token"
             }
         }
 
-class ContentTypeUpdateResponse(BaseModel):
-    '''Object usedtTo update content type'''
-    message: str = Field(...,example="Content type created successfully")
-    data: ContentType = None
+class ResourceTypeUpdateResponse(BaseModel):
+    '''Object usedtTo update resource type'''
+    message: str = Field(...,example="Resource_type created successfully")
+    data: ResourceType = None
 
 LangCodePattern =constr(regex=r"^[a-zA-Z]+(-[a-zA-Z0-9]+)*$")
 class Direction(str, Enum):
@@ -174,7 +174,7 @@ class DeletedItemResponse(BaseModel):
         }
 
 class DeleteResponse(BaseModel):
-    """Content delete response"""
+    """ResourceType delete response"""
     message:str
     data: DeletedItemResponse = None
 
@@ -189,8 +189,8 @@ class DeleteIdentity(BaseModel):
             }
         }
 
-class SourcePermissions(str, Enum):
-    '''To specify source access permisions'''
+class ResourcePermissions(str, Enum):
+    '''To specify resource access permisions'''
     CONTENT = "content"
     OPENACCESS = "open-access"
     PUBLISHABLE = "publishable"
@@ -214,7 +214,7 @@ class LicenseCreate(BaseModel):
     name: str
     code : LicenseCodePattern
     license : str
-    permissions : List[SourcePermissions] = [SourcePermissions.OPENACCESS]
+    permissions : List[ResourcePermissions] = [ResourcePermissions.OPENACCESS]
     class Config:
         '''display example value in API documentation'''
         schema_extra = {
@@ -232,7 +232,7 @@ class LicenseShortResponse(BaseModel):
     '''Return object of licenses without the full text'''
     name : str
     code : LicenseCodePattern
-    permissions : List[SourcePermissions]
+    permissions : List[ResourcePermissions]
     active: bool
     class Config: # pylint: disable=too-few-public-methods
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
@@ -256,7 +256,7 @@ class LicenseResponse(BaseModel):
     name : str
     code : LicenseCodePattern
     license : str
-    permissions : List[SourcePermissions]
+    permissions : List[ResourcePermissions]
     active: bool
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
@@ -289,7 +289,7 @@ class LicenseEdit (BaseModel):
     code: LicenseCodePattern
     name : str = None
     license : str = None
-    permissions : List[SourcePermissions] = [SourcePermissions.OPENACCESS]
+    permissions : List[ResourcePermissions] = [ResourcePermissions.OPENACCESS]
     active: bool = None
     class Config:
         '''display example value in API documentation'''
@@ -384,8 +384,8 @@ class VersionEdit(BaseModel):
 
 TableNamePattern = constr(regex=r"^[a-zA-Z]+(-[a-zA-Z0-9]+)*_[A-Z]+_[\w\.]+_[a-z]+$")
 
-class SourceLabel(str, Enum):
-    '''Markers for source items to be able to filter contents as per different usecases'''
+class ResourceLabel(str, Enum):
+    '''Markers for resource items to be able to filter contents as per different usecases'''
     LATEST = "latest"
     PUBLISHED = "published"
     PRERELEASE = "pre-release"
@@ -393,22 +393,22 @@ class SourceLabel(str, Enum):
     DEPRECATED = "deprecated"
     TEST = "test"
 
-class SourceCreate(BaseModel):
-    '''Input object of sources'''
-    contentType : str
+class ResourceCreate(BaseModel):
+    '''Input object of resources'''
+    resourceType : str
     language : LangCodePattern
     version : VersionPattern
     versionTag: VersionTagPattern = "1"
-    labels: List[SourceLabel] = None
+    labels: List[ResourceLabel] = None
     year: int
     license: LicenseCodePattern = "CC-BY-SA"
-    accessPermissions : List[SourcePermissions] = [SourcePermissions.CONTENT]
+    accessPermissions : List[ResourcePermissions] = [ResourcePermissions.CONTENT]
     metaData: dict = {}
     class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "contentType": "commentary",
+                "resourceType": "commentary",
                 "language": "en",
                 "version": "KJV",
                 "versionTag": "1611.12.31",
@@ -420,15 +420,15 @@ class SourceCreate(BaseModel):
             }
         }
 
-class SourceResponse(BaseModel):
-    '''Output object of sources'''
-    sourceId : int
-    sourceName : TableNamePattern
-    contentType : ContentType = None
+class ResourceResponse(BaseModel):
+    '''Output object of resources'''
+    resourceId : int
+    resourceName : TableNamePattern
+    resourceType : ResourceType = None
     language : LanguageResponse = None
     version : VersionResponse = None
     # revision: str = "1"
-    labels: List[SourceLabel] = None
+    labels: List[ResourceLabel] = None
     year: int
     license: LicenseShortResponse
     metaData: dict = None
@@ -440,9 +440,9 @@ class SourceResponse(BaseModel):
         # '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "sourceId" : 100090,
-                "sourceName": "en_KJV_1_commentary",
-                "contentType": {},
+                "resourceId" : 100090,
+                "resourceName": "en_KJV_1_commentary",
+                "resourceType": {},
                 "language": {},
                 "version": {},
                 "latest":True,
@@ -454,34 +454,34 @@ class SourceResponse(BaseModel):
             }
         }
 
-class SourceCreateResponse(BaseModel):
-    '''response object of sources update'''
-    message: str = Field(..., example="Source created successfully")
-    data: SourceResponse = None
+class ResourceCreateResponse(BaseModel):
+    '''response object of resources update'''
+    message: str = Field(..., example="Resource created successfully")
+    data: ResourceResponse = None
 
-class SourceUpdateResponse(BaseModel):
-    '''response object of sources update'''
-    message: str = Field(..., example="Source edited successfully")
-    data: SourceResponse = None
+class ResourceUpdateResponse(BaseModel):
+    '''response object of resources update'''
+    message: str = Field(..., example="Resource edited successfully")
+    data: ResourceResponse = None
 
 
-class SourceEdit(BaseModel):
-    '''Input object of source update'''
-    sourceName : TableNamePattern
+class ResourceEdit(BaseModel):
+    '''Input object of resource update'''
+    resourceName : TableNamePattern
     language : LangCodePattern = None
     version : VersionPattern = None
     versionTag: VersionTagPattern = None
-    labels: List[SourceLabel] = None
+    labels: List[ResourceLabel] = None
     year: int = None
     license: LicenseCodePattern = None
-    accessPermissions : List[SourcePermissions] = [SourcePermissions.CONTENT]
+    accessPermissions : List[ResourcePermissions] = [ResourcePermissions.CONTENT]
     metaData: dict = {}
     active: bool = None
     class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "sourceName": "en_KJV_1_commentary",
+                "resourceName": "en_KJV_1_commentary",
                 "language": "en",
                 "version": "KJV",
                 "versionTag": "1611.12.31",

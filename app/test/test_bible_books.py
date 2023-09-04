@@ -3,7 +3,7 @@ from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
 from .conftest import initial_test_users
-UNIT_URL = '/v2/lookup/bible/books'
+UNIT_URL = '/v2/resources/lookups/bible/books'
 
 headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json",

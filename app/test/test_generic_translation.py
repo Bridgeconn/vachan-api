@@ -7,7 +7,7 @@ from . import assert_input_validation_error, assert_not_available_content
 from .test_agmt_translation import assert_positive_get_tokens, assert_positive_get_sentence
 from .conftest import initial_test_users
 
-UNIT_URL = '/v2/translation'
+UNIT_URL = '/v2/text/translate/token-based'
 headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json"
@@ -128,7 +128,7 @@ def test_tokenize_with_diff_flags():
         headers=headers_auth, json=post_obj)
     assert response.status_code == 200
     all_words = [item['token'] for item in response.json()]
-    for word in sample_sent.split(): # covers all words in source
+    for word in sample_sent.split(): # covers all words in resource
         assert word in all_words
     assert len(all_words) == len(set(all_words)) #unique
     for word in all_words: # no phrases
@@ -324,7 +324,7 @@ def test_space_handling_in_token_replacement():
           "translation": "Jesus Christ"}
       ]
 
-    response = client.put("/v2/translation/token-translate?source_language=hi"+
+    response = client.put("/v2/text/translate/token-based/token-translate?source_language=hi"+
         "&target_language=en&use_data_for_learning=true",
         headers=headers_auth, json=trans_obj)
     assert response.status_code ==200
@@ -348,7 +348,7 @@ def test_space_handling_in_token_replacement():
           ],
           "translation": "Christ"}
       ]
-    response = client.put("/v2/translation/token-translate?source_language=hi"+
+    response = client.put("/v2/text/translate/token-based/token-translate?source_language=hi"+
         "&target_language=en&use_data_for_learning=true",
         headers=headers_auth, json=trans_obj)
     assert response.status_code == 200

@@ -8,7 +8,7 @@ from .conftest import initial_test_users
 src_lang = "en"
 trg_lang = "aa"
 
-POST_URL = '/v2/nlp/learn/gloss'
+POST_URL = '/v2/nlp/gloss'
 GET_LIST_URL = "/v2/nlp/gloss-entries"
 GET_COUNT_URL = '/v2/nlp/gloss-entries/count'
 
@@ -118,7 +118,7 @@ def test_get_gloss_count():
     assert resp.json()['tokenTranslationCount'] == 0
     assert resp.json()['tokenCount'] == 0
 
-    # With notavailable source language - Negative Test
+    # With notavailable resource language - Negative Test
     GET_URL = GET_COUNT_URL+f"?source_language=x-ttt&target_language={trg_lang}"
     resp = client.get(GET_URL,headers=headers_auth)
     assert resp.status_code == 404

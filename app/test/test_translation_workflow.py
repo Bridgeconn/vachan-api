@@ -5,7 +5,7 @@ import json
 import requests
 from . import client
 from .test_versions import check_post
-from .test_sources import check_post as source_post
+from .test_resources import check_post as source_post
 from .conftest import initial_test_users
 
 BASE_URL = "v2/"
@@ -23,7 +23,7 @@ ver_data = {
 }
 
 src_data = {
-    "contentType": "bible",
+    "resourceType": "bible",
     "language": "hi",
     "version": "XYZ",
     "revision": 1,
@@ -376,62 +376,63 @@ def test_end_to_end_translation():
 
     # resp = client.post(BASE_URL+"sources", headers=headers, json=src_data)
     resp = source_post(src_data)
-    assert resp.json()['message'] == "Source created successfully"
-    source_name = resp.json()['data']['sourceName']
+    assert resp.json()['message'] == "Resource created successfully"
+    source_name = resp.json()['data']['resourceName']
 
     headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
                 "app":"Autographa"
             }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    resp = client.post(BASE_URL+"bibles/"+source_name+"/books", headers=headers_auth,
+    resp = client.post(BASE_URL+"resources/bibles/"+source_name+"/books", headers=headers_auth,
     json=gospel_books_data)
     assert resp.json()['message'] == "Bible books uploaded and processed successfully"
 
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    resp = client.post(BASE_URL+"translation/projects", headers=headers_auth, json=project_post_data)
+    resp = client.post(BASE_URL+"text/translate/token-based/projects", headers=headers_auth, json=project_post_data)
     assert resp.json()['message'] == "Project created successfully"
-    project_update_data['projectId'] = resp.json()['data']['projectId']
-    project_id = resp.json()['data']['projectId']
+    proj_id = resp.json()['data']['projectId']
 
-    resp = client.put(BASE_URL+"translation/projects", headers=headers_auth, json=project_update_data)
+    resp = client.put(BASE_URL+"text/translate/token-based/projects"+'?project_id='+str(proj_id), \
+      headers=headers_auth, json=project_update_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # tokenize
-    resp = client.get(BASE_URL+"translation/project/tokens?project_id="+str(project_id),headers=headers_auth)
+    resp = client.get(BASE_URL+"text/translate/token-based/project/tokens?project_id="+str(proj_id),headers=headers_auth)
     assert resp.status_code == 200
 
     # translate
-    resp = client.put(BASE_URL+"translation/project/tokens?project_id="+str(project_id),
+    resp = client.put(BASE_URL+"text/translate/token-based/project/tokens?project_id="+str(proj_id),
     	headers=headers_auth, json=token_update_data)
     assert resp.json()['message'] == "Token translations saved"
 
     # Additional user
     NEW_USER_ID = initial_test_users['AgUser']['test_user_id']
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    resp = client.post(BASE_URL+"translation/project/user?project_id="+str(project_id)+
+    resp = client.post(BASE_URL+"text/translate/token-based/project/user?project_id="+str(proj_id)+
     	"&user_id="+str(NEW_USER_ID), headers=headers_auth)
     assert resp.json()['message'] == "User added to project successfully"
 
-    user_data['project_id'] = project_id
     user_data['userId'] = NEW_USER_ID
-    resp = client.put(BASE_URL+"translation/project/user", headers=headers_auth, json=user_data)
-    print(resp.json())
+    resp = client.put(BASE_URL+"text/translate/token-based/project/user"'?project_id='+str(proj_id),\
+       headers=headers_auth, json=user_data)
+    # print(resp.json())
     assert resp.json()['message'] == "User updated in project successfully"
 
-    resp = client.get(BASE_URL+"translation/projects?user_id="+str(NEW_USER_ID),headers=headers_auth)
+    resp = client.get(BASE_URL+"text/translate/token-based/projects?user_id="+str(NEW_USER_ID),headers=headers_auth)
     assert len(resp.json()) > 0
 
     # # Suggestions
 
-    resp = client.post(BASE_URL+"nlp/learn/alignment?source_language="+ALIGNMENT_SRC+
+    resp = client.post(BASE_URL+"nlp/alignment?source_language="+ALIGNMENT_SRC+
     	"&target_language="+ALIGNMENT_TRG, headers=headers_auth, json=alignment_data)
+    # print("**",resp)
     assert resp.status_code == 201
     # print(resp)
-    # print(resp.json())
+    
 
     # tokenize after adding token "परमेश्वर" via alignment
-    resp = client.put(BASE_URL+"translation/project/suggestions?project_id="+str(project_id)+
+    resp = client.put(BASE_URL+"text/translate/token-based/project/suggestions?project_id="+str(proj_id)+
         "&sentence_id_list=42001001",
     	headers=headers_auth)
     draft = resp.json()[0]['draft']

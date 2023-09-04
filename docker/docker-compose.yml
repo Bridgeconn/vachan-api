@@ -71,7 +71,7 @@ services:
       - VE-network
 
  vachan-db:
-    image: postgres:12.7
+    image: postgres:15.3
     healthcheck:
      test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "postgres" ]
      timeout: 45s

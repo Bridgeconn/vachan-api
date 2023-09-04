@@ -5,12 +5,12 @@ from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
 from .test_versions import check_post as add_version
-from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
+from .test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 from .conftest import initial_test_users
 
-UNIT_URL = '/v2/sources'
-RESTORE_URL = '/v2/restore'
-COMMENTARY_URL = '/v2/commentaries/'
+UNIT_URL = '/v2/resources'
+RESTORE_URL = '/v2/admin/restore'
+COMMENTARY_URL = '/v2/resources/commentaries/'
 
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json"
@@ -18,10 +18,10 @@ headers_auth = {"contentType": "application/json",
 
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
-    assert "sourceName" in item
-    assert "contentType" in item
-    assert "contentId" in item['contentType']
-    assert "contentType" in item['contentType']
+    assert "resourceName" in item
+    assert "resourceType" in item
+    assert "resourcetypeId" in item['resourceType']
+    assert "resourceType" in item['resourceType']
     assert "language" in item
     assert "code" in item["language"]
     assert "language" in item['language']
@@ -55,10 +55,9 @@ def assert_positive_get(item):
         else:
             tag = item['version']['versionTag']
     parts = [item['language']['code'], item['version']['versionAbbreviation'],
-        tag, item['contentType']['contentType']]
+        tag, item['resourceType']['resourceType']]
     table_name = "_".join(parts)
-    assert item["sourceName"] == table_name
-    assert "createdUser" in item
+    assert item["resourceName"] == table_name
 
 
 def check_post(data: dict):
@@ -69,7 +68,7 @@ def check_post(data: dict):
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
-    #With auth Only vachan and super admin can only create source
+    #With auth Only vachan and super admin can only create resource
     headers_auth['Authorization'] = "Bearer"+" "+ initial_test_users['APIUser']['token']
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 403
@@ -80,21 +79,21 @@ def check_post(data: dict):
 
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 201
-    assert response.json()['message'] == "Source created successfully"
+    assert response.json()['message'] == "Resource created successfully"
     # data = response.json()["data"]
     # print("PERM==>",data['metaData']['accessPermissions'])
     assert_positive_get(response.json()['data'])
     return response
 
 def test_post_default():
-    '''Positive test to add a new source'''
+    '''Positive test to add a new resource'''
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version",
     }
     add_version(version_data)
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -103,9 +102,9 @@ def test_post_default():
         "license": "CC-BY-SA",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
-    create_source = check_post(data)
-    assert create_source.json()['data']['labels'] == ["latest"]
-    return create_source
+    create_resource = check_post(data)
+    assert create_resource.json()['data']['labels'] == ["latest"]
+    return create_resource
 
 def test_post_wrong_version():
     '''Negative test with not available version or versionTag'''
@@ -115,7 +114,7 @@ def test_post_wrong_version():
     }
     add_version(version_data)
     data1 = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTD",
         "versionTag": 1,
@@ -131,7 +130,7 @@ def test_post_wrong_version():
     assert response.json()['details'] == "Version, TTD 1, not found in Database"
 
     data2 = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "versionTag": 2,
@@ -145,7 +144,7 @@ def test_post_wrong_version():
     assert response.json()['details'] == "Version, TTT 2, not found in Database"
 
     data3 = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -163,7 +162,7 @@ def test_post_wrong_lang():
     }
     add_version(version_data)
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "aaj",
         "version": "TTT",
         "versionTag": 1,
@@ -179,14 +178,14 @@ def test_post_wrong_lang():
     assert response.json()['details'] == "Language code, aaj, not found in Database"
 
 def test_post_wrong_content():
-    '''Negative test with not available content type'''
+    '''Negative test with not available resource type'''
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version",
     }
     add_version(version_data)
     data = {
-        "contentType": "bibl",
+        "resourceType": "bibl",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -198,11 +197,11 @@ def test_post_wrong_content():
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
-    assert response.json()['details'] == "ContentType, bibl, not found in Database"
+    assert response.json()['details'] == "ResourceType, bibl, not found in Database"
 
     # '''Negative test with not a valid license from license table'''
     data = {
-        "contentType": "infographic",
+        "resourceType": "vocabulary",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -223,7 +222,7 @@ def test_post_wrong_label():
     }
     add_version(version_data)
     data = {
-        "contentType": "bible",
+        "resourceType": "bible",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -243,7 +242,7 @@ def test_post_multiple_labels():
     }
     add_version(version_data)
     data = {
-        "contentType": "bible",
+        "resourceType": "bible",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -256,7 +255,7 @@ def test_post_multiple_labels():
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 201
-    assert response.json()['message'] == "Source created successfully"
+    assert response.json()['message'] == "Resource created successfully"
     assert_positive_get(response.json()['data'])
     assert response.json()['data']['labels'] == ["latest","test"]
 
@@ -269,7 +268,7 @@ def test_post_wrong_label_format():
     }
     add_version(version_data)
     data = {
-        "contentType": "bible",
+        "resourceType": "bible",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -285,7 +284,7 @@ def test_post_wrong_label_format():
 def test_post_wrong_year():
     '''Negative test with text in year field'''
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -301,7 +300,7 @@ def test_post_wrong_year():
 def test_post_wrong_metadata():
     '''Negative test with incorrect format for metadata'''
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -328,7 +327,7 @@ def test_post_missing_mandatory_info():
 
     # no language
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "version": "TTT",
         "versionTag": 1,
         "year": 2020
@@ -338,7 +337,7 @@ def test_post_missing_mandatory_info():
 
     # no version
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "versionTag": 1,
         "year": 2020
@@ -348,7 +347,7 @@ def test_post_missing_mandatory_info():
 
     # no year
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT"
     }
@@ -364,7 +363,7 @@ def test_post_missing_some_info():
     }
     add_version(version_data)
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "year": 2020
@@ -372,14 +371,14 @@ def test_post_missing_some_info():
     check_post(data)
 
 def test_post_duplicate():
-    '''Add the same source twice'''
+    '''Add the same resource twice'''
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version",
     }
     add_version(version_data)
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "year": 2020
@@ -400,7 +399,7 @@ def test_put_default():
     version_data['versionTag'] = 2
     add_version(version_data)
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         'language': 'ml',
         "version": "TTT",
         "year": 2020
@@ -408,10 +407,10 @@ def test_put_default():
     check_post(data)
 
     data_update = {
-        "sourceName": 'ml_TTT_1_commentary',
+        "resourceName": 'ml_TTT_1_commentary',
         "versionTag": 2
     }
-    #update source without auth
+    #update resource without auth
     headers = {"contentType": "application/json", "accept": "application/json"}
     response = client.put(UNIT_URL, headers=headers, json=data_update)
     assert response.status_code == 401
@@ -422,42 +421,42 @@ def test_put_default():
 
     response = client.put(UNIT_URL, headers=headers_auth, json=data_update)
     assert response.status_code == 201
-    assert response.json()['message'] == "Source edited successfully"
+    assert response.json()['message'] == "Resource edited successfully"
     assert_positive_get(response.json()['data'])
     assert response.json()['data']['version']['versionTag'] == "2"
-    assert response.json()['data']['sourceName'] == "ml_TTT_2_commentary"
+    assert response.json()['data']['resourceName'] == "ml_TTT_2_commentary"
 
     data_update = {
-        'sourceName': 'ml_TTT_2_commentary',
+        'resourceName': 'ml_TTT_2_commentary',
         'metaData': {'owner': 'new owner'}
     }
     response = client.put(UNIT_URL, headers=headers_auth, json=data_update)
     assert response.status_code == 201
-    assert response.json()['message'] == "Source edited successfully"
+    assert response.json()['message'] == "Resource edited successfully"
     assert_positive_get(response.json()['data'])
     assert response.json()['data']['metaData'] == \
-        {'accessPermissions': [schemas.SourcePermissions.CONTENT], 'owner': 'new owner'}
+        {'accessPermissions': [schemas.ResourcePermissions.CONTENT], 'owner': 'new owner'}
 
     # updating label
     data_update = {
-        'sourceName': 'ml_TTT_2_commentary',
+        'resourceName': 'ml_TTT_2_commentary',
         'labels': ["test"]
     }
     response = client.put(UNIT_URL, headers=headers_auth, json=data_update)
     assert response.status_code == 201
-    assert response.json()['message'] == "Source edited successfully"
+    assert response.json()['message'] == "Resource edited successfully"
     assert_positive_get(response.json()['data'])
     assert response.json()['data']['labels'] == ["test"]
 
-def test_post_put_gitlab_source():
-    '''Positive test for gitlab content type'''
+def test_post_put_gitlab_resource():
+    '''Positive test for gitlab resource type'''
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version",
     }
     add_version(version_data)
     data = {
-        "contentType": "gitlabrepo",
+        "resourceType": "gitlabrepo",
         "language": "hi",
         "version": "TTT",
         "year": 2020
@@ -475,37 +474,37 @@ def test_post_put_gitlab_source():
     # with repo link default branch is main
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 201
-    assert response.json()['message'] == "Source created successfully"
+    assert response.json()['message'] == "Resource created successfully"
     assert response.json()['data']["metaData"]["repo"] == link
     assert response.json()['data']["metaData"]["defaultBranch"] == "main"
 
-    # create another source with same repo link
+    # create another resource with same repo link
     data["language"] = "ml"
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 409
-    assert response.json()['details'] == "already present Source with same repo link"
+    assert response.json()['details'] == "already present Resource with same repo link"
 
-    # update another source with exising repo link
+    # update another resource with exising repo link
     data["language"] = "af"
     data["metaData"] = {"repo":link2}
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 201
-    assert response.json()['message'] == "Source created successfully"
+    assert response.json()['message'] == "Resource created successfully"
     assert response.json()['data']["metaData"]["repo"] == link2
 
     data_update = {
-        "sourceName": 'af_TTT_1_gitlabrepo',
+        "resourceName": 'af_TTT_1_gitlabrepo',
         "metaData": {
             "repo": link}
     }
 
     response = client.put(UNIT_URL, headers=headers_auth, json=data_update)
     assert response.status_code == 409
-    assert response.json()['details'] == "already present another source with same repo link"
+    assert response.json()['details'] == "already present another resource with same repo link"
 
 
 def test_created_user_can_only_edit():
-    """source edit can do by created user and Super Admin"""
+    """resource edit can do by created user and Super Admin"""
     sa_user_data = {
             "user_email": SUPER_USER,
             "password": SUPER_PASSWORD
@@ -524,33 +523,33 @@ def test_created_user_can_only_edit():
     version_data['versionTag'] = 2
     add_version(version_data)
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         'language': 'ml',
         "version": "TTT",
         "year": 2020
     }
-    #create source
+    #create resource
     response = client.post(UNIT_URL, headers=headers_auth, json=data)
     assert response.status_code == 201
-    assert response.json()['message'] == "Source created successfully"
+    assert response.json()['message'] == "Resource created successfully"
     assert_positive_get(response.json()['data'])
 
     data_update = {
-        "sourceName": 'ml_TTT_1_commentary',
+        "resourceName": 'ml_TTT_1_commentary',
         "versionTag": 2
     }
 
     #edit with SA who also the createdUser
     response = client.put(UNIT_URL, headers=headers_auth, json=data_update)
     assert response.status_code == 201
-    assert response.json()['message'] == "Source edited successfully"
+    assert response.json()['message'] == "Resource edited successfully"
     assert_positive_get(response.json()['data'])
     assert response.json()['data']['version']['versionTag'] == "2"
-    assert response.json()['data']['sourceName'] == "ml_TTT_2_commentary"
+    assert response.json()['data']['resourceName'] == "ml_TTT_2_commentary"
 
     #edit with a non permited user VachanAdmin (not createdUser)
     data_update = {
-        "sourceName": 'ml_TTT_2_commentary',
+        "resourceName": 'ml_TTT_2_commentary',
         "versionTag": 1
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
@@ -567,7 +566,7 @@ def test_soft_delete():
     }
     add_version(version_data)
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         'language': 'ml',
         "version": "TTT",
         "year": 2020
@@ -576,12 +575,12 @@ def test_soft_delete():
     assert response.json()['data']['active']
 
     data_update = {
-        'sourceName': 'ml_TTT_1_commentary',
+        'resourceName': 'ml_TTT_1_commentary',
         'active': False
     }
     response = client.put(UNIT_URL, headers=headers_auth, json=data_update)
     assert response.status_code == 201
-    assert response.json()['message'] == "Source edited successfully"
+    assert response.json()['message'] == "Resource edited successfully"
     assert_positive_get(response.json()['data'])
     assert not response.json()['data']['active']
 
@@ -591,7 +590,7 @@ def test_soft_delete():
     for item in response.json():
         assert_positive_get(item)
         assert not item['active']
-    assert 'ml_TTT_1_commentary' in [item['sourceName'] for item in response.json()]
+    assert 'ml_TTT_1_commentary' in [item['resourceName'] for item in response.json()]
 
 def test_get_empty():
     '''Test get before adding data to table. Usually done on freshly set up test DB.
@@ -609,14 +608,14 @@ def test_get_wrong_values():
     assert_input_validation_error(response)
 
 def test_get_after_adding_data(): #pylint: disable=too-many-statements
-    '''Add some sources to DB and test fecthing those data'''
+    '''Add some resources to DB and test fecthing those data'''
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version",
     }
     add_version(version_data)
     data = {
-        "contentType": "infographic",
+        "resourceType": "vocabulary",
         "version": "TTT",
         "year": 2020
     }
@@ -631,7 +630,7 @@ def test_get_after_adding_data(): #pylint: disable=too-many-statements
         data['language'] = lang
         check_post(data)
 
-    data['contentType'] = 'commentary'
+    data['resourceType'] = 'commentary'
     data['versionTag'] = 1
     data['metaData'] = {'owner': 'myself'}
     data['license'] = "ISC"
@@ -640,15 +639,15 @@ def test_get_after_adding_data(): #pylint: disable=too-many-statements
         check_post(data)
 
     check_default_get(UNIT_URL, headers_auth, assert_positive_get)
-    #Get sources with and without auth
+    #Get resources with and without auth
     headers = {"contentType": "application/json", "accept": "application/json"}
     # filter with contentType
     #without auth
-    response = client.get(UNIT_URL + "?content_type=commentary&version_abbreviation=TTT"+
+    response = client.get(UNIT_URL + "?resource_type=commentary&version_abbreviation=TTT"+
         "&latest_revision=false",headers=headers)
     assert_not_available_content(response)
     #with auth
-    response = client.get(UNIT_URL + "?content_type=commentary&version_abbreviation=TTT"+
+    response = client.get(UNIT_URL + "?resource_type=commentary&version_abbreviation=TTT"+
         "&latest_revision=false",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) >= 3
@@ -675,9 +674,9 @@ def test_get_after_adding_data(): #pylint: disable=too-many-statements
     for item in response.json():
         assert_positive_get(item)
 
-    # filter with source name
+    # filter with resource name
     response = client.get(UNIT_URL + \
-         "?source_name=hi_TTT_1_commentary",headers=headers_auth)
+         "?resource_name=hi_TTT_1_commentary",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
     for item in response.json():
@@ -721,15 +720,15 @@ def test_get_after_adding_data(): #pylint: disable=too-many-statements
     for item in response.json():
         assert_positive_get(item)
 
-def test_get_source_filter_access_tag():
-    """filter source with access tags"""
+def test_get_resource_filter_access_tag():
+    """filter resource with access tags"""
     version_data = {
         "versionAbbreviation": "TTT",
         "versionName": "test version",
     }
     add_version(version_data)
     data = {
-        "contentType": "infographic",
+        "resourceType": "vocabulary",
         "version": "TTT",
         "year": 2020,
         "accessPermissions": [
@@ -778,7 +777,7 @@ def test_get_source_filter_access_tag():
     assert response5.status_code == 200
     assert len(response5.json()) == 0
 
-    #Add source with access tags publishable , open-access
+    #Add resource with access tags publishable , open-access
     data['language'] = 'ho'
     data['accessPermissions'] = ['publishable','open-access']
     check_post(data)
@@ -789,8 +788,8 @@ def test_get_source_filter_access_tag():
     assert response6.status_code == 200
     assert len(response6.json()) == 1
 
-def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-statements
-    """Test getting sources with users having different permissions and
+def test_diffrernt_resources_with_app_and_roles(): #pylint: disable=too-many-statements
+    """Test getting resources with users having different permissions and
     also from multiple apps"""
     headers_auth = {"contentType": "application/json","accept": "application/json"} #pylint: disable=redefined-outer-name
     #app names
@@ -800,7 +799,7 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     VACHANADMIN = schema_auth.AdminRoles.VACHANADMIN.value #pylint: disable=invalid-name
     VACHANCONTENTDASHBOARD = schema_auth.App.VACHANCONTENTDASHBOARD.value #pylint: disable=invalid-name
 
-    #create sources for test with different access permissions
+    #create resources for test with different access permissions
     #content is default
     version_data = {
         "versionAbbreviation": "TTT",
@@ -808,7 +807,7 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
     }
     add_version(version_data)
     data = {
-        "contentType": "commentary",
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "versionTag": 1,
@@ -859,17 +858,17 @@ def test_diffrernt_sources_with_app_and_roles(): #pylint: disable=too-many-state
             db_perm_list = db_perm_list + list(set(temp_list)-set(db_perm_list))
         for item in check_list:
             assert item in db_perm_list
-        # check based on source
+        # check based on resource
         for item in response.json():
-            if item["sourceName"] == "hi_TTT_1_commentary":
+            if item["resourceName"] == "hi_TTT_1_commentary":
                 assert "content" in item['metaData']['accessPermissions']
-            elif item["sourceName"] == "ml_TTT_1_commentary":
+            elif item["resourceName"] == "ml_TTT_1_commentary":
                 assert "open-access" in item['metaData']['accessPermissions']
-            elif item["sourceName"] == "tn_TTT_1_commentary":
+            elif item["resourceName"] == "tn_TTT_1_commentary":
                 assert "publishable" in item['metaData']['accessPermissions']
-            elif item["sourceName"] == "af_TTT_1_commentary":
+            elif item["resourceName"] == "af_TTT_1_commentary":
                 assert "downloadable" in item['metaData']['accessPermissions']
-            elif item["sourceName"] == "ak_TTT_1_commentary":
+            elif item["resourceName"] == "ak_TTT_1_commentary":
                 assert "derivable" in item['metaData']['accessPermissions']
 
     #Get without Login
@@ -1247,8 +1246,8 @@ def test_version_tag():
     data['versionTag'] = "2.0.1.aplha.1"
     add_version(data)
 
-    source_data = {
-        "contentType": "commentary",
+    resource_data = {
+        "resourceType": "commentary",
         "language": "hi",
         "version": "XYZ",
         "versionTag": 1,
@@ -1256,16 +1255,16 @@ def test_version_tag():
         "license": "CC-BY-SA",
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
-    check_post(source_data)
+    check_post(resource_data)
 
-    source_data['versionTag'] = "2"
-    check_post(source_data)
+    resource_data['versionTag'] = "2"
+    check_post(resource_data)
 
-    source_data['versionTag'] = "2.0.1"
-    check_post(source_data)
+    resource_data['versionTag'] = "2.0.1"
+    check_post(resource_data)
 
-    source_data['versionTag'] = "2.0.1.aplha.1"
-    check_post(source_data)
+    resource_data['versionTag'] = "2.0.1.aplha.1"
+    check_post(resource_data)
 
     headers_auth = {"contentType": "application/json", "accept": "application/json"}
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
@@ -1288,8 +1287,8 @@ def test_version_tag_sorting_numeric():
         data['versionTag'] = tag
         add_version(data)
 
-    source_data = {
-        "contentType": "commentary",
+    resource_data = {
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "year": 2020,
@@ -1297,8 +1296,8 @@ def test_version_tag_sorting_numeric():
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     for tag in version_tags:
-        source_data['versionTag'] = tag
-        check_post(source_data)
+        resource_data['versionTag'] = tag
+        check_post(resource_data)
 
     headers_auth = {"contentType": "application/json", "accept": "application/json"}
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
@@ -1322,8 +1321,8 @@ def test_version_tag_sorting_dates():
         data['versionTag'] = tag
         add_version(data)
 
-    source_data = {
-        "contentType": "commentary",
+    resource_data = {
+        "resourceType": "commentary",
         "language": "hi",
         "version": "TTT",
         "year": 2020,
@@ -1331,8 +1330,8 @@ def test_version_tag_sorting_dates():
         "metaData": {"owner": "someone", "access-key": "123xyz"}
     }
     for tag in version_tags:
-        source_data['versionTag'] = tag
-        check_post(source_data)
+        resource_data['versionTag'] = tag
+        check_post(resource_data)
 
     headers_auth = {"contentType": "application/json", "accept": "application/json"}
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
@@ -1346,7 +1345,7 @@ def test_version_tag_sorting_dates():
 
 
 def test_delete_default():
-    ''' positive test case, checking for correct return of deleted source ID'''
+    ''' positive test case, checking for correct return of deleted resource ID'''
     from .test_commentaries import assert_positive_get as check_commentary  #pylint: disable=import-outside-toplevel
 
     #create new data
@@ -1355,7 +1354,7 @@ def test_delete_default():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
-    source_name = response.json()['data']['sourceName']
+    resource_name = response.json()['data']['resourceName']
 
      #Check Commentary table is created
     commentary_data = [
@@ -1363,52 +1362,52 @@ def test_delete_default():
     		'commentary':'the creation'}
      ]
     # headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    response = client.post(COMMENTARY_URL+source_name, headers=headers_va, json=commentary_data)
-    response = client.get(COMMENTARY_URL+source_name,headers=headers_va)
+    response = client.post(COMMENTARY_URL+resource_name, headers=headers_va, json=commentary_data)
+    response = client.get(COMMENTARY_URL+resource_name,headers=headers_va)
     assert response.status_code == 200
     assert len(response.json()) == 1
     for item in response.json():
         check_commentary(item)
 
-    response = client.get(UNIT_URL + "?source_name="+source_name, headers=headers_va)
-    source_id = response.json()[0]["sourceId"]
-    data = {"itemId":source_id}
+    response = client.get(UNIT_URL + "?resource_name="+resource_name, headers=headers_va)
+    resource_id = response.json()[0]["resourceId"]
+    data = {"itemId":resource_id}
     # Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}
-    response = client.delete(UNIT_URL + "?delete_id=" + str(source_id), headers=headers)
+    response = client.delete(UNIT_URL + "?resource_id=" + str(resource_id), headers=headers)
     
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
-     #Delete source with other API user,AgAdmin,AgUser,VachanUser,BcsDev
+     #Delete resource with other API user,AgAdmin,AgUser,VachanUser,BcsDev
     for user in ['APIUser','AgAdmin','AgUser','VachanUser','BcsDev']:
         headers_au = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users[user]['token']
         }
-        response = client.delete(UNIT_URL + "?delete_id=" + str(source_id), headers=headers_au)
+        response = client.delete(UNIT_URL + "?resource_id=" + str(resource_id), headers=headers_au)
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
-    #Delete source with createdUser(VachanAdmin)
-    response = client.delete(UNIT_URL + "?delete_id=" + str(source_id),headers=headers_va)
+    #Delete resource with createdUser(VachanAdmin)
+    response = client.delete(UNIT_URL + "?resource_id=" + str(resource_id),headers=headers_va)
     assert response.status_code == 200
     assert response.json()['message'] ==\
-         f"Source with identity {source_id} deleted successfully"
+         f"Resource with identity {resource_id} deleted successfully"
 
-    #Check source is deleted from sources table
-    check_source_name = client.get(UNIT_URL + "?source_name="+source_name, \
+    #Check resource is deleted from resources table
+    check_resource_name = client.get(UNIT_URL + "?resource_name="+resource_name, \
         headers=headers_auth)
-    assert_not_available_content(check_source_name)
+    assert_not_available_content(check_resource_name)
     #Check commentary exists
-    response = client.get(COMMENTARY_URL+source_name,headers=headers_va)
+    response = client.get(COMMENTARY_URL+resource_name,headers=headers_va)
     assert response.status_code == 404
 
 def test_delete_default_superadmin():
-    ''' positive test case, checking for correct return of deleted source ID'''
-    #Created User or Super Admin can only delete source
+    ''' positive test case, checking for correct return of deleted resource ID'''
+    #Created User or Super Admin can only delete resource
     #creating data
     response = test_post_default()
-    source_name = response.json()['data']['sourceName']
+    resource_name = response.json()['data']['resourceName']
 
     #Login as Super Admin
     sa_data = {
@@ -1423,22 +1422,22 @@ def test_delete_default_superadmin():
                     'Authorization': "Bearer"+" "+test_user_token
             }
 
-    response = client.get(UNIT_URL + "?source_name="+source_name, headers=headers_sa)
-    source_id = response.json()[0]["sourceId"]
-    data = {"itemId":source_id}
+    response = client.get(UNIT_URL + "?resource_name="+resource_name, headers=headers_sa)
+    resource_id = response.json()[0]["resourceId"]
+    data = {"itemId":resource_id}
 
-    #Delete source
-    response =response = client.delete(UNIT_URL + "?delete_id=" + str(source_id), headers=headers_sa)
+    #Delete resource
+    response =response = client.delete(UNIT_URL + "?resource_id=" + str(resource_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] == \
-    f"Source with identity {source_id} deleted successfully"
+    f"Resource with identity {resource_id} deleted successfully"
     logout_user(test_user_token)
-    return response,source_name
+    return response,resource_name
 
-def test_delete_source_id_string():
-    '''positive test case, source id as string'''
+def test_delete_resource_id_string():
+    '''positive test case, resource id as string'''
     response= test_post_default()
-    source_name = response.json()['data']['sourceName']
+    resource_name = response.json()['data']['resourceName']
     #Login as Super Admin
     sa_data = {
             "user_email": SUPER_USER,
@@ -1452,20 +1451,20 @@ def test_delete_source_id_string():
                     'Authorization': "Bearer"+" "+test_user_token
             }
 
-    response = client.get(UNIT_URL + "?source_name="+source_name, headers=headers_sa)
-    source_id = response.json()[0]["sourceId"]
-    source_id = str(source_id)
-    data = {"itemId":source_id}
-    response = client.delete(UNIT_URL + "?delete_id=" + str(source_id), headers=headers_sa)
+    response = client.get(UNIT_URL + "?resource_name="+resource_name, headers=headers_sa)
+    resource_id = response.json()[0]["resourceId"]
+    resource_id = str(resource_id)
+    data = {"itemId":resource_id}
+    response = client.delete(UNIT_URL + "?resource_id=" + str(resource_id), headers=headers_sa)
     assert response.status_code == 200
     assert response.json()['message'] == \
-         f"Source with identity {source_id} deleted successfully"
+         f"Resource with identity {resource_id} deleted successfully"
     logout_user(test_user_token)
 
 def test_delete_incorrectdatatype():
     '''negative testcase. Passing input data not in json format'''
     response = test_post_default()
-    source_name = response.json()['data']['sourceName']
+    resource_name = response.json()['data']['resourceName']
 
     #Login as Super Admin
     sa_data = {
@@ -1479,34 +1478,34 @@ def test_delete_incorrectdatatype():
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+test_user_token
             }
-    source_id = {}
+    resource_id = {}
 
-    response = client.get(UNIT_URL + "?source_name="+source_name, headers=headers_sa)
-    source_id = response.json()[0]["sourceId"]
-    source_id = {}
-    response = client.delete(UNIT_URL + "?delete_id=" + str(source_id), headers=headers_sa)
+    response = client.get(UNIT_URL + "?resource_name="+resource_name, headers=headers_sa)
+    resource_id = response.json()[0]["resourceId"]
+    resource_id = {}
+    response = client.delete(UNIT_URL + "?resource_id=" + str(resource_id), headers=headers_sa)
     assert_input_validation_error(response)
 
-def test_delete_missingvalue_source_id():
-    '''Negative Testcase. Passing input data without source Id'''
+def test_delete_missingvalue_resource_id():
+    '''Negative Testcase. Passing input data without resource Id'''
     data = {}
-    source_id =" "
+    resource_id =" "
     headers = {"contentType": "application/json",
                     "accept": "application/json",
                     'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
-    response = client.delete(UNIT_URL + "?delete_id=" + str(source_id), headers=headers)
+    response = client.delete(UNIT_URL + "?resource_id=" + str(resource_id), headers=headers)
     assert_input_validation_error(response)
 
-def test_delete_notavailable_source():
-    ''' request a non existing source ID, Ensure there is no partial matching'''
+def test_delete_notavailable_resource():
+    ''' request a non existing resource ID, Ensure there is no partial matching'''
     data = {"itemId":99999}
-    source_id=9999
+    resource_id=9999
     headers = {"contentType": "application/json",
                 "accept": "application/json",
                 'Authorization': "Bearer"+" "+initial_test_users['VachanAdmin']['token']
             }
-    response = client.delete(UNIT_URL + "?delete_id=" + str(source_id),headers=headers)
+    response = client.delete(UNIT_URL + "?resource_id=" + str(resource_id),headers=headers)
     assert response.status_code == 404
     assert response.json()['error'] == "Requested Content Not Available"
 
@@ -1515,7 +1514,7 @@ def test_restore_default():
     '''positive test case, checking for correct return object'''
     #only Super Admin can restore deleted data
     #Creating and Deelting data
-    response, source_name = test_delete_default_superadmin()
+    response, resource_name = test_delete_default_superadmin()
     deleteditem_id = response.json()['data']['itemId']
     data = {"itemId": deleteditem_id}
 
@@ -1526,7 +1525,7 @@ def test_restore_default():
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
 
-    #Restore source with other API user,VachanAdmin,AgAdmin, \
+    #Restore resource with other API user,VachanAdmin,AgAdmin, \
     # AgUser,VachanUser,BcsDev,'VachanContentAdmin','VachanContentViewer'
     for user in ['APIUser','VachanAdmin','AgAdmin','AgUser','VachanUser','BcsDev','VachanContentAdmin','VachanContentViewer']:
         headers = {"contentType": "application/json",
@@ -1537,7 +1536,7 @@ def test_restore_default():
         assert response.status_code == 403
         assert response.json()['error'] == 'Permission Denied'
 
-    # Restore source with Super Admin
+    # Restore resource with Super Admin
     # Login as Super Admin
     as_data = {
             "user_email": SUPER_USER,
@@ -1555,13 +1554,13 @@ def test_restore_default():
     assert response.status_code == 201
     assert response.json()['message'] == \
     f"Deleted Item with identity {deleteditem_id} restored successfully"
-    response = client.get(UNIT_URL + "?source_name="+source_name,headers=headers_sa)
+    response = client.get(UNIT_URL + "?resource_name="+resource_name,headers=headers_sa)
     assert response.status_code == 200
     assert len(response.json()) == 1
     for item in response.json():
         assert_positive_get(item)
      #Check commentary exists
-    response =client.get(COMMENTARY_URL+source_name,headers=headers_sa)
+    response =client.get(COMMENTARY_URL+resource_name,headers=headers_sa)
     assert response.status_code == 200
 
 def test_restore_item_id_string():

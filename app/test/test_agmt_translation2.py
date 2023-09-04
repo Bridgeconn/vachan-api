@@ -7,7 +7,7 @@ from . import assert_input_validation_error, assert_not_available_content
 from . test_agmt_translation import UNIT_URL, assert_positive_get_sentence
 from . test_auth_basic import login,SUPER_PASSWORD,SUPER_USER,logout_user
 
-RESTORE_URL = '/v2/restore'
+RESTORE_URL = '/v2/admin/restore'
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json",
                 "app":"Autographa"
@@ -44,11 +44,11 @@ def test_draft_update_positive():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get(f"{UNIT_URL}/sentences?project_id={project_id}", headers=headers_auth)
@@ -64,7 +64,7 @@ def test_draft_update_positive():
                 ]
             }
     ]
-    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/text/translate/token-based/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data)
     sents = resp.json()
     assert len(sents) == 1
@@ -75,7 +75,7 @@ def test_draft_update_positive():
     #fetch sentences to make sure
     data_str = json.dumps(put_data)
     resp = client.get(
-        "/v2/translation/project/sentences",
+        "/v2/text/translate/token-based/project/sentences",
         params={
         "project_id": project_id,
         "sentence_id_list": 100,
@@ -105,7 +105,7 @@ def test_draft_update_positive():
                 ]
             }
     ]
-    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/text/translate/token-based/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data2)
     sents = resp.json()
     print(sents)
@@ -117,7 +117,7 @@ def test_draft_update_positive():
     data_str2 = json.dumps(put_data2)  # Convert put_data to JSON
 
     resp = client.get(
-        "/v2/translation/project/sentences",
+        "/v2/text/translate/token-based/project/sentences",
         params={
         "project_id": project_id,
         "sentence_id_list": 100,
@@ -146,33 +146,33 @@ def test_draft_update_negative():
             }
     ]
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put(f"/v2/translation/project/draft?project_id={project_id+1}",
+    resp = client.put(f"/v2/text/translate/token-based/project/draft?project_id={project_id+1}",
         headers=headers_auth, json=put_data)
-    assert resp.json()['error'] == "Requested Content Not Available"
+    assert resp.json()['details'] == f"Project with id, {project_id+1}, not present"
 
     # non existing sentence
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/text/translate/token-based/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data)
     assert resp.json()['error'] == "Requested Content Not Available"
 
     # upload source and repeat last action
     put_data_source = {
-        "projectId": project_id,
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data_source)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data_source)
     assert resp.json()['message'] == "Project updated successfully"
 
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/text/translate/token-based/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data)
     assert resp.json()[0]["draft"] == put_data[0]['draft']
 
     # incorrect user
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser2']['token']
-    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/text/translate/token-based/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data)
     assert resp.json()['error'] == "Permission Denied"
 
@@ -188,7 +188,7 @@ def test_draft_update_negative():
                 ]
             }
     ]
-    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/text/translate/token-based/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data2)
     assert resp.status_code == 422
 
@@ -201,7 +201,7 @@ def test_draft_update_negative():
                 ]
             }
     ]
-    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/text/translate/token-based/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data2)
     assert resp.status_code == 422
 
@@ -214,7 +214,7 @@ def test_draft_update_negative():
              #    ]
             }
     ]
-    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/text/translate/token-based/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data2)
     assert resp.status_code == 422
 
@@ -228,7 +228,7 @@ def test_draft_update_negative():
                 ]
             }
     ]
-    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/text/translate/token-based/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data2)
     assert resp.status_code == 422
     assert resp.json()['details'] == "Incorrect metadata:Target segment [0, 10], is improper!"
@@ -241,11 +241,11 @@ def test_empty_draft_initalization():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # Ensure draft is set to ""
@@ -265,7 +265,7 @@ def test_empty_draft_initalization():
     tokens_trans = [
         {"token":"jungle", "translations":["കാട്"]}
     ]
-    response = client.post('/v2/nlp/learn/gloss?source_language=en&target_language=ml',
+    response = client.post('/v2/nlp/gloss?source_language=en&target_language=ml',
         headers=headers_auth, json=tokens_trans)
     assert response.status_code == 201
     assert response.json()['message'] == "Added to glossary"
@@ -297,15 +297,15 @@ def test_draft_meta_validation():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     #Get suggestions
-    resp = client.put(f"/v2/translation/project/suggestions?project_id={project_id}&sentenceIdList=100", 
+    resp = client.put(f"/v2/text/translate/token-based/project/suggestions?project_id={project_id}&sentenceIdList=100", 
         headers=headers_auth)
     assert resp.status_code == 201
     resp_draft_meta = resp.json()[0]['draftMeta']
@@ -323,7 +323,7 @@ def test_draft_meta_validation():
         "draft":resp.json()[0]['draft'],
         "draftMeta":resp_draft_meta
     }]
-    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/text/translate/token-based/project/draft?project_id={project_id}",
         headers=headers_auth, json=json_data)
     assert resp.status_code == 201
 
@@ -334,11 +334,11 @@ def test_space_in_suggested_draft():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # Add a gloss to ensure some suggestion in output
@@ -347,14 +347,14 @@ def test_space_in_suggested_draft():
         {"token":"far", "translations":["ദൂരെ"]},
         {"token":"fox", "translations":["കുറുക്കന്‍"]}
     ]
-    response = client.post('/v2/nlp/learn/gloss?source_language=en&target_language=ml',
+    response = client.post('/v2/nlp/gloss?source_language=en&target_language=ml',
         headers=headers_auth, json=tokens_trans)
     assert response.status_code == 201
     assert response.json()['message'] == "Added to glossary"
 
 
     #Get suggestions
-    resp = client.put(f"/v2/translation/project/suggestions?project_id={project_id}&sentenceIdList=100", 
+    resp = client.put(f"/v2/text/translate/token-based/project/suggestions?project_id={project_id}&sentenceIdList=100", 
         headers=headers_auth)
     assert resp.status_code == 201
     resp_obj = resp.json()
@@ -362,7 +362,7 @@ def test_space_in_suggested_draft():
     assert not resp_obj[0]['draft'].startswith(" ")
 
     #Get suggestions again
-    resp = client.put(f"/v2/translation/project/suggestions?project_id={project_id}&sentenceIdList=100", 
+    resp = client.put(f"/v2/text/translate/token-based/project/suggestions?project_id={project_id}&sentenceIdList=100", 
         headers=headers_auth)
     assert resp.status_code == 201
     resp_obj = resp.json()
@@ -378,11 +378,11 @@ def test_delete_sentence():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # Check sentences are added
@@ -460,11 +460,11 @@ def test_restore_sentence():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     delete_resp =client.delete(f"{UNIT_URL}/sentences?project_id={project_id}&sentence_id=100",
             headers=headers_auth)
 
@@ -535,7 +535,6 @@ def test_suggestion_when_token_overlaps_confirmed_segment():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "sentenceList": [
             {
             "sentenceId": 57001002,
@@ -545,11 +544,12 @@ def test_suggestion_when_token_overlaps_confirmed_segment():
         ]
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     # add a translation for just "not" when it occurs as "doesnot"
-    update_draft_url = f"/v2/translation/project/draft?project_id={project_id}"
+    update_draft_url = f"/v2/text/translate/token-based/project/draft?project_id={project_id}"
     data = [{ "draft": "they this",
         "draftMeta": [ [ [ 0, 4 ], [ 9, 9 ], "untranslated" ],
                        [ [ 4, 5 ], [ 9, 9 ], "untranslated" ],
@@ -600,14 +600,14 @@ def test_suggestion_when_token_overlaps_confirmed_segment():
 
 
     # Suggestion call 1
-    suggest_url =  f"/v2/translation/project/suggestions?project_id={project_id}&sentence_id_list=57001002"
+    suggest_url =  f"/v2/text/translate/token-based/project/suggestions?project_id={project_id}&sentence_id_list=57001002"
     suggest_resp = client.put(suggest_url, 
                              headers={'Authorization': f"bearer {initial_test_users['AgAdmin']['token']}",
                                       'app':"Autographa"})
     assert suggest_resp.status_code == 201
 
     # Suggestion call 2
-    suggest_url =  f"/v2/translation/project/suggestions?project_id={project_id}&sentence_id_list=57001002"
+    suggest_url =  f"/v2/text/translate/token-based/project/suggestions?project_id={project_id}&sentence_id_list=57001002"
     suggest_resp = client.put(suggest_url, 
                              headers={'Authorization': f"bearer {initial_test_users['AgAdmin']['token']}",
                                       'app':"Autographa"})
@@ -622,11 +622,11 @@ def test_glossupdate_upon_draft_update():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get(f"{UNIT_URL}/sentences?project_id={project_id}", headers=headers_auth)
@@ -642,7 +642,7 @@ def test_glossupdate_upon_draft_update():
                 ]
             }
     ]
-    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/text/translate/token-based/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data)
     sents = resp.json()
     assert len(sents) == 1
@@ -664,11 +664,11 @@ def test_draftmeta_validation():
     project_id = resp.json()['data']['projectId']
 
     put_data = {
-        "projectId": project_id,
         "sentenceList":source_sentences
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgUser']['token']
-    resp = client.put("/v2/translation/projects", headers=headers_auth, json=put_data)
+    resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+         headers=headers_auth, json=put_data)
     assert resp.json()['message'] == "Project updated successfully"
 
     ## Spaces not accounted for
@@ -683,7 +683,7 @@ def test_draftmeta_validation():
                 ]
             }
     ]
-    resp = client.put(f"/v2/translation/project/draft?project_id={project_id}",
+    resp = client.put(f"/v2/text/translate/token-based/project/draft?project_id={project_id}",
         headers=headers_auth, json=put_data2)
     assert resp.status_code == 422
     assert "error" in resp.json()

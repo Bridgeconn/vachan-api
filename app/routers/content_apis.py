@@ -1,13 +1,14 @@
 '''API endpoints related to content management''' #pylint: disable=too-many-lines
 import json
-from typing import List
+from typing import List,Dict
 import jsonpickle
 from fastapi import APIRouter, Query, Body, Depends, Path , Request,BackgroundTasks
 from sqlalchemy.orm import Session
+from pydantic import AnyUrl
 import db_models
 from schema import schemas,schemas_nlp, schema_auth, schema_content
 from dependencies import get_db, log, AddHiddenInput
-from crud import structurals_crud, contents_crud, nlp_sw_crud, media_crud
+from crud import structurals_crud, contents_crud, nlp_sw_crud
 from custom_exceptions import NotAvailableException, AlreadyExistsException,\
     UnprocessableException
 from auth.authentication import get_auth_access_check_decorator ,\
@@ -17,72 +18,73 @@ router = APIRouter()
 
 #pylint: disable=too-many-arguments,unused-argument
 ##### Content types #####
-@router.get('/v2/contents', response_model=List[schemas.ContentType],
+@router.get('/v2/resources/types', response_model=List[schemas.ResourceType],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}},  status_code=200,
-    tags=["Contents Types"])
+    tags=["Resources Types"])
 @get_auth_access_check_decorator
-async def get_contents(request: Request,content_type: str = Query(None, example="bible"),
+async def get_resources_types(request: Request,resource_type: str = Query(None, example="bible"),
      skip: int = Query(0, ge=0),limit: int = Query(100, ge=0),
      user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
-    '''fetches all the contents types supported and their details
+    '''fetches all the resources types supported and their details
     * the optional query parameter can be used to filter the result set
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n'''
-    log.info('In get_contents')
-    log.debug('contentType:%s, skip: %s, limit: %s',content_type, skip, limit)
-    return structurals_crud.get_content_types(db_, content_type=content_type,
+    log.info('In get_resources_types')
+    log.debug('resourceType:%s, skip: %s, limit: %s',resource_type, skip, limit)
+    return structurals_crud.get_resource_types(db_, resource_type=resource_type,
         skip=skip, limit=limit)
 
-@router.post('/v2/contents', response_model=schemas.ContentTypeUpdateResponse,
+@router.post('/v2/resources/types', response_model=schemas.ResourceTypeUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse},401:{"model": schemas.ErrorResponse},
     409: {"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Contents Types"])
+    status_code=201, tags=["Resources Types"])
 @get_auth_access_check_decorator
-async def add_contents(request: Request, content: schemas.ContentTypeCreate,
+async def add_resources_types(request: Request, resourcetype: schemas.ResourceTypeCreate,
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
-    ''' Creates a new content type.
+    ''' Creates a new resource type.
     Naming conventions to be followed
     - Use only english alphabets in lower case
     Additional operations required:
         1. Add corresponding table creation functions and mappings.
-        2. Define input, output resources and all required APIs to handle this content'''
-    log.info('In add_contents')
-    log.debug('content: %s',content)
-    if len(structurals_crud.get_content_types(db_, content_type=content.contentType)) > 0:
-        raise AlreadyExistsException(f"{content.contentType} already present")
-    data = structurals_crud.create_content_type(db_=db_, \
-        content=content,user_id=user_details['user_id'])
-    return {'message': "Content type created successfully",
+        2. Define input, output resources and all required APIs to handle this resource'''
+    log.info('In add_resources_types')
+    log.debug('resourcetype: %s',resourcetype)
+    if len(structurals_crud.get_resource_types(db_, resource_type=resourcetype.resourceType)) > 0:
+        raise AlreadyExistsException(f"{resourcetype.resourceType} already present")
+    data = structurals_crud.create_resource_types(db_=db_, \
+        resourcetype=resourcetype,user_id=user_details['user_id'])
+    return {'message': "Resource type created successfully",
             "data": data}
 
-@router.delete('/v2/contents',response_model=schemas.DeleteResponse,
+@router.delete('/v2/resources/types',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
     502: {"model": schemas.ErrorResponse}},
-    status_code=200,tags=["Contents Types"])
+    status_code=200,tags=["Resources Types"])
 @get_auth_access_check_decorator
-async def delete_contents(request: Request,content_id: int ,
+async def delete_resources_types(request: Request,
+    resourcetype_id: int = Query(..., example=100001),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
-    '''Delete Content
-    * unique Content Id can be used to delete an exisiting identity'''
-    log.info('In delete_contents')
-    log.debug('content-delete:%s',content_id)
-    dbtable_name = "content_types"
-    if len(structurals_crud.get_content_types(db_, content_id= content_id)) == 0:
-        raise NotAvailableException(f"Content id {content_id} not found")
-    content_obj = content_id
-    print("####" ,content_obj)
-    deleted_content = structurals_crud.delete_content(db_=db_, content=content_obj)
-    delcont = structurals_crud.add_deleted_data(db_=db_,del_content=  deleted_content,
+    '''Delete Resourcetype
+    * unique ResourceType Id can be used to delete an exisiting identity'''
+    log.info('In delete_resources_types')
+    log.debug('resourcetype-delete:%s',resourcetype_id)
+    dbtable_name = "resource_types"
+    if len(structurals_crud.get_resource_types(db_, resourcetype_id= resourcetype_id)) == 0:
+        raise NotAvailableException(f"ResourceType id {resourcetype_id} not found")
+    resourcetype_obj = resourcetype_id
+    deleted_resourcetype = structurals_crud.delete_resource_types(db_=db_,
+                                                                  resourcetype=resourcetype_obj)
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content=  deleted_resourcetype,
             table_name = dbtable_name,deleting_user=user_details['user_id'])
-    return {'message': f"Content with identity {content_id} deleted successfully",
+    return {'message': f"ResourceType with identity {resourcetype_id} deleted successfully",
             "data": delcont}
 
 ##### languages #####
-@router.get('/v2/languages',
+@router.get('/v2/resources/languages',
     response_model=List[schemas.LanguageResponse],
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
@@ -106,7 +108,7 @@ async def get_language(request: Request,
     return structurals_crud.get_languages(db_, language_code, language_name, search_word,
         localscript_name = localscript_name, skip = skip, limit = limit)
 
-@router.post('/v2/languages', response_model=schemas.LanguageCreateResponse,
+@router.post('/v2/resources/languages', response_model=schemas.LanguageCreateResponse,
     responses={502: {"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
@@ -124,7 +126,7 @@ async def add_language(request: Request, lang_obj : schemas.LanguageCreate = Bod
     return {'message': "Language created successfully",
             "data": data}
 
-@router.put('/v2/languages', response_model=schemas.LanguageUpdateResponse,
+@router.put('/v2/resources/languages', response_model=schemas.LanguageUpdateResponse,
     responses={502:{"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
@@ -141,28 +143,29 @@ async def edit_language(request: Request, lang_obj: schemas.LanguageEdit = Body(
             "data": structurals_crud.update_language(db_=db_, lang=lang_obj,
             user_id=user_details['user_id'])}
 
-@router.delete('/v2/languages',response_model=schemas.DeleteResponse,
+@router.delete('/v2/resources/languages',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Languages"])
 @get_auth_access_check_decorator
-async def delete_languages(request: Request, lang_id: int,
+async def delete_languages(request: Request,
+    language_id: int = Query(..., example=100001),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Language
     * unique Language Code can be used to delete an exisiting identity'''
     log.info('In delete_languages')
-    log.debug('language-delete:%s',lang_id)
+    log.debug('language-delete:%s',language_id)
     dbtable_name = "languages"
-    if len(structurals_crud.get_languages(db_, language_id = lang_id)) == 0:
-        raise NotAvailableException(f"Language id {lang_id} not found")
-    deleted_content = structurals_crud.delete_language(db_=db_, lang=lang_id)
+    if len(structurals_crud.get_languages(db_, language_id = language_id)) == 0:
+        raise NotAvailableException(f"Language id {language_id} not found")
+    deleted_content = structurals_crud.delete_language(db_=db_, lang=language_id)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
         table_name = dbtable_name,deleting_user=user_details['user_id'])
-    return {'message': f"Language with identity {lang_id} deleted successfully",
+    return {'message': f"Language with identity {language_id} deleted successfully",
             "data": delcont}
 
 ########### Licenses ######################
-@router.get('/v2/licenses',
+@router.get('/v2/resources/licenses',
     response_model=List[schemas.LicenseResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Licenses"])
@@ -170,7 +173,7 @@ async def delete_languages(request: Request, lang_id: int,
 async def get_license(request: Request,
     license_code : schemas.LicenseCodePattern=Query(None, example="CC-BY-SA"),
     license_name: str=Query(None, example="Creative Commons License"),
-    permission: schemas.SourcePermissions=Query(None, example="open-access"),
+    permission: schemas.ResourcePermissions=Query(None, example="open-access"),
     active: bool=Query(True), skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none),db_: Session=Depends(get_db)):
     '''fetches all the licenses present in the DB, their code and other details.
@@ -184,7 +187,7 @@ async def get_license(request: Request,
     return structurals_crud.get_licenses(db_, license_code, license_name, permission,
         active, skip = skip, limit = limit)
 
-@router.post('/v2/licenses', response_model=schemas.LicenseCreateResponse,
+@router.post('/v2/resources/licenses', response_model=schemas.LicenseCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
@@ -198,7 +201,7 @@ async def add_license(request: Request, license_obj : schemas.LicenseCreate = Bo
     return {'message': "License uploaded successfully",
         "data": structurals_crud.create_license(db_, license_obj, user_id=user_details['user_id'])}
 
-@router.put('/v2/licenses', response_model=schemas.LicenseUpdateResponse,
+@router.put('/v2/resources/licenses', response_model=schemas.LicenseUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
@@ -216,30 +219,30 @@ async def edit_license(request: Request, license_obj: schemas.LicenseEdit = Body
         "data": structurals_crud.update_license(db_=db_, license_obj=license_obj,
         user_id=user_details['user_id'])}
 
-@router.delete('/v2/licenses',response_model=schemas.DeleteResponse,
+@router.delete('/v2/resources/licenses',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
     502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Licenses"])
 @get_auth_access_check_decorator
-async def delete_licenses(request: Request, delete_id:int,
+async def delete_licenses(request: Request,
+    license_id:int = Query(..., example=100001),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete License
     * unique License Id can be used to delete an exisiting identity'''
     log.info('In delete_licenses')
-    log.debug('license-delete:%s',delete_id)
-    license_id= delete_id
+    log.debug('license-delete:%s',license_id)
     dbtable_name = "licenses"
-    if len(structurals_crud.get_licenses(db_, license_id= delete_id)) == 0:
+    if len(structurals_crud.get_licenses(db_, license_id= license_id)) == 0:
         raise NotAvailableException(f"License id {license_id} not found")
-    deleted_content = structurals_crud.delete_license(db_=db_, content=delete_id)
+    deleted_content = structurals_crud.delete_license(db_=db_, content=license_id)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
             table_name = dbtable_name,deleting_user=user_details['user_id'])
     return {'message': f"License with identity {license_id} deleted successfully",
             "data": delcont}
 
 ##### Version #####
-@router.get('/v2/versions',
+@router.get('/v2/resources/versions',
     response_model=List[schemas.VersionResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Versions"])
@@ -262,7 +265,7 @@ async def get_version(request: Request,
     return structurals_crud.get_versions(db_, version_abbreviation,
         version_name, version_tag, metadata, skip = skip, limit = limit)
 
-@router.post('/v2/versions', response_model=schemas.VersionCreateResponse,
+@router.post('/v2/resources/versions', response_model=schemas.VersionCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
@@ -283,7 +286,7 @@ async def add_version(request: Request, version_obj : schemas.VersionCreate = Bo
         "data": structurals_crud.create_version(db_=db_, version=version_obj,
         user_id=user_details['user_id'])}
 
-@router.put('/v2/versions', response_model=schemas.VersionUpdateResponse,
+@router.put('/v2/resources/versions', response_model=schemas.VersionUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
@@ -305,54 +308,54 @@ async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...
         "data": structurals_crud.update_version(db_=db_, version=ver_obj,
         user_id=user_details['user_id'])}
 
-@router.delete('/v2/versions',response_model=schemas.DeleteResponse,
+@router.delete('/v2/resources/versions',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
     502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Versions"])
 @get_auth_access_check_decorator
-async def delete_versions(request: Request, delete_id: int,
+async def delete_versions(request: Request,
+    version_id: int = Query(..., example=100001),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Version
     * unique Version Id can be used to delete an exisiting identity'''
     log.info('In delete_versions')
-    log.debug('version-delete:%s',delete_id)
-    version_id= delete_id
+    log.debug('version-delete:%s',version_id)
     dbtable_name = "versions"
-    if len(structurals_crud.get_versions(db_, version_id = delete_id)) == 0:
-        raise NotAvailableException(f"Version id {delete_id} not found")
-    deleted_content = structurals_crud.delete_version(db_=db_, ver=delete_id)
+    if len(structurals_crud.get_versions(db_, version_id = version_id)) == 0:
+        raise NotAvailableException(f"Version id {version_id} not found")
+    deleted_content = structurals_crud.delete_version(db_=db_, ver=version_id)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
             table_name = dbtable_name,deleting_user=user_details['user_id'])
     return {'message': f"Version with identity {version_id} deleted successfully",
             "data": delcont}
 
 
-###### Source #####
-@router.get('/v2/sources',
-    response_model=List[schemas.SourceResponse],
+###### Resource #####
+@router.get('/v2/resources',
+    response_model=List[schemas.ResourceResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse}},
-    status_code=200, tags=["Sources"])
+    status_code=200, tags=["Resources"])
 @get_auth_access_check_decorator
-async def get_source(request: Request, #pylint: disable=too-many-locals
-    source_name : schemas.TableNamePattern=Query(None, example="hi_IRV_1_bible"),
-    content_type: str=Query(None, example="commentary"),
+async def get_resource(request: Request, #pylint: disable=too-many-locals
+    resource_name : schemas.TableNamePattern=Query(None, example="hi_IRV_1_bible"),
+    resource_type: str=Query(None, example="commentary"),
     version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
     version_tag: schemas.VersionTagPattern=Query(None, example="1611.12.31"),
     language_code: schemas.LangCodePattern=Query(None,example="en"),
     license_code: schemas.LicenseCodePattern=Query(None,example="ISC"),
     metadata: schemas.MetaDataPattern=Query(None,
         example='{"otherName": "KJBC, King James Bible Commentaries"}'),
-    access_tag:List[schemas.SourcePermissions]=Query([schemas.SourcePermissions.CONTENT]),
-    labels:List[schemas.SourceLabel] = Query([]),
+    access_tag:List[schemas.ResourcePermissions]=Query([schemas.ResourcePermissions.CONTENT]),
+    labels:List[schemas.ResourceLabel] = Query([]),
     active: bool = True, latest_revision: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.CONTENT.value)),
     filtering_required=Depends(AddHiddenInput(value=True))):
-    '''Fetches all sources and their details.
+    '''Fetches all resources and their details.
     * Optional query parameters can be used to filter the result set
     * If version_tag is not explictly set or latest_revision is not set to False, then only
      item with highest version_tag among same version would be returned.
@@ -360,118 +363,118 @@ async def get_source(request: Request, #pylint: disable=too-many-locals
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
-    log.info('In get_source')
-    log.debug('sourceName:%s,contentType:%s, versionAbbreviation: %s, versionTag: %s, \
+    log.info('In get_resource')
+    log.debug('resourceName:%s,resourceType:%s, versionAbbreviation: %s, versionTag: %s, \
     languageCode: %s,license_code:%s, metadata: %s, access_tag: %s, latest_revision:\
-         %s, labels:%s, active: %s, skip: %s, limit: %s',source_name,
-        content_type, version_abbreviation, version_tag, language_code, license_code, metadata,
+         %s, labels:%s, active: %s, skip: %s, limit: %s',resource_name,
+        resource_type, version_abbreviation, version_tag, language_code, license_code, metadata,
         access_tag, latest_revision, labels, active, skip, limit)
-    return structurals_crud.get_sources(db_, content_type, version_abbreviation,
+    return structurals_crud.get_resources(db_, resource_type, version_abbreviation,
         version_tag=version_tag,language_code=language_code, license_code=license_code,
         metadata=metadata,access_tag=access_tag,
         latest_revision=latest_revision, labels=labels,active=active,
-        skip=skip, limit=limit,source_name=source_name)
+        skip=skip, limit=limit,resource_name=resource_name)
 
-@router.post('/v2/sources', response_model=schemas.SourceCreateResponse,
+@router.post('/v2/resources', response_model=schemas.ResourceCreateResponse,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Sources"])
+    status_code=201, tags=["Resources"])
 @get_auth_access_check_decorator
-async def add_source(request: Request, source_obj : schemas.SourceCreate = Body(...),
+async def add_resource(request: Request, resource_obj : schemas.ResourceCreate = Body(...),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     # user_details = Depends(auth_handler.kratos_session_validation)
-    ''' Creates a new source entry in sources table.
+    ''' Creates a new resource entry in resources table.
     * Also creates all associtated tables for the content type.
     * The required content type, version, language and license should be present in DB,
     * if not create them first.
     * Latest, can be included in labels for only one item per version.
     * AccessPermissions is list of permissions ["content", "open-access", "publishable",
         "downloadable","derivable"]. Default will be ["content"]
-    * repo and defaultBranch should given in the metaData if contentType is gitlabrepo,
+    * repo and defaultBranch should given in the metaData if resourceType is gitlabrepo,
         defaultBranch will be "main" if not mentioned in the metadata.
     '''
-    log.info('In add_source')
-    log.debug('source_obj: %s',source_obj)
-    if 'content' not in source_obj.accessPermissions:
-        source_obj.accessPermissions.append(schemas.SourcePermissions.CONTENT)
-    source_obj.metaData['accessPermissions'] = source_obj.accessPermissions
-    if source_obj.contentType == db_models.ContentTypeName.GITLABREPO.value:
-        if "repo" not in source_obj.metaData:
+    log.info('In add_resource')
+    log.debug('resource_obj: %s',resource_obj)
+    if 'content' not in resource_obj.accessPermissions:
+        resource_obj.accessPermissions.append(schemas.ResourcePermissions.CONTENT)
+    resource_obj.metaData['accessPermissions'] = resource_obj.accessPermissions
+    if resource_obj.resourceType == db_models.ResourceTypeName.GITLABREPO.value:
+        if "repo" not in resource_obj.metaData:
             raise UnprocessableException("repo link in metadata is mandatory to create"+
-                " source with contentType gitlabrepo")
-        if len(structurals_crud.get_sources(db_, metadata =
-                json.dumps({"repo":source_obj.metaData["repo"]}))) > 0:
-            raise AlreadyExistsException("already present Source with same repo link")
-        if "defaultBranch" not in source_obj.metaData:
-            source_obj.metaData["defaultBranch"] = "main"
-    return {'message': "Source created successfully",
-    "data": structurals_crud.create_source(db_=db_, source=source_obj,
+                " resource with resourceType gitlabrepo")
+        if len(structurals_crud.get_resources(db_, metadata =
+                json.dumps({"repo":resource_obj.metaData["repo"]}))) > 0:
+            raise AlreadyExistsException("already present Resource with same repo link")
+        if "defaultBranch" not in resource_obj.metaData:
+            resource_obj.metaData["defaultBranch"] = "main"
+    return {'message': "Resource created successfully",
+    "data": structurals_crud.create_resource(db_=db_, resource=resource_obj,
         user_id=user_details['user_id'])}
 
-@router.put('/v2/sources', response_model=schemas.SourceUpdateResponse,
+@router.put('/v2/resources', response_model=schemas.ResourceUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Sources"])
+    status_code=201, tags=["Resources"])
 @get_auth_access_check_decorator
-async def edit_source(request: Request,source_obj: schemas.SourceEdit = Body(...),
+async def edit_resource(request: Request,resource_obj: schemas.ResourceEdit = Body(...),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
-    ''' Changes one or more fields of source. Item identifier is source_name.
+    ''' Changes one or more fields of resource. Item identifier is resource_name.
     * Active field can be used to activate or deactivate a content.
     * Deactivated items are not included in normal fetch results if not specified otherwise
     * Edit of labels will overwrite the existing List of labels entirely
     * AccessPermissions is list of permissions ["content", "open-access", "publishable",
         "downloadable", "derivable"]. Edit accessPermission will overwrite the current list'''
-    log.info('In edit_source')
-    log.debug('source_obj: %s',source_obj)
-    if len(structurals_crud.get_sources(db_, source_name = source_obj.sourceName)) == 0:
-        raise NotAvailableException(f"Source {source_obj.sourceName} not found")
-    if 'content' not in source_obj.accessPermissions:
-        source_obj.accessPermissions.append(schemas.SourcePermissions.CONTENT)
-    source_obj.metaData['accessPermissions'] = source_obj.accessPermissions
-    if source_obj.sourceName.split("_")[-1] == \
-        db_models.ContentTypeName.GITLABREPO.value:
-        if "repo" not in source_obj.metaData:
+    log.info('In edit_resource')
+    log.debug('resource_obj: %s',resource_obj)
+    if len(structurals_crud.get_resources(db_, resource_name = resource_obj.resourceName)) == 0:
+        raise NotAvailableException(f"Resource {resource_obj.resourceName} not found")
+    if 'content' not in resource_obj.accessPermissions:
+        resource_obj.accessPermissions.append(schemas.ResourcePermissions.CONTENT)
+    resource_obj.metaData['accessPermissions'] = resource_obj.accessPermissions
+    if resource_obj.resourceName.split("_")[-1] == \
+        db_models.ResourceTypeName.GITLABREPO.value:
+        if "repo" not in resource_obj.metaData:
             raise UnprocessableException("repo link in metadata is mandatory to update"+
-                " source with contentType gitlabrepo")
-        current_source = structurals_crud.get_sources(db_, metadata =
-                json.dumps({"repo":source_obj.metaData["repo"]}))
-        if len(current_source)>0 and not current_source[0].sourceName ==\
-             source_obj.sourceName:
-            raise AlreadyExistsException("already present another source"+
+                " resource with resourceType gitlabrepo")
+        current_resource = structurals_crud.get_resources(db_, metadata =
+                json.dumps({"repo":resource_obj.metaData["repo"]}))
+        if len(current_resource)>0 and not current_resource[0].resourceName ==\
+             resource_obj.resourceName:
+            raise AlreadyExistsException("already present another resource"+
             " with same repo link")
-        if "defaultBranch" not in source_obj.metaData:
-            source_obj.metaData["defaultBranch"] = "main"
-    return {'message': "Source edited successfully",
-    "data": structurals_crud.update_source(db_=db_, source=source_obj,
+        if "defaultBranch" not in resource_obj.metaData:
+            resource_obj.metaData["defaultBranch"] = "main"
+    return {'message': "Resource edited successfully",
+    "data": structurals_crud.update_resource(db_=db_, resource=resource_obj,
         user_id=user_details['user_id'])}
 
-@router.delete('/v2/sources',response_model=schemas.DeleteResponse,
+@router.delete('/v2/resources',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
     502: {"model": schemas.ErrorResponse}},
-    status_code=200,tags=["Sources"])
+    status_code=200,tags=["Resources"])
 @get_auth_access_check_decorator
-async def delete_sources(request: Request, delete_id:int, \
+async def delete_resources(request: Request,
+    resource_id:int = Query(..., example=100001),
     user_details =Depends(get_user_or_none),  \
     db_: Session = Depends(get_db)):
-    '''Delete Source
-    * unique Source Id can be used to delete an exisiting identity'''
-    log.info('In delete_sources')
-    log.debug('source-delete:%s',delete_id)
-    source_id= delete_id
-    dbtable_name = "sources"
-    if len(structurals_crud.get_sources(db_, source_id= delete_id)) == 0:
-        raise NotAvailableException(f"Source id {source_id} not found")
-    deleted_content = structurals_crud.delete_source(db_=db_, delitem=delete_id)
+    '''Delete Resource
+    * unique Resource Id can be used to delete an exisiting identity'''
+    log.info('In delete_resources')
+    log.debug('resource-delete:%s',resource_id)
+    dbtable_name = "resources"
+    if len(structurals_crud.get_resources(db_, resource_id= resource_id)) == 0:
+        raise NotAvailableException(f"Resource id {resource_id} not found")
+    deleted_content = structurals_crud.delete_resource(db_=db_, delitem=resource_id)
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content,
             table_name = dbtable_name,deleting_user=user_details['user_id'])
-    return {'message': f"Source with identity {source_id} deleted successfully",
+    return {'message': f"Resource with identity {resource_id} deleted successfully",
             "data": delcont}
 
 # ############ Bible Books ##########
-@router.get('/v2/lookup/bible/books',
+@router.get('/v2/resources/lookups/bible/books',
     response_model=List[schema_content.BibleBook],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Lookups"])
@@ -492,7 +495,7 @@ async def get_bible_book(request: Request,book_id: int=Query(None, example=67),
         skip = skip, limit = limit)
 
 # #### Bible #######
-@router.post('/v2/bibles/{source_name}/books',
+@router.post('/v2/resources/bibles/{resource_name}/books',
     response_model=schema_content.BibleBookCreateResponse,
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse}, \
@@ -502,19 +505,20 @@ async def get_bible_book(request: Request,book_id: int=Query(None, example=67),
     status_code=201, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def add_bible_book(request: Request,
-    source_name : schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
+    resource_name : schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
     books: List[schema_content.BibleBookUpload] = Body(...),
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
     '''Uploads a bible book. It update 2 tables: ..._bible, .._bible_cleaned.
     The JSON provided should be generated from the USFM, using usfm-grammar 2.0.0-beta.8 or above'''
     log.info('In add_bible_book')
-    log.debug('source_name: %s, books: %s',source_name, books)
+    log.debug('resource_name: %s, books: %s',resource_name, books)
     return {'message': "Bible books uploaded and processed successfully",
-        "data": contents_crud.upload_bible_books(db_=db_, source_name=source_name,
+        "data": contents_crud.upload_bible_books(db_=db_, resource_name=resource_name,
         books=books, user_id=user_details['user_id'])}
 
-@router.put('/v2/bibles/{source_name}/books', response_model=schema_content.BibleBookUpdateResponse,
+@router.put('/v2/resources/bibles/{resource_name}/books',
+    response_model=schema_content.BibleBookUpdateResponse,
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
@@ -522,7 +526,7 @@ async def add_bible_book(request: Request,
     status_code=201, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def edit_bible_book(request: Request,
-    source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
+    resource_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
     books: List[schema_content.BibleBookEdit] = Body(...),user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
     '''Either changes the active status or the bible contents.
@@ -531,15 +535,16 @@ async def edit_bible_book(request: Request,
     Deactivated items are not included in normal fetch results if not specified otherwise
     * In the second case, the two fields, usfm and json,  are mandatory as they are interdependant.
     Contents of the respective bible_clean and bible_tokens tables
-    are deleted and new data added, which changes the results of /v2/bibles/{source_name}/verses
+    are deleted and new data added, which changes the results of
+    /v2/resources/bibles/{resource_name}/verses
     and tokens apis aswell.'''
     log.info('In edit_bible_book')
-    log.debug('source_name: %s, books: %s',source_name, books)
+    log.debug('resource_name: %s, books: %s',resource_name, books)
     return {'message': "Bible books updated successfully",
-        "data": contents_crud.update_bible_books(db_=db_, source_name=source_name,
+        "data": contents_crud.update_bible_books(db_=db_, resource_name=resource_name,
         books=books, user_id=user_details['user_id'])}
 
-@router.get('/v2/bibles/{source_name}/books',
+@router.get('/v2/resources/bibles/{resource_name}/books',
     response_model=List[schema_content.BibleBookContent],
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
@@ -548,7 +553,7 @@ async def edit_bible_book(request: Request,
     status_code=200, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def get_available_bible_book(request: Request,
-    source_name: schemas.TableNamePattern=Path(...,example="hi_IRV_1_bible"),
+    resource_name: schemas.TableNamePattern=Path(...,example="hi_IRV_1_bible"),
     book_code: schemas.BookCodePattern=Query(None, example="mat"),
     content_type: schema_content.BookContentType=Query(None), active: bool=True,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
@@ -561,58 +566,59 @@ async def get_available_bible_book(request: Request,
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
     log.info('In get_available_bible_book')
-    log.debug('source_name: %s, book_code: %s, contentType: %s, active:%s, skip: %s, limit: %s',
-        source_name, book_code, content_type, active, skip, limit)
-    return contents_crud.get_available_bible_books(db_, source_name, book_code, content_type,
+    log.debug('resource_name: %s, book_code: %s, resourceType: %s, active:%s, skip: %s, limit: %s',
+        resource_name, book_code, content_type, active, skip, limit)
+    return contents_crud.get_available_bible_books(db_, resource_name, book_code, content_type,
         active=active, skip = skip, limit = limit)
 
-@router.delete('/v2/bibles/{source_name}/books',response_model=schemas.DeleteResponse,
+@router.delete('/v2/resources/bibles/{resource_name}/books',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
     502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Bibles"])
 @get_auth_access_check_decorator
-async def delete_bible_book(request: Request,delete_id:int,
-    source_name: str = Path(...,example="en_KJV_1_bible"),
+async def delete_bible_book(request: Request,
+    biblebook_id:int = Query(..., example=100001),
+    resource_name: str = Path(...,example="en_KJV_1_bible"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Bible Book
-    * unique bible content Id with source name can be used to delete an exisiting identity'''
+    * unique bible book id with resource name can be used to delete an exisiting identity'''
     log.info('In delete_biblebook')
-    log.debug('biblebook-delete:%s',delete_id)
-    biblecontent_id= delete_id
-    tb_name = db_models.dynamicTables[source_name]
+    log.debug('biblebook-delete:%s',biblebook_id)
+    tb_name = db_models.dynamicTables[resource_name]
     dbtable_name = tb_name.__name__
     cleaned_tablename = dbtable_name+'_cleaned'
-    get_bible_response = contents_crud.get_available_bible_books(db_, source_name=source_name, \
-        biblecontent_id= delete_id)
+    get_bible_response = contents_crud.get_available_bible_books(db_, resource_name=resource_name, \
+        biblecontent_id= biblebook_id)
     if len(get_bible_response['db_content']) == 0:
-        raise NotAvailableException(f"Bible Book with id {biblecontent_id} not found")
-    deleted_content = contents_crud.delete_bible_book(db_=db_,delitem=delete_id,\
-        source_name=source_name,user_id=user_details['user_id'])
+        raise NotAvailableException(f"Bible Book with id {biblebook_id} not found")
+    deleted_content = contents_crud.delete_bible_book(db_=db_,delitem=biblebook_id,\
+        resource_name=resource_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_= db_,del_content= deleted_content['db_content'],
-        table_name = dbtable_name, source = deleted_content['source_content'],
+        table_name = dbtable_name, resource = deleted_content['resource_content'],
         deleting_user=user_details['user_id'])
-    del_clean=structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content2'],#pylint: disable=unused-variable
-        table_name=cleaned_tablename,source=deleted_content['source_content'],
-        deleting_user=user_details['user_id'])
-    return {'message': f"Bible Book with id {biblecontent_id} deleted successfully",
+    for item in  deleted_content['db_content2']:
+        structurals_crud.add_deleted_data(db_=db_,del_content= item,#pylint: disable=unused-variable
+            table_name=cleaned_tablename,resource=deleted_content['resource_content'],
+            deleting_user=user_details['user_id'])
+    return {'message': f"Bible Book with id {biblebook_id} deleted successfully",
             "data": delcont}
 
-@router.get('/v2/bibles/{source_name}/versification',
+@router.get('/v2/resources/bibles/{resource_name}/versification',
     response_model= schema_content.Versification,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def get_bible_versification(request: Request,
-    source_name:schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
+    resource_name:schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
     '''Fetches the versification structure of the specified bible,
     with details of number of chapters, max verses in each chapter etc'''
     log.info('In get_bible_versification')
-    log.debug('source_name: %s',source_name)
-    return contents_crud.get_bible_versification(db_, source_name)
+    log.debug('resource_name: %s',resource_name)
+    return contents_crud.get_bible_versification(db_, resource_name)
 
-@router.get('/v2/bibles/{source_name}/verses',
+@router.get('/v2/resources/bibles/{resource_name}/verses',
     response_model=List[schema_content.BibleVerse],
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
@@ -621,7 +627,7 @@ async def get_bible_versification(request: Request,
     status_code=200, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def get_bible_verse(request: Request,
-    source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
+    resource_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
     book_code: schemas.BookCodePattern=Query(None, example="mat"),
     chapter: int=Query(None, example=1), verse: int=Query(None, example=1),
     last_verse: int=Query(None, example=15), search_phrase: str=Query(None, example='सन्‍तान'),
@@ -630,7 +636,7 @@ async def get_bible_verse(request: Request,
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
     ''' Fetches the cleaned contents of bible, within a verse range, if specified.
     This API could be used for fetching,
-     * all verses of a source : with out giving any query params.
+     * all verses of a resource : with out giving any query params.
      * all verses of a book: with only book_code
      * all verses of a chapter: with book_code and chapter
      * one verse: with bookCode, chapter and verse(without lastVerse).
@@ -640,103 +646,32 @@ async def get_bible_verse(request: Request,
      * limit=n: limits the no. of items to be returned to n
      * returns [] for not available content'''
     log.info('In get_bible_verse')
-    log.debug('source_name: %s, book_code: %s, chapter: %s, verse:%s, last_verse:%s,\
+    log.debug('resource_name: %s, book_code: %s, chapter: %s, verse:%s, last_verse:%s,\
         search_phrase:%s, active:%s, skip: %s, limit: %s',
-        source_name, book_code, chapter, verse, last_verse, search_phrase, active, skip, limit)
-    return contents_crud.get_bible_verses(db_, source_name, book_code, chapter, verse,
+        resource_name, book_code, chapter, verse, last_verse, search_phrase, active, skip, limit)
+    return contents_crud.get_bible_verses(db_, resource_name, book_code, chapter, verse,
     last_verse = last_verse, search_phrase=search_phrase, active=active,
     skip = skip, limit = limit)
 
-# # ########### Audio bible ###################
-@router.post('/v2/bibles/{source_name}/audios',
-    response_model=schema_content.AudioBibleCreateResponse,
-    responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
-    401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
-    415:{"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Bibles"])
-@get_auth_access_check_decorator
-async def add_audio_bible(request: Request,
-    source_name : schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
-    audios: List[schema_content.AudioBibleUpload] = Body(...),
-    user_details =Depends(get_user_or_none),
-    db_: Session = Depends(get_db)):
-    '''uploads audio(links and related info, not files) for a bible'''
-    log.info('In add_audio_bible')
-    log.debug('source_name: %s, audios: %s',source_name, audios)
-    return {'message': "Bible audios details uploaded successfully",
-        "data": contents_crud.upload_bible_audios(db_=db_, source_name=source_name,
-        audios=audios, user_id=user_details['user_id'])}
-
-@router.put('/v2/bibles/{source_name}/audios',
-    response_model=schema_content.AudioBibleUpdateResponse,
-    responses={502: {"model": schemas.ErrorResponse}, \
-    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
-    401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Bibles"])
-@get_auth_access_check_decorator
-async def edit_audio_bible(request: Request,
-    source_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
-    audios: List[schema_content.AudioBibleEdit] = Body(...),
-    user_details =Depends(get_user_or_none),
-    db_: Session = Depends(get_db)):
-    ''' Changes the mentioned fields of audio bible row.
-    book codes are used to identify items and at least one is mandatory.
-    Active field can be used to activate or deactivate a content.
-    Deactivated items are not included in normal fetch results if not specified otherwise'''
-    log.info('In edit_audio_bible')
-    log.debug('source_name: %s, audios: %s',source_name, audios)
-    return {'message': "Bible audios details updated successfully",
-        "data": contents_crud.update_bible_audios(db_=db_, source_name=source_name,
-        audios=audios, user_id=user_details['user_id'])}
-
-@router.delete('/v2/bibles/{source_name}/audios',response_model=schemas.DeleteResponse,
-    responses={404: {"model": schemas.ErrorResponse},
-    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
-    502: {"model": schemas.ErrorResponse}},
-    status_code=200,tags=["Bibles"])
-@get_auth_access_check_decorator
-async def delete_bible_audios(request: Request,delete_id: int,
-    source_name: str = Path(...,example="en_KJV_1_bible"),
-    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
-    '''Delete Bible Audio
-    * unique Bible Audio Id  with source name can be used to delete an exisiting identity'''
-    log.info('In delete_bibleaudios')
-    log.debug('bibleaudio-delete:%s',delete_id)
-    bibleaudio_id= delete_id
-    tb_name = db_models.dynamicTables[source_name]
-    dbtable_name = tb_name.__name__
-    audio_tablename = dbtable_name+'_audio'
-    get_bible_response = contents_crud.get_available_bible_books(db_, source_name=source_name, \
-        bibleaudio_id= delete_id)
-    if len(get_bible_response['db_content']) == 0:
-        raise NotAvailableException(f"Bible Audio with id {bibleaudio_id} not found")
-    deleted_content = contents_crud.delete_bible_audio(db_=db_,delitem=delete_id,\
-        source_name=source_name,user_id=user_details['user_id'])
-    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
-        table_name = audio_tablename, source = deleted_content['source_content'],
-        deleting_user = user_details['user_id'])
-    return {'message': f"Bible Audio with id {bibleaudio_id} deleted successfully",
-            "data": delcont}
 
 # # ##### Commentary #####
-@router.get('/v2/commentaries/{source_name}',
+@router.get('/v2/resources/commentaries/{resource_name}',
     response_model=List[schema_content.CommentaryResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
     415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Commentaries"])
 @get_auth_access_check_decorator
 async def get_commentary(request: Request,
-    source_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
+    resource_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
     book_code: schemas.BookCodePattern=Query(None, example="1ki"),
     chapter: int = Query(None, example=10, ge=-1), verse: int = Query(None, example=1, ge=-1),
     last_verse: int = Query(None, example=3, ge=-1), active: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
-    '''Fetches commentries under the specified source.
+    '''Fetches commentries under the specified resource.
     * optional query parameters can be used to filter the result set
     * Using the params bookCode, chapter, and verse the result set can be filtered as per need,
-    like in the /v2/bibles/{sourceName}/verses API
+    like in the /v2/resources/bibles/{resourceName}/verses API
     * Value 0 for verse and last_verse indicate chapter introduction and -1 indicate
     chapter epilogue.
     * Similarly 0 for chapter means book introduction and -1 for chapter means book epilogue
@@ -744,14 +679,14 @@ async def get_commentary(request: Request,
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
     log.info('In get_commentary')
-    log.debug('source_name: %s, book_code: %s, chapter: %s, verse:%s,\
+    log.debug('resource_name: %s, book_code: %s, chapter: %s, verse:%s,\
         last_verse:%s, skip: %s, limit: %s',
-        source_name, book_code, chapter, verse, last_verse, skip, limit)
-    return contents_crud.get_commentaries(db_, source_name=source_name,chapter=chapter,\
+        resource_name, book_code, chapter, verse, last_verse, skip, limit)
+    return contents_crud.get_commentaries(db_, resource_name=resource_name,chapter=chapter,\
         book_code=book_code,verse=verse, last_verse=last_verse,active=active,\
         skip = skip, limit = limit)
 
-@router.post('/v2/commentaries/{source_name}',
+@router.post('/v2/resources/commentaries/{resource_name}',
     response_model=schema_content.CommentaryCreateResponse, response_model_exclude_none=True,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
@@ -760,7 +695,7 @@ async def get_commentary(request: Request,
     status_code=201, tags=["Commentaries"])
 @get_auth_access_check_decorator
 async def add_commentary(request: Request,background_tasks: BackgroundTasks,
-    source_name : schemas.TableNamePattern=Path(...,example="en_BBC_1_commentary"),
+    resource_name : schemas.TableNamePattern=Path(...,example="en_BBC_1_commentary"),
     commentaries: List[schema_content.CommentaryCreate] = Body(...),
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
@@ -775,24 +710,25 @@ async def add_commentary(request: Request,background_tasks: BackgroundTasks,
     * Similarly 0 for chapter means book introduction and -1 for chapter means book epilogue,
     verses fields can be null in these cases'''
     log.info('In add_commentary')
-    log.debug('source_name: %s, commentaries: %s',source_name, commentaries)
-    # verify source exist
-    source_db_content = db_.query(db_models.Source).filter(
-        db_models.Source.sourceName == source_name).first()
-    if not source_db_content:
-        raise NotAvailableException(f'Source {source_name}, not found in database')
+    log.debug('resource_name: %s, commentaries: %s',resource_name, commentaries)
+    # verify resource exist
+    resource_db_content = db_.query(db_models.Resource).filter(
+        db_models.Resource.resourceName == resource_name).first()
+    if not resource_db_content:
+        raise NotAvailableException(f'Resource {resource_name}, not found in database')
     job_info = nlp_sw_crud.create_job(db_=db_, user_id=user_details['user_id'])
     job_id = job_info.jobId
-    background_tasks.add_task(contents_crud.upload_commentaries,db_=db_, source_name=source_name,
-        commentaries=commentaries, job_id=job_id, user_id=user_details['user_id'])
+    background_tasks.add_task(contents_crud.upload_commentaries, db_=db_,
+        resource_name=resource_name, commentaries=commentaries, job_id=job_id,
+        user_id=user_details['user_id'])
     data = {"jobId": job_info.jobId, "status": job_info.status}
     job_resp = {"message": "Uploading Commentaries in background", "data": data}
-    return {'db_content':job_resp,'source_content':source_db_content}
+    return {'db_content':job_resp,'resource_content':resource_db_content}
     # return {'message': "Commentaries added successfully",
-    # "data": contents_crud.upload_commentaries(db_=db_, source_name=source_name,
+    # "data": contents_crud.upload_commentaries(db_=db_, resource_name=resource_name,
     #     commentaries=commentaries, user_id=user_details['user_id'])}
 
-@router.put('/v2/commentaries/{source_name}',
+@router.put('/v2/resources/commentaries/{resource_name}',
     response_model=schema_content.CommentaryUpdateResponse,response_model_exclude_none=True,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
@@ -800,7 +736,7 @@ async def add_commentary(request: Request,background_tasks: BackgroundTasks,
     status_code=201, tags=["Commentaries"])
 @get_auth_access_check_decorator
 async def edit_commentary(request: Request,background_tasks: BackgroundTasks,
-    source_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
+    resource_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
     commentaries: List[schema_content.CommentaryEdit] = Body(...),
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
@@ -809,60 +745,61 @@ async def edit_commentary(request: Request,background_tasks: BackgroundTasks,
     Also active field can be used to activate or deactivate a content.
     Deactivated items are not included in normal fetch results if not specified otherwise'''
     log.info('In edit_commentary')
-    log.debug('source_name: %s, commentaries: %s',source_name, commentaries)
-    # verify source exist
-    source_db_content = db_.query(db_models.Source).filter(
-        db_models.Source.sourceName == source_name).first()
-    if not source_db_content:
-        raise NotAvailableException(f'Source {source_name}, not found in database')
+    log.debug('resource_name: %s, commentaries: %s',resource_name, commentaries)
+    # verify resource exist
+    resource_db_content = db_.query(db_models.Resource).filter(
+        db_models.Resource.resourceName == resource_name).first()
+    if not resource_db_content:
+        raise NotAvailableException(f'Resource {resource_name}, not found in database')
     job_info = nlp_sw_crud.create_job(db_=db_, user_id=user_details['user_id'])
     job_id = job_info.jobId
-    background_tasks.add_task(contents_crud.update_commentaries,db_=db_, source_name=source_name,
-        commentaries=commentaries, job_id=job_id, user_id=user_details['user_id'])
+    background_tasks.add_task(contents_crud.update_commentaries,db_=db_,
+        resource_name=resource_name, commentaries=commentaries, job_id=job_id,
+        user_id=user_details['user_id'])
     data = {"jobId": job_info.jobId, "status": job_info.status}
     job_resp = {"message": "Updating Commentaries in background", "data": data}
-    return {'db_content':job_resp,'source_content':source_db_content}
+    return {'db_content':job_resp,'resource_content':resource_db_content}
     # return {'message': "Commentaries updated successfully",
-    # "data": contents_crud.update_commentaries(db_=db_, source_name=source_name,
+    # "data": contents_crud.update_commentaries(db_=db_, resource_name=resource_name,
     #     commentaries=commentaries, user_id=user_details['user_id'])}
 
-@router.delete('/v2/commentaries/{source_name}',response_model=schemas.DeleteResponse,
+@router.delete('/v2/resources/commentaries/{resource_name}',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
     502: {"model": schemas.ErrorResponse}},
     status_code=200,tags=["Commentaries"])
 @get_auth_access_check_decorator
-async def delete_commentary(request: Request,delete_id:int,
-    source_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
+async def delete_commentary(request: Request,
+    commentary_id:int = Query(..., example=100001),
+    resource_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Commentary
-    * unique Commentary Id can be used to delete an exisiting identity'''
+    * unique Commentary Id with resource name can be used to delete an exisiting identity'''
     log.info('In delete_commentaries')
-    log.debug('commentary-delete:%s',delete_id)
-    commentary_id= delete_id
-    tb_name = db_models.dynamicTables[source_name]
+    log.debug('commentary-delete:%s',commentary_id)
+    tb_name = db_models.dynamicTables[resource_name]
     dbtable_name = tb_name.__name__
     get_commentary_response = contents_crud.get_commentaries(db_, \
-        source_name=source_name, commentary_id= delete_id)
+        resource_name=resource_name, commentary_id= commentary_id)
     if len(get_commentary_response['db_content']) == 0:
         raise NotAvailableException(f"Commentary with id {commentary_id} not found")
-    deleted_content = contents_crud.delete_commentary(db_=db_,delitem=delete_id,\
-        table_name=tb_name,source_name=source_name,user_id=user_details['user_id'])
+    deleted_content = contents_crud.delete_commentary(db_=db_,delitem=commentary_id,\
+        table_name=tb_name,resource_name=resource_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
-        table_name= dbtable_name, source=deleted_content['source_content'],
+        table_name= dbtable_name, resource=deleted_content['resource_content'],
         deleting_user = user_details['user_id'])
     return {'message': f"Commentary id {commentary_id} deleted successfully",
             "data": delcont}
-# # ########### Dictionary ###################
-@router.get('/v2/dictionaries/{source_name}',
+# # ########### Vocabulary ###################
+@router.get('/v2/resources/vocabularies/{resource_name}',
     response_model_exclude_unset=True,
-    response_model=List[schema_content.DictionaryWordResponse],
+    response_model=List[schema_content.VocabularyWordResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
-    404:{"model": schemas.ErrorResponse},}, status_code=200, tags=["Dictionaries"])
+    404:{"model": schemas.ErrorResponse},}, status_code=200, tags=["Vocabularies"])
 @get_auth_access_check_decorator
-async def get_dictionary_word(request: Request,
-    source_name: schemas.TableNamePattern=Path(...,example="en_TW_1_dictionary"),
+async def get_vocabulary_word(request: Request,
+    resource_name: schemas.TableNamePattern=Path(...,example="en_TW_1_vocabulary"),
     search_word: str=Query(None, example="Adam"),
     exact_match: bool=False, word_list_only: bool=False,
     details: schemas.MetaDataPattern=Query(None, example='{"type":"person"}'), active: bool=None,
@@ -870,7 +807,7 @@ async def get_dictionary_word(request: Request,
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.CONTENT.value))):
     #operates_on=schema_auth.ResourceType.CONTENT.value
-    '''fetches list of dictionary words and all available details about them.
+    '''fetches list of vocabulary words and all available details about them.
     Using the searchIndex appropriately, it is possible to get
     * All words starting with a letter
     * All words starting with a substring
@@ -881,31 +818,32 @@ async def get_dictionary_word(request: Request,
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
-    log.info('In get_dictionary_word')
-    log.debug('source_name: %s, search_word: %s, exact_match: %s, word_list_only:%s, details:%s\
-        skip: %s, limit: %s', source_name, search_word, exact_match, word_list_only, details,
+    log.info('In get_vocabulary_word')
+    log.debug('resource_name: %s, search_word: %s, exact_match: %s, word_list_only:%s, details:%s\
+        skip: %s, limit: %s', resource_name, search_word, exact_match, word_list_only, details,
         skip, limit)
-    return contents_crud.get_dictionary_words(db_, source_name=source_name, search_word=search_word,
+    return contents_crud.get_vocabulary_words(db_, resource_name=resource_name,
+        search_word=search_word,
         exact_match=exact_match,
         word_list_only=word_list_only, details=details, active=active, skip=skip, limit=limit)
 
-@router.get('/v2/dictionaries/{source_name}/count',
+@router.get('/v2/resources/vocabularies/{resource_name}/count',
     response_model=int,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
-    404:{"model": schemas.ErrorResponse},}, status_code=200, tags=["Dictionaries"])
+    404:{"model": schemas.ErrorResponse},}, status_code=200, tags=["Vocabularies"])
 @get_auth_access_check_decorator
-async def get_dictionary_word_count(request: Request,
-    source_name: schemas.TableNamePattern=Path(...,example="en_TW_1_dictionary"),
+async def get_vocabulary_word_count(request: Request,
+    resource_name: schemas.TableNamePattern=Path(...,example="en_TW_1_vocabulary"),
     search_word: str=Query(None, example="Adam"),
     exact_match: bool=False,
     details: schemas.MetaDataPattern=Query(None, example='{"type":"person"}'),
     active: bool= Query(None),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.CONTENT.value))):
-    '''Counts dictionary words that match the query criteria.
+    '''Counts vocabulary words that match the query criteria.
     Using the search_word appropriately, it is possible to count:
-    * All word in the dictionary, if not specified
+    * All word in the vocabulary, if not specified
     * All words starting with a letter
     * All words starting with a substring
     * An exact word search, giving the whole word and setting exactMatch to True
@@ -913,304 +851,447 @@ async def get_dictionary_word_count(request: Request,
     * Both active and deactivated words, by not specifiying a value for active, which is default.
         Recommended that it is set to true for regular use-cases
     '''
-    log.info('In get_dictionary_word_count')
-    log.debug('source_name: %s, search_word: %s, exact_match: %s,  details:%s',
-        source_name, search_word, exact_match, details)
-    response = contents_crud.get_dictionary_words(db_, source_name=source_name,
+    log.info('In get_vocabulary_word_count')
+    log.debug('resource_name: %s, search_word: %s, exact_match: %s,  details:%s',
+        resource_name, search_word, exact_match, details)
+    response = contents_crud.get_vocabulary_words(db_, resource_name=resource_name,
         search_word=search_word, exact_match=exact_match,
         word_list_only=True, details=details, active=active, skip=None, limit=None)
     response['db_content'] = len(response['db_content'])
     return response
 
-@router.post('/v2/dictionaries/{source_name}',
-    response_model=schema_content.DictionaryCreateResponse,
+@router.post('/v2/resources/vocabularies/{resource_name}',
+    response_model=schema_content.VocabularyCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
     401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
     415:{"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Dictionaries"])
+    status_code=201, tags=["Vocabularies"])
 @get_auth_access_check_decorator
-async def add_dictionary_word(request: Request,
-    source_name : schemas.TableNamePattern=Path(..., example="en_TW_1_dictionary"),
-    dictionary_words: List[schema_content.DictionaryWordCreate] = Body(...),
+async def add_vocabulary_word(request: Request,
+    resource_name : schemas.TableNamePattern=Path(..., example="en_TW_1_vocabulary"),
+    vocabulary_words: List[schema_content.VocabularyWordCreate] = Body(...),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     ''' uploads dictionay words and their details. 'Details' should be of JSON datatype and  have
     all the additional info we have for each word, as key-value pairs.
     The word will serve as the unique identifier'''
-    log.info('In add_dictionary_word')
-    log.debug('source_name: %s, dictionary_words: %s',source_name, dictionary_words)
-    return {'message': "Dictionary words added successfully",
-        "data": contents_crud.upload_dictionary_words(db_=db_, source_name=source_name,
-        dictionary_words=dictionary_words, user_id=user_details['user_id'])}
+    log.info('In add_vocabulary_word')
+    log.debug('resource_name: %s, vocabulary_words: %s',resource_name, vocabulary_words)
+    return {'message': "Vocabulary words added successfully",
+        "data": contents_crud.upload_vocabulary_words(db_=db_, resource_name=resource_name,
+        vocabulary_words=vocabulary_words, user_id=user_details['user_id'])}
 
-@router.put('/v2/dictionaries/{source_name}',
-    response_model=schema_content.DictionaryUpdateResponse,
+@router.put('/v2/resources/vocabularies/{resource_name}',
+    response_model=schema_content.VocabularyUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
     401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Dictionaries"])
+    status_code=201, tags=["Vocabularies"])
 @get_auth_access_check_decorator
-async def edit_dictionary_word(request: Request,
-    source_name: schemas.TableNamePattern=Path(..., example="en_TW_1_dictionary"),
-    dictionary_words: List[schema_content.DictionaryWordEdit] = Body(...),
+async def edit_vocabulary_word(request: Request,
+    resource_name: schemas.TableNamePattern=Path(..., example="en_TW_1_vocabulary"),
+    vocabulary_words: List[schema_content.VocabularyWordEdit] = Body(...),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
-    ''' Updates a dictionary word. Item identifier is word, which cannot be altered.
+    ''' Updates a vocabulary word. Item identifier is word, which cannot be altered.
     * Updates all the details, of the specifed word, if details is provided.
     * Active field can be used to activate or deactivate a word.
     Deactivated words are not included in normal fetch results if not specified otherwise'''
-    log.info('In edit_dictionary_word')
-    log.debug('source_name: %s, dictionary_words: %s',source_name, dictionary_words)
-    return {'message': "Dictionary words updated successfully",
-        "data": contents_crud.update_dictionary_words(db_=db_, source_name=source_name,
-        dictionary_words=dictionary_words, user_id=user_details['user_id'])}
+    log.info('In edit_vocabulary_word')
+    log.debug('resource_name: %s, vocabulary_words: %s',resource_name, vocabulary_words)
+    return {'message': "Vocabulary words updated successfully",
+        "data": contents_crud.update_vocabulary_words(db_=db_, resource_name=resource_name,
+        vocabulary_words=vocabulary_words, user_id=user_details['user_id'])}
 
-@router.delete('/v2/dictionaries/{source_name}',response_model=schemas.DeleteResponse,
+@router.delete('/v2/resources/vocabularies/{resource_name}',response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
     502: {"model": schemas.ErrorResponse}},
-    status_code=200,tags=["Dictionaries"])
+    status_code=200,tags=["Vocabularies"])
 @get_auth_access_check_decorator
-async def delete_dictionaries(request: Request,delete_id: int,
-    source_name: str = Path(...,example="en_KJV_1_dictionary"),
+async def delete_vocabularies(request: Request,
+    word_id: int = Query(..., example=100001),
+    resource_name: str = Path(...,example="en_KJV_1_vocabulary"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
-    '''Delete Dictionary
-    * unique Dictionary Id with source name can be used to delete an exisiting identity'''
-    log.info('In delete_dictionaries')
-    log.debug('dictionary-delete:%s',delete_id)
-    word_id= delete_id
-    tb_name = db_models.dynamicTables[source_name]
+    '''Delete Vocabulary
+    * unique word Id with resource name can be used to delete an exisiting identity'''
+    log.info('In delete_vocabularies')
+    log.debug('vocabulary-delete:%s',word_id)
+    tb_name = db_models.dynamicTables[resource_name]
     dbtable_name = tb_name.__name__
-    get_dictionary_response = contents_crud.get_dictionary_words(db_, source_name=source_name,
-                 word_id= delete_id)
-    if len(get_dictionary_response['db_content']) == 0:
-        raise NotAvailableException(f"Dictionary with id {word_id} not found")
-    deleted_content = contents_crud.delete_dictionary(db_=db_,
-        delitem=delete_id,
-        table_name=tb_name,source_name=source_name,user_id=user_details['user_id'])
+    get_vocabulary_response = contents_crud.get_vocabulary_words(db_, resource_name=resource_name,
+                 word_id= word_id)
+    if len(get_vocabulary_response['db_content']) == 0:
+        raise NotAvailableException(f"Vocabulary with id {word_id} not found")
+    deleted_content = contents_crud.delete_vocabulary(db_=db_,
+        delitem=word_id,
+        table_name=tb_name,resource_name=resource_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
-        table_name = dbtable_name, source = deleted_content['source_content'],
+        table_name = dbtable_name, resource = deleted_content['resource_content'],
         deleting_user = user_details['user_id'])
-    return {'message': f"Dictionary id {word_id} deleted successfully",
+    return {'message': f"Vocabulary id {word_id} deleted successfully",
             "data": delcont}
 
-# # ########### Infographic ###################
-@router.get('/v2/infographics/{source_name}',
-    response_model=List[schema_content.InfographicResponse],
+# # ########### Parascriptural ###################
+@router.get('/v2/resources/parascripturals/{resource_name}',
+    response_model=List[schema_content.ParascriptResponse],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
-    415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Infographics"])
+    415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Parascripturals"])
 @get_auth_access_check_decorator
-async def get_infographic(request: Request,
-    source_name:schemas.TableNamePattern=Path(...,example="hi_IRV_1_infographic"),
-    book_code: schemas.BookCodePattern=Query(None, example="exo"),
-    title: str=Query(None, example="Ark of Covenant"), active: bool=True,
+async def get_parascriptural(request: Request, #pylint: disable=too-many-locals
+    resource_name:schemas.TableNamePattern=
+    Path(...,example="en_KJV_1_parascriptural"),
+    category:str=Query(None, example="Bible project video"),
+    title:str=Query(None,example="Bible Video of Genesis"),
+    description:str=Query(None, example="Origin Chronicles"),
+    content:str=Query(None, example="A Visual Journey Through the Bible's Beginning"),
+    reference: str = Query(None,
+    example='{"book": "mat", "chapter": 1, "verseNumber": 6}'),
+    link:AnyUrl=Query(None,example="http://someplace.com/resoucesid"),
+    search_word:str=Query(None,example="subtitle"),
+    metadata: schemas.MetaDataPattern=Query(None,
+        example='{"otherName": "BPV, Videos of Bible chapters"}'),
+    active: bool=Query(True),
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
-    '''Fetches the infographics. Can use, bookCode and/or title to filter the results
+    '''Fetches the parascripturals. Can use, parascriptural name,type and/or title
+       to filter the results
     * optional query parameters can be used to filter the result set
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n
-    * returns [] for not available content'''
-    log.info('In get_infographic')
-    log.debug('source_name: %s, book_code: %s skip: %s, limit: %s',
-        source_name, book_code, skip, limit)
-    return contents_crud.get_infographics(db_, source_name, book_code, title,
-        active=active, skip = skip, limit = limit)
+    * returns [] for not available content
+    * Filter with single reference -> eg :{"book": "mat", "chapter": 1, "verseNumber": 6}
+    * Filter with cross chapter references -> eg:reference": {"book":"MRK", "chapter":11,
+        "verseNumber":12,"bookEnd":"LUK", "chapterEnd":14, "verseEnd":15 }'''
+    log.info('In get_parascriptural')
+    log.debug('resource_name: %s,type: %s,title: %s, skip: %s,limit: %s,search_word: %s,\
+        reference:%s,metadata:%s',resource_name,category,title,skip,limit,search_word,\
+        reference,metadata)
+    reference_dict: Dict[str, int] = None
+    if reference:
+        reference_dict = json.loads(reference)
+    return contents_crud.get_parascripturals(db_, resource_name, category, title,
+        description = description, content = content, reference = reference_dict, link = link,
+        search_word = search_word, metadata = metadata, active = active, skip = skip, limit = limit)
 
-@router.post('/v2/infographics/{source_name}',
-    response_model=schema_content.InfographicCreateResponse,
+@router.post('/v2/resources/parascripturals/{resource_name}',
+    response_model=schema_content.ParascriptCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
     401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
     415:{"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Infographics"])
+    status_code=201, tags=["Parascripturals"])
 @get_auth_access_check_decorator
-async def add_infographics(request: Request,
-    source_name : schemas.TableNamePattern=Path(...,
-    example="hi_IRV_1_infographic"),
-    infographics: List[schema_content.InfographicCreate] = Body(...),
+async def add_parascripturals(request: Request,
+    resource_name : schemas.TableNamePattern=Path(...,
+    example="en_KJV_1_parascriptural"),
+    parascriptural: List[schema_content.ParascripturalCreate] = Body(...),
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
-    '''Uploads a list of infograhics. BookCode and title provided, serves as the unique idetifier
-    Only the  link to infographic is stored, not the actual file'''
-    log.info('In add_infographics')
-    log.debug('source_name: %s, infographics: %s',source_name, infographics)
-    return {'message': "Infographics added successfully",
-        "data": contents_crud.upload_infographics(db_=db_, source_name=source_name,
-        infographics=infographics, user_id=user_details['user_id'])}
+    '''Uploads a list of parascripturals. category field is mandatory'''
+    log.info('In add_parascripturals')
+    log.debug('resource_name: %s, parascripturals: %s',resource_name, parascriptural)
+    return {'message': "Parascripturals added successfully",
+        "data": contents_crud.upload_parascripturals(db_=db_, resource_name=resource_name,
+        parascriptural=parascriptural, user_id=user_details['user_id'])}
 
-@router.put('/v2/infographics/{source_name}',
-    response_model=schema_content.InfographicUpdateResponse,
+@router.put('/v2/resources/parascripturals/{resource_name}',
+    response_model=schema_content.ParascriptUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
     401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Infographics"])
+    status_code=201, tags=["Parascripturals"])
 @get_auth_access_check_decorator
-async def edit_infographics(request: Request,
-    source_name: schemas.TableNamePattern=Path(...,
-    example="hi_IRV_1_infographic"),
-    infographics: List[schema_content.InfographicEdit] = Body(...),
+async def edit_parascripturals(request: Request,
+    resource_name: schemas.TableNamePattern=Path(...,
+    example="en_KJV_1_parascriptural"),
+    parascripturals: List[schema_content.ParascriptEdit] = Body(...),
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
-    ''' Changes either the infographic link or active status.
-    Item identifier is book code and title, which cannot be altered.
-    Active field can be used to activate or deactivate a content.
-    Deactivated items are not included in normal fetch results if not specified otherwise'''
-    log.info('In edit_infographics')
-    log.debug('source_name: %s, infographics: %s',source_name, infographics)
-    return {'message': "Infographics updated successfully",
-        "data": contents_crud.update_infographics(db_=db_, source_name=source_name,
-        infographics=infographics, user_id=user_details['user_id'])}
+    ''' Changes description,content or link.
+    Item identifier is parascript type and title, which cannot be altered.'''
+    log.info('In edit_parascripturals')
+    log.debug('resource_name: %s, parascripturals: %s',resource_name, parascripturals)
+    return {'message': "Parascripturals updated successfully",
+        "data": contents_crud.update_parascripturals(db_=db_, resource_name=resource_name,
+        parascripturals=parascripturals, user_id=user_details['user_id'])}
 
-@router.delete('/v2/infographics/{source_name}',response_model=schemas.DeleteResponse,
+@router.delete('/v2/resources/parascripturals/{resource_name}',
+    response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
     502: {"model": schemas.ErrorResponse}},
-    status_code=200,tags=["Infographics"])
+    status_code=200,tags=["Parascripturals"])
 @get_auth_access_check_decorator
-async def delete_infographics(request: Request,delete_id:int,
-    source_name: str = Path(...,example="en_KJV_1_infographic"),
+async def delete_parascripturals(request: Request,
+    parascript_id:int = Query(..., example=100001),
+    resource_name: str = Path(...,example="en_KJV_1_parascriptural"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
-    '''Delete Infographic
-    * unique Infographic Id with source name can be used to delete an exisiting identity'''
-    log.info('In delete_infographics')
-    log.debug('infographics-delete:%s',delete_id)
-    infographic_id= delete_id
-    tb_name = db_models.dynamicTables[source_name]
+    '''Delete Parascriptural
+    * unique parascript Id with source name can be used to delete an exisiting identity'''
+    log.info('In delete_parascripturals')
+    log.debug('parascripturals-delete:%s',parascript_id)
+    tb_name = db_models.dynamicTables[resource_name]
     dbtable_name = tb_name.__name__
-    get_infographic_response = contents_crud.get_infographics(db_, source_name=source_name, \
-        infographic_id= delete_id)
-    if len(get_infographic_response['db_content']) == 0:
-        raise NotAvailableException(f"Infographic with id {infographic_id} not found")
-    deleted_content = contents_crud.delete_infographic(db_=db_,delitem=delete_id,\
-        table_name=tb_name,source_name=source_name,user_id=user_details['user_id'])
+    get_parascriptural_response = contents_crud.get_parascripturals(
+        db_, resource_name=resource_name, parascript_id= parascript_id)
+    if len(get_parascriptural_response['db_content']) == 0:
+        raise NotAvailableException(f"Parascriptural with id {parascript_id} not found")
+    deleted_content = contents_crud.delete_parascriptural(db_=db_,delitem=parascript_id,\
+        table_name=tb_name,resource_name=resource_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
-        table_name = dbtable_name, source = deleted_content['source_content'],
+        table_name = dbtable_name, resource = deleted_content['resource_content'],
         deleting_user = user_details['user_id'])
-    return {'message': f"Infographic id {infographic_id} deleted successfully",
+    return {'message': f"Parascriptural id {parascript_id} deleted successfully",
             "data": delcont}
 
-# # ########### bible videos ###################
-@router.get('/v2/biblevideos/{source_name}',
-    response_model=List[schema_content.BibleVideo],response_model_exclude_none=True,
-    responses={502: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
-    422: {"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
-    status_code=200, tags=["Bible Videos"])
+################ Audio Bibles ###################
+@router.get('/v2/resources/bible/audios/{resource_name}',
+    response_model=List[schema_content.AudioBibleResponse],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
+    415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Audio Bibles"])
 @get_auth_access_check_decorator
-async def get_biblevideo(request: Request,
-    source_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
-    title: str=Query(None, example="Overview: song of songs"),
-    series: str=Query(None, example="Old Testament"),
-    search_word: str = Query(None, example="faith"),
-    book_code: schemas.BookCodePattern=Query(None, example="sng"),
-    chapter: int=Query(None, example="1"),
-    verse: int=Query(None, example="1"), active: bool=True,
+async def get_audio_bibles(request: Request, #pylint: disable=too-many-locals
+    resource_name:schemas.TableNamePattern=
+    Path(...,example="en_KJV_1_audiobible"),
+    name:str=Query(None,example="Audio Bible of Genesis"),
+    audio_format:str=Query(None, example="mp3"),
+    reference: str = Query(None,
+    example='{"book": "gen", "chapter": 1, "verseNumber": 6}'),
+    link:AnyUrl=Query(None,example="http://someplace.com/resoucesid"),
+    search_word:str=Query(None,example="subtitle"),
+    metadata: schemas.MetaDataPattern=Query(None,
+        example='{"otherName": "Creation"}'),
+    active: bool=Query(True),
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
-    '''Fetches the Bible video details and URL.
+    '''Fetches the Audio Bibles. Can use, Audio Bible name, audio_format
+       reference,link,meatdata or search word to filter the results.
     * optional query parameters can be used to filter the result set
-    * Filter by reference in the format book, book and chapter, book-chapter-verse
     * skip=n: skips the first n objects in return list
     * limit=n: limits the no. of items to be returned to n
-    * returns [] for not available content'''
-    log.info('In get_biblevideo')
-    log.debug('source_name: %s, book_code: %s, title: %s, theme: %s, skip: %s, limit: %s',
-        source_name, book_code, title, series, skip, limit)
-    return media_crud.get_bible_videos(db_, source_name, book_code, title, series,
-    search_word=search_word,chapter=chapter,verse=verse,
-    active=active, skip=skip, limit=limit)
+    * returns [] for not available content
+    * Filter with single reference -> eg :{"book": "gen", "chapter": 1, "verseNumber": 6}
+    * Filter with cross chapter references -> eg:reference": {"book":"gen", "chapter":11,
+        "verseNumber":12,"bookEnd":"luk", "chapterEnd":14, "verseEnd":15 }'''
+    log.info('In get_audio_bibles')
+    log.debug('resource_name: %s,name: %s, skip: %s,limit: %s,search_word: %s,\
+        reference:%s,metadata:%s',resource_name,name,skip,limit,search_word,\
+        reference,metadata)
+    reference_dict: Dict[str, int] = None
+    if reference:
+        reference_dict = json.loads(reference)
+    return contents_crud.get_audio_bible(db_, resource_name, name,
+        audio_format = audio_format, reference = reference_dict, link = link,
+        search_word = search_word, metadata = metadata, active = active, skip = skip, limit = limit)
 
-@router.post('/v2/biblevideos/{source_name}',
-    response_model=schema_content.BibleVideoCreateResponse,
+@router.post('/v2/resources/bible/audios/{resource_name}',
+    response_model=schema_content.AudioBibleCreateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
     401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
     415:{"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Bible Videos"])
+    status_code=201, tags=["Audio Bibles"])
 @get_auth_access_check_decorator
-async def add_biblevideo(request: Request,
-    source_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
-    videos: List[schema_content.BibleVideoUpload] = Body(...),
+async def add_audio_bibles(request: Request,
+    resource_name : schemas.TableNamePattern=Path(...,
+    example="en_KJV_1_audiobible"),
+    audiobibles: List[schema_content.AudioBibleCreate] = Body(...),
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
-    '''Uploads a list of bible video links and details.
-    Provided title will serve as the unique identifier'''
-    log.info('In add_biblevideo')
-    log.debug('source_name: %s, videos: %s',source_name, videos)
-    return {'message': "Bible videos added successfully",
-        "data": media_crud.upload_bible_videos(db_=db_, source_name=source_name,
-        videos=videos, user_id=user_details['user_id'])}
+    '''Uploads a list of audio_bibles. category field is mandatory'''
+    log.info('In add_audio_bibles')
+    log.debug('resource_name: %s, audiobibles: %s',resource_name, audiobibles)
+    return {'message': "Audio Bibles added successfully",
+        "data": contents_crud.upload_audio_bible(db_=db_, resource_name=resource_name,
+        audiobibles=audiobibles, user_id=user_details['user_id'])}
 
-@router.put('/v2/biblevideos/{source_name}', response_model=schema_content.BibleVideoUpdateResponse,
+@router.put('/v2/resources/bible/audios/{resource_name}',
+    response_model=schema_content.AudioBibleUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse}, \
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
     401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
-    status_code=201, tags=["Bible Videos"])
+    status_code=201, tags=["Audio Bibles"])
 @get_auth_access_check_decorator
-async def edit_biblevideo(request: Request,
-    source_name:schemas.TableNamePattern=Path(...,example="en_TBP_1_biblevideo"),
-    videos: List[schema_content.BibleVideoEdit] = Body(...),user_details =Depends(get_user_or_none),
+async def edit_audio_bibles(request: Request,
+    resource_name: schemas.TableNamePattern=Path(...,
+    example="en_KJV_1_audiobible"),
+    audiobibles: List[schema_content.AudioBibleEdit] = Body(...),
+    user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
-    ''' Changes the selected rows of bible videos table.
-    Item identified by title, which cannot be altered.
-    Active field can be used to activate or deactivate a content.
-    Deactivated items are not included in normal fetch results if not specified otherwise'''
-    log.info('In edit_biblevideo')
-    log.debug('source_name: %s, videos: %s',source_name, videos)
-    return {'message': "Bible videos updated successfully",
-        "data": media_crud.update_bible_videos(db_=db_, source_name=source_name,
-        videos=videos, user_id=user_details['user_id'])}
+    ''' Changes description,reference or link.
+    Item identifier is audioId, which cannot be altered.'''
+    log.info('In edit_audio_bibles')
+    log.debug('resource_name: %s, audiobible: %s',resource_name, audiobibles)
+    return {'message': "Audio Bibles updated successfully",
+        "data": contents_crud.update_audio_bible(db_=db_, resource_name=resource_name,
+        audiobibles=audiobibles, user_id=user_details['user_id'])}
 
-@router.delete('/v2/biblevideos/{source_name}',response_model=schemas.DeleteResponse,
+@router.delete('/v2/resources/bible/audios/{resource_name}',
+    response_model=schemas.DeleteResponse,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
     502: {"model": schemas.ErrorResponse}},
-    status_code=200,tags=["Bible Videos"])
+    status_code=200,tags=["Audio Bibles"])
 @get_auth_access_check_decorator
-async def delete_biblevideos(request: Request,delete_id: int,
-    source_name: str = Path(...,example="en_KJV_1_biblevideo"),
+async def delete_audio_bibles(request: Request,
+    audio_id:int = Query(..., example=100001),
+    resource_name: str = Path(...,example="en_KJV_1_audiobible"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
-    '''Delete Bible Video
-    * unique bibleVideoId with source name can be used to delete an exisiting identity'''
-    log.info('In delete_biblevideos')
-    log.debug('biblevideos-delete:%s',delete_id)
-    biblevideo_id= delete_id
-    tb_name = db_models.dynamicTables[source_name]
+    '''Delete Audio Bible
+    * unique audioId with source name can be used to delete an exisiting identity'''
+    log.info('In delete_audio_bibles')
+    log.debug('audio_bibles-delete:%s',audio_id)
+    tb_name = db_models.dynamicTables[resource_name]
     dbtable_name = tb_name.__name__
-    get_biblevideo_response = media_crud.get_bible_videos(db_, source_name=source_name, \
-        biblevideo_id= delete_id)
-    if len(get_biblevideo_response['db_content']) == 0:
-        raise NotAvailableException(f"Bible Video with id {biblevideo_id} not found")
-    deleted_content = media_crud.delete_biblevideo(db_=db_,delitem=delete_id,\
-        table_name=tb_name,source_name=source_name,user_id=user_details['user_id'])
+    get_audio_response = contents_crud.get_audio_bible(
+        db_, resource_name=resource_name, audio_id= audio_id)
+    if len( get_audio_response['db_content']) == 0:
+        raise NotAvailableException(f"Audio Bible with id {audio_id} not found")
+    deleted_content = contents_crud.delete_audio_bible(db_=db_,delitem=audio_id,\
+        table_name=tb_name,resource_name=resource_name,user_id=user_details['user_id'])
     delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
-        table_name = dbtable_name, source = deleted_content['source_content'],
+        table_name = dbtable_name, resource = deleted_content['resource_content'],
         deleting_user = user_details['user_id'])
-    return {'message': f"Bible Video id {biblevideo_id} deleted successfully",
+    return {'message': f"Audio Bible id {audio_id} deleted successfully",
             "data": delcont}
 
-@router.get('/v2/sources/get-sentence', response_model=List[schemas_nlp.SentenceInput],
+# # ########### Sign Bible Video ###################
+@router.get('/v2/resources/bible/videos/{resource_name}',
+    response_model=List[schema_content.SignVideoResponse],
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
+    415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Sign Bible Videos"])
+@get_auth_access_check_decorator
+async def get_sign_bible_videos(request: Request, #pylint: disable=too-many-locals
+    resource_name:schemas.TableNamePattern=
+    Path(...,example="ins_KJV_1_signbiblevideo"),
+    title:str=Query(None,example="Sign Bible Video of Genesis"),
+    description:str=Query(None, example="Origin Chronicles"),
+    reference: str = Query(None,
+    example='{"book": "gen", "chapter": 1, "verseNumber": 6}'),
+    link:AnyUrl=Query(None,example="http://someplace.com/resoucesid"),
+    search_word:str=Query(None,example="subtitle"),
+    metadata: schemas.MetaDataPattern=Query(None,
+        example='{"otherName": "ISL, Indian Sign Language Videos"}'),
+    active: bool=Query(True),
+    skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
+    user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
+    '''Fetches the sign bible videos. Can use, sign bible video title,description
+       reference,link,meatdata or search word to filter the results.
+    * optional query parameters can be used to filter the result set
+    * skip=n: skips the first n objects in return list
+    * limit=n: limits the no. of items to be returned to n
+    * returns [] for not available content
+    * Filter with single reference -> eg :{"book": "gen", "chapter": 1, "verseNumber": 6}
+    * Filter with cross chapter references -> eg:reference": {"book":"gen", "chapter":11,
+        "verseNumber":12,"bookEnd":"luk", "chapterEnd":14, "verseEnd":15 }'''
+    log.info('In get_sign_bible_video')
+    log.debug('resource_name: %s,title: %s, skip: %s,limit: %s,search_word: %s,\
+        reference:%s,metadata:%s',resource_name,title,skip,limit,search_word,\
+        reference,metadata)
+    reference_dict: Dict[str, int] = None
+    if reference:
+        reference_dict = json.loads(reference)
+    return contents_crud.get_sign_bible_videos(db_, resource_name, title,
+        description = description, reference = reference_dict, link = link,
+        search_word = search_word, metadata = metadata, active = active, skip = skip, limit = limit)
+
+@router.post('/v2/resources/bible/videos/{resource_name}',
+    response_model=schema_content.SignVideoCreateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 409: {"model": schemas.ErrorResponse},
+    401:{"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse},
+    415:{"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Sign Bible Videos"])
+@get_auth_access_check_decorator
+async def add_sign_bible_videos(request: Request,
+    resource_name : schemas.TableNamePattern=Path(...,
+    example="ins_KJV_1_signbiblevideo"),
+    signvideos: List[schema_content.SignVideoCreate] = Body(...),
+    user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
+    '''Uploads a list of sign bible videos. category field is mandatory'''
+    log.info('In add_sign_bible_video')
+    log.debug('resource_name: %s, signvideos: %s',resource_name, signvideos)
+    return {'message': "Sign Bible Videos added successfully",
+        "data": contents_crud.upload_sign_bible_videos(db_=db_, resource_name=resource_name,
+        signvideos=signvideos, user_id=user_details['user_id'])}
+
+@router.put('/v2/resources/bible/videos/{resource_name}',
+    response_model=schema_content.SignVideoUpdateResponse,
+    responses={502: {"model": schemas.ErrorResponse}, \
+    422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
+    401:{"model": schemas.ErrorResponse},415:{"model": schemas.ErrorResponse}},
+    status_code=201, tags=["Sign Bible Videos"])
+@get_auth_access_check_decorator
+async def edit_sign_bible_videos(request: Request,
+    resource_name: schemas.TableNamePattern=Path(...,
+    example="ins_KJV_1_signbiblevideo"),
+    signvideos: List[schema_content.SignVideoEdit] = Body(...),
+    user_details =Depends(get_user_or_none),
+    db_: Session = Depends(get_db)):
+    ''' Changes description,reference or link.
+    Item identifier is signvideoId, which cannot be altered.'''
+    log.info('In edit_sign_bible_videos')
+    log.debug('resource_name: %s, signvideo: %s',resource_name, signvideos)
+    return {'message': "Sign Bible Videos updated successfully",
+        "data": contents_crud.update_sign_bible_videos(db_=db_, resource_name=resource_name,
+        signvideos = signvideos, user_id=user_details['user_id'])}
+
+@router.delete('/v2/resources/bible/videos/{resource_name}',
+    response_model=schemas.DeleteResponse,
+    responses={404: {"model": schemas.ErrorResponse},
+    401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
+    502: {"model": schemas.ErrorResponse}},
+    status_code=200,tags=["Sign Bible Videos"])
+@get_auth_access_check_decorator
+async def delete_sign_bible_videos(request: Request,
+    signvideo_id:int = Query(..., example=100001),
+    resource_name: str = Path(...,example="ins_KJV_1_signbiblevideo"),
+    user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
+    '''Delete Sign Bible Video
+    * unique signvideoId with source name can be used to delete an exisiting identity'''
+    log.info('In delete_sign_bible_videos')
+    log.debug('sign_bible_videos-delete:%s',signvideo_id)
+    tb_name = db_models.dynamicTables[resource_name]
+    dbtable_name = tb_name.__name__
+    get_signvideo_response = contents_crud.get_sign_bible_videos(
+        db_, resource_name=resource_name, signvideo_id= signvideo_id)
+    if len( get_signvideo_response['db_content']) == 0:
+        raise NotAvailableException(f"Sign Bible Video with id {signvideo_id} not found")
+    deleted_content = contents_crud.delete_sign_bible_videos(db_=db_,delitem=signvideo_id,\
+        table_name=tb_name,resource_name=resource_name,user_id=user_details['user_id'])
+    delcont = structurals_crud.add_deleted_data(db_=db_,del_content= deleted_content['db_content'],
+        table_name = dbtable_name, resource = deleted_content['resource_content'],
+        deleting_user = user_details['user_id'])
+    return {'message': f"Sign Bible Video id {signvideo_id} deleted successfully",
+            "data": delcont}
+
+@router.get('/v2/resources/get-sentence', response_model=List[schemas_nlp.SentenceInput],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401:{"model": schemas.ErrorResponse},
     404:{"model": schemas.ErrorResponse}},
-    status_code=200, tags=["Sources"])
+    status_code=200, tags=["Resources"])
 @get_auth_access_check_decorator
 async def extract_text_contents(request:Request, #pylint: disable=W0613
-    source_name:schemas.TableNamePattern=Query(None,example="en_TBP_1_bible"),
+    resource_name:schemas.TableNamePattern=Query(None,example="en_TBP_1_bible"),
     books:List[schemas.BookCodePattern]=Query(None,example='GEN'),
     language_code:schemas.LangCodePattern=Query(None, example="hi"),
-    content_type:str=Query(None, example="commentary"),
+    resource_type:str=Query(None, example="commentary"),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details = Depends(get_user_or_none), db_: Session = Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.RESEARCH.value))):
     '''A generic API for all content type tables to get just the text contents of that table
     that could be used for translation, as corpus for NLP operations like SW identification.
-    If source_name is provided, only that filter will be considered over content_type & language.'''
+    If resource_name is provided, only that filter will be considered over resource_type & 
+    language.'''
     log.info('In extract_text_contents')
-    log.debug('source_name: %s, language_code: %s',source_name, language_code)
+    log.debug('resource_name: %s, language_code: %s',resource_name, language_code)
     try:
-        tables = await get_source(request=request, source_name=source_name,
-            content_type=content_type, version_abbreviation=None,
+        tables = await get_resource(request=request, resource_name=resource_name,
+            resource_type=resource_type, version_abbreviation=None,
             version_tag=None, language_code=language_code,
             license_code=None, metadata=None,
             access_tag = None, labels=None, active= True, latest_revision= True,
@@ -1218,19 +1299,19 @@ async def extract_text_contents(request:Request, #pylint: disable=W0613
             operates_on=schema_auth.ResourceType.CONTENT.value,
             filtering_required=True)
     except Exception:
-        log.error("Error in getting sources list")
+        log.error("Error in getting resources list")
         raise
-    # the projects sources or drafts where people are willing to share their data for learning
+    # the projects resources or drafts where people are willing to share their data for learning
     # could be used for text content extraction. But need to be able to filter projects based on
     # use_data_for_learning flag and translation status(need to add a field in metadata for that).
-    # projects = projects_crud.get_agmt_projects(db_, source_language=language_code) +
+    # projects = projects_crud.get_agmt_projects(db_, resource_language=language_code) +
     #     projects_crud.get_agmt_projects(db_, target_language=language_code)
     if len(tables) == 0:
-        raise NotAvailableException("No sources available for the requested name or language")
+        raise NotAvailableException("No resources available for the requested name or language")
     return contents_crud.extract_text(db_, tables, books, skip=skip, limit=limit)
 
 #### Data Manipulation ####
-@router.put('/v2/restore', response_model=schemas.DataRestoreResponse,
+@router.put('/v2/admin/restore', response_model=schemas.DataRestoreResponse,
     responses={502:{"model":schemas.ErrorResponse},415:{"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}, 404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse}},
@@ -1252,7 +1333,7 @@ async def restore_content(request: Request, content: schemas.RestoreIdentity,
     return {'message': f"Deleted Item with identity {content.itemId} restored successfully",
     "data": data}
 
-@router.delete('/v2/deleted-items',response_model=schemas.CleanupDB,
+@router.delete('/v2/admin/cleanup',response_model=schemas.CleanupDB,
     responses={404: {"model": schemas.ErrorResponse},
     401: {"model": schemas.ErrorResponse},422: {"model": schemas.ErrorResponse}, \
     502: {"model": schemas.ErrorResponse}},
@@ -1262,7 +1343,7 @@ async def delete_deleteditems(request: Request,user_details =Depends(get_user_or
     db_: Session = Depends(get_db)):
     '''Periodic Cleaning of Database
     * Clearing deleted_items table
-    * Delete dangling dynamic tables whose source does not exist in sources table '''
+    * Delete dangling dynamic tables whose resource does not exist in resources table '''
     log.info('In delete_deleteditems')
     deleted_item_count = structurals_crud.cleanup_database(db_=db_)
     return {'message': "Database cleanup done!!",'deletedItemCount':deleted_item_count}

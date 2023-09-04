@@ -5,11 +5,11 @@ from . import client
 from . import assert_input_validation_error, assert_not_available_content
 from . import check_default_get
 from .test_versions import check_post as add_version
-from .test_sources import check_post as add_source
+from .test_resources import check_post as add_resource
 from .test_bibles import gospel_books_data
 from .conftest import initial_test_users
 
-UNIT_URL = 'v2/sources/'
+UNIT_URL = 'v2/resources/'
 SENT_URL = UNIT_URL+ "get-sentence"
 headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json",
@@ -49,7 +49,7 @@ commentary_data = [
     ]
 
 
-def create_sources():
+def create_resources():
     '''prior steps and post attempt, without checking the response'''
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     headers_auth["App"] = schema_auth.App.VACHAN.value
@@ -58,31 +58,31 @@ def create_sources():
         "versionName": "test version for get sentence",
     }
     add_version(version_data)
-    source_data = {
-        "contentType": "bible",
+    resource_data = {
+        "resourceType": "bible",
         "language": "hi",
         "version": "TTT",
         "year": 2020,
         "revision": 1,
-        "accessPermissions":[schemas.SourcePermissions.CONTENT.value, schemas.SourcePermissions.OPENACCESS.value]
+        "accessPermissions":[schemas.ResourcePermissions.CONTENT.value, schemas.ResourcePermissions.OPENACCESS.value]
     }
-    source = add_source(source_data)
-    bible_name = source.json()['data']['sourceName']
-    resp = client.post(f'/v2/bibles/{bible_name}/books', headers=headers_auth, json=gospel_books_data)
+    resource = add_resource(resource_data)
+    bible_name = resource.json()['data']['resourceName']
+    resp = client.post(f'/v2/resources/bibles/{bible_name}/books', headers=headers_auth, json=gospel_books_data)
     assert resp.status_code == 201
 
-    source_data = {
-        "contentType": "commentary",
+    resource_data = {
+        "resourceType": "commentary",
         "language": "en",
         "version": "TTT",
         "year": 2020,
         "revision": 1,
-        "accessPermissions":[schemas.SourcePermissions.CONTENT.value, schemas.SourcePermissions.OPENACCESS.value]
+        "accessPermissions":[schemas.ResourcePermissions.CONTENT.value, schemas.ResourcePermissions.OPENACCESS.value]
 
     }
-    source = add_source(source_data)
-    commentary_name = source.json()['data']['sourceName']
-    resp = client.post(f'/v2/commentaries/{commentary_name}', headers=headers_auth, json=commentary_data)
+    resource = add_resource(resource_data)
+    commentary_name = resource.json()['data']['resourceName']
+    resp = client.post(f'/v2/resources/commentaries/{commentary_name}', headers=headers_auth, json=commentary_data)
     assert resp.status_code == 201
 
     return bible_name, commentary_name
@@ -90,11 +90,11 @@ def create_sources():
 def test_get_poisitive():
 	'''normal tests for all possible get queries'''
 	# Before adding data
-	resp = client.get(SENT_URL+"?source_name=hi_TTT_1_bible", headers= headers_auth)
+	resp = client.get(SENT_URL+"?resource_name=hi_TTT_1_bible", headers= headers_auth)
 	assert resp.status_code == 404
 
 	# Add data
-	bible_name, commentary_name = create_sources()
+	bible_name, commentary_name = create_resources()
 
 	headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
 	headers_auth['App'] = schema_auth.App.API.value
@@ -123,21 +123,21 @@ def test_get_poisitive():
 		assert_positive_get(item)
 	assert 0 < len(only_hi) <= len(full_resp)
 
-	resp = client.get(SENT_URL+"?content_type=commentary", headers=headers_auth)
+	resp = client.get(SENT_URL+"?resource_type=commentary", headers=headers_auth)
 	assert resp.status_code == 200
 	only_commentary = resp.json()
 	for item in only_commentary:
 		assert_positive_get(item)
 	assert 0 < len(only_commentary) < len(full_resp)+len(only_commentary)
 
-	resp = client.get(SENT_URL+'?source_name='+bible_name, headers=headers_auth)
+	resp = client.get(SENT_URL+'?resource_name='+bible_name, headers=headers_auth)
 	assert resp.status_code == 200
 	chosen_bible = resp.json()
 	assert len(chosen_bible) == 8
 	for item in chosen_bible:
 		assert_positive_get(item)
 
-	resp = client.get(SENT_URL+'?source_name='+commentary_name, headers=headers_auth)
+	resp = client.get(SENT_URL+'?resource_name='+commentary_name, headers=headers_auth)
 	assert resp.status_code == 200
 	chosen_commentary = resp.json()
 	assert len(chosen_commentary) == 11
@@ -145,7 +145,7 @@ def test_get_poisitive():
 		assert_positive_get(item)
 
 	for buk in ['mat','mrk','luk','jhn']:
-		resp = client.get(SENT_URL+'?source_name='+bible_name+'&books='+buk, headers=headers_auth)
+		resp = client.get(SENT_URL+'?resource_name='+bible_name+'&books='+buk, headers=headers_auth)
 		assert resp.status_code == 200
 		chosen_book = resp.json()
 		assert len(chosen_book) == 2
@@ -153,14 +153,14 @@ def test_get_poisitive():
 			assert_positive_get(item)
 
 
-	resp = client.get(SENT_URL+'?source_name='+commentary_name+'&books=gen', headers=headers_auth)
+	resp = client.get(SENT_URL+'?resource_name='+commentary_name+'&books=gen', headers=headers_auth)
 	assert resp.status_code == 200
 	chosen_book = resp.json()
 	assert len(chosen_book) == 6
 	for item in chosen_book:
 		assert_positive_get(item)
 
-	resp = client.get(SENT_URL+'?source_name='+commentary_name+'&books=exo', headers=headers_auth)
+	resp = client.get(SENT_URL+'?resource_name='+commentary_name+'&books=exo', headers=headers_auth)
 	assert resp.status_code == 200
 	chosen_book = resp.json()
 	assert len(chosen_book) == 5
@@ -170,24 +170,24 @@ def test_get_poisitive():
 def test_get_negatives():
 	'''error or not available cases'''
 	# Add data
-	bible_name, commentary_name = create_sources()
+	bible_name, commentary_name = create_resources()
 	headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['BcsDev']['token']
 	headers_auth['App'] = schema_auth.App.API.value
 
 	for buk in ['mat','mrk','luk','jhn']:
-		resp = client.get(SENT_URL+'?source_name='+commentary_name+'&books='+buk, headers=headers_auth)
+		resp = client.get(SENT_URL+'?resource_name='+commentary_name+'&books='+buk, headers=headers_auth)
 		assert_not_available_content(resp)
 
 	for buk in ['gen', 'exo']:
-		resp = client.get(SENT_URL+'?source_name='+bible_name+'&books='+buk, headers=headers_auth)
+		resp = client.get(SENT_URL+'?resource_name='+bible_name+'&books='+buk, headers=headers_auth)
 		assert_not_available_content(resp)
 
-	# wrong source_name
-	resp = client.get(SENT_URL+'?source_name='+bible_name.replace('bible','commentary')+'&books=mat', headers=headers_auth)
+	# wrong resource_name
+	resp = client.get(SENT_URL+'?resource_name='+bible_name.replace('bible','commentary')+'&books=mat', headers=headers_auth)
 	assert resp.status_code == 404
 
 	# wrong content
-	resp = client.get(SENT_URL+'?content_type=usfm&books=mat', headers=headers_auth)
+	resp = client.get(SENT_URL+'?resource_type=usfm&books=mat', headers=headers_auth)
 	assert resp.status_code == 404
 
 	# wrong lang
@@ -198,8 +198,8 @@ def test_get_negatives():
 	resp = client.get(SENT_URL+'?books=matthew', headers=headers_auth)
 	assert_input_validation_error(resp)
 
-	# worng pattern for source
-	resp = client.get(SENT_URL+'?source_name=bible', headers=headers_auth)
+	# worng pattern for resource
+	resp = client.get(SENT_URL+'?resource_name=bible', headers=headers_auth)
 	assert_input_validation_error(resp)
 
 	# worng pattern for lang

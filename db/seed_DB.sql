@@ -1,20 +1,21 @@
 -- Script to create the basic table strcutures and 
 -- add minimal seed data for vachan-api
 
-CREATE TABLE public.content_types (
-    content_type_id SERIAL PRIMARY KEY ,
-    content_type text UNIQUE NOT NULL,
+CREATE TABLE public.resource_types (
+    resource_type_id SERIAL PRIMARY KEY ,
+    resource_type text UNIQUE NOT NULL,
     created_user text NULL
 );
 
-ALTER SEQUENCE public.content_types_content_type_id_seq RESTART WITH 100000;
+ALTER SEQUENCE public.resource_types_resource_type_id_seq RESTART WITH 100000;
 
-INSERT INTO content_types(content_type) VALUES('bible');
-INSERT INTO content_types(content_type) VALUES('commentary');
-INSERT INTO content_types(content_type) VALUES('dictionary');
-INSERT INTO content_types(content_type) VALUES('infographic');
-INSERT INTO content_types(content_type) VALUES('biblevideo');
-INSERT INTO content_types(content_type) VALUES('gitlabrepo'); 
+INSERT INTO resource_types(resource_type) VALUES('bible');
+INSERT INTO resource_types(resource_type) VALUES('commentary');
+INSERT INTO resource_types(resource_type) VALUES('vocabulary');
+INSERT INTO resource_types(resource_type) VALUES('parascriptural');
+INSERT INTO resource_types(resource_type) VALUES('audiobible');
+INSERT INTO resource_types(resource_type) VALUES('signbiblevideo'); 
+INSERT INTO resource_types(resource_type) VALUES('gitlabrepo'); 
 
 CREATE TABLE public.languages (
     language_id SERIAL PRIMARY KEY,
@@ -75,14 +76,14 @@ CREATE TABLE public.versions (
 
 ALTER SEQUENCE public.versions_version_id_seq RESTART WITH 100000;
 
-CREATE TABLE public.sources (
-    source_id SERIAL PRIMARY KEY,
+CREATE TABLE public.resources (
+    resource_id SERIAL PRIMARY KEY,
     version text UNIQUE,
-    source_table text UNIQUE,
+    resource_table text UNIQUE,
     year integer NOT NULL,
     labels text[],
     license_id int REFERENCES licenses(license_id),
-    content_id int NOT NULL REFERENCES content_types(content_type_id),
+    resourcetype_id int NOT NULL REFERENCES resource_types(resource_type_id),
     language_id int NOT NULL REFERENCES languages(language_id),
     version_id int NOT NULL REFERENCES versions(version_id),
     created_at timestamp with time zone DEFAULT NOW(),
@@ -93,7 +94,7 @@ CREATE TABLE public.sources (
     metadata jsonb NULL
 );
 
-ALTER SEQUENCE public.sources_source_id_seq RESTART WITH 100000;
+ALTER SEQUENCE public.resources_resource_id_seq RESTART WITH 100000;
 
 CREATE TABLE public.bible_books_look_up (
     book_id int PRIMARY KEY,
@@ -117,6 +118,7 @@ CREATE TABLE public.translation_projects(
     created_at timestamp with time zone DEFAULT NOW(),
     last_updated_user text NULL,
     last_updated_at  timestamp with time zone DEFAULT NOW(),
+    compatible_with text[],
     UNIQUE(project_name, created_user)
 );
 ALTER SEQUENCE public.translation_projects_project_id_seq RESTART WITH 100000;

@@ -11,7 +11,7 @@ import db_models
 # from auth.api_permission_map import api_permission_map
 from auth import utils
 from schema import schema_auth
-from dependencies import log, get_db
+from dependencies import log
 from custom_exceptions import GenericException ,\
     AlreadyExistsException,NotAvailableException,UnAuthorizedException,\
     UnprocessableException, PermissionException, AuthException
@@ -90,26 +90,31 @@ with open('auth/api-permissions.csv','r', encoding='utf-8') as file:
 
 def api_resourcetype_map(endpoint, path_params=None):
     '''Default correlation between API endpoints and resource they act upon'''
-    if endpoint.split('/')[2] in ["contents", "languages", "licenses", 'versions']:
+    if endpoint.endswith(("resources/types", "languages", "licenses", "versions")):
         resource_type = schema_auth.ResourceType.METACONTENT.value
-    elif endpoint.startswith('/v2/translation/project'):
+    elif endpoint.startswith('/v2/text/translate/token-based/project'):
         resource_type = schema_auth.ResourceType.PROJECT.value
     elif endpoint.startswith('/v2/user'):
         resource_type = schema_auth.ResourceType.USER.value
-    elif endpoint.startswith("/v2/translation") or endpoint.startswith("/v2/nlp"):
-        resource_type = schema_auth.ResourceType.TRANSLATION.value
-    elif endpoint.startswith("/v2/lookup"):
+
+    elif endpoint.startswith("/v2/resources/lookups/bible/books") or \
+         endpoint.startswith("/v2/nlp/stopwords"):
         resource_type = schema_auth.ResourceType.LOOKUP.value
+
+    elif endpoint.startswith("/v2/text/translate/token-based") or \
+         endpoint.startswith("/v2/nlp"):
+        resource_type = schema_auth.ResourceType.TRANSLATION.value
+
     elif endpoint.startswith("/v2/jobs"):
         resource_type = schema_auth.ResourceType.JOBS.value
     elif endpoint.startswith("/v2/media"):
         resource_type = schema_auth.ResourceType.MEDIA.value
     elif endpoint.startswith("/v2/files"):
         resource_type = schema_auth.ResourceType.FILE.value
-    elif endpoint.startswith("/v2/sources") or (
-        path_params is not None and "source_name" in path_params):
+    elif endpoint.startswith("/v2/resources") or (
+        path_params is not None and "resource_name" in path_params):
         resource_type = schema_auth.ResourceType.CONTENT.value
-    elif endpoint.split('/')[2] in ["restore","deleted-items"]:
+    elif endpoint.split('/')[3] in ["restore","cleanup"]:
         resource_type = schema_auth.ResourceType.DATAMANIPULATION.value
     else:
         raise GenericException("Resource Type of API not defined")
@@ -160,14 +165,14 @@ def get_access_tag(db_, resource_type, path_params=None, kw_args = None, resourc
     }
     if resource_type in resource_tag_map:
         return resource_tag_map[resource_type]
-    if path_params is not None and "source_name" in path_params:
-        db_entry = db_.query(db_models.Source.metaData['accessPermissions']).filter(
-            db_models.Source.sourceName == path_params['source_name']).first()
+    if path_params is not None and "resource_name" in path_params:
+        db_entry = db_.query(db_models.Resource.metaData['accessPermissions']).filter(
+            db_models.Resource.resourceName == path_params['resource_name']).first()
         if db_entry is not None:
             return db_entry[0]
-    if kw_args is not None and "source_name" in kw_args:
-        db_entry = db_.query(db_models.Source.metaData['accessPermissions']).filter(
-            db_models.Source.sourceName == kw_args['source_name']).first()
+    if kw_args is not None and "resource_name" in kw_args:
+        db_entry = db_.query(db_models.Resource.metaData['accessPermissions']).filter(
+            db_models.Resource.resourceName == kw_args['resource_name']).first()
         if db_entry is not None:
             return db_entry[0]
     if resource:
@@ -175,7 +180,6 @@ def get_access_tag(db_, resource_type, path_params=None, kw_args = None, resourc
     if resource_type == schema_auth.ResourceType.CONTENT:
         return ['content']
     return []
-
 def is_project_owner(db_:Session, db_resource, user_id):
     '''checks if the user is the owner of the given project'''
     if hasattr(db_resource, 'projectId'):
@@ -284,17 +288,17 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
         #########################################
         obj = None
         if isinstance(response, dict):
-            # separating out intended response and (source/project)object passed for auth check
+            # separating out intended response and (resource/project)object passed for auth check
             if "db_content" in response:
-                if "source_content" in response:
-                    obj = response['source_content']
+                if "resource_content" in response:
+                    obj = response['resource_content']
                 if "project_content" in response:
                     obj = response['project_content']
                 response = response['db_content']
             elif "data" in response:
                 if isinstance(response['data'], dict) and "db_content" in response['data']:
-                    if "source_content" in response['data']:
-                        obj = response['data']['source_content']
+                    if "resource_content" in response['data']:
+                        obj = response['data']['resource_content']
                     if "project_content" in response['data']:
                         obj = response['data']['project_content']
                     response['data'] = response['data']['db_content']
@@ -306,7 +310,7 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             # All no-auth and role based cases checked and appoved if applicable
             if db_:
                 db_.commit()
-                # if (method == "DELETE" and "source" in endpoint) or "restore" in endpoint:
+                # if (method == "DELETE" and "resource" in endpoint) or "restore" in endpoint:
                 #     db_models.map_all_dynamic_tables(db_= next(get_db()))
 
         elif obj is not None:
@@ -314,11 +318,11 @@ def get_auth_access_check_decorator(func):#pylint:disable=too-many-statements
             if check_right(user_details, required_rights, obj, db_):
                 if db_:
                     db_.commit()
-                    if (method == "DELETE" and "source" in endpoint):
+                    if (method == "DELETE" and "resource" in endpoint):
                         db_models.dynamicTables = {}
-                        db_models.map_all_dynamic_tables(db_= next(get_db()))
+                        db_models.map_all_dynamic_tables(db_= db_)
                     if "restore" in endpoint:
-                        db_models.map_all_dynamic_tables(db_= next(get_db()))
+                        db_models.map_all_dynamic_tables(db_= db_)
             else:
                 if user_details['user_id'] is None:
                     raise UnAuthorizedException("Access token not provided or user not recognized.")

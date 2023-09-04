@@ -3,11 +3,10 @@
 from typing import List
 from fastapi import APIRouter, Query, Body, Depends, Request, Path, BackgroundTasks
 from sqlalchemy.orm import Session
-
-
 from dependencies import get_db, log, AddHiddenInput
 from schema import schemas, schemas_nlp, schema_auth, schema_content
 from crud import nlp_crud, projects_crud, nlp_sw_crud, structurals_crud, utils
+from crud.projects_crud import check_app_compatibility_decorator
 from custom_exceptions import GenericException
 from routers import content_apis
 from auth.authentication import get_user_or_none,get_auth_access_check_decorator
@@ -15,7 +14,8 @@ from auth.authentication import get_user_or_none,get_auth_access_check_decorator
 router = APIRouter()
 #pylint: disable=too-many-arguments,unused-argument
 ############## Translation Projects ##########################
-@router.get('/v2/translation/projects', response_model=List[schemas_nlp.TranslationProject],
+@router.get('/v2/text/translate/token-based/projects',
+    response_model=List[schemas_nlp.TranslationProject],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}},
@@ -26,6 +26,7 @@ async def get_projects(request: Request,
     source_language:schemas.LangCodePattern=Query(None,example='en'),
     target_language:schemas.LangCodePattern=Query(None,example='ml'),
     active:bool=True, user_id:str=Query(None),
+    compatible_with: List[schema_auth.App] = Query(None,example=["Autographa","SanketMAST"]),
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db),
     filtering_required=Depends(AddHiddenInput(value=True))):
@@ -33,10 +34,14 @@ async def get_projects(request: Request,
     log.info('In get_projects')
     log.debug('project_name: %s, source_language:%s, target_language:%s,\
         active:%s, user_id:%s',project_name, source_language, target_language, active, user_id)
+    if compatible_with is None:
+        app = request.headers['app']
+        compatible_with = [app]
     return projects_crud.get_translation_projects(db_, project_name, source_language,
-        target_language, active=active, user_id=user_id, skip=skip, limit=limit)
+        target_language, active=active,compatible_with=compatible_with, user_id=user_id,
+        skip=skip, limit=limit)
 
-@router.post('/v2/translation/projects', status_code=201,
+@router.post('/v2/text/translate/token-based/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse}},
@@ -48,19 +53,22 @@ async def create_project(request: Request,
     '''Creates a new translation project'''
     log.info('In create_project')
     log.debug('project_obj: %s',project_obj)
+    app = request.headers['app']
     return {'message': "Project created successfully",
         "data": projects_crud.create_translation_project(db_=db_, project=project_obj,
-            user_id=user_details['user_id'])}
+            user_id=user_details['user_id'],app = app)}
 
-@router.put('/v2/translation/projects', status_code=201,
+@router.put('/v2/text/translate/token-based/projects', status_code=201,
     response_model=schemas_nlp.TranslationProjectUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     500: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
     tags=['Translation-Project management'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def update_project(request: Request, project_obj:schemas_nlp.TranslationProjectEdit,
-    user_details =Depends(get_user_or_none), db_:Session=Depends(get_db),
+    project_id:int=Query(...,example="1022004"), user_details =Depends(get_user_or_none),
+    db_:Session=Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.PROJECT.value))):
     # operates_on=schema_auth.ResourceType.PROJECT.value):
     '''Adds more books to a Translation project's source. Delete or activate project.'''
@@ -73,13 +81,14 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
             books_param_list += f"&books={buk}"#pylint: disable=R1713
 
         # request.scope['method'] = 'GET'
-        # request._url = URL('/v2/sources')#pylint: disable=protected-access
+        # request._url = URL('/v2/resources')#pylint: disable=protected-access
         response = await content_apis.extract_text_contents(
             request=request,
-            source_name=project_obj.selectedBooks.bible,
+            resource_name=project_obj.selectedBooks.bible,
+            #typeerror
             books=project_obj.selectedBooks.books,
             language_code=None,
-            content_type='bible',
+            resource_type='bible',
             skip=0, limit=100000,
             user_details = user_details,
             db_=db_,
@@ -95,16 +104,18 @@ async def update_project(request: Request, project_obj:schemas_nlp.TranslationPr
             project_obj.sentenceList = sentences
     return {'message': "Project updated successfully",
         "data": projects_crud.update_translation_project(db_, project_obj,
-            user_id=user_details['user_id'])}
+            project_id=project_id, user_id=user_details['user_id'])}
 
-@router.delete('/v2/translation/projects', status_code=201,
+@router.delete('/v2/text/translate/token-based/projects', status_code=201,
     response_model=schemas.DeleteResponse,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}, 403:{"model": schemas.ErrorResponse}},
     tags=['Translation-Project management'])
 @get_auth_access_check_decorator
-async def remove_project(request: Request,project_id:int,
+@check_app_compatibility_decorator
+async def remove_project(request: Request,
+    project_id:int = Query(..., example=100001),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Removes a project.'''
     log.info('In remove_project')
@@ -115,13 +126,14 @@ async def remove_project(request: Request,project_id:int,
     return {'message': f"Project with identity {project_id} deleted successfully",
             "data": delcont}
 
-@router.post('/v2/translation/project/user', status_code=201,
+@router.post('/v2/text/translate/token-based/project/user', status_code=201,
     response_model=schemas_nlp.UserUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}},
     tags=['Translation-Project management'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def add_user(request: Request,project_id:int, user_id:str,
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Adds new user to a project.'''
@@ -131,28 +143,31 @@ async def add_user(request: Request,project_id:int, user_id:str,
         "data": projects_crud.add_project_user(db_, project_id, user_id,
             current_user=user_details['user_id'])}
 
-@router.put('/v2/translation/project/user', status_code=201,
+@router.put('/v2/text/translate/token-based/project/user', status_code=201,
     response_model=schemas_nlp.UserUpdateResponse,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}},tags=['Translation-Project management'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def update_user(request: Request,user_obj:schemas_nlp.ProjectUser,
+                      project_id:int=Query(...,example="1022004"),
     user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):
     '''Changes role, metadata or active status of user of a project.'''
     log.info('In update_user')
     log.debug('user_obj:%s',user_obj)
     return {'message': "User updated in project successfully",
-        "data": projects_crud.update_project_user(db_, user_obj,
+        "data": projects_crud.update_project_user(db_, user_obj,project_id=project_id,
             current_user=user_details['user_id'])}
 
-@router.delete('/v2/translation/project/user', status_code=201,
+@router.delete('/v2/text/translate/token-based/project/user', status_code=201,
     response_model=schemas.DeleteResponse,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}, 403:{"model": schemas.ErrorResponse}},
     tags=['Translation-Project management'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def remove_user(request: Request,project_id:int, user_id:str,
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Removes a user from a project.'''
@@ -166,13 +181,14 @@ async def remove_user(request: Request,project_id:int, user_id:str,
             "data": delcont}
 
 ############## Translation APIs ##########################
-@router.get('/v2/translation/project/tokens', response_model=List[schemas_nlp.Token],
+@router.get('/v2/text/translate/token-based/project/tokens', response_model=List[schemas_nlp.Token],
     response_model_exclude_unset=True,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}},
     status_code=200, tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def get_tokens(request: Request, project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_range:List[int]=Query(None,max_items=2,min_items=2,example=(410010001, 41001999)),
@@ -194,12 +210,14 @@ async def get_tokens(request: Request, project_id:int=Query(...,example="1022004
         use_translation_memory=use_translation_memory,
         include_phrases = include_phrases, include_stopwords=include_stopwords)
 
-@router.put('/v2/translation/project/tokens', response_model=schemas_nlp.TranslateResponse,
+@router.put('/v2/text/translate/token-based/project/tokens',
+    response_model=schemas_nlp.TranslateResponse,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     500: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
     status_code=201, tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def apply_token_translations(request: Request,project_id:int=Query(...,example="1022004"),
     token_translations:List[schemas_nlp.TokenUpdate]=Body(...), return_drafts:bool=True,
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
@@ -210,13 +228,14 @@ async def apply_token_translations(request: Request,project_id:int=Query(...,exa
         user_id=user_details['user_id'])
     return {"message": "Token translations saved", "data":drafts}
 
-@router.get('/v2/translation/project/token-translations', status_code=200,
+@router.get('/v2/text/translate/token-based/project/token-translations', status_code=200,
     response_model= schemas_nlp.Translation,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}},
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def get_token_translation(request: Request,project_id:int=Query(...,example="1022004"),
     token:str=Query(...,example="duck"),
     sentence_id:int=Query(..., example="41001001"),
@@ -228,13 +247,14 @@ async def get_token_translation(request: Request,project_id:int=Query(...,exampl
     log.debug('project_id: %s, token:%s, occurrences:%s',project_id, token, occurrences)
     return projects_crud.obtain_project_token_translation(db_, project_id, token, occurrences)
 
-@router.put('/v2/translation/project/token-sentences', status_code=200,
+@router.put('/v2/text/translate/token-based/project/token-sentences', status_code=200,
     response_model = List[schemas_nlp.Sentence],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}},
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def get_token_sentences(request: Request,project_id:int=Query(...,example="1022004"),
     token:str=Query(...,example="duck"),
     occurrences:List[schemas_nlp.TokenOccurence]=Body(..., example=[
@@ -246,12 +266,13 @@ async def get_token_sentences(request: Request,project_id:int=Query(...,example=
     log.debug('project_id: %s, token:%s, occurrences:%s',project_id, token, occurrences)
     return projects_crud.get_project_source_per_token(db_, project_id, token, occurrences)
 
-@router.get('/v2/translation/project/draft', status_code=200,
+@router.get('/v2/text/translate/token-based/project/draft', status_code=200,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     415: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def get_draft(request: Request,project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
@@ -267,13 +288,14 @@ async def get_draft(request: Request,project_id:int=Query(...,example="1022004")
     return projects_crud.obtain_project_draft(db_, project_id, books,
         sentence_id_list, sentence_id_range, output_format=output_format)
 
-@router.put('/v2/translation/project/draft', status_code=201,
+@router.put('/v2/text/translate/token-based/project/draft', status_code=201,
     response_model = List[schemas_nlp.Sentence],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     415: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def update_draft(request: Request,project_id:int=Query(...,example="1022004"),
     sentence_list:List[schemas_nlp.ProjectDraftInput]=Body(...),
     user_details =Depends(get_user_or_none),db_:Session=Depends(get_db)):
@@ -285,13 +307,14 @@ async def update_draft(request: Request,project_id:int=Query(...,example="102200
     return projects_crud.update_project_draft(db_, project_id, sentence_list,
         user_details['user_id'])
 
-@router.get('/v2/translation/project/sentences', status_code=200,
+@router.get('/v2/text/translate/token-based/project/sentences', status_code=200,
     response_model_exclude_unset=True, response_model=List[schemas_nlp.Sentence],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}},
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def get_project_source(request: Request,project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
@@ -306,13 +329,14 @@ async def get_project_source(request: Request,project_id:int=Query(...,example="
     return projects_crud.obtain_project_source(db_, project_id, books, sentence_id_range,
         sentence_id_list, with_draft=with_draft, only_ids=only_ids)
 
-@router.delete('/v2/translation/project/sentences', status_code=201,
+@router.delete('/v2/text/translate/token-based/project/sentences', status_code=201,
     response_model=schemas.DeleteResponse,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}, 403:{"model": schemas.ErrorResponse}},
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def remove_sentence(request: Request,project_id:int=Query(...,example="1022004"),
     sentence_id:int=Query(...,example="41001001"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
@@ -326,13 +350,14 @@ async def remove_sentence(request: Request,project_id:int=Query(...,example="102
     return {'message': f"Sentence with identity {sentence_id} deleted successfully",
             "data": delcont}
 
-@router.get('/v2/translation/project/progress', status_code=200,
+@router.get('/v2/text/translate/token-based/project/progress', status_code=200,
     response_model= schemas_nlp.Progress,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}},
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def get_progress(request: Request,project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
@@ -345,13 +370,14 @@ async def get_progress(request: Request,project_id:int=Query(...,example="102200
     return projects_crud.obtain_project_progress(db_, project_id, books,
         sentence_id_list, sentence_id_range)
 
-@router.get('/v2/translation/project/versification', status_code=200,
+@router.get('/v2/text/translate/token-based/project/versification', status_code=200,
     response_model= schema_content.Versification,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}},
     tags=['Project-Based-Translation'])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def get_project_versification(request: Request,project_id:int=Query(...,example="1022004"),
     user_details =Depends(get_user_or_none), db_:Session=Depends(get_db)):
     '''Obtains versification structure for source sentences or verses'''
@@ -359,13 +385,14 @@ async def get_project_versification(request: Request,project_id:int=Query(...,ex
     log.debug('project_id: %s', project_id)
     return projects_crud.get_project_source_versification(db_, project_id)
 
-@router.put('/v2/translation/project/suggestions', status_code=201,
+@router.put('/v2/text/translate/token-based/project/suggestions', status_code=201,
     response_model=List[schemas_nlp.Sentence],
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}},
     tags=["Translation Suggestion"])
 @get_auth_access_check_decorator
+@check_app_compatibility_decorator
 async def suggest_auto_translation(request: Request,project_id:int=Query(...,example="1022004"),
     books:List[schemas.BookCodePattern]=Query(None,example=["mat", "mrk"]),
     sentence_id_list:List[int]=Query(None,example=[41001001,41001002,41001003]),
@@ -381,14 +408,15 @@ async def suggest_auto_translation(request: Request,project_id:int=Query(...,exa
         sentence_id_range = sentence_id_range,confirm_all = confirm_all)
 
 ########### Generic Translation ##################
-@router.put('/v2/translation/tokens', response_model=List[schemas_nlp.Token],
+@router.put('/v2/text/translate/token-based/tokens', response_model=List[schemas_nlp.Token],
     response_model_exclude_unset=True, status_code=200,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}},
     tags=['Generic Translation'])
 @get_auth_access_check_decorator
-async def tokenize(request: Request,source_language:schemas.LangCodePattern=Query(...,example="hi"),
+async def tokenize(request: Request,
+                   source_language:schemas.LangCodePattern=Query(...,example="hi"),
     sentence_list:List[schemas_nlp.SentenceInput]=Body(...),
     target_language:schemas.LangCodePattern=Query(None,example="ml"),
     use_translation_memory:bool=True, include_phrases:bool=True, include_stopwords:bool=False,
@@ -408,7 +436,8 @@ async def tokenize(request: Request,source_language:schemas.LangCodePattern=Quer
         use_translation_memory = use_translation_memory, include_phrases = include_phrases,
         include_stopwords = include_stopwords)
 
-@router.put('/v2/translation/token-translate', response_model=schemas_nlp.TranslateResponse,
+@router.put('/v2/text/translate/token-based/token-translate',
+    response_model=schemas_nlp.TranslateResponse,
     status_code=200,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -426,12 +455,13 @@ async def token_replace(request: Request,sentence_list:List[schemas_nlp.DraftInp
     log.info('In token_replace')
     log.debug('sentence_list:%s, token_translations:%s,\
         source_lanuage:%s, target_language:%s, use_data_for_learning:%s',
-        sentence_list, token_translations, source_language, target_language, use_data_for_learning)
+        sentence_list, token_translations, source_language,
+        target_language, use_data_for_learning)
     result = nlp_crud.replace_bulk_tokens(db_, sentence_list, token_translations, source_language,
         target_language, use_data_for_learning=use_data_for_learning)
     return {"message": "Tokens replaced with translations", "data": result}
 
-@router.put('/v2/translation/draft', status_code=200,
+@router.put('/v2/text/translate/token-based/draft', status_code=200,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     415: {"model": schemas.ErrorResponse},404: {"model": schemas.ErrorResponse}},
@@ -449,7 +479,7 @@ async def generate_draft(request: Request,sentence_list:List[schemas_nlp.DraftIn
             utils.validate_draft_meta(sent.sentence, sent.draft, sent.draftMeta)
     return nlp_crud.obtain_draft(sentence_list, doc_type)
 
-@router.put('/v2/translation/suggestions', response_model=List[schemas_nlp.Sentence],
+@router.put('/v2/text/translate/token-based/suggestions', response_model=List[schemas_nlp.Sentence],
     status_code=200,responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse}},
     tags=["Translation Suggestion"])
@@ -538,7 +568,7 @@ async def get_gloss_count(request: Request,
     response['tokenCount'] = len(response['token_count'])
     return response
 
-@router.post('/v2/nlp/learn/gloss', response_model=schemas_nlp.GlossUpdateResponse,
+@router.post('/v2/nlp/gloss', response_model=schemas_nlp.GlossUpdateResponse,
     status_code=201,responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     404: {"model": schemas.ErrorResponse}},
@@ -593,7 +623,7 @@ async def remove_glossary(request: Request,
     return {'message': f"Token-Translation pair {token} -> {translation} deleted successfully",
             "data": delcont}
 
-@router.post('/v2/nlp/learn/alignment', response_model=schemas_nlp.GlossUpdateResponse,
+@router.post('/v2/nlp/alignment', response_model=schemas_nlp.GlossUpdateResponse,
     status_code=201,responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
     415: {"model": schemas.ErrorResponse}},tags=["Nlp"])
@@ -610,7 +640,7 @@ async def add_alignments(request: Request,
     trg_lang=target_language, alignment_list=alignments, user_id=user_details['user_id'])
     return { "message": "Alignments used for learning", "data":tw_data }
 
-@router.get('/v2/lookup/stopwords/{language_code}', response_model=List[schemas_nlp.StopWords],
+@router.get('/v2/nlp/stopwords/{language_code}', response_model=List[schemas_nlp.StopWords],
     response_model_exclude_none=True, status_code=200,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -633,7 +663,7 @@ async def get_stop_words(request: Request,
         include_auto_generated=include_auto_generated, only_active=only_active, skip=skip,
         limit=limit)
 
-@router.put('/v2/lookup/stopwords/{language_code}',
+@router.put('/v2/nlp/stopwords/{language_code}',
     response_model=schemas_nlp.StopWordUpdateResponse, response_model_exclude_none=True,
     status_code=201,responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -650,7 +680,7 @@ async def update_stop_words(request: Request,
     sw_data = nlp_sw_crud.update_stopword_info(db_, language_code, sw_info,user_details['user_id'])
     return { "message": "Stopword info updated successfully", "data":sw_data }
 
-@router.post('/v2/lookup/stopwords/{language_code}',
+@router.post('/v2/nlp/stopwords/{language_code}',
     response_model=schemas_nlp.StopWordsAddResponse, response_model_exclude_none=True,
     status_code=201,responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -669,7 +699,7 @@ async def add_stopwords(request: Request,
     msg = f"{len(result)} stopwords added successfully"
     return {"message": msg, "data": result}
 
-@router.delete('/v2/lookup/stopwords/{language_code}', status_code=201,
+@router.delete('/v2/nlp/stopwords/{language_code}', status_code=201,
     response_model=schemas.DeleteResponse,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse},
@@ -689,7 +719,7 @@ async def remove_stopword(request: Request,
     return {'message':  "Stopword removed successfully",
             "data": delcont}
 
-@router.post('/v2/nlp/stopwords/generate',
+@router.post('/v2/nlp/stopwords-generate',
     response_model=schemas_nlp.StopWordsGenerateResponse, response_model_exclude_none=True,
     status_code=201,responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse},401: {"model": schemas.ErrorResponse}},
@@ -698,7 +728,7 @@ async def remove_stopword(request: Request,
 async def generate_stopwords(request: Request, background_tasks: BackgroundTasks,
     language_code:schemas.LangCodePattern=Query(...,example="bi"),
     use_server_data:bool=True,
-    source_name: schemas.TableNamePattern=Query(None,example="en_TW_1_dictionary"),
+    source_name: schemas.TableNamePattern=Query(None,example="en_TW_1_vocabulary"),
     user_details =Depends(get_user_or_none),
     sentence_list:List[schemas_nlp.SentenceInput]=Body(None), db_:Session=Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.LOOKUP.value))):#pylint: disable=unused-argument

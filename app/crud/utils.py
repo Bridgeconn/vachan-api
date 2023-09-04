@@ -2,11 +2,11 @@
 import subprocess
 import json
 import itertools
-
 import unicodedata
 from unidecode import unidecode
 import requests
-
+from sqlalchemy.orm import Session
+import db_models
 from custom_exceptions import TypeException, UnprocessableException
 #pylint: disable=R1732
 def normalize_unicode(text, form="NFKC"):
@@ -14,7 +14,7 @@ def normalize_unicode(text, form="NFKC"):
     return unicodedata.normalize(form, text)
 
 def punctuations():
-    '''list of punctuations commonly seen in our source files'''
+    '''list of punctuations commonly seen in our resource files'''
     return [',', '"', '!', '.', ':', ';', '\n', '\\','“','”',
         '“','*','।','?',';',"'","’","(",")","‘","—"]
 
@@ -182,7 +182,7 @@ def convert_dict_obj_to_pydantic(input_obj, target_class):
     return new_obj
 
 def convert_dict_to_sqlalchemy(input_obj, target_class):
-    '''convert a dictionary object into specified db_model object,
+    '''convert a vocabulary object into specified db_model object,
     if all key names are identical'''
     kwargs = {}
     for key in input_obj:
@@ -234,3 +234,19 @@ def validate_draft_meta(sentence, draft, draft_meta):
         raise UnprocessableException("Incorrect metadata:"+str(exe)) from exe
     except Exception as exe:
         raise UnprocessableException("Incorrect metadata.") from exe
+
+def create_decimal_ref_id(db_:Session, bookcode, chapter, verse):
+    '''Generate parascript ref start and end id'''
+    book_content = db_.query(db_models.BibleBook).filter(
+        db_models.BibleBook.bookCode == bookcode.lower()).first()
+    book_id = book_content.bookId
+    if book_id is not None:
+        if chapter is None and verse is None:
+            chapter = 0
+            verse = 0
+        if chapter is None and verse is not None:
+            raise UnprocessableException("verse will not exist without chapter")
+        if chapter is not None and verse is not None:
+            ref_id = (book_id * 100000) + (chapter * 1000) + verse
+            return ref_id
+    raise ValueError("book_id, chapter, and verse must not be None.")

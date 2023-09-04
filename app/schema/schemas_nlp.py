@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, constr, root_validator
 
 from schema.schemas import LangCodePattern, TableNamePattern, LanguageResponse
 from schema.schema_content import BookCodePattern, Job
+from schema.schema_auth import App
 
 #pylint: disable=too-few-public-methods
 class TranslationDocumentType(Enum):
@@ -25,7 +26,7 @@ class Stopwords(BaseModel):
 
 class ProjectUser(BaseModel):
     '''Input object for Translation project user update'''
-    project_id: int
+    project_id: int = None
     userId: str
     userRole: str = Field(None, example='projectOwner')
     metaData: dict = Field(None, example={
@@ -53,6 +54,7 @@ class TranslationProjectCreate(BaseModel):
         example=[',', '"', '!', '.', ':', ';', '\n', '\\','“','”',
         '“','*','।','?',';',"'","’","(",")","‘","—"])
     active: bool = True
+    compatibleWith: List[App] = Field(None,example=['SanketMAST'])
 
 class TranslationProject(BaseModel):
     '''Output object for project creation'''
@@ -67,6 +69,7 @@ class TranslationProject(BaseModel):
     metaData: dict = Field(None, example={"books":['mat', 'mrk', 'luk', 'jhn'],
         "useDataForLearning":True})
     active: bool
+    compatibleWith: List[App] = Field(None,example=['SanketMAST'])
     class Config:
         ''' telling Pydantic exactly that "it's OK if I pass a non-dict value,
         just get the data from object attributes'''
@@ -93,7 +96,6 @@ class SentenceInput(BaseModel):
 
 class TranslationProjectEdit(BaseModel):
     '''New books to be added or active flag change'''
-    projectId: int
     projectName: str = None
     active: bool = None
     selectedBooks: SelectedBooks = None
@@ -102,6 +104,7 @@ class TranslationProjectEdit(BaseModel):
     useDataForLearning: bool = None
     stopwords: Stopwords = None
     punctuations: List[constr(max_length=1)] = None
+    compatibleWith: List[App] = Field(None,example=['SanketMAST'])
 
 class TranslationProjectUpdateResponse(BaseModel):
     '''Response for post and put'''
@@ -217,7 +220,7 @@ class Alignment(BaseModel):
         {"sourceTokenIndex": 3, "targetTokenIndex": 2} ])
 
 class GlossInput(BaseModel):
-    '''Import object for glossary(dictionary) data for learning'''
+    '''Import object for glossary(vocabulary) data for learning'''
     token: str = Field(..., example="love")
     translations: List[str] = Field(None, example=['प्यार'])
     metaData: dict =Field(None, example={"word-class":"noun"})
@@ -258,7 +261,7 @@ class TranslationMemoryUpdateResponse(BaseModel):
     data : TranslationMemoryOut
 
 class GlossUpdateResponse(BaseModel):
-    '''Response object for learn/gloss and learn/alignments'''
+    '''Response object for gloss and alignments'''
     message: str = Field(..., example="Added to glossary/Alignments used for learning")
     data: List[GlossOutput]
 
