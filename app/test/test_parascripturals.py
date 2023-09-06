@@ -72,20 +72,20 @@ def test_post_default():
     assert len(data) == len(response.json()['data'])
     return response,resource_name
 
-def test_post_duplicate():
-    '''Negative test to add two parascripturals Links with same type and title'''
-    data = [
-        {'category':'Bible Stories', 'title':"the Gods reveals himself in new testament",
-        "link":"http://somewhere.com/new"}
-    ]
-    resp, resource_name = check_post(data)
-    assert resp.status_code == 201
-    assert resp.json()['message'] == "Parascripturals added successfully"
+# def test_post_duplicate():
+#     '''Negative test to add two parascripturals Links with same type and title'''
+#     data = [
+#         {'category':'Bible Stories', 'title':"the Gods reveals himself in new testament",
+#         "link":"http://somewhere.com/new"}
+#     ]
+#     resp, resource_name = check_post(data)
+#     assert resp.status_code == 201
+#     assert resp.json()['message'] == "Parascripturals added successfully"
 
-    data[0]['link'] = 'http://anotherplace/item'
-    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
-    assert response.status_code == 409
-    assert response.json()['error'] == "Already Exists"
+#     data[0]['link'] = 'http://anotherplace/item'
+#     response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
+#     assert response.status_code == 409
+#     assert response.json()['error'] == "Already Exists"
 
 def test_post_incorrect_data():
     ''' tests to check input validation in post API'''

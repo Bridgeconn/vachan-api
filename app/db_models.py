@@ -184,7 +184,6 @@ class Parascriptural():# pylint: disable=too-few-public-methods
     createTime = Column('created_at', DateTime, default=ist_time)
     updateTime = Column('last_updated_at', DateTime, onupdate= ist_time,default=ist_time)
     __table_args__ = (
-        UniqueConstraint('category', 'title'),
         {'extend_existing': True}
                      )
 class SignBibleVideo():# pylint: disable=too-few-public-methods
