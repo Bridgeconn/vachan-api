@@ -9,6 +9,12 @@
 
   <title>API Documentation </title>
 
+  <!-- Bootstrap CSS --> 
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
+
+
+
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
   <meta name="description" content="">
 
@@ -35,7 +41,8 @@
   <link rel="apple-touch-icon-precomposed" sizes="72x72" href="http://localhost:1313/favicon-72.png">
 
 
-  <link rel="icon" href="http://localhost:1313/favicon-32.png" sizes="32x32">
+  <!-- <link rel="icon" href="http://localhost:1313/favicon-32.png" sizes="32x32"> -->
+  <link rel="icon" href="/static/images/logo.png" sizes="32x32">
 
 
   <link rel="shortcut icon" sizes="196x196" href="http://localhost:1313/favicon-196.png">
@@ -73,27 +80,26 @@
   </style>
   <script src="scripts.js"></script>
 
+  <!-- Bootstrap JavaScript-->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm" crossorigin="anonymous"></script>
+
   <link rel="alternate" type="application/rss+xml" href="http://localhost:1313/index.xml" title="API Documentation">
 </head>
 
 <body>
-  <nav class="navbar navbar-expand-xl navbar-light bg-light py-4">
+  <nav class="navbar sticky-top navbar-expand-xl navbar-light bg-light py-4">
     <div class="container">
       <a class="navbar-brand d-flex align-items-center">
 
-        
-        <img class="" src="{{ root_url }}/static/images/logo.png" alt="images/logo.png" width="86" height="86">
-
-
-
+        <img class="" src="/static/images/logo.png" alt="images/logo.png" width="86" height="86">
 
         <span class="fs-3 fw-semibold text-uppercase text-primary">API Documentation</span>
       </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
-        aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
-      <div class="collapse navbar-collapse" id="navbarContent">
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav ms-auto mb-2 mb-xl-0">
 
           <li class="nav-item text-center">
@@ -124,13 +130,13 @@
           </li>
 
         </ul>
-        <ul class="navbar-nav ms-xl-3 mb-2 mb-xl-0">
+        <!-- <ul class="navbar-nav ms-xl-3 mb-2 mb-xl-0">
 
-        </ul>
+        </ul> -->
       </div>
     </div>
   </nav>
-
+  
   <a id="hero"></a>
   <section class="section hero py-5">
     <div class="container">
@@ -193,6 +199,9 @@
 
           <img class="" src="{{ root_url }}/static/images/fastapi.png" alt="images/fastapi.png" width="266"
             height="96">
+          <!-- <img class="" src="/static/images/fastapi.png" alt="images/fastapi.png" width="266"
+            height="96"> -->
+
 
 
         </div>
