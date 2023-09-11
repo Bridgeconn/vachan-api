@@ -55,9 +55,10 @@ class Reference(BaseModel):
     @validator('chapterEnd')
     def check_chapter_range(cls, val, values): # pylint:  disable=E0213
         '''chapter start should be less than or equal to chapter end'''
-        if 'chapter' in values and val < values['chapter']:
-            raise ValueError('chapter start should be less than or equal to chapter end')
-        return val
+        if val is not None:
+            if 'chapter' in values and val < values['chapter']:
+                raise ValueError('chapter start should be less than or equal to chapter end')
+            return val
     def check_verse_range(cls, val, values): # pylint:  disable=E0213
         '''verse start should be less than or equal to verse end'''
         if 'verseNumber' in values and val < values['verseNumber']:
