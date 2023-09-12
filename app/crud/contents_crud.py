@@ -410,7 +410,7 @@ def get_parascripturals(db_:Session, resource_name, category=None, title=None,**
         }
     return response
 
-def upload_parascripturals(db_: Session, resource_name, parascriptural, user_id=None):
+def upload_parascripturals(db_: Session, resource_name, parascriptural, user_id=None):#pylint: disable=too-many-branches
     '''Adds rows to the parascripturals table specified by resource_name'''
     resource_db_content = db_.query(db_models.Resource).filter(
         db_models.Resource.resourceName == resource_name).first()
@@ -431,13 +431,16 @@ def upload_parascripturals(db_: Session, resource_name, parascriptural, user_id=
                 #setting verseNumber to 000 if its not present
                 ref_start = utils.create_decimal_ref_id(db_,ref['book'],ref['chapter'],0)
                 ref['verseNumber'] = 0
-            if ref['verseEnd'] is not None:
-                ref_end   = utils.create_decimal_ref_id(
-                    db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
+            if ref['bookEnd'] is not None:
+                if ref['chapterEnd'] is not None and ref['verseEnd'] is not None:
+                    ref_end   = utils.create_decimal_ref_id(
+                        db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
+                else:
+                    #setting verseEnd to 999 if its not present
+                    ref_end  = utils.create_decimal_ref_id(db_,ref['bookEnd'],ref['chapterEnd'],999)
+                    ref['verseEnd'] = 999
             else:
-                #setting verseEnd to 999 if its not present
-                ref_end   = utils.create_decimal_ref_id(db_,ref['bookEnd'],ref['chapterEnd'],999)
-                ref['verseEnd'] = 999
+                ref_end = None
         else:
             ref = None
             ref_end = None
@@ -596,7 +599,7 @@ def get_audio_bible(db_:Session, resource_name, name=None,**kwargs): #pylint: di
         }
     return response
 
-def upload_audio_bible(db_: Session, resource_name, audiobibles, user_id=None):
+def upload_audio_bible(db_: Session, resource_name, audiobibles, user_id=None):#pylint: disable=too-many-branches
     '''Adds rows to the audio bibles table specified by resource_name'''
     resource_db_content = db_.query(db_models.Resource).filter(
         db_models.Resource.resourceName == resource_name).first()
@@ -617,13 +620,16 @@ def upload_audio_bible(db_: Session, resource_name, audiobibles, user_id=None):
                 #setting verseNumber to 000 if its not present
                 ref_start = utils.create_decimal_ref_id(db_,ref['book'],ref['chapter'],0)
                 ref['verseNumber'] = 0
-            if ref['verseEnd'] is not None:
-                ref_end   = utils.create_decimal_ref_id(
-                    db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
+            if ref['bookEnd'] is not None:
+                if ref['chapterEnd'] is not None and ref['verseEnd'] is not None:
+                    ref_end   = utils.create_decimal_ref_id(
+                        db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
+                else:
+                    #setting verseEnd to 999 if its not present
+                    ref_end  = utils.create_decimal_ref_id(db_,ref['bookEnd'],ref['chapterEnd'],999)
+                    ref['verseEnd'] = 999
             else:
-                #setting verseEnd to 999 if its not present
-                ref_end   = utils.create_decimal_ref_id(db_,ref['bookEnd'],ref['chapterEnd'],999)
-                ref['verseEnd'] = 999
+                ref_end = None
         else:
             ref = None
             ref_end = None
