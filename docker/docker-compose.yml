@@ -3,7 +3,7 @@ services:
  kratos-postgresd:
     image: postgres:9.6
     ports:
-      - "5432:5432"
+      - "5438:5432"
     expose:
       - 5432
     restart: always
@@ -23,7 +23,7 @@ services:
       - VE-network
 
  kratos-migrate:
-    image: oryd/kratos:v0.7.0-alpha.1
+    image: oryd/kratos:v1.0.0
     environment:
       - DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@kratos-postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
     volumes:
@@ -44,7 +44,7 @@ services:
       - VE-network
 
  kratos:
-    image: oryd/kratos:v0.7.0-alpha.1
+    image: oryd/kratos:v1.0.0
     ports:
       - '4433:4433' # public
       # - '4434:4434' # admin
@@ -91,7 +91,7 @@ services:
      - 5432
     ports:
      # HOST:CONTAINER
-     - "5433:5432"
+     - "5439:5432"
     networks:
      - VE-network
     volumes:
