@@ -40,7 +40,7 @@ def login(data):
     if response.status_code == 200:
         assert response.json()['message'] == "Login Succesfull"
         token =  response.json()['token']
-        assert len(token) == 32
+        assert len(token) == 39
         assert "userId" in response.json()
     elif response.status_code == 401:
         assert response.json()['error'] == "Authentication Error"
@@ -63,7 +63,7 @@ def register(data,apptype):
         assert "Permissions" in response.json()["registered_details"]
         assert "token" in response.json()
         token =  response.json()['token']
-        assert len(token) == 32
+        assert len(token) == 39
     return response
 
 #appending roles to same user on duplicate registration
@@ -213,7 +213,9 @@ def test_incorrect_email():
     """test for validation of incorrect email"""
     data = {
         "email": "incorrectemail",
-        "password": "passwordabc@1"
+        "password": "passwordabc@1",
+        "firstname": "user registration",
+        "lastname": "ABCD Test"
     }
     response = register(data,apptype=schema_auth.App.API.value)
     assert response.status_code == 422
@@ -225,7 +227,9 @@ def test_validate_password():
     #short password
     data = {
         "email": "PQR@gmail.com",
-        "password": "test"
+        "password": "test",
+        "firstname": "user registration",
+        "lastname": "PQR Test"
     }
     response = register(data,apptype=schema_auth.App.API.value)
     assert response.status_code == 422
@@ -234,7 +238,9 @@ def test_validate_password():
     #less secure password
     data = {
         "email": "PQR@gmail.com",
-        "password": "password"
+        "password": "password",
+        "firstname": "user registration",
+        "lastname": "PQR Test"
     }
     response = register(data,apptype=schema_auth.App.API.value)
     assert response.status_code == 422
@@ -243,29 +249,20 @@ def test_validate_password():
 #test for optional params in registration
 def test_optional_register_params(create_user_fixture):
     """test for optional params in the registration"""
-    #app type is none
+    #app type is none and lastname is not passed
     data = {
-        "email": "abc@gmail.com",
-        "password": "passwordabc@1",
-        "firstname": "user registration",
-        "lastname": "ABC Test"
+        "email": "abcd@gmail.com",
+        "password": "passwordabc@11",
+        "firstname": "user registration"
     }
     response = register(data,apptype=schema_auth.App.API.value)
     assert response.json()["registered_details"]["Permissions"] == \
         [schema_auth.App.API.value]
     abc_id = response.json()["registered_details"]["id"]
 
-    #no first and last name, registration execute without error
-    data = {
-        "email": "abc1@gmail.com",
-        "password": "passwordabc@1"
-    }
-    response1 = register(data,apptype=schema_auth.App.API.value)
-    abc1_id = response1.json()["registered_details"]["id"]
 
     users_list = create_user_fixture
     users_list.append(abc_id)
-    users_list.append(abc1_id)
 
 #test register with missing field
 def test_register_incorrectdatas():
@@ -384,7 +381,9 @@ def test_register_roles(create_user_fixture):
     # #role changed ag --> vachan
     data_xyz2 = {
         "email": "xyz2@gmail.com",
-        "password": "passwordxyz2@1"
+        "password": "passwordxyz2@1",
+        "firstname": "xyz user 2",
+        "lastname": "xyz Test 2"
     }
     response2 = register_role_appending(data_xyz2,apptype=schema_auth.App.VACHAN.value)
     assert response2.json()["registered_details"]["Permissions"] ==\
@@ -393,7 +392,9 @@ def test_register_roles(create_user_fixture):
     #role changed none --> ag
     data_xyz3 = {
         "email": "xyz3@gmail.com",
-        "password": "passwordxyz3@1"
+        "password": "passwordxyz3@1",
+        "firstname": "xyz user 3",
+        "lastname": "xyz Test 3"
     }
     response3 = register_role_appending(data_xyz3,apptype=schema_auth.App.AG.value)
     assert response3.json()["registered_details"]["Permissions"] ==\
@@ -423,7 +424,9 @@ def test_role_assignment_superadmin(create_user_fixture):
     #create 2 users
     user1 = {
         "email": "vachan@gmail.com",
-        "password": "passwordvachan@1"
+        "password": "passwordvachan@1",
+        "firstname": "vachan",
+        "lastname": "User Test"
     }
     response1 = register(user1,apptype=schema_auth.App.API.value)
     user1_id = response1.json()["registered_details"]["id"]
@@ -431,7 +434,9 @@ def test_role_assignment_superadmin(create_user_fixture):
 
     user2 = {
         "email": "ag@gmail.com",
-        "password": "passwordag@1"
+        "password": "passwordag@1",
+        "firstname": "Ag",
+        "lastname": "User Test"
     }
     response2 = register(user2,apptype=schema_auth.App.API.value)
     user2_id = response2.json()["registered_details"]["id"]
@@ -494,7 +499,9 @@ def test_token_expiry(create_user_fixture):
     #try change role with super user after logout
     user = {
         "email": "user@gmail.com",
-        "password": "passworduser@1"
+        "password": "passworduser@1",
+        "firstname": "user ",
+        "lastname": "role change Test"
     }
     response2 = register(user,apptype=schema_auth.App.API.value)
     user_id = response2.json()["registered_details"]["id"]

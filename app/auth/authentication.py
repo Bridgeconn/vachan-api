@@ -386,11 +386,14 @@ def get_users_kratos_filter(base_url,name,roles,limit,skip):#pylint: disable=too
                 "userId":data["id"],
                 "name":data["traits"]["name"]
             }
-            kratos_user["name"]["fullname"] = data["traits"]["name"]["first"].capitalize() \
-                + " "+ data["traits"]["name"]["last"].capitalize()
+
+            first_name = data["traits"]["name"]["first"].capitalize()
+            last_name = data["traits"]["name"].get("last", "")
+            last_name = last_name.capitalize() if last_name else last_name
+            kratos_user["name"]["fullname"] = first_name+ " " + last_name
+
             if not name is None:
                 if name.lower() == kratos_user["name"]["fullname"].lower() or\
-                    name.lower() == kratos_user["name"]["last"].lower() or\
                         name.lower() == kratos_user["name"]["first"].lower():
                     name_status = True
                 else:
@@ -486,12 +489,13 @@ def update_kratos_user(rec_user_id,data):
 def register_check_success(reg_response):
     """register reqirement success"""
     name_path = reg_response["identity"]["traits"]["name"]
+    last_name = name_path.get("last", "")
     data={
         "message":"Registration Successfull",
         "registered_details":{
             "id":reg_response["identity"]["id"],
             "email":reg_response["identity"]["traits"]["email"],
-            "Name":str(name_path["first"]) + " " + str(name_path["last"]),
+            "Name":str(name_path["first"]) + " " + last_name,
             "Permissions": reg_response["identity"]["traits"]["userrole"]
         },
         "token":reg_response["session_token"]
