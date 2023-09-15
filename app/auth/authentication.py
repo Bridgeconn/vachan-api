@@ -495,7 +495,8 @@ def register_check_success(reg_response):
         "registered_details":{
             "id":reg_response["identity"]["id"],
             "email":reg_response["identity"]["traits"]["email"],
-            "Name":str(name_path["first"]) + " " + last_name,
+            "Name": str(name_path["first"]) + (" " + last_name if last_name else ""),
+
             "Permissions": reg_response["identity"]["traits"]["userrole"]
         },
         "token":reg_response["session_token"]
