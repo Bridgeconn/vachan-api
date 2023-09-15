@@ -1,0 +1,114 @@
+/* html, body {
+    width: 100% !important;
+    margin: 0 !important; 
+    padding: 0 !important; 
+    overflow-x: hidden !important;
+    background: red !important;
+  } */
+
+/* html, body {
+    background: red !important;
+  } */
+  
+
+/* Add CSS styles to control the layout */
+/* #vachan-engine-apis {
+    display: flex;
+    flex-direction: row;
+} */
+
+
+
+@media (max-width: 375px) {
+  /* Apply styles for screens up to 375px width */
+  .navbar-toggler-icon {
+    font-size: 0.75rem; /* Adjust the font size to make the button smaller */
+    display: none; /* Hide the default hamburger menu icon */
+  }
+  .navbar-toggler {
+    font-size: 1.1rem; /* Adjust the font size to make the button smaller */
+    margin-left: 1rem; /* Add some spacing between the header and the button */
+  }
+  .navbar-toggler::before {
+    content: "\2630"; /* Unicode character for a three-bar icon (hamburger menu) */
+  }
+
+  .navbar-brand {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+  }
+  .navbar-brand img {
+    margin-right: 1rem; /* Add spacing between the image and text */
+  }
+
+  /* Adjust the font size of the heading as needed */
+  .navbar-brand span {
+    font-size: 1.2rem !important;
+  }
+}
+
+@media (max-width: 320px) {
+  /* Apply styles for screens up to 320px width */
+  navbar-toggler-icon {
+    font-size: 0.75rem; /* Adjust the font size to make the button smaller */
+  }
+  .navbar-toggler {
+    font-size: 0.75rem; /* Adjust the font size to make the button smaller */
+  }
+  .navbar-toggler::before {
+    content: "\2630"; /* Unicode character for a three-bar icon (hamburger menu) */
+  }
+
+  .navbar-brand {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+  }
+  .navbar-brand img {
+    margin-right: 1rem; /* Add spacing between the image and text */
+  }
+
+  /* Adjust the font size of the heading as needed */
+  .navbar-brand span {
+    font-size: 0.92rem !important;
+  }
+}
+
+/* .plot-address {
+  margin-right: 10px !important; 
+  display: inline-block; 
+} */
+
+
+
+
+
+
+
+
+
+/* Media query for mobile view */
+@media (max-width: 767px) {
+  .equal-width-buttons .btn {
+    width: calc(100% - 10px) !important; /* Full width for mobile */
+    border-width: 2px !important; /* Reduce the border width for mobile */
+    margin-right: 0 !important; /* Remove margin-right for mobile */
+    margin-bottom: 5px !important; /* Adjust the margin-bottom as needed for mobile */
+  }
+}
+
+@media (max-width: 991px) {
+  .equal-width-buttons {
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+}
+
+@media (max-width: 991px) {
+  .btn-custom-width {
+    width: 80% !important; /* Adjust the width as needed */
+    margin: 0 auto !important; /* Center the button horizontally */
+  }
+}
+
