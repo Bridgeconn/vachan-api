@@ -390,8 +390,7 @@ def get_users_kratos_filter(base_url,name,roles,limit,skip):#pylint: disable=too
             first_name = data["traits"]["name"]["first"].capitalize()
             last_name = data["traits"]["name"].get("last", "")
             last_name = last_name.capitalize() if last_name else last_name
-            kratos_user["name"]["fullname"] = first_name+ " " + last_name
-
+            kratos_user["name"]["fullname"] = first_name+(" " + last_name if last_name else "")
             if not name is None:
                 if name.lower() == kratos_user["name"]["fullname"].lower() or\
                         name.lower() == kratos_user["name"]["first"].lower():
