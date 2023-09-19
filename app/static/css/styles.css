@@ -105,10 +105,10 @@
   }
 }
 
-@media (max-width: 991px) {
-  .btn-custom-width {
-    width: 80% !important; /* Adjust the width as needed */
-    margin: 0 auto !important; /* Center the button horizontally */
+/* CSS for smaller images on mobile and tablets */
+@media (max-width: 768px) {
+  .img-mobile {
+    max-width: 100%; /* Make the image responsive by setting max-width to 100% */
+    height: auto; /* Allow the height to adjust proportionally */
   }
 }
-
