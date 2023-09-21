@@ -105,10 +105,184 @@
   }
 }
 
+
+.vachanenginego a img{
+  width: 280px;
+  height: 80px;
+}
+
+.intellisign a img{
+  width: 90px;
+  height: 90px;
+}
+
+
 /* CSS for smaller images on mobile and tablets */
 @media (max-width: 768px) {
-  .img-mobile {
-    max-width: 100%; /* Make the image responsive by setting max-width to 100% */
-    height: auto; /* Allow the height to adjust proportionally */
+  /* .img-mobile {
+    text-align: center;
+    margin-bottom: 20px; 
+    padding: 20px; 
+  } */
+
+  .img-mobile a img {
+    max-width: 100%; /* Make images responsive */
+    height: auto;
   }
+
+  .vachanenginego a img{
+    width: 210px;
+    height: 60px;
+  }
+  
+  .intellisign a img{
+    width: 70px;
+    height: 70px;
+  }
+
+}
+
+/* CSS for mobile view (e.g., up to 480px) */
+@media (max-width: 480px) {
+  /* .img-mobile {
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 20px;
+  } */
+
+  .img-mobile a img {
+    max-width: 50%; /* Adjust the maximum width for mobile */
+    height: auto;
+  }
+  .intellisign a img{
+    width: 50px;
+    height: 50px;
+  }
+
+}
+
+/* CSS for testimonal carousel */
+
+.testimonial-area {
+	padding: 80px 0;
+}
+.section-header h4 {
+	color: #ff87B0;
+	font-weight: 600;
+}
+.section-header {
+	padding-bottom: 15px;
+}
+.section-header h2 {
+	font-weight: 700;
+}
+.section-header p {
+	color: #6f6b80;
+	width: 40%;
+	margin: auto;
+}
+.icon-area {
+	text-align: center;
+}
+.icon-area i {
+	color: #ff87B0;
+	font-size: 80px;
+	margin-bottom: 20px;
+}
+.content p {
+	color: #6f6b80;
+	width: 60%;
+	margin: auto;
+}
+.person {
+	width: 100px;
+	height: 100px;
+	display: block;
+	margin: auto;
+	border-radius: 50%;
+	overflow: hidden;
+	border: 5px solid #ff87B0;
+	margin-top: 50px;
+}
+.person img {
+	width: 100%;
+}
+.content h5 {
+	font-weight: 900;
+	margin-top: 15px;
+}
+.testimonial-area {
+	/* background: url(1.jpg); */
+	background-size: cover;
+	background-position: center;
+}
+.carousel-indicators {
+	/* bottom: -80px; */
+  position: absolute; 
+  left: 0; 
+  right: 0; 
+  bottom: -50px;
+  text-align: center;
+}
+.carousel-indicators [data-bs-target] {
+	width: 60px;
+	height: 10px;
+	background-color: #ff87B0;
+}
+@media (min-width: 768px) and (max-width: 991px) {
+	.section-header p {
+		width: 85%;
+	}
+	.content p {
+		width: 95%;
+	}
+}
+@media (max-width: 767px) {
+	.testimonial-area {
+		padding: 30px 0;
+	}
+	.section-header p {
+		width: 95%;
+	}
+	.content p {
+		width: 100%;
+	}
+	.icon-area i {
+		font-size: 50px;
+	}
+}
+
+h2{
+  font-family: 'Poppins', sans-serif;
+
+}
+
+h3{
+  font-family: 'Poppins', sans-serif;
+}
+h4{
+  font-family: 'Poppins', sans-serif;
+}
+
+h5{
+  font-family: 'Nunito Sans', sans-serif;
+}
+h6{
+  font-family: 'Nunito Sans', sans-serif;
+}
+
+p{
+  font-family: 'Nunito Sans', sans-serif;
+}
+
+li{
+  font-family: 'Nunito Sans', sans-serif;
+}
+
+.textcolour{
+  font-family: 'Nunito Sans', sans-serif;
+}
+
+.docsbutton{
+  font-family: 'Nunito Sans', sans-serif;
 }

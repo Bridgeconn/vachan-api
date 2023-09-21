@@ -7,11 +7,9 @@
   <meta name="generator" content="Hugo 0.92.2">
   <!-- <script src="./images/livereload.js" data-no-instant="" defer=""></script> -->
 
-  <title>API Documentation </title>
+  <title>Vachan API</title>
 
-  <!-- Bootstrap CSS --> 
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
-
+  
 
 
 
@@ -42,7 +40,7 @@
 
 
   <!-- <link rel="icon" href="http://localhost:1313/favicon-32.png" sizes="32x32"> -->
-  <link rel="icon" href="/static/images/logo.png" sizes="32x32">
+  <link rel="icon" href="/static/images/Arrow.svg" sizes="30x30">
 
 
   <link rel="shortcut icon" sizes="196x196" href="http://localhost:1313/favicon-196.png">
@@ -68,13 +66,28 @@
   <meta itemprop="name" content="">
   <meta itemprop="description" content="">
 
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,500&family=Poppins:wght@500&display=swap" rel="stylesheet">
+
+  <!-- -------------Tesitmonial Carousel--------------------- -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js">
+	</script> 
+
+  <!-- Bootstrap CSS --> 
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
+
+
   <!-- Bootstrap JavaScript-->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm" crossorigin="anonymous"></script>
 
   <link rel="alternate" type="application/rss+xml" href="http://localhost:1313/index.xml" title="API Documentation">
    
-  <!-- Hugo-Script -->
-  <!-- <script src="{{ root_url }}/static/scripts/scripts.js"></script> -->
+  <!-- J-Script -->
+  <!-- <script src="/static/scripts/scripts.js"></script> -->
    
   
   <!-- Hugo-Styles -->
@@ -84,7 +97,8 @@
   <!-- Custom-CSS -->
   <link rel="stylesheet" type="text/css" href="/static/css/styles.css">
 
-
+  <!-- custom css for Services -->
+  <link rel="stylesheet" href="/static/css/services.css">
 
 </head>
 
@@ -93,54 +107,57 @@
     <div class="container-fluid">
       <a class="navbar-brand d-flex align-items-center">
 
-        <img class="" src="/static/images/logo.png" alt="images/logo.png" width="86" height="86">
+        <img class="" src="/static/images/Arrow.svg" alt="images/logo.png" width="86" height="86" style="margin-right: 8px;">
 
-        <span class="fs-3 fw-semibold text-uppercase text-primary">API Documentation</span>
+        <span class="fs-3 fw-semibold text-uppercase text-primary">Vachan API</span>
       </a>
 
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation" style="overflow:visible !important;">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
-      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ms-auto mb-2 mb-xl-0">
 
+          <!-- <li class="nav-item text-center">
+            <a class="nav-link text-primary px-3" href="#About">About</a>
+          </li> -->
+
           <li class="nav-item text-center">
-            <a class="nav-link text-primary px-3" href="#hero">About</a>
+            <a class="nav-link text-primary px-4" href="#Whatweoffer">What We Offer</a>
           </li>
 
           <li class="nav-item text-center">
-            <a class="nav-link text-primary px-4" href="#vachan-engine-apis">Vachan Engine
-              APIs</a>
+            <a class="nav-link text-primary px-4" href="#Clients">Clients</a>
           </li>
 
           <li class="nav-item text-center">
-            <a class="nav-link text-primary px-4" href="#ai-apis">AI APIs</a>
+            <a class="nav-link text-primary px-4" href="#Technologies">Technologies</a>
           </li>
 
-          <li class="nav-item text-center">
-            <a class="nav-link text-primary px-4" href="#translation-apis">Translation APIs</a>
-          </li>
 
-          <li class="nav-item text-center">
-            <a class="nav-link text-primary px-4" href="#content-management">Content
-              Management</a>
+          <li class="nav-item dropdown text-center">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Getting Started
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item text-center" href="https://api.vachanengine.org/docs">API Documentation</a></li>
+              <li><a class="dropdown-item text-center" href="#">Another action</a></li>
+              <li>
           </li>
-
-          <li class="nav-item text-center">
-            <a class="nav-link text-primary px-4"
-              href="#micro-services">Microservices</a>
-          </li>
+          <!-- <li class="nav-item text-center">
+            <a class="nav-link text-primary px-4" href="https://api.vachanengine.org/docs">Getting Started</a>
+          </li> -->
 
         </ul>
-        <!-- <ul class="navbar-nav ms-xl-auto mb-2 mb-xl-0">
-
-        </ul> -->
       </div>
     </div>
   </nav>
   
+
+
+
   <!-- Top Banner -->
-  <a id="hero"></a>
+  <a id="About"></a>
   <section class="section hero py-5">
     <div class="container">
       <div class="row flex-column flex-xl-row-reverse">
@@ -165,11 +182,11 @@
 
           <div class="d-flex flex-column flex-xl-row">
 
-            <a class="btn btn-primary text-light px-4 my-1" href="https://api.vachanengine.org/docs">API
+            <a class="btn btn-primary text-light px-4 my-1 docsbutton" href="https://api.vachanengine.org/docs">API
               Documentation</a>
 
 
-            <a class="btn btn-outline-primary px-4 my-1 ms-xl-4" href="https://api.vachanengine.org/redoc">API Docs
+            <a class="btn btn-outline-primary px-4 my-1 ms-xl-4 docsbutton" href="https://api.vachanengine.org/redoc">API Docs
               Generator<span class="ms-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                   fill="currentColor" class="bi bi-arrow-right" viewBox="0 0 16 16">
                   <path fill-rule="evenodd"
@@ -184,8 +201,57 @@
     </div>
   </section>
 
+  <!-- Section Dynamic Content -->
+  <section class="section portfolio">
+    <div class="container dynamic-services">
+
+      <!--services nav Icons sections -->
+      <div class="services-icons">
+        <div class="service-icon service-icon-btn" name="cms">
+          <img src="/static/images/CMS.svg" alt="image" class="service-image">
+          <span class="textcolour">CMS</span>
+        </div>
+        <div class="service-icon service-icon-btn" name="translation">
+          <img src="/static/images/Translation.svg" alt="image" class="service-image">
+          <span class="textcolour">Translation</span>
+        </div>
+        <div class="service-icon service-icon-btn" name="ai">
+          <img src="/static/images/AI.svg" alt="image" class="service-image">
+          <span class="textcolour">AI</span>
+        </div>
+        <div class="service-icon service-icon-btn" name="auth">
+          <img src="/static/images/AA.svg" alt="image" class="service-image">
+          <span class="textcolour">Auth&Access</span>
+        </div>
+        <div class="service-icon service-icon-btn" name="graphql">
+          <img src="/static/images/Graphql.svg" alt="image" class="service-image">
+          <span class="textcolour">GraphQL</span>
+        </div>
+        <div class="service-icon service-icon-btn" name="microservices">
+          <img src="/static/images/MicroService.svg" alt="image" class="service-image">
+          <span class="textcolour">Microservices</span>
+        </div>
+      </div>
+
+      <!-- Dynamic Content Section -->
+      <div id="animatedDiv">
+        <div id="service-content">
+          <h4 id="service-content-head"></h4>
+          <div id="service-content-body">
+          </div>
+          </div>
+       </div>
+        
+    </div>
+  </section>
+
+
+
+
+  <!-- ---------------------------------------------------------------------------- -->
+  
   <!-- Main Portfolio -->
-  <a id="portfolio"></a>
+  <!-- <a id="portfolio"></a>
   <section class="section portfolio">
     <div class="container">
 
@@ -350,11 +416,13 @@
       </div>
 
     </div>
-  </section>
+  </section> -->
+
+
 
    
   <!-- Key Features -->
-  <a id="services"></a>
+  <!-- <a id="services"></a>
   <section class="section services py-5">
     <div class="container">
       <div class="row justify-content-center pb-5">
@@ -441,38 +509,41 @@
 
       </div>
     </div>
-  </section>
+  </section> -->
+
+  <!-- ---------------------------------------------------------------------------- -->
+
+
 
 
   <!-- Our Clients -->
-  <!-- Our Clients Section -->
   <section id="Clients" style="background-color: #f0f8ff; padding: 40px 0;">
     <div class="container" padding: 20px; border-radius: 10px;">
       <h2 class="fs-1 fw-bold text-primary text-center pb-4" style="margin-bottom: 20px;">Our Clients</h2>
       <div class="row">
 
         <!-- Client 1 -->
-        <div class="col-md-4 col-sm-12 text-center img-fluid img-mobile img-tablet">
+        <div class="col-md-4 col-sm-12 text-center img-mobile vachanenginego">
           <a href="https://vachanonline.com" target="_blank">
-            <img src="{{ root_url }}/static/images/vachan_online.png" alt="VachanOnline" width="280" height="80">
+            <img src="{{ root_url }}/static/images/vachan_online.png" alt="VachanOnline">
           </a> 
           <!-- <h5 style="margin-top: 15px;"><a href="https://vachanonline.com" target="_blank">VachanOnline</a></h5>
           <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse lobortis, libero eget maximus tristique, urna ex lobortis sem, eget lacinia quam felis id augue</p> -->
         </div>
 
         <!-- Client 2 -->
-        <div class="col-md-4 col-sm-12 text-center img-fluid img-mobile img-tablet">
+        <div class="col-md-4 col-sm-12 text-center img-mobile vachanenginego">
           <a href="https://play.google.com/store/apps/details?id=com.bridgeconn.vachango&amp;pli=1" target="_blank">
-            <img src="{{ root_url }}/static/images/vachan_go.png" alt="VachanGo" width="280" height="80" class="img-fluid img-mobile img-tablet">
+            <img src="{{ root_url }}/static/images/vachan_go.png" alt="VachanGo">
           </a> 
           <!-- <h5 style="margin-top: 15px;"><a href="https://play.google.com/store/apps/details?id=com.bridgeconn.vachango&pcampaignid=web_share" target="_blank">VachanGo</a></h5>
           <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse lobortis, libero eget maximus tristique, urna ex lobortis sem, eget lacinia quam felis id augue</p> -->
         </div>
 
         <!-- Client 3 -->
-        <div class="col-md-4 col-sm-12 text-center img-fluid img-mobile img-tablet">
+        <div class="col-md-4 col-sm-12 text-center img-mobile intellisign">
           <a href="https://isl.bridgeconn.com" target="_blank">
-            <img src="{{ root_url }}/static/images/intellisign.png" alt="IntelliSign" width="90" height="90" class="img-fluid img-mobile img-tablet">
+            <img src="{{ root_url }}/static/images/intellisign.png" alt="IntelliSign">
           </a> 
           <!-- <h5><a href="https://isl.bridgeconn.com/" target="_blank">IntelliSign</a></h5>
           <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse lobortis, libero eget maximus tristique, urna ex lobortis sem, eget lacinia quam felis id augue</p> -->
@@ -483,15 +554,76 @@
   </section>
 
 
+  <!-- Testimonial Carousel -->
+  <div class="testimonial-area" style="background-color: #f0f8ff; padding: 40px 0;">
+		<div class="container">
+			<div class="row">
+				<div class="col-sm-12">
+					<div class="section-header text-center">
+            <!-- <div>
+              <h3 class="fs-1 fw-bold text-primary text-center pb-4">Testimonials</h3>
+            </div> -->
+						
+						<h4>What Our Clients Says</h4>
+						<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quaerat at animi unde, et, obcaecati eius.</p>
+					</div>
+				</div>
+				<div class="col-sm-12">
+          <div class="carousel slide" data-bs-ride="carousel" id="carouselExampleIndicators">
+              <div class="carousel-inner">
+                  <div class="carousel-item active">
+                      <div class="icon-area">
+                          <i class="fa fa-comments"></i>
+                      </div>
+                      <div class="content text-center">
+                          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Suscipit reiciendis necessitatibus laborum numquam consequuntur possimus magnam expedita ipsam illum voluptatem quia assumenda placeat, at asperiores vitae obcaecati. Reprehenderit nesciunt voluptatem excepturi, libero ipsum tempora perspiciatis.</p>
+                          <div class="person"><img alt="" src="/static/images/coding.png"></div>
+                          <h5>Ted Mosby</h5>
+                          <h6>Architect</h6>
+                      </div>
+                  </div>
+                  <div class="carousel-item">
+                      <div class="icon-area">
+                          <i class="fa fa-comments"></i>
+                      </div>
+                      <div class="content text-center">
+                          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Suscipit reiciendis necessitatibus laborum numquam consequuntur possimus magnam expedita ipsam illum voluptatem quia assumenda placeat, at asperiores vitae obcaecati. Reprehenderit nesciunt voluptatem excepturi, libero ipsum tempora perspiciatis.</p>
+                          <div class="person"><img alt="" src="/static/images/coding.png"></div>
+                          <h5>Marshal Erickson</h5>
+                          <h6>Lawyer</h6>
+                      </div>
+                  </div>
+                  <div class="carousel-item">
+                      <div class="icon-area">
+                          <i class="fa fa-comments"></i>
+                      </div>
+                      <div class="content text-center">
+                          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Suscipit reiciendis necessitatibus laborum numquam consequuntur possimus magnam expedita ipsam illum voluptatem quia assumenda placeat, at asperiores vitae obcaecati. Reprehenderit nesciunt voluptatem excepturi, libero ipsum tempora perspiciatis.</p>
+                          <div class="person"><img alt="" src="/static/images/coding.png"></div>
+                          <h5>Barney Stingson</h5>
+                          <h6>Philanthropist</h6>
+                      </div>
+                  </div>
+              </div>
+              <div class="carousel-indicators">
+                  <button aria-label="Slide 1" class="active" data-bs-slide-to="0" data-bs-target="#carouselExampleIndicators" type="button"></button>
+                  <button aria-label="Slide 2" data-bs-slide-to="1" data-bs-target="#carouselExampleIndicators" type="button"></button>
+                  <button aria-label="Slide 3" data-bs-slide-to="2" data-bs-target="#carouselExampleIndicators" type="button"></button>
+              </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Technologies -->
-  <a id="brands"></a> 
+  <a id="Technologies"></a> 
   <section class="section brands py-5">
     <div class="container">
       <div class="row">
 
         <div class="col-12">
-          <h3 class="fs-1 fw-bold text-primary text-center pb-4">Technologies </h3>
+          <h2 class="fs-1 fw-bold text-primary text-center pb-4">Technologies </h3>
         </div>
 
       </div>
@@ -542,12 +674,13 @@
   </section>
 
 
+  
   <!-- Footer -->
   <footer class="shared footer bg-blue-light py-5">
     <div class="container">
       <div class="row pb-5">
         <div class="col-12 col-xl-4 text-center text-xl-start pb-4">
-          <h4 class="fs-4 fw-semibold text-uppercase text-primary">API Documentation</h4>
+          <h4 class="fs-4 fw-semibold text-uppercase text-primary">Vachan API</h4>
           <p class="small text-black-61"></p>
 
           <ul class="d-flex justify-content-center justify-content-xl-start list-unstyled">
@@ -576,61 +709,49 @@
                 href="https://www.linkedin.com/company/bridgeconn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-linkedin" viewBox="0 0 16 16">
                   <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4z"/>
                 </svg>
-                </a></li>
-              
-
+                </a></li> 
+            <li class="rounded-circle bg-blue-63 me-2 p-2"><a
+                  class="d-flex align-items-center justify-content-center size-16"
+                  href="https://www.bridgeconn.com"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-globe" viewBox="0 0 16 16">
+                    <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49c.062.89.291 1.733.656 2.5H3.82zm6.853 3.472A7.024 7.024 0 0 0 13.745 12H11.91a9.27 9.27 0 0 1-.64 1.539 6.688 6.688 0 0 1-.597.933zM8.5 12v2.923c.67-.204 1.335-.82 1.887-1.855.173-.324.33-.682.468-1.068H8.5zm3.68-1h2.146c.365-.767.594-1.61.656-2.5h-2.49a13.65 13.65 0 0 1-.312 2.5zm2.802-3.5a6.959 6.959 0 0 0-.656-2.5H12.18c.174.782.282 1.623.312 2.5h2.49zM11.27 2.461c.247.464.462.98.64 1.539h1.835a7.024 7.024 0 0 0-3.072-2.472c.218.284.418.598.597.933zM10.855 4a7.966 7.966 0 0 0-.468-1.068C9.835 1.897 9.17 1.282 8.5 1.077V4h2.355z"/>
+                  </svg>
+                  </svg>
+                  </a></li>            
           </ul>
-
         </div>
 
-        <!-- <div class="col-12 col-xl-2 text-center text-xl-start pb-4">
-          <h5 class="fs-6 fw-semibold text-primary">About us</h5>
-          <ul class="list-unstyled">
+        <div class="col-12 col-xl-4 text-center text-xl-start pb-4">
+          <!-- Empty column division -->
+        </div>
 
-            <li class="">
-              <a class="small text-black-61 text-decoration-none" href="#hero">About</a>
-            </li>
 
-            <li class="">
-              <a class="small text-black-61 text-decoration-none"
-                href="#vachan-engine-apis">Vachan Engine APIs</a>
-            </li>
+        <!-- Location and Contact Us sections -->
+        <div class="col-12 col-xl-4 text-center text-xl-start pb-4">
+          <!-- Location -->
+          <div class="text-center text-xl-start pb-2">
+              <h5 class="fs-6 fw-semibold text-primary">Location</h5>
+              <ul class="list-unstyled">
+                  <li class="mb-2">
+                      <p class="small text-black-61 m-0">Plot No. 11-13 1st Floor, Village AmberHai, Dwarka Sector 19, New
+                        Delhi,India-110075</p>
+                  </li>
+              </ul>
+          </div>
 
-            <li class="">
-              <a class="small text-black-61 text-decoration-none" href="#ai-apis">AI APIs</a>
-            </li>
+          <!-- Contact Us -->
+          <div class="text-center text-xl-start pb-2">
+              <h5 class="fs-6 fw-semibold text-primary">Contact us</h5>
+              <p class="small text-black-61 mb-1">info@bridgeconn.com</p>
+              <p class="small text-black-61 mb-1">+91-11-41557314</p>
+          </div>
+        </div>
 
-            <li class="">
-              <a class="small text-black-61 text-decoration-none"
-                href="#translation-apis">Translation APIs</a>
-            </li>
 
-            <li class="">
-              <a class="small text-black-61 text-decoration-none"
-                href="#content-management">Content Management</a>
-            </li>
-
-            <li class="">
-              <a class="small text-black-61 text-decoration-none"
-                href="#micro-services">Microservices</a>
-            </li>
-
-          </ul>
-        </div> -->
-        <div class="col-12 col-xl-3 text-center text-xl-start pb-4">
+        <!-- <div class="col-12 col-xl-3 text-center text-xl-start pb-4">
           <h5 class="fs-6 fw-semibold text-primary">Location</h5>
           <ul class="list-unstyled">
 
             <li class="d-flex justify-content-center justify-content-xl-start mb-2">
-              <!-- <div class="d-flex align-items-center text-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16"
-                  height="16" fill="currentColor" class="bi bi-geo-alt" viewBox="0 0 16 16">
-                  <path
-                    d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 0 1 8 14.58a31.481 31.481 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94zM8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10z">
-                  </path>
-                  <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path>
-                </svg>
-              </div> -->
               <p class="small text-black-61 m-0">Plot No. 11-13 1st Floor, Village AmberHai, Dwarka Sector 19, New
                 Delhi,India-110075</p>
             </li>
@@ -644,7 +765,7 @@
 
           <p class="small text-black-61 mb-1">+91-11-41557314</p>
 
-        </div>
+        </div> -->
       </div>
       <div class="row">
         <div class="col-12">
@@ -658,5 +779,7 @@
 
 
 </body>
+
+<script src="/static/scripts/services.js"></script>
 
 </html>
