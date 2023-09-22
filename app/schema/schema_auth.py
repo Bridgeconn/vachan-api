@@ -41,7 +41,7 @@ class Registration(BaseModel):
     """kratos registration input"""
     email:str
     password:types.SecretStr
-    firstname:str = None
+    firstname:str
     lastname:str = None
 
 class EditUser(BaseModel):
