@@ -6,6 +6,14 @@ const dynamicContentWrapper = document.getElementById('animatedDiv')
 const serviceHeader = document.getElementById('service-content-head')
 const serviceBody = document.getElementById('service-content-body')
 
+const contentBodyColors = [
+    "rgba(153, 102 ,255,0.2)",
+    "rgba(255, 179, 199,0.2)",
+    "rgba(51, 221, 179, 0.2)",
+    "rgba(158, 23, 145, 0.2)",
+    "rgba(40, 193, 1, 0.2)",
+    "rgba(0, 196, 196,0.2)"
+]
 
 let serviceContent;
 
@@ -23,7 +31,6 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
 async function setServiceContent(serviceName) {
     await loadSeriveData();
     const currentData = serviceContent[serviceName]
-    console.log({currentData});
     if (currentData){
         serviceHeader.innerText = currentData.title;
         serviceBody.innerText = currentData.content;
@@ -36,7 +43,8 @@ async function setServiceContent(serviceName) {
 let lastClickedSection;
 
 async function handleServiceClicked(serviceName) {
-    console.log({serviceName, serviceContent});
+    const currentIndex = Object.keys(serviceContent).indexOf(serviceName);
+    animatedDiv.style.backgroundColor = contentBodyColors[currentIndex];
     // accordian action
     if (animatedDiv.clientHeight === 0) {
         await setServiceContent(serviceName);
@@ -62,9 +70,9 @@ async function handleServiceClicked(serviceName) {
 
 }
 
-const servicesBtn = document.querySelectorAll('.service-icon-btn');
+const serviceCard = document.querySelectorAll('.serviceCard');
 
-servicesBtn.forEach(div => {
+serviceCard.forEach(div => {
     div.addEventListener('click', function() {
       const name = this.getAttribute('name');
       handleServiceClicked(name)

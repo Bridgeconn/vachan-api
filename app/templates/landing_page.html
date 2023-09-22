@@ -40,7 +40,7 @@
 
 
   <!-- <link rel="icon" href="http://localhost:1313/favicon-32.png" sizes="32x32"> -->
-  <link rel="icon" href="/static/images/Arrow.svg" sizes="30x30">
+  <link rel="icon" href="/static/images/Logo.svg" sizes="30x30">
 
 
 
@@ -108,8 +108,8 @@
   <nav class="navbar sticky-top navbar-expand-xl navbar-light bg-light py-2" style="box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);">
     <div class="container-fluid">
       <a class="navbar-brand d-flex align-items-center" href="#About">
-        <img src="/static/images/Arrow.svg" alt="images/logo.png" width="86" height="86" style="margin-right: 8px;">
-        <span class="fs-3 fw-semibold text-uppercase text-primary">Vachan API</span>
+        <img src="/static/images/Logo.svg" alt="images/logo.png" width="86" height="86" style="margin-right: 15px;">
+        <span class="fs-3 fw-semibold text-sentencecase text-primary navimage">Vachan API</span>
     </a>
 
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -170,8 +170,7 @@
         </div>
         <div class="about col-12 col-xl-6 d-flex flex-column justify-content-center">
 
-          <h3 class="hero-title fw-bold display-1 text-primary text-center text-xl-start pb-4">All about <strong>Vachan
-              API</strong></h3>
+          <h3 class="hero-title fw-bold display-1 text-primary text-center text-xl-start pb-4 navimage"><strong>Vachan Engine</strong></h3>
 
 
           <p class="text-center text-justify text-black-61 text-xl-start pb-4" align="justify">Vachan API is a server application that offers APIs
@@ -202,34 +201,101 @@
   </section>
 
   <!-- Section Dynamic Content -->
-  <section class="section portfolio" id="Whatweoffer">
+  <section class="section" id="Whatweoffer">
     <div class="container dynamic-services">
+      <h2 class="fs-1 fw-bold text-primary text-center pb-4" style="margin-bottom: 20px;">What We Offer</h2>
 
       <!--services nav Icons sections -->
-      <div class="services-icons">
-        <div class="service-icon service-icon-btn" name="cms">
-          <img src="/static/images/CMS.svg" alt="image" class="service-image">
-          <span class="textcolour">CMS</span>
+      <div class="serviceCards">
+
+        <div class="serviceCard" name="cms">
+          <div class="serviceCard__container">
+            <div class="serviceCard__header">
+              <span>CMS</span>
+            </div>
+            <div class="serviceCard__body">
+              <div class="serviceCard__body__image" >
+                <img src="/static/images/CMS.svg" alt="image" class="service-image">
+              </div>
+            </div>
+            <div class="serviceCard__footer"></div>
+          </div>
+          <div class="serviceCard__shadow" style="--cardTopColor: #9966FF;"></div>
         </div>
-        <div class="service-icon service-icon-btn" name="translation">
-          <img src="/static/images/Translation.svg" alt="image" class="service-image">
-          <span class="textcolour">Translation</span>
+
+        <div class="serviceCard" name="translation">
+          <div class="serviceCard__container">
+            <div class="serviceCard__header">
+              <span>Translation</span>
+            </div>
+            <div class="serviceCard__body">
+              <div class="serviceCard__body__image" >
+                <img src="/static/images/Translation.svg" alt="image" class="service-image">
+              </div>
+            </div>
+            <div class="serviceCard__footer"></div>
+          </div>
+          <div class="serviceCard__shadow" style="--cardTopColor: #FFB3C7;"></div>
         </div>
-        <div class="service-icon service-icon-btn" name="ai">
-          <img src="/static/images/AI.svg" alt="image" class="service-image">
-          <span class="textcolour">AI</span>
+
+        <div class="serviceCard" name="ai">
+          <div class="serviceCard__container">
+            <div class="serviceCard__header">
+              <span>AI</span>
+            </div>
+            <div class="serviceCard__body">
+              <div class="serviceCard__body__image" >
+                <img src="/static/images/AI.svg" alt="image" class="service-image">
+              </div>
+            </div>
+            <div class="serviceCard__footer"></div>
+          </div>
+          <div class="serviceCard__shadow" style="--cardTopColor: #33DDB3;"></div>
         </div>
-        <div class="service-icon service-icon-btn" name="auth">
-          <img src="/static/images/AA.svg" alt="image" class="service-image">
-          <span class="textcolour">Auth&Access</span>
+
+        <div class="serviceCard" name="auth">
+          <div class="serviceCard__container">
+            <div class="serviceCard__header">
+             <span>Auth & Access</span>
+            </div>
+            <div class="serviceCard__body">
+              <div class="serviceCard__body__image" >
+                <img src="/static/images/AA.svg" alt="image" class="service-image">
+              </div>
+            </div>
+            <div class="serviceCard__footer"></div>
+          </div>
+          <div class="serviceCard__shadow" style="--cardTopColor: #9E1791;"></div>
         </div>
-        <div class="service-icon service-icon-btn" name="graphql">
-          <img src="/static/images/Graphql.svg" alt="image" class="service-image">
-          <span class="textcolour">GraphQL</span>
+
+        <div class="serviceCard" name="graphql">
+          <div class="serviceCard__container">
+            <div class="serviceCard__header">
+              <span>GraphQL</span>
+            </div>
+            <div class="serviceCard__body">
+              <div class="serviceCard__body__image" >
+                <img src="/static/images/Graphql.svg" alt="image" class="service-image">
+              </div>
+            </div>
+            <div class="serviceCard__footer"></div>
+          </div>
+          <div class="serviceCard__shadow" style="--cardTopColor: #28c101;"></div>
         </div>
-        <div class="service-icon service-icon-btn" name="microservices">
-          <img src="/static/images/MicroService.svg" alt="image" class="service-image">
-          <span class="textcolour">Microservices</span>
+
+        <div class="serviceCard" name="microservices">
+          <div class="serviceCard__container">
+            <div class="serviceCard__header">
+              <span>Microservices</span>
+            </div>
+            <div class="serviceCard__body">
+              <div class="serviceCard__body__image" >
+                <img src="/static/images/MicroService.svg" alt="image" class="service-image">
+              </div>
+            </div>
+            <div class="serviceCard__footer"></div>
+          </div>
+          <div class="serviceCard__shadow" style="--cardTopColor: #00c4c4;"></div>
         </div>
       </div>
 
@@ -518,7 +584,7 @@
 
   <!-- Our Clients -->
   <section id="Clients" style="background-color: #f0f8ff; padding: 40px 0;">
-    <div class="container" padding: 20px; border-radius: 10px;">
+    <div class="container" style="padding: 20px; border-radius: 10px;">
       <h2 class="fs-1 fw-bold text-primary text-center pb-4" style="margin-bottom: 20px;">Our Clients</h2>
       <div class="row">
 
@@ -557,19 +623,33 @@
 
       </div>
     </div>
+    <!-- Testimonial Carousel -->
+    <div class="testimonial-area" style="background-color: #f0f8ff; padding: 0 0 40px 0;">
+      <div class="container">
+        <div class="row">
+          <div class="col-sm-12">
+            <div class="carousel slide" data-bs-ride="carousel" id="carouselExampleIndicators">
+                <div class="carousel-inner" id="carousel-content" style="min-height: 350px;">
+                    <!-- content -->
+                </div>
+                <div class="carousel-indicators" id="carousel-indicator-wrapper">
+                  <!-- indicators -->
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
 
 
   <!-- Testimonial Carousel -->
-  <div class="testimonial-area" style="background-color: #f0f8ff; padding: 40px 0;">
+  <!-- <div class="testimonial-area" style="background-color: #f0f8ff; padding: 40px 0;">
 		<div class="container">
 			<div class="row">
 				<div class="col-sm-12">
 					<div class="section-header text-center">
-            <!-- <div>
-              <h3 class="fs-1 fw-bold text-primary text-center pb-4">Testimonials</h3>
-            </div> -->
-						
+            					
 						<h4>What Our Clients Says</h4>
 						<p>"Our clients' satisfaction is a testament to our commitment to exceptional service and outstanding results."</p>
 					</div>
@@ -620,7 +700,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </div> -->
 
   <!-- Technologies -->
   <a id="Technologies"></a> 
@@ -809,5 +889,6 @@
 </body>
 
 <script src="/static/scripts/services.js"></script>
+<script src="/static/scripts/client.js"></script>
 
 </html>
