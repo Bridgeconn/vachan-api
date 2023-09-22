@@ -106,12 +106,12 @@
 }
 
 
-.vachanenginego a img{
+.vachanenginego img{
   width: 280px;
   height: 80px;
 }
 
-.intellisign a img{
+.intellisign img{
   width: 90px;
   height: 90px;
 }
@@ -125,17 +125,17 @@
     padding: 20px; 
   } */
 
-  .img-mobile a img {
+  .img-mobile img {
     max-width: 100%; /* Make images responsive */
     height: auto;
   }
 
-  .vachanenginego a img{
+  .vachanenginego img{
     width: 210px;
     height: 60px;
   }
   
-  .intellisign a img{
+  .intellisign img{
     width: 70px;
     height: 70px;
   }
@@ -150,11 +150,11 @@
     padding: 20px;
   } */
 
-  .img-mobile a img {
+  .img-mobile img {
     max-width: 50%; /* Adjust the maximum width for mobile */
     height: auto;
   }
-  .intellisign a img{
+  .intellisign img{
     width: 50px;
     height: 50px;
   }
@@ -201,7 +201,7 @@
 	margin: auto;
 	border-radius: 50%;
 	overflow: hidden;
-	border: 5px solid #ff87B0;
+	border: 3px solid #3B270C;
 	margin-top: 50px;
 }
 .person img {
@@ -285,4 +285,37 @@ li{
 
 .docsbutton{
   font-family: 'Nunito Sans', sans-serif;
+}
+
+
+
+.navbar .dropdown-toggle {
+  color: #7c76bb !important; /* Set text color for dropdown items */
+}
+
+.navbar .dropdown-menu .dropdown-item {
+  /* background-color: #7c76bb; Set background color for sub-dropdown items */
+  color: #7c76bb; /* Set text color for sub-dropdown items */
+
+} 
+
+
+/* Default styles for laptop/desktop view */
+.techimages img {
+  max-width: 100%; /* Ensure images don't exceed their container width */
+  height: auto;   /* Maintain image aspect ratio */
+}
+
+/* Tablet view (adjust breakpoint as needed) */
+@media (max-width: 768px) {
+  .techimages img {
+    max-width: 80%; /* Reduce image size for tablet view */
+  }
+}
+
+/* Mobile view (adjust breakpoint as needed) */
+@media (max-width: 480px) {
+  .techimages img {
+    max-width: 45%; /* Reduce image size for mobile view */
+  }
 }

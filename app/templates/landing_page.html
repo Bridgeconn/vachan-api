@@ -43,6 +43,7 @@
   <link rel="icon" href="/static/images/Arrow.svg" sizes="30x30">
 
 
+
   <link rel="shortcut icon" sizes="196x196" href="http://localhost:1313/favicon-196.png">
 
 
@@ -66,6 +67,7 @@
   <meta itemprop="name" content="">
   <meta itemprop="description" content="">
 
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -105,12 +107,10 @@
 <body>
   <nav class="navbar sticky-top navbar-expand-xl navbar-light bg-light py-2" style="box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);">
     <div class="container-fluid">
-      <a class="navbar-brand d-flex align-items-center">
-
-        <img class="" src="/static/images/Arrow.svg" alt="images/logo.png" width="86" height="86" style="margin-right: 8px;">
-
+      <a class="navbar-brand d-flex align-items-center" href="#About">
+        <img src="/static/images/Arrow.svg" alt="images/logo.png" width="86" height="86" style="margin-right: 8px;">
         <span class="fs-3 fw-semibold text-uppercase text-primary">Vachan API</span>
-      </a>
+    </a>
 
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -141,7 +141,7 @@
             </a>
             <ul class="dropdown-menu">
               <li><a class="dropdown-item text-center" href="https://api.vachanengine.org/docs">API Documentation</a></li>
-              <li><a class="dropdown-item text-center" href="#">Another action</a></li>
+              <li><a class="dropdown-item text-center" href="https://api.vachanengine.org/redoc">API Docs Generator</a></li>
               <li>
           </li>
           <!-- <li class="nav-item text-center">
@@ -202,7 +202,7 @@
   </section>
 
   <!-- Section Dynamic Content -->
-  <section class="section portfolio">
+  <section class="section portfolio" id="Whatweoffer">
     <div class="container dynamic-services">
 
       <!--services nav Icons sections -->
@@ -524,30 +524,36 @@
 
         <!-- Client 1 -->
         <div class="col-md-4 col-sm-12 text-center img-mobile vachanenginego">
-          <a href="https://vachanonline.com" target="_blank">
+          <!-- <a href="" target="_blank">
             <img src="{{ root_url }}/static/images/vachan_online.png" alt="VachanOnline">
-          </a> 
+          </a>  -->
           <!-- <h5 style="margin-top: 15px;"><a href="https://vachanonline.com" target="_blank">VachanOnline</a></h5>
           <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse lobortis, libero eget maximus tristique, urna ex lobortis sem, eget lacinia quam felis id augue</p> -->
+          <img src="{{ root_url }}/static/images/vachan_online.png" alt="VachanOnline">
         </div>
 
+
         <!-- Client 2 -->
-        <div class="col-md-4 col-sm-12 text-center img-mobile vachanenginego">
-          <a href="https://play.google.com/store/apps/details?id=com.bridgeconn.vachango&amp;pli=1" target="_blank">
-            <img src="{{ root_url }}/static/images/vachan_go.png" alt="VachanGo">
-          </a> 
-          <!-- <h5 style="margin-top: 15px;"><a href="https://play.google.com/store/apps/details?id=com.bridgeconn.vachango&pcampaignid=web_share" target="_blank">VachanGo</a></h5>
+        <div class="col-md-4 col-sm-12 text-center img-mobile intellisign">
+          <!-- <a href="" target="_blank">
+            <img src="{{ root_url }}/static/images/intellisign.png" alt="IntelliSign">
+          </a>  -->
+          <!-- <h5><a href="https://isl.bridgeconn.com/" target="_blank">IntelliSign</a></h5>
           <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse lobortis, libero eget maximus tristique, urna ex lobortis sem, eget lacinia quam felis id augue</p> -->
+          <img src="{{ root_url }}/static/images/intellisign.png" alt="IntelliSign">
         </div>
 
         <!-- Client 3 -->
-        <div class="col-md-4 col-sm-12 text-center img-mobile intellisign">
-          <a href="https://isl.bridgeconn.com" target="_blank">
-            <img src="{{ root_url }}/static/images/intellisign.png" alt="IntelliSign">
-          </a> 
-          <!-- <h5><a href="https://isl.bridgeconn.com/" target="_blank">IntelliSign</a></h5>
+        <div class="col-md-4 col-sm-12 text-center img-mobile vachanenginego">
+          <!-- <a href="" target="_blank">
+            <img src="{{ root_url }}/static/images/vachan_go.png" alt="VachanGo">
+          </a>  -->
+          <!-- <h5 style="margin-top: 15px;"><a href="https://play.google.com/store/apps/details?id=com.bridgeconn.vachango&pcampaignid=web_share" target="_blank">VachanGo</a></h5>
           <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse lobortis, libero eget maximus tristique, urna ex lobortis sem, eget lacinia quam felis id augue</p> -->
+          <img src="{{ root_url }}/static/images/vachan_go.png" alt="VachanGo">
         </div>
+
+        
 
       </div>
     </div>
@@ -565,7 +571,7 @@
             </div> -->
 						
 						<h4>What Our Clients Says</h4>
-						<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quaerat at animi unde, et, obcaecati eius.</p>
+						<p>"Our clients' satisfaction is a testament to our commitment to exceptional service and outstanding results."</p>
 					</div>
 				</div>
 				<div class="col-sm-12">
@@ -576,32 +582,32 @@
                           <i class="fa fa-comments"></i>
                       </div>
                       <div class="content text-center">
+                          <p>We've been using VachanEngine CMS for our front-end applications, and it has truly served our need for varied resources in South Asian languages in different formats. The user-friendly documentation and their excellent development team makes it a breeze to organize and use the content. I highly recommend VachanEngine CMS to anyone looking for a powerful and intuitive content management solution.</p>
+                          <div class="person"><img alt="" src="/static/images/testimonials/samuel.png"></div>
+                          <h5>Samuel Anthrayose</h5>
+                          <h6>Project Manager</h6>
+                      </div>
+                  </div>
+                  <div class="carousel-item">
+                      <div class="icon-area">
+                          <i class="fa fa-comments"></i>
+                      </div>
+                      <div class="content text-center">
+                          <p>Vachan engine is comprehensive and easy to use. It has detailed documentation. The ability to try out the API on the documentation page itself is very useful. Making an UI application with it was a breeze.</p>
+                          <div class="person"><img alt="" src="/static/images/testimonials/revant.png"></div>
+                          <h5>Revant Cherian Idikulay</h5>
+                          <h6>Software Engineer</h6>
+                      </div>
+                  </div>
+                  <div class="carousel-item">
+                      <div class="icon-area">
+                          <i class="fa fa-comments"></i>
+                      </div>
+                      <div class="content text-center">
                           <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Suscipit reiciendis necessitatibus laborum numquam consequuntur possimus magnam expedita ipsam illum voluptatem quia assumenda placeat, at asperiores vitae obcaecati. Reprehenderit nesciunt voluptatem excepturi, libero ipsum tempora perspiciatis.</p>
                           <div class="person"><img alt="" src="/static/images/coding.png"></div>
                           <h5>Ted Mosby</h5>
-                          <h6>Architect</h6>
-                      </div>
-                  </div>
-                  <div class="carousel-item">
-                      <div class="icon-area">
-                          <i class="fa fa-comments"></i>
-                      </div>
-                      <div class="content text-center">
-                          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Suscipit reiciendis necessitatibus laborum numquam consequuntur possimus magnam expedita ipsam illum voluptatem quia assumenda placeat, at asperiores vitae obcaecati. Reprehenderit nesciunt voluptatem excepturi, libero ipsum tempora perspiciatis.</p>
-                          <div class="person"><img alt="" src="/static/images/coding.png"></div>
-                          <h5>Marshal Erickson</h5>
-                          <h6>Lawyer</h6>
-                      </div>
-                  </div>
-                  <div class="carousel-item">
-                      <div class="icon-area">
-                          <i class="fa fa-comments"></i>
-                      </div>
-                      <div class="content text-center">
-                          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Suscipit reiciendis necessitatibus laborum numquam consequuntur possimus magnam expedita ipsam illum voluptatem quia assumenda placeat, at asperiores vitae obcaecati. Reprehenderit nesciunt voluptatem excepturi, libero ipsum tempora perspiciatis.</p>
-                          <div class="person"><img alt="" src="/static/images/coding.png"></div>
-                          <h5>Barney Stingson</h5>
-                          <h6>Philanthropist</h6>
+                          <h6>The Architect</h6>
                       </div>
                   </div>
               </div>
@@ -629,7 +635,16 @@
       </div>
       <div class="row align-items-center justify-content-center">
 
-        <div class="col px-3 my-2 text-center">
+        <!-- <div class="col px-3 my-2 text-center"> -->
+        <div class="col-md-3 col-sm-6 px-3 my-2 text-center techimages">  
+
+
+          <img class="" src="{{ root_url }}/static/images/python.png" alt="images/python.png" width="162"
+            height="96">
+
+        </div>
+
+        <div class="col-md-3 col-sm-6 px-3 my-2 text-center techimages">
 
 
           <img class="" src="{{ root_url }}/static/images/fastapi.png" alt="images/fastapi.png" width="266"
@@ -637,7 +652,7 @@
 
         </div>
 
-        <div class="col px-3 my-2 text-center">
+        <div class="col-md-3 col-sm-6 px-3 my-2 text-center techimages">
 
 
           <img class="" src="{{ root_url }}/static/images/postgres.png" alt="images/postgres.png" width="166"
@@ -646,14 +661,14 @@
 
         </div>
 
-        <div class="col px-3 my-2 text-center">
+        <div class="col-md-3 col-sm-6 px-3 my-2 text-center techimages">
 
           <img class="" src="{{ root_url }}/static/images/docker.jpg" alt="images/docker.jpg" width="166"
             height="92">
 
         </div>
 
-        <div class="col px-3 my-2 text-center">
+        <div class="col-md-3 col-sm-6 px-3 my-2 text-center techimages">
 
           <img class="" src="{{ root_url }}/static/images/redis.png" alt="images/redis.png" width="166"
             height="55">
@@ -661,10 +676,26 @@
 
         </div>
 
-        <div class="col px-3 my-2 text-center">
+        <div class="col-md-3 col-sm-6 px-3 my-2 text-center techimages">
 
           <img class="" src="{{ root_url }}/static/images/graphql_logo.png" alt="images/graphql_logo.png"
             width="266" height="93">
+
+
+        </div>
+
+        <div class="col-md-3 col-sm-6 px-3 my-2 text-center techimages">
+
+          <img class="" src="{{ root_url }}/static/images/orykratos.png" alt="images/orykratos.png"
+            width="230" height="120">
+
+
+        </div>
+
+        <div class="col-md-3 col-sm-6 px-3 my-2 text-center techimages">
+
+          <img class="" src="{{ root_url }}/static/images/pytorch.png" alt="images/pytorch.png"
+            width="171" height=86">
 
 
         </div>
@@ -697,11 +728,8 @@
               </a></li>
             <li class="rounded-circle bg-blue-63 me-2 p-2"><a
                 class="d-flex align-items-center justify-content-center size-16"
-                href="https://twitter.com/Bridge_Conn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                  fill="currentColor" class="bi bi-twitter" viewBox="0 0 16 16">
-                  <path
-                    d="M5.026 15c6.038 0 9.341-5.003 9.341-9.334 0-.14 0-.282-.006-.422A6.685 6.685 0 0 0 16 3.542a6.658 6.658 0 0 1-1.889.518 3.301 3.301 0 0 0 1.447-1.817 6.533 6.533 0 0 1-2.087.793A3.286 3.286 0 0 0 7.875 6.03a9.325 9.325 0 0 1-6.767-3.429 3.289 3.289 0 0 0 1.018 4.382A3.323 3.323 0 0 1 .64 6.575v.045a3.288 3.288 0 0 0 2.632 3.218 3.203 3.203 0 0 1-.865.115 3.23 3.23 0 0 1-.614-.057 3.283 3.283 0 0 0 3.067 2.277A6.588 6.588 0 0 1 .78 13.58a6.32 6.32 0 0 1-.78-.045A9.344 9.344 0 0 0 5.026 15z">
-                  </path>
+                href="https://twitter.com/Bridge_Conn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-twitter-x" viewBox="0 0 16 16">
+                  <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865l8.875 11.633Z"/>
                 </svg>
               </a></li>
             <li class="rounded-circle bg-blue-63 me-2 p-2"><a
