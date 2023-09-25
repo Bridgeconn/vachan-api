@@ -4,15 +4,15 @@
         "content":"Effective content management is crucial for VachanOnline.com and the VachanGo app, the leading Scripture Engagement platform in Indian Languages. With a streamlined content management system, administrators can organize and distribute diverse resources, including commentaries, videos, audio bibles, and reading plans. This system facilitates seamless integration of new content and ensures a wide range of offerings in multiple Indian languages. It also enables efficient management of user-generated content, fostering an interactive community of users. Content management plays a pivotal role in maintaining a dynamic and enriching Scripture Engagement experience for users.",
         "links":[
             {
-                "link1":"https://vachanonline.com/",
-                "linkname1":"Vachan Online",
-                "button":"false"
+                "link":"https://vachanonline.com/",
+                "linkname":"Vachan Online",
+                "button":false
             },
 
             {
-                "link2":"https://play.google.com/store/apps/details?id=com.bridgeconn.vachango&amp;pli=1",
-                "linkname2":"Vachan Go",
-                "button":"false"
+                "link":"https://play.google.com/store/apps/details?id=com.bridgeconn.vachango&amp;pli=1",
+                "linkname":"Vachan Go",
+                "button":false
             }
         ]
     },
@@ -21,8 +21,8 @@
         "content":"Translation APIs are primarily designed for text translation but are now also being experimented with for sign language translation. These APIs typically rely on vocabulary-based translation techniques and token replacement methods. They excel in handling very low-resource languages and languages that are closely related. Additionally, these APIs offer translation memory and context-aware suggestion capabilities, enhancing the quality and accuracy of translations. Whether it's cloud-based projects or local projects, these translation APIs can seamlessly integrate and support various implementation scenarios. Their versatility and capabilities make them valuable tools for enabling effective language translation in a wide range of applications.",
         "links":[
             {
-                "link1":"https://isl.bridgeconn.com/",
-                "linkname1":"IntelliSign",
+                "link":"https://isl.bridgeconn.com/",
+                "linkname":"IntelliSign",
                 "button":false
 
             }
@@ -37,21 +37,21 @@
         "content":"Access Restriction is implemented for all the endpoints in different levels based on the API’s content priority. User level, Content level, Application level-based security is added to each endpoint. Some of the endpoints are open accessible and others are restricted to user-roles only. User with specific role permission can only access those APIs. Access to endpoints can be done with the help of authorized token. The security implemented for the Vachan Engine contents are based on Role Based Access Control (RBAC) Auwhich restricts the access based on user's role, access-tags etc.",
         "links":[
             {
-                "link1":"https://github.com/Bridgeconn/vachan-api/blob/version-2/docs/AccessManagement-RBAC.md",
-                "linkname1":"Access Management",
-                "button":"false"
+                "link":"https://github.com/Bridgeconn/vachan-api/blob/version-2/docs/AccessManagement-RBAC.md",
+                "linkname":"Access Management",
+                "button":false
             },
 
             {
-                "link2":"https://github.com/Bridgeconn/vachan-api/blob/version-2/app/auth/api-permissions.csv",
-                "linkname2":"API Permissions",
-                "button":"false"
+                "link":"https://github.com/Bridgeconn/vachan-api/blob/version-2/app/auth/api-permissions.csv",
+                "linkname":"API Permissions",
+                "button":false
             },
 
             {
-                "link3":"https://github.com/Bridgeconn/vachan-api/blob/version-2/app/auth/access_rules.json",
-                "linkname3":"Access Rules",
-                "button":"false"
+                "link":"https://github.com/Bridgeconn/vachan-api/blob/version-2/app/auth/access_rules.json",
+                "linkname":"Access Rules",
+                "button":false
             }
         ]
     },
@@ -60,9 +60,9 @@
         "content":"GraphQL module for Vachan Engine is a specification for web APIs that offers a compelling alternative to REST. This module serves as a middle layer between client applications and data sources. With its powerful query language, GraphQL enables declarative data fetching, eliminating the need for over-fetching or under-fetching. Initially implemented using Graphene, we are now migrating to the Strawberry library, ensuring access to the latest GraphQL advancements. It is hosted alongside our REST API services, this integration allows you to leverage the best of both worlds. While REST provides familiar GET, PUT, and POST endpoints, GraphQL empowers you with flexible and precise data retrieval.",
         "links":[
             {
-                "link1":"",
-                "linkname1":"GraphQL",
-                "button":"false"
+                "link":"",
+                "linkname":"GraphQL",
+                "button":false
             }
         ]
     },
@@ -71,9 +71,9 @@
         "content":"Vachan Engine microservices architecture is broken down into a set of independently functioning services, each serving a specific business capability. These services communicate with each other through well-defined APIs, typically using lightweight protocols such as HTTP or messaging systems.",
         "links":[
             {
-                "link1":"",
-                "linkname1":"Microservices",
-                "button":"false"
+                "link":"",
+                "linkname":"Microservices",
+                "button":false
             }
         ]
     }

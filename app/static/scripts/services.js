@@ -43,11 +43,11 @@ async function setServiceContent(serviceName) {
             // Iterate through the links and create anchor elements
             currentData.links.forEach((linkData, index) => {
                 const linkElement = document.createElement('a');
-                linkElement.href = linkData[`link${index + 1}`]; // Access link1, link2, etc.
+                linkElement.href = linkData.link;
                 linkElement.target = "_blank"; // Opens link in a new tab
-                linkElement.innerText = linkData[`linkname${index + 1}`] || 'Learn More'; // Use linkname or default text
+                linkElement.innerText = linkData.linkname || 'Learn More'; // Use linkname or default text
                 linkContainer.appendChild(linkElement);
-
+                
                 
                 if (index < currentData.links.length - 1) {
                     const separator = document.createElement('span');
@@ -56,8 +56,8 @@ async function setServiceContent(serviceName) {
                 }
             });
 
-            linkContainer.style.marginTop = '10px'; // Adjust the value as needed
-
+            
+            linkContainer.style.marginTop = '10px';
 
             // Append the link container to the service card's body
             serviceBody.appendChild(linkContainer);
@@ -67,7 +67,6 @@ async function setServiceContent(serviceName) {
         serviceBody.innerText = 'Something went wrong! Failed to load data.';
     }
 }
-
 
 let lastClickedSection;
 
