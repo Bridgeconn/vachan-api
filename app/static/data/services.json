@@ -34,18 +34,44 @@
     },
     "auth": {
         "title":"Auth & Access Management",
-        "content":"Access Restriction is implemented for all the endpoints in different levels based on the API’s content priority. User level, Content level, Application level-based security is added to each endpoint. Some of the endpoints are open accessible and others are restricted to user-roles only. User with specific role permission can only access those APIs. Access to endpoints can be done with the help of authorized token. The security implemented for the Vachan Engine contents are based on Role Based Access Control (RBAC) Auwhich restricts the access based on user's role, access-tags etc."
+        "content":"Access Restriction is implemented for all the endpoints in different levels based on the API’s content priority. User level, Content level, Application level-based security is added to each endpoint. Some of the endpoints are open accessible and others are restricted to user-roles only. User with specific role permission can only access those APIs. Access to endpoints can be done with the help of authorized token. The security implemented for the Vachan Engine contents are based on Role Based Access Control (RBAC) Auwhich restricts the access based on user's role, access-tags etc.",
+        "links":[
+            {
+                "link1":"https://github.com/Bridgeconn/vachan-api/blob/version-2/docs/AccessManagement-RBAC.md",
+                "linkname1":"Access Management",
+                "button":"false"
+            },
+
+            {
+                "link2":"https://github.com/Bridgeconn/vachan-api/blob/version-2/app/auth/api-permissions.csv",
+                "linkname2":"API Permissions",
+                "button":"false"
+            },
+
+            {
+                "link3":"https://github.com/Bridgeconn/vachan-api/blob/version-2/app/auth/access_rules.json",
+                "linkname3":"Access Rules",
+                "button":"false"
+            }
+        ]
     },
     "graphql": {
         "title":"GraphQL",
-        "content":"GraphQL module for Vachan Engine is a specification for web APIs that offers a compelling alternative to REST. This module serves as a middle layer between client applications and data sources. With its powerful query language, GraphQL enables declarative data fetching, eliminating the need for over-fetching or under-fetching. Initially implemented using Graphene, we are now migrating to the Strawberry library, ensuring access to the latest GraphQL advancements. It is hosted alongside our REST API services, this integration allows you to leverage the best of both worlds. While REST provides familiar GET, PUT, and POST endpoints, GraphQL empowers you with flexible and precise data retrieval."
+        "content":"GraphQL module for Vachan Engine is a specification for web APIs that offers a compelling alternative to REST. This module serves as a middle layer between client applications and data sources. With its powerful query language, GraphQL enables declarative data fetching, eliminating the need for over-fetching or under-fetching. Initially implemented using Graphene, we are now migrating to the Strawberry library, ensuring access to the latest GraphQL advancements. It is hosted alongside our REST API services, this integration allows you to leverage the best of both worlds. While REST provides familiar GET, PUT, and POST endpoints, GraphQL empowers you with flexible and precise data retrieval.",
+        "links":[
+            {
+                "link1":"",
+                "linkname1":"GraphQL",
+                "button":"false"
+            }
+        ]
     },
     "microservices": {
         "title":"Micro Services",
         "content":"Vachan Engine microservices architecture is broken down into a set of independently functioning services, each serving a specific business capability. These services communicate with each other through well-defined APIs, typically using lightweight protocols such as HTTP or messaging systems.",
         "links":[
             {
-                "link1":"https://miro.com/app/board/uXjVPGg6dwk=/%20",
+                "link1":"",
                 "linkname1":"Microservices",
                 "button":"false"
             }

@@ -28,18 +28,6 @@ window.onload = loadSeriveData();
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
 
-// async function setServiceContent(serviceName) {
-//     await loadSeriveData();
-//     const currentData = serviceContent[serviceName]
-//     if (currentData){
-//         serviceHeader.innerText = currentData.title;
-//         serviceBody.innerText = currentData.content;
-//     } else{
-//         // failed to get data
-//         serviceBody.innerText = 'something went wrong! Failed to load data';
-//     }
-// }
-
 async function setServiceContent(serviceName) {
     await loadSeriveData();
     const currentData = serviceContent[serviceName];
