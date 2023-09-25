@@ -30,13 +30,41 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
 
 async function setServiceContent(serviceName) {
     await loadSeriveData();
-    const currentData = serviceContent[serviceName]
-    if (currentData){
+    const currentData = serviceContent[serviceName];
+    if (currentData) {
         serviceHeader.innerText = currentData.title;
         serviceBody.innerText = currentData.content;
-    } else{
+
+        // Check if links exist in the JSON data
+        if (currentData.links && currentData.links.length > 0) {
+            const linkContainer = document.createElement('div');
+            linkContainer.classList.add('service-link-container');
+
+            // Iterate through the links and create anchor elements
+            currentData.links.forEach((linkData, index) => {
+                const linkElement = document.createElement('a');
+                linkElement.href = linkData.link;
+                linkElement.target = "_blank"; // Opens link in a new tab
+                linkElement.innerText = linkData.linkname || 'Learn More'; // Use linkname or default text
+                linkContainer.appendChild(linkElement);
+                
+                
+                if (index < currentData.links.length - 1) {
+                    const separator = document.createElement('span');
+                    separator.innerText = ' | ';
+                    linkContainer.appendChild(separator);
+                }
+            });
+
+            
+            linkContainer.style.marginTop = '10px';
+
+            // Append the link container to the service card's body
+            serviceBody.appendChild(linkContainer);
+        }
+    } else {
         // failed to get data
-        serviceBody.innerText = 'something went wrong! Failed to load data';
+        serviceBody.innerText = 'Something went wrong! Failed to load data.';
     }
 }
 
