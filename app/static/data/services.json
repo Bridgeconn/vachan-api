@@ -1,11 +1,32 @@
 {
     "cms": {
         "title":"Content Management",
-        "content":"Effective content management is crucial for VachanOnline.com and the VachanGo app, the leading Scripture Engagement platform in Indian Languages. With a streamlined content management system, administrators can organize and distribute diverse resources, including commentaries, videos, audio bibles, and reading plans. This system facilitates seamless integration of new content and ensures a wide range of offerings in multiple Indian languages. It also enables efficient management of user-generated content, fostering an interactive community of users. Content management plays a pivotal role in maintaining a dynamic and enriching Scripture Engagement experience for users."
+        "content":"Effective content management is crucial for VachanOnline.com and the VachanGo app, the leading Scripture Engagement platform in Indian Languages. With a streamlined content management system, administrators can organize and distribute diverse resources, including commentaries, videos, audio bibles, and reading plans. This system facilitates seamless integration of new content and ensures a wide range of offerings in multiple Indian languages. It also enables efficient management of user-generated content, fostering an interactive community of users. Content management plays a pivotal role in maintaining a dynamic and enriching Scripture Engagement experience for users.",
+        "links":[
+            {
+                "link1":"https://vachanonline.com/",
+                "linkname1":"Vachan Online",
+                "button":"false"
+            },
+
+            {
+                "link2":"https://play.google.com/store/apps/details?id=com.bridgeconn.vachango&amp;pli=1",
+                "linkname2":"Vachan Go",
+                "button":"false"
+            }
+        ]
     },
     "translation": {
         "title":"Translation APIs",
-        "content":"Translation APIs are primarily designed for text translation but are now also being experimented with for sign language translation. These APIs typically rely on vocabulary-based translation techniques and token replacement methods. They excel in handling very low-resource languages and languages that are closely related. Additionally, these APIs offer translation memory and context-aware suggestion capabilities, enhancing the quality and accuracy of translations. Whether it's cloud-based projects or local projects, these translation APIs can seamlessly integrate and support various implementation scenarios. Their versatility and capabilities make them valuable tools for enabling effective language translation in a wide range of applications."
+        "content":"Translation APIs are primarily designed for text translation but are now also being experimented with for sign language translation. These APIs typically rely on vocabulary-based translation techniques and token replacement methods. They excel in handling very low-resource languages and languages that are closely related. Additionally, these APIs offer translation memory and context-aware suggestion capabilities, enhancing the quality and accuracy of translations. Whether it's cloud-based projects or local projects, these translation APIs can seamlessly integrate and support various implementation scenarios. Their versatility and capabilities make them valuable tools for enabling effective language translation in a wide range of applications.",
+        "links":[
+            {
+                "link1":"https://isl.bridgeconn.com/",
+                "linkname1":"IntelliSign",
+                "button":false
+
+            }
+        ]
     },
     "ai": {
         "title":"AI APIs",
@@ -21,6 +42,13 @@
     },
     "microservices": {
         "title":"Micro Services",
-        "content":"Vachan Engine microservices architecture is broken down into a set ofi ndependently functioning services, each serving a specific business capability. These services communicate with each other through well-defined APIs, typically using lightweight protocols such as HTTP or messaging systems."
+        "content":"Vachan Engine microservices architecture is broken down into a set of independently functioning services, each serving a specific business capability. These services communicate with each other through well-defined APIs, typically using lightweight protocols such as HTTP or messaging systems.",
+        "links":[
+            {
+                "link1":"https://miro.com/app/board/uXjVPGg6dwk=/%20",
+                "linkname1":"Microservices",
+                "button":"false"
+            }
+        ]
     }
 }

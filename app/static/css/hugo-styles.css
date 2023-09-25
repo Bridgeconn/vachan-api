@@ -11483,13 +11483,13 @@ textarea.form-control-lg {
     }
 }
 
-@font-face {
+/* @font-face {
     font-family: 'SF Pro Display';
     src: url("http://localhost:1313//fonts/SF-Pro-Display-Regular.otf") format("opentype");
     font-weight: normal
-}
+} */
 
-@font-face {
+/* @font-face {
     font-family: 'SF Pro Display';
     src: url("http://localhost:1313//fonts/SF-Pro-Display-Semibold.otf") format("opentype");
     font-weight: 600
@@ -11499,7 +11499,7 @@ textarea.form-control-lg {
     font-family: 'SF Pro Display';
     src: url("http://localhost:1313//fonts/SF-Pro-Display-Bold.otf") format("opentype");
     font-weight: bold
-}
+} */
 
 .fw-semibold {
     font-weight: 600
