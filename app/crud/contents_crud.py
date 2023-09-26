@@ -134,7 +134,7 @@ def upload_commentaries(db_: Session, resource_name, commentaries, job_id, user_
         "output": {"message": "Commentaries added successfully","data": db_content_out}}
     update_job(db_, job_id, user_id, update_args)
 
-def update_commentaries(db_: Session, resource_name, commentaries,job_id, user_id=None):#pylint: disable=R1710
+def update_commentaries(db_: Session, resource_name, commentaries,job_id, user_id=None):#pylint: disable=R1710,too-many-locals
     '''Update rows, that matches book, chapter and verse range fields in the commentary table
     specified by resource_name'''
     resource_db_content = db_.query(db_models.Resource).filter(
