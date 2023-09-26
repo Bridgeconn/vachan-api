@@ -23,7 +23,7 @@ router = APIRouter()
     422: {"model": schemas.ErrorResponse}},  status_code=200,
     tags=["Resources Types"])
 @get_auth_access_check_decorator
-async def get_resources_types(request: Request,resource_type: str = Query(None, example="bible"),
+async def get_resources_types(request: Request,resource_type: str = Query(None, examples="bible"),
      skip: int = Query(0, ge=0),limit: int = Query(100, ge=0),
      user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     '''fetches all the resources types supported and their details
@@ -66,7 +66,7 @@ async def add_resources_types(request: Request, resourcetype: schemas.ResourceTy
     status_code=200,tags=["Resources Types"])
 @get_auth_access_check_decorator
 async def delete_resources_types(request: Request,
-    resourcetype_id: int = Query(..., example=100001),
+    resourcetype_id: int = Query(..., examples=100001),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Resourcetype
     * unique ResourceType Id can be used to delete an exisiting identity'''
@@ -91,10 +91,10 @@ async def delete_resources_types(request: Request,
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Languages"])
 @get_auth_access_check_decorator
 async def get_language(request: Request,
-    language_code : schemas.LangCodePattern = Query(None, example="hi"),
-    language_name: str = Query(None, example="hindi"),
-    search_word: str = Query(None, example="Sri Lanka"),
-    localscript_name: str = Query(None,example="हिंदी"),
+    language_code : schemas.LangCodePattern = Query(None, examples="hi"),
+    language_name: str = Query(None, examples="hindi"),
+    search_word: str = Query(None, examples="Sri Lanka"),
+    localscript_name: str = Query(None,examples="हिंदी"),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     '''fetches all the languages supported in the DB, their code and other details.
@@ -149,7 +149,7 @@ async def edit_language(request: Request, lang_obj: schemas.LanguageEdit = Body(
     status_code=200,tags=["Languages"])
 @get_auth_access_check_decorator
 async def delete_languages(request: Request,
-    language_id: int = Query(..., example=100001),
+    language_id: int = Query(..., examples=100001),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Language
     * unique Language Code can be used to delete an exisiting identity'''
@@ -171,9 +171,9 @@ async def delete_languages(request: Request,
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Licenses"])
 @get_auth_access_check_decorator
 async def get_license(request: Request,
-    license_code : schemas.LicenseCodePattern=Query(None, example="CC-BY-SA"),
-    license_name: str=Query(None, example="Creative Commons License"),
-    permission: schemas.ResourcePermissions=Query(None, example="open-access"),
+    license_code : schemas.LicenseCodePattern=Query(None, examples="CC-BY-SA"),
+    license_name: str=Query(None, examples="Creative Commons License"),
+    permission: schemas.ResourcePermissions=Query(None, examples="open-access"),
     active: bool=Query(True), skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none),db_: Session=Depends(get_db)):
     '''fetches all the licenses present in the DB, their code and other details.
@@ -226,7 +226,7 @@ async def edit_license(request: Request, license_obj: schemas.LicenseEdit = Body
     status_code=200,tags=["Licenses"])
 @get_auth_access_check_decorator
 async def delete_licenses(request: Request,
-    license_id:int = Query(..., example=100001),
+    license_id:int = Query(..., examples=100001),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete License
     * unique License Id can be used to delete an exisiting identity'''
@@ -248,10 +248,10 @@ async def delete_licenses(request: Request,
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Versions"])
 @get_auth_access_check_decorator
 async def get_version(request: Request,
-    version_abbreviation : schemas.VersionPattern = Query(None, example="KJV"),
-    version_name: str = Query(None, example="King James Version"),
+    version_abbreviation : schemas.VersionPattern = Query(None, examples="KJV"),
+    version_name: str = Query(None, examples="King James Version"),
     version_tag : schemas.VersionTagPattern = Query(None),
-    metadata: schemas.MetaDataPattern = Query(None, example='{"publishedIn":"1611"}'),
+    metadata: schemas.MetaDataPattern = Query(None, examples='{"publishedIn":"1611"}'),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Fetches all versions and their details.
@@ -315,7 +315,7 @@ async def edit_version(request: Request, ver_obj: schemas.VersionEdit = Body(...
     status_code=200,tags=["Versions"])
 @get_auth_access_check_decorator
 async def delete_versions(request: Request,
-    version_id: int = Query(..., example=100001),
+    version_id: int = Query(..., examples=100001),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Version
     * unique Version Id can be used to delete an exisiting identity'''
@@ -339,14 +339,14 @@ async def delete_versions(request: Request,
     status_code=200, tags=["Resources"])
 @get_auth_access_check_decorator
 async def get_resource(request: Request, #pylint: disable=too-many-locals
-    resource_name : schemas.TableNamePattern=Query(None, example="hi_IRV_1_bible"),
-    resource_type: str=Query(None, example="commentary"),
-    version_abbreviation: schemas.VersionPattern=Query(None,example="KJV"),
-    version_tag: schemas.VersionTagPattern=Query(None, example="1611.12.31"),
-    language_code: schemas.LangCodePattern=Query(None,example="en"),
-    license_code: schemas.LicenseCodePattern=Query(None,example="ISC"),
+    resource_name : schemas.TableNamePattern=Query(None, examples="hi_IRV_1_bible"),
+    resource_type: str=Query(None, examples="commentary"),
+    version_abbreviation: schemas.VersionPattern=Query(None,examples="KJV"),
+    version_tag: schemas.VersionTagPattern=Query(None, examples="1611.12.31"),
+    language_code: schemas.LangCodePattern=Query(None,examples="en"),
+    license_code: schemas.LicenseCodePattern=Query(None,examples="ISC"),
     metadata: schemas.MetaDataPattern=Query(None,
-        example='{"otherName": "KJBC, King James Bible Commentaries"}'),
+        examples='{"otherName": "KJBC, King James Bible Commentaries"}'),
     access_tag:List[schemas.ResourcePermissions]=Query([schemas.ResourcePermissions.CONTENT]),
     labels:List[schemas.ResourceLabel] = Query([]),
     active: bool = True, latest_revision: bool = True,
@@ -457,7 +457,7 @@ async def edit_resource(request: Request,resource_obj: schemas.ResourceEdit = Bo
     status_code=200,tags=["Resources"])
 @get_auth_access_check_decorator
 async def delete_resources(request: Request,
-    resource_id:int = Query(..., example=100001),
+    resource_id:int = Query(..., examples=100001),
     user_details =Depends(get_user_or_none),  \
     db_: Session = Depends(get_db)):
     '''Delete Resource
@@ -479,9 +479,9 @@ async def delete_resources(request: Request,
     responses={502: {"model": schemas.ErrorResponse},
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Lookups"])
 @get_auth_access_check_decorator
-async def get_bible_book(request: Request,book_id: int=Query(None, example=67),
-    book_code: schemas.BookCodePattern=Query(None,example='rev'),
-    book_name: str=Query(None, example="Revelation"),user_details =Depends(get_user_or_none),
+async def get_bible_book(request: Request,book_id: int=Query(None, examples=67),
+    book_code: schemas.BookCodePattern=Query(None,examples='rev'),
+    book_name: str=Query(None, examples="Revelation"),user_details =Depends(get_user_or_none),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0), db_: Session = Depends(get_db)):
     ''' returns the list of book ids, codes and names.
     * optional query parameters can be used to filter the result set
@@ -505,7 +505,7 @@ async def get_bible_book(request: Request,book_id: int=Query(None, example=67),
     status_code=201, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def add_bible_book(request: Request,
-    resource_name : schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
+    resource_name : schemas.TableNamePattern=Path(..., examples="hi_IRV_1_bible"),
     books: List[schema_content.BibleBookUpload] = Body(...),
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
@@ -526,7 +526,7 @@ async def add_bible_book(request: Request,
     status_code=201, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def edit_bible_book(request: Request,
-    resource_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
+    resource_name: schemas.TableNamePattern=Path(..., examples="hi_IRV_1_bible"),
     books: List[schema_content.BibleBookEdit] = Body(...),user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
     '''Either changes the active status or the bible contents.
@@ -553,8 +553,8 @@ async def edit_bible_book(request: Request,
     status_code=200, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def get_available_bible_book(request: Request,
-    resource_name: schemas.TableNamePattern=Path(...,example="hi_IRV_1_bible"),
-    book_code: schemas.BookCodePattern=Query(None, example="mat"),
+    resource_name: schemas.TableNamePattern=Path(...,examples="hi_IRV_1_bible"),
+    book_code: schemas.BookCodePattern=Query(None, examples="mat"),
     content_type: schema_content.BookContentType=Query(None), active: bool=True,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
@@ -578,8 +578,8 @@ async def get_available_bible_book(request: Request,
     status_code=200,tags=["Bibles"])
 @get_auth_access_check_decorator
 async def delete_bible_book(request: Request,
-    biblebook_id:int = Query(..., example=100001),
-    resource_name: str = Path(...,example="en_KJV_1_bible"),
+    biblebook_id:int = Query(..., examples=100001),
+    resource_name: str = Path(...,examples="en_KJV_1_bible"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Bible Book
     * unique bible book id with resource name can be used to delete an exisiting identity'''
@@ -610,7 +610,7 @@ async def delete_bible_book(request: Request,
     422: {"model": schemas.ErrorResponse}}, status_code=200, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def get_bible_versification(request: Request,
-    resource_name:schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
+    resource_name:schemas.TableNamePattern=Path(..., examples="hi_IRV_1_bible"),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
     '''Fetches the versification structure of the specified bible,
     with details of number of chapters, max verses in each chapter etc'''
@@ -627,10 +627,10 @@ async def get_bible_versification(request: Request,
     status_code=200, tags=["Bibles"])
 @get_auth_access_check_decorator
 async def get_bible_verse(request: Request,
-    resource_name: schemas.TableNamePattern=Path(..., example="hi_IRV_1_bible"),
-    book_code: schemas.BookCodePattern=Query(None, example="mat"),
-    chapter: int=Query(None, example=1), verse: int=Query(None, example=1),
-    last_verse: int=Query(None, example=15), search_phrase: str=Query(None, example='सन्‍तान'),
+    resource_name: schemas.TableNamePattern=Path(..., examples="hi_IRV_1_bible"),
+    book_code: schemas.BookCodePattern=Query(None, examples="mat"),
+    chapter: int=Query(None, examples=1), verse: int=Query(None, examples=1),
+    last_verse: int=Query(None, examples=15), search_phrase: str=Query(None, examples='सन्‍तान'),
     active: bool=True,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
@@ -662,10 +662,15 @@ async def get_bible_verse(request: Request,
     415:{"model": schemas.ErrorResponse}}, status_code=200, tags=["Commentaries"])
 @get_auth_access_check_decorator
 async def get_commentary(request: Request,
-    resource_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
-    book_code: schemas.BookCodePattern=Query(None, example="1ki"),
-    chapter: int = Query(None, example=10, ge=-1), verse: int = Query(None, example=1, ge=-1),
-    last_verse: int = Query(None, example=3, ge=-1), active: bool = True,
+    resource_name: schemas.TableNamePattern=Path(..., examples="en_BBC_1_commentary"),
+    reference: str = Query(None,
+    examples='{"book": "mat", "chapter": 1, "verseNumber": 6}'),
+    search_word: str=Query(None, examples="customary") ,
+    commentary: str=Query(None, examples="It was customary at the time"),
+    # book_code: schemas.BookCodePattern=Query(None, examples="1ki"),
+    # chapter: int = Query(None, examples=10, ge=-1), verse: int = Query(None, examples=1, ge=-1),
+    # last_verse: int = Query(None, examples=3, ge=-1), 
+    active: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Fetches commentries under the specified resource.
@@ -679,12 +684,10 @@ async def get_commentary(request: Request,
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
     log.info('In get_commentary')
-    log.debug('resource_name: %s, book_code: %s, chapter: %s, verse:%s,\
-        last_verse:%s, skip: %s, limit: %s',
-        resource_name, book_code, chapter, verse, last_verse, skip, limit)
-    return contents_crud.get_commentaries(db_, resource_name=resource_name,chapter=chapter,\
-        book_code=book_code,verse=verse, last_verse=last_verse,active=active,\
-        skip = skip, limit = limit)
+    log.debug('resource_name: %s, reference: %s, skip: %s, limit: %s, search_word: %s,\
+        commentary: %s', resource_name, reference, skip, limit)
+    return contents_crud.get_commentaries(db_, resource_name=resource_name,reference = reference,\
+        search_word = search_word, commentary=commentary, active=active, skip = skip, limit = limit)
 
 @router.post('/v2/resources/commentaries/{resource_name}',
     response_model=schema_content.CommentaryCreateResponse, response_model_exclude_none=True,
@@ -695,7 +698,7 @@ async def get_commentary(request: Request,
     status_code=201, tags=["Commentaries"])
 @get_auth_access_check_decorator
 async def add_commentary(request: Request,background_tasks: BackgroundTasks,
-    resource_name : schemas.TableNamePattern=Path(...,example="en_BBC_1_commentary"),
+    resource_name : schemas.TableNamePattern=Path(...,examples="en_BBC_1_commentary"),
     commentaries: List[schema_content.CommentaryCreate] = Body(...),
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
@@ -736,7 +739,7 @@ async def add_commentary(request: Request,background_tasks: BackgroundTasks,
     status_code=201, tags=["Commentaries"])
 @get_auth_access_check_decorator
 async def edit_commentary(request: Request,background_tasks: BackgroundTasks,
-    resource_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
+    resource_name: schemas.TableNamePattern=Path(..., examples="en_BBC_1_commentary"),
     commentaries: List[schema_content.CommentaryEdit] = Body(...),
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
@@ -770,8 +773,8 @@ async def edit_commentary(request: Request,background_tasks: BackgroundTasks,
     status_code=200,tags=["Commentaries"])
 @get_auth_access_check_decorator
 async def delete_commentary(request: Request,
-    commentary_id:int = Query(..., example=100001),
-    resource_name: schemas.TableNamePattern=Path(..., example="en_BBC_1_commentary"),
+    commentary_id:int = Query(..., examples=100001),
+    resource_name: schemas.TableNamePattern=Path(..., examples="en_BBC_1_commentary"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Commentary
     * unique Commentary Id with resource name can be used to delete an exisiting identity'''
@@ -799,10 +802,10 @@ async def delete_commentary(request: Request,
     404:{"model": schemas.ErrorResponse},}, status_code=200, tags=["Vocabularies"])
 @get_auth_access_check_decorator
 async def get_vocabulary_word(request: Request,
-    resource_name: schemas.TableNamePattern=Path(...,example="en_TW_1_vocabulary"),
-    search_word: str=Query(None, example="Adam"),
+    resource_name: schemas.TableNamePattern=Path(...,examples="en_TW_1_vocabulary"),
+    search_word: str=Query(None, examples="Adam"),
     exact_match: bool=False, word_list_only: bool=False,
-    details: schemas.MetaDataPattern=Query(None, example='{"type":"person"}'), active: bool=None,
+    details: schemas.MetaDataPattern=Query(None, examples='{"type":"person"}'), active: bool=None,
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.CONTENT.value))):
@@ -834,10 +837,10 @@ async def get_vocabulary_word(request: Request,
     404:{"model": schemas.ErrorResponse},}, status_code=200, tags=["Vocabularies"])
 @get_auth_access_check_decorator
 async def get_vocabulary_word_count(request: Request,
-    resource_name: schemas.TableNamePattern=Path(...,example="en_TW_1_vocabulary"),
-    search_word: str=Query(None, example="Adam"),
+    resource_name: schemas.TableNamePattern=Path(...,examples="en_TW_1_vocabulary"),
+    search_word: str=Query(None, examples="Adam"),
     exact_match: bool=False,
-    details: schemas.MetaDataPattern=Query(None, example='{"type":"person"}'),
+    details: schemas.MetaDataPattern=Query(None, examples='{"type":"person"}'),
     active: bool= Query(None),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.CONTENT.value))):
@@ -869,7 +872,7 @@ async def get_vocabulary_word_count(request: Request,
     status_code=201, tags=["Vocabularies"])
 @get_auth_access_check_decorator
 async def add_vocabulary_word(request: Request,
-    resource_name : schemas.TableNamePattern=Path(..., example="en_TW_1_vocabulary"),
+    resource_name : schemas.TableNamePattern=Path(..., examples="en_TW_1_vocabulary"),
     vocabulary_words: List[schema_content.VocabularyWordCreate] = Body(...),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     ''' uploads dictionay words and their details. 'Details' should be of JSON datatype and  have
@@ -889,7 +892,7 @@ async def add_vocabulary_word(request: Request,
     status_code=201, tags=["Vocabularies"])
 @get_auth_access_check_decorator
 async def edit_vocabulary_word(request: Request,
-    resource_name: schemas.TableNamePattern=Path(..., example="en_TW_1_vocabulary"),
+    resource_name: schemas.TableNamePattern=Path(..., examples="en_TW_1_vocabulary"),
     vocabulary_words: List[schema_content.VocabularyWordEdit] = Body(...),
     user_details =Depends(get_user_or_none),db_: Session = Depends(get_db)):
     ''' Updates a vocabulary word. Item identifier is word, which cannot be altered.
@@ -909,8 +912,8 @@ async def edit_vocabulary_word(request: Request,
     status_code=200,tags=["Vocabularies"])
 @get_auth_access_check_decorator
 async def delete_vocabularies(request: Request,
-    word_id: int = Query(..., example=100001),
-    resource_name: str = Path(...,example="en_KJV_1_vocabulary"),
+    word_id: int = Query(..., examples=100001),
+    resource_name: str = Path(...,examples="en_KJV_1_vocabulary"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Vocabulary
     * unique word Id with resource name can be used to delete an exisiting identity'''
@@ -940,17 +943,17 @@ async def delete_vocabularies(request: Request,
 @get_auth_access_check_decorator
 async def get_parascriptural(request: Request, #pylint: disable=too-many-locals
     resource_name:schemas.TableNamePattern=
-    Path(...,example="en_KJV_1_parascriptural"),
-    category:str=Query(None, example="Bible project video"),
-    title:str=Query(None,example="Bible Video of Genesis"),
-    description:str=Query(None, example="Origin Chronicles"),
-    content:str=Query(None, example="A Visual Journey Through the Bible's Beginning"),
+    Path(...,examples="en_KJV_1_parascriptural"),
+    category:str=Query(None, examples="Bible project video"),
+    title:str=Query(None,examples="Bible Video of Genesis"),
+    description:str=Query(None, examples="Origin Chronicles"),
+    content:str=Query(None, examples="A Visual Journey Through the Bible's Beginning"),
     reference: str = Query(None,
-    example='{"book": "mat", "chapter": 1, "verseNumber": 6}'),
-    link:AnyUrl=Query(None,example="http://someplace.com/resoucesid"),
-    search_word:str=Query(None,example="subtitle"),
+    examples='{"book": "mat", "chapter": 1, "verseNumber": 6}'),
+    link:AnyUrl=Query(None,examples="http://someplace.com/resoucesid"),
+    search_word:str=Query(None,examples="subtitle"),
     metadata: schemas.MetaDataPattern=Query(None,
-        example='{"otherName": "BPV, Videos of Bible chapters"}'),
+        examples='{"otherName": "BPV, Videos of Bible chapters"}'),
     active: bool=Query(True),
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
@@ -984,7 +987,7 @@ async def get_parascriptural(request: Request, #pylint: disable=too-many-locals
 @get_auth_access_check_decorator
 async def add_parascripturals(request: Request,
     resource_name : schemas.TableNamePattern=Path(...,
-    example="en_KJV_1_parascriptural"),
+    examples="en_KJV_1_parascriptural"),
     parascriptural: List[schema_content.ParascripturalCreate] = Body(...),
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
@@ -1004,7 +1007,7 @@ async def add_parascripturals(request: Request,
 @get_auth_access_check_decorator
 async def edit_parascripturals(request: Request,
     resource_name: schemas.TableNamePattern=Path(...,
-    example="en_KJV_1_parascriptural"),
+    examples="en_KJV_1_parascriptural"),
     parascripturals: List[schema_content.ParascriptEdit] = Body(...),
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
@@ -1024,8 +1027,8 @@ async def edit_parascripturals(request: Request,
     status_code=200,tags=["Parascripturals"])
 @get_auth_access_check_decorator
 async def delete_parascripturals(request: Request,
-    parascript_id:int = Query(..., example=100001),
-    resource_name: str = Path(...,example="en_KJV_1_parascriptural"),
+    parascript_id:int = Query(..., examples=100001),
+    resource_name: str = Path(...,examples="en_KJV_1_parascriptural"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Parascriptural
     * unique parascript Id with source name can be used to delete an exisiting identity'''
@@ -1054,15 +1057,15 @@ async def delete_parascripturals(request: Request,
 @get_auth_access_check_decorator
 async def get_audio_bibles(request: Request, #pylint: disable=too-many-locals
     resource_name:schemas.TableNamePattern=
-    Path(...,example="en_KJV_1_audiobible"),
-    name:str=Query(None,example="Audio Bible of Genesis"),
-    audio_format:str=Query(None, example="mp3"),
+    Path(...,examples="en_KJV_1_audiobible"),
+    name:str=Query(None,examples="Audio Bible of Genesis"),
+    audio_format:str=Query(None, examples="mp3"),
     reference: str = Query(None,
-    example='{"book": "gen", "chapter": 1, "verseNumber": 6}'),
-    link:AnyUrl=Query(None,example="http://someplace.com/resoucesid"),
-    search_word:str=Query(None,example="subtitle"),
+    examples='{"book": "gen", "chapter": 1, "verseNumber": 6}'),
+    link:AnyUrl=Query(None,examples="http://someplace.com/resoucesid"),
+    search_word:str=Query(None,examples="subtitle"),
     metadata: schemas.MetaDataPattern=Query(None,
-        example='{"otherName": "Creation"}'),
+        examples='{"otherName": "Creation"}'),
     active: bool=Query(True),
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
@@ -1096,7 +1099,7 @@ async def get_audio_bibles(request: Request, #pylint: disable=too-many-locals
 @get_auth_access_check_decorator
 async def add_audio_bibles(request: Request,
     resource_name : schemas.TableNamePattern=Path(...,
-    example="en_KJV_1_audiobible"),
+    examples="en_KJV_1_audiobible"),
     audiobibles: List[schema_content.AudioBibleCreate] = Body(...),
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
@@ -1116,7 +1119,7 @@ async def add_audio_bibles(request: Request,
 @get_auth_access_check_decorator
 async def edit_audio_bibles(request: Request,
     resource_name: schemas.TableNamePattern=Path(...,
-    example="en_KJV_1_audiobible"),
+    examples="en_KJV_1_audiobible"),
     audiobibles: List[schema_content.AudioBibleEdit] = Body(...),
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
@@ -1136,8 +1139,8 @@ async def edit_audio_bibles(request: Request,
     status_code=200,tags=["Audio Bibles"])
 @get_auth_access_check_decorator
 async def delete_audio_bibles(request: Request,
-    audio_id:int = Query(..., example=100001),
-    resource_name: str = Path(...,example="en_KJV_1_audiobible"),
+    audio_id:int = Query(..., examples=100001),
+    resource_name: str = Path(...,examples="en_KJV_1_audiobible"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Audio Bible
     * unique audioId with source name can be used to delete an exisiting identity'''
@@ -1166,15 +1169,15 @@ async def delete_audio_bibles(request: Request,
 @get_auth_access_check_decorator
 async def get_sign_bible_videos(request: Request, #pylint: disable=too-many-locals
     resource_name:schemas.TableNamePattern=
-    Path(...,example="ins_KJV_1_signbiblevideo"),
-    title:str=Query(None,example="Sign Bible Video of Genesis"),
-    description:str=Query(None, example="Origin Chronicles"),
+    Path(...,examples="ins_KJV_1_signbiblevideo"),
+    title:str=Query(None,examples="Sign Bible Video of Genesis"),
+    description:str=Query(None, examples="Origin Chronicles"),
     reference: str = Query(None,
-    example='{"book": "gen", "chapter": 1, "verseNumber": 6}'),
-    link:AnyUrl=Query(None,example="http://someplace.com/resoucesid"),
-    search_word:str=Query(None,example="subtitle"),
+    examples='{"book": "gen", "chapter": 1, "verseNumber": 6}'),
+    link:AnyUrl=Query(None,examples="http://someplace.com/resoucesid"),
+    search_word:str=Query(None,examples="subtitle"),
     metadata: schemas.MetaDataPattern=Query(None,
-        example='{"otherName": "ISL, Indian Sign Language Videos"}'),
+        examples='{"otherName": "ISL, Indian Sign Language Videos"}'),
     active: bool=Query(True),
     skip: int=Query(0, ge=0), limit: int=Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session=Depends(get_db)):
@@ -1208,7 +1211,7 @@ async def get_sign_bible_videos(request: Request, #pylint: disable=too-many-loca
 @get_auth_access_check_decorator
 async def add_sign_bible_videos(request: Request,
     resource_name : schemas.TableNamePattern=Path(...,
-    example="ins_KJV_1_signbiblevideo"),
+    examples="ins_KJV_1_signbiblevideo"),
     signvideos: List[schema_content.SignVideoCreate] = Body(...),
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
@@ -1228,7 +1231,7 @@ async def add_sign_bible_videos(request: Request,
 @get_auth_access_check_decorator
 async def edit_sign_bible_videos(request: Request,
     resource_name: schemas.TableNamePattern=Path(...,
-    example="ins_KJV_1_signbiblevideo"),
+    examples="ins_KJV_1_signbiblevideo"),
     signvideos: List[schema_content.SignVideoEdit] = Body(...),
     user_details =Depends(get_user_or_none),
     db_: Session = Depends(get_db)):
@@ -1248,8 +1251,8 @@ async def edit_sign_bible_videos(request: Request,
     status_code=200,tags=["Sign Bible Videos"])
 @get_auth_access_check_decorator
 async def delete_sign_bible_videos(request: Request,
-    signvideo_id:int = Query(..., example=100001),
-    resource_name: str = Path(...,example="ins_KJV_1_signbiblevideo"),
+    signvideo_id:int = Query(..., examples=100001),
+    resource_name: str = Path(...,examples="ins_KJV_1_signbiblevideo"),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Delete Sign Bible Video
     * unique signvideoId with source name can be used to delete an exisiting identity'''
@@ -1276,10 +1279,10 @@ async def delete_sign_bible_videos(request: Request,
     status_code=200, tags=["Resources"])
 @get_auth_access_check_decorator
 async def extract_text_contents(request:Request, #pylint: disable=W0613
-    resource_name:schemas.TableNamePattern=Query(None,example="en_TBP_1_bible"),
-    books:List[schemas.BookCodePattern]=Query(None,example='GEN'),
-    language_code:schemas.LangCodePattern=Query(None, example="hi"),
-    resource_type:str=Query(None, example="commentary"),
+    resource_name:schemas.TableNamePattern=Query(None,examples="en_TBP_1_bible"),
+    books:List[schemas.BookCodePattern]=Query(None,examples='GEN'),
+    language_code:schemas.LangCodePattern=Query(None, examples="hi"),
+    resource_type:str=Query(None, examples="commentary"),
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details = Depends(get_user_or_none), db_: Session = Depends(get_db),
     operates_on=Depends(AddHiddenInput(value=schema_auth.ResourceType.RESEARCH.value))):
