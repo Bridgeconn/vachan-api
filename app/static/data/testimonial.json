@@ -12,5 +12,11 @@
         "designation":"Software Engineer",
         "image":"/static/images/testimonials/revant.png",
         "comment":"Vachan engine is comprehensive and easy to use. It has detailed documentation. The ability to try out the API on the documentation page itself is very useful. Making an UI application with it was a breeze."
+    },
+    {"name":"IntelliSign",
+    "app":"",
+    "designation":"Client",
+    "image":"/static/images/testimonials/intellisign.png",
+    "comment":"VachanEngine has been an integral tool for our IntelliSign - Sign Language Translation app development. It provides us the functionality of using the previous user inputs as data for our projects and helps in fastening the process of sign translation, we are also using VE to provide users with seamless access to dictionary and glossary data of sign languages."
     }
 ]

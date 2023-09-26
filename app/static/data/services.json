@@ -71,7 +71,7 @@
         "content":"Vachan Engine microservices architecture is broken down into a set of independently functioning services, each serving a specific business capability. These services communicate with each other through well-defined APIs, typically using lightweight protocols such as HTTP or messaging systems.",
         "links":[
             {
-                "link":"",
+                "link":"https://miro.com/app/board/uXjVMHjqZ10=/?share_link_id=841173118462",
                 "linkname":"Microservices",
                 "button":false
             }
