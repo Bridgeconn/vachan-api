@@ -20,10 +20,8 @@ RESTORE_URL = '/v2/admin/restore'
 
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
-    assert "book" in item
-    assert "bookId" in item['book']
-    assert "bookCode" in item['book']
-    assert "chapter" in item
+    assert "book" in item['reference']
+    assert "chapter" in item['reference']
     # assert "verseStart" in item # optional params get_job remove null fields
     # assert "verseEnd" in item
     assert "commentary" in item
@@ -78,16 +76,16 @@ def check_commentary_job_finished(response):
 def test_post_default():
     '''Positive test to upload commentries, with various kins of ref ranges supported'''
     data = [
-    	{'bookCode':'gen', 'chapter':0, 'commentary':'book intro to Genesis'},
-    	{'bookCode':'gen', 'chapter':1, 'verseStart':0, 'verseEnd': 0,
+    	{'reference': {"book":"gen", "chapter":0},'commentary':'book intro to Genesis'},
+    	{'reference': {"book":"gen", "chapter":1, "verseNumber":0,"bookEnd":"gen", "chapterEnd":1,"verseEnd":10},
     		'commentary':'chapter intro to Genesis 1'},
-    	{'bookCode':'gen', 'chapter':1, 'verseStart':1, 'verseEnd': 10,
+    	{'reference': {"book":"gen", "chapter":1, "verseNumber":1,"verseEnd":10},
     		'commentary':'the begining'},
-    	{'bookCode':'gen', 'chapter':1, 'verseStart':3, 'verseEnd': 30,
+    	{'reference': {"book":"gen", "chapter":1, "verseNumber":3,"verseEnd":30},
     		'commentary':'the creation'},
-    	{'bookCode':'gen', 'chapter':1, 'verseStart':-1, 'verseEnd': -1,
+    	{'reference': {"book":"gen", "chapter":1, "verseNumber":-1,"verseEnd":-1},
     		'commentary':'Chapter Epilogue. God completes creation in 6 days.'},
-    	{'bookCode':'gen', 'chapter':-1, 'commentary':'book Epilogue.'}
+    	{'reference': {"book":"gen", "chapter":-1},'commentary':'book Epilogue.'}
     ]
     response,resource_name = check_post(data)
     # resource_name = check_post(data)[0]
@@ -98,7 +96,7 @@ def test_post_default():
     assert job_response.json()["message"] == "Commentaries added successfully"
     assert 'output' in job_response.json()['data']
     assert len(data) == len(job_response.json()['data']['output']['data'])
-    # print("resp=======>",job_response.json()["message"])
+    print("resp=======>",job_response.json()["message"])
     for item in job_response.json()['data']['output']['data']:
         assert_positive_get(item)
     return response,resource_name
@@ -106,10 +104,8 @@ def test_post_default():
 
 def test_post_duplicate():
     '''Negative test to add two commentaries with same reference range'''
-    data = [
-    	{'bookCode':'gen', 'chapter':1, 'verseStart':1,
-        "verseEnd":1, 'commentary':'first verse of Genesis'}
-    ]
+    data = [{'reference': {"book":"gen", "chapter":1, "verseNumber":1,"verseEnd":1},
+        'commentary':'first verse of Genesis'}]
     resp, resource_name = check_post(data)
     assert resp.status_code == 201
     assert resp.json()['message'] == "Uploading Commentaries in background"
@@ -139,60 +135,47 @@ def test_post_incorrect_data():
 
     # data object with missing mandatory fields
     headers = {"contentType": "application/json", "accept": "application/json"}#pylint: disable=unused-variable disable=redefined-outer-name
-    data = [
-        {'chapter':1, 'verseStart':1,
-        "verseEnd":1, 'commentary':'first verse of Genesis'}
-    ]
+
+    data = {'reference': {"chapter":1, "verseNumber":1,"verseEnd":1},
+        'commentary':'first verse of Genesis'}
+
     response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
-    data = [
-        {'bookCode':'gen', 'verseStart':1,
-        "verseEnd":1, 'commentary':'first verse of Genesis'}
-    ]
+    data = {'reference': {"book":"gen", "verseNumber":1,"verseEnd":1},
+        'commentary':'first verse of Genesis'}
     response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
-    data = [
-        {'bookCode':'gen', 'chapter':1, 'verseStart':1, "verseEnd":1}
-    ]
+    data = {'reference': {"book":"gen","chapter":1, "verseNumber":1,"verseEnd":1}}
     response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
     # incorrect data values in fields
 
-    data = [
-        {'bookCode':'genesis', 'chapter':1, 'verseStart':1,
+    data = {'bookCode':'genesis', 'chapter':1, 'verseStart':1,
         "verseEnd":1, 'commentary':'first verse of Genesis'}
-    ]
     response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
-    data = [
-        {'bookCode':'gen', 'chapter':'introduction', 'verseStart':1,
-        "verseEnd":1, 'commentary':'first verse of Genesis'}
-    ]
-    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
-    assert_input_validation_error(response)
-
-    data = [
-        {'bookCode':'gen', 'chapter':1, 'verseStart':'introduction',
+    data = {'reference': {"book":"genesis","chapter":1, "verseNumber":1,"verseEnd":1},
         'commentary':'first verse of Genesis'}
-    ]
     response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
-    data = [
-        {'bookCode':'gen', 'chapter':1, 'verseStart':'introduction',
-        'commentary':'first verse of Genesis', 'active': "deactive"}
-    ]
+    data = {'reference': {"book":"gen","chapter":1, "verseNumber":"Introduction"},
+        'commentary':'first verse of Genesis'}
     response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
-    data = [
-        {'bookCode':'gen', 'chapter':1, 'verseStart':10,
-        "verseEnd":1, 'commentary':'first verse of Genesis'}
-    ]
+    data = {'reference': {"book":"genesis","chapter":1, "verseNumber":1},
+        'commentary':'first verse of Genesis',
+        'active': "deactive"}
+    response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
+    assert_input_validation_error(response)
+
+    data ={'reference': {"book":"genesis","chapter":1, "verseNumber":10,"verseEnd":1},
+        'commentary':'first verse of Genesis'}
     response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert_input_validation_error(response)
 
@@ -207,29 +190,28 @@ def test_post_incorrect_data():
 def test_get_after_data_upload(): #pylint: disable=too-many-statements
     '''Add some data into the table and do all get tests'''
     data = [
-        {'bookCode':'gen', 'chapter':0, 'commentary':'book intro to Genesis'},
-        {'bookCode':'gen', 'chapter':1, 'verseStart':0, 'verseEnd': 0,
+        {'reference': {"book":"gen", "chapter":0},'commentary':'Book intro to Genesis'},
+        {'reference': {"book":"gen", "chapter":1, "verseNumber":0,"bookEnd":"gen","chapterEnd":1,"verseEnd":0},
             'commentary':'chapter intro to Genesis 1'},
-        {'bookCode':'gen', 'chapter':1, 'verseStart':1, 'verseEnd': 10,
+        {'reference': {"book":"gen", "chapter":1, "verseNumber":1,"bookEnd":"gen","chapterEnd":1,"verseEnd":10},
             'commentary':'the begining'},
-        {'bookCode':'gen', 'chapter':1, 'verseStart':3, 'verseEnd': 30,
+        {'reference': {"book":"gen", "chapter":1, "verseNumber":3,"bookEnd":"gen","chapterEnd":1,"verseEnd":30},
             'commentary':'the creation'},
-        {'bookCode':'gen', 'chapter':1, 'verseStart':-1, 'verseEnd': -1,
+        {'reference': {"book":"gen", "chapter":1, "verseNumber":-1,"bookEnd":"gen","chapterEnd":1,"verseEnd":-1},
             'commentary':'Chapter Epilogue. God completes creation in 6 days.'},
-        {'bookCode':'gen', 'chapter':-1, 'commentary':'book Epilogue.'},
-
-        {'bookCode':'exo', 'chapter':1, 'verseStart':1,
-            "verseEnd":1, 'commentary':'first verse of Exodus'},
-        {'bookCode':'exo', 'chapter':1, 'verseStart':1,
-        "verseEnd":10, 'commentary':'first para of Exodus'},
-        {'bookCode':'exo', 'chapter':1, 'verseStart':1,
-        "verseEnd":25, 'commentary':'first few paras of Exodus'},
-        {'bookCode':'exo', 'chapter':1, 'verseStart':20,
-        "verseEnd":25, 'commentary':'a middle para of Exodus'},
-        {'bookCode':'exo', 'chapter':0, 'commentary':'Book intro to Exodus'}
+        {'reference': {"book":"gen", "chapter":-1},'commentary':'book Epilogue.'},
+        {'reference': {"book":"exo", "chapter":1, "verseNumber":1,"bookEnd":"exo","chapterEnd":1,"verseEnd":1},
+            'commentary':'first verse of Exodus'},
+        {'reference': {"book":"exo", "chapter":1, "verseNumber":1,"bookEnd":"exo","chapterEnd":1,"verseEnd":10},
+            'commentary':'first para of Exodus'},
+        {'reference': {"book":"exo", "chapter":1, "verseNumber":1,"bookEnd":"exo","chapterEnd":1,"verseEnd":25},
+            'commentary':'first few paras of Exodus'},
+        {'reference': {"book":"exo", "chapter":1, "verseNumber":20,"bookEnd":"est","chapterEnd":1,"verseEnd":25},
+            'commentary':'a middle para of Exodus'},
+        {'reference': {"book":"exo", "chapter":0},'commentary':'Book intro to Exodus'}
     ]
+   
     resp, resource_name = check_post(data)
-
     assert resp.status_code == 201
     assert resp.json()['message'] == "Uploading Commentaries in background"
     job_response = check_commentary_job_finished(resp)
@@ -239,126 +221,121 @@ def test_get_after_data_upload(): #pylint: disable=too-many-statements
     assert len(data) == len(job_response.json()['data']['output']['data'])
     for item in job_response.json()['data']['output']['data']:
         assert_positive_get(item)
-
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     check_default_get(UNIT_URL+resource_name, headers_auth,assert_positive_get)
 
     #filter by book
     #without auth
-    response = client.get(UNIT_URL+resource_name+'?book_code=gen')
+    response = client.get(UNIT_URL+resource_name+"?commentary=Book intro to Genesis")
     assert response.status_code == 401
     assert response.json()["error"] == "Authentication Error"
 
     #with auth
-    response = client.get(UNIT_URL+resource_name+'?book_code=gen',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?commentary=Book intro to Genesis',\
+        headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+    response = client.get(UNIT_URL+resource_name+"?search_word=gen",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 6
 
-    response = client.get(UNIT_URL+resource_name+'?book_code=exo',headers=headers_auth)
-    assert response.status_code == 200
-    assert len(response.json()) == 5
-
     # all book introductions
-    response = client.get(UNIT_URL+resource_name+'?chapter=0',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+"?commentary=Book intro",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
 
     # all chapter intros
-    response = client.get(UNIT_URL+resource_name+'?verse=0',headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?commentary=chapter%20intro',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
     # all commentaries associated with a verse
-    response = client.get(UNIT_URL+resource_name+'?book_code=gen&chapter=1&verse=1',\
-        headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?reference={"book":"gen", "chapter":1, \
+        "verseNumber":1}', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
-    response = client.get(UNIT_URL+resource_name+'?book_code=gen&chapter=1&verse=8',\
-        headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?reference={"book":"gen", "chapter":1, \
+        "verseNumber":8}', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
 
-    response = client.get(UNIT_URL+resource_name+'?book_code=exo&chapter=1&verse=1',\
-        headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?reference={"book":"exo", "chapter":1,\
+        "verseNumber":1}',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 3
 
-    response = client.get(UNIT_URL+resource_name+'?book_code=exo&chapter=1&verse=2',\
-        headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?reference={"book":"exo", "chapter":1, \
+        "verseNumber":2}', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
 
-    response = client.get(UNIT_URL+resource_name+'?book_code=exo&chapter=1&verse=21',\
-        headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?reference={"book":"exo", "chapter":1,\
+         "verseNumber":21}', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
 
     # commentaries for a verse range
     # exact range
-    response = client.get(UNIT_URL+resource_name+'?book_code=exo&chapter=1&verse=1&last_verse=25',\
-        headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?reference={"book":"exo", "chapter":1,\
+         "verseNumber":1,"bookEnd":"exo","chapterEnd":1,"verseEnd":25}', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
-    response = client.get(UNIT_URL+resource_name+'?book_code=gen&chapter=1&verse=0&last_verse=0',\
-        headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?reference={"book":"gen", "chapter":1,\
+         "verseNumber":0,"bookEnd":"gen","chapterEnd":1,"verseEnd":0}',headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
     # inclusive
-    response = client.get(UNIT_URL+resource_name+'?book_code=EXO&chapter=1&verse=1&last_verse=3',\
-        headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?reference={"book":"exo", "chapter":1, \
+        "verseNumber":1,"bookEnd":"exo","chapterEnd":1,"verseEnd":10}', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
 
     # crossing boundary
-    response = client.get(UNIT_URL+resource_name+'?book_code=exo&chapter=1&verse=3&last_verse=13',\
-        headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?reference={"book":"exo", "chapter":1, \
+        "verseNumber":3,"bookEnd":"exo","chapterEnd":1,"verseEnd":20}', headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
+    #cross-chapter 
+    # crossing boundary
+    response = client.get(UNIT_URL+resource_name+'?reference={"book":"num", "chapter":2, \
+        "verseNumber":10,"bookEnd":"rut","chapterEnd":5,"verseEnd":5}', headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
     # not available
-    response = client.get(UNIT_URL+resource_name+'?book_code=rev&chapter=1&verse=3&last_verse=13',\
-        headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+'?reference={"book":"rev", "chapter":1, \
+        "verseNumber":9,"bookEnd":"rev","chapterEnd":6,"verseEnd":4}', headers=headers_auth)
     assert_not_available_content(response)
 
 def test_get_incorrect_data():
     '''Check for input validations in get'''
+    # Post data
+    data = [
+        {'reference': {"book":"gen", "chapter":1, "verseNumber":-1,"bookEnd":"gen","chapterEnd":1,"verseEnd":-1},
+            'commentary':'Chapter Epilogue. God completes creation in 6 days.'},
+        {'reference': {"book":"exo", "chapter":1, "verseNumber":20,"bookEnd":"est","chapterEnd":1,"verseEnd":25},
+            'commentary':'a middle para of Exodus'}
+    ]
+
+    resp, resource_name = check_post(data)
+    assert resp.status_code == 201
+    resource_name = resource_name.replace('commentary', 'bible')
+    response = client.get(UNIT_URL+resource_name, headers=headers_auth)
+    assert response.status_code == 404
     resource_name = 'hi_TTT'
     response = client.get(UNIT_URL+resource_name,headers=headers_auth)
     assert_input_validation_error(response)
 
-    resource_name = 'hi_TTT_1_commentary'
-    response = client.get(UNIT_URL+resource_name+'?book_code=10',headers=headers_auth)
-    assert_input_validation_error(response)
-
-    response = client.get(UNIT_URL+resource_name+'?book_code=matthew',headers=headers_auth)
-    assert_input_validation_error(response)
-
-    response = client.get(UNIT_URL+resource_name+'?chapter=intro',headers=headers_auth)
-    assert_input_validation_error(response)
-
-    response = client.get(UNIT_URL+resource_name+'?chapter=-10',headers=headers_auth)
-    assert_input_validation_error(response)
-
-    response = client.get(UNIT_URL+resource_name+'?verse=-10',headers=headers_auth)
-    assert_input_validation_error(response)
-
-    response = client.get(UNIT_URL+resource_name+'?active=not',headers=headers_auth)
-    assert_input_validation_error(response)
-
-    resp, resource_name = check_post([])
-    assert resp.status_code == 201
-    resource_name = resource_name.replace('commentary', 'bible')
-    response = client.get(UNIT_URL+resource_name,headers=headers_auth)
-    assert response.status_code == 404
-
 def test_put_after_upload():
     '''Positive tests for put'''
     data = [
-        {'bookCode':'mat', 'chapter':1, 'verseStart':1,
-        'verseEnd':10, 'commentary':"first verses of matthew"},
-        {'bookCode':'mrk','chapter':0, 'commentary':"book intro to Mark"},
+        {'reference': {"book":"mat", "chapter":1,'verseNumber':1,'verseEnd':10},
+            'commentary':"first verses of matthew"},
+        {'reference': {"book":"mrk", "chapter":0},'commentary':"book intro to Mark"}
     ]
     response, resource_name = check_post(data)
     assert response.status_code == 201
@@ -370,18 +347,23 @@ def test_put_after_upload():
     assert len(data) == len(job_response.json()['data']['output']['data'])
     for item in job_response.json()['data']['output']['data']:
         assert_positive_get(item)
+    get_response = client.get(UNIT_URL+resource_name,headers=headers_auth)
+    commentary_id1 = get_response.json()[0]['commentaryId']
+    commentary_id2 = get_response.json()[1]['commentaryId']
 
     # positive PUT
     new_data = [
-        {'bookCode':'mat', 'chapter':1, 'verseStart':1,
-        'verseEnd':10, 'commentary':"first verses of matthew"},
-        {'bookCode':'mrk','chapter':0, 'commentary':"book intro to Mark"},
+        {'commentaryId':commentary_id1,'reference': {"book":"mat", "chapter":1,'verseNumber':1,'bookEnd':"mat","chapterEnd":1,'verseEnd':10},
+            'commentary':"first verses of matthew"},
+        {'commentaryId':commentary_id2,'reference': {"book":"mrk", "chapter":0,"bookEnd":"mrk","chapterEnd":0,'verseEnd':0},
+            'commentary':"book intro to Mark"}
     ]
     #without auth
     response = client.put(UNIT_URL+resource_name,headers=headers, json=new_data)
     assert response.status_code == 401
     assert response.json()['error'] == 'Authentication Error'
     #with auth
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=new_data)
     assert response.status_code == 201
     assert response.json()['message'] == "Updating Commentaries in background"
@@ -391,17 +373,10 @@ def test_put_after_upload():
     for i,item in enumerate(job_response.json()['data']['output']['data']):
         assert_positive_get(item)
         assert item['commentary'] == new_data[i]['commentary']
-        assert item['book']['bookCode'] == data[i]['bookCode']
-        assert item['chapter'] == data[i]['chapter']
-        if 'verseEnd' in data[i]:
-            assert item['verseStart'] == data[i]['verseStart']
-            assert item['verseEnd'] == data[i]['verseEnd']
-        # else:
-        #     assert item['verseStart'] is None
-        #     assert item['verseEnd'] is None
+        assert item['reference'] == new_data[i]['reference']
 
     # not available PUT
-    new_data[0]['chapter'] = 2
+    new_data[0]['commentaryId'] = 9999
     response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=new_data)
     job_response = get_job_status(response.json()['data']['jobId'])
     assert job_response.json()['data']['status'] == 'job error'
@@ -484,14 +459,13 @@ def test_put_incorrect_data():
 def test_soft_delete():
     '''check soft delete in commentaries'''
     data = [
-        {'bookCode':'mrk', 'chapter':1, 'verseStart':1,
-        'verseEnd':10, 'commentary':"first verses of Mark"},
-        {'bookCode':'mrk','chapter':0, 'commentary':"book intro to Mark"},
+        {'reference':{'book':'mrk', 'chapter':1, 'verseNumber':1,'bookEnd':"mrk",'chapterEnd':1,'verseEnd':10},\
+            'commentary':"first verses of Mark"},
+        {'reference':{'book':'mrk','chapter':0},\
+            'commentary':"book intro to Mark"}
     ]
 
-    delete_data = [
-        {'bookCode':'mrk', 'chapter':1, 'verseStart':1, 'verseEnd':10}
-    ]
+   
 
     response, resource_name = check_post(data)
     assert response.json()['message'] == "Uploading Commentaries in background"
@@ -499,8 +473,13 @@ def test_soft_delete():
     assert job_response.json()['data']['status'] == 'job finished'
     assert job_response.json()["message"] == "Commentaries added successfully"
 
-    get_response1 = client.get(UNIT_URL+resource_name,headers=headers_auth)
-    assert len(get_response1.json()) == len(data)
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
+    get_response = client.get(UNIT_URL+resource_name,headers=headers_auth)
+    commentary_id1 = get_response.json()[0]['commentaryId']
+    delete_data = [
+        {'commentaryId':commentary_id1}
+    ]
+    assert len(get_response.json()) == len(data)
     delete_data[0]['active'] = False
 
     response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=delete_data)
@@ -549,9 +528,10 @@ def test_created_user_can_only_edit():
 
     #create commentary
     data = [
-        {'bookCode':'mat', 'chapter':1, 'verseStart':1,
-        'verseEnd':10, 'commentary':"first verses of matthew"},
-        {'bookCode':'mrk','chapter':0, 'commentary':"book intro to Mark"},
+        {'reference':{'book':'mat', 'chapter':1, 'verseStart':1,'bookEnd':'mat','chapterEnd':1,'verseEnd':10},
+         'commentary':"first verses of matthew"},
+        {'reference':{'book':'mrk','chapter':0},\
+            'commentary':"book intro to Mark"}
     ]
     response = client.post(UNIT_URL+resource_name, headers=headers_auth, json=data)
     assert response.status_code == 201
@@ -561,13 +541,14 @@ def test_created_user_can_only_edit():
     assert job_response.json()["message"] == "Commentaries added successfully"
 
     #update commentary with created SA user
+    get_response = client.get(UNIT_URL+resource_name,headers=headers_auth)
+    commentary_id1 = get_response.json()[0]['commentaryId']
+    commentary_id2 = get_response.json()[1]['commentaryId']
     new_data = [
-        {'bookCode':'mat', 'chapter':1, 'verseStart':1,
-        'verseEnd':10, 'commentary':"first verses of matthew"},
-        {'bookCode':'mrk','chapter':0, 'commentary':"book intro to Mark"},
+        {'commentaryId':commentary_id1},
+        {'commentaryId':commentary_id2}
     ]
     response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=new_data)
-    assert response.status_code == 201
     assert response.status_code == 201
     assert response.json()['message'] == "Updating Commentaries in background"
     job_response = check_commentary_job_finished(response)
@@ -595,14 +576,14 @@ def test_delete_default():
     headers_auth = {"contentType": "application/json",#pylint: disable=redefined-outer-name
                 "accept": "application/json"}
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
-    post_response = client.get(UNIT_URL+resource_name+'?book_code=gen&chapter=0',\
-        headers=headers_auth)
+    post_response = client.get(UNIT_URL+resource_name+'?reference= {"book":"gen", "chapter":1, \
+    "verseNumber":0,"bookEnd":"gen", "chapterEnd":1,"verseEnd":10}', headers=headers_auth)
     assert post_response.status_code == 200
     assert len(post_response.json()) == 1
     for item in post_response.json():
         assert_positive_get(item)
     commentary_response = client.get(UNIT_URL+resource_name,headers=headers_auth)
-    commentary_id = commentary_response.json()[0]['commentaryId']
+    commentary_id = commentary_response.json()[1]['commentaryId']
 
     #Delete without authentication
     headers = {"contentType": "application/json", "accept": "application/json"}#pylint: disable=redefined-outer-name
@@ -632,8 +613,8 @@ def test_delete_default():
     #Check commentray is deleted from table
     commentary_response = client.get(UNIT_URL+resource_name,headers=headers_auth)
     assert commentary_response.status_code == 200
-    delete_response = client.get(UNIT_URL+resource_name+'?book_code=gen&chapter=0',\
-        headers=headers_auth)
+    delete_response = client.get(UNIT_URL+resource_name+'?reference={"book":"gen", "chapter":1, \
+    "verseNumber":0,"bookEnd":"gen", "chapterEnd":1,"verseEnd":10}',headers=headers_auth)
     assert_not_available_content(delete_response)
 
 def test_delete_default_superadmin():
@@ -656,7 +637,7 @@ def test_delete_default_superadmin():
             }
 
     commentary_response = client.get(UNIT_URL+resource_name,headers=headers_sa)
-    commentary_id = commentary_response.json()[0]['commentaryId']
+    commentary_id = commentary_response.json()[1]['commentaryId']
     
      #Delete commentary with Super Admin
     response = client.delete(UNIT_URL+resource_name + "?commentary_id=" + str(commentary_id), headers=headers_sa)
@@ -842,8 +823,8 @@ def test_restore_default():
     assert response.status_code == 201
     assert response.json()['message'] == \
     f"Deleted Item with identity {deleteditem_id} restored successfully"
-    restore_response = client.get(UNIT_URL+resource_name+'?book_code=gen&chapter=0',\
-        headers=headers_sa)
+    restore_response = client.get(UNIT_URL+resource_name+'?reference={"book":"gen", "chapter":1, \
+    "verseNumber":0,"bookEnd":"gen", "chapterEnd":1,"verseEnd":10}', headers=headers_sa)
     assert restore_response.status_code == 200
     assert len(restore_response.json()) == 1
     for item in restore_response.json():

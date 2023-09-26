@@ -489,7 +489,6 @@ def test_put_after_upload():
     #with auth
     response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=new_data)
     assert response.status_code == 201
-    print("***********:",response.json())
     assert response.json()['message'] == 'Parascripturals updated successfully'
     for i,item in enumerate(response.json()['data']):
         assert_positive_get(item)

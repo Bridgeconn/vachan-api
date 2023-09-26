@@ -1356,9 +1356,9 @@ def test_delete_default():
             }
     resource_name = response.json()['data']['resourceName']
 
-     #Check Commentary table is created
+    #Check Commentary table is created
     commentary_data = [
-    	{'bookCode':'gen', 'chapter':1, 'verseStart':3, 'verseEnd': 30,
+    	{'reference':{'book':'gen', 'chapter':1, 'verseNumber':3, 'bookEnd':'gen','chapterEnd':1,'verseEnd': 30},
     		'commentary':'the creation'}
      ]
     # headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']

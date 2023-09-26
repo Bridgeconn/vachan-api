@@ -18,11 +18,10 @@ ist_timezone = timezone("Asia/Kolkata")
 def get_commentaries(db_: Session,**kwargs):
     '''Fetches rows of commentries from the table specified by resource_name'''
     resource_name = kwargs.get("resource_name")
-    book_code = kwargs.get("book_code",None)
-    chapter = kwargs.get("chapter",None)
-    verse = kwargs.get("verse",None)
-    last_verse = kwargs.get("last_verse",None)
+    reference = kwargs.get("reference",None)
     commentary_id = kwargs.get("commentary_id",None)
+    search_word = kwargs.get("search_word",None)
+    commentary = kwargs.get("commentary",None)
     active = kwargs.get("active",True)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
@@ -32,16 +31,22 @@ def get_commentaries(db_: Session,**kwargs):
         raise TypeException('The operation is supported only on commentaries')
     model_cls = db_models.dynamicTables[resource_name]
     query = db_.query(model_cls)
-    if book_code:
-        query = query.filter(model_cls.book.has(bookCode=book_code.lower()))
-    if chapter is not None:
-        query = query.filter(model_cls.chapter == chapter)
     if commentary_id is not None:
         query = query.filter(model_cls.commentaryId == commentary_id)
-    if verse is not None:
-        if last_verse is None:
-            last_verse = verse
-        query = query.filter(model_cls.verseStart <= verse, model_cls.verseEnd >= last_verse)
+    if commentary:
+        query = query.filter(model_cls.commentary.contains(\
+            utils.normalize_unicode(commentary.strip())))
+    if reference:
+        if isinstance(reference, str):
+            reference = json.loads(reference)
+        query = filter_by_reference(db_,query, model_cls, reference)
+    if search_word:
+        search_pattern = " & ".join(re.findall(r'\w+', search_word))
+        search_pattern += ":*"
+        query = query.filter(text("to_tsvector('simple', commentary || ' ' ||"+\
+            "jsonb_to_tsvector('simple', reference, '[\"string\", \"numeric\"]') || ' ')" +\
+            " @@ to_tsquery('simple', :pattern)").bindparams(pattern=search_pattern))
+
     query = query.filter(model_cls.active == active)
     resource_db_content = db_.query(db_models.Resource).filter(
         db_models.Resource.resourceName == resource_name).first()
@@ -74,48 +79,48 @@ def upload_commentaries(db_: Session, resource_name, commentaries, job_id, user_
     model_cls = db_models.dynamicTables[resource_name]
     db_content = []
     db_content_out = []
-    prev_book_code = None
     for item in commentaries:
-        if item.verseStart is not None and item.verseEnd is None:
-            item.verseEnd = item.verseStart
-        if item.bookCode != prev_book_code:
-            book = db_.query(db_models.BibleBook).filter(
-                db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
-            prev_book_code = item.bookCode
-            if not book:
-                update_args["output"]= {
-                "message": f'Bible Book code, {prev_book_code}, not found in database',
-                "resource_name": resource_name,"data": None}
-                update_job(db_, job_id, user_id, update_args)
-                return None
-                # raise NotAvailableException('Bible Book code, %s, not found in database')
-            exist_check = db_.query(model_cls).filter(
-                model_cls.book_id == book.bookId, model_cls.chapter == item.chapter,
-                model_cls.verseStart == item.verseStart, model_cls.verseEnd == item.verseEnd,
-            ).first()
+        if item.reference:
+            ref = item.reference.__dict__
+            if ref['verseNumber'] is not None:
+                ref_start = utils.create_decimal_ref_id(
+                    db_,ref['book'],ref['chapter'],ref['verseNumber'])
+            else:
+                #setting verseNumber to 000 if its not present
+                ref_start = utils.create_decimal_ref_id(db_,ref['book'],ref['chapter'],0)
+                ref['verseNumber'] = 0
+            if ref['bookEnd'] is not None:
+                if ref['chapterEnd'] is not None and ref['verseEnd'] is not None:
+                    ref_end   = utils.create_decimal_ref_id(
+                        db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
+                else:
+                    #setting verseEnd to 999 if its not present
+                    ref_end  = utils.create_decimal_ref_id(db_,ref['bookEnd'],ref['chapterEnd'],999)
+                    ref['verseEnd'] = 999
+            else:
+                ref_end = None
+        else:
+            ref = None
+            ref_end = None
+            ref_start = None
+        query = db_.query(model_cls)
+        for row in query.all():
+            exist_check = query.filter(model_cls.refStart == ref_start).first()
             if exist_check:
                 update_args["output"]= {
                 "message": 'Already exist commentary with same values for reference range',
-                "book_id": book.bookId, "chapter":item.chapter, "verseStart" : item.verseStart,
-                "verseEnd" : item.verseEnd, "data": None}
+                "data": None}
                 update_job(db_, job_id, user_id, update_args)
                 return None
 
         row = model_cls(
-            book_id = book.bookId,
-            chapter = item.chapter,
-            verseStart = item.verseStart,
-            verseEnd = item.verseEnd,
+            reference = ref,
+            refStart=ref_start,
+            refEnd=ref_end,
             commentary = utils.normalize_unicode(item.commentary),
             active=item.active)
         row_out = {
-            "book" : {
-                "bookId": book.bookId,
-                "bookName": book.bookName,
-                "bookCode": book.bookCode,},
-            "chapter" :  item.chapter,
-            "verseStart" :  item.verseStart,
-            "verseEnd" :  item.verseEnd,
+            "reference" : ref,
             "commentary" :  utils.normalize_unicode(item.commentary),
             "active": item.active}
         db_content.append(row)
@@ -147,31 +152,31 @@ def update_commentaries(db_: Session, resource_name, commentaries,job_id, user_i
     model_cls = db_models.dynamicTables[resource_name]
     db_content = []
     db_content_out = []
-    prev_book_code = None
+    model_cls = db_models.dynamicTables[resource_name]
+    query = db_.query(model_cls)
     for item in commentaries:
-        if item.bookCode != prev_book_code:
-            book = db_.query(db_models.BibleBook).filter(
-                db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
-            prev_book_code = item.bookCode
-            if not book:
-                update_args["output"]= {
-                "message": f'Bible Book code, {prev_book_code}, not found in database',
-                "resource_name": resource_name,"data": None}
-                update_job(db_, job_id, user_id, update_args)
-                return None
-        row = db_.query(model_cls).filter(
-            model_cls.book_id == book.bookId,
-            model_cls.chapter == item.chapter,
-            model_cls.verseStart == item.verseStart,
-            model_cls.verseEnd == item.verseEnd).first()
+        row = query.filter(model_cls.commentaryId == item.commentaryId).first()
         if not row:
             update_args["output"]= {
-                "message" : "Commentary row with bookCode:"+
-                    f"{item.bookCode},chapter:{item.chapter},verseStart:{item.verseStart},"+
-                    f"verseEnd:{item.verseEnd}, not found for {resource_name}",
-                "resource_name": resource_name,"data": None}
+            "message": 'Commentary with given id does not exist',
+            "data": None}
             update_job(db_, job_id, user_id, update_args)
             return None
+        if item.reference:
+            ref = item.reference.__dict__
+            if ref['verseNumber'] is not None:
+                ref_start = utils.create_decimal_ref_id(
+                    db_,ref['book'],ref['chapter'],ref['verseNumber'])
+            else:
+                ref_start = utils.create_decimal_ref_id(db_,ref['book'],ref['chapter'],0)
+            if ref['verseEnd'] is not None:
+                ref_end   = utils.create_decimal_ref_id(
+                    db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
+            else:
+                ref_end   = utils.create_decimal_ref_id(db_,ref['bookEnd'],ref['chapterEnd'],999)
+            row.reference = ref
+            row.refStart=ref_start
+            row.refEnd=ref_end
         if item.commentary:
             row.commentary = utils.normalize_unicode(item.commentary)
         if item.active is not None:
@@ -179,14 +184,8 @@ def update_commentaries(db_: Session, resource_name, commentaries,job_id, user_i
         db_.flush()
         db_content.append(row)
         row_out = {
-            "book" : {
-                "bookId": book.bookId,
-                "bookName": book.bookName,
-                "bookCode": book.bookCode,},
-            "chapter" :  row.chapter,
-            "verseStart" :  row.verseStart,
-            "verseEnd" :  row.verseEnd,
-            "commentary" :  row.commentary,
+            "reference" : row.reference,
+            "commentary" :  utils.normalize_unicode(row.commentary),
             "active": row.active}
         db_content_out.append(row_out)
     resource_db_content.updatedUser = user_id
@@ -195,6 +194,7 @@ def update_commentaries(db_: Session, resource_name, commentaries,job_id, user_i
         "endTime": datetime.now(),
         "output": {"message": "Commentaries updated successfully","data": db_content_out}}
     update_job(db_, job_id, user_id, update_args)
+
 # pylint: disable=duplicate-code
 def delete_commentary(db_: Session, delitem:int,table_name=None,
     resource_name=None,user_id=None):
@@ -1346,12 +1346,16 @@ def extract_text(db_:Session, tables, books, skip=0, limit=100):
             model_cls = db_models.dynamicTables[table.resourceName]
             query = db_.query(model_cls.commentaryId.label('sentenceId'),
                 model_cls.ref_string.label('surrogateId'),
-                model_cls.commentary.label('sentence')).join(model_cls.book)
+                model_cls.commentary.label('sentence'))
         else:
             continue
         if books is not None:
-            query = query.filter(
-                db_models.BibleBook.bookCode.in_([buk.lower() for buk in books]))
+            if table.resourceType.resourceType == db_models.ResourceTypeName.BIBLE.value:
+                query = query.filter(
+                     db_models.BibleBook.bookCode.in_([buk.lower() for buk in books]))
+            else:
+                query = query.filter(
+                    model_cls.reference['book'].astext.in_([buk.lower() for buk in books]))
         sentence_list += query.offset(skip).limit(limit).all()
         if len(sentence_list) >= limit:
             sentence_list = sentence_list[:limit]
