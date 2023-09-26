@@ -95,6 +95,7 @@ Edit the following contents appropriatetly and paste to the `.bashrc` file
   export VACHAN_KRATOS_PUBLIC_URL="http://127.0.0.1:4433/"
   export VACHAN_SUPER_USERNAME="<super-admin-emial-id>"
   export VACHAN_SUPER_PASSWORD="<a-strong-password>"
+  export VACHAN_DOMAIN=127.0.0.1:8000
 ```
 After editing .bashrc file they may need to run
 
