@@ -57,14 +57,7 @@
     },
     "graphql": {
         "title":"GraphQL",
-        "content":"GraphQL module for Vachan Engine is a specification for web APIs that offers a compelling alternative to REST. This module serves as a middle layer between client applications and data sources. With its powerful query language, GraphQL enables declarative data fetching, eliminating the need for over-fetching or under-fetching. Initially implemented using Graphene, we are now migrating to the Strawberry library, ensuring access to the latest GraphQL advancements. It is hosted alongside our REST API services, this integration allows you to leverage the best of both worlds. While REST provides familiar GET, PUT, and POST endpoints, GraphQL empowers you with flexible and precise data retrieval.",
-        "links":[
-            {
-                "link":"",
-                "linkname":"GraphQL",
-                "button":false
-            }
-        ]
+        "content":"GraphQL module for Vachan Engine is a specification for web APIs that offers a compelling alternative to REST. This module serves as a middle layer between client applications and data sources. With its powerful query language, GraphQL enables declarative data fetching, eliminating the need for over-fetching or under-fetching. Initially implemented using Graphene, we are now migrating to the Strawberry library, ensuring access to the latest GraphQL advancements. It is hosted alongside our REST API services, this integration allows you to leverage the best of both worlds. While REST provides familiar GET, PUT, and POST endpoints, GraphQL empowers you with flexible and precise data retrieval."        
     },
     "microservices": {
         "title":"Micro Services",
