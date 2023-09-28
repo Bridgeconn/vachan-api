@@ -21,9 +21,6 @@ RESTORE_URL = '/v2/admin/restore'
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
     assert "book" in item['reference']
-    assert "chapter" in item['reference']
-    # assert "verseStart" in item # optional params get_job remove null fields
-    # assert "verseEnd" in item
     assert "commentary" in item
     assert "active" in item
 
@@ -85,7 +82,8 @@ def test_post_default():
     		'commentary':'the creation'},
     	{'reference': {"book":"gen", "chapter":1, "verseNumber":-1,"verseEnd":-1},
     		'commentary':'Chapter Epilogue. God completes creation in 6 days.'},
-    	{'reference': {"book":"gen", "chapter":-1},'commentary':'book Epilogue.'}
+    	{'reference': {"book":"gen", "chapter":-1},'commentary':'book Epilogue.'},
+        {'reference': {"book":"mat"},'commentary':'book intro to Mathew'}
     ]
     response,resource_name = check_post(data)
     # resource_name = check_post(data)[0]
@@ -608,6 +606,7 @@ def test_delete_default():
             }
     response = client.delete(UNIT_URL+resource_name + "?commentary_id=" + str(commentary_id), headers=headers_va)
     assert response.status_code == 200
+    print("del resp:",response.json())
     assert response.json()['message'] ==\
          f"Commentary id {commentary_id} deleted successfully"
     #Check commentray is deleted from table
@@ -615,6 +614,7 @@ def test_delete_default():
     assert commentary_response.status_code == 200
     delete_response = client.get(UNIT_URL+resource_name+'?reference={"book":"gen", "chapter":1, \
     "verseNumber":0,"bookEnd":"gen", "chapterEnd":1,"verseEnd":10}',headers=headers_auth)
+    print("#####get resp after del:",delete_response.json())
     assert_not_available_content(delete_response)
 
 def test_delete_default_superadmin():

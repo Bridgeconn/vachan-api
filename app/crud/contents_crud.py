@@ -11,7 +11,8 @@ import db_models #pylint: disable=import-error
 from crud import utils  #pylint: disable=import-error
 from crud.nlp_sw_crud import update_job #pylint: disable=import-error
 from schema import schemas_nlp #pylint: disable=import-error
-from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException  #pylint: disable=import-error
+from custom_exceptions import NotAvailableException, TypeException, AlreadyExistsException,\
+    UnprocessableException  #pylint: disable=import-error
 
 ist_timezone = timezone("Asia/Kolkata")
 
@@ -55,6 +56,48 @@ def get_commentaries(db_: Session,**kwargs):
         'resource_content':resource_db_content}
     return response
 
+def process_reference(db_:Session,item): #pylint: disable=too-many-branches
+    '''Calculate refstart and refend ids for a given reference'''
+    if item.reference:
+        ref = item.reference.__dict__
+        if ref['book'] is not None:
+            if ref['chapter'] is not None:
+                if ref['verseNumber'] is not None:
+                    ref_start = utils.create_decimal_ref_id(
+                        db_, ref['book'], ref['chapter'], ref['verseNumber'])
+                else:
+                    # Setting verseNumber to 000 if it's not present - chapter intro
+                    ref_start = utils.create_decimal_ref_id(db_, ref['book'], ref['chapter'], 0)
+                    ref['verseNumber'] = 0
+            else:
+                # Setting chapter and verseNumber to 000 if it's both are not present - book intro
+                ref_start = utils.create_decimal_ref_id(
+                    db_, ref['book'], ref['chapter'], ref['verseNumber'])
+
+        if ref['bookEnd'] is not None:
+            if ref['chapter'] is not None:
+                if ref['verseEnd'] is not None:
+                    ref_end = utils.create_decimal_ref_id(
+                        db_, ref['bookEnd'], ref['chapterEnd'], ref['verseEnd'])
+                else:
+                    # Setting verseEnd to 999 if it's not present
+                    ref_end =utils.create_decimal_ref_id(db_, ref['bookEnd'], ref['chapterEnd'],999)
+                    ref['verseEnd'] = 999
+            else:
+                # Setting chapterEnd and verseEnd to 999 if it's both are not present - epilogue
+                if ref['verseEnd'] is None:
+                    ref_start = utils.create_decimal_ref_id(
+                        db_, ref['book'], 999, 999)
+                else:
+                    raise UnprocessableException("verse will not exist without chapter")
+        else:
+            ref_end = ref_start
+    else:
+        ref = None
+        ref_end = None
+        ref_start = None
+    return ref, ref_start, ref_end
+
 def upload_commentaries(db_: Session, resource_name, commentaries, job_id, user_id=None):#pylint: disable=too-many-locals,R1710
     '''Adds rows to the commentary table specified by resource_name'''
     update_args = {
@@ -80,32 +123,13 @@ def upload_commentaries(db_: Session, resource_name, commentaries, job_id, user_
     db_content = []
     db_content_out = []
     for item in commentaries:
-        if item.reference:
-            ref = item.reference.__dict__
-            if ref['verseNumber'] is not None:
-                ref_start = utils.create_decimal_ref_id(
-                    db_,ref['book'],ref['chapter'],ref['verseNumber'])
-            else:
-                #setting verseNumber to 000 if its not present
-                ref_start = utils.create_decimal_ref_id(db_,ref['book'],ref['chapter'],0)
-                ref['verseNumber'] = 0
-            if ref['bookEnd'] is not None:
-                if ref['chapterEnd'] is not None and ref['verseEnd'] is not None:
-                    ref_end   = utils.create_decimal_ref_id(
-                        db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
-                else:
-                    #setting verseEnd to 999 if its not present
-                    ref_end  = utils.create_decimal_ref_id(db_,ref['bookEnd'],ref['chapterEnd'],999)
-                    ref['verseEnd'] = 999
-            else:
-                ref_end = None
-        else:
-            ref = None
-            ref_end = None
-            ref_start = None
+        #getting reference and its ids
+        ref,ref_start,ref_end = process_reference( db_,item)
+
         query = db_.query(model_cls)
         for row in query.all():
-            exist_check = query.filter(model_cls.refStart == ref_start).first()
+            exist_check = query.filter(model_cls.refStart == ref_start, \
+                model_cls.refEnd == ref_end).first()
             if exist_check:
                 update_args["output"]= {
                 "message": 'Already exist commentary with same values for reference range',
@@ -422,29 +446,8 @@ def upload_parascripturals(db_: Session, resource_name, parascriptural, user_id=
     model_cls = db_models.dynamicTables[resource_name]
     db_content = []
     for item in parascriptural:
-        if item.reference:
-            ref = item.reference.__dict__
-            if ref['verseNumber'] is not None:
-                ref_start = utils.create_decimal_ref_id(
-                    db_,ref['book'],ref['chapter'],ref['verseNumber'])
-            else:
-                #setting verseNumber to 000 if its not present
-                ref_start = utils.create_decimal_ref_id(db_,ref['book'],ref['chapter'],0)
-                ref['verseNumber'] = 0
-            if ref['bookEnd'] is not None:
-                if ref['chapterEnd'] is not None and ref['verseEnd'] is not None:
-                    ref_end   = utils.create_decimal_ref_id(
-                        db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
-                else:
-                    #setting verseEnd to 999 if its not present
-                    ref_end  = utils.create_decimal_ref_id(db_,ref['bookEnd'],ref['chapterEnd'],999)
-                    ref['verseEnd'] = 999
-            else:
-                ref_end = None
-        else:
-            ref = None
-            ref_end = None
-            ref_start = None
+        #getting reference and its ids
+        ref,ref_start,ref_end = process_reference( db_,item)
         if item.content:
             item.content = utils.normalize_unicode(item.content.strip())
         if item.description:
@@ -611,29 +614,8 @@ def upload_audio_bible(db_: Session, resource_name, audiobibles, user_id=None):#
     model_cls = db_models.dynamicTables[resource_name]
     db_content = []
     for item in audiobibles:
-        if item.reference:
-            ref = item.reference.__dict__
-            if ref['verseNumber'] is not None:
-                ref_start = utils.create_decimal_ref_id(
-                    db_,ref['book'],ref['chapter'],ref['verseNumber'])
-            else:
-                #setting verseNumber to 000 if its not present
-                ref_start = utils.create_decimal_ref_id(db_,ref['book'],ref['chapter'],0)
-                ref['verseNumber'] = 0
-            if ref['bookEnd'] is not None:
-                if ref['chapterEnd'] is not None and ref['verseEnd'] is not None:
-                    ref_end   = utils.create_decimal_ref_id(
-                        db_,ref['bookEnd'],ref['chapterEnd'],ref['verseEnd'])
-                else:
-                    #setting verseEnd to 999 if its not present
-                    ref_end  = utils.create_decimal_ref_id(db_,ref['bookEnd'],ref['chapterEnd'],999)
-                    ref['verseEnd'] = 999
-            else:
-                ref_end = None
-        else:
-            ref = None
-            ref_end = None
-            ref_start = None
+        #getting reference and its ids
+        ref,ref_start,ref_end = process_reference( db_,item)
         if item.name:
             item.name = utils.normalize_unicode(item.name.strip())
         if item.audioFormat:

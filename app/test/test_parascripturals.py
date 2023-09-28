@@ -63,6 +63,8 @@ def test_post_default():
         "reference": {"book":"MAT", "chapter":2, "verseNumber":3, \
             "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
         "link":"http://somewhere.com/something"},
+        {'category':'Bible Stories', 'title':"chapter 1 of mathew",
+        "reference": {"book":"MAT"}}
     ]
     response,resource_name = check_post(data)
     assert response.status_code == 201
