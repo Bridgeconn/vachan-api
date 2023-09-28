@@ -115,6 +115,7 @@
 .serviceCard__header span {
     font-weight: 600;
     color: rgba(0, 0, 0, .55);
+    font-size: 1.1rem;
 }
 
 .serviceCard__header:after {
