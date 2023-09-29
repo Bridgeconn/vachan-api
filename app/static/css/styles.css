@@ -294,9 +294,9 @@ li{
   margin-bottom: -10px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1198px) {
   .navimage{
-    margin-bottom: 0px;
+    margin-bottom: 8px;
   }
 }
 

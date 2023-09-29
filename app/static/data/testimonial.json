@@ -4,19 +4,19 @@
         "app":"",
         "designation":"Project Manager",
         "image":"/static/images/testimonials/samuel.png",
-        "comment":"We've been using VachanEngine CMS for our front-end applications, and it has truly served our need for varied resources in South Asian languages in different formats. The user-friendly documentation and their excellent development team makes it a breeze to organize and use the content. I highly recommend VachanEngine CMS to anyone looking for a powerful and intuitive content management solution."
+        "comment":"We've been using Vachan Engine CMS for our front-end applications, and it has truly served our need for varied resources in South Asian languages in different formats. The user-friendly documentation and their excellent development team makes it a breeze to organize and use the content. I highly recommend Vachan Engine CMS to anyone looking for a powerful and intuitive content management solution."
     },
     {
         "name":"Revant Cherian Idikulay",
         "app":"",
         "designation":"Software Engineer",
         "image":"/static/images/testimonials/revant.png",
-        "comment":"Vachan engine is comprehensive and easy to use. It has detailed documentation. The ability to try out the API on the documentation page itself is very useful. Making an UI application with it was a breeze."
+        "comment":"Vachan Engine is comprehensive and easy to use. It has detailed documentation. The ability to try out the API on the documentation page itself is very useful. Making an UI application with it was a breeze."
     },
     {"name":"Anu Monachan",
     "app":"",
     "designation":"Software Engineer",
     "image":"/static/images/testimonials/anu.png",
-    "comment":"VachanEngine has been an integral tool for our IntelliSign - Sign Language Translation app development. It provides us the functionality of using the previous user inputs as data for our projects and helps in fastening the process of sign translation, we are also using VE to provide users with seamless access to dictionary and glossary data of sign languages."
+    "comment":"Vachan Engine has been an integral tool for our IntelliSign - Sign Language Translation app development. It provides us the functionality of using the previous user inputs as data for our projects and helps in fastening the process of sign translation, we are also using VE to provide users with seamless access to dictionary and glossary data of sign languages."
     }
 ]
