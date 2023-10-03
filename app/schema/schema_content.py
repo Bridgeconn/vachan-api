@@ -224,48 +224,15 @@ class BookContentType(str, Enum):
 
 class CommentaryCreate(BaseModel):
     '''Response object for commentaries'''
-    bookCode : BookCodePattern
-    chapter: int
-    verseStart: int = None
-    verseEnd: int = None
+    reference: Reference = None
     commentary: str
     active: bool = True
-
-    @validator('verseStart', 'verseEnd')
-    def check_verses(cls, val, values): # pylint:  disable=E0213
-        '''verse fields should be greater than or equal to -1'''
-        if 'chapter' in values and values['chapter'] in [-1, 0]:
-            if val not in [-1, 0, None]:
-                raise ValueError('verse fields should be 0, for book introductions and epilogues')
-            val = 0
-        if val is None:
-            raise ValueError('verse fields must have a value, '+
-                'except for book introduction and epilogue')
-        if val < -1:
-            raise ValueError('verse fields should be greater than or equal to -1')
-        return val
-
-    @validator('verseEnd')
-    def check_range(cls, val, values): # pylint: disable=E0213
-        '''verse start should be less than or equal to verse end'''
-        if 'verseStart' in values and val < values['verseStart']:
-            raise ValueError('verse start should be less than or equal to verse end')
-        return val
-
-    @validator('chapter')
-    def check_chapter(cls, val): # pylint:  disable=E0213
-        '''chapter fields should be greater than or equal to -1'''
-        if val < -1:
-            raise ValueError('chapter field should be greater than or equal to -1')
-        return val
     class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "bookCode": "1ki",
-                "chapter": 10,
-                "verseStart": 1,
-                "verseEnd": 7,
+                "reference": {"book":"MRK", "chapter":11, "verseNumber":12,
+                               "bookEnd":"LUK", "chapterEnd":14, "verseEnd":15 },
                 "commentary": "It was customary at the time ...",
                 "active": True
             }
@@ -274,48 +241,17 @@ class CommentaryCreate(BaseModel):
 
 class CommentaryEdit(BaseModel):
     '''Response object for commentaries'''
-    bookCode : BookCodePattern
-    chapter: int
-    verseStart: int = None
-    verseEnd: int = None
+    commentaryId:int
+    reference: Reference = None
     commentary: str = None
     active: bool = None
-
-    @validator('verseStart', 'verseEnd')
-    def check_verses(cls, val, values): # pylint: disable=E0213
-        '''verse fields should be greater than or equal to -1'''
-        if 'chapter' in values and values['chapter'] in [-1, 0]:
-            if val not in [-1, 0, None]:
-                raise ValueError('verse fields should be 0, for book introductions and epilogues')
-            val = 0
-        if val is None:
-            raise ValueError('verse fields must have a value, '+
-                'except for book introduction and epilogue')
-        if val < -1:
-            raise ValueError('verse fields should be greater than or equal to -1')
-        return val
-
-    @validator('verseEnd')
-    def check_range(cls, val, values): # pylint:  disable=E0213
-        '''verse start should be less than or equal to verse end'''
-        if 'verseStart' in values and val < values['verseStart']:
-            raise ValueError('verse start should be less than or equal to verse end')
-        return val
-
-    @validator('chapter')
-    def check_chapter(cls, val): # pylint:  disable=E0213
-        '''chapter fields should be greater than or equal to -1'''
-        if val < -1:
-            raise ValueError('chapter field should be greater than or equal to -1')
-        return val
     class Config:
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
-                "bookCode": "1ki",
-                "chapter": 10,
-                "verseStart": 1,
-                "verseEnd": 7,
+                "commentaryId":100000,
+                "reference": {"book":"MRK", "chapter":15, "verseNumber":10,
+                               "bookEnd":"JHN", "chapterEnd":1, "verseEnd":9 },
                 "commentary": "One of the practices of that time was ...",
                 "active": False
             }
@@ -324,10 +260,7 @@ class CommentaryEdit(BaseModel):
 class CommentaryResponse(BaseModel):
     '''Response object for commentaries'''
     commentaryId: int
-    book : BibleBook
-    chapter: int
-    verseStart: int = None
-    verseEnd: int = None
+    reference: Reference = None
     commentary: str
     active: bool
     class Config:
@@ -337,10 +270,8 @@ class CommentaryResponse(BaseModel):
         schema_extra = {
             "example": {
                 "commentaryId":100000,
-                "bookCode": "1ki",
-                "chapter": 10,
-                "verseStart": 1,
-                "verseEnd": 7,
+                "reference": {"book":"MRK", "chapter":11, "verseNumber":12,
+                               "bookEnd":"LUK", "chapterEnd":14, "verseEnd":15 },
                 "commentary": "It was customary at the time ...",
                 "active": True
             }

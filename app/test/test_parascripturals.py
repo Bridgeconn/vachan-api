@@ -63,6 +63,8 @@ def test_post_default():
         "reference": {"book":"MAT", "chapter":2, "verseNumber":3, \
             "bookEnd":"JHN", "chapterEnd":5, "verseEnd":6 },
         "link":"http://somewhere.com/something"},
+        {'category':'Bible Stories', 'title':"chapter 1 of mathew",
+        "reference": {"book":"MAT"}}
     ]
     response,resource_name = check_post(data)
     assert response.status_code == 201
@@ -489,7 +491,6 @@ def test_put_after_upload():
     #with auth
     response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=new_data)
     assert response.status_code == 201
-    print("***********:",response.json())
     assert response.json()['message'] == 'Parascripturals updated successfully'
     for i,item in enumerate(response.json()['data']):
         assert_positive_get(item)

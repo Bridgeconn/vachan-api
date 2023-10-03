@@ -121,34 +121,38 @@ class BibleBook(Base): # pylint: disable=too-few-public-methods
     bookName = Column('book_name', String)
     bookCode = Column('book_code', String)
 
-class Commentary(): # pylint: disable=too-few-public-methods
+class Commentary(): # pylint: disable=too-few-public-methods # pylint: disable=unsubscriptable-object
     '''Corresponds to the dynamically created commentary tables in vachan Db(postgres)'''
     commentaryId = Column('commentary_id', Integer,
         Sequence('commentary_id_seq', start=100001, increment=1), primary_key=True)
-    @declared_attr
-    def book_id(cls): # pylint: disable=E0213
-        '''For modelling the bookId field in derived classes'''
-        return Column('book_id', Integer, ForeignKey('bible_books_look_up.book_id'))
-    @declared_attr
-    def book(cls): # pylint: disable=E0213
-        '''For modelling the book field in derived classes'''
-        return relationship(BibleBook)
+    @hybrid_property
+    def reference(self):
+        '''To store reference information as JSONB'''
+        return self._reference
+
+    @reference.setter
+    def reference(self, value):
+        '''To set reference information from JSONB'''
+        self._reference = value
+
+    _reference = Column('reference', JSONB)
+
     @hybrid_property
     def ref_string(self):
         '''To compose surrogate id'''
-        return f'{self.book.bookCode} {self.chapter}:{self.verseStart}-{self.verseEnd}'
+        return f'{self.reference["book"]} {self.reference["chapter"]}:\
+            {self.reference["verseNumber"]}-{self.reference["verseEnd"]}'
+
     @ref_string.expression
-    def ref_string(cls): # pylint: disable=E0213
-        '''To compose surrogate id'''
-        return func.concat(BibleBook.bookCode," ",cls.chapter,":",cls.verseStart,"-",cls.verseEnd)
-    chapter = Column('chapter', Integer)
-    verseStart = Column('verse_start', Integer)
-    verseEnd = Column('verse_end', Integer)
+    def ref_string(cls):# pylint: disable=E0213
+        '''To compose surrogate id(SQL expression)'''
+        return func.concat(cls.reference['book'], " ", cls.reference['chapter'],\
+             ":", cls.reference['verseNumber'], "-", cls.reference['verseEnd'])
+    refStart = Column('ref_start', Integer)
+    refEnd = Column('ref_end', Integer)
     commentary = Column('commentary', String)
     active = Column('active', Boolean)
-    # createdUser = Column('created_user', String)
     __table_args__ = (
-    #     UniqueConstraint('book_id', 'chapter', 'verse_start', 'verse_end'),
         {'extend_existing': True}
                      )
 

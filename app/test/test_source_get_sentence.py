@@ -26,26 +26,28 @@ def assert_positive_get(item):
     assert "sentence" in item
 
 commentary_data = [
-        {'bookCode':'gen', 'chapter':0, 'commentary':'book intro to Genesis'},
-        {'bookCode':'gen', 'chapter':1, 'verseStart':0, 'verseEnd': 0,
+        {'reference':{'book':'gen', 'chapter':0},
+		 'commentary':'book intro to Genesis'},
+        {'reference':{'book':'gen', 'chapter':1, 'verseNumber':0, 'bookEnd':'gen','chapterEnd':1,'verseEnd': 0},
             'commentary':'chapter intro to Genesis 1'},
-        {'bookCode':'gen', 'chapter':1, 'verseStart':1, 'verseEnd': 10,
+        {'reference':{'book':'gen', 'chapter':1, 'verseNumber':1,'bookEnd':'gen','chapterEnd':1, 'verseEnd': 10},
             'commentary':'the begining'},
-        {'bookCode':'gen', 'chapter':1, 'verseStart':3, 'verseEnd': 30,
+        {'reference':{'book':'gen', 'chapter':1, 'verseNumber':3,'bookEnd':'gen','chapterEnd':1, 'verseEnd': 30},
             'commentary':'the creation'},
-        {'bookCode':'gen', 'chapter':1, 'verseStart':-1, 'verseEnd': -1,
+        {'reference':{'book':'gen', 'chapter':1, 'verseNumber':-1,'bookEnd':'gen','chapterEnd':1, 'verseEnd': -1},
             'commentary':'Chapter Epilogue. God completes creation in 6 days.'},
-        {'bookCode':'gen', 'chapter':-1, 'commentary':'book Epilogue.'},
-
-        {'bookCode':'exo', 'chapter':1, 'verseStart':1,
-            "verseEnd":1, 'commentary':'first verse of Exodus'},
-        {'bookCode':'exo', 'chapter':1, 'verseStart':1,
-        "verseEnd":10, 'commentary':'first para of Exodus'},
-        {'bookCode':'exo', 'chapter':1, 'verseStart':1,
-        "verseEnd":25, 'commentary':'first few paras of Exodus'},
-        {'bookCode':'exo', 'chapter':1, 'verseStart':20,
-        "verseEnd":25, 'commentary':'a middle para of Exodus'},
-        {'bookCode':'exo', 'chapter':0, 'commentary':'Book intro to Exodus'}
+        {'reference':{'book':'gen', 'chapter':-1},
+		 'commentary':'book Epilogue.'},
+        {'reference':{'book':'exo', 'chapter':1, 'verseNumber':1,'bookEnd':'exo','chapterEnd':1,"verseEnd":1},
+		 'commentary':'first verse of Exodus'},
+        {'reference':{'book':'exo', 'chapter':1, 'verseNumber':1,'bookEnd':'exo','chapterEnd':1,"verseEnd":10},
+		'commentary':'first para of Exodus'},
+        {'reference':{'book':'exo', 'chapter':1, 'verseNumber':1,'bookEnd':'exo','chapterEnd':1, "verseEnd":25},
+		 'commentary':'first few paras of Exodus'},
+        {'reference':{'book':'exo', 'chapter':1, 'verseNumber':20,'bookEnd':'exo','chapterEnd':1,"verseEnd":25},
+		 'commentary':'a middle para of Exodus'},
+        {'reference':{'book':'exo', 'chapter':0},
+		 'commentary':'Book intro to Exodus'}
     ]
 
 

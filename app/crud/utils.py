@@ -241,12 +241,14 @@ def create_decimal_ref_id(db_:Session, bookcode, chapter, verse):
         db_models.BibleBook.bookCode == bookcode.lower()).first()
     book_id = book_content.bookId
     if book_id is not None:
-        if chapter is None and verse is None:
-            chapter = 0
-            verse = 0
-        if chapter is None and verse is not None:
-            raise UnprocessableException("verse will not exist without chapter")
-        if chapter is not None and verse is not None:
-            ref_id = (book_id * 100000) + (chapter * 1000) + verse
-            return ref_id
+        if chapter is None:
+            if verse is None:
+                chapter = 0
+                verse = 0
+            else:
+                raise UnprocessableException("verse will not exist without chapter")
+        if chapter is not None:
+            if verse is not None:
+                ref_id = (book_id * 100000) + (chapter * 1000) + verse
+                return ref_id
     raise ValueError("book_id, chapter, and verse must not be None.")

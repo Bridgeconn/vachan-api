@@ -663,9 +663,11 @@ async def get_bible_verse(request: Request,
 @get_auth_access_check_decorator
 async def get_commentary(request: Request,
     resource_name: schemas.TableNamePattern=Path(..., examples="en_BBC_1_commentary"),
-    book_code: schemas.BookCodePattern=Query(None, examples="1ki"),
-    chapter: int = Query(None, examples=10, ge=-1), verse: int = Query(None, examples=1, ge=-1),
-    last_verse: int = Query(None, examples=3, ge=-1), active: bool = True,
+    reference: str = Query(None,
+    examples='{"book": "mat", "chapter": 1, "verseNumber": 6}'),
+    search_word: str=Query(None, examples="customary") ,
+    commentary: str=Query(None, examples="It was customary at the time"),
+    active: bool = True,
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=0),
     user_details =Depends(get_user_or_none), db_: Session = Depends(get_db)):
     '''Fetches commentries under the specified resource.
@@ -679,12 +681,10 @@ async def get_commentary(request: Request,
     * limit=n: limits the no. of items to be returned to n
     * returns [] for not available content'''
     log.info('In get_commentary')
-    log.debug('resource_name: %s, book_code: %s, chapter: %s, verse:%s,\
-        last_verse:%s, skip: %s, limit: %s',
-        resource_name, book_code, chapter, verse, last_verse, skip, limit)
-    return contents_crud.get_commentaries(db_, resource_name=resource_name,chapter=chapter,\
-        book_code=book_code,verse=verse, last_verse=last_verse,active=active,\
-        skip = skip, limit = limit)
+    log.debug('resource_name: %s, reference: %s, skip: %s, limit: %s, search_word: %s,\
+        commentary: %s', resource_name, reference, skip, limit,search_word,commentary)
+    return contents_crud.get_commentaries(db_, resource_name=resource_name,reference = reference,\
+        search_word = search_word, commentary=commentary, active=active, skip = skip, limit = limit)
 
 @router.post('/v2/resources/commentaries/{resource_name}',
     response_model=schema_content.CommentaryCreateResponse, response_model_exclude_none=True,
