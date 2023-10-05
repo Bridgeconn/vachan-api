@@ -151,6 +151,7 @@ class Commentary(): # pylint: disable=too-few-public-methods # pylint: disable=u
     refStart = Column('ref_start', Integer)
     refEnd = Column('ref_end', Integer)
     commentary = Column('commentary', String)
+    sectionType = Column('section_type',String)
     active = Column('active', Boolean)
     __table_args__ = (
         {'extend_existing': True}

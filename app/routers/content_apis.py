@@ -663,6 +663,7 @@ async def get_bible_verse(request: Request,
 @get_auth_access_check_decorator
 async def get_commentary(request: Request,
     resource_name: schemas.TableNamePattern=Path(..., examples="en_BBC_1_commentary"),
+    section_type:schema_content.SectionTypes=Query(schema_content.SectionTypes.COMMENTARY),
     reference: str = Query(None,
     examples='{"book": "mat", "chapter": 1, "verseNumber": 6}'),
     search_word: str=Query(None, examples="customary") ,
@@ -682,9 +683,11 @@ async def get_commentary(request: Request,
     * returns [] for not available content'''
     log.info('In get_commentary')
     log.debug('resource_name: %s, reference: %s, skip: %s, limit: %s, search_word: %s,\
-        commentary: %s', resource_name, reference, skip, limit,search_word,commentary)
-    return contents_crud.get_commentaries(db_, resource_name=resource_name,reference = reference,\
-        search_word = search_word, commentary=commentary, active=active, skip = skip, limit = limit)
+        commentary: %s,sectiopn_type: %s', resource_name, reference, skip,
+        limit,search_word,commentary,section_type)
+    return contents_crud.get_commentaries(db_, resource_name=resource_name,reference = reference,
+        search_word = search_word, commentary=commentary, section_type = section_type,
+        active=active, skip = skip, limit = limit)
 
 @router.post('/v2/resources/commentaries/{resource_name}',
     response_model=schema_content.CommentaryCreateResponse, response_model_exclude_none=True,

@@ -188,25 +188,25 @@ def test_post_incorrect_data():
 def test_get_after_data_upload(): #pylint: disable=too-many-statements
     '''Add some data into the table and do all get tests'''
     data = [
-        {'reference': {"book":"gen", "chapter":0},'commentary':'Book intro to Genesis'},
-        {'reference': {"book":"gen", "chapter":1, "verseNumber":0,"bookEnd":"gen","chapterEnd":1,"verseEnd":0},
+        {'sectionType':"book-introduction",'reference': {"book":"gen", "chapter":0},'commentary':'Book intro to Genesis'},
+        {'sectionType':"commentary-text",'reference': {"book":"gen", "chapter":1, "verseNumber":0,"bookEnd":"gen","chapterEnd":1,"verseEnd":0},
             'commentary':'chapter intro to Genesis 1'},
-        {'reference': {"book":"gen", "chapter":1, "verseNumber":1,"bookEnd":"gen","chapterEnd":1,"verseEnd":10},
+        {'sectionType':"commentary-text",'reference': {"book":"gen", "chapter":1, "verseNumber":1,"bookEnd":"gen","chapterEnd":1,"verseEnd":10},
             'commentary':'the begining'},
-        {'reference': {"book":"gen", "chapter":1, "verseNumber":3,"bookEnd":"gen","chapterEnd":1,"verseEnd":30},
+        {'sectionType':"commentary-text",'reference': {"book":"gen", "chapter":1, "verseNumber":3,"bookEnd":"gen","chapterEnd":1,"verseEnd":30},
             'commentary':'the creation'},
-        {'reference': {"book":"gen", "chapter":1, "verseNumber":-1,"bookEnd":"gen","chapterEnd":1,"verseEnd":-1},
+        {'sectionType':"epilogue",'reference': {"book":"gen", "chapter":1, "verseNumber":-1,"bookEnd":"gen","chapterEnd":1,"verseEnd":-1},
             'commentary':'Chapter Epilogue. God completes creation in 6 days.'},
-        {'reference': {"book":"gen", "chapter":-1},'commentary':'book Epilogue.'},
-        {'reference': {"book":"exo", "chapter":1, "verseNumber":1,"bookEnd":"exo","chapterEnd":1,"verseEnd":1},
+        {'sectionType':"epilogue",'reference': {"book":"gen", "chapter":-1},'commentary':'book Epilogue.'},
+        {'sectionType':"commentary-text",'reference': {"book":"exo", "chapter":1, "verseNumber":1,"bookEnd":"exo","chapterEnd":1,"verseEnd":1},
             'commentary':'first verse of Exodus'},
-        {'reference': {"book":"exo", "chapter":1, "verseNumber":1,"bookEnd":"exo","chapterEnd":1,"verseEnd":10},
+        {'sectionType':"commentary-text",'reference': {"book":"exo", "chapter":1, "verseNumber":1,"bookEnd":"exo","chapterEnd":1,"verseEnd":10},
             'commentary':'first para of Exodus'},
-        {'reference': {"book":"exo", "chapter":1, "verseNumber":1,"bookEnd":"exo","chapterEnd":1,"verseEnd":25},
+        {'sectionType':"commentary-text",'reference': {"book":"exo", "chapter":1, "verseNumber":1,"bookEnd":"exo","chapterEnd":1,"verseEnd":25},
             'commentary':'first few paras of Exodus'},
-        {'reference': {"book":"exo", "chapter":1, "verseNumber":20,"bookEnd":"est","chapterEnd":1,"verseEnd":25},
+        {'sectionType':"commentary-text",'reference': {"book":"exo", "chapter":1, "verseNumber":20,"bookEnd":"est","chapterEnd":1,"verseEnd":25},
             'commentary':'a middle para of Exodus'},
-        {'reference': {"book":"exo", "chapter":0},'commentary':'Book intro to Exodus'}
+        {'sectionType':"book-introduction",'reference': {"book":"exo", "chapter":0},'commentary':'Book intro to Exodus'}
     ]
    
     resp, resource_name = check_post(data)
@@ -218,6 +218,7 @@ def test_get_after_data_upload(): #pylint: disable=too-many-statements
     assert 'output' in job_response.json()['data']
     assert len(data) == len(job_response.json()['data']['output']['data'])
     for item in job_response.json()['data']['output']['data']:
+        # print("///item:",item)
         assert_positive_get(item)
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     check_default_get(UNIT_URL+resource_name, headers_auth,assert_positive_get)
@@ -229,17 +230,25 @@ def test_get_after_data_upload(): #pylint: disable=too-many-statements
     assert response.json()["error"] == "Authentication Error"
 
     #with auth
-    response = client.get(UNIT_URL+resource_name+'?commentary=Book intro to Genesis',\
+    response = client.get(UNIT_URL+resource_name+'?commentary=Book intro to Genesis&section_type=book-introduction',\
         headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 1
 
     response = client.get(UNIT_URL+resource_name+"?search_word=gen",headers=headers_auth)
     assert response.status_code == 200
-    assert len(response.json()) == 6
+    assert len(response.json()) == 3
+
+    response = client.get(UNIT_URL+resource_name+"?search_word=gen&section_type=book-introduction",headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+    response = client.get(UNIT_URL+resource_name+"?search_word=gen&section_type=epilogue",headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 2
 
     # all book introductions
-    response = client.get(UNIT_URL+resource_name+"?commentary=Book intro",headers=headers_auth)
+    response = client.get(UNIT_URL+resource_name+"?commentary=Book intro&section_type=book-introduction",headers=headers_auth)
     assert response.status_code == 200
     assert len(response.json()) == 2
 
@@ -351,9 +360,11 @@ def test_put_after_upload():
 
     # positive PUT
     new_data = [
-        {'commentaryId':commentary_id1,'reference': {"book":"mat", "chapter":1,'verseNumber':1,'bookEnd':"mat","chapterEnd":1,'verseEnd':10},
+        {'commentaryId':commentary_id1,'sectionType':"commentary-text",
+            'reference': {"book":"mat", "chapter":1,'verseNumber':1,'bookEnd':"mat","chapterEnd":1,'verseEnd':10},
             'commentary':"first verses of matthew"},
-        {'commentaryId':commentary_id2,'reference': {"book":"mrk", "chapter":0,"bookEnd":"mrk","chapterEnd":0,'verseEnd':0},
+        {'commentaryId':commentary_id2,'sectionType':"book-introduction",
+            'reference': {"book":"mrk", "chapter":0,"bookEnd":"mrk","chapterEnd":0,'verseEnd':0},
             'commentary':"book intro to Mark"}
     ]
     #without auth
@@ -370,6 +381,7 @@ def test_put_after_upload():
     assert job_response.json()["message"] == "Commentaries updated successfully"
     for i,item in enumerate(job_response.json()['data']['output']['data']):
         assert_positive_get(item)
+        assert item['sectionType'] == new_data[i]['sectionType']
         assert item['commentary'] == new_data[i]['commentary']
         assert item['reference'] == new_data[i]['reference']
 
