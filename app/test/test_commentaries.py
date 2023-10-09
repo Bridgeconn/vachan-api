@@ -188,25 +188,25 @@ def test_post_incorrect_data():
 def test_get_after_data_upload(): #pylint: disable=too-many-statements
     '''Add some data into the table and do all get tests'''
     data = [
-        {'sectionType':"book-introduction",'reference': {"book":"gen", "chapter":0},'commentary':'Book intro to Genesis'},
-        {'sectionType':"commentary-text",'reference': {"book":"gen", "chapter":1, "verseNumber":0,"bookEnd":"gen","chapterEnd":1,"verseEnd":0},
+        {'sectionType':["book-introduction"],'reference': {"book":"gen", "chapter":0},'commentary':'Book intro to Genesis'},
+        {'sectionType':["commentary-text"],'reference': {"book":"gen", "chapter":1, "verseNumber":0,"bookEnd":"gen","chapterEnd":1,"verseEnd":0},
             'commentary':'chapter intro to Genesis 1'},
-        {'sectionType':"commentary-text",'reference': {"book":"gen", "chapter":1, "verseNumber":1,"bookEnd":"gen","chapterEnd":1,"verseEnd":10},
+        {'sectionType':["commentary-text"],'reference': {"book":"gen", "chapter":1, "verseNumber":1,"bookEnd":"gen","chapterEnd":1,"verseEnd":10},
             'commentary':'the begining'},
-        {'sectionType':"commentary-text",'reference': {"book":"gen", "chapter":1, "verseNumber":3,"bookEnd":"gen","chapterEnd":1,"verseEnd":30},
+        {'sectionType':["commentary-text"],'reference': {"book":"gen", "chapter":1, "verseNumber":3,"bookEnd":"gen","chapterEnd":1,"verseEnd":30},
             'commentary':'the creation'},
-        {'sectionType':"epilogue",'reference': {"book":"gen", "chapter":1, "verseNumber":-1,"bookEnd":"gen","chapterEnd":1,"verseEnd":-1},
+        {'sectionType':["epilogue"],'reference': {"book":"gen", "chapter":1, "verseNumber":-1,"bookEnd":"gen","chapterEnd":1,"verseEnd":-1},
             'commentary':'Chapter Epilogue. God completes creation in 6 days.'},
-        {'sectionType':"epilogue",'reference': {"book":"gen", "chapter":-1},'commentary':'book Epilogue.'},
-        {'sectionType':"commentary-text",'reference': {"book":"exo", "chapter":1, "verseNumber":1,"bookEnd":"exo","chapterEnd":1,"verseEnd":1},
+        {'sectionType':["epilogue"],'reference': {"book":"gen", "chapter":-1},'commentary':'book Epilogue.'},
+        {'sectionType':["commentary-text"],'reference': {"book":"exo", "chapter":1, "verseNumber":1,"bookEnd":"exo","chapterEnd":1,"verseEnd":1},
             'commentary':'first verse of Exodus'},
-        {'sectionType':"commentary-text",'reference': {"book":"exo", "chapter":1, "verseNumber":1,"bookEnd":"exo","chapterEnd":1,"verseEnd":10},
+        {'sectionType':["commentary-text"],'reference': {"book":"exo", "chapter":1, "verseNumber":1,"bookEnd":"exo","chapterEnd":1,"verseEnd":10},
             'commentary':'first para of Exodus'},
-        {'sectionType':"commentary-text",'reference': {"book":"exo", "chapter":1, "verseNumber":1,"bookEnd":"exo","chapterEnd":1,"verseEnd":25},
+        {'sectionType':["commentary-text"],'reference': {"book":"exo", "chapter":1, "verseNumber":1,"bookEnd":"exo","chapterEnd":1,"verseEnd":25},
             'commentary':'first few paras of Exodus'},
-        {'sectionType':"commentary-text",'reference': {"book":"exo", "chapter":1, "verseNumber":20,"bookEnd":"est","chapterEnd":1,"verseEnd":25},
+        {'reference': {"book":"exo", "chapter":1, "verseNumber":20,"bookEnd":"est","chapterEnd":1,"verseEnd":25},
             'commentary':'a middle para of Exodus'},
-        {'sectionType':"book-introduction",'reference': {"book":"exo", "chapter":0},'commentary':'Book intro to Exodus'}
+        {'sectionType':["book-introduction"],'reference': {"book":"exo", "chapter":0},'commentary':'Book intro to Exodus'}
     ]
    
     resp, resource_name = check_post(data)
@@ -235,9 +235,15 @@ def test_get_after_data_upload(): #pylint: disable=too-many-statements
     assert response.status_code == 200
     assert len(response.json()) == 1
 
+    #searching multiple section types
+    response = client.get(UNIT_URL+resource_name+'?section_type=book-introduction&section_type=epilogue',\
+        headers=headers_auth)
+    assert response.status_code == 200
+    assert len(response.json()) == 4
+
     response = client.get(UNIT_URL+resource_name+"?search_word=gen",headers=headers_auth)
     assert response.status_code == 200
-    assert len(response.json()) == 3
+    assert len(response.json()) == 6
 
     response = client.get(UNIT_URL+resource_name+"?search_word=gen&section_type=book-introduction",headers=headers_auth)
     assert response.status_code == 200
@@ -318,6 +324,17 @@ def test_get_after_data_upload(): #pylint: disable=too-many-statements
         "verseNumber":9,"bookEnd":"rev","chapterEnd":6,"verseEnd":4}', headers=headers_auth)
     assert_not_available_content(response)
 
+def test_post_incorrect_sectiontype_format():
+    '''Check input validations for section type field'''
+
+    #Posting section type as a non-list field
+    data = [
+        {'sectionType':"book-introduction",'reference': {"book":"jhn", "chapter":0},'commentary':'Book intro to John'}
+        ]
+    resp= check_post(data)[0]
+    print("////:",resp.json()["details"],resp.status_code)
+    assert resp.status_code == 422
+
 def test_get_incorrect_data():
     '''Check for input validations in get'''
     # Post data
@@ -354,16 +371,17 @@ def test_put_after_upload():
     assert len(data) == len(job_response.json()['data']['output']['data'])
     for item in job_response.json()['data']['output']['data']:
         assert_positive_get(item)
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     get_response = client.get(UNIT_URL+resource_name,headers=headers_auth)
     commentary_id1 = get_response.json()[0]['commentaryId']
     commentary_id2 = get_response.json()[1]['commentaryId']
 
     # positive PUT
     new_data = [
-        {'commentaryId':commentary_id1,'sectionType':"commentary-text",
+        {'commentaryId':commentary_id1,'sectionType':["commentary-text"],
             'reference': {"book":"mat", "chapter":1,'verseNumber':1,'bookEnd':"mat","chapterEnd":1,'verseEnd':10},
             'commentary':"first verses of matthew"},
-        {'commentaryId':commentary_id2,'sectionType':"book-introduction",
+        {'commentaryId':commentary_id2,'sectionType':["book-introduction"],
             'reference': {"book":"mrk", "chapter":0,"bookEnd":"mrk","chapterEnd":0,'verseEnd':0},
             'commentary':"book intro to Mark"}
     ]

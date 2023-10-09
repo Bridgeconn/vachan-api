@@ -5,6 +5,7 @@ import json
 import re
 from datetime import datetime
 from pytz import timezone
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, defer, joinedload
 from sqlalchemy.sql import text
 import db_models #pylint: disable=import-error
@@ -23,7 +24,7 @@ def get_commentaries(db_: Session,**kwargs):#pylint: disable=too-many-locals
     commentary_id = kwargs.get("commentary_id",None)
     search_word = kwargs.get("search_word",None)
     commentary = kwargs.get("commentary",None)
-    section_type = kwargs.get("section_type")
+    section_type = kwargs.get("section_type",None)
     active = kwargs.get("active",True)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
@@ -39,7 +40,9 @@ def get_commentaries(db_: Session,**kwargs):#pylint: disable=too-many-locals
         query = query.filter(model_cls.commentary.contains(\
             utils.normalize_unicode(commentary.strip())))
     if section_type:
-        query = query.filter(model_cls.sectionType == section_type.value)
+        filter_conditions = [model_cls.sectionType.contains([item]) for item in section_type]
+        filter_condition = or_(*filter_conditions)
+        query = query.filter(filter_condition)
     if reference:
         if isinstance(reference, str):
             reference = json.loads(reference)

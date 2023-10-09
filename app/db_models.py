@@ -2,7 +2,8 @@
 
 from enum import Enum
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, JSON, ARRAY, Float, text
+from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy import Column, Integer, String, JSON, Float, text
 from sqlalchemy import Boolean, ForeignKey, DateTime
 from sqlalchemy import UniqueConstraint, Index
 from sqlalchemy.sql import func
@@ -151,7 +152,7 @@ class Commentary(): # pylint: disable=too-few-public-methods # pylint: disable=u
     refStart = Column('ref_start', Integer)
     refEnd = Column('ref_end', Integer)
     commentary = Column('commentary', String)
-    sectionType = Column('section_type',String)
+    sectionType = Column('section_type', ARRAY(String))
     active = Column('active', Boolean)
     __table_args__ = (
         {'extend_existing': True}
