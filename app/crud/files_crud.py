@@ -71,7 +71,7 @@ def parse_with_usfm_grammar(input_usfm, output_format=usfm_grammar.Format.JSON,
                 if chapter is not None:
                     output_content = extract_usj_chapter(output_content, chapter)
             elif content_filter == usfm_grammar.Filter.SCRIPTURE_PARAGRAPHS:
-                output_content = usfm_parser.to_usj(scripture=True)
+                output_content = usfm_parser.to_usj()
                 if chapter is not None:
                     output_content = extract_usj_chapter(output_content, chapter)
         case usfm_grammar.Format.CSV:
