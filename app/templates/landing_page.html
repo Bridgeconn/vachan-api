@@ -70,7 +70,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,500&family=Poppins:wght@500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Courgette&family=Courier+Prime&family=Cutive&family=Nunito+Sans:opsz,wght@6..12,500&family=Poppins:wght@500&family=Waterfall&display=swap" rel="stylesheet">
 
   <!-- -------------Tesitmonial Carousel--------------------- -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css" rel="stylesheet">
@@ -87,10 +87,7 @@
 
   <link rel="alternate" type="application/rss+xml" href="http://localhost:1313/index.xml" title="API Documentation">
    
-  <!-- J-Script -->
-  <!-- <script src="/static/scripts/scripts.js"></script> -->
    
-  
   <!-- Hugo-Styles -->
   <!-- <link rel="stylesheet" type="text/css" href="{{ root_url }}/static/css/hugo-styles.css"> -->
   <link rel="stylesheet" type="text/css" href="/static/css/hugo-styles.css">
@@ -101,6 +98,16 @@
   <!-- custom css for Services -->
   <link rel="stylesheet" href="/static/css/services.css">
 
+  <!-- Track page visits with google analytics -->
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-NPKQ4B1WE3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-NPKQ4B1WE3');
+  </script>
 </head>
 
 <body>
@@ -109,7 +116,7 @@
     <div class="container-fluid">
       <a class="navbar-brand d-flex align-items-center" href="#About">
         <img src="/static/images/Logo.svg" alt="images/logo.png" width="86" height="86" style="margin-right: 15px;">
-        <span class="fs-3 fw-semibold text-sentencecase text-primary navimage">Vachan API</span>
+        <span class="fs-3 fw-semibold text-uppercase text-primary navimage">Vachan API</span>
     </a>
 
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -139,9 +146,10 @@
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
               Getting Started
             </a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item text-center" href="https://api.vachanengine.org/docs">API Documentation</a></li>
-              <li><a class="dropdown-item text-center" href="https://api.vachanengine.org/redoc">API Docs Generator</a></li>
+            <ul class="dropdown-menu" style="box-shadow: 0px 2px 2px 2px rgba(0, 0, 0, 0.1);">
+              <!-- <li><a class="dropdown-item text-center" href="https://api.vachanengine.org/docs">API Documentation</a></li> -->
+              <li><a class="dropdown-item text-center" href="{{ root_url }}/docs">API Documentation</a></li>
+              <li><a class="dropdown-item text-center" href="{{ root_url }}/redoc">API Docs Generator</a></li>
               <li>
           </li>
           <!-- <li class="nav-item text-center">
@@ -161,29 +169,35 @@
       <div class="row flex-column flex-xl-row-reverse">
         <div class="col-12 col-xl-6  d-flex flex-column justify-content-center hero-image">
 
-          <img class="img-fluid" src="{{ root_url }}/static/images/hero-image.png" alt="images/hero-image.png"
+          <img class="img-fluid" src="{{ root_url }}/static/images/hero.gif" alt="images/hero-image.png"
             width="768" height="416">
 
 
         </div>
         <div class="about col-12 col-xl-6 d-flex flex-column justify-content-center">
 
-          <h3 class="hero-title fw-bold display-1 text-primary text-center text-xl-start pb-4 navimage"><strong>Vachan Engine</strong></h3>
+          <h3 class="hero-title fw-bold display-1 text-primary text-center text-xl-start navimage"><strong>Vachan Engine</strong></h3>
 
+          <h4 class="tagline w-bold text-center text-xl-start">Bridging word with technology</h4>
 
-          <p class="text-center text-justify text-black-61 text-xl-start pb-4" align="justify">Vachan API is a server application that offers APIs
-            for seamless interaction with underlying database and modules within the Vachan-Engine ecosystem. It caters
-            to a diverse range of client applications, including the Vachan Online website, Vachan Admin, Vachan Mobile
-            App, IntelliSign - Smart Sign Language Translation Platform, and the AutographaMT Bible translation tool.
+          <h3 class="points  w-bold text-center text-xl-start">
+            <a class="typewrite" data-period="2000" data-type='[ "Scripture accessibility in Indian languages", "Priority to data integrity and privacy", "Support for low-resource languages", "Flexibility in content management" ]'>
+              <span class="wrap"></span>
+            </a>
+          </h3>
+          
+
+          
+
+          <p class="text-center text-justify text-black-61 text-xl-start" align="justify">Vachan engine is a server application that offers APIs for seamless interaction with central database and modules within its ecosystem. It caters to a diverse range of client applications in the realm of Scripture engagement.
           </p>
 
           <div class="d-flex flex-column flex-xl-row">
 
-            <a class="btn btn-primary text-light px-4 my-1 docsbutton" href="https://api.vachanengine.org/docs">API
-              Documentation</a>
+            <a class="btn btn-primary text-light px-4 my-1 docsbutton" href="{{ root_url }}/docs">Try Out!</a>
 
 
-            <a class="btn btn-outline-primary px-4 my-1 ms-xl-4 docsbutton" href="https://api.vachanengine.org/redoc">API Docs
+            <a class="btn btn-outline-primary px-4 my-1 ms-xl-4 docsbutton" href="{{ root_url }}/redoc">API Docs
               Generator<span class="ms-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                   fill="currentColor" class="bi bi-arrow-right" viewBox="0 0 16 16">
                   <path fill-rule="evenodd"
@@ -789,11 +803,11 @@
   <footer class="shared footer bg-blue-light py-5">
     <div class="container">
       <div class="row pb-5">
-        <div class="col-12 col-xl-4 text-center text-xl-start pb-4">
+        <div class="col-12 col-xl-4 text-center pb-4">
           <h4 class="fs-4 fw-semibold text-uppercase text-primary">Vachan API</h4>
           <p class="small text-black-61"></p>
 
-          <ul class="d-flex justify-content-center justify-content-xl-start list-unstyled">
+          <ul class="d-flex justify-content-center list-unstyled">
 
 
             <li class="rounded-circle bg-blue-63 me-2 p-2"><a
@@ -807,7 +821,7 @@
               </a></li>
             <li class="rounded-circle bg-blue-63 me-2 p-2"><a
                 class="d-flex align-items-center justify-content-center size-16"
-                href="https://twitter.com/Bridge_Conn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-twitter-x" viewBox="0 0 16 16">
+                href="https://x.com/bridge_conn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-twitter-x" viewBox="0 0 16 16">
                   <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865l8.875 11.633Z"/>
                 </svg>
               </a></li>
@@ -829,24 +843,23 @@
 
         <div class="col-12 col-xl-4 text-center text-xl-start pb-4">
           <!-- Empty column division -->
+          <!-- Location -->
+          <div class="text-center pb-2">
+            <h5 class="fs-6 fw-semibold text-primary">Location</h5>
+            <ul class="list-unstyled">
+                <li class="mb-2">
+                    <p class="small text-black-61 m-0">Plot No. 11-13 1st Floor, Village AmberHai, Dwarka Sector 19, New
+                      Delhi,India-110075</p>
+                </li>
+            </ul>
+          </div>
         </div>
 
 
         <!-- Location and Contact Us sections -->
         <div class="col-12 col-xl-4 text-center text-xl-start pb-4">
-          <!-- Location -->
-          <div class="text-center text-xl-start pb-2">
-              <h5 class="fs-6 fw-semibold text-primary">Location</h5>
-              <ul class="list-unstyled">
-                  <li class="mb-2">
-                      <p class="small text-black-61 m-0">Plot No. 11-13 1st Floor, Village AmberHai, Dwarka Sector 19, New
-                        Delhi,India-110075</p>
-                  </li>
-              </ul>
-          </div>
-
           <!-- Contact Us -->
-          <div class="text-center text-xl-start pb-2">
+          <div class="text-center pb-2">
               <h5 class="fs-6 fw-semibold text-primary">Contact us</h5>
               <p class="small text-black-61 mb-1">info@bridgeconn.com</p>
               <p class="small text-black-61 mb-1">+91-11-41557314</p>
@@ -887,7 +900,10 @@
 
 </body>
 
+<!-- J-Script -->
 <script src="/static/scripts/services.js"></script>
 <script src="/static/scripts/client.js"></script>
+<script src="/static/scripts/scripts.js"></script>
+   
 
 </html>
