@@ -27,7 +27,7 @@ This release includes:
 
         ```
         ALTER TABLE <commentary_table> ADD COLUMN reference JSONB;
-        UPDATE <commentary_table> SET reference =                           jsonb_build_object('book', book,
+        UPDATE <commentary_table> SET reference = jsonb_build_object('book', book,
                             'chapter', chapter,
                             'verseNumber', verse,
                             'bookEnd', book,'
@@ -40,6 +40,6 @@ This release includes:
         ```
 
 
-### **--------------------------------------------------------------------------------------------------------------------------------------------**
+### **--------------------------------------------------------------------------------------------------------------------**
 
 
