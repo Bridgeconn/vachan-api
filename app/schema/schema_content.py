@@ -8,6 +8,7 @@ from schema.schemas import TableNamePattern, BookCodePattern
 from crud import utils
 
 #pylint: disable=too-few-public-methods
+
 class BibleBook(BaseModel):
     '''response object of Bible book'''
     bookId : int
@@ -224,6 +225,7 @@ class BookContentType(str, Enum):
 
 class CommentaryCreate(BaseModel):
     '''Response object for commentaries'''
+    sectionType: List[str] = ["commentary-text"]
     reference: Reference = None
     commentary: str
     active: bool = True
@@ -231,6 +233,7 @@ class CommentaryCreate(BaseModel):
         '''display example value in API documentation'''
         schema_extra = {
             "example": {
+                "sectionType": ["commentary-text"],
                 "reference": {"book":"MRK", "chapter":11, "verseNumber":12,
                                "bookEnd":"LUK", "chapterEnd":14, "verseEnd":15 },
                 "commentary": "It was customary at the time ...",
@@ -242,6 +245,7 @@ class CommentaryCreate(BaseModel):
 class CommentaryEdit(BaseModel):
     '''Response object for commentaries'''
     commentaryId:int
+    sectionType: List[str] = ["commentary-text"]
     reference: Reference = None
     commentary: str = None
     active: bool = None
@@ -250,6 +254,7 @@ class CommentaryEdit(BaseModel):
         schema_extra = {
             "example": {
                 "commentaryId":100000,
+                "sectionType": ["commentary-text"],
                 "reference": {"book":"MRK", "chapter":15, "verseNumber":10,
                                "bookEnd":"JHN", "chapterEnd":1, "verseEnd":9 },
                 "commentary": "One of the practices of that time was ...",
@@ -260,6 +265,7 @@ class CommentaryEdit(BaseModel):
 class CommentaryResponse(BaseModel):
     '''Response object for commentaries'''
     commentaryId: int
+    sectionType: List[str]
     reference: Reference = None
     commentary: str
     active: bool
@@ -270,6 +276,7 @@ class CommentaryResponse(BaseModel):
         schema_extra = {
             "example": {
                 "commentaryId":100000,
+                "sectionType": ["commentary-text"],
                 "reference": {"book":"MRK", "chapter":11, "verseNumber":12,
                                "bookEnd":"LUK", "chapterEnd":14, "verseEnd":15 },
                 "commentary": "It was customary at the time ...",
