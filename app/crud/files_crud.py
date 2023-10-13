@@ -2,7 +2,6 @@
 
 import usfm_grammar
 from lxml import etree
-
 from dependencies import log
 
 def extract_dict_chapter(converted_content:dict, chapter:int) -> dict:
@@ -80,4 +79,3 @@ def parse_with_usfm_grammar(input_usfm, output_format=usfm_grammar.Format.JSON,
                 output_content = extract_usx_chapter(output_content, chapter)
             output_content = etree.tostring(output_content, encoding='unicode', pretty_print=True) #pylint: disable=I1101
     return output_content
-    
