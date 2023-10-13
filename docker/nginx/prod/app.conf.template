@@ -40,6 +40,7 @@ server {
     location /graphql/ {
         proxy_pass http://vachan-cms-graphql:8004;    
     }
+    
     location /v2/demos/ {
         proxy_pass http://vachan-demos:8002;    
     }
