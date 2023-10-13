@@ -5,6 +5,7 @@ import json
 import re
 from datetime import datetime
 from pytz import timezone
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, defer, joinedload
 from sqlalchemy.sql import text
 import db_models #pylint: disable=import-error
@@ -16,13 +17,14 @@ from custom_exceptions import NotAvailableException, TypeException, AlreadyExist
 
 ist_timezone = timezone("Asia/Kolkata")
 
-def get_commentaries(db_: Session,**kwargs):
+def get_commentaries(db_: Session,**kwargs):#pylint: disable=too-many-locals
     '''Fetches rows of commentries from the table specified by resource_name'''
     resource_name = kwargs.get("resource_name")
     reference = kwargs.get("reference",None)
     commentary_id = kwargs.get("commentary_id",None)
     search_word = kwargs.get("search_word",None)
     commentary = kwargs.get("commentary",None)
+    section_type = kwargs.get("section_type",None)
     active = kwargs.get("active",True)
     skip = kwargs.get("skip",0)
     limit = kwargs.get("limit",100)
@@ -37,6 +39,10 @@ def get_commentaries(db_: Session,**kwargs):
     if commentary:
         query = query.filter(model_cls.commentary.contains(\
             utils.normalize_unicode(commentary.strip())))
+    if section_type:
+        filter_conditions = [model_cls.sectionType.contains([item]) for item in section_type]
+        filter_condition = or_(*filter_conditions)
+        query = query.filter(filter_condition)
     if reference:
         if isinstance(reference, str):
             reference = json.loads(reference)
@@ -142,10 +148,12 @@ def upload_commentaries(db_: Session, resource_name, commentaries, job_id, user_
             refStart=ref_start,
             refEnd=ref_end,
             commentary = utils.normalize_unicode(item.commentary),
+            sectionType = item.sectionType,
             active=item.active)
         row_out = {
             "reference" : ref,
             "commentary" :  utils.normalize_unicode(item.commentary),
+            "sectionType" : item.sectionType,
             "active": item.active}
         db_content.append(row)
         db_content_out.append(row_out)
@@ -203,12 +211,15 @@ def update_commentaries(db_: Session, resource_name, commentaries,job_id, user_i
             row.refEnd=ref_end
         if item.commentary:
             row.commentary = utils.normalize_unicode(item.commentary)
+        if item.sectionType:
+            row.sectionType = item.sectionType
         if item.active is not None:
             row.active = item.active
         db_.flush()
         db_content.append(row)
         row_out = {
             "reference" : row.reference,
+            "sectionType":row.sectionType,
             "commentary" :  utils.normalize_unicode(row.commentary),
             "active": row.active}
         db_content_out.append(row_out)
