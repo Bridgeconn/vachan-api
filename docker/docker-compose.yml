@@ -47,7 +47,7 @@ services:
     image: oryd/kratos:v1.0.0
     ports:
       - '4433:4433' # public
-      # - '4434:4434' # admin
+      # -'4434:4434' # admin
     restart: unless-stopped
     environment:
       - DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@kratos-postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
@@ -202,6 +202,33 @@ services:
      - logs-vol:/app/logs
     depends_on:
      - vachan-api
+    profiles:
+     - local-run
+     - deployment
+    networks:
+     - VE-network
+
+ vachan-cms-graphql:
+    image: athulyams/graphql-12:v2.0.0-alpha.1
+    ports:
+      - "8004:8004"
+    expose:
+      - 8004
+    command: uvicorn main:app --host 0.0.0.0 --port 8004
+    restart: always
+    environment:
+     - VACHAN_POSTGRES_HOST=vachan-db
+     - VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
+     - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
+     - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
+     - VACHAN_POSTGRES_PORT=5432
+     - VACHAN_DOMAIN=${VACHAN_DOMAIN:-api.vachanengine.org}
+     - VACHAN_LOGGING_LEVEL=INFO
+    # volumes:
+    #  - logs-vol:/app/logs
+    depends_on:
+     - vachan-api
+     - vachan-db
     profiles:
      - local-run
      - deployment

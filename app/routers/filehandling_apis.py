@@ -69,3 +69,4 @@ async def parse_uploaded_usfm(request:Request,
     log.debug("output_format: %s, content_filter: %s", output_format, content_filter)
     return files_crud.parse_with_usfm_grammar(
         input_usfm.USFM, output_format, content_filter, chapter)
+        

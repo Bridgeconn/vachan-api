@@ -102,5 +102,4 @@ def test_usfm_to_usx():
         print(resp.json())
         assert resp.json().startswith("<usx")
         assert resp.json().strip().endswith("</usx>")
-
-
+        
