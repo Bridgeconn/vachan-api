@@ -5,23 +5,19 @@ from lxml import etree
 
 from dependencies import log
 
-def extract_usj_chapter(converted_content: dict, chapter: int) -> dict:
+def extract_dict_chapter(converted_content:dict, chapter:int) -> dict:
     '''Extracts just one chapter from the dict or JSON of usfm grammar'''
-    output_content = {"book": {}}
-    
-    if 'book' in converted_content:
-        for item in converted_content['book']:
-            if item != 'chapters':
-                output_content['book'][item] = converted_content['book'][item]
-            else:
-                output_content['book']['chapters'] = []
-                for chapter_dict in converted_content['book']['chapters']:
-                    if int(chapter_dict.get('chapterNumber', 0)) == chapter:
-                        output_content['book']['chapters'].append(chapter_dict)
-                        break
-    
+    output_content = {"book":{}}
+    for item in converted_content['book']:
+        if item != 'chapters':
+            output_content['book'][item] = converted_content['book'][item]
+        else:
+            output_content['book']['chapters'] = []
+            for chapter_dict in converted_content['book']['chapters']:
+                if int(chapter_dict['chapterNumber']) == chapter:
+                    output_content['book']['chapters'].append(chapter_dict)
+                    break
     return output_content
-
 
 def extract_list_chapter(converted_content: list, chapter:int) -> list:
     '''Extract the rows of specified chapter from usfm-grammar's list output'''
@@ -60,20 +56,15 @@ def extract_usx_chapter(converted_content, chapter:int):
     return output_content
 
 def parse_with_usfm_grammar(input_usfm, output_format=usfm_grammar.Format.JSON,
-    content_filter=usfm_grammar.Filter.PARAGRAPHS,  # Updated filter name
+    content_filter=usfm_grammar.Filter.SCRIPTURE_PARAGRAPHS,
     chapter=None):
     '''Tries to parse the input usfm and provide the output as per the filter and format'''
     usfm_parser = usfm_grammar.USFMParser(input_usfm)
     match output_format:
         case usfm_grammar.Format.JSON:
-            if content_filter == usfm_grammar.Filter.PARAGRAPHS:
-                output_content = usfm_parser.to_usj()
-                if chapter is not None:
-                    output_content = extract_usj_chapter(output_content, chapter)
-            elif content_filter == usfm_grammar.Filter.SCRIPTURE_PARAGRAPHS:
-                output_content = usfm_parser.to_usj()
-                if chapter is not None:
-                    output_content = extract_usj_chapter(output_content, chapter)
+            output_content = usfm_parser.to_dict(content_filter)
+            if chapter is not None:
+                output_content = extract_dict_chapter(output_content, chapter)
         case usfm_grammar.Format.CSV:
             output_content = usfm_parser.to_list(content_filter)
             if chapter is not None:
@@ -82,10 +73,11 @@ def parse_with_usfm_grammar(input_usfm, output_format=usfm_grammar.Format.JSON,
         case usfm_grammar.Format.ST:
             output_content = usfm_parser.to_syntax_tree()
             if chapter is not None:
-                log.warning("Not implemented chapter extractor for syntax_tree")
+                log.warning("Not implemented chapter extracter for syntax_tree")
         case usfm_grammar.Format.USX:
             output_content = usfm_parser.to_usx(content_filter)
             if chapter is not None:
                 output_content = extract_usx_chapter(output_content, chapter)
             output_content = etree.tostring(output_content, encoding='unicode', pretty_print=True) #pylint: disable=I1101
     return output_content
+    
