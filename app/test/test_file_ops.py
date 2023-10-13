@@ -37,6 +37,7 @@ def test_usfm_to_json():
                 found_verse = True
                 break
         assert found_verse
+        
 
     for usfm_input in gospel_books_data:
         resp = client.put(f"{UNIT_URL}usfm/to/json?content_filter=scripture-paragraph",
@@ -102,4 +103,3 @@ def test_usfm_to_usx():
         print(resp.json())
         assert resp.json().startswith("<usx")
         assert resp.json().strip().endswith("</usx>")
-        

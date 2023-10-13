@@ -10,6 +10,7 @@ from auth.authentication import get_auth_access_check_decorator ,\
     get_user_or_none
 from custom_exceptions import NotAvailableException, GenericException
 
+
 router = APIRouter()
 #pylint: disable=too-many-arguments,unused-argument
 
@@ -69,4 +70,3 @@ async def parse_uploaded_usfm(request:Request,
     log.debug("output_format: %s, content_filter: %s", output_format, content_filter)
     return files_crud.parse_with_usfm_grammar(
         input_usfm.USFM, output_format, content_filter, chapter)
-        
