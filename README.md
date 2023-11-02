@@ -15,7 +15,7 @@
 </p>
 
 
-![screenshot](api_screenshot.gif)
+![screenshot](https://github.com/shimilgithub/vachan-api/blob/de41c3fcc1149a025adcd93ff108a3d786d78818/app/static/images/api_screenshot.gif)
 
 
 The Vachan API is a robust server application designed to facilitate seamless interaction with the underlying Database and various modules within the Vachan-Engine ecosystem. This versatile API is essential for a wide array of client applications, including the Vachan Online website, Vachan Admin, Vachan Mobile App, IntelliSign - the Smart Sign Language Translation Platform, and the AutographaMT Bible translation tool. 
