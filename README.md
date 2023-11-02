@@ -1,7 +1,7 @@
 
 <h1 align="center">
   <br>
-  <a href="http://www.amitmerchant.com/electron-markdownify"><img src="Logo.svg" alt="vachanapi" width="200"></a>
+  <a href="http://www.amitmerchant.com/electron-markdownify"><img src="https://api.vachanengine.org/static/images/Logo.svg" alt="vachanapi" width="200"></a>
   <br>
   Vachan API
   <br>
