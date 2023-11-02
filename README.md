@@ -1,7 +1,7 @@
 
 <h1 align="center">
   <br>
-  <a href="http://www.amitmerchant.com/electron-markdownify"><img src="app/static/images/Logo.svg" alt="vachanapi" width="200"></a>
+  <a href="http://www.amitmerchant.com/electron-markdownify"><img src="Logo.svg" alt="vachanapi" width="200"></a>
   <br>
   Vachan API
   <br>
@@ -10,12 +10,12 @@
 <p align="center">
   •<a href="#implementation-details"> Implementation Details</a> •
   <a href="#start-app-with-docker">Start App</a> •
-  <a href="##set-up-locally-for-development-and-testingwithout-docker">Setup</a> •
+  <a href="#set-up-locally-for-development-and-testingwithout-docker">Setup</a> •
   <a href="#license">License</a>
 </p>
 
 
-![screenshot](app/static/images/api_screenshot.gif)
+![screenshot](api_screenshot.gif)
 
 
 The Vachan API is a robust server application designed to facilitate seamless interaction with the underlying Database and various modules within the Vachan-Engine ecosystem. This versatile API is essential for a wide array of client applications, including the Vachan Online website, Vachan Admin, Vachan Mobile App, IntelliSign - the Smart Sign Language Translation Platform, and the AutographaMT Bible translation tool. 
