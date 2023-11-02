@@ -1,8 +1,26 @@
-# Vachan-api
 
-The server application that provides REST APIs to interact with the underlying Databases (SQL and Graph) and modules in Vachan-Engine.
+<h1 align="center">
+  <br>
+  <a href="http://www.amitmerchant.com/electron-markdownify"><img src="app/static/images/Logo.svg" alt="vachanapi" width="200"></a>
+  <br>
+  Vachan API
+  <br>
+</h1>
+<h4 align="center">Unified API for <a href="https://api.vachanengine.org/" target="_blank">Vachan-Engine applications</a></h4>
+<p align="center">
+  •<a href="#implementation-details"> Implementation Details</a> •
+  <a href="#start-app-with-docker">Start App</a> •
+  <a href="##set-up-locally-for-development-and-testingwithout-docker">Setup</a> •
+  <a href="#license">License</a>
+</p>
 
-Currently serving 3 client applications, VachanOnline website, the Vachan Mobile App and AutographaMT Bible translation tool.
+
+![screenshot](app/static/images/api_screenshot.gif)
+
+
+The Vachan API is a robust server application designed to facilitate seamless interaction with the underlying Database and various modules within the Vachan-Engine ecosystem. This versatile API is essential for a wide array of client applications, including the Vachan Online website, Vachan Admin, Vachan Mobile App, IntelliSign - the Smart Sign Language Translation Platform, and the AutographaMT Bible translation tool. 
+
+It achieves this by offering both REST APIs, catering to traditional database interactions, and utilizing Strawberry GraphQL for enhanced flexibility and efficiency.
 
 ## Implementation Details
 
@@ -93,8 +111,9 @@ Edit the following contents appropriatetly and paste to the `.bashrc` file
   export VACHAN_LOGGING_LEVEL="WARNING"
   export VACHAN_KRATOS_ADMIN_URL="http://127.0.0.1:4434/"
   export VACHAN_KRATOS_PUBLIC_URL="http://127.0.0.1:4433/"
-  export VACHAN_SUPER_USERNAME="<super-admin-emial-id>"
+  export VACHAN_SUPER_USERNAME="<super-admin-email-id>"
   export VACHAN_SUPER_PASSWORD="<a-strong-password>"
+  export VACHAN_DOMAIN=127.0.0.1:8000
 ```
 After editing .bashrc file they may need to run
 
@@ -155,3 +174,6 @@ To run all the testcases, from the folder vachan-api/app run the command
 ```python -m pytest```
 
 For runing testselectively, refer [pytest docs](https://docs.pytest.org/en/stable/usage.html#specifying-tests-selecting-tests)
+
+## License
+Bridge Connectivity Solutions Pvt. Ltd.
