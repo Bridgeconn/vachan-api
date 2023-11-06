@@ -1,20 +1,17 @@
-
 # Vachan API
-
 <div style="text-align: center;">
-    <img src="https://api.vachanengine.org/static/images/Logo.svg" alt="Vachan API Logo" width="150">
+  <br>
+  <a href="http://www.amitmerchant.com/electron-markdownify">
+    <img src="https://api.vachanengine.org/static/images/Logo.svg" alt="vachanapi" width="200">
+  </a>
 </div>
 
 
 
-### <center>Unified API for [Vachan-Engine applications](https://api.vachanengine.org/)</center>
 
-<p align="center">
-  •<a href="#implementation-details"> Implementation Details</a> •
-  <a href="#start-app-with-docker">Start App</a> •
-  <a href="#set-up-locally-for-development-and-testingwithout-docker">Setup</a> •
-  <a href="#license">License</a>
-</p>
+### Unified API for [Vachan-Engine applications](https://api.vachanengine.org/)
+
+[Implementation Details](#implementation-details) • [Start App](#start-app-with-docker)   • [Setup](#set-up-locally-for-development-and-testingwithout-docker) • [License](#license) 
 
 
 ![screenshot](https://github.com/shimilgithub/vachan-api/blob/de41c3fcc1149a025adcd93ff108a3d786d78818/app/static/images/api_screenshot.gif)
