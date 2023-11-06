@@ -1,12 +1,14 @@
 
-<h1 align="center">
-  <br>
-  <a href="http://www.amitmerchant.com/electron-markdownify"><img src="https://api.vachanengine.org/static/images/Logo.svg" alt="vachanapi" width="200"></a>
-  <br>
-  Vachan API
-  <br>
-</h1>
-<h4 align="center">Unified API for <a href="https://api.vachanengine.org/" target="_blank">Vachan-Engine applications</a></h4>
+# Vachan API
+
+<div style="text-align: center;">
+    <img src="https://api.vachanengine.org/static/images/Logo.svg" alt="Vachan API Logo" width="150">
+</div>
+
+
+
+### <center>Unified API for [Vachan-Engine applications](https://api.vachanengine.org/)</center>
+
 <p align="center">
   •<a href="#implementation-details"> Implementation Details</a> •
   <a href="#start-app-with-docker">Start App</a> •
@@ -107,7 +109,7 @@ Edit the following contents appropriatetly and paste to the `.bashrc` file
   export VACHAN_POSTGRES_USER="<db_user>"
   export VACHAN_POSTGRES_PASSWORD="<db_password>"
   export VACHAN_POSTGRES_DATABASE="<db_name>"
-  export VACHAN_POSTGRES_DATA_DIR="<data_dirrctory_path>"
+  export VACHAN_POSTGRES_DATA_DIR="<data_directory_path>"
   export VACHAN_LOGGING_LEVEL="WARNING"
   export VACHAN_KRATOS_ADMIN_URL="http://127.0.0.1:4434/"
   export VACHAN_KRATOS_PUBLIC_URL="http://127.0.0.1:4433/"
