@@ -67,6 +67,14 @@ copy_ssl_certificate() {
     cp -r "$cert_path" "$docker_volume_path" || { echo "Failed to copy SSL certificate"; exit 1; }
 }
 
+# Stop or remove Nginx on host
+stop_or_remove_nginx_host() {
+    echo "Stopping or removing Nginx on host..."
+    systemctl stop nginx || { echo "Failed to stop Nginx on host"; exit 1; }
+    # Remove Nginx instead of just stopping it
+    # apt-get remove -y nginx || { echo "Failed to remove Nginx from host"; exit 1; }
+}
+
 # Start Nginx container
 start_nginx_container() {
     echo "Starting Nginx container: $1..."
@@ -78,6 +86,8 @@ setup_automatic_ssl_renewal() {
     echo "Setting up automatic SSL certificate renewal..."
     (crontab -l 2>/dev/null; echo "0 3 * * * certbot renew --quiet --renew-hook 'docker restart $NGINX_CONTAINER_NAME'") | crontab - || { echo "Failed to setup automatic SSL certificate renewal"; exit 1; }
 }
+
+
 
 # Main execution
 stop_nginx_container "$NGINX_CONTAINER_NAME"
