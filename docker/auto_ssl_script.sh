@@ -88,7 +88,6 @@ setup_automatic_ssl_renewal() {
 }
 
 
-
 # Main execution
 stop_nginx_container "$NGINX_CONTAINER_NAME"
 free_up_port_80
@@ -97,6 +96,7 @@ install_certbot
 create_ssl_certificate "$DOMAIN_NAME" "$EMAIL"
 copy_ssl_certificate "$CERT_PATH" "$DOCKER_VOLUME_PATH"
 setup_automatic_ssl_renewal
+stop_or_remove_nginx_host
 start_nginx_container "$NGINX_CONTAINER_NAME"
 
 echo "Script completed successfully."
