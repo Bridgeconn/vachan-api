@@ -267,25 +267,29 @@ services:
   volumes:
    - ./nginx/prod/app.conf.template:/etc/nginx/templates/default.conf.template:ro
    - ./certbot/www:/var/www/certbot/:ro
-   - ./certbot/conf/:/etc/nginx/ssl/:ro
+   - ./certbot/conf:/etc/nginx/certs/:ro
    - logs-vol:/var/log/nginx/
   environment:
-    - VACHAN_DOMAIN=${VACHAN_DOMAIN}
+   - VACHAN_DOMAIN=${VACHAN_DOMAIN}
   profiles:
    - deployment
   networks:
    - VE-network
 
  certbot:
-  image: certbot/certbot:latest
+  image: certbot/certbot
   volumes:
-   - ./certbot/www/:/var/www/certbot/:rw
-   - ./certbot/conf/:/etc/letsencrypt/:rw
+    - ./certbot/conf:/etc/letsencrypt
+    - ./auto_ssl_script.sh:/auto_ssl_script.sh
   profiles:
    - deployment
+  entrypoint: /bin/sh -c '
+    while :; do
+      /auto_ssl_script.sh;
+      sleep 80d;
+    done;'
   networks:
-   - VE-network
- 
+   - VE-network 
 
  ofelia-scheduler:
     image: mcuadros/ofelia:v0.3.7

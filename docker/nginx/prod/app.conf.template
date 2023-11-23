@@ -33,8 +33,8 @@ server {
     proxy_connect_timeout 300;
     proxy_send_timeout 300;
 
-    ssl_certificate /etc/nginx/ssl/live/${VACHAN_DOMAIN}/fullchain.pem;
-    ssl_certificate_key /etc/nginx/ssl/live/${VACHAN_DOMAIN}/privkey.pem;
+    ssl_certificate /etc/nginx/certs/live/${VACHAN_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/nginx/certs/live/${VACHAN_DOMAIN}/privkey.pem;
  
 
     location /graphql/ {
