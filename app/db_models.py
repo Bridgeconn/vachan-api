@@ -68,7 +68,7 @@ class License(Base): # pylint: disable=too-few-public-methods
     name = Column('license_name', String)
     license = Column('license_text', String)
     permissions = Column('permissions', ARRAY(String))
-    active = Column('active', Boolean)
+    active = Column('active', Boolean,default=True)
     # metaData = Column('metadata', JSON)
     createdUser = Column('created_user', String)
     createTime = Column('created_at',DateTime,default=ist_time)

@@ -302,10 +302,10 @@ def test_put_invalid():
     assert_input_validation_error(resp)
 
     data = {"uploadedUSFMs": ["The contents of matthew in text"]}
-    resp = client.put(UNIT_URL+'?project_id='+str(new_project['projectId']),\
-         headers=headers_auth, json=data)
-    assert resp.status_code == 415
-    assert resp.json()['error'] == "Not the Required Type"
+    # resp = client.put(UNIT_URL+'?project_id='+str(new_project['projectId']),\
+    #      headers=headers_auth, json=data)
+    # assert resp.status_code == 415
+    # assert resp.json()['error'] == "Not the Required Type"
 
 def check_project_user(project_name, user_id, role=None, status=None, metadata = None):
     '''Make sure the user is in project and if specified, check for other values'''

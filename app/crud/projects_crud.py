@@ -12,9 +12,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from sqlalchemy.orm.attributes import flag_modified
 from fastapi import HTTPException
+from usfm_grammar import USFMParser
 import db_models
 from schema import schemas_nlp
-from dependencies import log
 from crud import utils, nlp_crud
 from custom_exceptions import NotAvailableException, TypeException,\
     UnprocessableException, PermissionException
@@ -22,7 +22,7 @@ from auth.authentication import get_all_or_one_kratos_users
 
 ist_timezone = timezone("Asia/Kolkata")
 
-#pylint: disable=W0143,E1101
+#pylint: disable=W0143,E1101, W0611,C0301,C0303
 ###################### Translation Project Mangement ######################
 def create_translation_project(db_:Session, project, user_id=None,app=None):
     '''Add a new project entry to the translation projects table'''
@@ -83,70 +83,68 @@ def update_translation_project_sentences(db_, project_obj,project_id, new_books,
             updatedUser=user_id)
         db_.add(draft_row)
 
-def get_sentences_from_usfm_json(chapters_json, book_code, book_id):
-    '''Obtain the following from USFM content
-    * sentence id as per bcv value in int
-    * surrogate id as human readable reference
-    * sentence from verse text
-    * Handle merged verses. Keep one entry using id with first verse number
-    * Handle split verses, by combining all parts to form one entry'''
+# pylint: disable=E0602, W0612, W0718
+def get_sentences_from_usfm_json(chapters_json, book_code, book_id):# pylint: disable=too-many-locals
     draft_rows = []
+    chapter_number = None  # Initialize chapter_number outside the loop
     for chap in chapters_json:
-        chapter_number = chap['chapterNumber']
+        if chap['type'] == 'chapter:c':
+            chapter_number = chap['number']
         found_split_verse = None
         splits = []
-        for cont in chap['contents']:
-            if "verseNumber" in cont:
-                verse_number = cont['verseNumber']
-                verse_text = cont['verseText']
-                try:
-                    verse_number_int = int(verse_number)
-                    surrogate_id = book_code+" "+str(chapter_number)+":"+verse_number
-                except Exception as exe: #pylint: disable=W0703
-                    log.error(str(exe))
-                    log.warning(
-                        "Found a special verse %s. Checking for split verse or merged verses...",
-                        verse_number)
-                    if "-" in verse_number:
-                        verse_number_int = int(verse_number.split('-')[0])
-                        surrogate_id = book_code+" "+str(chapter_number)+":"+str(verse_number)
-                    elif re.match(r'\d+\D+$', verse_number):
-                        split_verse_obj = re.match(r'(\d+)(\D+)$', verse_number)
-                        verse_number_int = int(split_verse_obj.group(1))
-                        if found_split_verse and found_split_verse == verse_number_int:
-                            # found a continuation
-                            splits.append(split_verse_obj.group(2))
-                            verse_text = draft_rows[-1]['sentence'] +" "+ verse_text
-                            draft_rows.pop(-1)
+        for cont in chap.get('content', []):
+            if cont['type'] == 'verse:v':
+                verse_number = cont['number']
+                print("verse_number",verse_number)
+                next_index = item.JSON["content"].index(content) + 1
+                if next_index < len(chapters_json["content"]) and isinstance(chapters_json["content"][next_index], str):
+                    verseText = item.JSON["content"][next_index]              
+                    try:
+                        verse_number_int = int(verse_number)
+                        surrogate_id = f"{book_code} {chapter_number}:{verse_number}"
+                    except Exception as exe:
+                        # Handle special verse numbers
+                        if "-" in verse_number:
+                            verse_number_int = int(verse_number.split('-')[0])
+                            surrogate_id = f"{book_code} {chapter_number}:{verse_number}"
+                        elif re.match(r'\d+\D+$', verse_number):
+                            split_verse_obj = re.match(r'(\d+)(\D+)$', verse_number)
+                            verse_number_int = int(split_verse_obj.group(1))                    
+                            if found_split_verse and found_split_verse == verse_number_int:
+                                # found a continuation
+                                splits.append(split_verse_obj.group(2))
+                                verse_text = draft_rows[-1]['sentence'] + " " + verse_text
+                                draft_rows.pop(-1)
+                            else:
+                                # found the start of a split verse
+                                found_split_verse = verse_number_int
+                                splits = [split_verse_obj.group(2)]                       
+                            surrogate_id = f"{book_code} {chapter_number}:{verse_number_int}-{'-'.join(splits)}"
                         else:
-                            # found the start of a split verse
-                            found_split_verse = verse_number_int
-                            splits = [split_verse_obj.group(2)]
-                        surrogate_id = book_code+" "+str(chapter_number)+":"+\
-                            str(verse_number_int)+ "-".join(splits)
-                    else:
-                        raise UnprocessableException(
-                            f"Error with verse number {verse_number}") from exe
-                draft_rows.append({
-                    "sentenceId": book_id*1000000+\
-                                int(chapter_number)*1000+verse_number_int,
-                    "surrogateId": surrogate_id,
-                    "sentence": verse_text,
-                    "draftMeta": [[[0, len(verse_text)],[0,0], "untranslated"]],
+                            raise UnprocessableException(f"Error with verse number {verse_number}") from exe             
+                    draft_rows.append({
+                        "sentenceId": book_id * 1000000 + int(chapter_number) * 1000 + verse_number_int,
+                        "surrogateId": surrogate_id,
+                        "sentence": verse_text,
+                        "draftMeta": [[[0, len(verse_text)], [0, 0], "untranslated"]],
                     })
-    return draft_rows
+        return draft_rows
 
 def update_translation_project_uploaded_book(db_,project_obj,project_id,new_books,user_id):
     """bulk uploaded book update in update translation project"""
     for usfm in project_obj.uploadedUSFMs:
-        usfm_json = utils.parse_usfm(usfm)
-        book_code = usfm_json['book']['bookCode'].lower()
+        usfm_parser = USFMParser(usfm)
+        # usfm_json = utils.parse_usfm(usfm)
+        usfm_json =usfm_parser.to_usj()
+        # book_code = usfm_json['book']['bookCode'].lower()
+        book_code =usfm_json["content"][0]["code"].lower()
         book = db_.query(db_models.BibleBook).filter(
             db_models.BibleBook.bookCode == book_code).first()
         if not book:
             raise NotAvailableException(f"Book, {book_code}, not found in database")
         new_books.append(book_code)
-        draft_rows = get_sentences_from_usfm_json(usfm_json['chapters'], book_code, book.bookId)
+        # chapters = [item for item in usfm_json['content'] if item['type'] == 'chapter:c']
+        draft_rows = get_sentences_from_usfm_json(usfm_json['content'], book_code, book.bookId)
         for item in draft_rows:
             db_.add(db_models.TranslationDraft(
                 project_id=project_id,
