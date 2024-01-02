@@ -209,7 +209,7 @@ services:
      - VE-network
 
  vachan-tbt:
-    image: kavitha3797/vachan-tbt:v2.0.0-alpha.4
+    image: kavitha3797/vachan-tbt:v2.0.1
     expose:
       - 8003
     command: uvicorn main:app --host 0.0.0.0 --port 8003
