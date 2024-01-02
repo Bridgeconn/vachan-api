@@ -208,6 +208,33 @@ services:
     networks:
      - VE-network
 
+ vachan-tbt:
+    image: kavitha3797/vachan-tbt:v2.0.0-alpha.4
+    expose:
+      - 8003
+    command: uvicorn main:app --host 0.0.0.0 --port 8003
+    restart: always
+    environment:
+     - VACHAN_POSTGRES_HOST=vachan-db
+     - VACHAN_POSTGRES_PORT=5432
+     - VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
+     - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
+     - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
+     - VACHAN_POSTGRES_SCHEMA=vachan_tbt
+     - VACHAN_LOGGING_LEVEL=INFO
+     - VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost}
+     - VACHAN_CMS_DOMAIN=http://vachan-api
+    volumes:
+     - logs-vol:/app/logs
+     - vachan-tbt-ml-models-vol:/app/ml-models
+    depends_on:
+     - vachan-db
+    profiles:
+     - local-run
+     - deployment
+    networks:
+     - VE-network
+
  vachan-cms-graphql:
     image: athulyams/graphql-12:v2.0.0-alpha.1
     ports:
@@ -379,3 +406,4 @@ volumes:
   logs-test-vol:
   vachan-db-backup:
   kratos-db-backup:
+  vachan-tbt-ml-models-vol:
