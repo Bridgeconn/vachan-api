@@ -524,6 +524,7 @@ def obtain_project_token_translation(db_, project_id, token, occurrences): # pyl
         with_draft=True)
     # draft_rows = draft_rows["db_content"]
     translations = pin_point_token_in_draft(occurrences, draft_rows)
+    print("translations",translations)
     # return translations
     # response = {
     #     'db_content':translations[0],

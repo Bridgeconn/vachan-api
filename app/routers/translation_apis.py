@@ -388,7 +388,7 @@ async def remove_sentence(request: Request,project_id:int=Query(...,examples="10
     log.debug('project_id:%s, sentence_id:%s',project_id, sentence_id)
     deleted_content = projects_crud.remove_project_sentence(db_, project_id,sentence_id,
         user_id=user_details['user_id'])
-    delcont = structurals_crud.add_deleted_data(db_, del_content=  deleted_content['db_content'],
+    delcont = structurals_crud.add_deleted_data(db_, del_content=  deleted_content,
         table_name = "translation_sentences", deleting_user=user_details['user_id'])
     return {'message': f"Sentence with identity {sentence_id} deleted successfully",
             "data": delcont}
