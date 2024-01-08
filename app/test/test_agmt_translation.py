@@ -69,10 +69,10 @@ def test_get_tokens():
     # after adding books
     #without auth
     get_response2 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id), headers=headers)
-    assert get_response2.json()['error'] == 'Database Error'
+    assert get_response2.json()['error'] == 'Authentication Error'
     get_response2 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id),headers=headers)
     assert get_response2.status_code == 401
-    assert get_response2.json()['error'] == 'Database Error'
+    assert get_response2.json()['error'] == 'Authentication Error'
     #with auth
     get_response2 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id),headers=headers_auth)
     print("get_response2",get_response2.json())
@@ -389,6 +389,7 @@ def test_drafts():
     assert resp.json()['message'] == "Token translations saved"
 
     response = client.get(UNIT_URL+'/draft?project_id='+str(project_id),headers=headers_auth)
+    print(" response ", response.json())
     assert response.status_code ==200
     assert isinstance(response.json(), list)
     assert "\\v 1 test test test" in response.json()[0]
