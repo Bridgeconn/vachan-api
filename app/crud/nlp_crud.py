@@ -84,7 +84,7 @@ def get_project_tokens(db_:Session, project_id, books, sentence_id_range, senten
         raise NotAvailableException(f"Project with id, {project_id}, not found")
     sentences = projects_crud.obtain_project_source(db_, project_id, books, sentence_id_range,
         sentence_id_list)
-    sentences = sentences['db_content']
+    # sentences = sentences['db_content']
     args = {"db_":db_, "src_language":project_row.sourceLanguage, "sentence_list":sentences,
         'trg_language':project_row.targetLanguage,
         "use_translation_memory":use_translation_memory, "include_phrases":include_phrases,
@@ -93,12 +93,12 @@ def get_project_tokens(db_:Session, project_id, books, sentence_id_range, senten
         args['stopwords'] = project_row.metaData['stopwords']
     if "punctuations" in project_row.metaData:
         args['punctuations'] = project_row.metaData['punctuations']
-    # return get_generic_tokens( **args)
-    response = {
-        'db_content':get_generic_tokens( **args),
-        'project_content':project_row
-        }
-    return response
+    return get_generic_tokens( **args)
+    # response = {
+    #     'db_content':get_generic_tokens( **args),
+    #     'project_content':project_row
+    #     }
+    # return response
 
 ###################### Token replacement translation ######################
 def replace_bulk_tokens_gloss_list(token_translations, updated_sentences):
