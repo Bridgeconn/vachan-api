@@ -793,7 +793,7 @@ def project_suggest_translations(db_:Session, project_id, books, #pylint: disabl
         raise NotAvailableException(f"Project with id, {project_id}, not found")
     draft_rows = projects_crud.obtain_project_source(db_, project_id, books, sentence_id_range,
         sentence_id_list, with_draft=True)
-    draft_rows = draft_rows['db_content']
+    # draft_rows = draft_rows['db_content']
     if confirm_all:
         for row in draft_rows:
             for i, meta in enumerate(row.draftMeta):
@@ -812,12 +812,14 @@ def project_suggest_translations(db_:Session, project_id, books, #pylint: disabl
         updated_drafts = auto_translate(**args)
         db_.add_all(updated_drafts)
     project_row.updatedUser = user_id
-    project_row.updateTime = datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
-    response = {
-        'db_content':updated_drafts,
-        'project_content':project_row
-        }
-    return response
+    db_.commit()
+    # project_row.updateTime = datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
+    # response = {
+    #     'db_content':updated_drafts,
+    #     'project_content':project_row
+    #     }
+    # return response
+    return updated_drafts
 
 def edit_glossary(db_: Session,token_info):
     '''updates the given information of a gloss in db'''

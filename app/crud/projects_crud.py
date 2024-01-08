@@ -406,12 +406,12 @@ def obtain_project_draft(db_:Session, project_id, books, sentence_id_list, sente
         raise NotAvailableException(f"Project with id, {project_id}, not found")
     draft_rows = obtain_project_source(db_, project_id, books, sentence_id_list,
         sentence_id_range, with_draft=True)
-    draft_rows = draft_rows['db_content']
+    # draft_rows = draft_rows['db_content']
     if output_format == schemas_nlp.DraftFormats.USFM :
         draft_out = nlp_crud.create_usfm(draft_rows)
-    # elif output_format == schemas_nlp.DraftFormats.JSON:
-    #     draft_out = nlp_crud.export_to_json(project_row.sourceLanguage,
-    #         project_row.targetLanguage, draft_rows, None)
+    elif output_format == schemas_nlp.DraftFormats.JSON:
+        draft_out = nlp_crud.export_to_json(project_row.sourceLanguage,
+            project_row.targetLanguage, draft_rows, None)
     elif output_format == schemas_nlp.DraftFormats.PRINT:
         draft_out = nlp_crud.export_to_print(draft_rows)
     else:
@@ -427,8 +427,12 @@ def update_project_draft(db_:Session, project_id, sentence_list, user_id):
     sentence_id_list = [sent.sentenceId for sent in sentence_list]
     source_resp = obtain_project_source(db_, project_id,
         sentence_id_list=sentence_id_list, with_draft=True)
-    project_row = source_resp['project_content']
-    sentences = source_resp['db_content']
+    # project_row = source_resp['project_content']
+    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    if not project_row:
+        raise NotAvailableException(f"Project with id, {project_id}, not found")
+    sentences = source_resp
+   # sentences = source_resp['db_content']
     for input_sent in sentence_list:
         sent = None
         for read_sent in sentences:
@@ -474,7 +478,7 @@ def obtain_project_progress(db_, project_id, books, sentence_id_list, sentence_i
         raise NotAvailableException(f"Project with id, {project_id}, not found")
     draft_rows = obtain_project_source(db_, project_id, books, sentence_id_list,
         sentence_id_range, with_draft=True)
-    draft_rows = draft_rows["db_content"]
+    # draft_rows = draft_rows["db_content"]
     confirmed_length = 0
     suggestions_length = 0
     untranslated_length = 0
@@ -588,7 +592,7 @@ def get_project_source_per_token(db_:Session, project_id, token, occurrences): #
     sent_ids = [occur.sentenceId for occur in occurrences]
     draft_rows = obtain_project_source(db_, project_id,
         sentence_id_list=sent_ids, with_draft=True)
-    draft_rows = draft_rows['db_content']
+    # draft_rows = draft_rows['db_content']
     occur_list = []
     for occur in occurrences:
         occur_list.append(occur.__dict__)
