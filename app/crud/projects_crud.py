@@ -4,7 +4,7 @@ projects are included in nlp_crud module'''
 
 import re
 import json
-import datetime
+# import datetime
 from functools import wraps
 from pytz import timezone
 from sqlalchemy import or_
@@ -416,11 +416,11 @@ def obtain_project_draft(db_:Session, project_id, books, sentence_id_list, sente
         draft_out = nlp_crud.export_to_print(draft_rows)
     else:
         raise TypeException(f"Unsupported output format: {output_format}")
-    response = {
-        'db_content':draft_out,
-        'project_content':project_row
-        }
-    return response
+    # response = {
+    #     'db_content':draft_out,
+    #     'project_content':project_row
+    #     }
+    return draft_out
 
 def update_project_draft(db_:Session, project_id, sentence_list, user_id):
     '''Directly write to the draft and draftMeta fields of project sentences'''
@@ -444,11 +444,11 @@ def update_project_draft(db_:Session, project_id, sentence_list, user_id):
         sent.draftMeta = input_sent.draftMeta
         sent.updatedUser = user_id
     project_row.updatedUser = user_id
-    project_row.updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
-    response_result = {
-        'db_content':sentences,
-        'project_content':project_row
-        }
+    # project_row.updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
+    # response_result = {
+    #     'db_content':sentences,
+    #     'project_content':project_row
+    #     }
     #Also add any new confirmed translations to translation memory
     gloss_list = []
     for sent in sentences:
@@ -462,7 +462,10 @@ def update_project_draft(db_:Session, project_id, sentence_list, user_id):
     nlp_crud.add_to_translation_memory(db_,
         project_row.sourceLanguage.code,
         project_row.targetLanguage.code, gloss_list, default_val=1)
-    return response_result
+    # return response_result
+    db_.commit()
+    return sentences
+
 
 def obtain_project_progress(db_, project_id, books, sentence_id_list, sentence_id_range):#pylint: disable=too-many-locals
     '''Calculate project translation progress in terms of how much of draft is translated'''
@@ -493,11 +496,12 @@ def obtain_project_progress(db_, project_id, books, sentence_id_list, sentence_i
         "suggestion": suggestions_length/total_length,
         "untranslated": untranslated_length/total_length}
     # return result
-    response_result = {
-        'db_content':result,
-        'project_content':project_row
-        }
-    return response_result
+    # response_result = {
+    #     'db_content':result,
+    #     'project_content':project_row
+    #     }
+    # return response_result
+    return result
 
 def obtain_project_token_translation(db_, project_id, token, occurrences): # pylint: disable=unused-argument
     '''Get the current translation for specific tokens providing their occurence in source'''
@@ -568,12 +572,12 @@ def get_project_source_versification(db_, project_id):
              versification_check(row, prev_book_code, versification, prev_verse, prev_chapter)
     if prev_book_code is not None:
         versification['maxVerses'][prev_book_code].append(prev_verse)
-    # return versification
-    response = {
-        'db_content':versification,
-        'project_content':project_row
-        }
-    return response
+    return versification
+    # response = {
+    #     'db_content':versification,
+    #     'project_content':project_row
+    #     }
+    # return response
 
 def get_project_source_per_token(db_:Session, project_id, token, occurrences): #pylint: disable=unused-argument
     '''get sentences and drafts for the token, which splits the token & translation in metadraft
@@ -764,11 +768,12 @@ def obtain_project_source(db_:Session, project_id, books=None, sentence_id_range
                 "surrogateId":row.surrogateId,"sentence":row.sentence}
             result.append(obj)
 
-    response = {
-        'db_content':result,
-        'project_content':project_row
-        }
-    return response
+    # response = {
+    #     'db_content':result,
+    #     'project_content':project_row
+    #     }
+    # return response
+    return result
 
 def remove_project_sentence(db_, project_id, sentence_id,user_id):
     '''To remove a sentence'''
@@ -784,10 +789,11 @@ def remove_project_sentence(db_, project_id, sentence_id,user_id):
     #     raise PermissionException("A user cannot remove oneself from a project.")
     db_.delete(sentence_row)
     project_row.updatedUser = user_id
-    project_row.updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
-    # db_.commit()
-    response = {
-        "db_content": sentence_row,
-        "project_content": project_row
-    }
-    return response
+    # project_row.updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
+    db_.commit()
+    # response = {
+    #     "db_content": sentence_row,
+    #     "project_content": project_row
+    # }
+    # return response
+    return sentence_row
