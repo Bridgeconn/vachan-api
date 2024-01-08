@@ -79,6 +79,7 @@ def test_default_post_put_get():
     "targetLanguageCode": "ml"
     }
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
+    print("RES",response.json())
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"
     new_project = response.json()['data']
@@ -96,6 +97,7 @@ def test_default_post_put_get():
     }
     response2 = client.put(UNIT_URL+'?project_id='+str(new_project['projectId']),\
          headers=headers_auth, json=put_data)
+    print("RES",response2.json())
     assert response2.status_code == 201
     assert response2.json()['message'] == "Project updated successfully"
     updated_project = response2.json()['data']
@@ -1326,24 +1328,29 @@ def test_bugfix_split_n_merged_verse():
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
+    print("RESPONSE1",response.json())
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"
     project_id = response.json()['data']['projectId']
 
     prj_book_data = {
       "uploadedUSFMs": [
-          "\\id REV\n\\c 1\n\\p\n\\v 1 some text\n\\v 2-10 merged text\n\\v 11a split text\n\\v 11b rest"
+          "\\id REV\n\\c 1\n\\p\n\\v 1 some text\n"+\
+          "\\v 2-10 merged text\n\\v 11a split text\n\\v 11b rest"
       ]
     }
     prj_update_resp = client.put(UNIT_URL+'?project_id='+str(project_id),\
          json=prj_book_data, headers=headers_auth)
+    print("RESPONSE2",prj_update_resp.json())
     assert prj_update_resp.status_code == 201
     resp_obj = prj_update_resp.json()
+    # print("RESPONSE3",resp_obj)
     assert resp_obj['message'] == 'Project updated successfully'
 
     sentences_resp = client.get(f"{SENTENCE_URL}?project_id={project_id}", headers=headers_auth)
     assert sentences_resp.status_code == 200
     sentences = sentences_resp.json()
+    print("sentences",sentences)
     assert len(sentences) == 3
     assert sentences[0]['sentenceId'] == 67001001
     assert sentences[0]['surrogateId'] == 'rev 1:1'

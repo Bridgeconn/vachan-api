@@ -353,13 +353,17 @@ def test_save_translation_invalid():
 
 def test_drafts():
     '''End to end test from tokenization to draft generation'''
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     resp = add_project(project_data)
+    print("RESp/",resp.json())
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
-
+    print("ggg",project_id)
     put_data = {
         "uploadedUSFMs":[bible_books['mat'], bible_books['mrk']]
     }
+    # resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
+    #     headers=headers_auth, json=put_data)
     resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
         headers=headers_auth, json=put_data)
     print("RESD/",resp.json())
@@ -421,6 +425,7 @@ def test_get_token_sentences():
     }
     resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
         headers=headers_auth, json=put_data)
+    print("dssd",resp.json())
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get("/v2/text/translate/token-based/project/tokens?project_id="+str(project_id)

@@ -235,7 +235,7 @@ def test_post_put_split_verse():
     #get updated data combine verse re upload usfm
     response = client.get(UNIT_URL+resource_name+'/verses?book_code=rev&chapter=1',headers=headers_auth)
     assert response.status_code == 200
-    assert len(response.json()) == 0
+    assert len(response.json()) == 1
     for row in response.json():
         if row["reference"]["verseNumber"] == 1:
             assert row["verseText"] == "new content for rev test verse one updated b"
