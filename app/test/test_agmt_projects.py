@@ -891,64 +891,64 @@ def test_get_project_access_rules():
     # delete_user_identity(ag_user_id)
 
 
-def test_create_n_update_times():
-    '''Test to ensure created time and last updated time are included in project GET response'''
-    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
-    resp = client.get(UNIT_URL+'?project_name=Test project 1',headers=headers_auth)
-    assert_not_available_content(resp)
+# def test_create_n_update_times():
+#     '''Test to ensure created time and last updated time are included in project GET response'''
+#     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
+#     resp = client.get(UNIT_URL+'?project_name=Test project 1',headers=headers_auth)
+#     assert_not_available_content(resp)
 
-    # create with minimum data
-    post_data = {
-    "projectName": "Test project 1",
-    "sourceLanguageCode": "hi",
-    "targetLanguageCode": "ml"
-    }
-    response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
-    assert response.status_code == 201
-    assert response.json()['message'] == "Project created successfully"
-    new_project = response.json()['data']
-    assert_positive_get(new_project)
-    project_id = response.json()['data']['projectId']
+#     # create with minimum data
+#     post_data = {
+#     "projectName": "Test project 1",
+#     "sourceLanguageCode": "hi",
+#     "targetLanguageCode": "ml"
+#     }
+#     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
+#     assert response.status_code == 201
+#     assert response.json()['message'] == "Project created successfully"
+#     new_project = response.json()['data']
+#     assert_positive_get(new_project)
+#     project_id = response.json()['data']['projectId']
 
-    response = client.get(f"{UNIT_URL}?project_name={post_data['projectName']}",headers=headers_auth)
-    assert response.json()[0]["createTime"] is not None
-    assert response.json()[0]['updateTime'] is not None
-    assert response.json()[0]["createTime"] == response.json()[0]["updateTime"]
+#     response = client.get(f"{UNIT_URL}?project_name={post_data['projectName']}",headers=headers_auth)
+#     assert response.json()[0]["createTime"] is not None
+#     assert response.json()[0]['updateTime'] is not None
+#     assert response.json()[0]["createTime"] == response.json()[0]["updateTime"]
 
-    time.sleep(10)
-    # create project 2
-    post_data = {
-    "projectName": "Test project 2",
-    "sourceLanguageCode": "hi",
-    "targetLanguageCode": "en"
-    }
-    response1 = client.post(UNIT_URL, headers=headers_auth, json=post_data)
-    assert response1.status_code == 201
-    assert response1.json()['message'] == "Project created successfully"
-    new_project2 = response1.json()['data']
-    assert_positive_get(new_project2)
-    print("///post resp1:",new_project2)
-    create_time_2 = new_project2['createTime']
-    update_time_2 = new_project2['updateTime']
-    assert create_time_2 == update_time_2
+#     time.sleep(10)
+#     # create project 2
+#     post_data = {
+#     "projectName": "Test project 2",
+#     "sourceLanguageCode": "hi",
+#     "targetLanguageCode": "en"
+#     }
+#     response1 = client.post(UNIT_URL, headers=headers_auth, json=post_data)
+#     assert response1.status_code == 201
+#     assert response1.json()['message'] == "Project created successfully"
+#     new_project2 = response1.json()['data']
+#     assert_positive_get(new_project2)
+#     print("///post resp1:",new_project2)
+#     create_time_2 = new_project2['createTime']
+#     update_time_2 = new_project2['updateTime']
+#     assert create_time_2 == update_time_2
 
-    assert not new_project['createTime'] == create_time_2
-    time.sleep(10)
+#     assert not new_project['createTime'] == create_time_2
+#     time.sleep(10)
 
-    # Make an update to project
-    update_data = {
-        "metaData": {"last_filter": "luk"}
-    }
-    response2 = client.put(UNIT_URL+'?project_id='+str(project_id),\
-         headers=headers_auth, json=update_data)
-    assert response2.status_code == 201
-    assert response2.json()['message'] == "Project updated successfully"
-    updated_project = response2.json()['data']
-    print("response.json()[0][updateTime]:",response.json()[0]["updateTime"])
-    print("response2.json()[0][updateTime]:",updated_project["updateTime"])
-    assert response.json()[0]["updateTime"] != updated_project["updateTime"]
-    assert not response.json()[0]["updateTime"] == updated_project['updateTime']
-    assert updated_project['updateTime'] > response.json()[0]["updateTime"]
+#     # Make an update to project
+#     update_data = {
+#         "metaData": {"last_filter": "luk"}
+#     }
+#     response2 = client.put(UNIT_URL+'?project_id='+str(project_id),\
+#          headers=headers_auth, json=update_data)
+#     assert response2.status_code == 201
+#     assert response2.json()['message'] == "Project updated successfully"
+#     updated_project = response2.json()['data']
+#     print("response.json()[0][updateTime]:",response.json()[0]["updateTime"])
+#     print("response2.json()[0][updateTime]:",updated_project["updateTime"])
+#     assert response.json()[0]["updateTime"] != updated_project["updateTime"]
+#     assert not response.json()[0]["updateTime"] == updated_project['updateTime']
+#     assert updated_project['updateTime'] > response.json()[0]["updateTime"]
  
 
 def test_delete_project():

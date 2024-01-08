@@ -596,11 +596,11 @@ def get_project_source_per_token(db_:Session, project_id, token, occurrences): #
             draft.draftMeta.append(mta)
     # return draft_rows
     draft_dicts = [item.__dict__ for item in draft_rows]
-    response = {
-        'db_content':draft_dicts,
-        'project_content':project_row
-        }
-    return response
+    # response = {
+    #     'db_content':draft_dicts,
+    #     'project_content':project_row
+    #     }
+    return draft_dicts
 
 def pin_point_token_in_draft(occurrences, draft_rows):#pylint: disable=too-many-locals,too-many-branches
     '''find out token's aligned portion in draft'''

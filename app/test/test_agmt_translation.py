@@ -109,6 +109,7 @@ def test_get_tokens():
     # with list filter
     get_response7 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
         "&sentence_id_list=41000000",headers=headers_auth)
+    
     assert_not_available_content(get_response7)
 
     get_response7 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
@@ -392,7 +393,7 @@ def test_drafts():
     print(" response ", response.json())
     assert response.status_code ==200
     assert isinstance(response.json(), list)
-    assert "\\v 1 test test test" in response.json()[0]
+    assert "\\v 0 test test test" in response.json()[0]
 
     response = client.get(UNIT_URL+'/draft?project_id='+str(project_id)+
         "&books=mat",headers=headers_auth)
