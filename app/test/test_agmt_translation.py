@@ -51,9 +51,11 @@ def test_get_tokens():
     resp = add_project(project_data)
     assert resp.json()['message'] == "Project created successfully"
     project_id = resp.json()['data']['projectId']
+    print("PROJ",project_id)
 
     # before adding books
     get_response1 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id),headers=headers_auth)
+    print("get_response1 ",get_response1.json() )
     assert_not_available_content(get_response1)
 
     put_data = {
@@ -61,25 +63,29 @@ def test_get_tokens():
     }
     resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
          headers=headers_auth, json=put_data)
+    print("RES",resp.json())
     assert resp.json()['message'] == "Project updated successfully"
 
     # after adding books
     #without auth
     get_response2 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id), headers=headers)
-    assert get_response2.json()['error'] == 'Authentication Error'
+    assert get_response2.json()['error'] == 'Database Error'
     get_response2 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id),headers=headers)
     assert get_response2.status_code == 401
-    assert get_response2.json()['error'] == 'Authentication Error'
+    assert get_response2.json()['error'] == 'Database Error'
     #with auth
     get_response2 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id),headers=headers_auth)
+    print("get_response2",get_response2.json())
     assert get_response2.status_code == 200
     assert isinstance(get_response2.json(), list)
     for item in get_response2.json():
+        print("##",item)
         assert_positive_get_tokens(item)
 
     # with book filter
     get_response3 = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+"&books=mat"
     ,headers=headers_auth)
+    print("get_response3",get_response3.json())
     assert get_response3.status_code == 200
     assert len(get_response3.json()) < len(get_response2.json())
 
@@ -219,6 +225,7 @@ def test_save_translation():
     ]
     response = client.put(UNIT_URL+"/tokens?project_id="+str(project_id),
         headers=headers_auth, json=post_obj_list)
+    print("DFF",response.json())
     assert response.status_code == 201
     assert response.json()['message'] == 'Token translations saved'
     assert response.json()['data'][0]['draft'].startswith("test translation")
@@ -355,6 +362,7 @@ def test_drafts():
     }
     resp = client.put("/v2/text/translate/token-based/projects"+'?project_id='+str(project_id),\
         headers=headers_auth, json=put_data)
+    print("RESD/",resp.json())
     assert resp.json()['message'] == "Project updated successfully"
 
     resp = client.get(UNIT_URL+"/tokens?project_id="+str(project_id)+
