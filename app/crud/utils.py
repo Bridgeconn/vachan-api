@@ -6,6 +6,7 @@ import requests
 from sqlalchemy.orm import Session
 import db_models
 from custom_exceptions import UnprocessableException
+# from usfm_grammar import USFMParser, Filter
 #pylint: disable=R1732,C0303
 def normalize_unicode(text, form="NFKC"):
     '''to normalize text contents before adding them to DB'''
@@ -89,7 +90,10 @@ books = {
 67: {"book_code": "rev", "book_name": "revelation"}
 }
 
-BOOK_CODES = [ val['book_code'] for key, val in books.items()]
+# BOOK_CODES = [ val['book_code'] for key, val in books.items()]
+BOOK_CODES = { val['book_code']:{'book_num':key, "book_name":val['book_name']}
+                                                    for key, val in books.items()}
+
 
 
 def book_code(book_num):
@@ -250,3 +254,24 @@ def create_decimal_ref_id(db_:Session, bookcode, chapter, verse):
                 ref_id = (book_id * 100000) + (chapter * 1000) + verse
                 return ref_id
     raise ValueError("book_id, chapter, and verse must not be None.")
+
+
+# def parse_usfm(usfm_string):
+#     '''parse an uploaded usfm file using usfm-grammar'''
+#     try:
+#         usfm_parser = USFMParser(normalize_unicode(usfm_string))
+
+#         usfm_json = usfm_parser.to_usj(include_markers=Filter.BCV+Filter.TEXT)
+#     except Exception as exce:
+#         raise TypeException("Errors in input USFM") from exce
+
+#     return usfm_json
+
+# def form_usfm(usj_obj):
+#     '''convert a usfm-grammar format JSON into usfm'''
+#     try:
+#         usj_parser = USFMParser(from_usj=usj_obj)
+#         usfm_string = usj_parser.usfm
+#     except Exception as exce:
+#         raise TypeException("Errors in input USJ(USFM JSON)") from exce
+#     return usfm_string
