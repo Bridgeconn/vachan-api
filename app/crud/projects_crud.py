@@ -4,7 +4,7 @@ projects are included in nlp_crud module'''
 
 import re
 import json
-import datetime
+# import datetime
 from functools import wraps
 from pytz import timezone
 from sqlalchemy import or_
@@ -101,7 +101,6 @@ def get_sentences_from_usfm_json(contents_list, book_code, book_id):
     surrogate_id = book_code
     found_split_verse = None
     splits = []
-    print("contents_list",contents_list)
     for node in contents_list:
         if isinstance(node, str):
             sent_id = book_id*1000000+int(curr_chap)*1000+verse_number_int
@@ -151,8 +150,7 @@ def get_sentences_from_usfm_json(contents_list, book_code, book_id):
 def update_translation_project_uploaded_book(db_,project_obj,project_id,new_books,user_id):
     """bulk uploaded book update in update translation project"""
     for usfm in project_obj.uploadedUSFMs:
-        # usfm_parser = USFMParser(usfm)
-        usfm_parser = USFMParser(utils.normalize_unicode(usfm))
+        usfm_parser = USFMParser(usfm)
         # usfm_json = utils.parse_usfm(usfm)
         usfm_json =usfm_parser.to_usj(include_markers=Filter.BCV+Filter.TEXT)
         book_code = usfm_json['content'][0]['code'].lower()
@@ -161,8 +159,6 @@ def update_translation_project_uploaded_book(db_,project_obj,project_id,new_book
         book_id = utils.BOOK_CODES[book_code.lower()]['book_num']
         new_books.append(book_code)
         draft_rows = get_sentences_from_usfm_json(usfm_json['content'], book_code, book_id)
-        print("draft_rows",draft_rows)
-        print("usfm_json['content']",usfm_json['content'])
         for item in draft_rows:
             db_.add(db_models.TranslationDraft(
                 project_id=project_id,
@@ -172,6 +168,45 @@ def update_translation_project_uploaded_book(db_,project_obj,project_id,new_book
                 draft="",
                 draftMeta=item['draftMeta'],
                 updatedUser=user_id))
+
+def update_translation_project(db_:Session, project_obj, project_id, user_id=None):
+    '''Either activate or deactivate a project or Add more books to a project,
+    adding all new verses to the drafts table'''
+    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    if not project_row:
+        raise NotAvailableException(f"Project with id, {project_id}, not found")
+    new_books = []
+    if project_obj.sentenceList:
+        update_translation_project_sentences(db_, project_obj,project_id, new_books, user_id)
+    if project_obj.uploadedUSFMs:
+        #uploaded usfm book add to project
+        update_translation_project_uploaded_book(db_,project_obj,project_id,new_books,user_id)
+    db_.commit()
+    # db_.expire_all()
+    if project_obj.projectName:
+        project_row.projectName = project_obj.projectName
+    if project_obj.active is not None:
+        project_row.active = project_obj.active
+    if project_obj.useDataForLearning is not None:
+        project_row.metaData['useDataForLearning'] = project_obj.useDataForLearning
+        flag_modified(project_row, "metaData")
+    if project_obj.stopwords:
+        project_row.metaData['stopwords'] = project_obj.stopwords.__dict__
+        flag_modified(project_row, "metaData")
+    if project_obj.punctuations:
+        project_row.metaData['punctuations'] = project_obj.punctuations
+        flag_modified(project_row, "metaData")
+    if project_obj.compatibleWith:
+        project_row.compatibleWith= project_obj.compatibleWith
+    project_row.updatedUser = user_id
+
+    if len(new_books) > 0:
+        project_row.metaData['books'] += new_books
+        flag_modified(project_row, "metaData")
+    db_.add(project_row)
+    db_.commit()
+    db_.refresh(project_row)
+    return project_row
 
 # def update_translation_project(db_:Session, project_obj, project_id, user_id=None):
 #     '''Either activate or deactivate a project or Add more books to a project,
@@ -211,45 +246,6 @@ def update_translation_project_uploaded_book(db_,project_obj,project_id,new_book
 #     db_.commit()
 #     db_.refresh(project_row)
 #     return project_row
-
-def update_translation_project(db_:Session, project_obj, project_id, user_id=None):
-    '''Either activate or deactivate a project or Add more books to a project,
-    adding all new verses to the drafts table'''
-    project_row = db_.query(db_models.TranslationProject).get(project_id)
-    if not project_row:
-        raise NotAvailableException(f"Project with id, {project_id}, not found")
-    new_books = []
-    if project_obj.sentenceList:
-        update_translation_project_sentences(db_, project_obj,project_id, new_books, user_id)
-    if project_obj.uploadedUSFMs:
-        #uploaded usfm book add to project
-        update_translation_project_uploaded_book(db_,project_obj,project_id,new_books,user_id)
-    # db_.commit()
-    # db_.expire_all()
-    if project_obj.projectName:
-        project_row.projectName = project_obj.projectName
-    if project_obj.active is not None:
-        project_row.active = project_obj.active
-    if project_obj.useDataForLearning is not None:
-        project_row.metaData['useDataForLearning'] = project_obj.useDataForLearning
-        flag_modified(project_row, "metaData")
-    if project_obj.stopwords:
-        project_row.metaData['stopwords'] = project_obj.stopwords.__dict__
-        flag_modified(project_row, "metaData")
-    if project_obj.punctuations:
-        project_row.metaData['punctuations'] = project_obj.punctuations
-        flag_modified(project_row, "metaData")
-    if project_obj.compatibleWith:
-        project_row.compatibleWith= project_obj.compatibleWith
-    project_row.updatedUser = user_id
-
-    if len(new_books) > 0:
-        project_row.metaData['books'] += new_books
-        flag_modified(project_row, "metaData")
-    db_.add(project_row)
-    db_.commit()
-    db_.refresh(project_row)
-    return project_row
 
 
 
@@ -424,7 +420,6 @@ def obtain_project_draft(db_:Session, project_id, books, sentence_id_list, sente
     #     'db_content':draft_out,
     #     'project_content':project_row
     #     }
-    # return response
     return draft_out
 
 def update_project_draft(db_:Session, project_id, sentence_list, user_id):
@@ -433,11 +428,11 @@ def update_project_draft(db_:Session, project_id, sentence_list, user_id):
     source_resp = obtain_project_source(db_, project_id,
         sentence_id_list=sentence_id_list, with_draft=True)
     # project_row = source_resp['project_content']
-    # sentences = source_resp['db_content']
     project_row = db_.query(db_models.TranslationProject).get(project_id)
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
     sentences = source_resp
+   # sentences = source_resp['db_content']
     for input_sent in sentence_list:
         sent = None
         for read_sent in sentences:
@@ -504,12 +499,13 @@ def obtain_project_progress(db_, project_id, books, sentence_id_list, sentence_i
     result = {"confirmed": confirmed_length/total_length,
         "suggestion": suggestions_length/total_length,
         "untranslated": untranslated_length/total_length}
-    return result
+    # return result
     # response_result = {
     #     'db_content':result,
     #     'project_content':project_row
     #     }
     # return response_result
+    return result
 
 def obtain_project_token_translation(db_, project_id, token, occurrences): # pylint: disable=unused-argument
     '''Get the current translation for specific tokens providing their occurence in source'''
@@ -528,6 +524,7 @@ def obtain_project_token_translation(db_, project_id, token, occurrences): # pyl
         with_draft=True)
     # draft_rows = draft_rows["db_content"]
     translations = pin_point_token_in_draft(occurrences, draft_rows)
+    print("translations",translations)
     # return translations
     # response = {
     #     'db_content':translations[0],
@@ -612,7 +609,6 @@ def get_project_source_per_token(db_:Session, project_id, token, occurrences): #
     #     'db_content':draft_dicts,
     #     'project_content':project_row
     #     }
-    # return response
     return draft_dicts
 
 def pin_point_token_in_draft(occurrences, draft_rows):#pylint: disable=too-many-locals,too-many-branches
@@ -798,7 +794,7 @@ def remove_project_sentence(db_, project_id, sentence_id,user_id):
     #     raise PermissionException("A user cannot remove oneself from a project.")
     db_.delete(sentence_row)
     project_row.updatedUser = user_id
-    project_row.updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
+    # project_row.updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
     db_.commit()
     # response = {
     #     "db_content": sentence_row,

@@ -12,7 +12,7 @@ from pytz import timezone
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text,func
-from crud import utils, projects_crud #pylint: disable=no-name-in-module
+from crud import utils, projects_crud
 from crud import nlp_tokenization as nlp_utils
 import db_models
 from dependencies import log
@@ -793,7 +793,7 @@ def project_suggest_translations(db_:Session, project_id, books, #pylint: disabl
         raise NotAvailableException(f"Project with id, {project_id}, not found")
     draft_rows = projects_crud.obtain_project_source(db_, project_id, books, sentence_id_range,
         sentence_id_list, with_draft=True)
-    draft_rows = draft_rows['db_content']
+    # draft_rows = draft_rows['db_content']
     if confirm_all:
         for row in draft_rows:
             for i, meta in enumerate(row.draftMeta):
@@ -812,12 +812,14 @@ def project_suggest_translations(db_:Session, project_id, books, #pylint: disabl
         updated_drafts = auto_translate(**args)
         db_.add_all(updated_drafts)
     project_row.updatedUser = user_id
-    project_row.updateTime = datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
-    response = {
-        'db_content':updated_drafts,
-        'project_content':project_row
-        }
-    return response
+    db_.commit()
+    # project_row.updateTime = datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
+    # response = {
+    #     'db_content':updated_drafts,
+    #     'project_content':project_row
+    #     }
+    # return response
+    return updated_drafts
 
 def edit_glossary(db_: Session,token_info):
     '''updates the given information of a gloss in db'''
@@ -895,7 +897,6 @@ def obtain_draft(sentence_list, doc_type):
         return result
     return None
 
-
 def create_usfm(sent_drafts):
     '''Creates minimal USFM file with basic markers from the input verses list
     input: List of (bbbcccvvv, "generated translation")
@@ -931,7 +932,6 @@ def create_usfm(sent_drafts):
     if file != '':
         usfm_files.append(file)
     return usfm_files
-
 
 def export_to_print(sentence_list):
     '''get a response with just id and draft to print'''
