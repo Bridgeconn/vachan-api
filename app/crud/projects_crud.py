@@ -101,6 +101,7 @@ def get_sentences_from_usfm_json(contents_list, book_code, book_id):
     surrogate_id = book_code
     found_split_verse = None
     splits = []
+    print("contents_list",contents_list)
     for node in contents_list:
         if isinstance(node, str):
             sent_id = book_id*1000000+int(curr_chap)*1000+verse_number_int
@@ -150,7 +151,8 @@ def get_sentences_from_usfm_json(contents_list, book_code, book_id):
 def update_translation_project_uploaded_book(db_,project_obj,project_id,new_books,user_id):
     """bulk uploaded book update in update translation project"""
     for usfm in project_obj.uploadedUSFMs:
-        usfm_parser = USFMParser(usfm)
+        # usfm_parser = USFMParser(usfm)
+        usfm_parser = USFMParser(utils.normalize_unicode(usfm))
         # usfm_json = utils.parse_usfm(usfm)
         usfm_json =usfm_parser.to_usj(include_markers=Filter.BCV+Filter.TEXT)
         book_code = usfm_json['content'][0]['code'].lower()
@@ -159,6 +161,8 @@ def update_translation_project_uploaded_book(db_,project_obj,project_id,new_book
         book_id = utils.BOOK_CODES[book_code.lower()]['book_num']
         new_books.append(book_code)
         draft_rows = get_sentences_from_usfm_json(usfm_json['content'], book_code, book_id)
+        print("draft_rows",draft_rows)
+        print("usfm_json['content']",usfm_json['content'])
         for item in draft_rows:
             db_.add(db_models.TranslationDraft(
                 project_id=project_id,
@@ -409,9 +413,9 @@ def obtain_project_draft(db_:Session, project_id, books, sentence_id_list, sente
     draft_rows = draft_rows['db_content']
     if output_format == schemas_nlp.DraftFormats.USFM :
         draft_out = nlp_crud.create_usfm(draft_rows)
-    # elif output_format == schemas_nlp.DraftFormats.JSON:
-    #     draft_out = nlp_crud.export_to_json(project_row.sourceLanguage,
-    #         project_row.targetLanguage, draft_rows, None)
+    elif output_format == schemas_nlp.DraftFormats.JSON:
+        draft_out = nlp_crud.export_to_json(project_row.sourceLanguage,
+            project_row.targetLanguage, draft_rows, None)
     elif output_format == schemas_nlp.DraftFormats.PRINT:
         draft_out = nlp_crud.export_to_print(draft_rows)
     else:
@@ -764,11 +768,12 @@ def obtain_project_source(db_:Session, project_id, books=None, sentence_id_range
                 "surrogateId":row.surrogateId,"sentence":row.sentence}
             result.append(obj)
 
-    response = {
-        'db_content':result,
-        'project_content':project_row
-        }
-    return response
+    # response = {
+    #     'db_content':result,
+    #     'project_content':project_row
+    #     }
+    # return response
+    return result
 
 def remove_project_sentence(db_, project_id, sentence_id,user_id):
     '''To remove a sentence'''
@@ -785,7 +790,7 @@ def remove_project_sentence(db_, project_id, sentence_id,user_id):
     db_.delete(sentence_row)
     project_row.updatedUser = user_id
     project_row.updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
-    # db_.commit()
+    db_.commit()
     response = {
         "db_content": sentence_row,
         "project_content": project_row

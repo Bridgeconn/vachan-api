@@ -1328,7 +1328,7 @@ def test_bugfix_split_n_merged_verse():
     }
     headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['AgAdmin']['token']
     response = client.post(UNIT_URL, headers=headers_auth, json=post_data)
-    print("RESPONSE1",response.json())
+    # print("RESPONSE1",response.json())
     assert response.status_code == 201
     assert response.json()['message'] == "Project created successfully"
     project_id = response.json()['data']['projectId']
@@ -1341,12 +1341,19 @@ def test_bugfix_split_n_merged_verse():
     }
     prj_update_resp = client.put(UNIT_URL+'?project_id='+str(project_id),\
          json=prj_book_data, headers=headers_auth)
-    print("RESPONSE2",prj_update_resp.json())
+    # print("RESPONSE2",prj_update_resp.json())
     assert prj_update_resp.status_code == 201
     resp_obj = prj_update_resp.json()
     # print("RESPONSE3",resp_obj)
     assert resp_obj['message'] == 'Project updated successfully'
-
+    # print("USFM Data:", prj_book_data)
+    # # print("Project Update Response:", resp_obj)
+    # for verse_content in prj_book_data["uploadedUSFMs"]:
+    #     verses = verse_content.split('\n\\v ')
+    #     for verse in verses[1:]:  # Skip the first element as it contains metadata
+    #         print("Processing Verse:", '\\v ' + verse)
+    #         verse_parts = verse.split(' ')  # Split by space to get individual components
+    #         print("Verse Parts:", verse_parts)
     sentences_resp = client.get(f"{SENTENCE_URL}?project_id={project_id}", headers=headers_auth)
     assert sentences_resp.status_code == 200
     sentences = sentences_resp.json()
