@@ -410,7 +410,7 @@ def obtain_project_draft(db_:Session, project_id, books, sentence_id_list, sente
         raise NotAvailableException(f"Project with id, {project_id}, not found")
     draft_rows = obtain_project_source(db_, project_id, books, sentence_id_list,
         sentence_id_range, with_draft=True)
-    draft_rows = draft_rows['db_content']
+    # draft_rows = draft_rows['db_content']
     if output_format == schemas_nlp.DraftFormats.USFM :
         draft_out = nlp_crud.create_usfm(draft_rows)
     elif output_format == schemas_nlp.DraftFormats.JSON:
@@ -420,19 +420,24 @@ def obtain_project_draft(db_:Session, project_id, books, sentence_id_list, sente
         draft_out = nlp_crud.export_to_print(draft_rows)
     else:
         raise TypeException(f"Unsupported output format: {output_format}")
-    response = {
-        'db_content':draft_out,
-        'project_content':project_row
-        }
-    return response
+    # response = {
+    #     'db_content':draft_out,
+    #     'project_content':project_row
+    #     }
+    # return response
+    return draft_out
 
 def update_project_draft(db_:Session, project_id, sentence_list, user_id):
     '''Directly write to the draft and draftMeta fields of project sentences'''
     sentence_id_list = [sent.sentenceId for sent in sentence_list]
     source_resp = obtain_project_source(db_, project_id,
         sentence_id_list=sentence_id_list, with_draft=True)
-    project_row = source_resp['project_content']
-    sentences = source_resp['db_content']
+    # project_row = source_resp['project_content']
+    # sentences = source_resp['db_content']
+    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    if not project_row:
+        raise NotAvailableException(f"Project with id, {project_id}, not found")
+    sentences = source_resp
     for input_sent in sentence_list:
         sent = None
         for read_sent in sentences:
@@ -448,11 +453,11 @@ def update_project_draft(db_:Session, project_id, sentence_list, user_id):
         sent.draftMeta = input_sent.draftMeta
         sent.updatedUser = user_id
     project_row.updatedUser = user_id
-    project_row.updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
-    response_result = {
-        'db_content':sentences,
-        'project_content':project_row
-        }
+    # project_row.updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
+    # response_result = {
+    #     'db_content':sentences,
+    #     'project_content':project_row
+    #     }
     #Also add any new confirmed translations to translation memory
     gloss_list = []
     for sent in sentences:
@@ -466,7 +471,10 @@ def update_project_draft(db_:Session, project_id, sentence_list, user_id):
     nlp_crud.add_to_translation_memory(db_,
         project_row.sourceLanguage.code,
         project_row.targetLanguage.code, gloss_list, default_val=1)
-    return response_result
+    # return response_result
+    db_.commit()
+    return sentences
+
 
 def obtain_project_progress(db_, project_id, books, sentence_id_list, sentence_id_range):#pylint: disable=too-many-locals
     '''Calculate project translation progress in terms of how much of draft is translated'''
@@ -475,7 +483,7 @@ def obtain_project_progress(db_, project_id, books, sentence_id_list, sentence_i
         raise NotAvailableException(f"Project with id, {project_id}, not found")
     draft_rows = obtain_project_source(db_, project_id, books, sentence_id_list,
         sentence_id_range, with_draft=True)
-    draft_rows = draft_rows["db_content"]
+    # draft_rows = draft_rows["db_content"]
     confirmed_length = 0
     suggestions_length = 0
     untranslated_length = 0
@@ -496,12 +504,12 @@ def obtain_project_progress(db_, project_id, books, sentence_id_list, sentence_i
     result = {"confirmed": confirmed_length/total_length,
         "suggestion": suggestions_length/total_length,
         "untranslated": untranslated_length/total_length}
-    # return result
-    response_result = {
-        'db_content':result,
-        'project_content':project_row
-        }
-    return response_result
+    return result
+    # response_result = {
+    #     'db_content':result,
+    #     'project_content':project_row
+    #     }
+    # return response_result
 
 def obtain_project_token_translation(db_, project_id, token, occurrences): # pylint: disable=unused-argument
     '''Get the current translation for specific tokens providing their occurence in source'''
@@ -572,12 +580,12 @@ def get_project_source_versification(db_, project_id):
              versification_check(row, prev_book_code, versification, prev_verse, prev_chapter)
     if prev_book_code is not None:
         versification['maxVerses'][prev_book_code].append(prev_verse)
-    # return versification
-    response = {
-        'db_content':versification,
-        'project_content':project_row
-        }
-    return response
+    return versification
+    # response = {
+    #     'db_content':versification,
+    #     'project_content':project_row
+    #     }
+    # return response
 
 def get_project_source_per_token(db_:Session, project_id, token, occurrences): #pylint: disable=unused-argument
     '''get sentences and drafts for the token, which splits the token & translation in metadraft
@@ -588,7 +596,7 @@ def get_project_source_per_token(db_:Session, project_id, token, occurrences): #
     sent_ids = [occur.sentenceId for occur in occurrences]
     draft_rows = obtain_project_source(db_, project_id,
         sentence_id_list=sent_ids, with_draft=True)
-    draft_rows = draft_rows['db_content']
+    # draft_rows = draft_rows['db_content']
     occur_list = []
     for occur in occurrences:
         occur_list.append(occur.__dict__)
@@ -600,11 +608,12 @@ def get_project_source_per_token(db_:Session, project_id, token, occurrences): #
             draft.draftMeta.append(mta)
     # return draft_rows
     draft_dicts = [item.__dict__ for item in draft_rows]
-    response = {
-        'db_content':draft_dicts,
-        'project_content':project_row
-        }
-    return response
+    # response = {
+    #     'db_content':draft_dicts,
+    #     'project_content':project_row
+    #     }
+    # return response
+    return draft_dicts
 
 def pin_point_token_in_draft(occurrences, draft_rows):#pylint: disable=too-many-locals,too-many-branches
     '''find out token's aligned portion in draft'''
@@ -791,8 +800,9 @@ def remove_project_sentence(db_, project_id, sentence_id,user_id):
     project_row.updatedUser = user_id
     project_row.updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
     db_.commit()
-    response = {
-        "db_content": sentence_row,
-        "project_content": project_row
-    }
-    return response
+    # response = {
+    #     "db_content": sentence_row,
+    #     "project_content": project_row
+    # }
+    # return response
+    return sentence_row

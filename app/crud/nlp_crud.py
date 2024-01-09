@@ -12,7 +12,7 @@ from pytz import timezone
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import text,func
-from crud import utils, projects_crud
+from crud import utils, projects_crud #pylint: disable=no-name-in-module
 from crud import nlp_tokenization as nlp_utils
 import db_models
 from dependencies import log
