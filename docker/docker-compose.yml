@@ -3,7 +3,7 @@ services:
  kratos-postgresd:
     image: postgres:9.6
     ports:
-      - "7008:5432"
+      - "5432:5432"
     expose:
       - 5432
     restart: always
@@ -46,8 +46,8 @@ services:
  kratos:
     image: oryd/kratos:v1.0.0
     ports:
-      - '4435:4433' # public
-      # - '4434:4434' # admin
+      - '4433:4433' # public
+      # -'4434:4434' # admin
     restart: unless-stopped
     environment:
       - DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@kratos-postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
@@ -71,12 +71,12 @@ services:
       - VE-network
 
  vachan-db:
-    image: postgres:15.3
+    image: postgres:16.0
     healthcheck:
      test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "postgres" ]
      timeout: 45s
      interval: 10s
-     retries: 3
+     retries: 10
     restart: always
     environment:
      - POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
@@ -91,7 +91,7 @@ services:
      - 5432
     ports:
      # HOST:CONTAINER
-     - "7777:5432"
+     - "5433:5432"
     networks:
      - VE-network
     volumes:
@@ -237,6 +237,8 @@ services:
 
  vachan-cms-graphql:
     image: athulyams/graphql-12:v2.0.0-alpha.1
+    ports:
+      - "8004:8004"
     expose:
       - 8004
     command: uvicorn main:app --host 0.0.0.0 --port 8004

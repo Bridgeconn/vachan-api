@@ -208,45 +208,6 @@ def update_translation_project(db_:Session, project_obj, project_id, user_id=Non
     db_.refresh(project_row)
     return project_row
 
-# def update_translation_project(db_:Session, project_obj, project_id, user_id=None):
-#     '''Either activate or deactivate a project or Add more books to a project,
-#     adding all new verses to the drafts table'''
-#     project_row = db_.query(db_models.TranslationProject).get(project_id)
-#     if not project_row:
-#         raise NotAvailableException(f"Project with id, {project_id}, not found")
-#     new_books = []
-#     if project_obj.sentenceList:
-#         update_translation_project_sentences(db_, project_obj,project_id, new_books, user_id)
-#     if project_obj.uploadedUSFMs:
-#         #uploaded usfm book add to project
-#         update_translation_project_uploaded_book(db_,project_obj,project_id,new_books,user_id)
-#     # db_.commit()
-#     # db_.expire_all()
-#     if project_obj.projectName:
-#         project_row.projectName = project_obj.projectName
-#     if project_obj.active is not None:
-#         project_row.active = project_obj.active
-#     if project_obj.useDataForLearning is not None:
-#         project_row.metaData['useDataForLearning'] = project_obj.useDataForLearning
-#         flag_modified(project_row, "metaData")
-#     if project_obj.stopwords:
-#         project_row.metaData['stopwords'] = project_obj.stopwords.__dict__
-#         flag_modified(project_row, "metaData")
-#     if project_obj.punctuations:
-#         project_row.metaData['punctuations'] = project_obj.punctuations
-#         flag_modified(project_row, "metaData")
-#     if project_obj.compatibleWith:
-#         project_row.compatibleWith= project_obj.compatibleWith
-#     project_row.updatedUser = user_id
-
-#     if len(new_books) > 0:
-#         project_row.metaData['books'] += new_books
-#         flag_modified(project_row, "metaData")
-#     db_.add(project_row)
-#     db_.commit()
-#     db_.refresh(project_row)
-#     return project_row
-
 
 
 # pylint: disable=duplicate-code
