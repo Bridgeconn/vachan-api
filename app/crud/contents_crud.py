@@ -1167,7 +1167,6 @@ def update_bible_books_cleaned(db_,resource_name,books,resource_db_content,user_
     for item in books:#pylint: disable=too-many-nested-blocks
         book = db_.query(db_models.BibleBook).filter(
             db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
-        print("RESFT",item)
         if item.USFM:
             db_.query(model_cls_2).filter(
                 model_cls_2.book_id == book.bookId).delete()

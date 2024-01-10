@@ -158,7 +158,7 @@ def parse_with_usfm_grammar(input_usfm, output_format=usfm_grammar.Format.JSON,c
                 output_content = usfm_parser.to_usj(exclude_markers=excluded_markers)
             elif included_markers:
                 output_content = usfm_parser.to_usj(include_markers=included_markers)
-            else:
+            # else:
             if chapter is not None:
                 output_content = extract_dict_chapter(output_content, chapter)
         case usfm_grammar.Format.CSV:
@@ -167,13 +167,13 @@ def parse_with_usfm_grammar(input_usfm, output_format=usfm_grammar.Format.JSON,c
                 output_content = usfm_parser.to_usj(exclude_markers=excluded_markers)
             elif included_markers:
                 output_content = usfm_parser.to_usj(include_markers=included_markers)
-            else:
+            # else:
             if chapter is not None:
                 output_content = extract_list_chapter(output_content, chapter)
             output_content = "\n".join(['\t'.join(list(row)) for row in output_content])
         case usfm_grammar.Format.ST:
             output_content = usfm_parser.to_syntax_tree()
-            if chapter is not None:
+            # if chapter is not None:
         case usfm_grammar.Format.USX:
             output_content = usfm_parser.to_usx()
             if chapter is not None:
