@@ -4,7 +4,7 @@ projects are included in nlp_crud module'''
 
 import re
 import json
-import datetime
+# import datetime
 from functools import wraps
 from pytz import timezone
 from sqlalchemy import or_
@@ -12,15 +12,19 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from sqlalchemy.orm.attributes import flag_modified
 from fastapi import HTTPException
+from usfm_grammar import USFMParser,Filter
 import db_models
 from schema import schemas_nlp
-from dependencies import log
 from crud import utils, nlp_crud
+from dependencies import log
 from custom_exceptions import NotAvailableException, TypeException,\
     UnprocessableException, PermissionException
 from auth.authentication import get_all_or_one_kratos_users
+# from usfm_grammar import USFMParser
 
 ist_timezone = timezone("Asia/Kolkata")
+
+
 
 #pylint: disable=W0143,E1101
 ###################### Translation Project Mangement ######################
@@ -47,8 +51,6 @@ def create_translation_project(db_:Session, project, user_id=None,app=None):
         active=project.active,
         createdUser=user_id,
         updatedUser=user_id,
-        createTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S'),
-        updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S'),
         metaData=meta,
         compatibleWith = project.compatibleWith
         )
@@ -60,10 +62,11 @@ def create_translation_project(db_:Session, project, user_id=None,app=None):
         userRole="projectOwner",
         active=True)
     db_.add(db_content2)
-    # db_.commit()
+    db_.commit()
     return db_content
 
 book_pattern_in_surrogate_id = re.compile(r'^[\w\d]\w\w')
+
 def update_translation_project_sentences(db_, project_obj,project_id, new_books, user_id):
     """bulk selected book update in update translation project"""
     for sent in project_obj.sentenceList:
@@ -83,7 +86,8 @@ def update_translation_project_sentences(db_, project_obj,project_id, new_books,
             updatedUser=user_id)
         db_.add(draft_row)
 
-def get_sentences_from_usfm_json(chapters_json, book_code, book_id):
+
+def get_sentences_from_usfm_json(contents_list, book_code, book_id):
     '''Obtain the following from USFM content
     * sentence id as per bcv value in int
     * surrogate id as human readable reference
@@ -91,62 +95,70 @@ def get_sentences_from_usfm_json(chapters_json, book_code, book_id):
     * Handle merged verses. Keep one entry using id with first verse number
     * Handle split verses, by combining all parts to form one entry'''
     draft_rows = []
-    for chap in chapters_json:
-        chapter_number = chap['chapterNumber']
-        found_split_verse = None
-        splits = []
-        for cont in chap['contents']:
-            if "verseNumber" in cont:
-                verse_number = cont['verseNumber']
-                verse_text = cont['verseText']
-                try:
-                    verse_number_int = int(verse_number)
-                    surrogate_id = book_code+" "+str(chapter_number)+":"+verse_number
-                except Exception as exe: #pylint: disable=W0703
-                    log.error(str(exe))
-                    log.warning(
-                        "Found a special verse %s. Checking for split verse or merged verses...",
-                        verse_number)
-                    if "-" in verse_number:
-                        verse_number_int = int(verse_number.split('-')[0])
-                        surrogate_id = book_code+" "+str(chapter_number)+":"+str(verse_number)
-                    elif re.match(r'\d+\D+$', verse_number):
-                        split_verse_obj = re.match(r'(\d+)(\D+)$', verse_number)
-                        verse_number_int = int(split_verse_obj.group(1))
-                        if found_split_verse and found_split_verse == verse_number_int:
-                            # found a continuation
-                            splits.append(split_verse_obj.group(2))
-                            verse_text = draft_rows[-1]['sentence'] +" "+ verse_text
-                            draft_rows.pop(-1)
-                        else:
-                            # found the start of a split verse
-                            found_split_verse = verse_number_int
-                            splits = [split_verse_obj.group(2)]
-                        surrogate_id = book_code+" "+str(chapter_number)+":"+\
-                            str(verse_number_int)+ "-".join(splits)
-                    else:
-                        raise UnprocessableException(
-                            f"Error with verse number {verse_number}") from exe
+    curr_chap = 0
+    verse_number = 0
+    verse_number_int = 0
+    surrogate_id = book_code
+    found_split_verse = None
+    splits = []
+    for node in contents_list:
+        if isinstance(node, str):
+            sent_id = book_id*1000000+int(curr_chap)*1000+verse_number_int
+            if len(draft_rows)>0 and draft_rows[-1]['sentenceId'] == sent_id:
+                draft_rows[-1]['sentence'] += " "+node
+                draft_rows[-1]['surrogateId'] = surrogate_id
+                draft_rows[-1]['draftMeta'][0][0][1] = len(draft_rows[-1]['sentence'])
+            else:
                 draft_rows.append({
-                    "sentenceId": book_id*1000000+\
-                                int(chapter_number)*1000+verse_number_int,
-                    "surrogateId": surrogate_id,
-                    "sentence": verse_text,
-                    "draftMeta": [[[0, len(verse_text)],[0,0], "untranslated"]],
-                    })
+                        "sentenceId": sent_id,
+                        "surrogateId": surrogate_id,
+                        "sentence": node,
+                        "draftMeta": [[[0, len(node)],[0,0], "untranslated"]],
+                        })
+        elif node['type'] == "chapter":
+            curr_chap = node['number']
+        elif node['type'] == "verse":
+            verse_number = node['number']
+            try:
+                verse_number_int = int(verse_number)
+                surrogate_id = f"{book_code} {curr_chap}:{verse_number}"
+            except Exception as exe: #pylint: disable=W0703
+                log.error(str(exe))
+                log.warning(
+                    "Found a special verse %s. Checking for split verse or merged verses...",
+                    verse_number)
+                if "-" in verse_number:
+                    verse_number_int = int(verse_number.split('-')[0])
+                    surrogate_id = f"{book_code} {curr_chap}:{verse_number}"
+                elif re.match(r'\d+\D+$', verse_number):
+                    split_verse_obj = re.match(r'(\d+)(\D+)$', verse_number)
+                    verse_number_int = int(split_verse_obj.group(1))
+                    if found_split_verse and found_split_verse == verse_number_int:
+                        # found a continuation
+                        splits.append(split_verse_obj.group(2))
+                    else:
+                        # found the start of a split verse
+                        found_split_verse = verse_number_int
+                        splits = [split_verse_obj.group(2)]
+                    surrogate_id = book_code+" "+str(curr_chap)+":"+\
+                        str(verse_number_int)+ "-".join(splits)
+                else:
+                    raise UnprocessableException(
+                        f"Error with verse number {verse_number}") from exe
     return draft_rows
 
 def update_translation_project_uploaded_book(db_,project_obj,project_id,new_books,user_id):
     """bulk uploaded book update in update translation project"""
     for usfm in project_obj.uploadedUSFMs:
-        usfm_json = utils.parse_usfm(usfm)
-        book_code = usfm_json['book']['bookCode'].lower()
-        book = db_.query(db_models.BibleBook).filter(
-            db_models.BibleBook.bookCode == book_code).first()
-        if not book:
+        usfm_parser = USFMParser(usfm)
+        # usfm_json = utils.parse_usfm(usfm)
+        usfm_json =usfm_parser.to_usj(include_markers=Filter.BCV+Filter.TEXT)
+        book_code = usfm_json['content'][0]['code'].lower()
+        if book_code.lower() not in utils.BOOK_CODES:
             raise NotAvailableException(f"Book, {book_code}, not found in database")
+        book_id = utils.BOOK_CODES[book_code.lower()]['book_num']
         new_books.append(book_code)
-        draft_rows = get_sentences_from_usfm_json(usfm_json['chapters'], book_code, book.bookId)
+        draft_rows = get_sentences_from_usfm_json(usfm_json['content'], book_code, book_id)
         for item in draft_rows:
             db_.add(db_models.TranslationDraft(
                 project_id=project_id,
@@ -164,14 +176,12 @@ def update_translation_project(db_:Session, project_obj, project_id, user_id=Non
     if not project_row:
         raise NotAvailableException(f"Project with id, {project_id}, not found")
     new_books = []
-    if project_obj.selectedBooks:
-        new_books += project_obj.selectedBooks.books
     if project_obj.sentenceList:
         update_translation_project_sentences(db_, project_obj,project_id, new_books, user_id)
     if project_obj.uploadedUSFMs:
         #uploaded usfm book add to project
         update_translation_project_uploaded_book(db_,project_obj,project_id,new_books,user_id)
-    # db_.commit()
+    db_.commit()
     # db_.expire_all()
     if project_obj.projectName:
         project_row.projectName = project_obj.projectName
@@ -189,14 +199,16 @@ def update_translation_project(db_:Session, project_obj, project_id, user_id=Non
     if project_obj.compatibleWith:
         project_row.compatibleWith= project_obj.compatibleWith
     project_row.updatedUser = user_id
-    project_row.updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
+
     if len(new_books) > 0:
         project_row.metaData['books'] += new_books
         flag_modified(project_row, "metaData")
     db_.add(project_row)
-    # db_.commit()
-    # db_.refresh(project_row)
+    db_.commit()
+    db_.refresh(project_row)
     return project_row
+
+
 
 # pylint: disable=duplicate-code
 def check_app_compatibility_decorator(func):#pylint:disable=too-many-statements
@@ -355,7 +367,7 @@ def obtain_project_draft(db_:Session, project_id, books, sentence_id_list, sente
         raise NotAvailableException(f"Project with id, {project_id}, not found")
     draft_rows = obtain_project_source(db_, project_id, books, sentence_id_list,
         sentence_id_range, with_draft=True)
-    draft_rows = draft_rows['db_content']
+    # draft_rows = draft_rows['db_content']
     if output_format == schemas_nlp.DraftFormats.USFM :
         draft_out = nlp_crud.create_usfm(draft_rows)
     elif output_format == schemas_nlp.DraftFormats.JSON:
@@ -365,19 +377,23 @@ def obtain_project_draft(db_:Session, project_id, books, sentence_id_list, sente
         draft_out = nlp_crud.export_to_print(draft_rows)
     else:
         raise TypeException(f"Unsupported output format: {output_format}")
-    response = {
-        'db_content':draft_out,
-        'project_content':project_row
-        }
-    return response
+    # response = {
+    #     'db_content':draft_out,
+    #     'project_content':project_row
+    #     }
+    return draft_out
 
 def update_project_draft(db_:Session, project_id, sentence_list, user_id):
     '''Directly write to the draft and draftMeta fields of project sentences'''
     sentence_id_list = [sent.sentenceId for sent in sentence_list]
     source_resp = obtain_project_source(db_, project_id,
         sentence_id_list=sentence_id_list, with_draft=True)
-    project_row = source_resp['project_content']
-    sentences = source_resp['db_content']
+    # project_row = source_resp['project_content']
+    project_row = db_.query(db_models.TranslationProject).get(project_id)
+    if not project_row:
+        raise NotAvailableException(f"Project with id, {project_id}, not found")
+    sentences = source_resp
+   # sentences = source_resp['db_content']
     for input_sent in sentence_list:
         sent = None
         for read_sent in sentences:
@@ -393,11 +409,11 @@ def update_project_draft(db_:Session, project_id, sentence_list, user_id):
         sent.draftMeta = input_sent.draftMeta
         sent.updatedUser = user_id
     project_row.updatedUser = user_id
-    project_row.updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
-    response_result = {
-        'db_content':sentences,
-        'project_content':project_row
-        }
+    # project_row.updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
+    # response_result = {
+    #     'db_content':sentences,
+    #     'project_content':project_row
+    #     }
     #Also add any new confirmed translations to translation memory
     gloss_list = []
     for sent in sentences:
@@ -411,7 +427,10 @@ def update_project_draft(db_:Session, project_id, sentence_list, user_id):
     nlp_crud.add_to_translation_memory(db_,
         project_row.sourceLanguage.code,
         project_row.targetLanguage.code, gloss_list, default_val=1)
-    return response_result
+    # return response_result
+    db_.commit()
+    return sentences
+
 
 def obtain_project_progress(db_, project_id, books, sentence_id_list, sentence_id_range):#pylint: disable=too-many-locals
     '''Calculate project translation progress in terms of how much of draft is translated'''
@@ -420,7 +439,7 @@ def obtain_project_progress(db_, project_id, books, sentence_id_list, sentence_i
         raise NotAvailableException(f"Project with id, {project_id}, not found")
     draft_rows = obtain_project_source(db_, project_id, books, sentence_id_list,
         sentence_id_range, with_draft=True)
-    draft_rows = draft_rows["db_content"]
+    # draft_rows = draft_rows["db_content"]
     confirmed_length = 0
     suggestions_length = 0
     untranslated_length = 0
@@ -442,11 +461,12 @@ def obtain_project_progress(db_, project_id, books, sentence_id_list, sentence_i
         "suggestion": suggestions_length/total_length,
         "untranslated": untranslated_length/total_length}
     # return result
-    response_result = {
-        'db_content':result,
-        'project_content':project_row
-        }
-    return response_result
+    # response_result = {
+    #     'db_content':result,
+    #     'project_content':project_row
+    #     }
+    # return response_result
+    return result
 
 def obtain_project_token_translation(db_, project_id, token, occurrences): # pylint: disable=unused-argument
     '''Get the current translation for specific tokens providing their occurence in source'''
@@ -463,14 +483,16 @@ def obtain_project_token_translation(db_, project_id, token, occurrences): # pyl
     sentence_list = [occur["sentenceId"] for occur in occurrences]
     draft_rows = obtain_project_source(db_, project_id, sentence_id_list=sentence_list,
         with_draft=True)
-    draft_rows = draft_rows["db_content"]
+    # draft_rows = draft_rows["db_content"]
     translations = pin_point_token_in_draft(occurrences, draft_rows)
+    print("translations",translations)
     # return translations
-    response = {
-        'db_content':translations[0],
-        'project_content':project_row
-        }
-    return response
+    # response = {
+    #     'db_content':translations[0],
+    #     'project_content':project_row
+    #     }
+    # return response
+    return translations[0]
 
 def versification_check(row, prev_book_code, versification, prev_verse, prev_chapter):
     """versification check for project source versification"""
@@ -516,12 +538,12 @@ def get_project_source_versification(db_, project_id):
              versification_check(row, prev_book_code, versification, prev_verse, prev_chapter)
     if prev_book_code is not None:
         versification['maxVerses'][prev_book_code].append(prev_verse)
-    # return versification
-    response = {
-        'db_content':versification,
-        'project_content':project_row
-        }
-    return response
+    return versification
+    # response = {
+    #     'db_content':versification,
+    #     'project_content':project_row
+    #     }
+    # return response
 
 def get_project_source_per_token(db_:Session, project_id, token, occurrences): #pylint: disable=unused-argument
     '''get sentences and drafts for the token, which splits the token & translation in metadraft
@@ -532,7 +554,7 @@ def get_project_source_per_token(db_:Session, project_id, token, occurrences): #
     sent_ids = [occur.sentenceId for occur in occurrences]
     draft_rows = obtain_project_source(db_, project_id,
         sentence_id_list=sent_ids, with_draft=True)
-    draft_rows = draft_rows['db_content']
+    # draft_rows = draft_rows['db_content']
     occur_list = []
     for occur in occurrences:
         occur_list.append(occur.__dict__)
@@ -544,11 +566,11 @@ def get_project_source_per_token(db_:Session, project_id, token, occurrences): #
             draft.draftMeta.append(mta)
     # return draft_rows
     draft_dicts = [item.__dict__ for item in draft_rows]
-    response = {
-        'db_content':draft_dicts,
-        'project_content':project_row
-        }
-    return response
+    # response = {
+    #     'db_content':draft_dicts,
+    #     'project_content':project_row
+    #     }
+    return draft_dicts
 
 def pin_point_token_in_draft(occurrences, draft_rows):#pylint: disable=too-many-locals,too-many-branches
     '''find out token's aligned portion in draft'''
@@ -619,6 +641,52 @@ def pin_point_token_in_draft(occurrences, draft_rows):#pylint: disable=too-many-
     return translations
 
 #########################################################
+# def obtain_project_source(db_:Session, project_id, books=None, sentence_id_range=None,#pylint: disable=too-many-locals
+#     sentence_id_list=None, **kwargs):
+#     '''fetches all or selected source sentences from translation_sentences table'''
+#     with_draft= kwargs.get("with_draft",False)
+#     only_ids = kwargs.get("only_ids",False)
+#     project_row = db_.query(db_models.TranslationProject).get(project_id)
+#     if not project_row:
+#         raise NotAvailableException(f"Project with id, {project_id}, not found")
+#     sentence_query = db_.query(db_models.TranslationDraft).filter(
+#         db_models.TranslationDraft.project_id == project_id)
+#     if books:
+#         book_filters = []
+#         for buk in books:
+#             try:
+#                 book_id = utils.BOOK_CODES[buk.lower()]['book_num']
+#             except Exception as exce:
+#                 raise NotAvailableException(f"Book, {buk}, not in database") from exce
+#             book_filters.append(
+#                 db_models.TranslationDraft.sentenceId.between(
+#                     book_id*1000000, book_id*1000000 + 999999))
+#         sentence_query = sentence_query.filter(or_(*book_filters))
+#     elif sentence_id_range:
+#         if len(sentence_id_range) != 2 or sentence_id_range[0] > sentence_id_range[1]:
+#             raise UnprocessableException(
+#                 "sentence_id_range should have two value, first being smaller.")
+#         sentence_query = sentence_query.filter(
+#             db_models.TranslationDraft.sentenceId.between(
+#                 sentence_id_range[0],sentence_id_range[1]))
+#     elif sentence_id_list:
+#         sentence_query = sentence_query.filter(
+#             db_models.TranslationDraft.sentenceId.in_(sentence_id_list))
+#     draft_rows = sentence_query.order_by(db_models.TranslationDraft.sentenceId).all()
+#     if only_ids:
+#         result = []
+#         for row in draft_rows:
+#             obj = {"sentenceId": row.sentenceId,
+#                 "surrogateId":row.surrogateId}
+#             result.append(obj)
+#     elif with_draft:
+#         result =  draft_rows
+#     else:
+#         result = []
+#         for row in draft_rows:
+#             obj = {"sentenceId": row.sentenceId,
+#                 "surrogateId":row.surrogateId,"sentence":row.sentence}
+#             result.append(obj)
 def obtain_project_source(db_:Session, project_id, books=None, sentence_id_range=None,#pylint: disable=too-many-locals
     sentence_id_list=None, **kwargs):
     '''fetches all or selected source sentences from translation_sentences table'''
@@ -632,15 +700,18 @@ def obtain_project_source(db_:Session, project_id, books=None, sentence_id_range
     if books:
         book_filters = []
         for buk in books:
-            book_id = db_.query(db_models.BibleBook.bookId).filter(
-                db_models.BibleBook.bookCode==buk).first()
-            if not book_id:
-                raise NotAvailableException(f"Book, {buk}, not in database")
+            try:
+                book_id = utils.BOOK_CODES[buk.lower()]['book_num']
+            except Exception as exce:
+                raise NotAvailableException(f"Book, {buk}, not in database") from exce
             book_filters.append(
                 db_models.TranslationDraft.sentenceId.between(
-                    book_id[0]*1000000, book_id[0]*1000000 + 999999))
+                    book_id*1000000, book_id*1000000 + 999999))
         sentence_query = sentence_query.filter(or_(*book_filters))
     elif sentence_id_range:
+        if len(sentence_id_range) != 2 or sentence_id_range[0] > sentence_id_range[1]:
+            raise UnprocessableException(
+                "sentence_id_range should have two value, first being smaller.")
         sentence_query = sentence_query.filter(
             db_models.TranslationDraft.sentenceId.between(
                 sentence_id_range[0],sentence_id_range[1]))
@@ -662,11 +733,13 @@ def obtain_project_source(db_:Session, project_id, books=None, sentence_id_range
             obj = {"sentenceId": row.sentenceId,
                 "surrogateId":row.surrogateId,"sentence":row.sentence}
             result.append(obj)
-    response = {
-        'db_content':result,
-        'project_content':project_row
-        }
-    return response
+
+    # response = {
+    #     'db_content':result,
+    #     'project_content':project_row
+    #     }
+    # return response
+    return result
 
 def remove_project_sentence(db_, project_id, sentence_id,user_id):
     '''To remove a sentence'''
@@ -682,10 +755,11 @@ def remove_project_sentence(db_, project_id, sentence_id,user_id):
     #     raise PermissionException("A user cannot remove oneself from a project.")
     db_.delete(sentence_row)
     project_row.updatedUser = user_id
-    project_row.updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
-    # db_.commit()
-    response = {
-        "db_content": sentence_row,
-        "project_content": project_row
-    }
-    return response
+    # project_row.updateTime = datetime.datetime.now(ist_timezone).strftime('%Y-%m-%d %H:%M:%S')
+    db_.commit()
+    # response = {
+    #     "db_content": sentence_row,
+    #     "project_content": project_row
+    # }
+    # return response
+    return sentence_row

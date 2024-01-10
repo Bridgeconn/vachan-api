@@ -4,7 +4,7 @@ from typing import List
 from pydantic import BaseModel
 from pydantic import types
 
-#pylint: disable=too-few-public-methods
+#pylint: disable=too-few-public-methods, C0301
 class ResourceType(str, Enum):
     '''Classify DB resources for defineing access rights on them'''
     METACONTENT = "meta contents like licences, languages, versions or content types"

@@ -19,5 +19,5 @@ beautifulsoup4==4.11.1
 starlette==0.27.0
 pylint==2.16.1
 jsonpickle==2.2.0
-usfm-grammar==3.0.0a4
+usfm-grammar==3.0.0b2
 pytz==2023.3
