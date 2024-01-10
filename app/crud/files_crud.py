@@ -124,77 +124,56 @@ def parse_with_usfm_grammar(input_usfm, output_format=usfm_grammar.Format.JSON,c
             excluded_markers.extend(Filter.BCV.value)
         if "COMMENTS" in exclude_markers:
             excluded_markers.extend(Filter.COMMENTS.value)
-            # print(f"Excluding all markers in Filter.COMMENTS: {excluded_markers}")
         if "TITLES" in exclude_markers:
             excluded_markers.extend(Filter.TITLES.value)
-            # print(f"Excluding all markers in Filter.TITLES: {excluded_markers}")
         if "BOOK_HEADERS" in exclude_markers:
             excluded_markers.extend(Filter.BOOK_HEADERS.value)
-            # print(f"Excluding all markers in Filter.BOOK_HEADERS: {excluded_markers}")
         if "NOTES" in exclude_markers:
             excluded_markers.extend(Filter.NOTES.value)
-            # print(f"Excluding all markers in Filter.NOTES: {excluded_markers}")
         if "STUDY_BIBLE" in exclude_markers:
             excluded_markers.extend(Filter.STUDY_BIBLE.value)
-            # print(f"Excluding all markers in Filter.STUDY_BIBLE: {excluded_markers}")
         else:
             for marker in exclude_markers:               
                 if marker in Filter.PARAGRAPHS.value:
                     excluded_markers.append(marker)
-                    # print(f"Excluding marker: {marker}")
                 if marker in Filter.BCV.value:
                     excluded_markers.append(marker)
-                    # print(f"Excluding marker: {marker}")
                 if marker in Filter.COMMENTS.value:
                     excluded_markers.append(marker)
-                    # print(f"Excluding marker: {marker}")
                 if marker in Filter.TITLES.value:
                     excluded_markers.append(marker)
-                    # print(f"Excluding marker: {marker}")
                 if marker in Filter.CHARACTERS.value:
                     excluded_markers.append(marker)
-                    # print(f"Excluding marker: {marker}")
                 if marker in Filter.BOOK_HEADERS.value:
                     excluded_markers.append(marker)
-                    # print(f"Excluding marker: {marker}")
                 if marker in Filter.NOTES.value:
                     excluded_markers.append(marker)
-                    # print(f"Excluding marker: {marker}")
                 if marker in Filter.STUDY_BIBLE.value:
                     excluded_markers.append(marker)
-                    # print(f"Excluding marker: {marker}")
     output_content = None
     match output_format:
         case usfm_grammar.Format.JSON:
-    # if output_format == usfm_grammar.Format.JSON:
             output_content = usfm_parser.to_usj( )
             if excluded_markers:
                 output_content = usfm_parser.to_usj(exclude_markers=excluded_markers)
-                # print("Generating JSON output with excluded markers.")
             elif included_markers:
                 output_content = usfm_parser.to_usj(include_markers=included_markers)
-                # print("Generating JSON output with included markers.")
             else:
-                print("No markers specified for JSON output.")
             if chapter is not None:
                 output_content = extract_dict_chapter(output_content, chapter)
         case usfm_grammar.Format.CSV:
             output_content = usfm_parser.to_list( )
             if excluded_markers:
                 output_content = usfm_parser.to_usj(exclude_markers=excluded_markers)
-                # print("Generating list output with excluded markers.")
             elif included_markers:
                 output_content = usfm_parser.to_usj(include_markers=included_markers)
-                # print("Generating list output with included markers.")
             else:
-                print("No markers specified for JSON output.")
             if chapter is not None:
                 output_content = extract_list_chapter(output_content, chapter)
             output_content = "\n".join(['\t'.join(list(row)) for row in output_content])
         case usfm_grammar.Format.ST:
             output_content = usfm_parser.to_syntax_tree()
             if chapter is not None:
-                print("Not implemented chapter extractor for syntax_tree")
         case usfm_grammar.Format.USX:
             output_content = usfm_parser.to_usx()
             if chapter is not None:

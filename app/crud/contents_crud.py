@@ -953,7 +953,6 @@ def bible_verse_type_check(content, model_cls_2, book, db_content2, chapter_numb
     merged_verse_pattern = re.compile(r'(\d+)-(\d+)$')
     metadata_field = {"publishedVersification":[]}
     #NormalVerseNumber Pattern
-    # print("CONTENT",content)
     if normal_verse_pattern.match(str(content['verseNumber'])):
         row_other = model_cls_2(
         book_id = book.bookId,
@@ -1046,21 +1045,15 @@ def upload_bible_books(db_: Session, resource_name, books, user_id=None):  # pyl
                     raise TypeException("JSON is not of the required format..")
                 try:
                     chapter_number = int(chapter['number'])
-                    # print("CHAPTERNUM", chapter_number)
                 except ValueError as exe:
                     raise TypeException("JSON is not of the required format. Chapter number should be an integer.") from exe
         # Iterate over the content of the chapter
         for content in item.JSON["content"]:
             if isinstance(content, dict) and content.get("type") == "verse:v":
-                # verseNumber = content.get("number", "")
-                # print("VERSE" ,content)
                 verseNumber = content.get("number", "")
-                # verseText = content.get("content", "")
-                # print("VERSENUM", verseNumber)
                 next_index = item.JSON["content"].index(content) + 1
                 if next_index < len(item.JSON["content"]) and isinstance(item.JSON["content"][next_index], str):
                     verseText = item.JSON["content"][next_index]
-                    # print("VERSETEXT", verseText)
                 if verseNumber:
                     if verseText is None:
                         raise TypeException("JSON is not of the required format. verseText not found")
@@ -1201,7 +1194,6 @@ def update_bible_books_cleaned(db_,resource_name,books,resource_db_content,user_
                         # Include verse and verse text in content
                         content["verseNumber"] = verseNumber
                         content["verseText"] = verseText
-                        # print("CONTENT",content)
                         # Call your function to process the verse
                         db_content2, split_indexs = \
                             bible_verse_type_check(content, model_cls_2, book, db_content2, chapter_number, split_indexs)
