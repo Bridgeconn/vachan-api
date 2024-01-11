@@ -3,7 +3,7 @@ services:
  kratos-postgresd:
     image: postgres:9.6
     ports:
-      - "5438:5432"
+      - "5432:5432"
     expose:
       - 5432
     restart: always
@@ -91,7 +91,7 @@ services:
      - 5432
     ports:
      # HOST:CONTAINER
-     - "5439:5432"
+     - "5433:5432"
     networks:
      - VE-network
     volumes:
@@ -209,7 +209,7 @@ services:
      - VE-network
  
  vachan-cms-rest:
-    image: athulyams/vachan-cms-rest:v2.0.2
+    image: athulyams/vachan-cms-rest:v2.0.3
     # ports:
     #   - "8004:8004"
     expose:
@@ -294,7 +294,7 @@ services:
  web-server-local:
     image: nginx:latest
     ports:
-     - 82:80
+     - 80:80
     restart: always
     expose:
      - 80
