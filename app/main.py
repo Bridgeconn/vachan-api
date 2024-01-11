@@ -17,7 +17,7 @@ from custom_exceptions import GenericException,TypeException , PermissionExcepti
 import db_models
 from database import engine
 from dependencies import get_db, log
-from routers import content_apis, auth_api, media_api, filehandling_apis
+from routers import auth_api
 from auth.authentication import create_super_user
 # pylint: enable=E0401
 
@@ -229,9 +229,9 @@ def test(request: Request,db_: Session = Depends(get_db)):
     )
 
 app.include_router(auth_api.router)
-app.include_router(content_apis.router)
-app.include_router(media_api.router)
-app.include_router(filehandling_apis.router)
+# app.include_router(content_apis.router)
+# app.include_router(media_api.router)
+# app.include_router(filehandling_apis.router)
 
 beta_endpoints = [
     "/graphql",  # Specify the paths of the beta endpoints
@@ -242,34 +242,18 @@ beta_endpoints = [
     "/v2/files/usfm/to/{output_format}"
 ]
 
-# def custom_openapi():
-#     '''Modify the auto generated openapi schema for API docs'''
-#     openapi_schema = get_openapi(title="Vachan-API", version="2.0.0",
-#         description=f"The server application that provides APIs to interact \
-# with the underlying Databases and modules in Vachan-Engine. \
-# <br> • <a href=\"{root_url}/v2/text/translate/token-based/docs\" > Vachan-TBT docs </a>",
-#         routes=app.routes)
-
-#     # Add version information to specific endpoints
-#     for path, path_data in openapi_schema["paths"].items():
-#         for _, method_data in path_data.items():
-#             if path in beta_endpoints:
-#                 # Set endpoints as experimental in the API-docs
-#                 method_data.setdefault("x-experimental", True)
-
-#     return openapi_schema
-
 def custom_openapi():
-    '''Modify the auto-generated OpenAPI schema for API docs'''
-    cms_href = "<a href=\"{root_url}/v2/cms/rest/docs\" > Vachan-CMS-REST docs </a>"
-    tbt_href = "<a href=\"{root_url}/v2/text/translate/token-based/docs\" > Vachan-TBT docs </a>"
+    '''Modify the auto generated openapi schema for API docs'''
 
     openapi_schema = get_openapi(
         title="Vachan-API",
         version="2.0.0",
-        description=f"The server application that provides APIs to interact\
-            with the underlying Databases and modules in Vachan-Engine.\
-            <br> • {cms_href} <br> • {tbt_href}",
+        description=(
+        "The server application that provides APIs to interact with the \
+        underlying Databases \and modules in Vachan-Engine. "
+        f"<br> • <a href=\"{root_url}/v2/text/translate/token-based/docs\" > Vachan-TBT docs </a>"
+        f"<br> • <a href=\"{root_url}/v2/cms/rest/docs\" > Vachan-CMS docs </a>"
+        ),
         routes=app.routes
     )
 
@@ -281,5 +265,4 @@ def custom_openapi():
                 method_data.setdefault("x-experimental", True)
 
     return openapi_schema
-
 app.openapi = custom_openapi
