@@ -35,6 +35,7 @@ if root_url is not None and not root_url.startswith("http://"):
 app = FastAPI(title="Vachan-API", version="2.0.0",
     description=f"The server application that provides APIs to interact \
 with the underlying Databases and modules in Vachan-Engine. \
+\n • For Vachan-CMS docs: {root_url}/v2/cms/rest/docs,\
 \n • For Vachan-TBT docs: {root_url}/v2/text/translate/token-based/docs")
 template = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -241,13 +242,36 @@ beta_endpoints = [
     "/v2/files/usfm/to/{output_format}"
 ]
 
+# def custom_openapi():
+#     '''Modify the auto generated openapi schema for API docs'''
+#     openapi_schema = get_openapi(title="Vachan-API", version="2.0.0",
+#         description=f"The server application that provides APIs to interact \
+# with the underlying Databases and modules in Vachan-Engine. \
+# <br> • <a href=\"{root_url}/v2/text/translate/token-based/docs\" > Vachan-TBT docs </a>",
+#         routes=app.routes)
+
+#     # Add version information to specific endpoints
+#     for path, path_data in openapi_schema["paths"].items():
+#         for _, method_data in path_data.items():
+#             if path in beta_endpoints:
+#                 # Set endpoints as experimental in the API-docs
+#                 method_data.setdefault("x-experimental", True)
+
+#     return openapi_schema
+
 def custom_openapi():
-    '''Modify the auto generated openapi schema for API docs'''
-    openapi_schema = get_openapi(title="Vachan-API", version="2.0.0",
-        description=f"The server application that provides APIs to interact \
-with the underlying Databases and modules in Vachan-Engine. \
-<br> • <a href=\"{root_url}/v2/text/translate/token-based/docs\" > Vachan-TBT docs </a>",
-        routes=app.routes)
+    '''Modify the auto-generated OpenAPI schema for API docs'''
+    cms_href = "<a href=\"{root_url}/v2/cms/rest/docs\" > Vachan-CMS-REST docs </a>"
+    tbt_href = "<a href=\"{root_url}/v2/text/translate/token-based/docs\" > Vachan-TBT docs </a>"
+
+    openapi_schema = get_openapi(
+        title="Vachan-API",
+        version="2.0.0",
+        description=f"The server application that provides APIs to interact\
+            with the underlying Databases and modules in Vachan-Engine.\
+            <br> • {cms_href} <br> • {tbt_href}",
+        routes=app.routes
+    )
 
     # Add version information to specific endpoints
     for path, path_data in openapi_schema["paths"].items():
