@@ -209,7 +209,7 @@ services:
      - VE-network
  
  vachan-cms-rest:
-    image: athulyams/vachan-cms-rest:v2.0.1
+    image: athulyams/vachan-cms-rest:v2.0.2
     # ports:
     #   - "8004:8004"
     expose:
