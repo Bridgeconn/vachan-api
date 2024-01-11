@@ -1,14 +1,12 @@
 '''Utility functions'''
-import subprocess
-import json
 import itertools
 import unicodedata
 from unidecode import unidecode
 import requests
 from sqlalchemy.orm import Session
 import db_models
-from custom_exceptions import TypeException, UnprocessableException
-#pylint: disable=R1732
+from custom_exceptions import UnprocessableException
+#pylint: disable=R1732,C0303
 def normalize_unicode(text, form="NFKC"):
     '''to normalize text contents before adding them to DB'''
     return unicodedata.normalize(form, text)
@@ -91,7 +89,10 @@ books = {
 67: {"book_code": "rev", "book_name": "revelation"}
 }
 
-BOOK_CODES = [ val['book_code'] for key, val in books.items()]
+# BOOK_CODES = [ val['book_code'] for key, val in books.items()]
+BOOK_CODES = { val['book_code']:{'book_num':key, "book_name":val['book_name']}
+                                                    for key, val in books.items()}
+
 
 
 def book_code(book_num):
@@ -126,36 +127,36 @@ def stopwords(lang):
         return known_stopwords[lang]
     return {"prepositions":[], "postpositions":[]}
 
-def parse_usfm(usfm_string):
-    '''parse an uploaded usfm file using usfm-grammar'''
-    file= open("temp.usfm", "w", encoding='utf-8')
-    file.write(normalize_unicode(usfm_string))
-    file.close()
-    process = subprocess.Popen('$(npm -g root)/usfm-grammar/cli.js temp.usfm',
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE,
-                         shell=True)
-    stdout, stderr = process.communicate()
-    if stderr:
-        raise TypeException(stderr.decode('utf-8'))
-    usfm_json = json.loads(stdout.decode('utf-8'))
-    return usfm_json
+# def parse_usfm(usfm_string):
+#     '''parse an uploaded usfm file using usfm-grammar'''
+#     file= open("temp.usfm", "w", encoding='utf-8')
+#     file.write(normalize_unicode(usfm_string))
+#     file.close()
+#     process = subprocess.Popen('$(npm -g root)/usfm-grammar/cli.js temp.usfm',
+#                          stdout=subprocess.PIPE,
+#                          stderr=subprocess.PIPE,
+#                          shell=True)
+#     stdout, stderr = process.communicate()
+#     if stderr:
+#         raise TypeException(stderr.decode('utf-8'))
+#     usfm_json = json.loads(stdout.decode('utf-8'))
+#     return usfm_json
 
-def form_usfm(json_obj):
-    '''convert a usfm-grammar format JSON into usfm'''
-    file = open("temp.json", "w", encoding='utf-8')
-    json.dump(json_obj, file)
-    # file.write(json_obj)
-    file.close()
-    process = subprocess.Popen('$(npm -g root)/usfm-grammar/cli.js --output=usfm temp.json',
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE,
-                         shell=True)
-    stdout, stderr = process.communicate()
-    if stderr:
-        raise TypeException(stderr.decode('utf-8'))
-    usfm_string = stdout.decode('utf-8')
-    return usfm_string
+# def form_usfm(json_obj):
+#     '''convert a usfm-grammar format JSON into usfm'''
+#     file = open("temp.json", "w", encoding='utf-8')
+#     json.dump(json_obj, file)
+#     # file.write(json_obj)
+#     file.close()
+#     process = subprocess.Popen('$(npm -g root)/usfm-grammar/cli.js --output=usfm temp.json',
+#                          stdout=subprocess.PIPE,
+#                          stderr=subprocess.PIPE,
+#                          shell=True)
+#     stdout, stderr = process.communicate()
+#     if stderr:
+#         raise TypeException(stderr.decode('utf-8'))
+#     usfm_string = stdout.decode('utf-8')
+#     return usfm_string
 
 
 def to_eng(data):

@@ -1354,3 +1354,18 @@ async def delete_deleteditems(request: Request,user_details =Depends(get_user_or
     log.info('In delete_deleteditems')
     deleted_item_count = structurals_crud.cleanup_database(db_=db_)
     return {'message': "Database cleanup done!!",'deletedItemCount':deleted_item_count}
+
+@router.get('/v2/jobs', response_model=schemas_nlp.JobStatusResponse,
+    response_model_exclude_none=True, status_code=200,
+    responses={502: {"model": schemas.ErrorResponse},
+    422: {"model": schemas.ErrorResponse},404:{"model": schemas.ErrorResponse}},
+    tags=['Jobs'])
+@get_auth_access_check_decorator
+async def check_job_status(request: Request,
+    job_id:int=Query(...,examples="100000"),user_details =Depends(get_user_or_none),
+    db_:Session=Depends(get_db)):
+    '''Checking the status of a job'''
+    log.info('In check_job_status')
+    log.debug('job_id:%s', job_id)
+    result = nlp_sw_crud.check_job_status(db_, job_id)
+    return result

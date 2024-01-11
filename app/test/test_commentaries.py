@@ -8,7 +8,6 @@ from .test_versions import check_post as add_version
 from .test_resources import check_post as add_resource
 from . test_auth_basic import SUPER_PASSWORD,SUPER_USER, login, logout_user
 from .conftest import initial_test_users
-from .test_stop_words_generation import get_job_status
 
 
 UNIT_URL = '/v2/resources/commentaries/'
@@ -17,6 +16,7 @@ headers = {"contentType": "application/json", "accept": "application/json"}
 headers_auth = {"contentType": "application/json",
                 "accept": "application/json"}
 RESTORE_URL = '/v2/admin/restore'
+JOBS_URL = '/v2/jobs'
 
 def assert_positive_get(item):
     '''Check for the properties in the normal return object'''
@@ -69,6 +69,27 @@ def check_commentary_job_finished(response):
         log.info("sleeping for a minute in get commentary status")
         time.sleep(60)
     return job_response
+
+def assert_positive_job_response(out):
+    '''Check the properties in the update response'''
+    assert "message" in out
+    assert "data" in out
+    
+def get_job_status(job_id):
+    '''Retrieve status of a job'''
+    # registered user can get job status
+    response = client.get(JOBS_URL+'/?job_id='+str(job_id),headers=headers)
+    assert response.status_code == 401
+    assert response.json()['error'] == 'Authentication Error'
+    
+    headers_auth['Authorization'] = "Bearer"+" "+ initial_test_users['APIUser']['token']
+    response = client.get(JOBS_URL+'/?job_id='+str(job_id),headers=headers_auth)
+    assert response.status_code == 200
+    assert_positive_job_response(response.json())
+    assert "jobId" in response.json()['data']
+    assert "status" in response.json()['data']
+    return response
+
 
 def test_post_default():
     '''Positive test to upload commentries, with various kins of ref ranges supported'''
@@ -405,12 +426,14 @@ def test_put_after_upload():
 
     # not available PUT
     new_data[0]['commentaryId'] = 9999
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=new_data)
     job_response = get_job_status(response.json()['data']['jobId'])
     assert job_response.json()['data']['status'] == 'job error'
     assert job_response.json()["message"] == "Job is terminated with an error"
     assert "message" in job_response.json()["data"]["output"]
 
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     resource_name = resource_name.replace('1', '2')
     response = client.put(UNIT_URL+resource_name,headers=headers_auth, json=[])
     assert response.status_code == 404
@@ -519,6 +542,7 @@ def test_soft_delete():
     for i,item in enumerate(job_response.json()['data']['output']['data']): #pylint: disable=unused-variable
         assert not item['active']
 
+    headers_auth['Authorization'] = "Bearer"+" "+initial_test_users['VachanAdmin']['token']
     get_response2 = client.get(UNIT_URL+resource_name, headers=headers_auth)
     assert len(get_response2.json()) == len(data) - len(delete_data)
 
@@ -569,6 +593,7 @@ def test_created_user_can_only_edit():
     assert job_response.json()["message"] == "Commentaries added successfully"
 
     #update commentary with created SA user
+    headers_auth['Authorization'] = "Bearer"+" "+test_user_token
     get_response = client.get(UNIT_URL+resource_name,headers=headers_auth)
     commentary_id1 = get_response.json()[0]['commentaryId']
     commentary_id2 = get_response.json()[1]['commentaryId']

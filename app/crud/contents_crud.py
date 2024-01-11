@@ -1,6 +1,6 @@
 ''' Place to define all Database CRUD operations for content tables
 bible, commentary, parascriptural, vocabulary ,sign bible video etc'''
-#pylint: disable=too-many-lines
+#pylint: disable=too-many-lines,line-too-long
 import json
 import re
 from datetime import datetime
@@ -8,6 +8,7 @@ from pytz import timezone
 from sqlalchemy import or_
 from sqlalchemy.orm import Session, defer, joinedload
 from sqlalchemy.sql import text
+from usfm_grammar import USFMParser,Filter
 import db_models #pylint: disable=import-error
 from crud import utils  #pylint: disable=import-error
 from crud.nlp_sw_crud import update_job #pylint: disable=import-error
@@ -1020,7 +1021,8 @@ def bible_verse_type_check(content, model_cls_2, book, db_content2, chapter_numb
             book.bookName, chapter_number, content['verseNumber'])
     return db_content2, split_indexs
 
-def upload_bible_books(db_: Session, resource_name, books, user_id=None):#pylint: disable=too-many-locals
+
+def upload_bible_books(db_: Session, resource_name, books, user_id=None):  # pylint: disable=too-many-locals,too-many-branches
     '''Adds rows to the bible table and corresponding bible_cleaned specified by resource_name'''
     resource_db_content = db_.query(db_models.Resource).filter(
         db_models.Resource.resourceName == resource_name).first()
@@ -1028,35 +1030,42 @@ def upload_bible_books(db_: Session, resource_name, books, user_id=None):#pylint
         raise NotAvailableException(f'Resource {resource_name}, not found in database')
     if resource_db_content.resourceType.resourceType != db_models.ResourceTypeName.BIBLE.value:
         raise TypeException('The operation is supported only on bible')
-    model_cls_2 = db_models.dynamicTables[resource_name+'_cleaned']
+    model_cls_2 = db_models.dynamicTables[resource_name + '_cleaned']
     db_content = []
     db_content2 = []
     split_indexs = []
     for item in books:
         #checks for uploaded books
         book = upload_bible_books_checks(db_, item, resource_name, db_content)
-        if "chapters" not in item.JSON:
-            raise TypeException("JSON is not of the required format")
-        for chapter in item.JSON["chapters"]:
-            if "chapterNumber" not in chapter or "contents" not in chapter:
-                raise TypeException("JSON is not of the required format."+\
-                    " Chapters should have chapterNumber and contents")
-            try:
-                chapter_number = int(chapter['chapterNumber'])
-            except Exception as exe:
-                raise TypeException("JSON is not of the required format."+\
-                    " chapterNumber should be an interger") from exe
-            for content in chapter['contents']:
-                if 'verseNumber' in content:
-                    if "verseText" not in content:
-                        raise TypeException(
-                            "JSON is not of the required format. verseText not found")
+        usfm_parser = USFMParser(item.USFM)
+        item.JSON =usfm_parser.to_usj(include_markers= Filter.BCV+Filter.TEXT)
+        for chapter in item.JSON["content"]:
+            if isinstance(chapter, dict) and chapter.get("type") == "chapter:c":
+                if "number" not in chapter:
+                    raise TypeException("JSON is not of the required format..")
+                try:
+                    chapter_number = int(chapter['number'])
+                except ValueError as exe:
+                    raise TypeException("JSON is not of the required format. Chapter number should be an integer.") from exe
+        # Iterate over the content of the chapter
+        for content in item.JSON["content"]:
+            if isinstance(content, dict) and content.get("type") == "verse:v":
+                verseNumber = content.get("number", "")
+                next_index = item.JSON["content"].index(content) + 1
+                if next_index < len(item.JSON["content"]) and isinstance(item.JSON["content"][next_index], str):
+                    verseText = item.JSON["content"][next_index]
+                if verseNumber:
+                    if verseText is None:
+                        raise TypeException("JSON is not of the required format. verseText not found")
+                   # Include verse and verse text in content
+                    content["verseNumber"] = verseNumber
+                    content["verseText"] = verseText
+                   # Call your function to process the verse
                     db_content2, split_indexs = \
                         bible_verse_type_check(content, model_cls_2,
-                            book, db_content2, chapter_number,split_indexs)
+                            book, db_content2, chapter_number, split_indexs)
     if len(split_indexs) > 0:
         db_content2 = bible_split_verse_completion(db_content2, split_indexs)
-
     db_.add_all(db_content)
     db_.add_all(db_content2)
     resource_db_content.updatedUser = user_id
@@ -1067,25 +1076,29 @@ def upload_bible_books(db_: Session, resource_name, books, user_id=None):#pylint
     }
     return response
 
+
+
+
 def upload_bible_books_checks(db_, item, resource_name, db_content):
     """checks for uploaded bible books"""
     model_cls = db_models.dynamicTables[resource_name]
     book_code = None
-    if item.JSON is None:
+    usfm_parser = USFMParser(item.USFM)
+    if item.USFM:
         try:
-            item.JSON = utils.parse_usfm(item.USFM)
+            item.JSON =usfm_parser.to_usj( )
         except Exception as exe:
             raise TypeException("USFM is not of the required format.") from exe
-    elif item.USFM is None:
-        try:
-            item.USFM = utils.form_usfm(item.JSON)
-        except Exception as exe:
-            raise TypeException("Input JSON is not of the required format.") from exe
+    # if item.USFM is None:
+    #     try:
+    #         item.USFM = utils.form_usfm(item.JSON)
+    #     except Exception as exe:
+    #         raise TypeException("Input JSON is not of the required format.") from exe
     try:
-        book_code = item.JSON['book']['bookCode']
+        # Accessing the book code directly from the JSON structure
+        book_code = item.JSON["content"][0]["code"]
     except Exception as exe:
-        raise TypeException("Input JSON is not of the required format.") from exe
-
+        raise TypeException("Input JSON is not of the required format") from exe
     book = db_.query(db_models.BibleBook).filter(
             db_models.BibleBook.bookCode == book_code.lower() ).first()
     if not book:
@@ -1107,6 +1120,7 @@ def upload_bible_books_checks(db_, item, resource_name, db_content):
     db_content.append(row)
     return book
 
+
 def update_bible_books(db_: Session, resource_name, books, user_id=None):
     '''change values of bible books already uploaded'''
     resource_db_content = db_.query(db_models.Resource).filter(
@@ -1125,17 +1139,15 @@ def update_bible_books(db_: Session, resource_name, books, user_id=None):
         if not row:
             raise NotAvailableException(f"Bible book, {item.bookCode}, not found in Database")
         if item.USFM:
-            item.JSON = utils.parse_usfm(item.USFM)
-            row.USFM = utils.normalize_unicode(item.USFM)
-            row.JSON = item.JSON
-        if item.JSON:
-            item.USFM = utils.form_usfm(item.JSON)
+            usfm_parser = USFMParser(item.USFM)
+            item.JSON =usfm_parser.to_usj( )
             row.USFM = utils.normalize_unicode(item.USFM)
             row.JSON = item.JSON
         if item.active is not None:
             row.active = item.active
         db_.flush()
         db_content.append(row)
+        db_.commit()
         resource_db_content = update_bible_books_cleaned\
             (db_,resource_name,books,resource_db_content,user_id)
         response = {
@@ -1145,26 +1157,48 @@ def update_bible_books(db_: Session, resource_name, books, user_id=None):
         # return db_content
         return response
 
-def update_bible_books_cleaned(db_,resource_name,books,resource_db_content,user_id):
+
+
+def update_bible_books_cleaned(db_,resource_name,books,resource_db_content,user_id):#pylint: disable=too-many-branches,too-many-locals
     """update bible cleaned table"""
     db_content2 = []
     split_indexs = []
     model_cls_2 = db_models.dynamicTables[resource_name+'_cleaned']
-    for item in books:
+    for item in books:#pylint: disable=too-many-nested-blocks
         book = db_.query(db_models.BibleBook).filter(
             db_models.BibleBook.bookCode == item.bookCode.lower() ).first()
-        if item.USFM: # delete all verses and add them again
+        if item.USFM:
             db_.query(model_cls_2).filter(
                 model_cls_2.book_id == book.bookId).delete()
-            for chapter in item.JSON['chapters']:
-                chapter_number = int(chapter['chapterNumber'])
-                for content in chapter['contents']:
-                    if 'verseNumber' in content:
+            usfm_parser = USFMParser(item.USFM)
+            item.JSON =usfm_parser.to_usj(include_markers= Filter.BCV+Filter.TEXT)
+            for chapter in item.JSON["content"]:
+                if isinstance(chapter, dict) and chapter.get("type") == "chapter:c":
+                    if "number" not in chapter:
+                        raise TypeException("JSON is not of the required format..")
+                    try:
+                        chapter_number = int(chapter['number'])
+                    except ValueError as exe:
+                        raise TypeException("JSON is not of the required format.\ Chapter number should be an integer.") from exe
+            # Iterate over the content of the chapter
+            for content in item.JSON["content"]:
+                if isinstance(content, dict) and content.get("type") == "verse:v":
+                    verseNumber = content.get("number", "")
+                    next_index = item.JSON["content"].index(content) + 1
+                    if next_index < len(item.JSON["content"]) and isinstance(item.JSON["content"][next_index], str):
+                        verseText = item.JSON["content"][next_index]
+                    if verseNumber:
+                        if verseText is None:
+                            raise TypeException("JSON is not of the required format. verseText not found")
+                        # Include verse and verse text in content
+                        content["verseNumber"] = verseNumber
+                        content["verseText"] = verseText
+                        # Call your function to process the verse
                         db_content2, split_indexs = \
-                        bible_verse_type_check(content, model_cls_2,
-                            book, db_content2, chapter_number,split_indexs)
-
-        if item.active is not None: # set all the verse rows' active flag accordingly
+                            bible_verse_type_check(content, model_cls_2, book, db_content2, chapter_number, split_indexs)
+                        print(" ssmbook",book.bookId)
+        if item.active is not None:
+            #  set all the verse rows' active flag accordingly
             rows = db_.query(model_cls_2).filter(
                 model_cls_2.book_id == book.bookId).all()
             for row in rows:
@@ -1173,11 +1207,15 @@ def update_bible_books_cleaned(db_,resource_name,books,resource_db_content,user_
         db_content2 = bible_split_verse_completion(db_content2, split_indexs)
     db_.add_all(db_content2)
     db_.flush()
-    # db_.commit()
+    db_.commit()
     # resource_db_content.updatedUser = user_id
     resource_db_content.updatedUser = user_id
     return resource_db_content
     # db_.commit()
+
+
+
+
 
 
 def get_bible_versification(db_, resource_name):

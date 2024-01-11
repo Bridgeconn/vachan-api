@@ -1,11 +1,12 @@
 '''Defines all input and output classes for Content related API endpoints
 like Bible,Audio,Video etc.'''
-
+#pylint: disable=R0801, R1710
 from typing import List
 from enum import Enum
 from pydantic import BaseModel, constr, AnyUrl, validator, root_validator, Field
 from schema.schemas import TableNamePattern, BookCodePattern
-from crud import utils
+
+
 
 #pylint: disable=too-few-public-methods
 
@@ -141,24 +142,25 @@ class BibleBookUpload(BaseModel):
 
 class BibleBookEdit(BaseModel):
     '''Input object of bible book'''
-    bookCode: BookCodePattern = None
+    bookCode: BookCodePattern
     USFM: str = None
     JSON: dict = None
     active: bool = None
 
-    @root_validator
-    def check_for_usfm_json(cls, values): # pylint:  disable=E0213
-        '''USFM and JSON should be updated together. If they are absent, bookCode is required'''
-        if "bookCode" not in values or values['bookCode'] is None:
-            if "JSON" in values and values['JSON'] is not None:
-                values["bookCode"] = values["JSON"]['book']['bookCode'].lower()
-            elif "USFM" in values:
-                usfm_json = utils.parse_usfm(values['USFM'])
-                values["bookCode"] = usfm_json['book']['bookCode'].lower()
-                values["JSON"] = usfm_json
-            else:
-                raise ValueError('"bookCode" is required to identiy the row to be updated')
-        return values
+    # @root_validator
+    # def check_for_usfm_json(cls, values): # pylint:  disable=E0213
+    #     '''USFM and JSON should be updated together. If they are absent, bookCode is required'''
+    #     if "bookCode" not in values or values['bookCode'] is None:
+    #         if "JSON" in values and values['JSON'] is not None:
+    #             values["bookCode"] = values["JSON"]['book']['bookCode'].lower()
+    #         elif "USFM" in values:
+    #         #     # usfm_parser = USFMParser(item.USFM)
+    #         #     usfm_parser = USFMParser(item.USFM)
+    #             values["bookCode"] = usfm_json['book']['bookCode'].lower()
+    #             values["JSON"] = usfm_json
+    #         else:
+    #             raise ValueError('"bookCode" is required to identiy the row to be updated')
+    #     return values
 
     class Config:
         '''display example value in API documentation'''

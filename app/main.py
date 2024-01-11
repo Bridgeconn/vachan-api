@@ -17,7 +17,7 @@ from custom_exceptions import GenericException,TypeException , PermissionExcepti
 import db_models
 from database import engine
 from dependencies import get_db, log
-from routers import content_apis, translation_apis, auth_api, media_api, filehandling_apis
+from routers import content_apis, auth_api, media_api, filehandling_apis
 from auth.authentication import create_super_user
 # pylint: enable=E0401
 
@@ -28,9 +28,15 @@ if os.environ.get("VACHAN_TEST_MODE", "False") != 'True':
 
     create_super_user()
 
-app = FastAPI(title="Vachan-API", version="2.0.0-beta.28",
-    description="The server application that provides APIs to interact \
-with the underlying Databases and modules in Vachan-Engine.")
+root_url = os.getenv("VACHAN_DOMAIN", 'http://localhost:8000')
+if root_url is not None and not root_url.startswith("http://"):
+    root_url = "http://" + root_url
+
+app = FastAPI(title="Vachan-API", version="2.0.0",
+    description=f"The server application that provides APIs to interact \
+with the underlying Databases and modules in Vachan-Engine. \
+\n • For Vachan-CMS docs: {root_url}/v2/cms/rest/docs,\
+\n • For Vachan-TBT docs: {root_url}/v2/text/translate/token-based/docs")
 template = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -214,9 +220,6 @@ def test(request: Request,db_: Session = Depends(get_db)):
     '''Tests if app is running and the DB connection is active
     * Also displays API documentation page upon successful connection on root endpoint'''
     db_.query(db_models.Language).first()
-    root_url = os.getenv("VACHAN_DOMAIN")
-    if root_url is not None and not root_url.startswith("http://"):
-        root_url = "http://" + root_url
     return template.TemplateResponse(
         "landing_page.html",
         {
@@ -227,7 +230,6 @@ def test(request: Request,db_: Session = Depends(get_db)):
 
 app.include_router(auth_api.router)
 app.include_router(content_apis.router)
-app.include_router(translation_apis.router)
 app.include_router(media_api.router)
 app.include_router(filehandling_apis.router)
 
@@ -235,18 +237,41 @@ beta_endpoints = [
     "/graphql",  # Specify the paths of the beta endpoints
     "/v2/resources/bibles/{resource_name}/versification",
     "/v2/resources/bibles/{resource_name}/books/{book_code}/export/{output_format}",
-    "/v2/text/translate/token-based/project/versification",
     "/v2/media/gitlab/stream",
     "/v2/media/gitlab/download",
     "/v2/files/usfm/to/{output_format}"
 ]
 
+# def custom_openapi():
+#     '''Modify the auto generated openapi schema for API docs'''
+#     openapi_schema = get_openapi(title="Vachan-API", version="2.0.0",
+#         description=f"The server application that provides APIs to interact \
+# with the underlying Databases and modules in Vachan-Engine. \
+# <br> • <a href=\"{root_url}/v2/text/translate/token-based/docs\" > Vachan-TBT docs </a>",
+#         routes=app.routes)
+
+#     # Add version information to specific endpoints
+#     for path, path_data in openapi_schema["paths"].items():
+#         for _, method_data in path_data.items():
+#             if path in beta_endpoints:
+#                 # Set endpoints as experimental in the API-docs
+#                 method_data.setdefault("x-experimental", True)
+
+#     return openapi_schema
+
 def custom_openapi():
-    '''Modify the auto generated openapi schema for API docs'''
-    openapi_schema = get_openapi(title="Vachan-API", version="2.0.0-beta.28",
-        description="The server application that provides APIs to interact \
-        with the underlying Databases and modules in Vachan-Engine.",
-        routes=app.routes)
+    '''Modify the auto-generated OpenAPI schema for API docs'''
+    cms_href = "<a href=\"{root_url}/v2/cms/rest/docs\" > Vachan-CMS-REST docs </a>"
+    tbt_href = "<a href=\"{root_url}/v2/text/translate/token-based/docs\" > Vachan-TBT docs </a>"
+
+    openapi_schema = get_openapi(
+        title="Vachan-API",
+        version="2.0.0",
+        description=f"The server application that provides APIs to interact\
+            with the underlying Databases and modules in Vachan-Engine.\
+            <br> • {cms_href} <br> • {tbt_href}",
+        routes=app.routes
+    )
 
     # Add version information to specific endpoints
     for path, path_data in openapi_schema["paths"].items():

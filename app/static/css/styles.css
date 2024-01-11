@@ -44,7 +44,7 @@
 
   /* Adjust the font size of the heading as needed */
   .navbar-brand span {
-    font-size: 1.2rem !important;
+    font-size: 1.7rem !important;
   }
 }
 
@@ -71,7 +71,7 @@
 
   /* Adjust the font size of the heading as needed */
   .navbar-brand span {
-    font-size: 0.92rem !important;
+    font-size: 1.4rem !important;
   }
 }
 
@@ -289,7 +289,15 @@ li{
 
 .navimage{
   font-family: 'Poppins', sans-serif;
-  color: #36454F !important;
+  color: #625BFE !important;
+  font-size: 4.39rem;
+  margin-bottom: -10px;
+}
+
+@media (max-width: 1198px) {
+  .navimage{
+    margin-bottom: 8px;
+  }
 }
 
 
@@ -324,4 +332,20 @@ li{
     max-width: 45%; /* Reduce image size for mobile view */
   }
 }
+.tagline{
+  color: #ff87B0;
+  font-family: 'Courgette', cursive;
+  font-size: 1.7rem;
+}
+
+
+.typewrite{
+  font-size: 1.1rem;
+  color: #625BFE;
+  text-align: center !important;
+  padding-top:10em;
+  text-decoration: none;  
+  font-family: 'Courier Prime', monospace;
+}
+
 
