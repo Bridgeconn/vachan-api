@@ -1,25 +1,8 @@
-<h1 align="center">
-  <br>
-  <a href="http://www.amitmerchant.com/electron-markdownify"><img src="https://api.vachanengine.org/static/images/Logo.svg" alt="vachanapi" width="200"></a>
-  <br>
-  Vachan API
-  <br>
-</h1>
+# Vachan-api
 
+The server application that provides REST APIs to interact with the underlying Databases (SQL and Graph) and modules in Vachan-Engine.
 
-
-
-### Unified API for [Vachan-Engine applications](https://api.vachanengine.org/)
-
-[Implementation Details](#implementation-details) • [Start App](#start-app-with-docker)   • [Setup](#set-up-locally-for-development-and-testingwithout-docker) • [License](#license) 
-
-
-![screenshot](https://github.com/shimilgithub/vachan-api/blob/de41c3fcc1149a025adcd93ff108a3d786d78818/app/static/images/api_screenshot.gif)
-
-
-The Vachan API is a robust server application designed to facilitate seamless interaction with the underlying Database and various modules within the Vachan-Engine ecosystem. This versatile API is essential for a wide array of client applications, including the Vachan Online website, Vachan Admin, Vachan Mobile App, IntelliSign - the Smart Sign Language Translation Platform, and the AutographaMT Bible translation tool. 
-
-It achieves this by offering both REST APIs, catering to traditional database interactions, and utilizing Strawberry GraphQL for enhanced flexibility and efficiency.
+Currently serving 3 client applications, VachanOnline website, the Vachan Mobile App and AutographaMT Bible translation tool.
 
 ## Implementation Details
 
@@ -106,11 +89,11 @@ Edit the following contents appropriatetly and paste to the `.bashrc` file
   export VACHAN_POSTGRES_USER="<db_user>"
   export VACHAN_POSTGRES_PASSWORD="<db_password>"
   export VACHAN_POSTGRES_DATABASE="<db_name>"
-  export VACHAN_POSTGRES_DATA_DIR="<data_directory_path>"
+  export VACHAN_POSTGRES_DATA_DIR="<data_dirrctory_path>"
   export VACHAN_LOGGING_LEVEL="WARNING"
   export VACHAN_KRATOS_ADMIN_URL="http://127.0.0.1:4434/"
   export VACHAN_KRATOS_PUBLIC_URL="http://127.0.0.1:4433/"
-  export VACHAN_SUPER_USERNAME="<super-admin-email-id>"
+  export VACHAN_SUPER_USERNAME="<super-admin-emial-id>"
   export VACHAN_SUPER_PASSWORD="<a-strong-password>"
   export VACHAN_DOMAIN=127.0.0.1:8000
 ```
@@ -173,6 +156,3 @@ To run all the testcases, from the folder vachan-api/app run the command
 ```python -m pytest```
 
 For runing testselectively, refer [pytest docs](https://docs.pytest.org/en/stable/usage.html#specifying-tests-selecting-tests)
-
-## License
-Bridge Connectivity Solutions Pvt. Ltd.
