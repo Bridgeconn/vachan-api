@@ -139,7 +139,8 @@
 #         set_routes_to_cache(key=permanent_link, value=data)
 
 #     response =  Response(data)
-#     response.headers["Content-Disposition"]=f"attachment; filename={permanent_link.split('/')[-1]}"
+#     response.headers["Content-Disposition"]=\
+#           f"attachment; filename={permanent_link.split('/')[-1]}"
 #     response.headers["Content-Type"] = "application/force-download"
 #     response.headers["Content-Transfer-Encoding"] = "Binary"
 #     response.headers["Content-Type"] = "application/octet-stream"
