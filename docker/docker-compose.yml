@@ -3,7 +3,7 @@ services:
  kratos-postgresd:
     image: postgres:9.6
     ports:
-      - "5432:5432"
+      - "5435:5432"
     expose:
       - 5432
     restart: always
@@ -46,7 +46,7 @@ services:
  kratos:
     image: oryd/kratos:v1.0.0
     ports:
-      - '4433:4433' # public
+      - '4436:4433' # public
       # -'4434:4434' # admin
     restart: unless-stopped
     environment:
@@ -290,6 +290,57 @@ services:
     networks:
      - VE-network
 
+ vachan_ai:
+    image: jayasankarkk/vachan-ai:0.0.0-alpha.1
+    healthcheck:
+     timeout: 45s
+     interval: 10s
+     retries: 10
+    environment:
+     - VACHAN_AI_POSTGRES_HOST=192.168.3.157
+     - VACHAN_AI_POSTGRES_USER=${VACHAN_AI_POSTGRES_USER:-postgres}
+     - VACHAN_AI_POSTGRES_PASSWORD=${VACHAN_AI_POSTGRES_PASSWORD:-secret}
+     - VACHAN_AI_POSTGRES_DATABASE=${VACHAN_AI_POSTGRES_DATABASE:-vachan_ai_db}
+     - VACHAN_AI_POSTGRES_SCHEMA=${VACHAN_AI_POSTGRES_DATABASE:-vachan_ai}
+
+     - VACHAN_AI_XLSR_MAX_AUDIO_DURATION=${VACHAN_AI_XLSR_MAX_AUDIO_DURATION:-25}
+     - VACHAN_AI_XLSR_SAMPLING_RATE=${VACHAN_AI_XLSR_SAMPLING_RATE:-16000}
+     - VACHAN_AI_NLLB_MAX_SRC_CHARS=${VACHAN_AI_NLLB_MAX_SRC_CHARS:-512}
+     - VACHAN_AI_NLLB_BATCH_SIZE=${VACHAN_AI_NLLB_BATCH_SIZE:-10}
+      
+    
+     - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI:-http://192.168.3.157:5000}
+     - VACHAN_AI_ARTIFACT_PATH=${VACHAN_AI_ARTIFACT_PATH:-models}
+     - VACHAN_AI_SERVED_MODEL_URI=${VACHAN_AI_SERVED_MODEL_URI:-http://192.168.3.157:8080/v2/models}
+     - VACHAN_AI_MODEL_SETTINGS_DIR=${VACHAN_AI_MODEL_SETTINGS_DIR:-serving_models}
+     - VACHAN_AI_REQUEST_TIMEOUT=${VACHAN_AI_REQUEST_TIMEOUT:-60}
+
+     - VACHAN_AI_AWS_ACCESS_KEY=${VACHAN_AI_AWS_ACCESS_KEY}
+     - VACHAN_AI_AWS_SECRET_ACCESS_KEY=${VACHAN_AI_AWS_SECRET_ACCESS_KEY}
+     - VACHAN_AI_S3_BUCKET=${VACHAN_AI_S3_BUCKET}
+     - VACHAN_AI_AWS_ACCOUNT_REGION=${VACHAN_AI_AWS_ACCOUNT_REGION}
+     
+
+     - VACHAN_AI_DATA_PATH=${VACHAN_AI_DATA_PATH:-/var/data-vachan-ai}
+     - VACHAN_AI_POSTGRES_PORT=5433
+     - VACHAN_AI_LOGGING_LEVEL=INFO
+     - VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost}
+     - VACHAN_LOGGING_LEVEL=INFO
+    command: uvicorn main:app --host 0.0.0.0 --port 8006
+    volumes:
+     - ${VACHAN_AI_DATA_PATH}/docker-volumes/ai-logs-vol:/app/logs
+     - ${VACHAN_AI_DATA_PATH}/cache:/root/.cache
+    restart: always
+    depends_on:
+     - vachan-api
+    expose:
+     - 8006
+    ports:
+     - "8006:8006"
+    networks:
+     - VE-network
+    container_name: vachan_ai
+
  # Web Server
  web-server-local:
     image: nginx:latest
@@ -435,3 +486,5 @@ volumes:
   vachan-db-backup:
   kratos-db-backup:
   vachan-tbt-ml-models-vol:
+  ai-logs-vol:
+  cache:
