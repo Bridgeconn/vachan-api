@@ -369,7 +369,7 @@ services:
       ofelia.job-local.copy-vachan-backup-monthly.command: sh -c "cp /var/backups/vachan/vachan_db_backup_latest.sql /var/backup-copies/vachan_db_backup_monthly_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Monthly backup successful(vachan-db)' >> /app/logs/backup.log || echo `date`':Monthly backup failed(vachan)' >> /app/logs/backup.log"
       ofelia.job-local.prune-vachan-monthly-backup.schedule: "0 0 0 1 * *" # Retains only latest 12 of the montly dumps
       ofelia.job-local.prune-vachan-monthly-backup.command: sh -c "ls -tr /var/backup-copies/vachan_db_backup_monthly* | head -n -12 |  xargs rm -f -- && echo `date`':Monthly Prune successful(vachan-db)' >> /app/logs/backup.log || echo `date`':Monthly Prune failed(vachan)' >> /app/logs/backup.log"
-      ofelia.job-local.copy-vachan-backup-yearly.schedule: "0 0 4 1 JAN *" # Copies latest dump on first day of every year
+      ofelia.job-local.copy-vachan-backup-yearly.schedule: "0 0 3 * JAN *" # Copies latest dump on first day of every year
       ofelia.job-local.copy-vachan-backup-yearly.command: sh -c "cp /var/backups/vachan/vachan_db_backup_latest.sql /var/backup-copies/vachan_db_backup_yearly_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Yearly backup successful(vachan-db)' >> /app/logs/backup.log || echo `date`':Yearly backup failed(vachan)' >> /app/logs/backup.log"
       ofelia.job-local.copy-kratos-backup-daily.schedule: "0 0 4 * * *" # Copies latest dump from DB container every day at 04:00 am
       ofelia.job-local.copy-kratos-backup-daily.command: sh -c "cp /var/backups/kratos/kratos_db_backup_latest.sql /var/backup-copies/kratos_db_backup_daily_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Daily backup successful(kratos)' >> /app/logs/backup.log || echo `date`':Daily backup failed(kratos)' >> /app/logs/backup.log"
@@ -383,7 +383,7 @@ services:
       ofelia.job-local.copy-kratos-backup-monthly.command: sh -c "cp /var/backups/kratos/kratos_db_backup_latest.sql /var/backup-copies/kratos_db_backup_monthly_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Monthly backup successful(kratos)' >> /app/logs/backup.log || echo `date`':Monthly backup failed(kratos)' >> /app/logs/backup.log"
       ofelia.job-local.prune-kratos-monthly-backup.schedule: "0 0 1 1 * *" # Retains only latest 12 of the montly dumps
       ofelia.job-local.prune-kratos-monthly-backup.command: sh -c "ls -tr /var/backup-copies/kratos_db_backup_monthly* | head -n -12 |  xargs rm -f -- && echo `date`':Monthly Prune successful(kratos)' >> /app/logs/backup.log || echo `date`':Monthly Prune failed(kratos)' >> /app/logs/backup.log"
-      ofelia.job-local.copy-kratos-backup-yearly.schedule: "0 0 4 1 JAN *" # Copies latest dump on first day of every year
+      ofelia.job-local.copy-kratos-backup-yearly.schedule: "0 0 3 * JAN *" # Copies latest dump on first day of every year
       ofelia.job-local.copy-kratos-backup-yearly.command: sh -c "cp /var/backups/kratos/kratos_db_backup_latest.sql /var/backup-copies/kratos_db_backup_yearly_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Yearly backup successful(kratos)' >> /app/logs/backup.log || echo `date`':Yearly backup failed(kratos)' >> /app/logs/backup.log"
     networks:
      - VE-network
