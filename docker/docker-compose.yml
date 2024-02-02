@@ -291,7 +291,7 @@ services:
      - VE-network
 
  vachan_ai:
-    image: jayasankarkk/vachan-ai:0.0.0-alpha.1
+    image: jayasankarkk/vachan-ai:0.0.0-alpha.3
     healthcheck:
      timeout: 45s
      interval: 10s
@@ -326,6 +326,7 @@ services:
      - VACHAN_AI_LOGGING_LEVEL=INFO
      - VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost}
      - VACHAN_LOGGING_LEVEL=INFO
+     - VACHAN_AI_ENV=${VACHAN_AI_ENV:-Development}
     command: uvicorn main:app --host 0.0.0.0 --port 8006
     volumes:
      - ${VACHAN_AI_DATA_PATH}/docker-volumes/ai-logs-vol:/app/logs
@@ -333,6 +334,9 @@ services:
     restart: always
     depends_on:
      - vachan-api
+    profiles:
+     - local-run
+     - deployment
     expose:
      - 8006
     ports:
@@ -340,6 +344,7 @@ services:
     networks:
      - VE-network
     container_name: vachan_ai
+
 
  # Web Server
  web-server-local:
