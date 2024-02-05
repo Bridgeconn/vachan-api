@@ -40,7 +40,10 @@ server {
     location /graphql/ {
         proxy_pass http://vachan-cms-graphql:8004;    
     }
-
+    location /v2/cms/rest/ {
+        proxy_pass http://vachan-cms-rest:8005;    
+    }
+    
     location /v2/text/translate/token-based/ {
         proxy_pass http://vachan-tbt:8003;    
     }
