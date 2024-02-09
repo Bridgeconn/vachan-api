@@ -47,7 +47,7 @@ services:
     image: oryd/kratos:v1.0.0
     ports:
       - '4433:4433' # public
-      # -'4434:4434' # admin
+      # - '4434:4434' # admin
     restart: unless-stopped
     environment:
       - DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@kratos-postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
@@ -91,7 +91,7 @@ services:
      - 5432
     ports:
      # HOST:CONTAINER
-     - "5433:5432"
+     - "5432:5432"
     networks:
      - VE-network
     volumes:
@@ -285,6 +285,73 @@ services:
     profiles:
      - local-run
      - deployment
+    networks:
+     - VE-network
+
+ kratos-app:
+    depends_on:
+      - kratos-migrate
+    image: oryd/kratos:v1.0.0
+    ports:
+      - "4433:4433" # public
+      # - "4434:4434" # admin
+    expose:
+      - 4433
+      - 4434
+    restart: unless-stopped
+    environment:
+      - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS:-smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true}
+      - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL:-EMAIL_ADDRESS@bridgeconn.com}
+      - DSN=postgres://kratos:secret@postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
+      - LOG_LEVEL=trace
+    command: serve -c /etc/config/kratos/kratos-app.yml --watch-courier
+    volumes:
+      - type: volume
+        source: kratos-sqlite
+        target: /var/lib/sqlite
+        read_only: false
+      - type: bind
+        source: ./Kratos_config/email-password
+        target: /etc/config/kratos
+    profiles:
+     - local-run
+     - deployment
+    networks:
+      - VE-network
+
+ vachan-access:
+    image: shimilshijo/vachan-access:v2.0.2
+    expose:
+      - 8007
+    command: uvicorn main:app --host 0.0.0.0 --port 8007
+    restart: always
+    environment:
+     - VACHAN_POSTGRES_HOST=vachan-db
+     - VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
+     - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
+     - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
+     - VACHAN_POSTGRES_PORT=5432
+     - VACHAN_KRATOS_PUBLIC_URL=${VACHAN_KRATOS_PUBLIC_URL:-http://kratos:4433/}
+     - VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
+     - VACHAN_KRATOS_APP_PUBLIC_URL=http://kratos-app:4433/
+     - VACHAN_KRATOS_APP_ADMIN_URL=http://kratos-app:4434/
+     - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME}
+     - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD}
+     - VACHAN_TEST_MODE="False"
+     - VACHAN_LOGGING_LEVEL=INFO
+     - VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost:8000}
+    
+    volumes:
+     - logs-vol:/app/logs
+    depends_on:
+     - vachan-db
+     - kratos
+     - kratos-app
+
+    profiles:
+     - local-run
+     - deployment
+   
     networks:
      - VE-network
 
