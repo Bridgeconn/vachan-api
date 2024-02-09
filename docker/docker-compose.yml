@@ -293,10 +293,10 @@ services:
       - kratos-migrate
     image: oryd/kratos:v1.0.0
     ports:
-      - "4433:4433" # public
+      - "4443:4433" # public
       - "4444:4434" # admin
     expose:
-      - 4433
+      - 4443
       - 4444
     restart: unless-stopped
     environment:
