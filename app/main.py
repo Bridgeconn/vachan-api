@@ -17,7 +17,6 @@ from custom_exceptions import GenericException,TypeException , PermissionExcepti
 import db_models
 from database import engine
 from dependencies import get_db, log
-from routers import auth_api
 from auth.authentication import create_super_user
 # pylint: enable=E0401
 
