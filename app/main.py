@@ -17,7 +17,6 @@ from custom_exceptions import GenericException,TypeException , PermissionExcepti
 import db_models
 from database import engine
 from dependencies import get_db, log
-from routers import auth_api
 from auth.authentication import create_super_user
 # pylint: enable=E0401
 
@@ -36,7 +35,8 @@ app = FastAPI(title="Vachan-API", version="2.0.0",
     description=f"The server application that provides APIs to interact \
 with the underlying Databases and modules in Vachan-Engine. \
 \n • For Vachan-CMS docs: {root_url}/v2/cms/rest/docs,\
-\n • For Vachan-TBT docs: {root_url}/v2/text/translate/token-based/docs")
+\n • For Vachan-TBT docs: {root_url}/v2/text/translate/token-based/docs,\
+\n • For Vachan-Auth Access docs: {root_url}/v2/auth-access/docs")
 template = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -228,7 +228,7 @@ def test(request: Request,db_: Session = Depends(get_db)):
         }
     )
 
-app.include_router(auth_api.router)
+# app.include_router(auth_api.router)
 # app.include_router(content_apis.router)
 # app.include_router(media_api.router)
 # app.include_router(filehandling_apis.router)
@@ -253,6 +253,7 @@ def custom_openapi():
         underlying Databases \and modules in Vachan-Engine. "
         f"<br> • <a href=\"{root_url}/v2/text/translate/token-based/docs\" > Vachan-TBT docs </a>"
         f"<br> • <a href=\"{root_url}/v2/cms/rest/docs\" > Vachan-CMS docs </a>"
+        f"<br> • <a href=\"{root_url}/v2/auth-access/docs\" > Vachan-Auth Access docs </a>"
         ),
         routes=app.routes
     )

@@ -35,13 +35,17 @@ server {
 
     ssl_certificate /etc/nginx/ssl/live/${VACHAN_DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/nginx/ssl/live/${VACHAN_DOMAIN}/privkey.pem;
- 
 
-    location /graphql/ {
-        proxy_pass http://vachan-cms-graphql:8004;    
+    location /v2/auth-access/ {
+        proxy_pass http://vachan-access:8007;    
     }
+
     location /v2/cms/rest/ {
         proxy_pass http://vachan-cms-rest:8005;    
+    }
+    
+    location /graphql/ {
+        proxy_pass http://vachan-cms-graphql:8004;    
     }
     
     location /v2/text/translate/token-based/ {
