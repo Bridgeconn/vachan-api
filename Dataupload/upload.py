@@ -22,7 +22,7 @@ def create_database_schema():
     postgres_schema = os.environ.get("VACHAN_POSTGRES_SCHEMA", "vachan_cms_rest_12")
 
     #if you want to use a new schema, you can use below code to specify the name.
-    # postgres_schema = os.environ.get("VACHAN_POSTGRES_SCHEMA", "DataUpload")
+    # postgres_schema = os.environ.get("VACHAN_POSTGRES_SCHEMA", "<schema_name>"")
 
 
     encoded_password = urllib.parse.quote(postgres_password, safe='')
@@ -49,7 +49,6 @@ def create_database_schema():
 
 
 #creating token
-        #Token is now disabled since cms is not integrated with auth. When it is , the token need to be enabled with headers
 # LOGIN_URL = '/v2/user/login'
 # SUPER_USER = os.environ.get("VACHAN_SUPER_USERNAME")
 # SUPER_PASSWORD = os.environ.get("VACHAN_SUPER_PASSWORD")
@@ -476,59 +475,59 @@ def add_bible(csv_file_path):
     return usfm_list
 
 #==========================================================================================================================
-# def add_parascriptual(csv_file_path):   #Only use if you want to add new parascriptual data using folder "parascriptuals"
-#     data_list = []
+def add_parascriptual(csv_file_path):   #Only use if you want to add new parascriptual.
+    data_list = []
 
-#     try:
-#         with open(csv_file_path, 'r', encoding='utf-8') as file:
-#             # Create a CSV reader
-#             reader = csv.DictReader(file)
+    try:
+        with open(csv_file_path, 'r', encoding='utf-8') as file:
+            # Create a CSV reader
+            reader = csv.DictReader(file)
 
-#             # Assuming the first row is the header
-#             for row in reader:
-#                 try:
-#                     # Extracting required fields
-#                     reference_data = json.loads(row['reference'])
-#                     reference = {
-#                         "book": reference_data['book'],
-#                         "chapter": reference_data.get('chapter', 0),
-#                         "verseNumber": reference_data.get('verseNumber', 0),
-#                         "bookEnd": reference_data.get('bookEnd', ''),
-#                         "chapterEnd": reference_data.get('chapterEnd', 0),
-#                         "verseEnd": reference_data.get('verseEnd', 0)
-#                     }
-#                 except KeyError:
-#                     print(f"Error: 'reference' column does not contain required keys in row: {row}")
-#                     continue
-#                 except json.JSONDecodeError:
-#                     print(f"Error: 'reference' column contains invalid JSON format in row: {row}")
-#                     continue
+            # Assuming the first row is the header
+            for row in reader:
+                try:
+                    # Extracting required fields
+                    reference_data = json.loads(row['reference'])
+                    reference = {
+                        "book": reference_data['book'],
+                        "chapter": reference_data.get('chapter', 0),
+                        "verseNumber": reference_data.get('verseNumber', 0),
+                        "bookEnd": reference_data.get('bookEnd', ''),
+                        "chapterEnd": reference_data.get('chapterEnd', 0),
+                        "verseEnd": reference_data.get('verseEnd', 0)
+                    }
+                except KeyError:
+                    print(f"Error: 'reference' column does not contain required keys in row: {row}")
+                    continue
+                except json.JSONDecodeError:
+                    print(f"Error: 'reference' column contains invalid JSON format in row: {row}")
+                    continue
 
-#                 # Constructing data dictionary
-#                 data = {
-#                     "category": row.get('category', ''),
-#                     "title": row.get('title', ''),
-#                     "description": row.get('description', ''),
-#                     "content": row.get('content', ''),
-#                     "reference": reference,
-#                     "link": row.get('link', ''),
-#                     "metaData": json.loads(row.get('metadata', '{}')),
-#                     "active": row.get('active', '') == 't'
-#                 }
+                # Constructing data dictionary
+                data = {
+                    "category": row.get('category', ''),
+                    "title": row.get('title', ''),
+                    "description": row.get('description', ''),
+                    "content": row.get('content', ''),
+                    "reference": reference,
+                    "link": row.get('link', ''),
+                    "metaData": json.loads(row.get('metadata', '{}')),
+                    "active": row.get('active', '') == 't'
+                }
 
-#                 data_list.append(data)
+                data_list.append(data)
 
-#     except FileNotFoundError:
-#         print(f"Error: File '{csv_file_path}' not found.")
-#     except Exception as e:
-#         print(f"An error occurred while processing {csv_file_path}: {str(e)}")
+    except FileNotFoundError:
+        print(f"Error: File '{csv_file_path}' not found.")
+    except Exception as e:
+        print(f"An error occurred while processing {csv_file_path}: {str(e)}")
 
-#     return data_list
+    return data_list
 
-# data = add_parascriptual('files4/ml_TBP_1_parascriptural.csv')
-# resource_name = 'ml_TBP_1_parascriptural'
-# parascript_url = f"/resources/parascripturals/{resource_name}"
-# upload_data(data, parascript_url)
+data = add_parascriptual('files4/ml_TBP_1_parascriptural.csv')
+resource_name = 'ml_TBP_1_parascriptural'
+parascript_url = f"/resources/parascripturals/{resource_name}"
+upload_data(data, parascript_url)
 
 #==========================================================================================================================
 
@@ -554,7 +553,7 @@ try:
     # Add USFM data to biblebooks
 
     def upload_bible_data():
-        folder_path = 'bible'
+        folder_path = 'bible' #folder path to the respective data files
         for filename in os.listdir(folder_path):
             if filename.endswith('.csv'):
                 csv_file_path = os.path.join(folder_path, filename)
@@ -571,20 +570,13 @@ try:
                     except Exception as e:
                         print(f"Failed to upload data for {resource_name}: {str(e)}")
 
-                #By this method you can validate file by file
-                # try:
-                # # Upload all entries for a single CSV file
-                #     upload_data(data, bible_url)
-                #     print(f"Success: All data for {resource_name} uploaded successfully.")
-                # except Exception as e:
-                #     print(f"Failed to upload data for {resource_name}: {str(e)}")
-
     #Call the function to upload data
     upload_bible_data() 
 
     #4th
     #Add vocabularies
 
+    #file paths to the respective data files
     file_paths = [
     'vocabularies/en_EBD_1_vocabulary.csv',
     'vocabularies/hi_IRVD_1_vocabulary.csv',
@@ -623,6 +615,7 @@ try:
     #8th
     #Add commentaries
 
+    #file paths to the respective data files
     file_paths = [
         'files/commentarydata_mr_BBC_1_commentary.txt',
         'files/commentarydata_en_BBC_1_commentary.txt',
