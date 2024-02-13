@@ -1,3 +1,4 @@
+''' Python script that related to extraction of data from sql dump'''
 import os
 import re
 import csv
