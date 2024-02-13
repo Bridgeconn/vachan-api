@@ -209,7 +209,7 @@ services:
      - VE-network
  
  vachan-cms-rest:
-    image: athulyams/vachan-cms-rest:v2.0.3
+    image: athulyams/vachan-cms-rest:v2.0.4
     expose:
       - 8005
     command: uvicorn main:app --host 0.0.0.0 --port 8005
