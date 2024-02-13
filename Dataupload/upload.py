@@ -367,9 +367,6 @@ def upload_commentary(file_path):
                     'active': fields[5] == 't',
                     "sectionType":["commentary-text"]
                 })
-    # for item in parsed_data:
-    #     print(item)
-    # print(parsed_data)
                 
     # Extract resource name from the file path
     file_name = file_path.split("/")[-1].split(".")[0]
