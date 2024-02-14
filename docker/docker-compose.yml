@@ -120,10 +120,6 @@ services:
      - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
      - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
      - VACHAN_POSTGRES_PORT=5432
-     - VACHAN_KRATOS_PUBLIC_URL=${VACHAN_KRATOS_PUBLIC_URL:-http://kratos:4433/}
-     - VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
-     - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME}
-     - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD}
      - VACHAN_TEST_MODE="False"
      - VACHAN_LOGGING_LEVEL=INFO
      - VACHAN_GITLAB_TOKEN=${VACHAN_GITLAB_TOKEN:-none}
@@ -137,10 +133,6 @@ services:
     restart: always
     links:
      - vachan-db
-     - kratos
-    depends_on:
-     - kratos
-     - kratos-postgresd
     expose:
      - 8000
     profiles:
@@ -189,24 +181,24 @@ services:
   networks:
    - VE-network
 
- vachan-demos:
-    image: kavitha3797/vachan-demos:v2-0-0-alpha-8
-    expose:
-      - 8002
-    command: uvicorn main:app --host 0.0.0.0 --port 8002
-    restart: always
-    environment:
-     - VACHAN_DOMAIN=${VACHAN_DOMAIN:-api.vachanengine.org}
-     - VACHAN_LOGGING_LEVEL=INFO
-    volumes:
-     - logs-vol:/app/logs
-    depends_on:
-     - vachan-api
-    profiles:
-     - local-run
-     - deployment
-    networks:
-     - VE-network
+#  vachan-demos:
+#     image: kavitha3797/vachan-demos:v2-0-0-alpha-8
+#     expose:
+#       - 8002
+#     command: uvicorn main:app --host 0.0.0.0 --port 8002
+#     restart: always
+#     environment:
+#      - VACHAN_DOMAIN=${VACHAN_DOMAIN:-api.vachanengine.org}
+#      - VACHAN_LOGGING_LEVEL=INFO
+#     volumes:
+#      - logs-vol:/app/logs
+#     depends_on:
+#      - vachan-api
+#     profiles:
+#      - local-run
+#      - deployment
+#     networks:
+#      - VE-network
  
  vachan-cms-rest:
     image: athulyams/vachan-cms-rest:v2.0.3
@@ -277,8 +269,6 @@ services:
      - VACHAN_POSTGRES_PORT=5432
      - VACHAN_DOMAIN=${VACHAN_DOMAIN:-api.vachanengine.org}
      - VACHAN_LOGGING_LEVEL=INFO
-    # volumes:
-    #  - logs-vol:/app/logs
     depends_on:
      - vachan-api
      - vachan-db
@@ -302,7 +292,7 @@ services:
     environment:
       - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS:-smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true}
       - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL:-EMAIL_ADDRESS@bridgeconn.com}
-      - DSN=postgres://kratos:secret@postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
+      - DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@kratos-postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
       - LOG_LEVEL=trace
     command: serve -c /etc/config/kratos/kratos-app.yml --watch-courier
     volumes:
@@ -313,18 +303,11 @@ services:
       - type: bind
         source: ./Kratos_config/email-password
         target: /etc/config/kratos
-    profiles:
-     - local-run
-     - deployment
     networks:
       - VE-network
 
  vachan-access:
     image: shimilshijo/vachan-access:v2.0.2
-    expose:
-      - 8007
-    command: uvicorn main:app --host 0.0.0.0 --port 8007
-    restart: always
     environment:
      - VACHAN_POSTGRES_HOST=vachan-db
      - VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
@@ -339,19 +322,25 @@ services:
      - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD}
      - VACHAN_TEST_MODE="False"
      - VACHAN_LOGGING_LEVEL=INFO
-     - VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost:8000}
-    
+     - VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost}
+     - VACHAN_CMS_DOMAIN=http://vachan-api
+    command: uvicorn main:app --host 0.0.0.0 --port 8007
     volumes:
      - logs-vol:/app/logs
+    restart: always
+    links:
+     - vachan-db
+     - kratos
+     - kratos-app
     depends_on:
      - vachan-db
      - kratos
      - kratos-app
-
+    expose:
+     - 8007
     profiles:
      - local-run
      - deployment
-   
     networks:
      - VE-network
 

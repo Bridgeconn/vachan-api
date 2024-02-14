@@ -56,9 +56,7 @@ server {
         proxy_pass http://vachan-tbt:8003;    
     }
     
-    location /v2/demos/ {
-        proxy_pass http://vachan-demos:8002;    
-    }
+
    
     location / {
         proxy_pass http://vachan-api:8000;
