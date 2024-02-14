@@ -3,9 +3,10 @@ services:
  kratos-postgresd:
     image: postgres:9.6
     ports:
-      - "5432:5432"
+      - "5434:5432"
     expose:
       - 5432
+      - 5434
     restart: always
     environment:
       - POSTGRES_USER=${VACHAN_KRATOS_DB_USER:-kratos}
@@ -46,8 +47,8 @@ services:
  kratos:
     image: oryd/kratos:v1.0.0
     ports:
-      - '4433:4433' # public
-      - '4434:4434' # admin
+      - '4436:4433' # public
+      - '4435:4434' # admin
     restart: unless-stopped
     environment:
       - DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@kratos-postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
@@ -65,8 +66,10 @@ services:
     depends_on:
       - kratos-postgresd
     expose:
-      - 4434
+      # - 4434
       - 4433
+      - 4436
+      - 4435
     networks:
       - VE-network
 
