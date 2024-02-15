@@ -307,7 +307,7 @@ services:
       - VE-network
 
  vachan-access:
-    image: shimilshijo/vachan-access:v2.0.3
+    image: shimilshijo/vachan-access:v2.0.4
     environment:
      - VACHAN_POSTGRES_HOST=vachan-db
      - VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
