@@ -17,16 +17,7 @@ from custom_exceptions import GenericException,TypeException , PermissionExcepti
 import db_models
 from database import engine
 from dependencies import get_db, log
-from auth.authentication import create_super_user
 # pylint: enable=E0401
-
-# from auth.api_permission_map import initialize_apipermissions
-
-#create super user
-if os.environ.get("VACHAN_TEST_MODE", "False") != 'True':
-
-    create_super_user()
-
 root_url = os.getenv("VACHAN_DOMAIN", 'http://localhost:8000')
 if root_url is not None and not root_url.startswith("http://"):
     root_url = "http://" + root_url
