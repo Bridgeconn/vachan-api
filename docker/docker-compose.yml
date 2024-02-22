@@ -343,7 +343,7 @@ services:
      - deployment
     networks:
      - VE-network
-    container_name: vachan_ai
+
 
  vachan_ai:
     image: jayasankarkk/vachan-ai:0.0.0-alpha.4
