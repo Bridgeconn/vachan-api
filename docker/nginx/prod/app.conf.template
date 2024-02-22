@@ -40,6 +40,10 @@ server {
         proxy_pass http://vachan-access:8007;    
     }
 
+    location /v2/ai/model/ {
+        proxy_pass http://vachan-ai:8006;
+    }
+
     location /v2/cms/rest/ {
         proxy_pass http://vachan-cms-rest:8005;    
     }

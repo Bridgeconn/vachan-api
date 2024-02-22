@@ -291,72 +291,175 @@ services:
     networks:
      - VE-network
 
- kratos-app:
-    depends_on:
-      - kratos-migrate
-    image: oryd/kratos:v1.0.0
-    ports:
-      - "4443:4433" # public
-      - "4444:4434" # admin
-    expose:
-      - 4443
-      - 4444
-    restart: unless-stopped
-    environment:
-      - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS:-smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true}
-      - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL:-EMAIL_ADDRESS@bridgeconn.com}
-      - DSN=postgres://kratos:secret@postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
-      - LOG_LEVEL=trace
-    command: serve -c /etc/config/kratos/kratos-app.yml --watch-courier
-    volumes:
-      - type: volume
-        source: kratos-sqlite
-        target: /var/lib/sqlite
-        read_only: false
-      - type: bind
-        source: ./Kratos_config/email-password
-        target: /etc/config/kratos
-    profiles:
-     - local-run
-     - deployment
-    networks:
-      - VE-network
+#  kratos-app:
+#     depends_on:
+#       - kratos-migrate
+#     image: oryd/kratos:v1.0.0
+#     ports:
+#       - "4443:4433" # public
+#       - "4444:4434" # admin
+#     expose:
+#       - 4443
+#       - 4444
+#     restart: unless-stopped
+#     environment:
+#       - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS:-smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true}
+#       - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL:-EMAIL_ADDRESS@bridgeconn.com}
+#       - DSN=postgres://kratos:secret@postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
+#       - LOG_LEVEL=trace
+#     command: serve -c /etc/config/kratos/kratos-app.yml --watch-courier
+#     volumes:
+#       - type: volume
+#         source: kratos-sqlite
+#         target: /var/lib/sqlite
+#         read_only: false
+#       - type: bind
+#         source: ./Kratos_config/email-password
+#         target: /etc/config/kratos
+#     profiles:
+#      - local-run
+#      - deployment
+#     networks:
+#       - VE-network
 
- vachan-access:
-    image: shimilshijo/vachan-access:v2.0.2
-    expose:
-      - 8007
-    command: uvicorn main:app --host 0.0.0.0 --port 8007
-    restart: always
-    environment:
-     - VACHAN_POSTGRES_HOST=vachan-db
-     - VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
-     - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
-     - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
-     - VACHAN_POSTGRES_PORT=5432
-     - VACHAN_KRATOS_PUBLIC_URL=${VACHAN_KRATOS_PUBLIC_URL:-http://kratos:4433/}
-     - VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
-     - VACHAN_KRATOS_APP_PUBLIC_URL=http://kratos-app:4433/
-     - VACHAN_KRATOS_APP_ADMIN_URL=http://kratos-app:4434/
-     - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME}
-     - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD}
-     - VACHAN_TEST_MODE="False"
-     - VACHAN_LOGGING_LEVEL=INFO
-     - VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost:8000}
+#  vachan-access:
+#     image: shimilshijo/vachan-access:v2.0.2
+#     expose:
+#       - 8007
+#     command: uvicorn main:app --host 0.0.0.0 --port 8007
+#     restart: always
+#     environment:
+#      - VACHAN_POSTGRES_HOST=vachan-db
+#      - VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
+#      - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
+#      - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
+#      - VACHAN_POSTGRES_PORT=5432
+#      - VACHAN_KRATOS_PUBLIC_URL=${VACHAN_KRATOS_PUBLIC_URL:-http://kratos:4433/}
+#      - VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
+#      - VACHAN_KRATOS_APP_PUBLIC_URL=http://kratos-app:4433/
+#      - VACHAN_KRATOS_APP_ADMIN_URL=http://kratos-app:4434/
+#      - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME}
+#      - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD}
+#      - VACHAN_TEST_MODE="False"
+#      - VACHAN_LOGGING_LEVEL=INFO
+#      - VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost:8000}
     
-    volumes:
-     - logs-vol:/app/logs
-    depends_on:
-     - vachan-db
-     - kratos
-     - kratos-app
+#     volumes:
+#      - logs-vol:/app/logs
+#     depends_on:
+#      - vachan-db
+#      - kratos
+#      - kratos-app
 
+#     profiles:
+#      - local-run
+#      - deployment
+   
+#     networks:
+#      - VE-network
+
+ vachan_ai:
+    image: jayasankarkk/vai:0.0.0-1
+    healthcheck:
+     timeout: 45s
+     interval: 10s
+     retries: 10
+    environment:
+     - REDIS_HOST=redisai
+     - REDIS_PORT=6379
+     - REDIS_URL = redis://:vsfrgetd@localhost:6379/1
+     - VACHAN_AI_POSTGRES_HOST=192.168.3.157
+     - VACHAN_AI_POSTGRES_USER=${VACHAN_AI_POSTGRES_USER:-postgres}
+     - VACHAN_AI_POSTGRES_PASSWORD=${VACHAN_AI_POSTGRES_PASSWORD:-secret}
+     - VACHAN_AI_POSTGRES_DATABASE=${VACHAN_AI_POSTGRES_DATABASE:-vachan_ai_db}
+     - VACHAN_AI_POSTGRES_SCHEMA=${VACHAN_AI_POSTGRES_SCHEMA:-aischema}
+
+     - VACHAN_AI_XLSR_MAX_AUDIO_DURATION=${VACHAN_AI_XLSR_MAX_AUDIO_DURATION:-25}
+     - VACHAN_AI_XLSR_SAMPLING_RATE=${VACHAN_AI_XLSR_SAMPLING_RATE:-16000}
+     - VACHAN_AI_NLLB_MAX_SRC_CHARS=${VACHAN_AI_NLLB_MAX_SRC_CHARS:-512}
+     - VACHAN_AI_NLLB_BATCH_SIZE=${VACHAN_AI_NLLB_BATCH_SIZE:-10}
+      
+    
+     - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI:-http://192.168.3.157:8083}
+     - VACHAN_AI_ARTIFACT_PATH=${VACHAN_AI_ARTIFACT_PATH:-models}
+     - VACHAN_AI_SERVED_MODEL_URI=${VACHAN_AI_SERVED_MODEL_URI:-http://192.168.3.157:8085/v2/models}
+     - VACHAN_AI_MODEL_SETTINGS_DIR=${VACHAN_AI_MODEL_SETTINGS_DIR:-serving_models}
+     - VACHAN_AI_REQUEST_TIMEOUT=${VACHAN_AI_REQUEST_TIMEOUT:-60}
+
+     - VACHAN_AI_AWS_ACCESS_KEY=${VACHAN_AI_AWS_ACCESS_KEY}
+     - VACHAN_AI_AWS_SECRET_ACCESS_KEY=${VACHAN_AI_AWS_SECRET_ACCESS_KEY}
+     - VACHAN_AI_S3_BUCKET=${VACHAN_AI_S3_BUCKET}
+     - VACHAN_AI_AWS_ACCOUNT_REGION=${VACHAN_AI_AWS_ACCOUNT_REGION}
+     
+
+     - VACHAN_AI_DATA_PATH=${VACHAN_AI_DATA_PATH:-/var/data-vachan-ai}
+     - VACHAN_AI_POSTGRES_PORT=5433
+     - VACHAN_AI_LOGGING_LEVEL=INFO
+     - VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost}
+     - VACHAN_LOGGING_LEVEL=INFO
+     - VACHAN_AI_ENV=${VACHAN_AI_ENV:-Production}
+     - PYTHONPATH=/app/app/core/model_access/ai_model_core.py:/app/app/core/cloud_operations
+     - VACHAN_REDIS_PASS=${VACHAN_REDIS_PASS:-vsfrgetd}
+    #  - PYTHONPATH=${PYTHONPATH:-/app/app/core/cloud_operations}
+    #  - PYTHONPATH=${PYTHONPATH:-/app/app/core/model_access}
+    command: uvicorn main:app --host 0.0.0.0 --port 8006
+    volumes:
+     - ${VACHAN_AI_DATA_PATH}/docker-volumes/ai-logs-vol:/app/logs
+     - ${VACHAN_AI_DATA_PATH}/cache:/root/.cache
+    restart: always
+    depends_on:
+     - vachan-api
+     - redisai
     profiles:
      - local-run
      - deployment
-   
+    expose:
+     - 8006
+    ports:
+     - "8006:8006"
     networks:
      - VE-network
+    container_name: vachan_ai
+
+ worker:
+    image: jayasankarkk/vai:0.0.0-1
+    healthcheck:
+     timeout: 45s
+     interval: 10s
+     retries: 10 
+    environment:
+    #  - REDIS_HOST=redisai
+    #  - REDIS_PORT=6379
+     - REDIS_URL = redis://:vsfrgetd@localhost:6379/1
+     - VACHAN_REDIS_PASS=${VACHAN_REDIS_PASS:-vsfrgetd}
+     - VACHAN_AI_POSTGRES_HOST=192.168.3.157
+     - VACHAN_AI_POSTGRES_USER=${VACHAN_AI_POSTGRES_USER:-postgres}
+     - VACHAN_AI_POSTGRES_PASSWORD=${VACHAN_AI_POSTGRES_PASSWORD:-secret}
+     - VACHAN_AI_POSTGRES_DATABASE=${VACHAN_AI_POSTGRES_DATABASE:-vachan_ai_db}
+     - VACHAN_AI_POSTGRES_SCHEMA=${VACHAN_AI_POSTGRES_SCHEMA:-aischema}
+     - VACHAN_AI_POSTGRES_PORT=5433
+     - VACHAN_AI_SERVED_MODEL_URI=${VACHAN_AI_SERVED_MODEL_URI:-http://192.168.3.157:8085/v2/models}
+     - PYTHONPATH=/app/app/core/model_access/ai_model_core.py:/app/app/core/cloud_operations
+    command: rq worker --url redis://:vsfrgetd@redisai:6379
+    depends_on:
+      - redisai
+    volumes:
+     - ${VACHAN_AI_DATA_PATH}/docker-volumes/redis_worker-logs-vol:/app/rqlogs
+    networks:
+     - VE-network
+    container_name: redis-worker
+
+ redisai:
+    container_name: redisai
+    image: "redis:alpine"
+    expose:
+      - 6379
+    volumes:
+      # save redisearch data to your current working directory
+      - ${VACHAN_AI_DATA_PATH}/docker-volumes/redis-data:/app/data
+    restart: on-failure
+    networks:
+      - VE-network
 
  # Web Server
  web-server-local:
