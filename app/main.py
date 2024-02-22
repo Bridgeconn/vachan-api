@@ -247,7 +247,7 @@ def custom_openapi():
         f"<br> • <a href=\"{root_url}/v2/cms/rest/docs\" > Vachan-CMS docs </a>"
         f"<br> • <a href=\"{root_url}/v2/auth/docs\" > Vachan-Auth docs </a>"
         f"<br> • <a href=\"{root_url}/v2/ai/model\" > Vachan-AI docs </a>"
-        
+
         ),
         routes=app.routes
     )
