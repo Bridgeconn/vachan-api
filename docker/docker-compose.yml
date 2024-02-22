@@ -345,7 +345,7 @@ services:
      - VE-network
 
 
- vachan_ai:
+ vachan-ai:
     image: jayasankarkk/vachan-ai:0.0.0-alpha.4
     healthcheck:
      timeout: 45s
@@ -401,7 +401,7 @@ services:
      - "8006:8006"
     networks:
      - VE-network
-    container_name: vachan_ai
+    container_name: vachan-ai
 
 
 
