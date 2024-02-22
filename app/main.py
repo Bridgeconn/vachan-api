@@ -27,12 +27,8 @@ app = FastAPI(title="Vachan-API", version="2.0.0",
 with the underlying Databases and modules in Vachan-Engine. \
 \n • For Vachan-CMS docs: {root_url}/v2/cms/rest/docs,\
 \n • For Vachan-TBT docs: {root_url}/v2/text/translate/token-based/docs,\
-<<<<<<< HEAD
-\n • For Vachan-Auth Access docs: {root_url}/v2/auth-access/docs,\
+\n • For Vachan-Auth docs: {root_url}/v2/auth/docs,\
 \n • For Vachan-AI docs: {root_url}/v2/ai/model")
-=======
-\n • For Vachan-Auth docs: {root_url}/v2/auth/docs")
->>>>>>> ff24a388ecadde7fa6dcbad966007c8688d2e95d
 template = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -249,12 +245,9 @@ def custom_openapi():
         underlying Databases \and modules in Vachan-Engine. "
         f"<br> • <a href=\"{root_url}/v2/text/translate/token-based/docs\" > Vachan-TBT docs </a>"
         f"<br> • <a href=\"{root_url}/v2/cms/rest/docs\" > Vachan-CMS docs </a>"
-<<<<<<< HEAD
-        f"<br> • <a href=\"{root_url}/v2/auth-access/docs\" > Vachan-Auth Access docs </a>"
-        f"<br> • <a href=\"{root_url}/v2/ai/model\" > Vachan-AI docs </a>"
-=======
         f"<br> • <a href=\"{root_url}/v2/auth/docs\" > Vachan-Auth docs </a>"
->>>>>>> ff24a388ecadde7fa6dcbad966007c8688d2e95d
+        f"<br> • <a href=\"{root_url}/v2/ai/model\" > Vachan-AI docs </a>"
+        
         ),
         routes=app.routes
     )
