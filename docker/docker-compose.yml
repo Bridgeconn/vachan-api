@@ -384,7 +384,7 @@ services:
      - VACHAN_AI_ENV=${VACHAN_AI_ENV:-Development}
      - PYTHONPATH=/app/app/core/model_access/ai_model_core.py:/app/app/core/cloud_operations
      - VACHAN_REDIS_PASS=${VACHAN_REDIS_PASS:-vsfrgetd}
-    command: uvicorn main:app --host 0.0.0.0 --port 8006
+    command: uvicorn main:app --host 0.0.0.0 --port 8008
     volumes:
      - ${VACHAN_AI_DATA_PATH}/docker-volumes/ai-logs-vol:/app/logs
      - ${VACHAN_AI_DATA_PATH}/cache:/root/.cache
@@ -396,9 +396,9 @@ services:
      - local-run
      - deployment
     expose:
-     - 8006
+     - 8008
     ports:
-     - "8006:8006"
+     - "8008:8008"
     networks:
      - VE-network
     container_name: vachan-ai

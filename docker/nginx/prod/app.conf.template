@@ -36,12 +36,12 @@ server {
     ssl_certificate /etc/nginx/ssl/live/${VACHAN_DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/nginx/ssl/live/${VACHAN_DOMAIN}/privkey.pem;
 
-    location /v2/auth/ {
-        proxy_pass http://vachan-access:8007;    
+    location /v2/ai/model/ {
+        proxy_pass http://vachan-ai:8008;
     }
 
-    location /v2/ai/model/ {
-        proxy_pass http://vachan-ai:8006;
+    location /v2/auth/ {
+        proxy_pass http://vachan-access:8007;    
     }
 
     location /v2/cms/rest/ {
