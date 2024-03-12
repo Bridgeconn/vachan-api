@@ -352,7 +352,7 @@ services:
      interval: 10s
      retries: 10
     environment:
-     - VACHAN_AI_POSTGRES_HOST=192.168.3.157
+     - VACHAN_AI_POSTGRES_HOST=dov2conn.bridgeconn.com
      - VACHAN_AI_POSTGRES_USER=${VACHAN_AI_POSTGRES_USER:-postgres}
      - VACHAN_AI_POSTGRES_PASSWORD=${VACHAN_AI_POSTGRES_PASSWORD:-secret}
      - VACHAN_AI_POSTGRES_DATABASE=${VACHAN_AI_POSTGRES_DATABASE:-vachan_ai_db}
@@ -364,9 +364,9 @@ services:
      - VACHAN_AI_NLLB_BATCH_SIZE=${VACHAN_AI_NLLB_BATCH_SIZE:-10}
       
     
-     - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI:-http://192.168.3.157:8083}
+     - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI:-http://dov2conn.bridgeconn.com:8083}
      - VACHAN_AI_ARTIFACT_PATH=${VACHAN_AI_ARTIFACT_PATH:-models}
-     - VACHAN_AI_SERVED_MODEL_URI=${VACHAN_AI_SERVED_MODEL_URI:-http://192.168.3.157:8085/v2/models}
+     - VACHAN_AI_SERVED_MODEL_URI=${VACHAN_AI_SERVED_MODEL_URI:-http://dov2conn.bridgeconn.com:8085/v2/models}
      - VACHAN_AI_MODEL_SETTINGS_DIR=${VACHAN_AI_MODEL_SETTINGS_DIR:-serving_models}
      - VACHAN_AI_REQUEST_TIMEOUT=${VACHAN_AI_REQUEST_TIMEOUT:-60}
 
@@ -384,7 +384,7 @@ services:
      - VACHAN_AI_ENV=${VACHAN_AI_ENV:-Development}
      - PYTHONPATH=/app/app/core/model_access/ai_model_core.py:/app/app/core/cloud_operations
      - VACHAN_REDIS_PASS=${VACHAN_REDIS_PASS:-vsfrgetd}
-    command: uvicorn main:app --host 0.0.0.0 --port 8008
+    command: uvicorn main:app --host 0.0.0.0 --port 8006
     volumes:
      - ${VACHAN_AI_DATA_PATH}/docker-volumes/ai-logs-vol:/app/logs
      - ${VACHAN_AI_DATA_PATH}/cache:/root/.cache
@@ -396,9 +396,9 @@ services:
      - local-run
      - deployment
     expose:
-     - 8008
+     - 8006
     ports:
-     - "8008:8008"
+     - "8006:8006"
     networks:
      - VE-network
     container_name: vachan-ai
