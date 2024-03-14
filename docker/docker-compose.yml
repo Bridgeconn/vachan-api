@@ -380,6 +380,7 @@ services:
      - VACHAN_AI_POSTGRES_PORT=5433
      - VACHAN_AI_LOGGING_LEVEL=INFO
      - VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost}
+     - VACHAN_AI_DOMAIN=http://vachan-api
      - VACHAN_LOGGING_LEVEL=INFO
      - VACHAN_AI_ENV=${VACHAN_AI_ENV:-Development}
      - PYTHONPATH=/app/app/core/model_access/ai_model_core.py:/app/app/core/cloud_operations
