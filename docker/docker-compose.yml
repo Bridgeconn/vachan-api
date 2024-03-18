@@ -346,7 +346,7 @@ services:
 
 
  vachan-ai:
-    image: jayasankarkk/vachan-ai:0.0.0-alpha.4
+    image: jayasankarkk/vachan-ai:0.0.0-alpha.5
     healthcheck:
      timeout: 45s
      interval: 10s
@@ -379,12 +379,13 @@ services:
      - VACHAN_AI_DATA_PATH=${VACHAN_AI_DATA_PATH:-/var/data-vachan-ai}
      - VACHAN_AI_POSTGRES_PORT=5433
      - VACHAN_AI_LOGGING_LEVEL=INFO
-     - VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost}
-     - VACHAN_AI_DOMAIN=http://vachan-api
      - VACHAN_LOGGING_LEVEL=INFO
-     - VACHAN_AI_ENV=${VACHAN_AI_ENV:-Development}
+     - VACHAN_AI_ENV=${VACHAN_AI_ENV:-Production}
      - PYTHONPATH=/app/app/core/model_access/ai_model_core.py:/app/app/core/cloud_operations
      - VACHAN_REDIS_PASS=${VACHAN_REDIS_PASS:-vsfrgetd}
+     - VACHAN_AI_BASEPATH=/v2/ai
+     - VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost}
+     - VACHAN_AI_DOMAIN=http://vachan-api
     command: uvicorn main:app --host 0.0.0.0 --port 8006
     volumes:
      - ${VACHAN_AI_DATA_PATH}/docker-volumes/ai-logs-vol:/app/logs
@@ -404,6 +405,39 @@ services:
      - VE-network
     container_name: vachan-ai
 
+
+ worker:
+    image: jayasankarkk/vachan-ai:0.0.0-alpha.5
+    healthcheck:
+     timeout: 45s
+     interval: 10s
+     retries: 10 
+    environment:
+     - REDIS_HOST=redis
+     - REDIS_PORT=6379
+     - VACHAN_AI_POSTGRES_HOST=dov2conn.bridgeconn.com
+     - VACHAN_AI_POSTGRES_USER=${VACHAN_AI_POSTGRES_USER:-postgres}
+     - VACHAN_AI_POSTGRES_PASSWORD=${VACHAN_AI_POSTGRES_PASSWORD:-secret}
+     - VACHAN_AI_POSTGRES_DATABASE=${VACHAN_AI_POSTGRES_DATABASE:-vachan_ai_db}
+     - VACHAN_AI_POSTGRES_SCHEMA=${VACHAN_AI_POSTGRES_SCHEMA:-aischema}
+     - VACHAN_AI_POSTGRES_PORT=5433
+     - VACHAN_AI_SERVED_MODEL_URI=${VACHAN_AI_SERVED_MODEL_URI:-http://dov2conn.bridgeconn.com:8085/v2/models}
+     - PYTHONPATH=/app/app/core/model_access/ai_model_core.py:/app/app/core/cloud_operations
+     - VACHAN_REDIS_PASS=vsfrgetd
+    command: rq worker --url redis://:vsfrgetd@redis:6379
+    links:
+      - redis
+    depends_on:
+      - redis
+      - vachan-api
+    volumes:
+     - ${VACHAN_AI_DATA_PATH}/docker-volumes/redis_worker-logs-vol:/app/rqlogs
+    profiles:
+     - local-run
+     - deployment
+    networks:
+     - VE-network 
+    container_name: redis-worker
 
 
  # Web Server

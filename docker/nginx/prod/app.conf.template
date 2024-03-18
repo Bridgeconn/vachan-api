@@ -41,7 +41,7 @@ server {
         proxy_pass http://vachan-access:8007;    
     }
 
-    location /v2/ai/model/ {
+    location /v2/ai/ {
         proxy_pass http://vachan-ai:8006;
     }
 
