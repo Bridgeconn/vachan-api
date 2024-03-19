@@ -423,8 +423,7 @@ services:
      - VACHAN_AI_POSTGRES_PORT=5433
      - VACHAN_AI_SERVED_MODEL_URI=${VACHAN_AI_SERVED_MODEL_URI:-http://dov2conn.bridgeconn.com:8085/v2/models}
      - PYTHONPATH=/app/app/core/model_access/ai_model_core.py:/app/app/core/cloud_operations
-     - VACHAN_REDIS_PASS=vsfrgetd
-    command: rq worker --url redis://:vsfrgetd@redis:6379
+    command: rq worker --url redis://:${VACHAN_REDIS_PASS}@redis:6379
     links:
       - redis
     depends_on:
