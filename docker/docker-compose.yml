@@ -1,74 +1,74 @@
 version: '3.9'
 services:
- kratos-postgresd:
-    image: postgres:9.6
-    ports:
-      - "5432:5432"
-    expose:
-      - 5432
-    restart: always
-    environment:
-      - POSTGRES_USER=${VACHAN_KRATOS_DB_USER:-kratos}
-      - POSTGRES_PASSWORD=${VACHAN_KRATOS_DB_PASSWORD:-secret}
-      - POSTGRES_DB=${VACHAN_KRATOS_DB_NAME:-kratos}
-      - POSTGRES_HOST_AUTH_METHOD=md5
-    volumes: 
-      - kratos-postgres-vol:/var/lib/postgresql/data
-      - kratos-db-backup:/var/backups:rw
-    labels:
-      ofelia.enabled: "true"
-      ofelia.job-exec.kratos-backup.schedule: "0 0 1 * * *" #"Takes a single dump within the db container every day at 01:00 am"
-      ofelia.job-exec.kratos-backup.command: "pg_dump --dbname=postgresql://$VACHAN_KRATOS_DB_USER:$VACHAN_KRATOS_DB_PASSWORD@localhost:5432/$VACHAN_KRATOS_DB_NAME  --file=/var/backups/kratos_db_backup_latest.sql"
-    networks:
-      - VE-network
+kratos-postgresd:
+image: postgres:9.6
+ports:
+- "5432:5432"
+expose:
+- 5432
+restart: always
+environment:
+- POSTGRES_USER=${VACHAN_KRATOS_DB_USER:-kratos}
+- POSTGRES_PASSWORD=${VACHAN_KRATOS_DB_PASSWORD:-secret}
+- POSTGRES_DB=${VACHAN_KRATOS_DB_NAME:-kratos}
+- POSTGRES_HOST_AUTH_METHOD=md5
+volumes: 
+- kratos-postgres-vol:/var/lib/postgresql/data
+- kratos-db-backup:/var/backups:rw
+labels:
+ofelia.enabled: "true"
+ofelia.job-exec.kratos-backup.schedule: "0 0 1 * * *" #"Takes a single dump within the db container every day at 01:00 am"
+ofelia.job-exec.kratos-backup.command: "pg_dump --dbname=postgresql://$VACHAN_KRATOS_DB_USER:$VACHAN_KRATOS_DB_PASSWORD@localhost:5432/$VACHAN_KRATOS_DB_NAME  --file=/var/backups/kratos_db_backup_latest.sql"
+networks:
+- VE-network
 
- kratos-migrate:
-    image: oryd/kratos:v1.0.0
-    environment:
-      - DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@kratos-postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
-    volumes:
-      - type: volume
-        source: kratos-sqlite
-        target: /var/lib/sqlite
-        read_only: false
-      - type: bind
-        source: ./Kratos_config/email-password
-        target: /etc/config/kratos
-    command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
-    restart: on-failure
-    links:
-      - kratos-postgresd
-    depends_on:
-      - kratos-postgresd
-    networks:
-      - VE-network
+kratos-migrate:
+image: oryd/kratos:v1.0.0
+environment:
+- DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@kratos-postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
+volumes:
+- type: volume
+source: kratos-sqlite
+target: /var/lib/sqlite
+read_only: false
+- type: bind
+source: ./Kratos_config/email-password
+target: /etc/config/kratos
+command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
+restart: on-failure
+links:
+- kratos-postgresd
+depends_on:
+- kratos-postgresd
+networks:
+- VE-network
 
- kratos:
-    image: oryd/kratos:v1.0.0
-    ports:
-      - '4433:4433' # public
-      - '4434:4434' # admin
-    restart: unless-stopped
-    environment:
-      - DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@kratos-postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
-      - LOG_LEVEL=trace
-      - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS:-smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true}
-      - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL:-EMAIL_ADDRESS@bridgeconn.com}
-      - SERVE_PUBLIC_BASE_URL=http://kratos:4433
-    command: serve -c /etc/config/kratos/kratos.yml  --watch-courier
-    volumes:
-      - type: bind
-        source: ./Kratos_config/email-password
-        target: /etc/config/kratos
-    links:
-      - kratos-postgresd
-    depends_on:
-      - kratos-postgresd
-    expose:
-      - 4434
-      - 4433
-    networks:
-      - VE-network
+kratos:
+image: oryd/kratos:v1.0.0
+ports:
+- '4433:4433' # public
+- '4434:4434' # admin
+restart: unless-stopped
+environment:
+- DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@kratos-postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
+- LOG_LEVEL=trace
+- COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS:-smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true}
+- COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL:-EMAIL_ADDRESS@bridgeconn.com}
+- SERVE_PUBLIC_BASE_URL=http://kratos:4433
+command: serve -c /etc/config/kratos/kratos.yml  --watch-courier
+volumes:
+- type: bind
+source: ./Kratos_config/email-password
+target: /etc/config/kratos
+links:
+- kratos-postgresd
+depends_on:
+- kratos-postgresd
+expose:
+- 4434
+- 4433
+networks:
+- VE-network
 
  vachan-db:
     image: postgres:16.0
@@ -141,45 +141,45 @@ services:
     networks:
      - VE-network
 
- vachan-api-test:
-  build:
-   context: ../
-   dockerfile: ./docker/Dockerfile
-  healthcheck:
-   timeout: 45s
-   interval: 10s
-   retries: 10
-  environment:
-   - VACHAN_POSTGRES_HOST=vachan-db
-   - VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
-   - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
-   - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
-   - VACHAN_POSTGRES_PORT=5432
-   - VACHAN_KRATOS_PUBLIC_URL=http://kratos:4433/
-   - VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
-   - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME:-super@admin.com}
-   - VACHAN_GITLAB_TOKEN=${VACHAN_GITLAB_TOKEN}
-   - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD:-Just4Complexity!}
-   - VACHAN_TEST_MODE="False"
-   - VACHAN_LOGGING_LEVEL=INFO
-   - VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost:8000}
-  command: python -m pytest
-  volumes:
-   - logs-test-vol:/app/logs
-  restart: "no"
-  expose:
-   - 8000
-  links:
-   - vachan-db
-   - kratos
-  depends_on:
-   - kratos-postgresd
-   - kratos
-   - vachan-db
-  profiles:
-   - testing
-  networks:
-   - VE-network
+vachan-api-test:
+build:
+context: ../
+dockerfile: ./docker/Dockerfile
+healthcheck:
+timeout: 45s
+interval: 10s
+retries: 10
+environment:
+- VACHAN_POSTGRES_HOST=vachan-db
+- VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
+- VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
+- VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
+- VACHAN_POSTGRES_PORT=5432
+- VACHAN_KRATOS_PUBLIC_URL=http://kratos:4433/
+- VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
+- VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME:-super@admin.com}
+- VACHAN_GITLAB_TOKEN=${VACHAN_GITLAB_TOKEN}
+- VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD:-Just4Complexity!}
+- VACHAN_TEST_MODE="False"
+- VACHAN_LOGGING_LEVEL=INFO
+- VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost:8000}
+command: python -m pytest
+volumes:
+- logs-test-vol:/app/logs
+restart: "no"
+expose:
+- 8000
+links:
+- vachan-db
+- kratos
+depends_on:
+- kratos-postgresd
+- kratos
+- vachan-db
+profiles:
+- testing
+networks:
+- VE-network
 
 #  vachan-demos:
 #     image: kavitha3797/vachan-demos:v2-0-0-alpha-11
@@ -201,7 +201,7 @@ services:
 #      - VE-network
  
  vachan-cms-rest:
-    image: athulyams/vachan-cms-rest:v2.0.4
+    image: athulyams/vachan-cms-rest:v2.0.5
     expose:
       - 8005
     command: uvicorn main:app --host 0.0.0.0 --port 8005
@@ -226,217 +226,217 @@ services:
     networks:
      - VE-network
      
- vachan-tbt:
-    image: kavitha3797/vachan-tbt:v2.0.1
-    expose:
-      - 8003
-    command: uvicorn main:app --host 0.0.0.0 --port 8003
-    restart: always
-    environment:
-     - VACHAN_POSTGRES_HOST=vachan-db
-     - VACHAN_POSTGRES_PORT=5432
-     - VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
-     - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
-     - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
-     - VACHAN_POSTGRES_SCHEMA=vachan_tbt
-     - VACHAN_LOGGING_LEVEL=INFO
-     - VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost}
-     - VACHAN_CMS_DOMAIN=http://vachan-api
-    volumes:
-     - logs-vol:/app/logs
-     - vachan-tbt-ml-models-vol:/app/ml-models
-    depends_on:
-     - vachan-db
-    profiles:
-     - local-run
-     - deployment
-    networks:
-     - VE-network
+vachan-tbt:
+image: kavitha3797/vachan-tbt:v2.0.1
+expose:
+- 8003
+command: uvicorn main:app --host 0.0.0.0 --port 8003
+restart: always
+environment:
+- VACHAN_POSTGRES_HOST=vachan-db
+- VACHAN_POSTGRES_PORT=5432
+- VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
+- VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
+- VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
+- VACHAN_POSTGRES_SCHEMA=vachan_tbt
+- VACHAN_LOGGING_LEVEL=INFO
+- VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost}
+- VACHAN_CMS_DOMAIN=http://vachan-api
+volumes:
+- logs-vol:/app/logs
+- vachan-tbt-ml-models-vol:/app/ml-models
+depends_on:
+- vachan-db
+profiles:
+- local-run
+- deployment
+networks:
+- VE-network
 
- vachan-cms-graphql:
-    image: athulyams/graphql-12:v2.0.0-alpha.1
-    ports:
-      - "8004:8004"
-    expose:
-      - 8004
-    command: uvicorn main:app --host 0.0.0.0 --port 8004
-    restart: always
-    environment:
-     - VACHAN_POSTGRES_HOST=vachan-db
-     - VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
-     - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
-     - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
-     - VACHAN_POSTGRES_PORT=5432
-     - VACHAN_DOMAIN=${VACHAN_DOMAIN:-api.vachanengine.org}
-     - VACHAN_LOGGING_LEVEL=INFO
-    depends_on:
-     - vachan-api
-     - vachan-db
-    profiles:
-     - local-run
-     - deployment
-    networks:
-     - VE-network
+vachan-cms-graphql:
+image: athulyams/graphql-12:v2.0.0-alpha.1
+ports:
+- "8004:8004"
+expose:
+- 8004
+command: uvicorn main:app --host 0.0.0.0 --port 8004
+restart: always
+environment:
+- VACHAN_POSTGRES_HOST=vachan-db
+- VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
+- VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
+- VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
+- VACHAN_POSTGRES_PORT=5432
+- VACHAN_DOMAIN=${VACHAN_DOMAIN:-api.vachanengine.org}
+- VACHAN_LOGGING_LEVEL=INFO
+depends_on:
+- vachan-api
+- vachan-db
+profiles:
+- local-run
+- deployment
+networks:
+- VE-network
 
- kratos-app:
-    depends_on:
-      - kratos-migrate
-    image: oryd/kratos:v1.0.0
-    ports:
-      - "4443:4433" # public
-      - "4444:4434" # admin
-    expose:
-      - 4443
-      - 4444
-    restart: unless-stopped
-    environment:
-      - COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS:-smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true}
-      - COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL:-EMAIL_ADDRESS@bridgeconn.com}
-      - DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@kratos-postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
-      - LOG_LEVEL=trace
-    command: serve -c /etc/config/kratos/kratos-app.yml --watch-courier
-    volumes:
-      - type: volume
-        source: kratos-sqlite
-        target: /var/lib/sqlite
-        read_only: false
-      - type: bind
-        source: ./Kratos_config/email-password
-        target: /etc/config/kratos
-    networks:
-      - VE-network
+kratos-app:
+depends_on:
+- kratos-migrate
+image: oryd/kratos:v1.0.0
+ports:
+- "4443:4433" # public
+- "4444:4434" # admin
+expose:
+- 4443
+- 4444
+restart: unless-stopped
+environment:
+- COURIER_SMTP_CONNECTION_URI=${VACHAN_SUPPORT_EMAIL_CREDS:-smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true}
+- COURIER_SMTP_FROM_ADDRESS=${VACHAN_SUPPORT_EMAIL:-EMAIL_ADDRESS@bridgeconn.com}
+- DSN=${VACHAN_AUTH_DATABASE:-postgres://kratos:secret@kratos-postgresd:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4}
+- LOG_LEVEL=trace
+command: serve -c /etc/config/kratos/kratos-app.yml --watch-courier
+volumes:
+- type: volume
+source: kratos-sqlite
+target: /var/lib/sqlite
+read_only: false
+- type: bind
+source: ./Kratos_config/email-password
+target: /etc/config/kratos
+networks:
+- VE-network
 
- vachan-access:
-    image: shimilshijo/vachan-access:v2.0.4
-    environment:
-     - VACHAN_POSTGRES_HOST=vachan-db
-     - VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
-     - VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
-     - VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
-     - VACHAN_POSTGRES_PORT=5432
-     - VACHAN_KRATOS_PUBLIC_URL=${VACHAN_KRATOS_PUBLIC_URL:-http://kratos:4433/}
-     - VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
-     - VACHAN_KRATOS_APP_PUBLIC_URL=http://kratos-app:4433/
-     - VACHAN_KRATOS_APP_ADMIN_URL=http://kratos-app:4434/
-     - VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME}
-     - VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD}
-     - VACHAN_TEST_MODE="False"
-     - VACHAN_LOGGING_LEVEL=INFO
-     - VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost}
-     - VACHAN_CMS_DOMAIN=http://vachan-api
-    command: uvicorn main:app --host 0.0.0.0 --port 8007
-    volumes:
-     - logs-vol:/app/logs
-    restart: always
-    links:
-     - vachan-db
-     - kratos
-     - kratos-app
-    depends_on:
-     - vachan-db
-     - kratos
-     - kratos-app
-    expose:
-     - 8007
-    profiles:
-     - local-run
-     - deployment
-    networks:
-     - VE-network
+vachan-access:
+image: shimilshijo/vachan-access:v2.0.4
+environment:
+- VACHAN_POSTGRES_HOST=vachan-db
+- VACHAN_POSTGRES_USER=${VACHAN_POSTGRES_USER:-postgres}
+- VACHAN_POSTGRES_PASSWORD=${VACHAN_POSTGRES_PASSWORD:-password}
+- VACHAN_POSTGRES_DATABASE=${VACHAN_POSTGRES_DATABASE:-vachan_dev}
+- VACHAN_POSTGRES_PORT=5432
+- VACHAN_KRATOS_PUBLIC_URL=${VACHAN_KRATOS_PUBLIC_URL:-http://kratos:4433/}
+- VACHAN_KRATOS_ADMIN_URL=http://kratos:4434/
+- VACHAN_KRATOS_APP_PUBLIC_URL=http://kratos-app:4433/
+- VACHAN_KRATOS_APP_ADMIN_URL=http://kratos-app:4434/
+- VACHAN_SUPER_USERNAME=${VACHAN_SUPER_USERNAME}
+- VACHAN_SUPER_PASSWORD=${VACHAN_SUPER_PASSWORD}
+- VACHAN_TEST_MODE="False"
+- VACHAN_LOGGING_LEVEL=INFO
+- VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost}
+- VACHAN_CMS_DOMAIN=http://vachan-api
+command: uvicorn main:app --host 0.0.0.0 --port 8007
+volumes:
+- logs-vol:/app/logs
+restart: always
+links:
+- vachan-db
+- kratos
+- kratos-app
+depends_on:
+- vachan-db
+- kratos
+- kratos-app
+expose:
+- 8007
+profiles:
+- local-run
+- deployment
+networks:
+- VE-network
 
 
- vachan-ai:
-    image: jayasankarkk/vachan-ai:0.0.0-alpha.5
-    healthcheck:
-     timeout: 45s
-     interval: 10s
-     retries: 10
-    environment:
-     - VACHAN_AI_POSTGRES_HOST=dov2conn.bridgeconn.com
-     - VACHAN_AI_POSTGRES_USER=${VACHAN_AI_POSTGRES_USER:-postgres}
-     - VACHAN_AI_POSTGRES_PASSWORD=${VACHAN_AI_POSTGRES_PASSWORD:-secret}
-     - VACHAN_AI_POSTGRES_DATABASE=${VACHAN_AI_POSTGRES_DATABASE:-vachan_ai_db}
-     - VACHAN_AI_POSTGRES_SCHEMA=${VACHAN_AI_POSTGRES_SCHEMA:-aischema}
+vachan-ai:
+image: jayasankarkk/vachan-ai:0.0.0-alpha.5
+healthcheck:
+timeout: 45s
+interval: 10s
+retries: 10
+environment:
+- VACHAN_AI_POSTGRES_HOST=dov2conn.bridgeconn.com
+- VACHAN_AI_POSTGRES_USER=${VACHAN_AI_POSTGRES_USER:-postgres}
+- VACHAN_AI_POSTGRES_PASSWORD=${VACHAN_AI_POSTGRES_PASSWORD:-secret}
+- VACHAN_AI_POSTGRES_DATABASE=${VACHAN_AI_POSTGRES_DATABASE:-vachan_ai_db}
+- VACHAN_AI_POSTGRES_SCHEMA=${VACHAN_AI_POSTGRES_SCHEMA:-aischema}
 
-     - VACHAN_AI_XLSR_MAX_AUDIO_DURATION=${VACHAN_AI_XLSR_MAX_AUDIO_DURATION:-25}
-     - VACHAN_AI_XLSR_SAMPLING_RATE=${VACHAN_AI_XLSR_SAMPLING_RATE:-16000}
-     - VACHAN_AI_NLLB_MAX_SRC_CHARS=${VACHAN_AI_NLLB_MAX_SRC_CHARS:-512}
-     - VACHAN_AI_NLLB_BATCH_SIZE=${VACHAN_AI_NLLB_BATCH_SIZE:-10}
+- VACHAN_AI_XLSR_MAX_AUDIO_DURATION=${VACHAN_AI_XLSR_MAX_AUDIO_DURATION:-25}
+- VACHAN_AI_XLSR_SAMPLING_RATE=${VACHAN_AI_XLSR_SAMPLING_RATE:-16000}
+- VACHAN_AI_NLLB_MAX_SRC_CHARS=${VACHAN_AI_NLLB_MAX_SRC_CHARS:-512}
+- VACHAN_AI_NLLB_BATCH_SIZE=${VACHAN_AI_NLLB_BATCH_SIZE:-10}
       
     
-     - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI:-http://dov2conn.bridgeconn.com:8083}
-     - VACHAN_AI_ARTIFACT_PATH=${VACHAN_AI_ARTIFACT_PATH:-models}
-     - VACHAN_AI_SERVED_MODEL_URI=${VACHAN_AI_SERVED_MODEL_URI:-http://dov2conn.bridgeconn.com:8085/v2/models}
-     - VACHAN_AI_MODEL_SETTINGS_DIR=${VACHAN_AI_MODEL_SETTINGS_DIR:-serving_model}
-     - VACHAN_AI_REQUEST_TIMEOUT=${VACHAN_AI_REQUEST_TIMEOUT:-60}
+- MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI:-http://dov2conn.bridgeconn.com:8083}
+- VACHAN_AI_ARTIFACT_PATH=${VACHAN_AI_ARTIFACT_PATH:-models}
+- VACHAN_AI_SERVED_MODEL_URI=${VACHAN_AI_SERVED_MODEL_URI:-http://dov2conn.bridgeconn.com:8085/v2/models}
+- VACHAN_AI_MODEL_SETTINGS_DIR=${VACHAN_AI_MODEL_SETTINGS_DIR:-serving_model}
+- VACHAN_AI_REQUEST_TIMEOUT=${VACHAN_AI_REQUEST_TIMEOUT:-60}
 
-     - VACHAN_AI_AWS_ACCESS_KEY=${VACHAN_AI_AWS_ACCESS_KEY}
-     - VACHAN_AI_AWS_SECRET_ACCESS_KEY=${VACHAN_AI_AWS_SECRET_ACCESS_KEY}
-     - VACHAN_AI_S3_BUCKET=${VACHAN_AI_S3_BUCKET}
-     - VACHAN_AI_AWS_ACCOUNT_REGION=${VACHAN_AI_AWS_ACCOUNT_REGION}
+- VACHAN_AI_AWS_ACCESS_KEY=${VACHAN_AI_AWS_ACCESS_KEY}
+- VACHAN_AI_AWS_SECRET_ACCESS_KEY=${VACHAN_AI_AWS_SECRET_ACCESS_KEY}
+- VACHAN_AI_S3_BUCKET=${VACHAN_AI_S3_BUCKET}
+- VACHAN_AI_AWS_ACCOUNT_REGION=${VACHAN_AI_AWS_ACCOUNT_REGION}
      
 
-     - VACHAN_AI_DATA_PATH=${VACHAN_AI_DATA_PATH:-/var/data-vachan-ai}
-     - VACHAN_AI_POSTGRES_PORT=5433
-     - VACHAN_AI_LOGGING_LEVEL=INFO
-     - VACHAN_LOGGING_LEVEL=INFO
-     - VACHAN_AI_ENV=${VACHAN_AI_ENV:-Production}
-     - PYTHONPATH=/app/app/core/model_access/ai_model_core.py:/app/app/core/cloud_operations
-     - VACHAN_REDIS_PASS=${VACHAN_REDIS_PASS:-vsfrgetd}
-     - VACHAN_AI_BASEPATH=/v2/ai
-     - VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost}
-     - VACHAN_AI_DOMAIN=http://vachan-api
-    command: uvicorn main:app --host 0.0.0.0 --port 8008
-    volumes:
-     - ${VACHAN_AI_DATA_PATH}/docker-volumes/ai-logs-vol:/app/logs
-     - ${VACHAN_AI_DATA_PATH}/cache:/root/.cache
-    restart: always
-    depends_on:
-     - vachan-api
-     - redis
-    profiles:
-     - local-run
-     - deployment
-    expose:
-     - 8008
-    ports:
-     - "8008:8008"
-    networks:
-     - VE-network
-    container_name: vachan-ai
+- VACHAN_AI_DATA_PATH=${VACHAN_AI_DATA_PATH:-/var/data-vachan-ai}
+- VACHAN_AI_POSTGRES_PORT=5433
+- VACHAN_AI_LOGGING_LEVEL=INFO
+- VACHAN_LOGGING_LEVEL=INFO
+- VACHAN_AI_ENV=${VACHAN_AI_ENV:-Production}
+- PYTHONPATH=/app/app/core/model_access/ai_model_core.py:/app/app/core/cloud_operations
+- VACHAN_REDIS_PASS=${VACHAN_REDIS_PASS:-vsfrgetd}
+- VACHAN_AI_BASEPATH=/v2/ai
+- VACHAN_DOMAIN=${VACHAN_DOMAIN:-http://localhost}
+- VACHAN_AI_DOMAIN=http://vachan-api
+command: uvicorn main:app --host 0.0.0.0 --port 8008
+volumes:
+- ${VACHAN_AI_DATA_PATH}/docker-volumes/ai-logs-vol:/app/logs
+- ${VACHAN_AI_DATA_PATH}/cache:/root/.cache
+restart: always
+depends_on:
+- vachan-api
+- redis
+profiles:
+- local-run
+- deployment
+expose:
+- 8008
+ports:
+- "8008:8008"
+networks:
+- VE-network
+container_name: vachan-ai
 
 
- worker:
-    image: jayasankarkk/vachan-ai:0.0.0-alpha.5
-    healthcheck:
-     timeout: 45s
-     interval: 10s
-     retries: 10 
-    environment:
-     - REDIS_HOST=redis
-     - REDIS_PORT=6379
-     - VACHAN_AI_POSTGRES_HOST=dov2conn.bridgeconn.com
-     - VACHAN_AI_POSTGRES_USER=${VACHAN_AI_POSTGRES_USER:-postgres}
-     - VACHAN_AI_POSTGRES_PASSWORD=${VACHAN_AI_POSTGRES_PASSWORD:-secret}
-     - VACHAN_AI_POSTGRES_DATABASE=${VACHAN_AI_POSTGRES_DATABASE:-vachan_ai_db}
-     - VACHAN_AI_POSTGRES_SCHEMA=${VACHAN_AI_POSTGRES_SCHEMA:-aischema}
-     - VACHAN_AI_POSTGRES_PORT=5433
-     - VACHAN_AI_SERVED_MODEL_URI=${VACHAN_AI_SERVED_MODEL_URI:-http://dov2conn.bridgeconn.com:8085/v2/models}
-     - PYTHONPATH=/app/app/core/model_access/ai_model_core.py:/app/app/core/cloud_operations
-    command: rq worker --url redis://:${VACHAN_REDIS_PASS}@redis:6379
-    links:
-      - redis
-    depends_on:
-      - redis
-      - vachan-api
-    volumes:
-     - ${VACHAN_AI_DATA_PATH}/docker-volumes/redis_worker-logs-vol:/app/rqlogs
-    profiles:
-     - local-run
-     - deployment
-    networks:
-     - VE-network 
-    container_name: redis-worker
+worker:
+image: jayasankarkk/vachan-ai:0.0.0-alpha.5
+healthcheck:
+timeout: 45s
+interval: 10s
+retries: 10 
+environment:
+- REDIS_HOST=redis
+- REDIS_PORT=6379
+- VACHAN_AI_POSTGRES_HOST=dov2conn.bridgeconn.com
+- VACHAN_AI_POSTGRES_USER=${VACHAN_AI_POSTGRES_USER:-postgres}
+- VACHAN_AI_POSTGRES_PASSWORD=${VACHAN_AI_POSTGRES_PASSWORD:-secret}
+- VACHAN_AI_POSTGRES_DATABASE=${VACHAN_AI_POSTGRES_DATABASE:-vachan_ai_db}
+- VACHAN_AI_POSTGRES_SCHEMA=${VACHAN_AI_POSTGRES_SCHEMA:-aischema}
+- VACHAN_AI_POSTGRES_PORT=5433
+- VACHAN_AI_SERVED_MODEL_URI=${VACHAN_AI_SERVED_MODEL_URI:-http://dov2conn.bridgeconn.com:8085/v2/models}
+- PYTHONPATH=/app/app/core/model_access/ai_model_core.py:/app/app/core/cloud_operations
+command: rq worker --url redis://:${VACHAN_REDIS_PASS}@redis:6379
+links:
+- redis
+depends_on:
+- redis
+- vachan-api
+volumes:
+- ${VACHAN_AI_DATA_PATH}/docker-volumes/redis_worker-logs-vol:/app/rqlogs
+profiles:
+- local-run
+- deployment
+networks:
+- VE-network 
+container_name: redis-worker
 
 
  # Web Server
@@ -491,51 +491,51 @@ services:
    - VE-network
  
 
- ofelia-scheduler:
-    image: mcuadros/ofelia:v0.3.7
-    depends_on:
-      - kratos-postgresd
-      - vachan-db
-    command: daemon --docker
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - kratos-db-backup:/var/backups/kratos:ro
-      - vachan-db-backup:/var/backups/vachan:ro
-      - /var/lib/backups:/var/backup-copies/:rw
-      - logs-vol:/app/logs
-    environment:
-      - TZ=${TIMEZONE:-Asia/Calcutta}
-    labels:
-      ofelia.job-local.copy-vachan-backup-daily.schedule: "0 0 3 * * *" # Copies latest dump from DB container every day at 03:00 am
-      ofelia.job-local.copy-vachan-backup-daily.command: sh -c "cp /var/backups/vachan/vachan_db_backup_latest.sql /var/backup-copies/vachan_db_backup_daily_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Daily backup successful(vachan-db)' >> /app/logs/backup.log || echo `date`':Daily backup failed(vachan)' >> /app/logs/backup.log"
-      ofelia.job-local.prune-vachan-daily-backup.schedule: "0 0 0 * * *" # Retains only latest 7 of the daily backups 
-      ofelia.job-local.prune-vachan-daily-backup.command: sh -c "ls -tr /var/backup-copies/vachan_db_backup_daily* | head -n -7 |  xargs rm -f -- && echo `date`':Daily Prune successful(vachan-db)' >> /app/logs/backup.log || echo `date`':Daily Prune failed(vachan)' >> /app/logs/backup.log"
-      ofelia.job-local.copy-vachan-backup-weekly.schedule: "0 0 3 ? * SUN" # Copies latest dump on every sunday 03:00 am
-      ofelia.job-local.copy-vachan-backup-weekly.command: sh -c "cp /var/backups/vachan/vachan_db_backup_latest.sql /var/backup-copies/vachan_db_backup_weekly_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Weekly backup successful(vachan-db)' >> /app/logs/backup.log || echo `date`':Weekly backup failed(vachan)' >> /app/logs/backup.log"
-      ofelia.job-local.prune-vachan-weekly-backup.schedule: "0 0 0 ? * SUN" # Retains only latest 4 of the weekly backups
-      ofelia.job-local.prune-vachan-weekly-backup.command: sh -c "ls -tr /var/backup-copies/vachan_db_backup_weekly* | head -n -4 |  xargs rm -f -- && echo `date`':Weekly Prune successful(vachan-db)' >> /app/logs/backup.log || echo `date`':Weekly Prune failed(vachan)' >> /app/logs/backup.log"
-      ofelia.job-local.copy-vachan-backup-monthly.schedule: "0 0 3 1 * *" # Copies latest dump on first day of every month
-      ofelia.job-local.copy-vachan-backup-monthly.command: sh -c "cp /var/backups/vachan/vachan_db_backup_latest.sql /var/backup-copies/vachan_db_backup_monthly_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Monthly backup successful(vachan-db)' >> /app/logs/backup.log || echo `date`':Monthly backup failed(vachan)' >> /app/logs/backup.log"
-      ofelia.job-local.prune-vachan-monthly-backup.schedule: "0 0 0 1 * *" # Retains only latest 12 of the montly dumps
-      ofelia.job-local.prune-vachan-monthly-backup.command: sh -c "ls -tr /var/backup-copies/vachan_db_backup_monthly* | head -n -12 |  xargs rm -f -- && echo `date`':Monthly Prune successful(vachan-db)' >> /app/logs/backup.log || echo `date`':Monthly Prune failed(vachan)' >> /app/logs/backup.log"
-      ofelia.job-local.copy-vachan-backup-yearly.schedule: "0 0 3 1 JAN *" # Copies latest dump on first day of every year
-      ofelia.job-local.copy-vachan-backup-yearly.command: sh -c "cp /var/backups/vachan/vachan_db_backup_latest.sql /var/backup-copies/vachan_db_backup_yearly_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Yearly backup successful(vachan-db)' >> /app/logs/backup.log || echo `date`':Yearly backup failed(vachan)' >> /app/logs/backup.log"
-      ofelia.job-local.copy-kratos-backup-daily.schedule: "0 0 4 * * *" # Copies latest dump from DB container every day at 04:00 am
-      ofelia.job-local.copy-kratos-backup-daily.command: sh -c "cp /var/backups/kratos/kratos_db_backup_latest.sql /var/backup-copies/kratos_db_backup_daily_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Daily backup successful(kratos)' >> /app/logs/backup.log || echo `date`':Daily backup failed(kratos)' >> /app/logs/backup.log"
-      ofelia.job-local.prune-kratos-daily-backup.schedule: "0 0 1 * * *" # Retains only latest 7 of the daily backups 
-      ofelia.job-local.prune-kratos-daily-backup.command: sh -c "ls -tr /var/backup-copies/kratos_db_backup_daily* | head -n -7 |  xargs rm -f -- && echo `date`':Daily Prune successful(kratos)' >> /app/logs/backup.log || echo `date`':Daily Prune failed(kratos)' >> /app/logs/backup.log"
-      ofelia.job-local.copy-kratos-backup-weekly.schedule: "0 0 4 ? * SUN" # Copies latest dump on every sunday 04:00 am
-      ofelia.job-local.copy-kratos-backup-weekly.command: sh -c "cp /var/backups/kratos/kratos_db_backup_latest.sql /var/backup-copies/kratos_db_backup_weekly_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Weekly backup successful(kratos)' >> /app/logs/backup.log || echo `date`':Weekly backup failed(kratos)' >> /app/logs/backup.log"
-      ofelia.job-local.prune-kratos-weekly-backup.schedule: "0 1 0 ? * SUN" # Retains only latest 4 of the weekly backups
-      ofelia.job-local.prune-kratos-weekly-backup.command: sh -c "ls -tr /var/backup-copies/kratos_db_backup_weekly* | head -n -4 |  xargs rm -f -- && echo `date`':Weekly Prune successful(kratos)' >> /app/logs/backup.log || echo `date`':Weekly Prune failed(kratos)' >> /app/logs/backup.log"
-      ofelia.job-local.copy-kratos-backup-monthly.schedule: "0 0 4 1 * *" # Copies latest dump on first day of every month
-      ofelia.job-local.copy-kratos-backup-monthly.command: sh -c "cp /var/backups/kratos/kratos_db_backup_latest.sql /var/backup-copies/kratos_db_backup_monthly_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Monthly backup successful(kratos)' >> /app/logs/backup.log || echo `date`':Monthly backup failed(kratos)' >> /app/logs/backup.log"
-      ofelia.job-local.prune-kratos-monthly-backup.schedule: "0 0 1 1 * *" # Retains only latest 12 of the montly dumps
-      ofelia.job-local.prune-kratos-monthly-backup.command: sh -c "ls -tr /var/backup-copies/kratos_db_backup_monthly* | head -n -12 |  xargs rm -f -- && echo `date`':Monthly Prune successful(kratos)' >> /app/logs/backup.log || echo `date`':Monthly Prune failed(kratos)' >> /app/logs/backup.log"
-      ofelia.job-local.copy-kratos-backup-yearly.schedule: "0 0 3 1 JAN *" # Copies latest dump on first day of every year
-      ofelia.job-local.copy-kratos-backup-yearly.command: sh -c "cp /var/backups/kratos/kratos_db_backup_latest.sql /var/backup-copies/kratos_db_backup_yearly_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Yearly backup successful(kratos)' >> /app/logs/backup.log || echo `date`':Yearly backup failed(kratos)' >> /app/logs/backup.log"
-    networks:
-     - VE-network
+ofelia-scheduler:
+image: mcuadros/ofelia:v0.3.7
+depends_on:
+- kratos-postgresd
+- vachan-db
+command: daemon --docker
+volumes:
+- /var/run/docker.sock:/var/run/docker.sock:ro
+- kratos-db-backup:/var/backups/kratos:ro
+- vachan-db-backup:/var/backups/vachan:ro
+- /var/lib/backups:/var/backup-copies/:rw
+- logs-vol:/app/logs
+environment:
+- TZ=${TIMEZONE:-Asia/Calcutta}
+labels:
+ofelia.job-local.copy-vachan-backup-daily.schedule: "0 0 3 * * *" # Copies latest dump from DB container every day at 03:00 am
+ofelia.job-local.copy-vachan-backup-daily.command: sh -c "cp /var/backups/vachan/vachan_db_backup_latest.sql /var/backup-copies/vachan_db_backup_daily_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Daily backup successful(vachan-db)' >> /app/logs/backup.log || echo `date`':Daily backup failed(vachan)' >> /app/logs/backup.log"
+ofelia.job-local.prune-vachan-daily-backup.schedule: "0 0 0 * * *" # Retains only latest 7 of the daily backups 
+ofelia.job-local.prune-vachan-daily-backup.command: sh -c "ls -tr /var/backup-copies/vachan_db_backup_daily* | head -n -7 |  xargs rm -f -- && echo `date`':Daily Prune successful(vachan-db)' >> /app/logs/backup.log || echo `date`':Daily Prune failed(vachan)' >> /app/logs/backup.log"
+ofelia.job-local.copy-vachan-backup-weekly.schedule: "0 0 3 ? * SUN" # Copies latest dump on every sunday 03:00 am
+ofelia.job-local.copy-vachan-backup-weekly.command: sh -c "cp /var/backups/vachan/vachan_db_backup_latest.sql /var/backup-copies/vachan_db_backup_weekly_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Weekly backup successful(vachan-db)' >> /app/logs/backup.log || echo `date`':Weekly backup failed(vachan)' >> /app/logs/backup.log"
+ofelia.job-local.prune-vachan-weekly-backup.schedule: "0 0 0 ? * SUN" # Retains only latest 4 of the weekly backups
+ofelia.job-local.prune-vachan-weekly-backup.command: sh -c "ls -tr /var/backup-copies/vachan_db_backup_weekly* | head -n -4 |  xargs rm -f -- && echo `date`':Weekly Prune successful(vachan-db)' >> /app/logs/backup.log || echo `date`':Weekly Prune failed(vachan)' >> /app/logs/backup.log"
+ofelia.job-local.copy-vachan-backup-monthly.schedule: "0 0 3 1 * *" # Copies latest dump on first day of every month
+ofelia.job-local.copy-vachan-backup-monthly.command: sh -c "cp /var/backups/vachan/vachan_db_backup_latest.sql /var/backup-copies/vachan_db_backup_monthly_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Monthly backup successful(vachan-db)' >> /app/logs/backup.log || echo `date`':Monthly backup failed(vachan)' >> /app/logs/backup.log"
+ofelia.job-local.prune-vachan-monthly-backup.schedule: "0 0 0 1 * *" # Retains only latest 12 of the montly dumps
+ofelia.job-local.prune-vachan-monthly-backup.command: sh -c "ls -tr /var/backup-copies/vachan_db_backup_monthly* | head -n -12 |  xargs rm -f -- && echo `date`':Monthly Prune successful(vachan-db)' >> /app/logs/backup.log || echo `date`':Monthly Prune failed(vachan)' >> /app/logs/backup.log"
+ofelia.job-local.copy-vachan-backup-yearly.schedule: "0 0 3 1 JAN *" # Copies latest dump on first day of every year
+ofelia.job-local.copy-vachan-backup-yearly.command: sh -c "cp /var/backups/vachan/vachan_db_backup_latest.sql /var/backup-copies/vachan_db_backup_yearly_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Yearly backup successful(vachan-db)' >> /app/logs/backup.log || echo `date`':Yearly backup failed(vachan)' >> /app/logs/backup.log"
+ofelia.job-local.copy-kratos-backup-daily.schedule: "0 0 4 * * *" # Copies latest dump from DB container every day at 04:00 am
+ofelia.job-local.copy-kratos-backup-daily.command: sh -c "cp /var/backups/kratos/kratos_db_backup_latest.sql /var/backup-copies/kratos_db_backup_daily_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Daily backup successful(kratos)' >> /app/logs/backup.log || echo `date`':Daily backup failed(kratos)' >> /app/logs/backup.log"
+ofelia.job-local.prune-kratos-daily-backup.schedule: "0 0 1 * * *" # Retains only latest 7 of the daily backups 
+ofelia.job-local.prune-kratos-daily-backup.command: sh -c "ls -tr /var/backup-copies/kratos_db_backup_daily* | head -n -7 |  xargs rm -f -- && echo `date`':Daily Prune successful(kratos)' >> /app/logs/backup.log || echo `date`':Daily Prune failed(kratos)' >> /app/logs/backup.log"
+ofelia.job-local.copy-kratos-backup-weekly.schedule: "0 0 4 ? * SUN" # Copies latest dump on every sunday 04:00 am
+ofelia.job-local.copy-kratos-backup-weekly.command: sh -c "cp /var/backups/kratos/kratos_db_backup_latest.sql /var/backup-copies/kratos_db_backup_weekly_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Weekly backup successful(kratos)' >> /app/logs/backup.log || echo `date`':Weekly backup failed(kratos)' >> /app/logs/backup.log"
+ofelia.job-local.prune-kratos-weekly-backup.schedule: "0 1 0 ? * SUN" # Retains only latest 4 of the weekly backups
+ofelia.job-local.prune-kratos-weekly-backup.command: sh -c "ls -tr /var/backup-copies/kratos_db_backup_weekly* | head -n -4 |  xargs rm -f -- && echo `date`':Weekly Prune successful(kratos)' >> /app/logs/backup.log || echo `date`':Weekly Prune failed(kratos)' >> /app/logs/backup.log"
+ofelia.job-local.copy-kratos-backup-monthly.schedule: "0 0 4 1 * *" # Copies latest dump on first day of every month
+ofelia.job-local.copy-kratos-backup-monthly.command: sh -c "cp /var/backups/kratos/kratos_db_backup_latest.sql /var/backup-copies/kratos_db_backup_monthly_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Monthly backup successful(kratos)' >> /app/logs/backup.log || echo `date`':Monthly backup failed(kratos)' >> /app/logs/backup.log"
+ofelia.job-local.prune-kratos-monthly-backup.schedule: "0 0 1 1 * *" # Retains only latest 12 of the montly dumps
+ofelia.job-local.prune-kratos-monthly-backup.command: sh -c "ls -tr /var/backup-copies/kratos_db_backup_monthly* | head -n -12 |  xargs rm -f -- && echo `date`':Monthly Prune successful(kratos)' >> /app/logs/backup.log || echo `date`':Monthly Prune failed(kratos)' >> /app/logs/backup.log"
+ofelia.job-local.copy-kratos-backup-yearly.schedule: "0 0 3 1 JAN *" # Copies latest dump on first day of every year
+ofelia.job-local.copy-kratos-backup-yearly.command: sh -c "cp /var/backups/kratos/kratos_db_backup_latest.sql /var/backup-copies/kratos_db_backup_yearly_`date +%Y-%m-%d_%H_%M_%S`.sql && echo `date`':Yearly backup successful(kratos)' >> /app/logs/backup.log || echo `date`':Yearly backup failed(kratos)' >> /app/logs/backup.log"
+networks:
+- VE-network
 
  #redis caching DB
  redis:
