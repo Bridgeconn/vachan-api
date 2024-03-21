@@ -15,6 +15,7 @@ from custom_exceptions import GenericException,TypeException , PermissionExcepti
     UnprocessableException,NotAvailableException, AlreadyExistsException,\
         UnAuthorizedException, GitlabException
 import db_models
+from database import engine
 from dependencies import get_db, log
 # pylint: enable=E0401
 root_url = os.getenv("VACHAN_DOMAIN", 'http://localhost:8000')
@@ -203,7 +204,7 @@ async def gitlab_exception_handler(request, exc: GitlabException):
     )
 ######################################################
 # db_models.map_all_dynamic_tables(db_= next(get_db()))
-# db_models.Base.metadata.create_all(bind=engine)
+db_models.Base.metadata.create_all(bind=engine)
 
 
 @app.get('/', response_class=HTMLResponse, status_code=200)

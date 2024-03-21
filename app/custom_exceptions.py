@@ -8,26 +8,6 @@ class GenericException(Exception):
         self.detail = detail
         self.status_code = 500
 
-class DatabaseException(Exception):
-    '''Format for Database error'''
-    def __init__(self, detail):
-        super().__init__()
-        self.name = "Database Error"
-        self.logging_info = detail.__dict__
-        if 'orig' in detail.__dict__:
-            self.detail = str(detail.__dict__['orig']).replace('DETAIL:','')
-        else:
-            self.detail = str(detail)
-        self.status_code = 502
-
-class AuthException(Exception):
-    '''Format for Gitlab error in media access APIs'''
-    def __init__(self, detail):
-        super().__init__()
-        self.name = "Kratos Access Error"
-        self.detail = detail
-        self.status_code = 502
-
 class GitlabException(Exception):
     '''Format for Gitlab error in media access APIs'''
     def __init__(self, detail):
