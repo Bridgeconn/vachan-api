@@ -203,7 +203,7 @@ async def gitlab_exception_handler(request, exc: GitlabException):
         content={"error": exc.name, "details": str(exc.detail)}
     )
 ######################################################
-db_models.map_all_dynamic_tables(db_= next(get_db()))
+# db_models.map_all_dynamic_tables(db_= next(get_db()))
 db_models.Base.metadata.create_all(bind=engine)
 
 
