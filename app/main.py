@@ -15,7 +15,6 @@ from custom_exceptions import GenericException,TypeException , PermissionExcepti
     UnprocessableException,NotAvailableException, AlreadyExistsException,\
         UnAuthorizedException, GitlabException
 import db_models
-from database import engine
 from dependencies import get_db, log
 # pylint: enable=E0401
 root_url = os.getenv("VACHAN_DOMAIN", 'http://localhost:8000')
