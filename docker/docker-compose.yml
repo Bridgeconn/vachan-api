@@ -346,7 +346,7 @@ services:
 
 
  vachan-ai:
-    image: jayasankarkk/vachan-ai:0.0.0-alpha.5
+    image: jayasankarkk/vachan-ai:0.0.0-alpha.6
     healthcheck:
      timeout: 45s
      interval: 10s
@@ -381,6 +381,7 @@ services:
      - VACHAN_AI_LOGGING_LEVEL=INFO
      - VACHAN_LOGGING_LEVEL=INFO
      - VACHAN_AI_ENV=${VACHAN_AI_ENV:-Production}
+     - VACHAN_AI_MLSERVER_REQUEST_TIMEOUT=120
      - PYTHONPATH=/app/app/core/model_access/ai_model_core.py:/app/app/core/cloud_operations
      - VACHAN_REDIS_PASS=${VACHAN_REDIS_PASS:-vsfrgetd}
      - VACHAN_AI_BASEPATH=/v2/ai
@@ -390,6 +391,7 @@ services:
     volumes:
      - ${VACHAN_AI_DATA_PATH}/docker-volumes/ai-logs-vol:/app/logs
      - ${VACHAN_AI_DATA_PATH}/cache:/root/.cache
+     - ${VACHAN_AI_DATA_PATH}/Downloads:/tmp
     restart: always
     depends_on:
      - vachan-api
@@ -407,7 +409,7 @@ services:
 
 
  worker:
-    image: jayasankarkk/vachan-ai:0.0.0-alpha.5
+    image: jayasankarkk/vachan-ai:0.0.0-alpha.6
     healthcheck:
      timeout: 45s
      interval: 10s
@@ -421,6 +423,7 @@ services:
      - VACHAN_AI_POSTGRES_DATABASE=${VACHAN_AI_POSTGRES_DATABASE:-vachan_ai_db}
      - VACHAN_AI_POSTGRES_SCHEMA=${VACHAN_AI_POSTGRES_SCHEMA:-aischema}
      - VACHAN_AI_POSTGRES_PORT=5433
+     - VACHAN_AI_DATA_PATH=${VACHAN_AI_DATA_PATH:-/var/data-vachan-ai}
      - VACHAN_AI_SERVED_MODEL_URI=${VACHAN_AI_SERVED_MODEL_URI:-http://dov2conn.bridgeconn.com:8085/v2/models}
      - PYTHONPATH=/app/app/core/model_access/ai_model_core.py:/app/app/core/cloud_operations
     command: rq worker --url redis://:${VACHAN_REDIS_PASS}@redis:6379
@@ -431,6 +434,8 @@ services:
       - vachan-api
     volumes:
      - ${VACHAN_AI_DATA_PATH}/docker-volumes/redis_worker-logs-vol:/app/rqlogs
+     - ../data/csvs:/csvs
+     - ${VACHAN_AI_DATA_PATH}/Downloads:/tmp
     profiles:
      - local-run
      - deployment
