@@ -1,0 +1,105 @@
+,Unnamed: 0,lang_code,lang_name,lang_code_alias,lang_id
+0,0,afr,Afrikaans,afr,100017
+1,1,amh,Amharic,amh,100037
+2,2,arb,Modern Standard Arabic,arb,101403
+3,3,ary,Moroccan Arabic,ary,101404
+4,4,arz,Egyptian Arabic,arz,101405
+5,5,asm,Assamese,asm,100049
+6,6,ast,Asturian,ast,100050
+7,7,azj,North Azerbaijani,azj,101406
+8,8,bel,Belarusian,bel,100089
+9,9,ben,Bengali,ben,100091
+10,10,bos,Bosnian,bos,100132
+11,11,bul,Bulgarian,bul,100151
+12,12,cat,Catalan,cat,100174
+13,13,ceb,Cebuano,ceb,100186
+14,14,ces,Czech,ces,100189
+15,15,ckb,Central Kurdish,ckb,100199
+16,16,cmn,Mandarin Chinese,cmn,101407
+17,17,cmn_Hant,Mandarin Chinese,cmn_Hant,101408
+18,18,cym,Welsh,cym,100244
+19,19,dan,Danish,dan,100247
+20,20,deu,German,deu,100254
+21,21,ell,Greek,ell,100285
+22,22,eng,English,eng,100288
+23,23,est,Estonian,est,100293
+24,24,eus,Basque,eus,100294
+25,25,fin,Finnish,fin,100303
+26,26,fra,French,fra,100307
+27,27,fuv,Nigerian Fulfulde,fuv,101409
+28,28,gaz,West Central Oromo,gaz,101410
+29,29,gle,Irish,gle,100327
+30,30,glg,Galician,glg,100328
+31,31,guj,Gujarati,guj,100347
+32,32,heb,Hebrew,heb,100367
+33,33,hin,Hindi,hin,100372
+34,34,hrv,Croatian,hrv,100380
+35,35,hun,Hungarian,hun,100385
+36,36,hye,Armenian,hye,100392
+37,37,ibo,Igbo,ibo,100395
+38,38,ind,Indonesian,ind,100411
+39,39,isl,Icelandic,isl,100417
+40,40,ita,Italian,ita,100418
+41,41,jav,Javanese,jav,100428
+42,42,jpn,Japanese,jpn,100435
+43,43,kam,Kamba,kam,100443
+44,44,kan,Kannada,kan,100444
+45,45,kat,Georgian,kat,100447
+46,46,kaz,Kazakh,kaz,100449
+47,47,kea,Kabuverdianu,kea,100465
+48,48,khk,Halh Mongolian,khk,101411
+49,49,khm,Khmer,khm,100477
+50,50,kir,Kyrgyz,kir,100483
+51,51,kor,Korean,kor,100508
+52,52,lao,Lao,lao,100555
+53,53,lit,Lithuanian,lit,100577
+54,54,ltz,Luxembourgish,ltz,100592
+55,55,lug,Ganda,lug,100594
+56,56,luo,Luo,luo,100595
+57,57,lvs,Standard Latvian,lvs,101412
+58,58,mai,Maithili,mai,100604
+59,59,mal,Malayalam,mal,100607
+60,60,mar,Marathi,mar,100613
+61,61,mkd,Macedonian,mkd,100672
+62,62,mlt,Maltese,mlt,100676
+63,63,mni,Meitei,mni,101413
+64,64,mya,Burmese,mya,100717
+65,65,nld,Dutch,nld,100765
+66,66,nno,Norwegian Nynorsk,nno,100770
+67,67,nob,Norwegian Bokmål,nob,100774
+68,68,npi,Nepali,npi,100778
+69,69,nya,Nyanja,nya,100791
+70,70,oci,Occitan,oci,100798
+71,71,ory,Odia,ory,100807
+72,72,pan,Punjabi,pan,100816
+73,73,pbt,Southern Pashto,pbt,101414
+74,74,pes,Western Persian,pes,101415
+75,75,pol,Polish,pol,100840
+76,76,por,Portuguese,por,100841
+77,77,ron,Romanian,ron,100906
+78,78,rus,Russian,rus,100913
+79,79,slk,Slovak,slk,100946
+80,80,slv,Slovenian,slv,100948
+81,81,sna,Shona,sna,100951
+82,82,snd,Sindhi,snd,100952
+83,83,som,Somali,som,100957
+84,84,spa,Spanish,spa,100959
+85,85,srp,Serbian,srp,101416
+86,86,swe,Swedish,swe,100978
+87,87,swh,Swahili,swh,100979
+88,88,tam,Tamil,tam,100987
+89,89,tel,Telugu,tel,101006
+90,90,tgk,Tajik,tgk,101015
+91,91,tgl,Tagalog,tgl,101016
+92,92,tha,Thai,tha,101019
+93,93,tur,Turkish,tur,101061
+94,94,ukr,Ukrainian,ukr,101082
+95,95,urd,Urdu,urd,101417
+96,96,uzn,Northern Uzbek,uzn,101418
+97,97,vie,Vietnamese,vie,101099
+98,98,xho,Xhosa,xho,101124
+99,99,yor,Yoruba,yor,101157
+100,100,yue,Cantonese,yue,101419
+101,101,zlm,Colloquial Malay,zlm,101180
+102,102,zsm,Standard Malay,zsm,101420
+103,103,zul,Zulu,zul,101195
