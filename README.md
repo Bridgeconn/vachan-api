@@ -10,9 +10,7 @@ Implemented Using
 - Python 3.10.6
 - Fastapi framework
 - Postgresql Database
-- Ory Kratos for Authentication
-- Redis for caching and job queueing 
-- Usfm-grammar
+
 
 ## Start App (with docker)
 
@@ -26,8 +24,8 @@ or
 
 Set environment variables VACHAN_SUPER_USERNAME, VACHAN_SUPER_PASSWORD. Use `--build` and `--force-recreate` flags if there has been code change. Refer [the detailed usage guide](./docs/docker-guide.md#to-start-app-locally) and [section on environments variables](#set-up-environmental-variables), for more information.
 
-If all goes well you should be able to get proper outputs at `http://localhost`, `http://localhost/docs`, `http://localhost/v2/demos`, 
-`http://127.0.0.1:4434/identities` and connect to postgresDB at `localhost`, `5433`
+If all goes well you should be able to get proper outputs at `http://localhost`, `http://localhost/docs`, `http://localhost/v2/demos/docs`, 
+`http://localhost/v2/cms/rest/docs`,`http://localhost/v2/text/translate/token-based/docs`,`http://localhost/v2/auth/docs`,`http://localhost//v2/ai/docs`,`http://127.0.0.1:4434/identities`and connect to postgresDB at `localhost`, `5433`
 
 
 ## Set up locally for development and testing(without docker)
@@ -65,15 +63,7 @@ Prerequisite: Postgresql (refer [postgresql website](https://www.postgresql.org/
 2. create a new database, in the name you want
   `CREATE DATABASE db_name;`
 3. exit from psql ( `\q` or ctl+d )
-4. from terminal use command 
-  
-  `>>> cd DB`
-  
-  `>>> psql db_name < seed_DB.sql`
 
-  (use your username and password if required
-  `>>> psql -U username db_name < seed_DB.sql` )
-  
 ### Set up Environmental Variables
 
 go to the home directory and open `.bashrc` file
@@ -105,24 +95,6 @@ After editing .bashrc file they may need to run
 
 to refresh the bashrc file or logout and login to refresh it
 
-### Install usfm-grammar
-
-Set up node and npm and install [usfm-grammar](https://www.npmjs.com/package/usfm-grammar) library globally
-
-`npm install -g usfm-grammar@2.2.0`
-
-
-### Set up a Kratos instance
-
-Refer instructions and use config files [here](./docker/Kratos_config) and run a Kratos server on localhost
-
-Make sure you have installed Docker Version 24.0.1 before setting Kratos instance.
-Refer [detailed guide for docker usage](./docs/docker-guide.md) for more details.
-
-```
-cd docker/Kratos_config
-docker-compose -f quickstart.yml up 
-```
 
 
 ### Run the app
@@ -151,8 +123,6 @@ Redoc documentaion is also available at http://127.0.0.1:8000/redoc
 
 ### Run Test
 
-To run all the testcases, from the folder vachan-api/app run the command
+To run  the testcase, from the folder vachan-api/app run the command
 
 ```python -m pytest```
-
-For runing testselectively, refer [pytest docs](https://docs.pytest.org/en/stable/usage.html#specifying-tests-selecting-tests)
