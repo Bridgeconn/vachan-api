@@ -376,7 +376,7 @@ services:
      - VACHAN_AI_AWS_ACCOUNT_REGION=${VACHAN_AI_AWS_ACCOUNT_REGION}
      
 
-     - VACHAN_AI_DATA_PATH=${VACHAN_AI_DATA_PATH:-/var/data-vachan-ai}
+     - VACHAN_AI_DATA_PATH=${VACHAN_AI_DATA_PATH:-/home/gitautodeploy/vachan_ai_data}
      - VACHAN_AI_POSTGRES_PORT=5433
      - VACHAN_AI_LOGGING_LEVEL=INFO
      - VACHAN_LOGGING_LEVEL=INFO
@@ -423,8 +423,9 @@ services:
      - VACHAN_AI_POSTGRES_DATABASE=${VACHAN_AI_POSTGRES_DATABASE:-vachan_ai_db}
      - VACHAN_AI_POSTGRES_SCHEMA=${VACHAN_AI_POSTGRES_SCHEMA:-aischema}
      - VACHAN_AI_POSTGRES_PORT=5433
-     - VACHAN_AI_DATA_PATH=${VACHAN_AI_DATA_PATH:-/var/data-vachan-ai}
+     - VACHAN_AI_DATA_PATH=${VACHAN_AI_DATA_PATH:-/home/gitautodeploy/vachan_ai_data}
      - VACHAN_AI_SERVED_MODEL_URI=${VACHAN_AI_SERVED_MODEL_URI:-http://dov2conn.bridgeconn.com:8085/v2/models}
+     - VACHAN_AI_MLSERVER_REQUEST_TIMEOUT=120
      - PYTHONPATH=/app/app/core/model_access/ai_model_core.py:/app/app/core/cloud_operations
     command: rq worker --url redis://:${VACHAN_REDIS_PASS}@redis:6379
     links:
