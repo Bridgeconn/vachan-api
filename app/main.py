@@ -22,7 +22,7 @@ root_url = os.getenv("VACHAN_DOMAIN", 'http://localhost:8000')
 if root_url is not None and not root_url.startswith("http://"):
     root_url = "http://" + root_url
 
-app = FastAPI(title="Vachan-API", version="2.0.0",
+app = FastAPI(title="Vachan-API", version="2.0.1",
     description=f"The server application that provides APIs to interact \
 with the underlying Databases and modules in Vachan-Engine. \
 \n • For Vachan-CMS docs: {root_url}/v2/cms/rest/docs,\
@@ -239,7 +239,7 @@ def custom_openapi():
 
     openapi_schema = get_openapi(
         title="Vachan-API",
-        version="2.0.0",
+        version="2.0.1",
         description=(
         "The server application that provides APIs to interact with the \
         underlying Databases \and modules in Vachan-Engine. "
