@@ -389,9 +389,9 @@ services:
      - VACHAN_AI_DOMAIN=http://vachan-api
     command: uvicorn main:app --host 0.0.0.0 --port 8008
     volumes:
-     - ${VACHAN_AI_DATA_PATH}/docker-volumes/ai-logs-vol:/app/logs
-     - ${VACHAN_AI_DATA_PATH}/cache:/root/.cache
-     - ${VACHAN_AI_DATA_PATH}/Downloads:/tmp
+     - ${VACHAN_AI_DATA_PATH:-/home/gitautodeploy/vachan_ai_data}/docker-volumes/ai-logs-vol:/app/logs
+     - ${VACHAN_AI_DATA_PATH:-/home/gitautodeploy/vachan_ai_data}/cache:/root/.cache
+     - ${VACHAN_AI_DATA_PATH:-/home/gitautodeploy/vachan_ai_data}/Downloads:/tmp
     restart: always
     depends_on:
      - vachan-api
@@ -434,9 +434,9 @@ services:
       - redis
       - vachan-api
     volumes:
-     - ${VACHAN_AI_DATA_PATH}/docker-volumes/redis_worker-logs-vol:/app/rqlogs
+     - ${VACHAN_AI_DATA_PATH:-/home/gitautodeploy/vachan_ai_data}/docker-volumes/redis_worker-logs-vol:/app/rqlogs
      - ../data/csvs:/csvs
-     - ${VACHAN_AI_DATA_PATH}/Downloads:/tmp
+     - ${VACHAN_AI_DATA_PATH:-/home/gitautodeploy/vachan_ai_data}/Downloads:/tmp
     profiles:
      - local-run
      - deployment
