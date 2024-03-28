@@ -24,7 +24,7 @@ or
 
 Set environment variables VACHAN_SUPER_USERNAME, VACHAN_SUPER_PASSWORD. Use `--build` and `--force-recreate` flags if there has been code change. Refer [the detailed usage guide](./docs/docker-guide.md#to-start-app-locally) and [section on environments variables](#set-up-environmental-variables), for more information.
 
-If all goes well you should be able to get proper outputs at `http://localhost`, `http://localhost/docs`, `http://localhost/v2/demos/docs`, 
+If all goes well you should be able to get proper outputs at `http://localhost`, `http://localhost/docs`,
 `http://localhost/v2/cms/rest/docs`,`http://localhost/v2/text/translate/token-based/docs`,`http://localhost/v2/auth/docs`,`http://localhost//v2/ai/docs`,`http://127.0.0.1:4434/identities`and connect to postgresDB at `localhost`, `5433`
 
 
